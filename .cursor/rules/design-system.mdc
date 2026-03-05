@@ -1,0 +1,30 @@
+---
+description: Tarmeer 4.0 design system — primary color and derived palette for all UI
+globs: 
+alwaysApply: false
+---
+
+# Tarmeer 4.0 Design System
+
+All interactive and decorative UI must use the **primary palette** below. Do not use browser-default blue or other off-brand colors for focus, hover, or links.
+
+## Primary
+
+- **Primary (buttons, key CTAs)**: `#b8864a` — CSS var `--color-tarmeer-primary-btn`
+- **Primary hover**: `#a67c47` — `--color-tarmeer-primary-btn-hover`
+- **Accent (links, tags, borders)**: `#c6a065` — `--color-tarmeer-gold` / `--color-tarmeer-warm` used for lighter emphasis
+
+## Derived (from primary)
+
+- **Focus ring**: same as primary at ~40% opacity, e.g. `ring-2 ring-[#b8864a]/40` or use class `focus-primary`
+- **Focus border**: `border-[#b8864a]` when focused
+- **Link hover**: `text-[#b8864a]` or `hover:text-[#c6a065]`
+- **Card / button hover**: primary hover background or `bg-[#c6a065]/10` for outline buttons
+- **Muted text**: `#6b6b6b` — `--color-tarmeer-muted`
+- **Body text**: `#2c2c2c` — `--color-tarmeer-text`
+
+## Rules
+
+1. **Focus states**: All `input`, `textarea`, `select`, and focusable `button` must use primary-colored focus (no blue). Use `outline-none` and `focus-visible:ring-2 focus-visible:ring-[#b8864a]/40` (or the shared `.focus-primary` utility).
+2. **Hover states**: Buttons and links use primary or primary-hover; cards can use primary tint or shadow.
+3. **New components**: Reuse existing Tailwind theme variables and the `.btn-primary` / `.focus-primary` classes from `src/index.css`.
