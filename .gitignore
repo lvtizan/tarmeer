@@ -4,4 +4,9 @@ dist
 *.log
 *.tmp
 *.local
+.env
+.env.*
+!.env.example
+!.env.production
+deploy.local
 

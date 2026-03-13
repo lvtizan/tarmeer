@@ -13,25 +13,26 @@ import {
   Eye,
   Trash2,
   Plus,
+  ChevronDown,
 } from 'lucide-react';
 
 const PRIMARY = '#b8864a';
 
-/* Mock products for "Products Used" table */
-const MOCK_PRODUCTS = [
-  { id: '1', name: 'Nordic Minimalist Sofa Set', category: 'Furniture', supplier: 'Guangzhou Home Co.', thumb: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&q=80' },
-  { id: '2', name: 'Calacatta Gold Marble Slab', category: 'Materials & Surfaces', supplier: 'Foshan Ceramics Ltd.', thumb: 'https://images.unsplash.com/photo-1615873968403-89e068629265?w=200&q=80' },
-];
+/* Mock products for "Products Used" table - 暂时隐藏 */
+// const MOCK_PRODUCTS = [
+//   { id: '1', name: 'Nordic Minimalist Sofa Set', category: 'Furniture', supplier: 'Guangzhou Home Co.', thumb: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=200&q=80' },
+//   { id: '2', name: 'Calacatta Gold Marble Slab', category: 'Materials & Surfaces', supplier: 'Foshan Ceramics Ltd.', thumb: 'https://images.unsplash.com/photo-1615873968403-89e068629265?w=200&q=80' },
+// ];
 
 export default function UploadProjectPage() {
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
-  const [coverIndex, setCoverIndex] = useState(0);
+  // const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [coverIndex] = useState(0);
   const [images, setImages] = useState<{ url: string; id: string }[]>([
     { id: '1', url: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=600&q=80' },
     { id: '2', url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80' },
   ]);
 
-  const removeProduct = (id: string) => setProducts((p) => p.filter((x) => x.id !== id));
+  // const removeProduct = (id: string) => setProducts((p) => p.filter((x) => x.id !== id));
   const removeImage = (id: string) => setImages((p) => p.filter((x) => x.id !== id));
 
   return (
@@ -75,9 +76,11 @@ export default function UploadProjectPage() {
             <Settings className="w-5 h-5" />
           </button>
           <div
-            className="size-10 rounded-full bg-cover bg-center border-2 flex-shrink-0"
-            style={{ borderColor: PRIMARY, backgroundImage: 'url(https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80)' }}
-          />
+            className="size-10 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs font-semibold"
+            style={{ borderColor: PRIMARY, backgroundColor: `${PRIMARY}15`, color: PRIMARY }}
+          >
+            AK
+          </div>
         </div>
       </header>
 
@@ -87,9 +90,11 @@ export default function UploadProjectPage() {
           <div className="p-6">
             <div className="flex gap-3 items-center mb-8">
               <div
-                className="size-12 rounded-full bg-cover bg-center flex-shrink-0"
-                style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80)' }}
-              />
+                className="size-12 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold"
+                style={{ backgroundColor: `${PRIMARY}15`, color: PRIMARY }}
+              >
+                AK
+              </div>
               <div>
                 <h2 className="text-[#2c2c2c] font-bold text-base">Ahmed Khalil</h2>
                 <p className="text-stone-500 text-xs">Senior Interior Designer</p>
@@ -126,7 +131,7 @@ export default function UploadProjectPage() {
             </nav>
           </div>
           <div className="mt-auto p-6">
-            <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
+            <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
               <h4 className="text-sm font-bold text-[#2c2c2c] mb-2">Need Help?</h4>
               <p className="text-xs text-stone-500 mb-3">Contact your dedicated account manager for supply chain inquiries.</p>
               <button type="button" className="w-full py-2 rounded-lg border border-stone-200 bg-white text-stone-800 text-xs font-bold hover:bg-stone-50 transition">
@@ -155,7 +160,7 @@ export default function UploadProjectPage() {
             </div>
 
             {/* Step 1: Project Details */}
-            <div className="mb-8 bg-white rounded-xl shadow-sm border border-stone-100 p-6">
+            <div className="mb-8 bg-white rounded-lg shadow-sm border border-stone-100 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-[#2c2c2c]">Project Details</h2>
                 <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ color: PRIMARY, backgroundColor: `${PRIMARY}20` }}>
@@ -184,14 +189,17 @@ export default function UploadProjectPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-stone-700">Style <span className="text-red-500">*</span></label>
-                  <select className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none">
-                    <option value="">Select a style</option>
-                    <option value="modern">Modern Contemporary</option>
-                    <option value="islamic">Modern Islamic</option>
-                    <option value="classic">Neo-Classic</option>
-                    <option value="minimalist">Minimalist</option>
-                    <option value="industrial">Industrial</option>
-                  </select>
+                  <div className="relative">
+                    <select className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 pr-10 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none cursor-pointer appearance-none">
+                      <option value="">Select a style</option>
+                      <option value="modern">Modern Contemporary</option>
+                      <option value="islamic">Modern Islamic</option>
+                      <option value="classic">Neo-Classic</option>
+                      <option value="minimalist">Minimalist</option>
+                      <option value="industrial">Industrial</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8864a] pointer-events-none" />
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-stone-700">Location (City) <span className="text-red-500">*</span></label>
@@ -211,20 +219,23 @@ export default function UploadProjectPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-stone-700">Completion Year</label>
-                  <select className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none">
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                    <option value="2022">2022</option>
-                    <option value="2021">2021</option>
-                  </select>
+                  <div className="relative">
+                    <select className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 pr-10 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none cursor-pointer appearance-none">
+                      {Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => {
+                        const year = new Date().getFullYear() + 1 - i;
+                        return <option key={year} value={year}>{year}</option>;
+                      })}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8864a] pointer-events-none" />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Gallery Images */}
-            <div className="mb-8 bg-white rounded-xl shadow-sm border border-stone-100 p-6">
+            <div className="mb-8 bg-white rounded-lg shadow-sm border border-stone-100 p-6">
               <h2 className="text-lg font-bold text-[#2c2c2c] mb-6">Gallery Images</h2>
-              <div className="border-2 border-dashed border-stone-300 rounded-xl p-10 flex flex-col items-center justify-center bg-stone-50 hover:bg-stone-100 transition cursor-pointer mb-6">
+              <div className="border-2 border-dashed border-stone-300 rounded-lg p-10 flex flex-col items-center justify-center bg-stone-50 hover:bg-stone-100 transition cursor-pointer mb-6">
                 <Upload className="w-12 h-12 text-stone-400 mb-3" />
                 <p className="text-stone-700 font-bold text-base mb-1">Click to upload or drag and drop</p>
                 <p className="text-stone-500 text-sm">High-res JPG, PNG (Max 10MB per image)</p>
@@ -257,8 +268,8 @@ export default function UploadProjectPage() {
               </div>
             </div>
 
-            {/* Products Used */}
-            <div className="mb-8 bg-white rounded-xl shadow-sm border border-stone-100 p-6">
+            {/* Products Used - 暂时隐藏，分散注册力
+            <div className="mb-8 bg-white rounded-lg shadow-sm border border-stone-100 p-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                   <h2 className="text-lg font-bold text-[#2c2c2c]">Products Used (Chinese Supply Chain)</h2>
@@ -268,7 +279,6 @@ export default function UploadProjectPage() {
                   type="button"
                   className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-lg text-sm font-bold text-[#2c2c2c] transition"
                 >
-                  <Plus className="w-4 h-4" />
                   Add Product
                 </button>
               </div>
@@ -294,7 +304,7 @@ export default function UploadProjectPage() {
                         <td className="py-3 px-4 text-sm text-stone-600">{row.category}</td>
                         <td className="py-3 px-4 text-sm text-stone-600">{row.supplier}</td>
                         <td className="py-3 px-4 text-right">
-                          <button type="button" onClick={() => removeProduct(row.id)} className="text-stone-400 hover:text-red-500 transition">
+                          <button type="button" className="text-stone-400 hover:text-red-500 transition">
                             <Trash2 className="w-5 h-5 inline" />
                           </button>
                         </td>
@@ -304,6 +314,7 @@ export default function UploadProjectPage() {
                 </table>
               </div>
             </div>
+            */}
           </div>
         </main>
       </div>

@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import Banner from '../components/home/Banner';
 import PricingSection from '../components/home/PricingSection';
 import DesignersSection from '../components/home/DesignersSection';
-import CompanySection from '../components/home/CompanySection';
 
 export default function HomePage() {
   const location = useLocation();
@@ -25,7 +24,6 @@ export default function HomePage() {
       <Banner />
       <PricingSection />
       <DesignersSection />
-      <CompanySection />
     </>
   );
 }

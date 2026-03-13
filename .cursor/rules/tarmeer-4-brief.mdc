@@ -1,0 +1,37 @@
+---
+description: Tarmeer 4.0 product & design direction — homepage focus, materials sub-site, Havenly style
+globs: 
+alwaysApply: false
+---
+
+# Tarmeer 4.0 — Product & Design Brief
+
+## Homepage Focus
+
+**主推设计师服务**，首页重心明确：
+
+1. **Banner** — 首屏主视觉，强调设计师服务与 CTA（Get Started / Meet Designers）。
+2. **设计师招募 + 项目价目** — 包价/设计套餐卡片（如 New Home Full Case、Soft Decoration），清晰价格与「Get Started」；设计师入驻入口（Join as Designer）可见。
+3. **设计师展示** — 设计师卡片罗列（项目图、头像、姓名、位置），点击进入个人页/作品集。
+4. **公司信息** — 地址、地图、WhatsApp、Instagram 等，保持简洁。
+
+建材城**不作为首页重心**，仅作为子模块入口（导航或 Footer 链接）。
+
+## 建材城子模块（完整子站）
+
+- **落地页** `/materials` — Havenly 风格：浅色、留白、分类卡片（图 + 标题 + 短描述）。
+- **分类页** `/materials/:category` — 每个分类独立页，结构完整（案例、说明、CTA），视觉与主站一致。
+- 建材城是「完整子站」，有独立落地页 + 多分类页，但层级上从属于主站，不在首页占主视觉。
+
+## 全站风格（参考 Havenly）
+
+- **浅色、留白多** — 背景以白、米白、浅暖灰为主，区块之间留白充足。
+- **清晰层次** — 标题层级分明，段落简短，信息分块清晰。
+- **包价/设计师卡片** — 卡片化展示（价格包、设计师、建材分类），统一圆角、阴影、hover 状态。
+- **统一 CTA** — 主按钮用语统一：**Get Started**（开始设计/选套餐）、**与我们联系 / Contact Us**（WhatsApp 等）。避免混用多种说法。
+- **主色与设计系统** — 遵循 `.cursor/rules/design-system.mdc`（主色 #b8864a、焦点/悬停从主色衍生）。
+
+## 导航与信息架构
+
+- 主导航突出：Home、Find Designers、Showrooms、Join as Designer；建材城以 **Materials** 入口进入子站。
+- 全站 CTA 与主色、按钮样式保持一致，便于用户识别「开始」与「联系」路径。

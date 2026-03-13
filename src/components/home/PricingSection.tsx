@@ -1,4 +1,4 @@
-import { WHATSAPP_LINK } from '../../lib/constants';
+import { Link } from 'react-router-dom';
 import { isWartime } from '../../config/site-config';
 
 const PACKAGES = [
@@ -9,6 +9,7 @@ const PACKAGES = [
     price: '29',
     unit: 'AED/m²',
     cta: 'Get Started',
+    link: '/services/new-home-design',
     features: ['Floor plans & 3D visuals', 'Full construction drawings', 'Material specifications'],
   },
   {
@@ -18,6 +19,7 @@ const PACKAGES = [
     price: '22',
     unit: 'AED/m²',
     cta: 'Get Started',
+    link: '/services/soft-decoration',
     features: ['Layout & 720° virtual tour', 'Mood boards & visuals', 'Lighting, color & product list'],
   },
 ];
@@ -51,7 +53,7 @@ export default function PricingSection() {
           {PACKAGES.map((pkg) => (
             <div
               key={pkg.title}
-              className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
+              className="relative bg-white rounded-lg shadow-lg overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="p-6 sm:p-8 flex flex-col flex-1">
                 <h3 className="font-semibold text-lg sm:text-xl text-[#2c2c2c] mb-3">
@@ -74,20 +76,18 @@ export default function PricingSection() {
                   </span>
                   <span className="text-sm text-[#6b6b6b]">{pkg.unit}</span>
                 </div>
-                <a
-                  href={WHATSAPP_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary block w-full text-center"
+                <Link
+                  to={pkg.link}
+                  className="btn-primary block w-full text-center text-white"
                 >
                   {pkg.cta}
-                </a>
+                </Link>
               </div>
             </div>
           ))}
         </div>
 
-        {/* 战时模式提示 */}
+        {/* Wartime mode prompt */}
         {isWartime() && (
           <div className="mt-10 max-w-2xl mx-auto">
             <div className="bg-[#c6a065]/10 border border-[#c6a065]/30 rounded-lg p-4 text-center">

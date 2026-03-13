@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import PageContainer from '../components/PageContainer';
-import { Package, TrendingUp, Users, UserPlus, Store, Handshake, ChevronDown } from 'lucide-react';
+import { Package, TrendingUp, Users, UserPlus, Store, Handshake } from 'lucide-react';
 
 const PRIMARY = '#b8864a';
 
@@ -36,7 +36,7 @@ export default function ApplyPage() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative min-h-[420px] sm:min-h-[500px] flex flex-col justify-center items-center text-center px-4 py-12 sm:py-16 rounded-b-2xl overflow-hidden">
+      <section className="relative min-h-[420px] sm:min-h-[500px] flex flex-col justify-center items-center text-center px-4 py-12 sm:py-16 overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -50,14 +50,14 @@ export default function ApplyPage() {
           >
             For Interior Designers
           </span>
-          <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-4">
+          <h1 className="font-serif text-white text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-4">
             Join the Tarmeer Designer Network
           </h1>
           <p className="text-slate-200 text-lg sm:text-xl font-medium leading-relaxed max-w-2xl mx-auto mb-6">
             Access Premium Chinese Supply Chains, Increase Your Project Volume, and Join the Top Design Community in MENA.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register" className="btn-primary inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 text-base lg:text-lg">
+            <Link to="/auth" className="btn-primary inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 text-base lg:text-lg text-white">
               Apply Now
             </Link>
             <a
@@ -86,7 +86,7 @@ export default function ApplyPage() {
               const Icon = b.icon;
               return (
                 <div key={b.title} className="flex flex-col group">
-                  <div className="w-full aspect-[4/3] bg-cover bg-center rounded-xl mb-6 shadow-md overflow-hidden">
+                  <div className="w-full aspect-[4/3] bg-cover bg-center rounded-lg mb-6 shadow-md overflow-hidden">
                     <img
                       src={b.image}
                       alt=""
@@ -108,7 +108,7 @@ export default function ApplyPage() {
         </section>
 
         {/* How It Works */}
-        <section className="mb-16 lg:mb-24 bg-stone-50 rounded-2xl p-8 lg:p-12 border border-stone-200">
+        <section className="mb-16 lg:mb-24 bg-stone-50 rounded-lg p-8 lg:p-12 border border-stone-200">
           <div className="text-center mb-12">
             <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-4">
               How It Works
@@ -143,7 +143,7 @@ export default function ApplyPage() {
         {/* CTA block */}
         <section className="mb-16">
           <div
-            className="rounded-2xl p-8 lg:p-16 text-center shadow-xl relative overflow-hidden"
+            className="rounded-lg p-8 lg:p-16 text-center shadow-xl relative overflow-hidden"
             style={{ backgroundColor: '#1c1917' }}
           >
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: PRIMARY, marginTop: '-4rem', marginRight: '-4rem' }} />
@@ -156,11 +156,10 @@ export default function ApplyPage() {
                 Join hundreds of top designers who are already leveraging the Tarmeer network to source better and build faster.
               </p>
               <Link
-                to="/register"
-                className="btn-primary inline-flex items-center justify-center gap-2 min-w-[200px] h-14 px-10 text-lg font-bold [&>svg]:block [&>svg]:leading-[0]"
+                to="/auth"
+                className="btn-primary inline-flex items-center justify-center min-w-[200px] h-14 px-10 text-lg font-bold text-white"
               >
-                <span>Apply Now</span>
-                <ChevronDown className="w-5 h-5 rotate-[-90deg] shrink-0" aria-hidden />
+                Apply Now
               </Link>
             </div>
           </div>

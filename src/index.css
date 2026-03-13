@@ -66,3 +66,12 @@ button:focus-visible {
   box-shadow: 0 0 0 2px rgba(184, 134, 74, 0.4);
   border-color: var(--color-tarmeer-primary);
 }
+
+/* Checkbox 主题色 */
+input[type="checkbox"] {
+  accent-color: var(--color-tarmeer-primary);
+}
+input[type="checkbox"]:checked {
+  background-color: var(--color-tarmeer-primary);
+  border-color: var(--color-tarmeer-primary);
+}

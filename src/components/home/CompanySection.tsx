@@ -14,14 +14,14 @@ export default function CompanySection() {
               Address
             </h3>
             <p className="text-[#2c2c2c] flex items-start justify-center md:justify-start gap-2">
-              <span className="text-lg leading-none" aria-hidden>📍</span>
+              <span className="text-lg leading-none" aria-hidden>🏢</span>
               <span>{ADDRESS}</span>
             </p>
             <a
               href={GOOGLE_MAPS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary inline-flex items-center gap-2 mt-3"
+              className="btn-primary inline-flex items-center gap-2 mt-3 text-white"
             >
               <MapPin className="w-4 h-4" />
               Google Map
@@ -42,7 +42,7 @@ export default function CompanySection() {
           </div>
         </div>
         <p className="text-sm text-[#6b6b6b] text-center mt-8 max-w-xl mx-auto">
-          We offer full-case and soft decoration design packages. Get in touch to start your project.
+          Local design services across the UAE. We offer full-case and soft decoration packages — meet us in person or get in touch to start your project.
         </p>
       </div>
     </section>

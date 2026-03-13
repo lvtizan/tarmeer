@@ -60,7 +60,7 @@ export default function LoginPage() {
 
           <form
             onSubmit={handleSubmit}
-            className="space-y-6 bg-white rounded-2xl border border-stone-200 shadow-sm p-6 sm:p-7"
+            className="space-y-6 bg-white rounded-lg border border-stone-200 shadow-sm p-6 sm:p-7"
           >
             {/* Email */}
             <div className="space-y-2">
@@ -78,7 +78,7 @@ export default function LoginPage() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="designer@tarmeer.com"
-                  className="w-full pl-9 pr-3 h-11 rounded-xl border border-[#e5d6c5] bg-white text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none transition placeholder:text-stone-400"
+                  className="w-full pl-9 pr-3 h-11 rounded-lg border border-[#e5d6c5] bg-white text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none transition placeholder:text-stone-400"
                 />
               </div>
             </div>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-9 pr-9 h-11 rounded-xl border border-[#e5d6c5] bg-white text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none transition placeholder:text-stone-400"
+                  className="w-full pl-9 pr-9 h-11 rounded-lg border border-[#e5d6c5] bg-white text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none transition placeholder:text-stone-400"
                 />
                 <button
                   type="button"
@@ -137,7 +137,7 @@ export default function LoginPage() {
             <div className="pt-2 space-y-4">
               <button
                 type="submit"
-                className="w-full h-11 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-md"
+                className="w-full h-11 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-md"
                 style={{ backgroundColor: PRIMARY, color: '#1c1917' }}
               >
                 <span>Login to Studio</span>
@@ -148,7 +148,7 @@ export default function LoginPage() {
                 <p>Don&apos;t have an account yet?</p>
                 <Link
                   to="/register"
-                  className="mt-2 inline-flex w-full items-center justify-center h-11 rounded-xl border-2 border-[#e5d6c5] font-semibold hover:border-[#b8864a] hover:bg-[#b8864a]/5 transition-colors"
+                  className="mt-2 inline-flex w-full items-center justify-center h-11 rounded-lg border-2 border-[#e5d6c5] font-semibold hover:border-[#b8864a] hover:bg-[#b8864a]/5 transition-colors"
                   style={{ color: '#2c2c2c' }}
                 >
                   Create Designer Account

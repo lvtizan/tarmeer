@@ -1,13 +1,15 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, Navigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import PageContainer from '../components/PageContainer';
 import { getCategoryBySlug, getCaseStudiesForCategory } from '../data/materials';
+import { dedupeImageEntries } from '../lib/imageCleanup';
 import { WHATSAPP_LINK } from '../lib/constants';
 
 export default function MaterialCategoryPage() {
   const { category } = useParams<{ category: string }>();
+  if (category === 'brands') return <Navigate to="/materials" replace />;
   const cat = category ? getCategoryBySlug(category) : undefined;
-  const caseStudies = category ? getCaseStudiesForCategory(category) : [];
+  const caseStudies = category ? dedupeImageEntries(getCaseStudiesForCategory(category)) : [];
 
   if (!cat) {
     return (
@@ -100,6 +102,9 @@ export default function MaterialCategoryPage() {
               </article>
             ))}
           </div>
+          {caseStudies.length === 0 && (
+            <p className="text-sm text-[#6b6b6b]">No valid project images are available right now.</p>
+          )}
         </PageContainer>
       </section>
 
@@ -112,7 +117,7 @@ export default function MaterialCategoryPage() {
           <p className="text-sm text-[#6b6b6b] mb-6 max-w-md mx-auto">
             Visit our showroom to experience materials firsthand, or contact us via WhatsApp for consultations.
           </p>
-          <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="btn-primary">
+          <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="btn-primary text-white">
             Contact us
           </a>
         </PageContainer>

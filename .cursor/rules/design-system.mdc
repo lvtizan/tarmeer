@@ -28,3 +28,11 @@ All interactive and decorative UI must use the **primary palette** below. Do not
 1. **Focus states**: All `input`, `textarea`, `select`, and focusable `button` must use primary-colored focus (no blue). Use `outline-none` and `focus-visible:ring-2 focus-visible:ring-[#b8864a]/40` (or the shared `.focus-primary` utility).
 2. **Hover states**: Buttons and links use primary or primary-hover; cards can use primary tint or shadow.
 3. **New components**: Reuse existing Tailwind theme variables and the `.btn-primary` / `.focus-primary` classes from `src/index.css`.
+
+## Spacing & Border Radius
+
+1. **Border radius (global)**: Use `rounded-lg` (8px) for all buttons, cards, inputs, and containers. Do NOT use `rounded-xl`, `rounded-2xl`, `rounded-3xl`, or `rounded-full` unless specifically required for a unique design element.
+2. **Input padding**: Standard input padding is `px-3 py-2.5` (12px horizontal, 10px vertical).
+3. **Input with right icon**: When an input has a right-side icon (e.g., password toggle), use `pr-10` (40px) or `pr-12` (48px) to ensure 24px spacing from the icon to text. Never let text touch the icon.
+4. **Input with left icon**: Use `pl-10` (40px) or `pl-12` (48px) for left-side icons.
+5. **Button padding**: Primary buttons use `px-6 py-3` (24px horizontal, 12px vertical) per `.btn-primary`.

@@ -30,24 +30,21 @@ export interface PeacetimeConfig {
 }
 
 export const SITE_CONFIG: SiteConfig = {
-  // 当前模式：战时（物流阻断，线上服务为主）
-  mode: 'WARTIME',
+  mode: 'PEACETIME',
 
-  // 战时模式配置
   wartime: {
-    bannerTitle: 'Remote Design Services',
-    bannerSubtitle: 'Professional interior design from anywhere. Postpone construction until logistics resume. Special wartime service available now.',
+    bannerTitle: 'UAE Design Services',
+    bannerSubtitle: 'Professional interior design across the UAE. Meet designers in person for face-to-face consultation and local project delivery.',
     bannerCta: 'Get Started',
-    badge: 'Online Service • Global Available',
-    notice: '⚡ Special Wartime Service: Remote design with postponed construction',
-    noticeZh: '⚡ 战时特别服务：远程设计，延后施工'
+    badge: 'UAE • Local Design',
+    notice: '',
+    noticeZh: ''
   },
 
-  // 和平模式配置（战后恢复，线下业务为主）
   peacetime: {
-    bannerTitle: 'Find Your Designer',
-    bannerSubtitle: 'Our interior design services are tailored to your space, style, and budget — across the UAE.',
-    bannerCta: 'Meet Designers',
+    bannerTitle: 'UAE Design Services',
+    bannerSubtitle: 'Professional interior design across the UAE. Meet designers in person for face-to-face consultation and local project delivery.',
+    bannerCta: 'Get Started',
     badge: 'UAE • Dubai • Sharjah • Design Services',
     notice: '',
     noticeZh: ''

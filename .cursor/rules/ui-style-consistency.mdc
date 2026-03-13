@@ -1,0 +1,41 @@
+---
+description: Tarmeer UI style consistency rule for all new design work
+alwaysApply: true
+---
+
+# Tarmeer UI Style Consistency
+
+Before starting any new UI, UX, visual, layout, component, page, admin, or designer-center task, first align with this rule and `.cursor/rules/design-system.mdc`.
+
+## Source Of Truth
+
+- Use the **designer center** as the primary style reference for all new dashboard-like surfaces, especially admin pages.
+- If admin and designer styles conflict, prefer the designer-center language unless the task explicitly requires a different pattern.
+
+## Visual Language
+
+- Backgrounds: use warm light neutrals such as `bg-[#faf9f7]`, `bg-white`, `bg-stone-50`.
+- Text: primary text uses `text-[#2c2c2c]`; secondary text uses `text-stone-500` or `text-stone-600`.
+- Borders: use `border-stone-200` and `border-stone-100`, not cold `gray` borders by default.
+- Brand color: use `#b8864a` as the main accent, with hover/focus states derived from it.
+
+## Components
+
+- Icons: use `lucide-react`; do not use emoji as UI icons.
+- Navigation active state: prefer `bg-[#b8864a]/10` with `border-l-4 border-[#b8864a]` for sidebar items.
+- Cards: prefer `bg-white rounded-lg border border-stone-200`.
+- Inputs: use stone borders and primary-colored focus rings.
+- Loading and empty states must match the same neutral palette and typography.
+
+## Consistency Rule
+
+- New admin UI must visually match the designer center unless a clear product reason says otherwise.
+- When extending an existing page, reuse its current style tokens instead of introducing a parallel style system.
+- Avoid mixing `gray` and `stone` palettes within the same surface unless there is a deliberate semantic reason.
+
+## Quick Check Before Finishing
+
+- Are icons from `lucide-react`?
+- Is the page using stone/warm-neutral surfaces?
+- Is the primary accent still `#b8864a`?
+- Does the result feel like the designer center belongs to the same product as the admin area?

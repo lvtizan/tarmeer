@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
-import { designersList } from '../../data/designers';
 import DesignerCard from '../designers/DesignerCard';
+import { designersList } from '../../data/designers';
 
 const MAX_ON_HOME = 8;
-const designersOnHome = designersList.slice(0, MAX_ON_HOME);
 
 export default function DesignersSection() {
+  const designers = designersList.slice(0, MAX_ON_HOME);
+
   return (
     <section id="designers" className="py-16 sm:py-24 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -14,12 +15,12 @@ export default function DesignersSection() {
             Meet the perfect designer for your space and style
           </h2>
           <p className="text-[#6b6b6b] max-w-xl mx-auto">
-            Browse by style or location — then work with your chosen designer via WhatsApp.
+            Meet designers in person across the UAE. Browse by style or location — then book a face-to-face consultation or connect via WhatsApp.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {designersOnHome.map((d) => (
+          {designers.map((d) => (
             <DesignerCard key={d.slug} designer={d} />
           ))}
         </div>
