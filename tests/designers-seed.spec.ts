@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { designersList, getDesignerProjects } from '../src/data/designers';
 
 async function expectImagesLoaded(locator: ReturnType<import('@playwright/test').Page['locator']>) {
   const count = await locator.count();
@@ -41,4 +42,12 @@ test('designer project opens detail modal on nested project route', async ({ pag
   await expect(page).toHaveURL(/\/designers\/salma-nasser\/projects\/salma-nasser-project-1$/);
   await expect(page.getByRole('dialog', { name: 'Project detail' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Palm Villa Reception' })).toBeVisible();
+});
+
+test('designer seed project covers are unique across all designers', () => {
+  const covers = designersList.flatMap((designer) =>
+    getDesignerProjects(designer.slug).map((project) => project.coverImage)
+  );
+
+  expect(new Set(covers).size).toBe(covers.length);
 });

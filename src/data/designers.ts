@@ -29,32 +29,61 @@ interface DesignerSeed extends Designer {
   projects: DesignerProject[];
 }
 
-const REAL_PROJECT_IMAGES = [
-  '/images/designers/projects/salma-nasser-01.jpg',
-  '/images/designers/projects/salma-nasser-02.jpg',
-  '/images/designers/projects/salma-nasser-03.jpg',
-  '/images/designers/projects/salma-nasser-04.jpg',
-  '/images/designers/projects/shared-project-05.jpg',
-];
-
-function rotateImages(offset: number, count = 5) {
-  return Array.from({ length: count }, (_, index) => {
-    return REAL_PROJECT_IMAGES[(offset + index) % REAL_PROJECT_IMAGES.length];
-  });
+function coverPath(index: number) {
+  return `/images/designers/projects/covers/cover-${String(index).padStart(3, '0')}.jpg`;
 }
 
-function createProject(
-  slug: string,
-  order: number,
-  title: string,
-  location: string,
-  address: string,
-  cost: string,
-  description: string,
-  tags: string[],
-  imageOffset: number
-): DesignerProject {
-  const images = rotateImages(imageOffset, 3);
+function designerImageSet(designerIndex: number, count = 5) {
+  const start = designerIndex * 5 + 1;
+  return Array.from({ length: count }, (_, index) => coverPath(start + index));
+}
+
+const DESIGNER_INDEX: Record<string, number> = {
+  'salma-nasser': 0,
+  'omar-farouk': 1,
+  'hana-idris': 2,
+  'daniel-rana': 3,
+  'mariam-kassem': 4,
+  'layla-haddad': 5,
+  'yousef-karim': 6,
+  'noor-rahman': 7,
+  'tariq-mansour': 8,
+  'amira-safwan': 9,
+  'karim-dawoud': 10,
+  'sara-elias': 11,
+  'adam-hakim': 12,
+  'leena-aziz': 13,
+  'zayn-abbas': 14,
+};
+
+let nextDesignerImageIndex = 2;
+
+function rotateImages(_offset: number, count = 5) {
+  const images = designerImageSet(nextDesignerImageIndex, count);
+  nextDesignerImageIndex += 1;
+  return images;
+}
+
+function createProject(...args: any[]): DesignerProject {
+  const slug = String(args[0]);
+  const usesExplicitDesignerIndex = Array.isArray(args[8]);
+
+  const designerIndex = usesExplicitDesignerIndex
+    ? Number(args[1])
+    : DESIGNER_INDEX[slug];
+  const order = usesExplicitDesignerIndex ? Number(args[2]) : Number(args[1]);
+  const title = String(usesExplicitDesignerIndex ? args[3] : args[2]);
+  const location = String(usesExplicitDesignerIndex ? args[4] : args[3]);
+  const address = String(usesExplicitDesignerIndex ? args[5] : args[4]);
+  const cost = String(usesExplicitDesignerIndex ? args[6] : args[5]);
+  const description = String(usesExplicitDesignerIndex ? args[7] : args[6]);
+  const tags = (usesExplicitDesignerIndex ? args[8] : args[7]) as string[];
+
+  const images = [
+    coverPath(designerIndex * 5 + order),
+    coverPath(designerIndex * 5 + ((order % 5) + 1)),
+    coverPath(designerIndex * 5 + (((order + 1) % 5) + 1)),
+  ];
 
   return {
     id: `${slug}-project-${order}`,
@@ -80,15 +109,15 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Specializes in premium family villas with warm neutral palettes, custom joinery, and hospitality-first living spaces.',
     bioLong: 'Salma works on complete villa interiors across Dubai, combining refined finishes with layouts that support hosting, daily family life, and long-term durability.',
     avatar: '/images/designers/avatars/salma-nasser.jpg',
-    projectImages: rotateImages(0),
+    projectImages: designerImageSet(0),
     projectCount: 5,
     expertise: ['Villa Renovation', 'Custom Joinery', 'Lighting Design', 'Material Selection'],
     projects: [
-      createProject('salma-nasser', 1, 'Palm Villa Reception', 'Dubai, UAE', 'Palm Jumeirah, Dubai', 'AED 82,000 - 126,000', 'A reception and family entertaining suite with layered lighting, soft stone textures, and concealed storage for formal hosting.', ['Luxury', 'Majlis', 'Lighting'], 0),
-      createProject('salma-nasser', 2, 'Marina Open Kitchen', 'Dubai, UAE', 'Dubai Marina, Dubai', 'AED 54,000 - 88,000', 'A warm kitchen redesign centered on a social island, hidden appliance wall, and durable premium finishes.', ['Kitchen', 'Full renovation', 'Family living'], 1),
-      createProject('salma-nasser', 3, 'Stone Ensuite Retreat', 'Dubai, UAE', 'Al Barari, Dubai', 'AED 38,000 - 67,000', 'A spa-like ensuite with fluted cabinetry, backlit mirrors, and quieter material transitions.', ['Bathroom', 'Luxury', 'Materials'], 2),
-      createProject('salma-nasser', 4, 'Terrace Hosting Lounge', 'Dubai, UAE', 'Tilal Al Ghaf, Dubai', 'AED 41,000 - 72,000', 'An outdoor entertaining lounge designed for evening gatherings with layered seating and weather-ready finishes.', ['Outdoor', 'Soft decoration', 'Hosting'], 3),
-      createProject('salma-nasser', 5, 'Private Majlis Suite', 'Dubai, UAE', 'Meydan, Dubai', 'AED 63,000 - 101,000', 'A formal majlis suite balancing contemporary silhouettes with hospitality details and acoustic comfort.', ['Majlis', 'Custom joinery', 'Luxury'], 4),
+      createProject('salma-nasser', 0, 1, 'Palm Villa Reception', 'Dubai, UAE', 'Palm Jumeirah, Dubai', 'AED 82,000 - 126,000', 'A reception and family entertaining suite with layered lighting, soft stone textures, and concealed storage for formal hosting.', ['Luxury', 'Majlis', 'Lighting']),
+      createProject('salma-nasser', 0, 2, 'Marina Open Kitchen', 'Dubai, UAE', 'Dubai Marina, Dubai', 'AED 54,000 - 88,000', 'A warm kitchen redesign centered on a social island, hidden appliance wall, and durable premium finishes.', ['Kitchen', 'Full renovation', 'Family living']),
+      createProject('salma-nasser', 0, 3, 'Stone Ensuite Retreat', 'Dubai, UAE', 'Al Barari, Dubai', 'AED 38,000 - 67,000', 'A spa-like ensuite with fluted cabinetry, backlit mirrors, and quieter material transitions.', ['Bathroom', 'Luxury', 'Materials']),
+      createProject('salma-nasser', 0, 4, 'Terrace Hosting Lounge', 'Dubai, UAE', 'Tilal Al Ghaf, Dubai', 'AED 41,000 - 72,000', 'An outdoor entertaining lounge designed for evening gatherings with layered seating and weather-ready finishes.', ['Outdoor', 'Soft decoration', 'Hosting']),
+      createProject('salma-nasser', 0, 5, 'Private Majlis Suite', 'Dubai, UAE', 'Meydan, Dubai', 'AED 63,000 - 101,000', 'A formal majlis suite balancing contemporary silhouettes with hospitality details and acoustic comfort.', ['Majlis', 'Custom joinery', 'Luxury']),
     ],
   },
   {
@@ -100,15 +129,15 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Builds clean, high-finish homes around better planning, oak textures, and durable materials for busy households.',
     bioLong: 'Omar focuses on end-to-end apartment and villa upgrades where zoning, family flow, and material performance matter as much as the visual result.',
     avatar: '/images/designers/avatars/omar-farouk.jpg',
-    projectImages: rotateImages(1),
+    projectImages: designerImageSet(1),
     projectCount: 5,
     expertise: ['Space Planning', 'Kitchen Design', 'Family Homes', 'Procurement'],
     projects: [
-      createProject('omar-farouk', 1, 'Creek Loft Reset', 'Abu Dhabi, UAE', 'Al Raha Beach, Abu Dhabi', 'AED 46,000 - 79,000', 'A compact loft reorganized with clearer sightlines, concealed utility storage, and restrained timber detailing.', ['Apartment', 'Minimal', 'Storage'], 1),
-      createProject('omar-farouk', 2, 'Oak Kitchen Upgrade', 'Abu Dhabi, UAE', 'Saadiyat Grove, Abu Dhabi', 'AED 57,000 - 92,000', 'A kitchen scheme with vertical-grain cabinetry, integrated refrigeration, and a practical breakfast zone.', ['Kitchen', 'Custom Cabinets', 'Family living'], 2),
-      createProject('omar-farouk', 3, 'Family Salon Layout', 'Abu Dhabi, UAE', 'Yas Acres, Abu Dhabi', 'AED 35,000 - 58,000', 'The salon was rebuilt for larger gatherings with modular seating, better TV sightlines, and softer acoustics.', ['Living', 'Layout', 'Furniture'], 3),
-      createProject('omar-farouk', 4, 'Quiet Bedroom Suite', 'Abu Dhabi, UAE', 'Al Reef, Abu Dhabi', 'AED 24,000 - 44,000', 'A calm bedroom package using integrated wardrobes, warm lighting, and low-contrast finishes.', ['Bedroom', 'Lighting', 'Joinery'], 4),
-      createProject('omar-farouk', 5, 'Roof Garden Seating', 'Abu Dhabi, UAE', 'Al Jubail Island, Abu Dhabi', 'AED 39,000 - 70,000', 'An exterior seating deck for sunset use with weather-resistant upholstery and low-maintenance detailing.', ['Outdoor', 'Lifestyle', 'Soft decoration'], 0),
+      createProject('omar-farouk', 1, 1, 'Creek Loft Reset', 'Abu Dhabi, UAE', 'Al Raha Beach, Abu Dhabi', 'AED 46,000 - 79,000', 'A compact loft reorganized with clearer sightlines, concealed utility storage, and restrained timber detailing.', ['Apartment', 'Minimal', 'Storage']),
+      createProject('omar-farouk', 1, 2, 'Oak Kitchen Upgrade', 'Abu Dhabi, UAE', 'Saadiyat Grove, Abu Dhabi', 'AED 57,000 - 92,000', 'A kitchen scheme with vertical-grain cabinetry, integrated refrigeration, and a practical breakfast zone.', ['Kitchen', 'Custom Cabinets', 'Family living']),
+      createProject('omar-farouk', 1, 3, 'Family Salon Layout', 'Abu Dhabi, UAE', 'Yas Acres, Abu Dhabi', 'AED 35,000 - 58,000', 'The salon was rebuilt for larger gatherings with modular seating, better TV sightlines, and softer acoustics.', ['Living', 'Layout', 'Furniture']),
+      createProject('omar-farouk', 1, 4, 'Quiet Bedroom Suite', 'Abu Dhabi, UAE', 'Al Reef, Abu Dhabi', 'AED 24,000 - 44,000', 'A calm bedroom package using integrated wardrobes, warm lighting, and low-contrast finishes.', ['Bedroom', 'Lighting', 'Joinery']),
+      createProject('omar-farouk', 1, 5, 'Roof Garden Seating', 'Abu Dhabi, UAE', 'Al Jubail Island, Abu Dhabi', 'AED 39,000 - 70,000', 'An exterior seating deck for sunset use with weather-resistant upholstery and low-maintenance detailing.', ['Outdoor', 'Lifestyle', 'Soft decoration']),
     ],
   },
   {
@@ -120,11 +149,11 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Creates polished apartment interiors with soft color, boutique-hotel layering, and detail-focused dressing spaces.',
     bioLong: 'Hana is often hired for city apartments and private suites where visual refinement matters and storage still needs to work hard.',
     avatar: '/images/designers/avatars/hana-idris.jpg',
-    projectImages: rotateImages(2),
+    projectImages: designerImageSet(2),
     projectCount: 5,
     expertise: ['Apartment Styling', 'Color & Materials', 'Bathroom Design', 'Soft Decoration'],
     projects: [
-      createProject('hana-idris', 1, 'Pearl Entry Lounge', 'Sharjah, UAE', 'Aljada Residence, Sharjah', 'AED 26,000 - 47,000', 'A small but high-impact entry lounge using curving furniture, bronze accents, and layered lighting.', ['Entrance', 'Styling', 'Lighting'], 2),
+      createProject('hana-idris', 2, 1, 'Pearl Entry Lounge', 'Sharjah, UAE', 'Aljada Residence, Sharjah', 'AED 26,000 - 47,000', 'A small but high-impact entry lounge using curving furniture, bronze accents, and layered lighting.', ['Entrance', 'Styling', 'Lighting']),
       createProject('hana-idris', 2, 'Skyline Dining Room', 'Sharjah, UAE', 'Maryam Island, Sharjah', 'AED 31,000 - 55,000', 'A dining room arranged around a tailored banquette, quiet color, and mirrored depth for evening entertaining.', ['Dining', 'Soft decoration', 'Luxury'], 3),
       createProject('hana-idris', 3, 'Spa Bath Composition', 'Sharjah, UAE', 'Al Khan, Sharjah', 'AED 33,000 - 61,000', 'A compact bath transformed with warm stone graphics, soft brass, and layered mirror lighting.', ['Bathroom', 'Materials', 'Lighting'], 4),
       createProject('hana-idris', 4, 'Dressing Room Edit', 'Sharjah, UAE', 'Muwaileh, Sharjah', 'AED 37,000 - 64,000', 'A wardrobe and vanity room that improves storage clarity while keeping a softer editorial visual language.', ['Wardrobe', 'Custom Joinery', 'Luxury'], 0),
