@@ -7,6 +7,9 @@ dist
 .env
 .env.*
 !.env.example
-!.env.production
+.env.production
 deploy.local
-
+playwright-report/
+test-results/
+test-screenshots/
+test-screenshots-images/
