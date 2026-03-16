@@ -18,7 +18,7 @@ export function buildPublicDesignersListQuery(input: BuildPublicDesignersListQue
          created_at,
          (SELECT COUNT(*) FROM projects p WHERE p.designer_id = designers.id AND p.status = 'published') as project_count,
          (SELECT images FROM projects p WHERE p.designer_id = designers.id AND p.status = 'published' ORDER BY p.created_at DESC LIMIT 1) as featured_project_images
-       FROM designers WHERE status = 'approved' AND is_approved = 1
+       FROM designers WHERE status = 'approved' AND is_approved = 1 AND deleted_at IS NULL
        ORDER BY display_order DESC, created_at DESC
        LIMIT ${input.limit} OFFSET ${input.offset}`,
     params: [] as string[],

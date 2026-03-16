@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { rewriteSchemaSql } from './schemaSql';
 
 test('rewriteSchemaSql swaps default database name in create and use statements', () => {
@@ -14,4 +16,16 @@ test('rewriteSchemaSql swaps default database name in create and use statements'
   assert.match(result, /CREATE DATABASE IF NOT EXISTS `tarmeer_staging` CHARACTER SET utf8mb4;/);
   assert.match(result, /USE `tarmeer_staging`;/);
   assert.doesNotMatch(result, /USE tarmeer;/);
+});
+
+test('schema files include soft delete fields for designers', () => {
+  const root = path.resolve(process.cwd(), '..');
+  const serverSchema = fs.readFileSync(path.join(root, 'server/schema/designers.sql'), 'utf8');
+  const appSchema = fs.readFileSync(path.join(root, 'database/schema.sql'), 'utf8');
+
+  for (const sql of [serverSchema, appSchema]) {
+    assert.match(sql, /deleted_at/i);
+    assert.match(sql, /deleted_by_admin_id/i);
+    assert.match(sql, /delete_reason/i);
+  }
 });

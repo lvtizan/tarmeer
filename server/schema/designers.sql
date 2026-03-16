@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS designers (
   display_order INT DEFAULT 0,
   status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
   rejection_reason TEXT DEFAULT NULL,
+  deleted_at DATETIME DEFAULT NULL,
+  deleted_by_admin_id INT DEFAULT NULL,
+  delete_reason TEXT DEFAULT NULL,
   verification_token VARCHAR(64) DEFAULT NULL,
   verification_expires DATETIME DEFAULT NULL,
   reset_token VARCHAR(64) DEFAULT NULL,
@@ -30,5 +33,6 @@ CREATE TABLE IF NOT EXISTS designers (
   INDEX idx_verification (verification_token),
   INDEX idx_reset (reset_token),
   INDEX idx_display_order (display_order),
-  INDEX idx_approved (is_approved)
+  INDEX idx_approved (is_approved),
+  INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

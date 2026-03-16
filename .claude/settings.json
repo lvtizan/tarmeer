@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"chore: finalize workspace localization and project updates:*)",
+      "Bash(rm -f .git/index.lock)",
+      "Bash(pkill -f \"git add\")",
+      "Bash(git reset:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)",
+      "Bash(bash scripts/localize-workspace.sh)",
+      "Bash(git ls-tree:*)",
+      "Bash(ls -d */)",
+      "Bash(find . -name \".DS_Store\" -delete)",
+      "Read(//Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI项目/迪拜网站/tarmeer-4.0/**)",
+      "Bash(git commit -m \"chore: clean up unused files:*)",
+      "Bash(ln -s ~/.local/share/tarmeer-4.0/node_modules node_modules)",
+      "Bash(git commit -m \"chore: fix node_modules symlink and update permissions:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI项目/迪拜网站/tarmeer-4.0/.git"
+    ]
+  }
+}

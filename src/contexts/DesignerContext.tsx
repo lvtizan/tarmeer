@@ -22,7 +22,7 @@ export interface DesignerProjectItem {
   year: string;
   imageUrls: string[];
   productIds: string[];
-  status: 'draft' | 'pending' | 'published' | 'rejected';
+  status: 'draft' | 'pending' | 'published' | 'rejected' | 'uploading' | 'upload_failed';
   rejectionReason?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -55,6 +55,7 @@ type DesignerContextValue = {
   projectsError: string | null;
   loadProjects: () => Promise<void>;
   addProject: (p: ProjectPayload) => Promise<DesignerProjectItem>;
+  addProjectWithUploadTransition: (p: ProjectPayload, options?: { maxRetries?: number }) => Promise<DesignerProjectItem>;
   updateProject: (id: string, p: ProjectPayload) => Promise<DesignerProjectItem>;
   deleteProject: (id: string) => Promise<void>;
   getProject: (id: string) => DesignerProjectItem | undefined;
@@ -107,6 +108,10 @@ function toApiProjectPayload(project: ProjectPayload) {
 
 function persistDesigner(updated: Record<string, any>) {
   localStorage.setItem('designer', JSON.stringify(updated));
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function DesignerProvider({ children }: { children: ReactNode }) {
@@ -273,6 +278,53 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
     return nextProject;
   }, []);
 
+  const addProjectWithUploadTransition = useCallback(async (p: ProjectPayload, options?: { maxRetries?: number }) => {
+    const tempId = `temp-upload-${Date.now()}`;
+    const optimistic: DesignerProjectItem = {
+      id: tempId,
+      title: p.title,
+      description: p.description,
+      style: p.style,
+      location: p.location,
+      area: p.area,
+      year: p.year,
+      imageUrls: p.imageUrls,
+      productIds: p.productIds,
+      status: 'uploading',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setProjects((prev) => [optimistic, ...prev]);
+
+    const maxRetries = Math.max(1, options?.maxRetries ?? 8);
+    let lastError: unknown = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+      try {
+        const result = await api.post('/projects', toApiProjectPayload(p));
+        const nextProject = mapProject(result.project);
+        setProjects((prev) => prev.map((project) => (project.id === tempId ? nextProject : project)));
+        return nextProject;
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxRetries) {
+          const backoffMs = Math.min(12000, 1000 * attempt * attempt);
+          await wait(backoffMs);
+          continue;
+        }
+      }
+    }
+
+    setProjects((prev) =>
+      prev.map((project) =>
+        project.id === tempId
+          ? { ...project, status: 'upload_failed', rejectionReason: (lastError as any)?.message || 'Upload failed.' }
+          : project,
+      ),
+    );
+    throw lastError instanceof Error ? lastError : new Error('Upload failed.');
+  }, []);
+
   const updateProject = useCallback(async (id: string, patch: ProjectPayload) => {
     const result = await api.put(`/projects/${id}`, toApiProjectPayload(patch));
     const nextProject = mapProject(result.project);
@@ -301,6 +353,7 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
     projectsError,
     loadProjects,
     addProject,
+    addProjectWithUploadTransition,
     updateProject,
     deleteProject,
     getProject,

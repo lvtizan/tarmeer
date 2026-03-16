@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database';
 import config from '../config';
-import { sendDesignerRegistrationEmail, sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken, setFrontendUrl } from '../services/emailService';
+import { sendDesignerRegistrationEmail, sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
+import { buildRegisterEmailStatus } from '../lib/registerEmailPolicy';
+import { buildRegistrationAvailabilityResult } from '../lib/registrationAvailability';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com',
@@ -47,6 +49,46 @@ function sanitizeDesignerSession(designer: any) {
   return safeDesigner;
 }
 
+function resolveFrontendUrl(req: any): string {
+  if (config.nodeEnv === 'production') {
+    return config.frontendUrl;
+  }
+
+  return req.headers.origin
+    || req.headers.referer?.split('/').slice(0, 3).join('/')
+    || config.frontendUrl
+    || 'https://www.tarmeer.com';
+}
+
+async function checkExistingDesignerFields(email?: string, phone?: string | null) {
+  const normalizedPhone = phone?.trim();
+  const checks = await Promise.all([
+    email
+      ? pool.execute('SELECT id FROM designers WHERE email = ? LIMIT 1', [email])
+      : Promise.resolve([[ ]]),
+    normalizedPhone
+      ? pool.execute('SELECT id FROM designers WHERE phone = ? LIMIT 1', [normalizedPhone])
+      : Promise.resolve([[ ]]),
+  ]);
+
+  const [emailRows, phoneRows] = checks.map((entry) => entry[0] as any[]);
+  return buildRegistrationAvailabilityResult({
+    emailExists: emailRows.length > 0,
+    phoneExists: phoneRows.length > 0,
+  });
+}
+
+export async function checkAvailability(req: any, res: any) {
+  try {
+    const { email, phone } = req.body;
+    const availability = await checkExistingDesignerFields(email, phone);
+    res.json(availability);
+  } catch (error) {
+    console.error('Registration availability error:', error);
+    res.status(500).json({ error: 'Failed to check registration availability.' });
+  }
+}
+
 export async function register(req: any, res: any) {
   try {
     const { email, password, fullName, full_name, phone, city } = req.body;
@@ -56,13 +98,9 @@ export async function register(req: any, res: any) {
       return res.status(400).json({ error: 'Temporary email addresses are not allowed. Please use a valid email.' });
     }
     
-    const [existing] = await pool.execute(
-      'SELECT id FROM designers WHERE email = ?',
-      [email]
-    );
-    
-    if ((existing as any[]).length > 0) {
-      return res.status(400).json({ error: 'Email already registered' });
+    const availability = await checkExistingDesignerFields(email, phone || null);
+    if (availability.error) {
+      return res.status(400).json({ error: availability.error });
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -81,35 +119,59 @@ export async function register(req: any, res: any) {
     );
     
     const newDesigner = (designer as any[])[0];
-    const smtpConfigured = config.smtp.user && config.smtp.pass;
+    const smtpConfigured = Boolean(config.smtp.user && config.smtp.pass);
 
     // 从请求中动态获取前端域名（优先使用请求头的 origin）
-    const frontendUrl = req.headers.origin || req.headers.referer?.split('/').slice(0, 3).join('/') || process.env.FRONTEND_URL || 'https://www.tarmeer.com';
-    setFrontendUrl(frontendUrl);
+    const frontendUrl = resolveFrontendUrl(req);
 
-    // 立即返回注册成功响应
-    res.status(201).json({
-      message: 'Registration successful! Please check your email to verify your account.',
-      email: email,
-      emailSent: true
-    });
+    let verificationSent = false;
 
-    // 异步发送邮件，不阻塞响应
     if (smtpConfigured) {
+      try {
+        const sendResult = await sendVerificationEmail(email, name, verificationToken, frontendUrl);
+        const mailInfo = sendResult as any;
+        verificationSent = true;
+        console.log(`[SMTP] Verification email sent to ${email}`, {
+          messageId: mailInfo?.messageId,
+          response: mailInfo?.response,
+          accepted: mailInfo?.accepted,
+          rejected: mailInfo?.rejected,
+        });
+      } catch (emailError: any) {
+        console.error('[SMTP] Verification email failed:', emailError?.message || emailError);
+        if (emailError?.response) console.error('[SMTP] Response:', emailError.response);
+      }
+
       setImmediate(async () => {
         try {
-          await sendVerificationEmail(email, name, verificationToken);
-          console.log(`[SMTP] Verification email sent to ${email}`);
-          await sendDesignerRegistrationEmail(newDesigner);
-          console.log(`[SMTP] Registration notification sent for ${email}`);
+          const sendResult = await sendDesignerRegistrationEmail(newDesigner);
+          const mailInfo = sendResult as any;
+          console.log(`[SMTP] Registration notification sent for ${email}`, {
+            messageId: mailInfo?.messageId,
+            response: mailInfo?.response,
+            accepted: mailInfo?.accepted,
+            rejected: mailInfo?.rejected,
+          });
         } catch (emailError: any) {
-          console.error('[SMTP] Verification email failed:', emailError?.message || emailError);
+          console.error('[SMTP] Registration notification failed:', emailError?.message || emailError);
           if (emailError?.response) console.error('[SMTP] Response:', emailError.response);
         }
       });
     } else {
       console.warn('[SMTP] Not configured: set SMTP_USER and SMTP_PASS in .env on server, then pm2 restart tarmeer-api');
+      verificationSent = false;
     }
+
+    const emailStatus = buildRegisterEmailStatus({
+      verificationSent,
+      notificationQueued: smtpConfigured,
+    });
+
+    res.status(201).json({
+      message: emailStatus.message,
+      email,
+      emailSent: emailStatus.emailSent,
+    });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed. Please try again or contact support.' });
@@ -130,6 +192,10 @@ export async function verifyEmail(req: any, res: any) {
     }
     
     const user = (designer as any[])[0];
+
+    if (user.deleted_at) {
+      return res.status(400).json({ error: 'Verification link is invalid or has expired.' });
+    }
     
     await pool.execute(
       'UPDATE designers SET email_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = ?',
@@ -172,6 +238,10 @@ export async function resendVerification(req: any, res: any) {
     }
     
     const user = (designer as any[])[0];
+
+    if (user.deleted_at) {
+      return res.status(400).json({ error: 'Email not found or already verified.' });
+    }
     
     const { token: verificationToken, expires: verificationExpires } = generateVerificationToken();
     
@@ -181,10 +251,16 @@ export async function resendVerification(req: any, res: any) {
     );
     
     // 从请求中动态获取前端域名
-    const frontendUrl = req.headers.origin || req.headers.referer?.split('/').slice(0, 3).join('/') || process.env.FRONTEND_URL || 'https://www.tarmeer.com';
-    setFrontendUrl(frontendUrl);
+    const frontendUrl = resolveFrontendUrl(req);
     
-    await sendVerificationEmail(email, user.full_name, verificationToken);
+    const sendResult = await sendVerificationEmail(email, user.full_name, verificationToken, frontendUrl);
+    const mailInfo = sendResult as any;
+    console.log(`[SMTP] Verification email resent to ${email}`, {
+      messageId: mailInfo?.messageId,
+      response: mailInfo?.response,
+      accepted: mailInfo?.accepted,
+      rejected: mailInfo?.rejected,
+    });
     
     res.json({ message: 'Verification email sent. Please check your inbox.' });
   } catch (error) {
@@ -207,6 +283,10 @@ export async function login(req: any, res: any) {
     }
     
     const user = (designer as any[])[0];
+
+    if (user.deleted_at) {
+      return res.status(403).json({ error: 'Designer account is deleted.' });
+    }
     
     if (!user.email_verified) {
       return res.status(401).json({ 
@@ -254,6 +334,10 @@ export async function forgotPassword(req: any, res: any) {
     }
     
     const user = (designer as any[])[0];
+
+    if (user.deleted_at) {
+      return res.status(400).json({ error: 'Designer account is deleted.' });
+    }
     const { token, expires } = generatePasswordResetToken();
     
     await pool.execute(
@@ -262,14 +346,19 @@ export async function forgotPassword(req: any, res: any) {
     );
     
     // 从请求中动态获取前端域名
-    const frontendUrl = req.headers.origin || req.headers.referer?.split('/').slice(0, 3).join('/') || process.env.FRONTEND_URL || 'https://www.tarmeer.com';
-    setFrontendUrl(frontendUrl);
+    const frontendUrl = resolveFrontendUrl(req);
     
     // 异步发送邮件
     setImmediate(async () => {
       try {
-        await sendPasswordResetEmail(email, token);
-        console.log(`[SMTP] Password reset email sent to ${email}`);
+        const sendResult = await sendPasswordResetEmail(email, token, frontendUrl);
+        const mailInfo = sendResult as any;
+        console.log(`[SMTP] Password reset email sent to ${email}`, {
+          messageId: mailInfo?.messageId,
+          response: mailInfo?.response,
+          accepted: mailInfo?.accepted,
+          rejected: mailInfo?.rejected,
+        });
       } catch (emailError: any) {
         console.error('[SMTP] Password reset email failed:', emailError?.message || emailError);
       }
@@ -301,6 +390,10 @@ export async function resetPassword(req: any, res: any) {
     }
     
     const user = (designer as any[])[0];
+
+    if (user.deleted_at) {
+      return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
     
     await pool.execute(

@@ -37,6 +37,9 @@ export const config = {
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
     from: process.env.SMTP_FROM || 'noreply@mail.kptom.com',
+    fromName: process.env.SMTP_FROM_NAME || 'Tarmeer',
+    replyTo: process.env.SMTP_REPLY_TO || process.env.SMTP_FROM || 'noreply@mail.kptom.com',
+    returnPath: process.env.SMTP_RETURN_PATH || process.env.SMTP_FROM || 'noreply@mail.kptom.com',
   },
   
   notificationEmail: 'lvyiming@kp99.cn',

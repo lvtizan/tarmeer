@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Phone, MapPin, User, FileText, ChevronDown } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Phone, MapPin, User, FileText } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
+import SelectField from '../components/form/SelectField';
+import { sanitizePersonName, sanitizePhoneDigits } from '../lib/formInputRules';
 
 const PHONE_COUNTRY_STORAGE_KEY = 'tarmeer_phone_country';
 
@@ -50,6 +52,19 @@ function getStoredPhoneCountry(): string {
 
 type Tab = 'login' | 'register';
 
+const AUTH_BANNERS: Record<Tab, { image: string; title: string; subtitle: string }> = {
+  login: {
+    image: '/images/designers/projects/covers/cover-008.jpg',
+    title: 'Designer Sign In',
+    subtitle: 'Manage your projects and profile.',
+  },
+  register: {
+    image: '/images/designers/projects/covers/cover-004.jpg',
+    title: 'Create Account',
+    subtitle: 'Start your designer profile.',
+  },
+};
+
 export default function AuthPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('login');
@@ -64,6 +79,8 @@ export default function AuthPage() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneCountryCode, setPhoneCountryCode] = useState<string>(() => getStoredPhoneCountry());
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
   
   const [loginForm, setLoginForm] = useState({ email: '', password: '', remember: false });
   const [registerForm, setRegisterForm] = useState({
@@ -87,7 +104,16 @@ export default function AuthPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const target = e.target as HTMLInputElement;
-    const { name, value, type, checked } = target;
+    const { name, type, checked } = target;
+    let { value } = target;
+
+    if (name === 'fullName') {
+      value = sanitizePersonName(value);
+    }
+
+    if (name === 'phone') {
+      value = sanitizePhoneDigits(value);
+    }
     
     setRegisterForm((prev) => ({
       ...prev,
@@ -151,6 +177,37 @@ export default function AuthPage() {
       setPasswordError('Passwords do not match');
     } else if (name === 'confirmPassword' && registerForm.password === value) {
       setPasswordError(null);
+    }
+  };
+
+  const checkRegistrationAvailability = async (field: 'email' | 'phone') => {
+    if (field === 'email') {
+      const email = registerForm.email.trim();
+      if (!email || emailError) return;
+
+      setCheckingEmail(true);
+      try {
+        const result = await api.post('/auth/check-availability', { email });
+        setEmailError(result.emailAvailable ? null : 'Email already registered');
+      } catch (err: any) {
+        setEmailError(err.message || 'Unable to verify email availability right now');
+      } finally {
+        setCheckingEmail(false);
+      }
+      return;
+    }
+
+    const fullPhone = phoneCountryCode + registerForm.phone.replace(/\D/g, '');
+    if (!registerForm.phone || phoneError) return;
+
+    setCheckingPhone(true);
+    try {
+      const result = await api.post('/auth/check-availability', { phone: fullPhone });
+      setPhoneError(result.phoneAvailable ? null : 'Phone already registered');
+    } catch (err: any) {
+      setPhoneError(err.message || 'Unable to verify phone availability right now');
+    } finally {
+      setCheckingPhone(false);
     }
   };
 
@@ -246,7 +303,13 @@ export default function AuthPage() {
         city: registerForm.city
       });
 
-      setSuccess(res?.message || 'Registration successful! Please check your email to verify your account.');
+      if (res?.emailSent === false) {
+        setSuccess(null);
+        setError(res?.message || 'Registration created, but verification email could not be delivered. Please retry sending verification email.');
+        setNeedVerification(true);
+      } else {
+        setSuccess(res?.message || 'Registration successful! Please check your email to verify your account.');
+      }
       setTab('login');
       setLoginForm(prev => ({ ...prev, email: registerForm.email }));
       setRegisterForm({
@@ -267,25 +330,34 @@ export default function AuthPage() {
   };
 
   // Design system: rounded-lg (8px) for all, pr-10 for right icon (24px spacing)
-  const inputBaseClass = "w-full h-11 px-3 py-2.5 rounded-lg border bg-white text-sm text-[#2c2c2c] placeholder:text-[#6b6b6b] focus:outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 transition-all";
+  const inputBaseClass = "w-full h-12 px-3 rounded-lg border bg-white text-sm text-[#2c2c2c] placeholder:text-[#6b6b6b] focus:outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 transition-all";
   const inputErrorClass = "border-red-300 focus:border-red-400 focus:ring-red-400/40";
   const inputNormalClass = "border-stone-200";
+  const activeBanner = AUTH_BANNERS[tab];
 
   return (
     <div className="min-h-screen bg-[#faf9f7] text-[#2c2c2c] flex flex-col">
-      <section className="relative h-[180px] sm:h-[220px] overflow-hidden bg-stone-200">
+      <section className="relative h-[220px] sm:h-[260px] overflow-hidden bg-stone-200">
         <img
-          src="/images/showroom-sharjah-panorama.png"
+          src={activeBanner.image}
           alt=""
           className="w-full h-full object-cover"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
           }}
         />
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-            {tab === 'login' ? 'Designer Login' : 'Create Designer Account'}
-          </h1>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(17,14,10,0.72)_0%,rgba(17,14,10,0.48)_42%,rgba(17,14,10,0.18)_100%)]" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="mx-auto w-full max-w-[440px] px-4 sm:max-w-[520px]">
+            <div className="mx-auto max-w-[360px] text-center text-white">
+              <h1 className="whitespace-nowrap text-[28px] font-bold leading-none sm:text-[34px]">
+                {activeBanner.title}
+              </h1>
+              <p className="mt-2 text-sm leading-6 text-white/85 sm:text-[15px]">
+                {activeBanner.subtitle}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -449,11 +521,17 @@ export default function AuthPage() {
                     required
                     value={registerForm.email}
                     onChange={handleRegisterChange}
+                    onBlur={() => {
+                      void checkRegistrationAvailability('email');
+                    }}
                     placeholder="name@studio.com"
                     autoComplete="email"
                     className={`${inputBaseClass} pl-10 ${emailError && registerForm.email ? inputErrorClass : inputNormalClass}`}
                   />
                 </div>
+                {checkingEmail && !emailError && registerForm.email && (
+                  <p className="text-xs text-stone-500 mt-1">Checking email availability...</p>
+                )}
                 {emailError && registerForm.email && (
                   <p className="text-xs text-red-500 mt-1">{emailError}</p>
                 )}
@@ -462,24 +540,22 @@ export default function AuthPage() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">Phone / WhatsApp</label>
                 <div className="flex gap-2">
-                  <div className="relative">
-                    <select
-                      value={phoneCountryCode}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setPhoneCountryCode(v);
-                        localStorage.setItem(PHONE_COUNTRY_STORAGE_KEY, v);
-                        setPhoneError(null);
-                      }}
-                      className="h-11 w-[90px] shrink-0 rounded-lg border border-stone-200 bg-white pl-2 pr-7 text-sm focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 appearance-none cursor-pointer"
-                      aria-label="Country code"
-                    >
-                      {PHONE_COUNTRY_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.value}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8864a] pointer-events-none" />
-                  </div>
+                  <SelectField
+                    wrapperClassName="w-[90px] shrink-0"
+                    value={phoneCountryCode}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setPhoneCountryCode(v);
+                      localStorage.setItem(PHONE_COUNTRY_STORAGE_KEY, v);
+                      setPhoneError(null);
+                    }}
+                    className="w-[90px] bg-white pl-2 pr-9"
+                    aria-label="Country code"
+                  >
+                    {PHONE_COUNTRY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.value}</option>
+                    ))}
+                  </SelectField>
                   <div className="relative flex-1">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                     <input
@@ -488,12 +564,19 @@ export default function AuthPage() {
                       required
                       value={registerForm.phone}
                       onChange={handleRegisterChange}
+                      onBlur={() => {
+                        void checkRegistrationAvailability('phone');
+                      }}
                       placeholder="50 123 4567"
                       autoComplete="tel-national"
+                      inputMode="numeric"
                       className={`${inputBaseClass} pl-10 ${phoneError && registerForm.phone ? inputErrorClass : inputNormalClass}`}
                     />
                   </div>
                 </div>
+                {checkingPhone && !phoneError && registerForm.phone && (
+                  <p className="text-xs text-stone-500 mt-1">Checking phone availability...</p>
+                )}
                 {phoneError && registerForm.phone && (
                   <p className="text-xs text-red-500 mt-1">{phoneError}</p>
                 )}
@@ -560,22 +643,19 @@ export default function AuthPage() {
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">City</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 z-10" />
-                  <select
-                    name="city"
-                    value={registerForm.city}
-                    onChange={handleRegisterChange}
-                    className={`${inputBaseClass} pl-10 pr-10 appearance-none cursor-pointer`}
-                  >
-                    <option value="">Select City</option>
-                    <option value="Dubai">Dubai</option>
-                    <option value="Sharjah">Sharjah</option>
-                    <option value="Abu Dhabi">Abu Dhabi</option>
-                    <option value="Ajman">Ajman</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8864a] pointer-events-none" />
-                </div>
+                <SelectField
+                  icon={<MapPin className="w-4 h-4" />}
+                  name="city"
+                  value={registerForm.city}
+                  onChange={handleRegisterChange}
+                  className={`${inputBaseClass} pr-10 appearance-none cursor-pointer`}
+                >
+                  <option value="">Select City</option>
+                  <option value="Dubai">Dubai</option>
+                  <option value="Sharjah">Sharjah</option>
+                  <option value="Abu Dhabi">Abu Dhabi</option>
+                  <option value="Ajman">Ajman</option>
+                </SelectField>
               </div>
 
               <div className="space-y-1.5">

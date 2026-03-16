@@ -26,3 +26,13 @@ test('buildPublicProjectsListQuery selects consistent designer metadata fields',
   assert.match(result.sql, /d\.bio as designer_bio/);
   assert.match(result.sql, /d\.avatar_url as designer_avatar/);
 });
+
+test('buildPublicProjectsListQuery excludes soft-deleted designers', () => {
+  const result = buildPublicProjectsListQuery({
+    status: 'published',
+    limit: 3,
+    offset: 0,
+  });
+
+  assert.match(result.sql, /d\.deleted_at IS NULL/);
+});

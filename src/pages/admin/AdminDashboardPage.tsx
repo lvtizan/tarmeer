@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Clock, CheckCircle, XCircle, Users } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
+import { formatCount, toNumber } from '../../lib/formatNumber';
 
 const PRIMARY = '#b8864a';
 
@@ -65,6 +66,10 @@ export default function AdminDashboardPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const sumMetric = (key: keyof DailyStat) => {
+    return dailyStats.reduce((sum, stat) => sum + toNumber(stat[key]), 0);
+  };
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -92,41 +97,45 @@ export default function AdminDashboardPage() {
 
       {/* Overview Cards - match DesignerDashboardPage: icon + label + number */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
+          <div className="mb-3 flex items-center gap-3">
             <Clock className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-sm font-medium text-stone-500">Pending Designers</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Pending Designers</span>
           </div>
-          <p className="text-2xl font-bold text-[#2c2c2c]">{overview?.pending_count || 0}</p>
+          <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.pending_count)}</p>
           {hasPermission('can_approve') && (
-            <Link to="/admin/designers?status=pending" className="text-sm font-semibold mt-2 inline-block" style={{ color: PRIMARY }}>
+            <Link to="/admin/designers?status=pending" className="mt-3 inline-block text-sm font-semibold" style={{ color: PRIMARY }}>
               Review pending designers →
             </Link>
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
+          <div className="mb-3 flex items-center gap-3">
             <CheckCircle className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-sm font-medium text-stone-500">Approved Designers</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Approved Designers</span>
           </div>
-          <p className="text-2xl font-bold text-[#2c2c2c]">{overview?.approved_count || 0}</p>
+          <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.approved_count)}</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
+          <div className="mb-3 flex items-center gap-3">
             <XCircle className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-sm font-medium text-stone-500">Rejected</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Rejected</span>
           </div>
-          <p className="text-2xl font-bold text-[#2c2c2c]">{overview?.rejected_count || 0}</p>
+          <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.rejected_count)}</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
+          <div className="mb-3 flex items-center gap-3">
             <Users className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-sm font-medium text-stone-500">Total Designers</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Total Designers</span>
           </div>
-          <p className="text-2xl font-bold text-[#2c2c2c]">{overview?.total_count || 0}</p>
+          <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.total_count)}</p>
         </div>
       </div>
 
@@ -147,7 +156,7 @@ export default function AdminDashboardPage() {
                         style={{ width: `${Math.min(100, (stat.profile_views / maxViews) * 100)}%`, backgroundColor: PRIMARY }}
                       />
                     </div>
-                    <span className="text-sm font-medium text-[#2c2c2c] w-12 text-right">{stat.profile_views}</span>
+                    <span className="text-sm font-medium text-[#2c2c2c] w-12 text-right">{formatCount(stat.profile_views)}</span>
                   </div>
                 ));
               })()}
@@ -163,19 +172,19 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-lg border border-stone-200">
                 <p className="text-sm text-stone-500">Phone Clicks</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{dailyStats.reduce((sum, s) => sum + s.phone_clicks, 0)}</p>
+                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('phone_clicks'))}</p>
               </div>
               <div className="p-4 rounded-lg border border-stone-200">
                 <p className="text-sm text-stone-500">WhatsApp Clicks</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{dailyStats.reduce((sum, s) => sum + s.whatsapp_clicks, 0)}</p>
+                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('whatsapp_clicks'))}</p>
               </div>
               <div className="p-4 rounded-lg border border-stone-200">
                 <p className="text-sm text-stone-500">Contact Form</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{dailyStats.reduce((sum, s) => sum + s.contact_clicks, 0)}</p>
+                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('contact_clicks'))}</p>
               </div>
               <div className="p-4 rounded-lg border border-stone-200">
                 <p className="text-sm text-stone-500">Project Views</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{dailyStats.reduce((sum, s) => sum + s.project_views, 0)}</p>
+                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('project_views'))}</p>
               </div>
             </div>
           ) : (
@@ -229,8 +238,8 @@ export default function AdminDashboardPage() {
                       </Link>
                     </td>
                     <td className="py-3 px-4 text-stone-500">{designer.city || '-'}</td>
-                    <td className="py-3 px-4 text-right font-medium text-[#2c2c2c]">{designer.total_views}</td>
-                    <td className="py-3 px-4 text-right text-stone-500">{designer.total_clicks}</td>
+                    <td className="py-3 px-4 text-right font-medium text-[#2c2c2c]">{formatCount(designer.total_views)}</td>
+                    <td className="py-3 px-4 text-right text-stone-500">{formatCount(designer.total_clicks)}</td>
                   </tr>
                 ))}
               </tbody>

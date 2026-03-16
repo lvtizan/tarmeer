@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword } from '../controllers/authController';
+import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, checkAvailability } from '../controllers/authController';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
@@ -36,6 +36,15 @@ router.post('/register',
   ],
   handleValidation,
   register
+);
+
+router.post('/check-availability',
+  [
+    body('email').optional({ values: 'falsy' }).isEmail().withMessage('Please enter a valid email address'),
+    body('phone').optional({ values: 'falsy' }).isString().withMessage('Please enter a valid phone number'),
+  ],
+  handleValidation,
+  checkAvailability
 );
 
 router.post('/verify-email',

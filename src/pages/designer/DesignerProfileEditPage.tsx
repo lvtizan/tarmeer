@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { useDesigner } from '../../contexts/DesignerContext';
 import Avatar from '../../components/ui/Avatar';
-import { ChevronDown } from 'lucide-react';
+import SelectField from '../../components/form/SelectField';
+import { sanitizePersonName, sanitizePhoneDigits } from '../../lib/formInputRules';
 
 const PRIMARY = '#b8864a';
 const CITIES = [
@@ -31,7 +32,14 @@ export default function DesignerProfileEditPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+    if (name === 'fullName') {
+      value = sanitizePersonName(value);
+    }
+    if (name === 'phone') {
+      value = sanitizePhoneDigits(value);
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
     setSaved(false);
     setError(null);
@@ -71,9 +79,10 @@ export default function DesignerProfileEditPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">Profile</h1>
-      <p className="text-stone-500 text-sm mb-8">Update your personal and professional information.</p>
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-[980px] px-2 md:px-4">
+      <h1 className="mb-1.5 text-3xl font-bold text-[#2c2c2c]">Profile</h1>
+      <p className="mb-6 text-sm text-stone-500">Update your personal and professional information.</p>
 
       {error && (
         <div className="mb-6 p-4 rounded-lg border border-red-200 bg-red-50 text-sm text-red-700">
@@ -81,11 +90,11 @@ export default function DesignerProfileEditPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Avatar */}
-        <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Profile Photo</h2>
-          <div className="flex items-center gap-6">
+        <div className="bg-white rounded-lg border border-stone-200 p-5">
+          <h2 className="mb-3 text-lg font-bold text-[#2c2c2c]">Profile Photo</h2>
+          <div className="flex min-h-[92px] items-center gap-5">
             <input
               ref={fileInputRef}
               type="file"
@@ -108,8 +117,8 @@ export default function DesignerProfileEditPage() {
         </div>
 
         {/* Personal info */}
-        <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Personal Information</h2>
+        <div className="bg-white rounded-lg border border-stone-200 p-5">
+          <h2 className="mb-3 text-lg font-bold text-[#2c2c2c]">Personal Information</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-sm font-semibold text-stone-700 mb-1">Full Name *</label>
@@ -119,7 +128,7 @@ export default function DesignerProfileEditPage() {
                 required
                 value={form.fullName}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
+                className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
               />
             </div>
             <div>
@@ -141,7 +150,7 @@ export default function DesignerProfileEditPage() {
                 required
                 value={form.email}
                 readOnly
-                className="w-full rounded-lg border border-stone-200 bg-stone-100 px-4 py-3 text-[#2c2c2c] outline-none cursor-not-allowed"
+                className="h-12 w-full rounded-lg border border-stone-200 bg-stone-100 px-4 text-[#2c2c2c] outline-none cursor-not-allowed"
               />
               <p className="mt-1 text-xs text-stone-500">Email is managed by your account and cannot be edited here.</p>
             </div>
@@ -154,26 +163,24 @@ export default function DesignerProfileEditPage() {
                 value={form.phone}
                 onChange={handleChange}
                 placeholder="+971 50 123 4567"
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
+                inputMode="numeric"
+                className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
               />
             </div>
             <div>
               <label className="block text-sm font-semibold text-stone-700 mb-1">City</label>
-              <div className="relative">
-                <select
+              <SelectField
                   name="city"
                   value={form.city}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 pr-10 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none cursor-pointer appearance-none"
+                  className="pr-10"
                 >
                   {CITIES.map((c) => (
                     <option key={c.value || 'empty'} value={c.value}>
                       {c.label}
                     </option>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8864a] pointer-events-none" />
-              </div>
+              </SelectField>
             </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-semibold text-stone-700 mb-1">Address</label>
@@ -183,7 +190,7 @@ export default function DesignerProfileEditPage() {
                 value={form.address}
                 onChange={handleChange}
                 placeholder="Full address"
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
+                className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
               />
             </div>
             <div className="sm:col-span-2">
@@ -200,7 +207,7 @@ export default function DesignerProfileEditPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 pt-1">
           <button
             type="submit"
             disabled={isSubmitting}
@@ -214,6 +221,7 @@ export default function DesignerProfileEditPage() {
           )}
         </div>
       </form>
+      </div>
     </div>
   );
 }

@@ -3,12 +3,18 @@ import pool from '../config/database';
 import { logActivity } from './adminController';
 import { canAdminReviewProject } from '../lib/projectReview';
 import { parseJsonField } from '../lib/parseJsonField';
+import {
+  buildDesignerAdminWhereClause,
+  validateDeleteReason,
+} from '../lib/designerSoftDelete';
+import { buildAdminDesignersListQuery } from '../lib/adminDesignersQuery';
 
 // Get all designers with filters and pagination
 export async function getDesignersForAdmin(req: any, res: Response) {
   const {
     status,
     search,
+    deleted,
     sortBy = 'created_at',
     sortOrder = 'DESC',
     page = 1,
@@ -20,25 +26,11 @@ export async function getDesignersForAdmin(req: any, res: Response) {
   const safePage = Math.max(1, parseInt(page) || 1);
   const offset = (safePage - 1) * safeLimit;
   
-  const values: any[] = [];
-  const conditions: string[] = [];
-  
-  // Filter by status
-  if (status && ['pending', 'approved', 'rejected'].includes(status)) {
-    conditions.push('d.status = ?');
-    values.push(status);
-  }
-  
-  // Search
-  if (search) {
-    conditions.push('(d.full_name LIKE ? OR d.email LIKE ? OR d.city LIKE ?)');
-    const searchPattern = `%${search}%`;
-    values.push(searchPattern, searchPattern, searchPattern);
-  }
-  
-  const whereClause = conditions.length > 0 
-    ? 'WHERE ' + conditions.join(' AND ')
-    : '';
+  const { whereClause, values } = buildDesignerAdminWhereClause({
+    status,
+    search,
+    deleted,
+  });
   
   // Validate sort
   const validSorts = ['created_at', 'full_name', 'email', 'display_order', 'profile_views'];
@@ -54,33 +46,15 @@ export async function getDesignersForAdmin(req: any, res: Response) {
     const total = (countRows as any[])[0].total;
     
     // Get designers with stats
-    const [rows] = await pool.execute(
-      `SELECT 
-        d.id,
-        d.email,
-        d.full_name,
-        d.phone,
-        d.city,
-        d.avatar_url,
-        d.style,
-        d.expertise,
-        d.status,
-        d.is_approved,
-        d.display_order,
-        d.rejection_reason,
-        d.created_at,
-        d.updated_at,
-        COALESCE(SUM(ds.profile_views), 0) as total_profile_views,
-        COALESCE(SUM(ds.contact_clicks), 0) as total_contact_clicks,
-        (SELECT COUNT(*) FROM projects p WHERE p.designer_id = d.id) as project_count
-      FROM designers d
-      LEFT JOIN designer_stats ds ON d.id = ds.designer_id
-      ${whereClause}
-      GROUP BY d.id
-      ORDER BY ${safeSortBy === 'profile_views' ? 'total_profile_views' : `d.${safeSortBy}`} ${safeSortOrder}
-      LIMIT ${safeLimit} OFFSET ${offset}`,
-      values
-    );
+    const query = buildAdminDesignersListQuery({
+      whereClause,
+      safeSortBy,
+      safeSortOrder,
+      safeLimit,
+      offset,
+    });
+
+    const [rows] = await pool.execute(query.sql, values);
     
     res.json({
       designers: rows,
@@ -182,6 +156,9 @@ function sanitizeAdminDesigner(designer: any) {
     is_approved: designer.is_approved,
     display_order: designer.display_order,
     rejection_reason: designer.rejection_reason,
+    deleted_at: designer.deleted_at,
+    deleted_by_admin_id: designer.deleted_by_admin_id,
+    delete_reason: designer.delete_reason,
     created_at: designer.created_at,
     updated_at: designer.updated_at,
   };
@@ -278,6 +255,94 @@ export async function rejectDesigner(req: any, res: Response) {
   } catch (error) {
     console.error('Error rejecting designer:', error);
     res.status(500).json({ error: 'Failed to reject designer.' });
+  }
+}
+
+export async function deleteDesigner(req: any, res: Response) {
+  const { id } = req.params;
+  const reason = validateDeleteReason(req.body?.reason);
+
+  if (!reason) {
+    return res.status(400).json({ error: 'Delete reason is required.' });
+  }
+
+  try {
+    const [existing] = await pool.execute(
+      'SELECT id, full_name, email, deleted_at FROM designers WHERE id = ?',
+      [id]
+    );
+
+    const designers = existing as any[];
+    if (designers.length === 0) {
+      return res.status(404).json({ error: 'Designer not found.' });
+    }
+
+    const designer = designers[0];
+    if (designer.deleted_at) {
+      return res.status(400).json({ error: 'Designer is already deleted.' });
+    }
+
+    await pool.execute(
+      `UPDATE designers
+       SET deleted_at = NOW(), deleted_by_admin_id = ?, delete_reason = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [req.admin.id, reason, id]
+    );
+
+    await logActivity(req.admin.id, 'delete_designer', 'designer', parseInt(id, 10), {
+      name: designer.full_name,
+      email: designer.email,
+      reason,
+    });
+
+    res.json({
+      message: 'Designer deleted successfully.',
+      designer: { id: Number(id), deletedAt: new Date().toISOString(), deleteReason: reason },
+    });
+  } catch (error) {
+    console.error('Error deleting designer:', error);
+    res.status(500).json({ error: 'Failed to delete designer.' });
+  }
+}
+
+export async function restoreDesigner(req: any, res: Response) {
+  const { id } = req.params;
+
+  try {
+    const [existing] = await pool.execute(
+      'SELECT id, full_name, email, deleted_at FROM designers WHERE id = ?',
+      [id]
+    );
+
+    const designers = existing as any[];
+    if (designers.length === 0) {
+      return res.status(404).json({ error: 'Designer not found.' });
+    }
+
+    const designer = designers[0];
+    if (!designer.deleted_at) {
+      return res.status(400).json({ error: 'Designer is not deleted.' });
+    }
+
+    await pool.execute(
+      `UPDATE designers
+       SET deleted_at = NULL, deleted_by_admin_id = NULL, delete_reason = NULL, updated_at = NOW()
+       WHERE id = ?`,
+      [id]
+    );
+
+    await logActivity(req.admin.id, 'restore_designer', 'designer', parseInt(id, 10), {
+      name: designer.full_name,
+      email: designer.email,
+    });
+
+    res.json({
+      message: 'Designer restored successfully.',
+      designer: { id: Number(id), deletedAt: null, deleteReason: null },
+    });
+  } catch (error) {
+    console.error('Error restoring designer:', error);
+    res.status(500).json({ error: 'Failed to restore designer.' });
   }
 }
 

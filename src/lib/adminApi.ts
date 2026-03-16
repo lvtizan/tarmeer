@@ -34,6 +34,9 @@ export interface Designer {
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
+  deleted_by_admin_id?: number | null;
+  delete_reason?: string | null;
   total_profile_views?: number;
   total_contact_clicks?: number;
   project_count?: number;
@@ -174,6 +177,7 @@ class AdminApiClient {
   async getDesigners(params: {
     status?: string;
     search?: string;
+    deleted?: string;
     sortBy?: string;
     sortOrder?: string;
     page?: number;
@@ -182,6 +186,7 @@ class AdminApiClient {
     const query = new URLSearchParams();
     if (params.status) query.set('status', params.status);
     if (params.search) query.set('search', params.search);
+    if (params.deleted) query.set('deleted', params.deleted);
     if (params.sortBy) query.set('sortBy', params.sortBy);
     if (params.sortOrder) query.set('sortOrder', params.sortOrder);
     if (params.page) query.set('page', String(params.page));
@@ -202,6 +207,20 @@ class AdminApiClient {
     return this.request(`/designers/${id}/reject`, {
       method: 'PUT',
       body: JSON.stringify({ reason }),
+    });
+  }
+
+  async deleteDesigner(id: number, reason: string) {
+    return this.request(`/designers/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async restoreDesigner(id: number) {
+    return this.request(`/designers/${id}/restore`, {
+      method: 'POST',
+      body: JSON.stringify({}),
     });
   }
 

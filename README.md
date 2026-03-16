@@ -24,6 +24,20 @@ npm run build
 npm run preview
 ```
 
+## Localize Heavy Folders (Reduce iCloud Usage)
+
+This project lives under iCloud. To keep dependencies and generated caches on local disk:
+
+```bash
+./scripts/localize-workspace.sh --install
+```
+
+What it does:
+- Keeps source code in iCloud project directory
+- Moves heavy folders to `~/.local/share/tarmeer-4.0`
+- Symlinks `node_modules`, `dist`, Playwright reports, and test caches back into project
+- Installs dependencies locally with `PUPPETEER_SKIP_DOWNLOAD=1` by default
+
 ## GitHub Pages（对外访问）
 
 代码推送到 `main` 后，GitHub Actions 会自动构建并部署到 GitHub Pages。

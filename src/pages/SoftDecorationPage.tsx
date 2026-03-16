@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, X, MapPin, CircleDollarSign } from 'lucide-react';
 import ProjectGallery from '../components/project/ProjectGallery';
 import { dedupeProjectCards } from '../lib/imageCleanup';
+import { sanitizePersonName, sanitizePhoneDigits } from '../lib/formInputRules';
 
 const SERVICES = [
   'Floor plan functional layout drawing',
@@ -113,11 +114,11 @@ function ProjectModal({ project, onClose }: ProjectModalProps) {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-[#2c2c2c] mb-1">Your name <span className="text-red-500">*</span></label>
-                    <input type="text" required value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-[#b8864a]" />
+                    <input type="text" required value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: sanitizePersonName(e.target.value) }))} className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-[#b8864a]" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#2c2c2c] mb-1">WhatsApp number <span className="text-red-500">*</span></label>
-                    <input type="tel" required value={form.whatsapp} onChange={(e) => setForm((p) => ({ ...p, whatsapp: e.target.value }))} placeholder="+971 50 123 4567" className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-[#b8864a]" />
+                    <input type="tel" required inputMode="numeric" value={form.whatsapp} onChange={(e) => setForm((p) => ({ ...p, whatsapp: sanitizePhoneDigits(e.target.value) }))} placeholder="+971 50 123 4567" className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-[#b8864a]" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[#2c2c2c] mb-1">Requirement description <span className="text-red-500">*</span></label>

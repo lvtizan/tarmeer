@@ -4,6 +4,7 @@ import { getProjectStatusForDesignerSubmit } from '../lib/projectReview';
 import { buildPublicProjectsListQuery } from '../lib/publicProjectsQuery';
 import { parseJsonField } from '../lib/parseJsonField';
 import { sanitizePublicProject } from '../lib/publicDesignerSerialization';
+import { buildProjectPersistenceValues } from '../lib/projectPersistence';
 
 function normalizeProject(project: any) {
   return {
@@ -13,6 +14,29 @@ function normalizeProject(project: any) {
   };
 }
 
+function toSortableTimestamp(value: unknown) {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp = new Date(value as string | number | Date).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function compareProjectsNewestFirst(left: any, right: any) {
+  const updatedDiff = toSortableTimestamp(right.updated_at) - toSortableTimestamp(left.updated_at);
+  if (updatedDiff !== 0) {
+    return updatedDiff;
+  }
+
+  const createdDiff = toSortableTimestamp(right.created_at) - toSortableTimestamp(left.created_at);
+  if (createdDiff !== 0) {
+    return createdDiff;
+  }
+
+  return Number(right.id || 0) - Number(left.id || 0);
+}
+
 export async function createProject(req: any, res: any) {
   try {
     const designer_id = req.user.id;
@@ -20,22 +44,34 @@ export async function createProject(req: any, res: any) {
     const projectStatus = status === 'draft'
       ? getProjectStatusForDesignerSubmit(false)
       : getProjectStatusForDesignerSubmit(true);
+    const values = buildProjectPersistenceValues({
+      title,
+      description,
+      style,
+      location,
+      area,
+      year,
+      cost,
+      images,
+      tags,
+      status: projectStatus,
+    });
     
     const [result] = await pool.execute(
       `INSERT INTO projects (designer_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
       [
         designer_id,
-        title,
-        description,
-        style,
-        location,
-        area,
-        year,
-        cost,
-        JSON.stringify(images),
-        JSON.stringify(tags),
-        projectStatus,
+        values.title,
+        values.description,
+        values.style,
+        values.location,
+        values.area,
+        values.year,
+        values.cost,
+        values.images,
+        values.tags,
+        values.status,
       ]
     );
     
@@ -51,7 +87,11 @@ export async function createProject(req: any, res: any) {
       [designer_id]
     );
     
-    await sendProjectSubmissionEmail((project as any[])[0], (designer as any[])[0]);
+    try {
+      await sendProjectSubmissionEmail((project as any[])[0], (designer as any[])[0]);
+    } catch (notificationError) {
+      console.error('Project submission notification error:', notificationError);
+    }
     
     res.status(201).json({
       message: 'Project submitted successfully.',
@@ -71,7 +111,7 @@ export async function getProjects(req: any, res: any) {
     const designer_id = req.query.designer_id;
     const status = 'published';
     
-    let whereClause = `WHERE p.status = ? AND d.status = 'approved' AND d.is_approved = 1`;
+    let whereClause = `WHERE p.status = ? AND d.status = 'approved' AND d.is_approved = 1 AND d.deleted_at IS NULL`;
     const params: any[] = [status];
     
     if (designer_id) {
@@ -120,12 +160,16 @@ export async function getMyProjects(req: any, res: any) {
     const [projects] = await pool.execute(
       `SELECT id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason, created_at, updated_at
        FROM projects
-       WHERE designer_id = ?
-       ORDER BY updated_at DESC, created_at DESC`,
+       WHERE designer_id = ?`,
       [designerId]
     );
 
-    res.json({ projects: (projects as any[]).map(normalizeProject) });
+    // Avoid sorting large JSON image payloads inside MySQL, which can exhaust sort memory.
+    const normalizedProjects = (projects as any[])
+      .sort(compareProjectsNewestFirst)
+      .map(normalizeProject);
+
+    res.json({ projects: normalizedProjects });
   } catch (error) {
     console.error('Get my projects error:', error);
     res.status(500).json({ error: 'Failed to load your projects.' });
@@ -153,7 +197,7 @@ export async function getProjectById(req: any, res: any) {
               d.city as designer_city, d.avatar_url as designer_avatar, d.bio as designer_bio
        FROM projects p
        INNER JOIN designers d ON p.designer_id = d.id
-       WHERE p.id = ? AND p.status = 'published' AND d.status = 'approved' AND d.is_approved = 1`,
+       WHERE p.id = ? AND p.status = 'published' AND d.status = 'approved' AND d.is_approved = 1 AND d.deleted_at IS NULL`,
       [id]
     );
     
@@ -177,6 +221,18 @@ export async function updateProject(req: any, res: any) {
     const nextStatus = status === 'draft'
       ? getProjectStatusForDesignerSubmit(false)
       : getProjectStatusForDesignerSubmit(true);
+    const values = buildProjectPersistenceValues({
+      title,
+      description,
+      style,
+      location,
+      area,
+      year,
+      cost,
+      images,
+      tags,
+      status: nextStatus,
+    });
     
     const [project] = await pool.execute(
       'SELECT * FROM projects WHERE id = ?',
@@ -196,16 +252,16 @@ export async function updateProject(req: any, res: any) {
        SET title = ?, description = ?, style = ?, location = ?, area = ?, year = ?, cost = ?, images = ?, tags = ?, status = ?, rejection_reason = NULL
        WHERE id = ?`,
       [
-        title,
-        description,
-        style,
-        location,
-        area,
-        year,
-        cost,
-        JSON.stringify(images),
-        JSON.stringify(tags),
-        nextStatus,
+        values.title,
+        values.description,
+        values.style,
+        values.location,
+        values.area,
+        values.year,
+        values.cost,
+        values.images,
+        values.tags,
+        values.status,
         id,
       ]
     );

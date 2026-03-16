@@ -1,24 +1,49 @@
-import { transporter, NOTIFICATION_EMAIL, FROM_EMAIL, shouldSkipRealEmail, sendMailDevMode } from '../config/email';
+import {
+  transporter,
+  NOTIFICATION_EMAIL,
+  FROM_EMAIL,
+  FROM_NAME,
+  REPLY_TO_EMAIL,
+  RETURN_PATH_EMAIL,
+  shouldSkipRealEmail,
+  sendMailDevMode,
+} from '../config/email';
 import crypto from 'crypto';
 
-// 默认前端URL（当无法从请求中获取时使用）
 const DEFAULT_FRONTEND_URL = process.env.FRONTEND_URL || 'https://www.tarmeer.com';
 
-// 请求级别的前端URL存储
-let currentFrontendUrl: string | null = null;
+type TransactionalMail = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+};
 
-// 设置当前请求的前端URL（由controller在处理请求时调用）
-export function setFrontendUrl(url: string) {
-  currentFrontendUrl = url;
+function normalizeFrontendUrl(frontendUrl?: string | null): string {
+  return frontendUrl || DEFAULT_FRONTEND_URL;
 }
 
-// 获取当前前端URL
-export function getFrontendUrl(): string {
-  return currentFrontendUrl || DEFAULT_FRONTEND_URL;
+async function sendTransactionalMail({ to, subject, html, text }: TransactionalMail) {
+  if (shouldSkipRealEmail()) {
+    return sendMailDevMode(to, subject, html);
+  }
+
+  return transporter.sendMail({
+    from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+    to,
+    subject,
+    html,
+    text,
+    replyTo: REPLY_TO_EMAIL,
+    envelope: {
+      from: RETURN_PATH_EMAIL,
+      to,
+    },
+  });
 }
 
-export async function sendVerificationEmail(email: string, fullName: string, token: string) {
-  const verificationLink = `${getFrontendUrl()}/verify-email?token=${token}`;
+export async function sendVerificationEmail(email: string, fullName: string, token: string, frontendUrl?: string) {
+  const verificationLink = `${normalizeFrontendUrl(frontendUrl)}/verify-email?token=${token}`;
   
   const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -33,15 +58,24 @@ export async function sendVerificationEmail(email: string, fullName: string, tok
       </div>
     `;
   
-  if (shouldSkipRealEmail()) {
-    return sendMailDevMode(email, '[Tarmeer] Verify Your Email Address', html);
-  }
-  
-  await transporter.sendMail({
-    from: `"Tarmeer" <${FROM_EMAIL}>`,
+  const text = [
+    `Dear ${fullName},`,
+    '',
+    'Thank you for registering on Tarmeer Designer Platform.',
+    'Please verify your email address with the link below:',
+    verificationLink,
+    '',
+    'This link is valid for 24 hours.',
+    'If you did not register for a Tarmeer account, please ignore this email.',
+    '',
+    'Tarmeer Team',
+  ].join('\n');
+
+  await sendTransactionalMail({
     to: email,
     subject: '[Tarmeer] Verify Your Email Address',
-    html
+    html,
+    text,
   });
 }
 
@@ -61,15 +95,21 @@ export async function sendDesignerRegistrationEmail(designer: any) {
       </div>
     `;
   
-  if (shouldSkipRealEmail()) {
-    return sendMailDevMode(NOTIFICATION_EMAIL, '[Tarmeer] New Designer Registration', html);
-  }
-  
-  await transporter.sendMail({
-    from: `"Tarmeer" <${FROM_EMAIL}>`,
+  const text = [
+    'New Designer Registration',
+    `Name: ${designer.full_name}`,
+    `Email: ${designer.email}`,
+    `Phone: ${designer.phone || 'Not provided'}`,
+    `City: ${designer.city || 'Not provided'}`,
+    `Email Verified: ${designer.email_verified ? 'Verified' : 'Not Verified'}`,
+    `Registration Time: ${new Date().toLocaleString('en-US')}`,
+  ].join('\n');
+
+  await sendTransactionalMail({
     to: NOTIFICATION_EMAIL,
     subject: '[Tarmeer] New Designer Registration',
-    html
+    html,
+    text,
   });
 }
 
@@ -80,8 +120,8 @@ export function generateVerificationToken(): { token: string; expires: Date } {
 }
 
 // 密码重置邮件
-export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetLink = `${getFrontendUrl()}/reset-password?token=${token}`;
+export async function sendPasswordResetEmail(email: string, token: string, frontendUrl?: string) {
+  const resetLink = `${normalizeFrontendUrl(frontendUrl)}/reset-password?token=${token}`;
   
   const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -96,15 +136,24 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       </div>
     `;
   
-  if (shouldSkipRealEmail()) {
-    return sendMailDevMode(email, '[Tarmeer] Reset Your Password', html);
-  }
-  
-  await transporter.sendMail({
-    from: `"Tarmeer" <${FROM_EMAIL}>`,
+  const text = [
+    'Password Reset Request',
+    '',
+    'We received a request to reset your password for your Tarmeer account.',
+    'Use the link below to set a new password:',
+    resetLink,
+    '',
+    'This link is valid for 1 hour.',
+    'If you did not request a password reset, please ignore this email.',
+    '',
+    'Tarmeer Team',
+  ].join('\n');
+
+  await sendTransactionalMail({
     to: email,
     subject: '[Tarmeer] Reset Your Password',
-    html
+    html,
+    text,
   });
 }
 
@@ -130,15 +179,21 @@ export async function sendProjectSubmissionEmail(project: any, designer: any) {
       </div>
     `;
   
-  if (shouldSkipRealEmail()) {
-    return sendMailDevMode(NOTIFICATION_EMAIL, '[Tarmeer] New Project Submission', html);
-  }
-  
-  await transporter.sendMail({
-    from: `"Tarmeer" <${FROM_EMAIL}>`,
+  const text = [
+    `Designer ${designer.full_name} submitted a new project`,
+    `Project Name: ${project.title}`,
+    `Style: ${project.style || 'Not provided'}`,
+    `Location: ${project.location || 'Not provided'}`,
+    `Area: ${project.area || 'Not provided'}`,
+    `Budget: ${project.cost || 'Not provided'}`,
+    `Submission Time: ${new Date().toLocaleString('en-US')}`,
+  ].join('\n');
+
+  await sendTransactionalMail({
     to: NOTIFICATION_EMAIL,
     subject: '[Tarmeer] New Project Submission',
-    html
+    html,
+    text,
   });
 }
 
@@ -158,14 +213,20 @@ export async function sendContactFormEmail(contact: any) {
       </div>
     `;
   
-  if (shouldSkipRealEmail()) {
-    return sendMailDevMode(NOTIFICATION_EMAIL, '[Tarmeer] New Client Inquiry', html);
-  }
-  
-  await transporter.sendMail({
-    from: `"Tarmeer" <${FROM_EMAIL}>`,
+  const text = [
+    'New Client Inquiry',
+    `Name: ${contact.name}`,
+    `Email: ${contact.email || 'Not provided'}`,
+    `Phone: ${contact.phone || 'Not provided'}`,
+    `Type: ${contact.type}`,
+    `Message: ${contact.message || 'None'}`,
+    `Time: ${new Date().toLocaleString('en-US')}`,
+  ].join('\n');
+
+  await sendTransactionalMail({
     to: NOTIFICATION_EMAIL,
     subject: '[Tarmeer] New Client Inquiry',
-    html
+    html,
+    text,
   });
 }

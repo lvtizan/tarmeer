@@ -51,3 +51,10 @@ test('designer seed project covers are unique across all designers', () => {
 
   expect(new Set(covers).size).toBe(covers.length);
 });
+
+test('designer seed project detail images are unique within each designer', () => {
+  for (const designer of designersList) {
+    const images = getDesignerProjects(designer.slug).flatMap((project) => project.images);
+    expect(new Set(images).size).toBe(images.length);
+  }
+});

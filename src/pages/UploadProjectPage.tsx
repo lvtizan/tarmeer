@@ -13,8 +13,8 @@ import {
   Eye,
   Trash2,
   Plus,
-  ChevronDown,
 } from 'lucide-react';
+import SelectField from '../components/form/SelectField';
 
 const PRIMARY = '#b8864a';
 
@@ -176,7 +176,7 @@ export default function UploadProjectPage() {
                   <input
                     type="text"
                     placeholder="e.g. Modern Villa in Riyadh"
-                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
+                    className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
                   />
                 </div>
                 <div className="md:col-span-2 flex flex-col gap-2">
@@ -189,24 +189,21 @@ export default function UploadProjectPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-stone-700">Style <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <select className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 pr-10 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none cursor-pointer appearance-none">
+                  <SelectField className="pr-10">
                       <option value="">Select a style</option>
                       <option value="modern">Modern Contemporary</option>
                       <option value="islamic">Modern Islamic</option>
                       <option value="classic">Neo-Classic</option>
                       <option value="minimalist">Minimalist</option>
                       <option value="industrial">Industrial</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8864a] pointer-events-none" />
-                  </div>
+                  </SelectField>
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-stone-700">Location (City) <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="e.g. Riyadh, Dubai, Jeddah"
-                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
+                    className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -219,15 +216,12 @@ export default function UploadProjectPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-stone-700">Completion Year</label>
-                  <div className="relative">
-                    <select className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 pr-10 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none cursor-pointer appearance-none">
+                  <SelectField className="pr-10">
                       {Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => {
                         const year = new Date().getFullYear() + 1 - i;
                         return <option key={year} value={year}>{year}</option>;
                       })}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#b8864a] pointer-events-none" />
-                  </div>
+                  </SelectField>
                 </div>
               </div>
             </div>

@@ -3,8 +3,11 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { adminApi, Designer } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
+import SelectField from '../../components/form/SelectField';
+import { formatCount } from '../../lib/formatNumber';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
+type DeletedFilter = 'active' | 'deleted' | 'all';
 
 export default function AdminDesignersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,9 +21,15 @@ export default function AdminDesignersPage() {
     return status === 'pending' || status === 'approved' || status === 'rejected' ? status : 'all';
   });
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>(() => {
+    const deleted = searchParams.get('deleted');
+    return deleted === 'deleted' || deleted === 'all' ? deleted : 'active';
+  });
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [rejectModal, setRejectModal] = useState<{ id: number; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'sort'>(() => searchParams.get('view') === 'sort' ? 'sort' : 'list');
   const [sortOrder, setSortOrder] = useState<{ id: number; displayOrder: number }[]>([]);
@@ -36,6 +45,7 @@ export default function AdminDesignersPage() {
       const result = await adminApi.getDesigners({
         status: statusFilter === 'all' ? undefined : statusFilter,
         search: search || undefined,
+        deleted: deletedFilter,
         page,
         limit: 20,
         sortBy: viewMode === 'sort' ? 'display_order' : 'created_at',
@@ -56,7 +66,7 @@ export default function AdminDesignersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, search, page, viewMode]);
+  }, [statusFilter, search, deletedFilter, page, viewMode]);
 
   useEffect(() => {
     loadDesigners();
@@ -65,7 +75,7 @@ export default function AdminDesignersPage() {
   // Reset selection when filters change
   useEffect(() => {
     setSelectedIds([]);
-  }, [statusFilter, search, page]);
+  }, [statusFilter, search, deletedFilter, page]);
 
   useEffect(() => {
     if (!canSort && viewMode === 'sort') {
@@ -74,19 +84,28 @@ export default function AdminDesignersPage() {
   }, [canSort, viewMode]);
 
   useEffect(() => {
+    if (deletedFilter !== 'active' && viewMode === 'sort') {
+      setViewMode('list');
+    }
+  }, [deletedFilter, viewMode]);
+
+  useEffect(() => {
     const next = new URLSearchParams();
     if (statusFilter !== 'all') next.set('status', statusFilter);
     if (search) next.set('search', search);
+    if (deletedFilter !== 'active') next.set('deleted', deletedFilter);
     if (page > 1) next.set('page', String(page));
     if (viewMode === 'sort') next.set('view', 'sort');
     setSearchParams(next, { replace: true });
-  }, [statusFilter, search, page, viewMode, setSearchParams]);
+  }, [statusFilter, search, deletedFilter, page, viewMode, setSearchParams]);
+
+  const selectableDesigners = designers.filter((designer) => !designer.deleted_at && designer.status === 'pending');
 
   const handleSelectAll = () => {
-    if (selectedIds.length === designers.length) {
+    if (selectedIds.length === selectableDesigners.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(designers.map(d => d.id));
+      setSelectedIds(selectableDesigners.map(d => d.id));
     }
   };
 
@@ -118,6 +137,40 @@ export default function AdminDesignersPage() {
       await adminApi.rejectDesigner(rejectModal.id, rejectReason);
       setRejectModal(null);
       setRejectReason('');
+      await loadDesigners();
+    } catch (error: any) {
+      setPageError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteModal) return;
+
+    if (!deleteReason.trim()) {
+      setPageError('Please provide a delete reason');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await adminApi.deleteDesigner(deleteModal.id, deleteReason);
+      setDeleteModal(null);
+      setDeleteReason('');
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteModal.id));
+      await loadDesigners();
+    } catch (error: any) {
+      setPageError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRestore = async (id: number) => {
+    setIsSubmitting(true);
+    try {
+      await adminApi.restoreDesigner(id);
       await loadDesigners();
     } catch (error: any) {
       setPageError(error.message);
@@ -190,6 +243,18 @@ export default function AdminDesignersPage() {
     );
   };
 
+  const getLifecycleBadge = (designer: Designer) => {
+    if (designer.deleted_at) {
+      return (
+        <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-stone-200 text-stone-700">
+          Deleted
+        </span>
+      );
+    }
+
+    return getStatusBadge(designer.status);
+  };
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -232,19 +297,35 @@ export default function AdminDesignersPage() {
           {/* Status filter */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-stone-500">Status:</span>
-            <select
+            <SelectField
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value as StatusFilter);
                 setPage(1);
               }}
-              className="px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
+              className="min-w-[140px] border-stone-300 bg-white px-3"
             >
               <option value="all">All</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
-            </select>
+            </SelectField>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-stone-500">Lifecycle:</span>
+            <SelectField
+              value={deletedFilter}
+              onChange={(e) => {
+                setDeletedFilter(e.target.value as DeletedFilter);
+                setPage(1);
+              }}
+              className="min-w-[140px] border-stone-300 bg-white px-3"
+            >
+              <option value="active">Active</option>
+              <option value="deleted">Deleted</option>
+              <option value="all">All</option>
+            </SelectField>
           </div>
 
           {/* Search */}
@@ -257,7 +338,7 @@ export default function AdminDesignersPage() {
                 setPage(1);
               }}
               placeholder="Search by name, email, or city..."
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
+              className="h-12 w-full px-3 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
             />
           </div>
 
@@ -275,7 +356,7 @@ export default function AdminDesignersPage() {
       </div>
 
       {/* Sort Mode */}
-      {viewMode === 'sort' && canSort && (
+      {viewMode === 'sort' && canSort && deletedFilter === 'active' && (
         <div className="mb-4">
           <p className="text-sm text-stone-500 mb-2">
             Drag or use arrows to change the display order. Higher positions appear first on the homepage.
@@ -311,7 +392,7 @@ export default function AdminDesignersPage() {
                   <th className="w-12 px-4 py-3">
                     <input
                       type="checkbox"
-                      checked={selectedIds.length === designers.length && designers.length > 0}
+                      checked={selectableDesigners.length > 0 && selectedIds.length === selectableDesigners.length}
                       onChange={handleSelectAll}
                       className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                     />
@@ -335,6 +416,7 @@ export default function AdminDesignersPage() {
                         type="checkbox"
                         checked={selectedIds.includes(designer.id)}
                         onChange={() => handleSelect(designer.id)}
+                        disabled={designer.deleted_at !== null && designer.deleted_at !== undefined || designer.status !== 'pending'}
                         className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                       />
                     </td>
@@ -366,19 +448,26 @@ export default function AdminDesignersPage() {
                     <p className="text-sm text-[#2c2c2c]">{designer.email}</p>
                     <p className="text-sm text-stone-500">{designer.phone || 'No phone'}</p>
                   </td>
-                  <td className="py-3 px-4">{getStatusBadge(designer.status)}</td>
+                  <td className="py-3 px-4">{getLifecycleBadge(designer)}</td>
                   <td className="py-3 px-4 text-right text-sm">
-                    {designer.total_profile_views || 0}
+                    {formatCount(designer.total_profile_views)}
                   </td>
                   <td className="py-3 px-4 text-right text-sm">
-                    {designer.project_count || 0}
+                    {formatCount(designer.project_count)}
                   </td>
                   <td className="py-3 px-4 text-sm text-stone-500">
                     {new Date(designer.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 px-4 text-right">
-                    {canApprove && designer.status === 'pending' && (
-                      <div className="flex gap-2 justify-end">
+                    <div className="flex flex-col items-end gap-2">
+                      <Link
+                        to={`/admin/designers/${designer.id}`}
+                        className="text-sm font-medium text-[#b8864a] hover:text-[#a67c47]"
+                      >
+                        View details
+                      </Link>
+                    {canApprove && !designer.deleted_at && designer.status === 'pending' && (
+                      <div className="flex max-w-[220px] flex-wrap justify-end gap-2">
                         <button
                           onClick={() => handleApprove(designer.id)}
                           className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
@@ -393,11 +482,35 @@ export default function AdminDesignersPage() {
                         </button>
                       </div>
                     )}
+                    {canApprove && designer.deleted_at && (
+                      <button
+                        onClick={() => handleRestore(designer.id)}
+                        disabled={isSubmitting}
+                        className="px-3 py-1.5 bg-stone-700 text-white text-sm rounded hover:bg-stone-800 disabled:opacity-50"
+                      >
+                        Restore
+                      </button>
+                    )}
+                    {canApprove && !designer.deleted_at && (
+                      <button
+                        onClick={() => setDeleteModal({ id: designer.id, name: designer.full_name })}
+                        disabled={isSubmitting}
+                        className="px-3 py-1.5 bg-stone-700 text-white text-sm rounded hover:bg-stone-800 disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    )}
                     {designer.status === 'rejected' && designer.rejection_reason && (
-                      <span className="text-xs text-red-600" title={designer.rejection_reason}>
-                        Rejected: {designer.rejection_reason.substring(0, 30)}...
+                      <span className="block max-w-[220px] truncate text-right text-xs text-red-600 md:max-w-[320px] xl:max-w-[440px]" title={designer.rejection_reason}>
+                        Rejected: {designer.rejection_reason}
                       </span>
                     )}
+                    {designer.deleted_at && designer.delete_reason && (
+                      <span className="block max-w-[220px] truncate text-right text-xs text-stone-500 md:max-w-[320px] xl:max-w-[440px]" title={designer.delete_reason}>
+                        Delete reason: {designer.delete_reason}
+                      </span>
+                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -453,8 +566,8 @@ export default function AdminDesignersPage() {
                 <p className="text-sm text-stone-500">{designer.city}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">{designer.total_profile_views || 0} views</p>
-                <p className="text-xs text-stone-500">{designer.project_count || 0} projects</p>
+                <p className="text-sm font-medium">{formatCount(designer.total_profile_views)} views</p>
+                <p className="text-xs text-stone-500">{formatCount(designer.project_count)} projects</p>
               </div>
             </div>
           );
@@ -530,6 +643,49 @@ export default function AdminDesignersPage() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {isSubmitting ? 'Rejecting...' : 'Reject Designer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-[#2c2c2c] mb-2">
+              Delete Designer
+            </h3>
+            <p className="text-sm text-stone-600 mb-4">
+              Deleting: <strong>{deleteModal.name}</strong>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
+                Delete Reason *
+              </label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
+                placeholder="Please explain why this designer is being deleted..."
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setDeleteModal(null);
+                  setDeleteReason('');
+                }}
+                className="px-4 py-2 text-stone-600 hover:text-[#2c2c2c]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isSubmitting || !deleteReason.trim()}
+                className="px-4 py-2 bg-stone-800 text-white rounded-lg hover:bg-black disabled:opacity-50"
+              >
+                {isSubmitting ? 'Deleting...' : 'Delete Designer'}
               </button>
             </div>
           </div>

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import SelectField from '../components/form/SelectField';
+import { sanitizePersonName, sanitizePhoneDigits } from '../lib/formInputRules';
 
 const PRIMARY = '#b8864a';
 
@@ -16,7 +18,14 @@ export default function RegisterPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
+    const { name, type, checked } = e.target as HTMLInputElement;
+    let { value } = e.target as HTMLInputElement;
+    if (name === 'fullName') {
+      value = sanitizePersonName(value);
+    }
+    if (name === 'phone') {
+      value = sanitizePhoneDigits(value);
+    }
     setForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -125,7 +134,7 @@ export default function RegisterPage() {
                       value={form.fullName}
                       onChange={handleChange}
                       placeholder="Architect John Doe"
-                      className="rounded-lg border border-stone-300 bg-[#faf9f7] px-3 py-2.5 text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none"
+                      className="h-12 rounded-lg border border-stone-300 bg-[#faf9f7] px-3 text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -139,7 +148,7 @@ export default function RegisterPage() {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="name@studio.com"
-                      className="rounded-lg border border-stone-300 bg-[#faf9f7] px-3 py-2.5 text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none"
+                      className="h-12 rounded-lg border border-stone-300 bg-[#faf9f7] px-3 text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -151,23 +160,24 @@ export default function RegisterPage() {
                       value={form.phone}
                       onChange={handleChange}
                       placeholder="+971 50 123 4567"
-                      className="rounded-lg border border-stone-300 bg-[#faf9f7] px-3 py-2.5 text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none"
+                      inputMode="numeric"
+                      className="h-12 rounded-lg border border-stone-300 bg-[#faf9f7] px-3 text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-[#2c2c2c]">City</label>
-                    <select
+                    <SelectField
                       name="city"
                       value={form.city}
                       onChange={handleChange}
-                      className="rounded-lg border border-stone-300 bg-[#faf9f7] px-3 py-2.5 text-sm focus:border-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]/40 outline-none"
+                      className="border-stone-300 bg-[#faf9f7] px-3 py-2.5"
                     >
                       <option value="">Select City</option>
                       <option value="dubai">Dubai</option>
                       <option value="sharjah">Sharjah</option>
                       <option value="abu-dhabi">Abu Dhabi</option>
                       <option value="ajman">Ajman</option>
-                    </select>
+                    </SelectField>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -213,4 +223,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

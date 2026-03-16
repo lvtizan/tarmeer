@@ -45,13 +45,17 @@ class ApiClient {
     } catch (err: any) {
       const msg = err?.message || '';
       if (/fetch|network|failed|load/i.test(msg) || err?.name === 'TypeError') {
-        throw new Error('Network error: registration service is unavailable. Please try again later or contact support.');
+        throw new Error('Network error: the service is temporarily unavailable. Please try again in a moment.');
       }
       throw err;
     }
 
     if (!response.ok) {
       let errorMessage = 'Request failed';
+      if (response.status === 413) {
+        errorMessage = 'Uploaded images are too large. Please reduce image size or image count and try again.';
+      }
+
       try {
         const body = await response.json();
         errorMessage = body.error || errorMessage;

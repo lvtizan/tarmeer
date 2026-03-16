@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Eye, MousePointerClick, FolderOpen, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import { adminApi, AdminDesignerDetail, AdminDesignerProject } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
+import { formatCount } from '../../lib/formatNumber';
 
 const PRIMARY = '#b8864a';
 
@@ -23,6 +24,8 @@ export default function AdminDesignerDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rejectingProject, setRejectingProject] = useState<AdminDesignerProject | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const canApprove = hasPermission('can_approve');
 
@@ -68,6 +71,36 @@ export default function AdminDesignerDetailPage() {
       await loadDetail();
     } catch (err: any) {
       setActionError(err.message || 'Failed to reject project.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteDesigner = async () => {
+    if (!detail || !deleteReason.trim()) return;
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      await adminApi.deleteDesigner(detail.designer.id, deleteReason);
+      setShowDeleteModal(false);
+      setDeleteReason('');
+      await loadDetail();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to delete designer.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRestoreDesigner = async () => {
+    if (!detail) return;
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      await adminApi.restoreDesigner(detail.designer.id);
+      await loadDetail();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to restore designer.');
     } finally {
       setIsSubmitting(false);
     }
@@ -131,10 +164,38 @@ export default function AdminDesignerDetailPage() {
                 )}
               </div>
               {designer.bio && <p className="mt-4 text-sm text-stone-600 leading-6 max-w-3xl">{designer.bio}</p>}
+              {designer.deleted_at && (
+                <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
+                  <p>Deleted at: {new Date(designer.deleted_at).toLocaleString()}</p>
+                  {designer.delete_reason && <p className="mt-1">Reason: {designer.delete_reason}</p>}
+                </div>
+              )}
             </div>
           </div>
-          <div className={`px-3 py-1.5 rounded-full text-sm font-medium ${designer.status === 'approved' ? 'bg-green-100 text-green-700' : designer.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-            Designer {designer.status}
+          <div className="flex items-center gap-3">
+            <div className={`px-3 py-1.5 rounded-full text-sm font-medium ${designer.deleted_at ? 'bg-stone-200 text-stone-700' : designer.status === 'approved' ? 'bg-green-100 text-green-700' : designer.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+              {designer.deleted_at ? 'Designer deleted' : `Designer ${designer.status}`}
+            </div>
+            {canApprove && !designer.deleted_at && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium hover:bg-black disabled:opacity-50"
+              >
+                Delete
+              </button>
+            )}
+            {canApprove && designer.deleted_at && (
+              <button
+                type="button"
+                onClick={handleRestoreDesigner}
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-lg bg-stone-700 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50"
+              >
+                Restore
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -145,14 +206,14 @@ export default function AdminDesignerDetailPage() {
             <Eye className="w-6 h-6" style={{ color: PRIMARY }} />
             <span className="text-sm font-medium text-stone-500">Profile Views</span>
           </div>
-          <p className="text-2xl font-bold text-[#2c2c2c]">{stats.total_profile_views || 0}</p>
+          <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(stats.total_profile_views)}</p>
         </div>
         <div className="bg-white rounded-lg border border-stone-200 p-6">
           <div className="flex items-center gap-3 mb-2">
             <MousePointerClick className="w-6 h-6" style={{ color: PRIMARY }} />
             <span className="text-sm font-medium text-stone-500">Contact Clicks</span>
           </div>
-          <p className="text-2xl font-bold text-[#2c2c2c]">{stats.total_contact_clicks || 0}</p>
+          <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(stats.total_contact_clicks)}</p>
         </div>
         <div className="bg-white rounded-lg border border-stone-200 p-6">
           <div className="flex items-center gap-3 mb-2">
@@ -204,7 +265,7 @@ export default function AdminDesignerDetailPage() {
                       <p className="text-xs text-stone-500">
                         Submitted {new Date(project.created_at).toLocaleDateString()}
                       </p>
-                      {canApprove && project.status === 'pending' && (
+                      {canApprove && !designer.deleted_at && project.status === 'pending' && (
                         <div className="flex gap-2">
                           <button
                             type="button"
@@ -265,6 +326,42 @@ export default function AdminDesignerDetailPage() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {isSubmitting ? 'Rejecting...' : 'Reject Project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-stone-200 p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-[#2c2c2c] mb-2">Delete Designer</h3>
+            <p className="text-sm text-stone-600 mb-4">{designer.full_name}</p>
+            <textarea
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
+              placeholder="Please explain why this designer is being deleted..."
+            />
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteReason('');
+                }}
+                className="px-4 py-2 text-stone-600 hover:text-[#2c2c2c]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteDesigner}
+                disabled={isSubmitting || !deleteReason.trim()}
+                className="px-4 py-2 bg-stone-800 text-white rounded-lg hover:bg-black disabled:opacity-50"
+              >
+                {isSubmitting ? 'Deleting...' : 'Delete Designer'}
               </button>
             </div>
           </div>

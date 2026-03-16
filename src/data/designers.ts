@@ -30,7 +30,21 @@ interface DesignerSeed extends Designer {
 }
 
 function coverPath(index: number) {
-  return `/images/designers/projects/covers/cover-${String(index).padStart(3, '0')}.jpg`;
+  const logicalIndex = index - 1;
+  const sourceIndex = (logicalIndex % 25) + 1;
+  const variantIndex = Math.floor(logicalIndex / 25) + 1;
+  const physicalIndex = (sourceIndex - 1) * 3 + variantIndex;
+
+  return `/images/designers/projects/covers/cover-${String(physicalIndex).padStart(3, '0')}.jpg`;
+}
+
+function detailPath(index: number, variant: number) {
+  const logicalIndex = index - 1;
+  const sourceIndex = (logicalIndex % 25) + 1;
+  const variantIndex = Math.floor(logicalIndex / 25) + 1;
+  const physicalIndex = (sourceIndex - 1) * 3 + variantIndex;
+
+  return `/images/designers/projects/details-v2/cover-${String(physicalIndex).padStart(3, '0')}-${variant}.jpg`;
 }
 
 function designerImageSet(designerIndex: number, count = 5) {
@@ -56,12 +70,38 @@ const DESIGNER_INDEX: Record<string, number> = {
   'zayn-abbas': 14,
 };
 
-let nextDesignerImageIndex = 2;
+function projectDetailSet(designerIndex: number, order: number) {
+  const base = designerIndex * 5 + 1;
+  const coverIndices = Array.from({ length: 5 }, (_, index) => base + index);
+  const distribution = [
+    [
+      [coverIndices[0], 1],
+      [coverIndices[1], 1],
+      [coverIndices[2], 1],
+    ],
+    [
+      [coverIndices[3], 1],
+      [coverIndices[4], 1],
+      [coverIndices[0], 2],
+    ],
+    [
+      [coverIndices[1], 2],
+      [coverIndices[2], 2],
+      [coverIndices[3], 2],
+    ],
+    [
+      [coverIndices[4], 2],
+      [coverIndices[0], 3],
+      [coverIndices[1], 3],
+    ],
+    [
+      [coverIndices[2], 3],
+      [coverIndices[3], 3],
+      [coverIndices[4], 3],
+    ],
+  ] as const;
 
-function rotateImages(_offset: number, count = 5) {
-  const images = designerImageSet(nextDesignerImageIndex, count);
-  nextDesignerImageIndex += 1;
-  return images;
+  return distribution[order - 1].map(([coverIndex, variant]) => detailPath(coverIndex, variant));
 }
 
 function createProject(...args: any[]): DesignerProject {
@@ -79,16 +119,13 @@ function createProject(...args: any[]): DesignerProject {
   const description = String(usesExplicitDesignerIndex ? args[7] : args[6]);
   const tags = (usesExplicitDesignerIndex ? args[8] : args[7]) as string[];
 
-  const images = [
-    coverPath(designerIndex * 5 + order),
-    coverPath(designerIndex * 5 + ((order % 5) + 1)),
-    coverPath(designerIndex * 5 + (((order + 1) % 5) + 1)),
-  ];
+  const coverIndex = designerIndex * 5 + order;
+  const images = projectDetailSet(designerIndex, order);
 
   return {
     id: `${slug}-project-${order}`,
     title,
-    coverImage: images[0],
+    coverImage: coverPath(coverIndex),
     images,
     year: 2024 + (order % 2),
     location,
@@ -169,7 +206,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Delivers crisp layouts, quiet luxury finishes, and architectural detailing for full-home transformations.',
     bioLong: 'Daniel approaches interiors with an architectural lens, emphasizing clear geometry, disciplined material transitions, and flexible spaces that still feel premium.',
     avatar: '/images/designers/avatars/daniel-rana.jpg',
-    projectImages: rotateImages(3),
+    projectImages: designerImageSet(3),
     projectCount: 5,
     expertise: ['Full Home Renovation', 'Interior Architecture', 'Custom Millwork', 'Project Management'],
     projects: [
@@ -189,7 +226,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Designs approachable luxury with earthy tones, comfortable seating plans, and strong attention to hospitality.',
     bioLong: 'Mariam works across Northern Emirates homes where clients want warmth, practicality, and visual polish without anything feeling cold or overdesigned.',
     avatar: '/images/designers/avatars/mariam-kassem.jpg',
-    projectImages: rotateImages(4),
+    projectImages: designerImageSet(4),
     projectCount: 5,
     expertise: ['Residential Interiors', 'Soft Furnishing', 'Outdoor Living', 'Turnkey Styling'],
     projects: [
@@ -209,7 +246,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Builds elegant city homes with tailored seating, calm symmetry, and a strong focus on guest-ready living rooms.',
     bioLong: 'Layla is known for polished urban interiors that feel formal enough for hosting yet relaxed enough for daily use.',
     avatar: '/images/designers/avatars/layla-haddad.jpg',
-    projectImages: rotateImages(0),
+    projectImages: designerImageSet(5),
     projectCount: 5,
     expertise: ['Living Rooms', 'Furniture Curation', 'Lighting Design', 'Turnkey Styling'],
     projects: [
@@ -229,7 +266,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Focuses on cleaner layouts, practical kitchens, and low-maintenance materials that still read premium.',
     bioLong: 'Yousef typically works with busy households who want better organization, easier circulation, and a calmer visual language.',
     avatar: '/images/designers/avatars/yousef-karim.jpg',
-    projectImages: rotateImages(1),
+    projectImages: designerImageSet(6),
     projectCount: 5,
     expertise: ['Kitchen Planning', 'Storage Design', 'Apartment Renovation', 'Procurement'],
     projects: [
@@ -249,7 +286,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Designs refined apartments with layered textures, gentle contrast, and carefully edited dressing and bath spaces.',
     bioLong: 'Noor often works on compact but high-finish interiors where every element needs to feel considered and visually calm.',
     avatar: '/images/designers/avatars/noor-rahman.jpg',
-    projectImages: rotateImages(2),
+    projectImages: designerImageSet(7),
     projectCount: 5,
     expertise: ['Soft Decoration', 'Bathroom Design', 'Apartment Styling', 'Color & Materials'],
     projects: [
@@ -269,7 +306,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Handles clean-lined renovations with stronger geometry, integrated technology, and more architectural detailing.',
     bioLong: 'Tariq works across villas and premium apartments where clients want sharper forms, disciplined palettes, and hidden tech integration.',
     avatar: '/images/designers/avatars/tariq-mansour.jpg',
-    projectImages: rotateImages(3),
+    projectImages: designerImageSet(8),
     projectCount: 5,
     expertise: ['Interior Architecture', 'Technology Integration', 'Custom Millwork', 'Renovation'],
     projects: [
@@ -289,7 +326,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Creates comfortable homes with welcoming seating plans, earthy color palettes, and family-focused layouts.',
     bioLong: 'Amira is strongest on homes that need to feel warm and polished without sacrificing ease of maintenance or everyday use.',
     avatar: '/images/designers/avatars/amira-safwan.jpg',
-    projectImages: rotateImages(4),
+    projectImages: designerImageSet(9),
     projectCount: 5,
     expertise: ['Family Interiors', 'Soft Furnishing', 'Dining Spaces', 'Outdoor Living'],
     projects: [
@@ -309,7 +346,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Works on practical renovation packages that balance visual quality, buildability, and straightforward material choices.',
     bioLong: 'Karim is often hired when clients want a premium result but also need decisions to stay grounded in site realities and timelines.',
     avatar: '/images/designers/avatars/karim-dawoud.jpg',
-    projectImages: rotateImages(0),
+    projectImages: designerImageSet(10),
     projectCount: 5,
     expertise: ['Renovation Planning', 'Materials', 'Site Coordination', 'Kitchen & Bath'],
     projects: [
@@ -329,7 +366,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Designs calm, polished homes with a lighter touch, better storage, and detail-focused vanity and dressing zones.',
     bioLong: 'Sara often works with young families and professionals who want a cleaner interior language without sacrificing softness.',
     avatar: '/images/designers/avatars/sara-elias.jpg',
-    projectImages: rotateImages(1),
+    projectImages: designerImageSet(11),
     projectCount: 5,
     expertise: ['Bedroom Styling', 'Wardrobes', 'Vanity Areas', 'Soft Decoration'],
     projects: [
@@ -349,7 +386,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Specializes in premium apartment upgrades with strong storage logic and clean, modern detailing.',
     bioLong: 'Adam is strongest on city apartments where every square meter needs to work harder without losing a premium tone.',
     avatar: '/images/designers/avatars/adam-hakim.jpg',
-    projectImages: rotateImages(2),
+    projectImages: designerImageSet(12),
     projectCount: 5,
     expertise: ['Apartment Upgrades', 'Storage Planning', 'Compact Kitchens', 'Lighting'],
     projects: [
@@ -369,7 +406,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Designs resort-inspired homes with softer textures, easier outdoor transitions, and a more restful visual tempo.',
     bioLong: 'Leena works on homes that lean into light, openness, and a more relaxed hospitality mood, especially near waterfront communities.',
     avatar: '/images/designers/avatars/leena-aziz.jpg',
-    projectImages: rotateImages(3),
+    projectImages: designerImageSet(13),
     projectCount: 5,
     expertise: ['Resort Style', 'Outdoor Living', 'Bedroom Suites', 'Dining Spaces'],
     projects: [
@@ -389,7 +426,7 @@ const designerSeeds: DesignerSeed[] = [
     bioShort: 'Builds structured interiors with restrained palettes, integrated joinery, and low-clutter living zones.',
     bioLong: 'Zayn is strongest on homes that need visual order, cleaner lines, and a more disciplined furniture composition.',
     avatar: '/images/designers/avatars/zayn-abbas.jpg',
-    projectImages: rotateImages(4),
+    projectImages: designerImageSet(14),
     projectCount: 5,
     expertise: ['Custom Joinery', 'Living Rooms', 'Workspace Design', 'Project Management'],
     projects: [

@@ -15,6 +15,8 @@ import {
   getDesignerDetails,
   approveDesigner,
   rejectDesigner,
+  deleteDesigner,
+  restoreDesigner,
   bulkApproveDesigners,
   updateDesignerOrder,
   approveProject,
@@ -62,6 +64,8 @@ router.get('/designers', getDesignersForAdmin);
 router.get('/designers/:id', getDesignerDetails);
 router.put('/designers/:id/approve', requirePermission('can_approve'), approveDesigner);
 router.put('/designers/:id/reject', requirePermission('can_approve'), rejectDesigner);
+router.delete('/designers/:id', requirePermission('can_approve'), deleteDesigner);
+router.post('/designers/:id/restore', requirePermission('can_approve'), restoreDesigner);
 router.put('/designers/bulk-approve', requirePermission('can_approve'), bulkApproveDesigners);
 router.put('/designers/order', requirePermission('can_sort'), updateDesignerOrder);
 router.put('/projects/:projectId/approve', requirePermission('can_approve'), approveProject);

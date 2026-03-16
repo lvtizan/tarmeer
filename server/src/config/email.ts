@@ -56,3 +56,6 @@ export const NOTIFICATION_EMAIL = config.notificationEmail;
 
 // 发件人需与 SMTP 登录账号一致，见官方文档
 export const FROM_EMAIL = config.smtp.from || config.smtp.user || 'noreply@mail.kptom.com';
+export const FROM_NAME = config.smtp.fromName || 'Tarmeer';
+export const REPLY_TO_EMAIL = config.smtp.replyTo || FROM_EMAIL;
+export const RETURN_PATH_EMAIL = config.smtp.returnPath || FROM_EMAIL;

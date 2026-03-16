@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS designers (
   display_order INT DEFAULT 0,
   status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
   rejection_reason TEXT,
+  deleted_at TIMESTAMP NULL,
+  deleted_by_admin_id INT NULL,
+  delete_reason TEXT,
   verification_token VARCHAR(255),
   verification_expires TIMESTAMP,
   reset_token VARCHAR(255),
@@ -31,7 +34,8 @@ CREATE TABLE IF NOT EXISTS designers (
   INDEX idx_email (email),
   INDEX idx_verification_token (verification_token),
   INDEX idx_reset_token (reset_token),
-  INDEX idx_display_order (display_order)
+  INDEX idx_display_order (display_order),
+  INDEX idx_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 项目表

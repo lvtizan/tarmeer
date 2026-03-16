@@ -6,7 +6,7 @@ interface BuildPublicProjectsListQueryInput {
 }
 
 export function buildPublicProjectsListQuery(input: BuildPublicProjectsListQueryInput) {
-  let whereClause = `WHERE p.status = ? AND d.status = 'approved' AND d.is_approved = 1`;
+  let whereClause = `WHERE p.status = ? AND d.status = 'approved' AND d.is_approved = 1 AND d.deleted_at IS NULL`;
   const params: string[] = [input.status];
 
   if (input.designerId) {

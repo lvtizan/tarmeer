@@ -10,6 +10,13 @@ import contactRoutes from './routes/contact';
 import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
 import config from './config';
+import {
+  isPayloadTooLargeError,
+  PAYLOAD_TOO_LARGE_MESSAGE,
+  UPLOAD_REQUEST_BODY_LIMIT,
+} from './lib/requestLimits';
+import { buildCorsOrigins } from './lib/corsOrigins';
+import { shouldSkipApiRateLimit } from './lib/rateLimitPolicy';
 
 dotenv.config();
 
@@ -47,29 +54,25 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: 'Too many requests from this IP, please try again later.',
+  skip: (req) => shouldSkipApiRateLimit({
+    nodeEnv: config.nodeEnv,
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+  }),
 });
 app.use('/api/', limiter);
 
-const corsOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5179',
-  'http://localhost:5190',
-  config.frontendUrl,
-  'http://47.91.108.104',
-  'https://47.91.108.104',
-  'https://designer.tarmeer.com',
-  'http://designer.tarmeer.com',
-];
+const corsOrigins = buildCorsOrigins(config.frontendUrl);
 app.use(cors({
-  origin: corsOrigins.filter(Boolean),
+  origin: corsOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: UPLOAD_REQUEST_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: UPLOAD_REQUEST_BODY_LIMIT }));
 
 app.get('/', (req, res) => {
   res.json({
@@ -121,6 +124,11 @@ app.use('/api/stats', statsRoutes);
 
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('Error:', err);
+
+  if (isPayloadTooLargeError(err)) {
+    res.status(413).json({ error: PAYLOAD_TOO_LARGE_MESSAGE });
+    return;
+  }
   
   if (config.nodeEnv === 'production') {
     res.status(500).json({ error: 'Internal server error' });

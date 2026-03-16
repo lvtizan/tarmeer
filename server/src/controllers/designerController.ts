@@ -43,7 +43,7 @@ export async function getDesigners(req: any, res: any) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const whereClause = `WHERE status = 'approved' AND is_approved = 1`;
+    const whereClause = `WHERE status = 'approved' AND is_approved = 1 AND deleted_at IS NULL`;
     const params: any[] = [];
     
     const [countResult] = await pool.execute(
@@ -93,7 +93,7 @@ export async function getDesignerById(req: any, res: any) {
          created_at,
          (SELECT COUNT(*) FROM projects p WHERE p.designer_id = designers.id AND p.status = 'published') as project_count,
          (SELECT images FROM projects p WHERE p.designer_id = designers.id AND p.status = 'published' ORDER BY p.created_at DESC LIMIT 1) as featured_project_images
-       FROM designers WHERE id = ? AND status = 'approved' AND is_approved = 1`,
+       FROM designers WHERE id = ? AND status = 'approved' AND is_approved = 1 AND deleted_at IS NULL`,
       [id]
     );
     
@@ -138,7 +138,7 @@ export async function updateDesigner(req: any, res: any) {
     }
 
     const [existingRows] = await pool.execute(
-      'SELECT * FROM designers WHERE id = ?',
+      'SELECT * FROM designers WHERE id = ? AND deleted_at IS NULL',
       [id]
     );
 
