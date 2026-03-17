@@ -121,10 +121,6 @@ export default function DesignerProfilePage() {
               {designer.bioLong && designer.bioLong !== designer.bioShort && (
                 <p className="text-[#6b6b6b] text-sm leading-relaxed mb-4">{designer.bioLong}</p>
               )}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#b8864a]/10 border border-[#b8864a]/30 rounded">
-                <span className="font-serif text-xl font-bold text-[#b8864a]">{designer.projectCount}</span>
-                <span className="text-sm text-[#6b6b6b] uppercase tracking-wide">Projects</span>
-              </div>
             </section>
 
             <section className="border-t border-stone-200 pt-6 mt-6">
