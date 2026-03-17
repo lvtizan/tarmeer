@@ -18,7 +18,8 @@ export default function DesignerProjectsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">My Projects</h1>
@@ -121,6 +122,7 @@ export default function DesignerProjectsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Phone, MapPin, User, FileText } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Phone, MapPin, User, FileText, ChevronDown } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
 import SelectField from '../components/form/SelectField';
 import { sanitizePersonName, sanitizePhoneDigits } from '../lib/formInputRules';
 
 const PHONE_COUNTRY_STORAGE_KEY = 'tarmeer_phone_country';
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const PHONE_E164_REGEX = /^\+[1-9]\d{7,14}$/;
 
 const PHONE_COUNTRY_OPTIONS = [
   { value: '+971', label: 'UAE +971' },
@@ -81,6 +83,7 @@ export default function AuthPage() {
   const [phoneCountryCode, setPhoneCountryCode] = useState<string>(() => getStoredPhoneCountry());
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [checkingPhone, setCheckingPhone] = useState(false);
+  const [registerTouched, setRegisterTouched] = useState<Record<string, boolean>>({});
   
   const [loginForm, setLoginForm] = useState({ email: '', password: '', remember: false });
   const [registerForm, setRegisterForm] = useState({
@@ -100,6 +103,10 @@ export default function AuthPage() {
     setError(null);
   };
 
+  const markRegisterTouched = (field: string) => {
+    setRegisterTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   const handleRegisterChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -114,17 +121,18 @@ export default function AuthPage() {
     if (name === 'phone') {
       value = sanitizePhoneDigits(value);
     }
-    
+
     setRegisterForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
-    
+
     setError(null);
-    
+    if (name === 'agree' || name === 'city') {
+      markRegisterTouched(name);
+    }
+
     if (name === 'fullName') {
-      // 支持全球语言字符：中文、英文、阿拉伯文、空格、连字符、点号等
-      // Unicode 字母范围涵盖大多数语言
       if (value.length > 0 && !/^[\p{L}\s\-'\.]+$/u.test(value)) {
         setNameError('Name can only contain letters, spaces, hyphens and dots');
       } else if (value.length > 50) {
@@ -133,50 +141,43 @@ export default function AuthPage() {
         setNameError(null);
       }
     }
-    
+
     if (name === 'email') {
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (value.length > 0 && !emailRegex.test(value)) {
+      if (value.length > 0 && !EMAIL_REGEX.test(value)) {
         setEmailError('Please enter a valid email address');
       } else {
         setEmailError(null);
       }
     }
-    
+
     if (name === 'phone') {
       const digits = value.replace(/\D/g, '');
       const fullPhone = phoneCountryCode + digits;
-      const phoneRegex = /^\+[1-9]\d{1,14}$/;
-      if (digits.length > 0 && !phoneRegex.test(fullPhone)) {
+      if (digits.length > 0 && !PHONE_E164_REGEX.test(fullPhone)) {
         setPhoneError('Please enter a valid phone number');
       } else {
         setPhoneError(null);
       }
     }
-    
+
     if (name === 'password') {
       if (value.length > 0 && value.length < 6) {
-        setPasswordError('Password must be at least 6 characters');
-      } else if (value.length >= 6) {
-        const hasLetter = /[a-zA-Z]/.test(value);
-        const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
-        
-        if (!hasLetter) {
-          setPasswordError('Password must contain English letters');
-        } else if (!hasSymbol) {
-          setPasswordError('Password must contain special characters (e.g., !@#$%^&*)');
-        } else {
-          setPasswordError(null);
-        }
+        setPasswordError('At least 6 characters');
+      } else if (registerForm.confirmPassword && value !== registerForm.confirmPassword) {
+        setPasswordError('Passwords do not match');
       } else {
         setPasswordError(null);
       }
     }
-    
-    if (name === 'confirmPassword' && registerForm.password !== value) {
-      setPasswordError('Passwords do not match');
-    } else if (name === 'confirmPassword' && registerForm.password === value) {
-      setPasswordError(null);
+
+    if (name === 'confirmPassword') {
+      if (value && registerForm.password !== value) {
+        setPasswordError('Passwords do not match');
+      } else if (registerForm.password.length > 0 && registerForm.password.length < 6) {
+        setPasswordError('At least 6 characters');
+      } else {
+        setPasswordError(null);
+      }
     }
   };
 
@@ -260,19 +261,39 @@ export default function AuthPage() {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setRegisterTouched({
+      submit: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      city: true,
+      password: true,
+      confirmPassword: true,
+      agree: true,
+    });
+
+    if (!registerForm.fullName.trim()) {
+      setError('Please enter your full name');
+      return;
+    }
+
     if (nameError) {
       setError(nameError);
       return;
     }
-    
+
+    if (!registerForm.email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+
     if (emailError) {
       setError(emailError);
       return;
     }
-    
+
     const fullPhone = phoneCountryCode + registerForm.phone.replace(/\D/g, '');
-    if (!/^\+[1-9]\d{1,14}$/.test(fullPhone)) {
+    if (!PHONE_E164_REGEX.test(fullPhone)) {
       setError('Please enter a valid phone number');
       return;
     }
@@ -280,7 +301,12 @@ export default function AuthPage() {
       setError(phoneError);
       return;
     }
-    
+
+    if (!registerForm.city) {
+      setError('Please select your city');
+      return;
+    }
+
     if (passwordError) {
       setError(passwordError);
       return;
@@ -291,8 +317,14 @@ export default function AuthPage() {
       return;
     }
 
+    if (!registerForm.agree) {
+      setError('Please agree to the Privacy Policy');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setNeedVerification(false);
 
     try {
       const res = await api.post('/auth/register', {
@@ -322,6 +354,11 @@ export default function AuthPage() {
         philosophy: '',
         agree: false,
       });
+      setRegisterTouched({});
+      setNameError(null);
+      setEmailError(null);
+      setPhoneError(null);
+      setPasswordError(null);
     } catch (err: any) {
       setError(err.message || 'Registration failed, please try again later');
     } finally {
@@ -329,10 +366,39 @@ export default function AuthPage() {
     }
   };
 
-  // Design system: rounded-lg (8px) for all, pr-10 for right icon (24px spacing)
-  const inputBaseClass = "w-full h-12 px-3 rounded-lg border bg-white text-sm text-[#2c2c2c] placeholder:text-[#6b6b6b] focus:outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 transition-all";
-  const inputErrorClass = "border-red-300 focus:border-red-400 focus:ring-red-400/40";
-  const inputNormalClass = "border-stone-200";
+  const emailLooksValid =
+    registerForm.email.length > 0 && !emailError && EMAIL_REGEX.test(registerForm.email);
+  const passwordLengthOk = registerForm.password.length >= 6;
+  const passwordsMatch =
+    registerForm.password.length > 0 &&
+    registerForm.confirmPassword.length > 0 &&
+    registerForm.password === registerForm.confirmPassword &&
+    passwordLengthOk;
+  const cityError = !registerForm.city && (registerTouched.city || registerTouched.submit);
+  const termsError = !registerForm.agree && (registerTouched.agree || registerTouched.submit);
+  const requiredFilled = Boolean(
+    registerForm.fullName.trim() &&
+      registerForm.email.trim() &&
+      registerForm.phone.trim() &&
+      registerForm.city &&
+      registerForm.password &&
+      registerForm.confirmPassword &&
+      registerForm.agree
+  );
+  const hasFieldErrors = Boolean(
+    nameError || emailError || phoneError || passwordError || cityError || termsError
+  );
+  const registerDisabled = loading || !requiredFilled || hasFieldErrors;
+
+  const inputBaseClass =
+    'w-full h-11 rounded-lg border bg-white px-3 text-[14px] leading-5 text-[#2c2c2c] placeholder:text-[#8a857f] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 transition-colors';
+  const selectBaseClass =
+    'h-11 rounded-lg border bg-white py-0 text-[14px] leading-5 text-[#2c2c2c] focus:border-[#b8864a] focus:ring-[#b8864a]/20';
+  const iconBaseClass = 'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400';
+  const inputErrorClass = 'border-red-300 focus:border-red-400 focus:ring-red-300/30';
+  const inputNormalClass = 'border-stone-200 focus:border-[#b8864a]';
+  const eyeButtonClass =
+    'absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-stone-100 hover:text-[#8f6a3f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a]/20';
   const activeBanner = AUTH_BANNERS[tab];
 
   return (
@@ -361,16 +427,16 @@ export default function AuthPage() {
         </div>
       </section>
 
-      <main className="flex-1 flex items-start justify-center px-4 py-8">
+      <main className="flex-1 flex items-start justify-center px-4 py-7 sm:py-8">
         <div className="w-full max-w-[440px]">
-          <div className="flex rounded-lg bg-white border border-stone-200 p-1 mb-6">
+          <div className="mb-4 flex rounded-xl border border-stone-200 bg-stone-50/80 p-1">
             <button
               type="button"
               onClick={() => { setTab('login'); setError(null); setSuccess(null); }}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`h-9 w-1/2 rounded-lg text-sm font-medium transition-colors ${
                 tab === 'login'
-                  ? 'bg-[#b8864a] text-white'
-                  : 'text-[#6b6b6b] hover:bg-stone-50'
+                  ? 'border border-stone-200 bg-white text-[#2c2c2c]'
+                  : 'text-[#7a756f] hover:bg-stone-100/70'
               }`}
             >
               Sign in
@@ -378,18 +444,23 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => { setTab('register'); setError(null); setSuccess(null); }}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`h-9 w-1/2 rounded-lg text-sm font-medium transition-colors ${
                 tab === 'register'
-                  ? 'bg-[#b8864a] text-white'
-                  : 'text-[#6b6b6b] hover:bg-stone-50'
+                  ? 'border border-stone-200 bg-white text-[#2c2c2c]'
+                  : 'text-[#7a756f] hover:bg-stone-100/70'
               }`}
             >
               Create account
             </button>
           </div>
+          {tab === 'register' && (
+            <p className="mb-4 px-1 text-sm leading-5 text-[#7a756f]">
+              Create your studio profile to start publishing projects.
+            </p>
+          )}
 
           {error && (
-            <div className="mb-4 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
+            <div className="mb-3 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm text-red-700">{error}</p>
@@ -408,7 +479,7 @@ export default function AuthPage() {
           )}
 
           {success && (
-            <div className="mb-4 p-4 rounded-lg bg-green-50 border border-green-200 flex items-start gap-3">
+            <div className="mb-3 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-3">
               <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
               <p className="text-sm text-green-700">{success}</p>
             </div>
@@ -417,12 +488,12 @@ export default function AuthPage() {
           {tab === 'login' && (
             <form
               onSubmit={handleLoginSubmit}
-              className="bg-white rounded-lg border border-stone-200 shadow-sm p-6 space-y-5"
+              className="space-y-4 rounded-xl border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(24,24,24,0.05)] sm:p-6"
             >
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <Mail className={iconBaseClass} />
                   <input
                     name="email"
                     type="email"
@@ -438,7 +509,7 @@ export default function AuthPage() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <Lock className={iconBaseClass} />
                   <input
                     name="password"
                     type={showPassword ? 'text' : 'password'}
@@ -451,8 +522,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    tabIndex={-1}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-[#b8864a]"
+                    className={eyeButtonClass}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -489,32 +559,33 @@ export default function AuthPage() {
           {tab === 'register' && (
             <form
               onSubmit={handleRegisterSubmit}
-              className="bg-white rounded-lg border border-stone-200 shadow-sm p-6 space-y-4"
+              className="space-y-3.5 rounded-xl border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(24,24,24,0.05)] sm:p-6"
             >
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <User className={iconBaseClass} />
                   <input
                     name="fullName"
                     type="text"
                     required
                     value={registerForm.fullName}
                     onChange={handleRegisterChange}
+                    onBlur={() => markRegisterTouched('fullName')}
                     placeholder="Your full name"
                     autoComplete="name"
-                    className={`${inputBaseClass} pl-10 ${nameError && registerForm.fullName ? inputErrorClass : inputNormalClass}`}
+                    className={`${inputBaseClass} pl-10 ${nameError && (registerTouched.fullName || registerTouched.submit) ? inputErrorClass : inputNormalClass}`}
                   />
                 </div>
-                {nameError && registerForm.fullName && (
-                  <p className="text-xs text-red-500 mt-1">{nameError}</p>
+                {nameError && (registerTouched.fullName || registerTouched.submit) && (
+                  <p className="mt-1 text-xs text-red-600">{nameError}</p>
                 )}
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <Mail className={iconBaseClass} />
                   <input
                     name="email"
                     type="email"
@@ -522,42 +593,48 @@ export default function AuthPage() {
                     value={registerForm.email}
                     onChange={handleRegisterChange}
                     onBlur={() => {
+                      markRegisterTouched('email');
                       void checkRegistrationAvailability('email');
                     }}
                     placeholder="name@studio.com"
                     autoComplete="email"
-                    className={`${inputBaseClass} pl-10 ${emailError && registerForm.email ? inputErrorClass : inputNormalClass}`}
+                    className={`${inputBaseClass} pl-10 ${emailError && (registerTouched.email || registerTouched.submit) ? inputErrorClass : inputNormalClass}`}
                   />
                 </div>
                 {checkingEmail && !emailError && registerForm.email && (
-                  <p className="text-xs text-stone-500 mt-1">Checking email availability...</p>
+                  <p className="mt-1 text-xs text-stone-500">Checking email availability...</p>
                 )}
-                {emailError && registerForm.email && (
-                  <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                {emailError && (registerTouched.email || registerTouched.submit) && (
+                  <p className="mt-1 text-xs text-red-600">{emailError}</p>
+                )}
+                {emailLooksValid && !checkingEmail && (
+                  <p className="mt-1 text-xs text-emerald-700">Email looks good.</p>
                 )}
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">Phone / WhatsApp</label>
-                <div className="flex gap-2">
-                  <SelectField
-                    wrapperClassName="w-[90px] shrink-0"
-                    value={phoneCountryCode}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setPhoneCountryCode(v);
-                      localStorage.setItem(PHONE_COUNTRY_STORAGE_KEY, v);
-                      setPhoneError(null);
-                    }}
-                    className="w-[90px] bg-white pl-2 pr-9"
-                    aria-label="Country code"
-                  >
-                    {PHONE_COUNTRY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.value}</option>
-                    ))}
-                  </SelectField>
+                <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-2">
+                  <div className="relative shrink-0">
+                    <select
+                      value={phoneCountryCode}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPhoneCountryCode(v);
+                        localStorage.setItem(PHONE_COUNTRY_STORAGE_KEY, v);
+                        setPhoneError(null);
+                      }}
+                      aria-label="Country code"
+                      className={`${inputBaseClass} appearance-none pl-3 pr-8 ${phoneError && (registerTouched.phone || registerTouched.submit) ? inputErrorClass : inputNormalClass}`}
+                    >
+                      {PHONE_COUNTRY_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.value}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                  </div>
                   <div className="relative flex-1">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <Phone className={iconBaseClass} />
                     <input
                       name="phone"
                       type="tel"
@@ -565,28 +642,29 @@ export default function AuthPage() {
                       value={registerForm.phone}
                       onChange={handleRegisterChange}
                       onBlur={() => {
+                        markRegisterTouched('phone');
                         void checkRegistrationAvailability('phone');
                       }}
                       placeholder="50 123 4567"
                       autoComplete="tel-national"
                       inputMode="numeric"
-                      className={`${inputBaseClass} pl-10 ${phoneError && registerForm.phone ? inputErrorClass : inputNormalClass}`}
+                      className={`${inputBaseClass} pl-10 ${phoneError && (registerTouched.phone || registerTouched.submit) ? inputErrorClass : inputNormalClass}`}
                     />
                   </div>
                 </div>
                 {checkingPhone && !phoneError && registerForm.phone && (
-                  <p className="text-xs text-stone-500 mt-1">Checking phone availability...</p>
+                  <p className="mt-1 text-xs text-stone-500">Checking phone availability...</p>
                 )}
-                {phoneError && registerForm.phone && (
-                  <p className="text-xs text-red-500 mt-1">{phoneError}</p>
+                {phoneError && (registerTouched.phone || registerTouched.submit) && (
+                  <p className="mt-1 text-xs text-red-600">{phoneError}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-semibold text-[#2c2c2c]">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <Lock className={iconBaseClass} />
                     <input
                       name="password"
                       type={showPassword ? 'text' : 'password'}
@@ -594,15 +672,15 @@ export default function AuthPage() {
                       minLength={6}
                       value={registerForm.password}
                       onChange={handleRegisterChange}
-                      placeholder="6+ chars"
+                      onBlur={() => markRegisterTouched('password')}
+                      placeholder="At least 6 characters"
                       autoComplete="new-password"
-                      className={`${inputBaseClass} pl-10 pr-10 ${passwordError && registerForm.password ? inputErrorClass : inputNormalClass}`}
+                      className={`${inputBaseClass} pl-10 pr-10 ${passwordError && (registerTouched.password || registerTouched.submit || registerTouched.confirmPassword) ? inputErrorClass : inputNormalClass}`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      tabIndex={-1}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-[#b8864a]"
+                      className={eyeButtonClass}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -613,7 +691,7 @@ export default function AuthPage() {
                 <div className="space-y-1.5">
                   <label className="block text-sm font-semibold text-[#2c2c2c]">Confirm</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <Lock className={iconBaseClass} />
                     <input
                       name="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -621,15 +699,15 @@ export default function AuthPage() {
                       minLength={6}
                       value={registerForm.confirmPassword}
                       onChange={handleRegisterChange}
-                      placeholder="Confirm"
+                      onBlur={() => markRegisterTouched('confirmPassword')}
+                      placeholder="Confirm password"
                       autoComplete="new-password"
-                      className={`${inputBaseClass} pl-10 pr-10 ${passwordError && registerForm.confirmPassword ? inputErrorClass : inputNormalClass}`}
+                      className={`${inputBaseClass} pl-10 pr-10 ${passwordError && (registerTouched.confirmPassword || registerTouched.submit || registerTouched.password) ? inputErrorClass : inputNormalClass}`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword((v) => !v)}
-                      tabIndex={-1}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-[#b8864a]"
+                      className={eyeButtonClass}
                       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -637,8 +715,14 @@ export default function AuthPage() {
                   </div>
                 </div>
               </div>
-              {passwordError && (registerForm.password || registerForm.confirmPassword) && (
-                <p className="text-xs text-red-500 -mt-2">{passwordError}</p>
+              {passwordError && (registerTouched.password || registerTouched.confirmPassword || registerTouched.submit) && (
+                <p className="-mt-1 text-xs text-red-600">{passwordError}</p>
+              )}
+              {!passwordError && passwordLengthOk && registerTouched.password && !passwordsMatch && (
+                <p className="-mt-1 text-xs text-stone-500">Passwords do not match yet.</p>
+              )}
+              {passwordsMatch && (
+                <p className="-mt-1 text-xs text-emerald-700">Passwords match.</p>
               )}
 
               <div className="space-y-1.5">
@@ -648,52 +732,64 @@ export default function AuthPage() {
                   name="city"
                   value={registerForm.city}
                   onChange={handleRegisterChange}
-                  className={`${inputBaseClass} pr-10 appearance-none cursor-pointer`}
+                  onBlur={() => markRegisterTouched('city')}
+                  className={`${selectBaseClass} pr-9 ${cityError ? inputErrorClass : inputNormalClass}`}
+                  chevronClassName="right-3 h-4 w-4 text-stone-400"
                 >
-                  <option value="">Select City</option>
+                  <option value="">Select your city</option>
                   <option value="Dubai">Dubai</option>
                   <option value="Sharjah">Sharjah</option>
                   <option value="Abu Dhabi">Abu Dhabi</option>
                   <option value="Ajman">Ajman</option>
                 </SelectField>
+                {cityError && <p className="mt-1 text-xs text-red-600">Please select a city.</p>}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1 pt-0.5">
                 <label className="block text-sm font-semibold text-[#2c2c2c]">
-                  Design Philosophy <span className="text-[#6b6b6b] font-normal">(optional)</span>
+                  Design Philosophy <span className="font-normal text-[#8a857f]">(optional)</span>
                 </label>
                 <div className="relative">
-                  <FileText className="absolute left-3 top-3 w-4 h-4 text-stone-400" />
+                  <FileText className="absolute left-3 top-3 h-4 w-4 text-stone-400" />
                   <textarea
                     name="philosophy"
                     rows={2}
                     value={registerForm.philosophy}
                     onChange={handleRegisterChange}
-                    placeholder="Briefly describe your design style..."
-                    className="w-full min-h-[44px] py-2.5 px-3 pl-10 rounded-lg border border-stone-200 bg-white text-sm text-[#2c2c2c] placeholder:text-[#6b6b6b] focus:outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 transition-all resize-none"
+                    placeholder="Share your approach, materials, or signature style..."
+                    className="min-h-[82px] w-full resize-y rounded-lg border border-stone-200 bg-white px-3 py-2.5 pl-10 text-[14px] leading-5 text-[#2c2c2c] placeholder:text-[#8a857f] focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20"
                   />
                 </div>
               </div>
 
-              <label className="flex items-start gap-3 cursor-pointer pt-1">
+              <label className="flex cursor-pointer items-start gap-2.5 pt-0.5">
                 <input
                   type="checkbox"
                   name="agree"
                   checked={registerForm.agree}
                   onChange={handleRegisterChange}
+                  onBlur={() => markRegisterTouched('agree')}
                   required
-                  className="mt-0.5 h-4 w-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                  className={`mt-0.5 h-4 w-4 rounded border ${termsError ? 'border-red-300' : 'border-stone-300'} text-[#b8864a] focus:ring-[#b8864a]`}
                 />
-                <span className="text-sm text-[#6b6b6b] leading-relaxed">
-                  I agree to Tarmeer&apos;s <span className="text-[#b8864a] hover:underline cursor-pointer">Terms of Service</span> and <span className="text-[#b8864a] hover:underline cursor-pointer">Privacy Policy</span>.
+                <span className="text-[13px] leading-5 text-[#6f6a64]">
+                  I agree to Tarmeer&apos;s{' '}
+                  <a className="font-medium text-[#9b7242] transition-colors hover:text-[#7e5b33] hover:underline" href="/privacy">
+                    Privacy Policy
+                  </a>
+                  .
                 </span>
               </label>
-              
+              {termsError && (
+                <p className="-mt-1 text-xs text-red-600">Please agree before creating your account.</p>
+              )}
+
               <LoadingButton
                 type="submit"
                 loading={loading}
-                disabled={!registerForm.agree}
-                className="w-full h-11 rounded-lg font-medium btn-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                loadingText="Creating account..."
+                disabled={registerDisabled}
+                className="h-11 w-full rounded-lg font-medium btn-primary text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:saturate-75"
               >
                 Create account
               </LoadingButton>
