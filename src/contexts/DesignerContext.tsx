@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { api } from '../lib/api';
+import { safeGetJSON, safeSetJSON, safeRemoveItem } from '../lib/storage';
+import { UPLOAD_MAX_RETRY_ATTEMPTS, IMAGE_ERROR_RETRY_DELAY_BASE_MS, IMAGE_ERROR_RETRY_MAX_DELAY_MS } from '../lib/constants';
 
 export interface DesignerProfile {
   fullName: string;
@@ -74,21 +76,26 @@ function safelyParseMaybeJSON(value: any) {
   }
 }
 
-function mapProject(project: any): DesignerProjectItem {
+function mapProject(project: unknown): DesignerProjectItem {
+  if (!project || typeof project !== 'object') {
+    throw new Error('Invalid project data');
+  }
+
+  const p = project as Record<string, unknown>;
   return {
-    id: String(project.id),
-    title: project.title || '',
-    description: project.description || '',
-    style: project.style || '',
-    location: project.location || '',
-    area: project.area || '',
-    year: project.year || '',
-    imageUrls: safelyParseMaybeJSON(project.images),
-    productIds: safelyParseMaybeJSON(project.tags).map((tag: any) => String(tag)),
-    status: project.status || 'draft',
-    rejectionReason: project.rejection_reason || null,
-    createdAt: project.created_at,
-    updatedAt: project.updated_at,
+    id: String(p.id ?? ''),
+    title: (p.title as string) || '',
+    description: (p.description as string) || '',
+    style: (p.style as string) || '',
+    location: (p.location as string) || '',
+    area: (p.area as string) || '',
+    year: (p.year as string) || '',
+    imageUrls: safelyParseMaybeJSON(p.images),
+    productIds: safelyParseMaybeJSON(p.tags).map((tag: unknown) => String(tag)),
+    status: ((p.status as string) || 'draft') as DesignerProjectItem['status'],
+    rejectionReason: (p.rejection_reason as string | null) || null,
+    createdAt: p.created_at as string | undefined,
+    updatedAt: p.updated_at as string | undefined,
   };
 }
 
@@ -106,8 +113,8 @@ function toApiProjectPayload(project: ProjectPayload) {
   };
 }
 
-function persistDesigner(updated: Record<string, any>) {
-  localStorage.setItem('designer', JSON.stringify(updated));
+function persistDesigner(updated: Record<string, unknown>) {
+  safeSetJSON('designer', updated);
 }
 
 function wait(ms: number) {
@@ -118,25 +125,20 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
   // 从 localStorage 读取初始用户数据
   const getInitialProfile = (): DesignerProfile => {
     if (typeof window === 'undefined') return emptyProfile;
-    try {
-      const stored = localStorage.getItem('designer');
-      if (stored) {
-        const data = JSON.parse(stored);
-        return {
-          fullName: data.full_name || data.fullName || '',
-          email: data.email || '',
-          phone: data.phone || '',
-          city: data.city || '',
-          address: data.address || '',
-          bio: data.bio || '',
-          avatarUrl: data.avatar_url || data.avatarUrl || '',
-          title: data.title || '',
-        };
-      }
-    } catch (e) {
-      console.error('Failed to parse designer from localStorage', e);
-    }
-    return emptyProfile;
+
+    const data = safeGetJSON<Record<string, unknown>>('designer');
+    if (!data) return emptyProfile;
+
+    return {
+      fullName: (data.full_name as string) || (data.fullName as string) || '',
+      email: (data.email as string) || '',
+      phone: (data.phone as string) || '',
+      city: (data.city as string) || '',
+      address: (data.address as string) || '',
+      bio: (data.bio as string) || '',
+      avatarUrl: (data.avatar_url as string) || (data.avatarUrl as string) || '',
+      title: (data.title as string) || '',
+    };
   };
 
   const [profile, setProfileState] = useState<DesignerProfile>(getInitialProfile);
@@ -146,32 +148,20 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
 
   // 监听 localStorage 变化（比如邮件验证后更新）
   useEffect(() => {
-    const handleStorageChange = () => {
-      const newProfile = getInitialProfile();
-      if (newProfile.email && newProfile.email !== profile.email) {
-        setProfileState(newProfile);
-        setProjects([]); // 新用户，清空项目
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'designer') {
+        const newProfile = getInitialProfile();
+        if (newProfile.email && newProfile.email !== profile.email) {
+          setProfileState(newProfile);
+          setProjects([]); // 新用户，清空项目
+        }
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    // 也检查当前页面内的变化
-    const interval = setInterval(() => {
-      const stored = localStorage.getItem('designer');
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          if (data.email && data.email !== profile.email) {
-            setProfileState(getInitialProfile());
-            setProjects([]);
-          }
-        } catch {}
-      }
-    }, 1000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
     };
   }, [profile.email]);
 
@@ -202,21 +192,18 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
   const setProfile = useCallback((patch: Partial<DesignerProfile>) => {
     setProfileState((prev) => {
       const updated = { ...prev, ...patch };
-      try {
-        const stored = localStorage.getItem('designer');
-        const data = stored ? JSON.parse(stored) : {};
-        persistDesigner({
-          ...data,
-          full_name: updated.fullName,
-          email: updated.email,
-          phone: updated.phone,
-          city: updated.city,
-          address: updated.address,
-          bio: updated.bio,
-          avatar_url: updated.avatarUrl,
-          title: updated.title,
-        });
-      } catch {}
+      const data = safeGetJSON<Record<string, unknown>>('designer') || {};
+      persistDesigner({
+        ...data,
+        full_name: updated.fullName,
+        email: updated.email,
+        phone: updated.phone,
+        city: updated.city,
+        address: updated.address,
+        bio: updated.bio,
+        avatar_url: updated.avatarUrl,
+        title: updated.title,
+      });
       return updated;
     });
   }, []);
@@ -224,22 +211,18 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
   const setAvatar = useCallback((url: string) => {
     setProfileState((prev) => {
       const updated = { ...prev, avatarUrl: url };
-      try {
-        const stored = localStorage.getItem('designer');
-        const data = stored ? JSON.parse(stored) : {};
-        persistDesigner({
-          ...data,
-          avatar_url: url,
-        });
-      } catch {}
+      const data = safeGetJSON<Record<string, unknown>>('designer') || {};
+      persistDesigner({
+        ...data,
+        avatar_url: url,
+      });
       return updated;
     });
   }, []);
 
   const saveProfile = useCallback(async (payload: ProfilePayload) => {
-    const stored = localStorage.getItem('designer');
-    const data = stored ? JSON.parse(stored) : {};
-    const id = data.id;
+    const data = safeGetJSON<Record<string, unknown>>('designer');
+    const id = data?.id as string | undefined;
 
     if (!id) {
       throw new Error('Designer session not found. Please log in again.');
@@ -252,7 +235,9 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
       city: payload.city,
       address: payload.address,
       bio: payload.bio,
-      avatar_url: profile.avatarUrl,
+      avatar_url: payload.avatarUrl,
+      style: (data?.style as string) || null,
+      expertise: (data?.expertise as string[]) || [],
     });
 
     const nextDesigner = {
@@ -260,12 +245,23 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
       ...result.designer,
     };
     persistDesigner(nextDesigner);
-    setProfileState(getInitialProfile());
-  }, [profile.avatarUrl, profile.title]);
+
+    // 直接更新状态而不是重新计算
+    setProfileState((prev) => ({
+      ...prev,
+      fullName: (result.designer?.full_name as string) || prev.fullName,
+      title: (result.designer?.title as string) || prev.title,
+      phone: (result.designer?.phone as string) || prev.phone,
+      city: (result.designer?.city as string) || prev.city,
+      address: (result.designer?.address as string) || prev.address,
+      bio: (result.designer?.bio as string) || prev.bio,
+      avatarUrl: (result.designer?.avatar_url as string) || payload.avatarUrl,
+    }));
+  }, []);
 
   const logout = useCallback(() => {
     api.clearToken();
-    localStorage.removeItem('designer');
+    safeRemoveItem('designer');
     setProfileState(emptyProfile);
     setProjects([]);
     setProjectsError(null);
@@ -297,7 +293,7 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
 
     setProjects((prev) => [optimistic, ...prev]);
 
-    const maxRetries = Math.max(1, options?.maxRetries ?? 8);
+    const maxRetries = Math.max(1, options?.maxRetries ?? UPLOAD_MAX_RETRY_ATTEMPTS);
     let lastError: unknown = null;
     for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
       try {
@@ -307,18 +303,21 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
         return nextProject;
       } catch (error) {
         lastError = error;
-        if (attempt < maxRetries) {
-          const backoffMs = Math.min(12000, 1000 * attempt * attempt);
-          await wait(backoffMs);
-          continue;
+        // 413（文件过大）或明确的客户端错误无法通过重试解决，立即停止
+        const msg = error instanceof Error ? error.message : '';
+        const isNonRetryable = msg.includes('too large') || msg.includes('413');
+        if (isNonRetryable || attempt >= maxRetries) {
+          break;
         }
+        const backoffMs = Math.min(IMAGE_ERROR_RETRY_MAX_DELAY_MS, IMAGE_ERROR_RETRY_DELAY_BASE_MS * attempt * attempt);
+        await wait(backoffMs);
       }
     }
 
     setProjects((prev) =>
       prev.map((project) =>
         project.id === tempId
-          ? { ...project, status: 'upload_failed', rejectionReason: (lastError as any)?.message || 'Upload failed.' }
+          ? { ...project, status: 'upload_failed', rejectionReason: (lastError instanceof Error ? lastError.message : 'Upload failed.') }
           : project,
       ),
     );

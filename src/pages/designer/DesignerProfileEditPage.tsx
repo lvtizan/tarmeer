@@ -14,7 +14,7 @@ const CITIES = [
 ];
 
 export default function DesignerProfileEditPage() {
-  const { profile, setProfile, setAvatar, saveProfile } = useDesigner();
+  const { profile, setAvatar, saveProfile } = useDesigner();
   const [form, setForm] = useState({
     fullName: profile.fullName,
     email: profile.email,
@@ -23,6 +23,7 @@ export default function DesignerProfileEditPage() {
     address: profile.address,
     bio: profile.bio,
     title: profile.title,
+    avatarUrl: profile.avatarUrl,
   });
   const [saved, setSaved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,10 +58,9 @@ export default function DesignerProfileEditPage() {
         city: form.city,
         address: form.address,
         bio: form.bio,
-        avatarUrl: profile.avatarUrl,
+        avatarUrl: form.avatarUrl,
         title: form.title,
       });
-      setProfile(form);
       setSaved(true);
     } catch (err: any) {
       setError(err.message || 'Failed to save profile.');
@@ -69,13 +69,116 @@ export default function DesignerProfileEditPage() {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 压缩图片到指定大小以内
+  const compressImage = (file: File, maxSizeKB: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            reject(new Error('Failed to compress image'));
+            return;
+          }
+
+          // 设置最大尺寸
+          const MAX_DIMENSION = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_DIMENSION) {
+              height = (height * MAX_DIMENSION) / width;
+              width = MAX_DIMENSION;
+            }
+          } else {
+            if (height > MAX_DIMENSION) {
+              width = (width * MAX_DIMENSION) / height;
+              height = MAX_DIMENSION;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          // 绘制图片
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // 逐步压缩直到满足大小要求
+          const maxSizeBytes = maxSizeKB * 1024;
+          let quality = 0.9;
+          let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+          // 如果初始压缩就满足要求，直接返回
+          if (compressedDataUrl.length <= maxSizeBytes) {
+            resolve(compressedDataUrl);
+            return;
+          }
+
+          // 二分法寻找合适的压缩质量
+          let minQuality = 0.1;
+          let maxQuality = 0.9;
+          let iterations = 0;
+          const maxIterations = 10;
+
+          while (iterations < maxIterations) {
+            quality = (minQuality + maxQuality) / 2;
+            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+            if (compressedDataUrl.length <= maxSizeBytes) {
+              minQuality = quality;
+            } else {
+              maxQuality = quality;
+            }
+
+            iterations++;
+
+            // 如果范围足够小，使用较小的质量
+            if (maxQuality - minQuality < 0.05) {
+              break;
+            }
+          }
+
+          // 使用找到的质量再压缩一次
+          const finalQuality = minQuality;
+          compressedDataUrl = canvas.toDataURL('image/jpeg', finalQuality);
+
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setAvatar(reader.result as string);
-    reader.readAsDataURL(file);
-    setSaved(false);
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPG, PNG).');
+      return;
+    }
+
+    setError(null);
+
+    try {
+      // 无论图片大小，统一走压缩流程，确保 data URL ≤ 500KB，payload 不超过 nginx 限制
+      const TARGET_SIZE_KB = 500;
+      const compressedDataUrl = await compressImage(file, TARGET_SIZE_KB);
+      setAvatar(compressedDataUrl);
+      setForm((prev) => ({ ...prev, avatarUrl: compressedDataUrl }));
+      setSaved(false);
+    } catch (err) {
+      setError('Failed to process image. Please try another image.');
+      console.error('Image compression error:', err);
+    }
   };
 
   return (
@@ -111,7 +214,7 @@ export default function DesignerProfileEditPage() {
             />
             <div>
               <p className="text-sm font-semibold text-[#2c2c2c]">Click avatar to change</p>
-              <p className="text-xs text-stone-500 mt-1">JPG, PNG. Max 2MB.</p>
+              <p className="text-xs text-stone-500 mt-1">JPG, PNG. Large images will be auto-compressed.</p>
             </div>
           </div>
         </div>

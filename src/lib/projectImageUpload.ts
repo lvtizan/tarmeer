@@ -1,8 +1,9 @@
 export const MAX_TOTAL_UPLOAD_BYTES = 20 * 1024 * 1024;
-export const MAX_ESTIMATED_PAYLOAD_BYTES = 18 * 1024 * 1024;
-export const IMAGE_COMPRESSION_THRESHOLD_BYTES = 5 * 1024 * 1024;
-export const IMAGE_MAX_DIMENSION = 1800;
-export const IMAGE_OUTPUT_QUALITY = 0.82;
+export const MAX_ESTIMATED_PAYLOAD_BYTES = 15 * 1024 * 1024;
+// 超过此大小的图片自动压缩（降低至 300KB，手机照片全部走压缩流程）
+export const IMAGE_COMPRESSION_THRESHOLD_BYTES = 300 * 1024;
+export const IMAGE_MAX_DIMENSION = 1400;
+export const IMAGE_OUTPUT_QUALITY = 0.78;
 
 export function formatFileSize(bytes: number) {
   if (bytes >= 1024 * 1024) {
