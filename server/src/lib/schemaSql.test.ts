@@ -29,3 +29,19 @@ test('schema files include soft delete fields for designers', () => {
     assert.match(sql, /delete_reason/i);
   }
 });
+
+test('schema files allow long avatar payloads for designer profile updates', () => {
+  const root = path.resolve(process.cwd(), '..');
+  const schemaFiles = [
+    path.join(root, 'server/schema/designers.sql'),
+    path.join(root, 'server/schema/init.sql'),
+    path.join(root, 'server/schema/init-tables-only.sql'),
+    path.join(root, 'database/schema.sql'),
+  ];
+
+  for (const filePath of schemaFiles) {
+    const sql = fs.readFileSync(filePath, 'utf8');
+    assert.match(sql, /avatar_url\s+(TEXT|MEDIUMTEXT|LONGTEXT)/i);
+    assert.doesNotMatch(sql, /avatar_url\s+varchar\s*\(\s*5\d{2}\s*\)/i);
+  }
+});

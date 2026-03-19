@@ -47,6 +47,7 @@ async function main() {
       'admin_tables.sql',
       'designer-title-migration.sql',
       'project-review-migration.sql',
+      'avatar-url-migration.sql',
     ];
 
     if (TABLES_ONLY) {

@@ -1,6 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { adminApi, AdminUser } from '../lib/adminApi';
 
+interface AdminProfileResponse {
+  id: number;
+  email: string;
+  fullName: string;
+  role: string;
+  permissions: AdminUser['permissions'] | null;
+}
+
 interface AdminContextType {
   admin: AdminUser | null;
   isLoading: boolean;
@@ -37,7 +45,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const profile = await adminApi.getProfile();
+      const profile = await adminApi.getProfile() as AdminProfileResponse;
       setAdmin({
         id: profile.id,
         email: profile.email,

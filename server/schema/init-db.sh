@@ -25,6 +25,7 @@ echo "Applying admin and migration schemas..."
 render_sql "$SCRIPT_DIR/admin_tables.sql" | mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p "$DB_NAME"
 render_sql "$SCRIPT_DIR/designer-title-migration.sql" | mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p "$DB_NAME"
 render_sql "$SCRIPT_DIR/project-review-migration.sql" | mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p "$DB_NAME"
+render_sql "$SCRIPT_DIR/avatar-url-migration.sql" | mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p "$DB_NAME"
 
 echo "Done. Database, tables, admin schema, and migrations are ready."
 echo "Set DB_NAME=$DB_NAME and DB_USER/DB_PASSWORD in .env then restart: pm2 restart tarmeer-api"

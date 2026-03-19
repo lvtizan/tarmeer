@@ -30,6 +30,7 @@ render_sql "$SCRIPT_DIR/init.sql" | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_US
 render_sql "$SCRIPT_DIR/admin_tables.sql" | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$DB_NAME"
 render_sql "$SCRIPT_DIR/designer-title-migration.sql" | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$DB_NAME"
 render_sql "$SCRIPT_DIR/project-review-migration.sql" | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$DB_NAME"
+render_sql "$SCRIPT_DIR/avatar-url-migration.sql" | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$DB_NAME"
 unset MYSQL_PWD
 echo "Done. Base schema, admin schema, and migrations are applied."
 echo "Set the same DB_* and JWT_SECRET in /tarmeer/tarmeer_api/.env on ECS, then pm2 restart tarmeer-api."

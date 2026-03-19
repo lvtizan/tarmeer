@@ -9,17 +9,28 @@ const navLinks = [
   { to: '/designers/apply', label: 'Join as Designer' },
 ];
 
-export default function Navbar({ whatsAppLink }: { whatsAppLink: string }) {
+export default function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
   const handleNavClick = (e: React.MouseEvent, to: string) => {
+    // 如果在首页点击 Home 链接，滚动到顶部而不是跳转
     if (to === '/' && location.pathname === '/') {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     setOpen(false);
   };
+
+  const renderNavLink = (to: string, label: string, extraClasses = '') => (
+    <Link
+      to={to}
+      onClick={(e) => handleNavClick(e, to)}
+      className={`text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition ${extraClasses}`}
+    >
+      {label}
+    </Link>
+  );
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-stone-200">
@@ -35,41 +46,17 @@ export default function Navbar({ whatsAppLink }: { whatsAppLink: string }) {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          {navLinks.map(({ to, label }) => (
-            to === '/' ? (
-              <Link
-                key={to}
-                to={to}
-                onClick={(e) => { if (location.pathname === '/') { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}
-                className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-              >
-                {label}
-              </Link>
-            ) : (
-              <Link
-                key={to}
-                to={to}
-                className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-              >
-                {label}
-              </Link>
-            )
-          ))}
-          <Link
-            to="/auth"
-            className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-          >
-            Log In
-          </Link>
-          <a href={whatsAppLink} target="_blank" rel="noopener noreferrer" className="btn-primary ml-2 text-base text-white">
+          {navLinks.map(({ to, label }) => renderNavLink(to, label))}
+          {renderNavLink('/auth?tab=login', 'Log In')}
+          <Link to="/contact" className="btn-primary ml-2 text-base text-white">
             Contact Us
-          </a>
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
-          <a href={whatsAppLink} target="_blank" rel="noopener noreferrer" className="btn-primary px-3 py-2 text-sm text-white">
+          <Link to="/contact" className="btn-primary px-3 py-2 text-sm text-white">
             Contact
-          </a>
+          </Link>
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
@@ -84,19 +71,8 @@ export default function Navbar({ whatsAppLink }: { whatsAppLink: string }) {
       {open && (
         <div className="md:hidden border-t border-stone-200 bg-white">
           <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-2">
-            {navLinks.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                onClick={(e) => handleNavClick(e, to)}
-                className="py-2 text-base font-medium text-[#2c2c2c]"
-              >
-                {label}
-              </Link>
-            ))}
-            <Link to="/auth" onClick={() => setOpen(false)} className="py-2 text-base font-medium text-[#2c2c2c]">
-              Log In
-            </Link>
+            {navLinks.map(({ to, label }) => renderNavLink(to, label, 'py-2'))}
+            {renderNavLink('/auth?tab=login', 'Log In', 'py-2')}
           </div>
         </div>
       )}

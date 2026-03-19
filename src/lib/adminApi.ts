@@ -1,4 +1,6 @@
 // Admin API Client - separate token storage from designer auth
+import { safeGetItem, safeSetItem, safeRemoveItem } from './storage';
+
 const API_BASE = import.meta.env.VITE_API_URL || (
   import.meta.env.PROD
     ? `${window.location.origin}/api`
@@ -85,19 +87,19 @@ class AdminApiClient {
 
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    safeSetItem(ADMIN_TOKEN_KEY, token);
   }
 
   getToken(): string | null {
     if (!this.token) {
-      this.token = localStorage.getItem(ADMIN_TOKEN_KEY);
+      this.token = safeGetItem(ADMIN_TOKEN_KEY);
     }
     return this.token;
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    safeRemoveItem(ADMIN_TOKEN_KEY);
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
@@ -108,7 +110,7 @@ class AdminApiClient {
 
     const token = this.getToken();
     if (token) {
-      (headers as any)['Authorization'] = `Bearer ${token}`;
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(`${API_BASE}/admin${endpoint}`, {
@@ -158,7 +160,7 @@ class AdminApiClient {
     return result;
   }
 
-  async getProfile(): Promise<{ id: number; email: string; fullName: string; role: string; permissions: any }> {
+  async getProfile(): Promise<{ id: number; email: string; fullName: string; role: string; permissions: AdminUser['permissions'] | null }> {
     return this.request('/profile');
   }
 
@@ -271,14 +273,14 @@ class AdminApiClient {
     return this.request('/admins');
   }
 
-  async createSubAdmin(data: { email: string; password: string; fullName: string; permissions?: any }) {
+  async createSubAdmin(data: { email: string; password: string; fullName: string; permissions?: AdminUser['permissions'] }) {
     return this.request('/admins', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateAdmin(id: number, data: { fullName?: string; permissions?: any; isActive?: boolean }) {
+  async updateAdmin(id: number, data: { fullName?: string; permissions?: AdminUser['permissions']; isActive?: boolean }) {
     return this.request(`/admins/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

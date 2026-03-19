@@ -7,7 +7,7 @@ const footerNavLinks = [
   { to: '/#designers', label: 'Designers' },
   { to: '/#pricing', label: 'Pricing' },
   { to: '/materials', label: 'Showrooms' },
-  { to: '/designers/apply', label: 'Become a Partner' },
+  { to: '/contact', label: 'Become a Partner' },
 ];
 
 export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
@@ -30,14 +30,12 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
                   {label}
                 </Link>
               ))}
-              <a
-                href={whatsAppLink}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/contact"
                 className="text-sm text-white/80 hover:text-white transition"
               >
                 Contact Us
-              </a>
+              </Link>
             </nav>
           </div>
           <div>

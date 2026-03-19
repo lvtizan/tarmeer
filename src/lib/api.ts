@@ -1,3 +1,5 @@
+import { safeGetItem, safeSetItem, safeRemoveItem } from './storage';
+
 function resolveApiBase() {
   const envBase = import.meta.env.VITE_API_URL?.trim();
   if (envBase) {
@@ -27,19 +29,19 @@ class ApiClient {
 
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem('token', token);
+    safeSetItem('token', token);
   }
 
   getToken() {
     if (!this.token) {
-      this.token = localStorage.getItem('token');
+      this.token = safeGetItem('token');
     }
     return this.token;
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem('token');
+    safeRemoveItem('token');
   }
 
   async request(endpoint: string, options: RequestInit = {}) {
@@ -50,7 +52,8 @@ class ApiClient {
 
     const token = this.getToken();
     if (token) {
-      (headers as any)['Authorization'] = `Bearer ${token}`;
+      // 使用类型断言来设置 Authorization header
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
     let response: Response;
@@ -59,12 +62,15 @@ class ApiClient {
         ...options,
         headers,
       });
-    } catch (err: any) {
-      const msg = err?.message || '';
-      if (/fetch|network|failed|load/i.test(msg) || err?.name === 'TypeError') {
-        throw new Error('Network error: the service is temporarily unavailable. Please try again in a moment.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        const msg = err.message || '';
+        if (/fetch|network|failed|load/i.test(msg) || err.name === 'TypeError') {
+          throw new Error('Network error: the service is temporarily unavailable. Please try again in a moment.');
+        }
+        throw err;
       }
-      throw err;
+      throw new Error('An unexpected error occurred while making the request');
     }
 
     if (!response.ok) {
@@ -85,7 +91,7 @@ class ApiClient {
     return response.json();
   }
 
-  async post(endpoint: string, data: any) {
+  async post(endpoint: string, data: unknown) {
     return this.request(endpoint, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -98,7 +104,7 @@ class ApiClient {
     });
   }
 
-  async put(endpoint: string, data: any) {
+  async put(endpoint: string, data: unknown) {
     return this.request(endpoint, {
       method: 'PUT',
       body: JSON.stringify(data),

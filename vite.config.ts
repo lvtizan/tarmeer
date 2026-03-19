@@ -6,6 +6,7 @@ export default defineConfig({
   base: '/',
   plugins: [react(), tailwindcss()],
   server: {
+    host: '0.0.0.0', // 允许内网访问
     port: 5173,
     headers: { 'Cache-Control': 'no-cache' },
   },

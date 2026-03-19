@@ -20,6 +20,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import PrivacyPage from './pages/PrivacyPage';
 import NewHomeDesignPage from './pages/NewHomeDesignPage';
 import SoftDecorationPage from './pages/SoftDecorationPage';
+import ContactPage from './pages/ContactPage';
 import DesignerDashboardPage from './pages/designer/DesignerDashboardPage';
 import DesignerProfileEditPage from './pages/designer/DesignerProfileEditPage';
 import DesignerProjectsPage from './pages/designer/DesignerProjectsPage';
@@ -88,6 +89,7 @@ function App() {
             <Route path="/materials/:category" element={<MaterialCategoryPage />} />
             <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
             <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
           </Routes>
         </Layout>

@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Phone, MapPin, User, FileText, ChevronDown } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
 import SelectField from '../components/form/SelectField';
 import { sanitizePersonName, sanitizePhoneDigits } from '../lib/formInputRules';
-
-const PHONE_COUNTRY_STORAGE_KEY = 'tarmeer_phone_country';
+import { STORAGE_KEYS, MAX_NAME_LENGTH, MIN_PASSWORD_LENGTH } from '../lib/constants';
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const PHONE_E164_REGEX = /^\+[1-9]\d{7,14}$/;
 
@@ -49,7 +48,12 @@ const PHONE_COUNTRY_OPTIONS = [
 
 function getStoredPhoneCountry(): string {
   if (typeof window === 'undefined') return '+971';
-  return localStorage.getItem(PHONE_COUNTRY_STORAGE_KEY) || '+971';
+  const stored = localStorage.getItem(STORAGE_KEYS.PHONE_COUNTRY);
+  // Validate that stored value is a valid country code, otherwise default to +971
+  if (stored && /^\+\d{1,4}$/.test(stored)) {
+    return stored;
+  }
+  return '+971';
 }
 
 type Tab = 'login' | 'register';
@@ -69,7 +73,44 @@ const AUTH_BANNERS: Record<Tab, { image: string; title: string; subtitle: string
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>('login');
+
+  // Refs for auto-focus
+  const loginEmailRef = useRef<HTMLInputElement>(null);
+  const registerNameRef = useRef<HTMLInputElement>(null);
+
+  // Auto-switch tab based on URL parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'register') {
+      setTab('register');
+    } else if (tabParam === 'login') {
+      setTab('login');
+    }
+  }, [searchParams]);
+
+  // Auto-focus first input when tab changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (tab === 'login' && loginEmailRef.current) {
+        loginEmailRef.current.focus();
+      } else if (tab === 'register' && registerNameRef.current) {
+        registerNameRef.current.focus();
+      }
+    }, 100); // Small delay to ensure tab content is rendered
+    return () => clearTimeout(timer);
+  }, [tab]);
+
+  // Ensure phone country code always has a valid default value
+  useEffect(() => {
+    if (!phoneCountryCode || !/^\+\d{1,4}$/.test(phoneCountryCode)) {
+      setPhoneCountryCode('+971');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.PHONE_COUNTRY, '+971');
+      }
+    }
+  }, []);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -90,7 +131,7 @@ export default function AuthPage() {
     fullName: '',
     email: '',
     phone: '',
-    city: '',
+    city: 'Dubai',
     password: '',
     confirmPassword: '',
     philosophy: '',
@@ -135,8 +176,8 @@ export default function AuthPage() {
     if (name === 'fullName') {
       if (value.length > 0 && !/^[\p{L}\s\-'\.]+$/u.test(value)) {
         setNameError('Name can only contain letters, spaces, hyphens and dots');
-      } else if (value.length > 50) {
-        setNameError('Name is too long (max 50 characters)');
+      } else if (value.length > MAX_NAME_LENGTH) {
+        setNameError(`Name is too long (max ${MAX_NAME_LENGTH} characters)`);
       } else {
         setNameError(null);
       }
@@ -161,8 +202,8 @@ export default function AuthPage() {
     }
 
     if (name === 'password') {
-      if (value.length > 0 && value.length < 6) {
-        setPasswordError('At least 6 characters');
+      if (value.length > 0 && value.length < MIN_PASSWORD_LENGTH) {
+        setPasswordError(`At least ${MIN_PASSWORD_LENGTH} characters`);
       } else if (registerForm.confirmPassword && value !== registerForm.confirmPassword) {
         setPasswordError('Passwords do not match');
       } else {
@@ -173,8 +214,8 @@ export default function AuthPage() {
     if (name === 'confirmPassword') {
       if (value && registerForm.password !== value) {
         setPasswordError('Passwords do not match');
-      } else if (registerForm.password.length > 0 && registerForm.password.length < 6) {
-        setPasswordError('At least 6 characters');
+      } else if (registerForm.password.length > 0 && registerForm.password.length < MIN_PASSWORD_LENGTH) {
+        setPasswordError(`At least ${MIN_PASSWORD_LENGTH} characters`);
       } else {
         setPasswordError(null);
       }
@@ -368,7 +409,7 @@ export default function AuthPage() {
 
   const emailLooksValid =
     registerForm.email.length > 0 && !emailError && EMAIL_REGEX.test(registerForm.email);
-  const passwordLengthOk = registerForm.password.length >= 6;
+  const passwordLengthOk = registerForm.password.length >= MIN_PASSWORD_LENGTH;
   const passwordsMatch =
     registerForm.password.length > 0 &&
     registerForm.confirmPassword.length > 0 &&
@@ -495,6 +536,7 @@ export default function AuthPage() {
                 <div className="relative">
                   <Mail className={iconBaseClass} />
                   <input
+                    ref={loginEmailRef}
                     name="email"
                     type="email"
                     required
@@ -566,6 +608,7 @@ export default function AuthPage() {
                 <div className="relative">
                   <User className={iconBaseClass} />
                   <input
+                    ref={registerNameRef}
                     name="fullName"
                     type="text"
                     required
@@ -621,7 +664,7 @@ export default function AuthPage() {
                       onChange={(e) => {
                         const v = e.target.value;
                         setPhoneCountryCode(v);
-                        localStorage.setItem(PHONE_COUNTRY_STORAGE_KEY, v);
+                        localStorage.setItem(STORAGE_KEYS.PHONE_COUNTRY, v);
                         setPhoneError(null);
                       }}
                       aria-label="Country code"
@@ -669,11 +712,11 @@ export default function AuthPage() {
                       name="password"
                       type={showPassword ? 'text' : 'password'}
                       required
-                      minLength={6}
+                      minLength={MIN_PASSWORD_LENGTH}
                       value={registerForm.password}
                       onChange={handleRegisterChange}
                       onBlur={() => markRegisterTouched('password')}
-                      placeholder="At least 6 characters"
+                      placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
                       autoComplete="new-password"
                       className={`${inputBaseClass} pl-10 pr-10 ${passwordError && (registerTouched.password || registerTouched.submit || registerTouched.confirmPassword) ? inputErrorClass : inputNormalClass}`}
                     />
@@ -696,7 +739,7 @@ export default function AuthPage() {
                       name="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
                       required
-                      minLength={6}
+                      minLength={MIN_PASSWORD_LENGTH}
                       value={registerForm.confirmPassword}
                       onChange={handleRegisterChange}
                       onBlur={() => markRegisterTouched('confirmPassword')}
@@ -787,7 +830,6 @@ export default function AuthPage() {
               <LoadingButton
                 type="submit"
                 loading={loading}
-                loadingText="Creating account..."
                 disabled={registerDisabled}
                 className="h-11 w-full rounded-lg font-medium btn-primary text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:saturate-75"
               >

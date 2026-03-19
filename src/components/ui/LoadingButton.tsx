@@ -5,7 +5,6 @@ interface LoadingButtonProps {
   loading?: boolean;
   disabled?: boolean;
   children: React.ReactNode;
-  loadingText?: React.ReactNode;
   className?: string;
   onClick?: () => void;
 }
@@ -15,7 +14,6 @@ export default function LoadingButton({
   loading = false,
   disabled = false,
   children,
-  loadingText,
   className = '',
   onClick,
 }: LoadingButtonProps) {
@@ -24,12 +22,14 @@ export default function LoadingButton({
       type={type}
       disabled={disabled || loading}
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 ${className}`}
+      className={`relative inline-flex items-center justify-center ${className}`}
     >
       {loading && (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="absolute inset-0 flex items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </span>
       )}
-      <span>{loading ? (loadingText ?? children) : children}</span>
+      <span className={loading ? 'opacity-0' : ''}>{children}</span>
     </button>
   );
 }

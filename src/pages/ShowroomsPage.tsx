@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import PageContainer from '../components/PageContainer';
 import { brandsList } from '../data/brands';
 import { WHATSAPP_LINK, GOOGLE_MAPS_URL } from '../lib/constants';
-import { MapPin, Clock, Palette, Building2, Package } from 'lucide-react';
+import { MapPin, Clock, Palette, Building2, Package, Megaphone, Store, MessageCircle } from 'lucide-react';
 
 const PRIMARY = '#b8864a';
 
@@ -21,6 +21,24 @@ const EXPERIENCE_ITEMS = [
     title: 'Personalized Sourcing',
     text: 'Direct access to our premium Chinese supply chain, customized for your specific project requirements.',
     icon: Package,
+  },
+];
+
+const ALLIANCE_ITEMS = [
+  {
+    title: 'Social Media Exposure',
+    text: 'Promote your brand through Tarmeer’s established content and social channels.',
+    icon: Megaphone,
+  },
+  {
+    title: 'Physical Showroom Presence',
+    text: 'Showcase your products in real spaces where customers can explore materials and solutions.',
+    icon: Store,
+  },
+  {
+    title: 'Qualified Daily Inquiries',
+    text: 'Benefit from consistent inbound interest generated through our online ecosystem.',
+    icon: MessageCircle,
   },
 ];
 
@@ -183,6 +201,72 @@ export default function MaterialsPage() {
                   </div>
                 );
               })}
+            </div>
+          </section>
+
+          <section aria-labelledby="showroom-alliance-title">
+            <div className="rounded-[22px] border border-stone-200 bg-white p-6 shadow-[0_14px_42px_rgba(28,18,8,0.05)] sm:p-8 lg:p-10">
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+                <div>
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                    Partnership Opportunity
+                  </p>
+                  <h2
+                    id="showroom-alliance-title"
+                    className="font-serif text-3xl font-bold leading-tight text-[#2c2c2c] sm:text-[2.1rem]"
+                  >
+                    Join Our Showroom Alliance
+                  </h2>
+                  <p className="mt-4 max-w-[60ch] text-[15px] leading-7 text-stone-600">
+                    Grow your brand through Tarmeer’s showroom network, social media ecosystem, and daily customer inquiries. We help partners increase visibility both online and offline.
+                  </p>
+
+                  <div className="mt-6 space-y-3.5">
+                    {ALLIANCE_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.title} className="flex items-start gap-3 rounded-xl border border-stone-100 bg-stone-50/70 p-3.5">
+                          <div
+                            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                            style={{ backgroundColor: `${PRIMARY}18` }}
+                          >
+                            <Icon className="h-4.5 w-4.5" style={{ color: PRIMARY }} />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-[#2c2c2c]">{item.title}</h3>
+                            <p className="mt-1 text-sm leading-6 text-stone-600">{item.text}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-6 flex flex-col items-start gap-2">
+                    <Link
+                      to="/contact"
+                      className="inline-flex h-11 items-center justify-center rounded-xl px-6 text-sm font-bold text-white shadow-[0_10px_24px_rgba(184,134,74,0.24)] transition-transform hover:-translate-y-0.5"
+                      style={{ backgroundColor: PRIMARY }}
+                    >
+                      Become a Partner
+                    </Link>
+                    <p className="text-xs text-stone-500">
+                      Ideal for brands, suppliers, and showroom partners looking to grow in the UAE.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative overflow-hidden rounded-[18px] border border-stone-200 bg-stone-100">
+                  <img
+                    src="/images/showroom-sharjah-panorama.png"
+                    alt="Tarmeer showroom and material display environment"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=1200&q=80';
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </section>
 

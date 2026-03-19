@@ -57,7 +57,7 @@ export default function ApplyPage() {
             Access Premium Chinese Supply Chains, Increase Your Project Volume, and Join the Top Design Community in MENA.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth" className="btn-primary inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 text-base lg:text-lg text-white">
+            <Link to="/auth?tab=register" className="btn-primary inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 text-base lg:text-lg text-white">
               Apply Now
             </Link>
             <a

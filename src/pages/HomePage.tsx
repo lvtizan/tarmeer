@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { SCROLL_TIMEOUT_MS } from '../lib/constants';
 import Banner from '../components/home/Banner';
 import PricingSection from '../components/home/PricingSection';
 import DesignersSection from '../components/home/DesignersSection';
@@ -14,7 +15,7 @@ export default function HomePage() {
     if (!id) return;
     const el = document.getElementById(id);
     if (el) {
-      const t = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+      const t = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), SCROLL_TIMEOUT_MS);
       return () => clearTimeout(t);
     }
   }, [location.pathname, location.hash]);

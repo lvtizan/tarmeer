@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
 import DesignerCard from '../designers/DesignerCard';
 import { designersList } from '../../data/designers';
-
-const MAX_ON_HOME = 8;
+import { MAX_DESIGNERS_ON_HOME } from '../../lib/constants';
 
 export default function DesignersSection() {
-  const designers = designersList.slice(0, MAX_ON_HOME);
+  const designers = designersList.slice(0, MAX_DESIGNERS_ON_HOME);
 
   return (
     <section id="designers" className="py-16 sm:py-24 bg-white">

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS designers (
   city VARCHAR(100),
   address TEXT,
   bio TEXT,
-  avatar_url VARCHAR(500),
+  avatar_url MEDIUMTEXT,
   style VARCHAR(255),
   expertise JSON,
   is_approved BOOLEAN DEFAULT FALSE,

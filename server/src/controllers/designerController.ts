@@ -132,7 +132,14 @@ export async function updateDesigner(req: any, res: any) {
   try {
     const { id } = req.params;
     const { full_name, title, phone, city, address, bio, avatar_url, style, expertise } = req.body;
-    
+
+    console.log('=== UPDATE DESIGNER ===');
+    console.log('Designer ID:', id);
+    console.log('User ID:', req.user.id);
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('Avatar URL length:', avatar_url?.length || 0);
+    console.log('Avatar URL preview:', avatar_url?.substring(0, 100) || 'none');
+
     if (req.user.id !== parseInt(id)) {
       return res.status(403).json({ error: 'You cannot edit another designer\'s profile.' });
     }
