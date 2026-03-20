@@ -22,7 +22,7 @@ export async function authenticate(req: any, res: any, next: any) {
     }
 
     const [rows] = await pool.execute(
-      'SELECT id, email, deleted_at FROM designers WHERE id = ?',
+      'SELECT id, email FROM designers WHERE id = ?',
       [user.id]
     );
 
@@ -31,13 +31,10 @@ export async function authenticate(req: any, res: any, next: any) {
       return res.status(401).json({ error: 'Designer account not found.' });
     }
 
-    if (designers[0].deleted_at) {
-      return res.status(403).json({ error: 'Designer account is deleted.' });
-    }
-
     req.user = { id: designers[0].id, email: designers[0].email };
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     res.status(401).json({ error: 'Invalid authentication token.' });
   }
 }
