@@ -33,6 +33,15 @@ SSH_KEY_CANDIDATES=(
 DEPLOY_SSH_PASSWORD="${DEPLOY_SSH_PASSWORD:-}"
 AUTH_MODE=""
 SELECTED_SSH_KEY=""
+RSYNC_FLAGS=(
+  -az
+  --delete
+  --checksum
+  --itemize-changes
+  --stats
+  --human-readable
+  --exclude=.DS_Store
+)
 
 try_ssh_key_auth() {
   local key_path="$1"
@@ -75,13 +84,19 @@ run_ssh() {
   fi
 }
 
-run_scp_to_remote() {
+run_rsync_to_remote() {
   local local_path="$1"
   local remote_path="$2"
+
+  if [[ ! -d "$local_path" ]]; then
+    echo "❌ 增量部署失败：本地目录不存在 -> $local_path"
+    exit 1
+  fi
+
   if [[ "$AUTH_MODE" == "key" ]]; then
-    scp -i "$SELECTED_SSH_KEY" -o StrictHostKeyChecking=accept-new -r $local_path "${SERVER_USER}@${SERVER_HOST}:${remote_path}"
+    rsync "${RSYNC_FLAGS[@]}" -e "ssh -i $SELECTED_SSH_KEY -o StrictHostKeyChecking=accept-new" "$local_path" "${SERVER_USER}@${SERVER_HOST}:${remote_path}"
   else
-    /usr/bin/expect -c "set timeout 1200; spawn bash -lc \"scp -r -o StrictHostKeyChecking=no $local_path ${SERVER_USER}@${SERVER_HOST}:${remote_path}\"; expect \"password:\"; send \"$DEPLOY_SSH_PASSWORD\r\"; expect eof"
+    /usr/bin/expect -c "set timeout 1200; spawn rsync -az --delete --checksum --itemize-changes --stats --human-readable --exclude=.DS_Store -e \"ssh -o StrictHostKeyChecking=no\" $local_path ${SERVER_USER}@${SERVER_HOST}:${remote_path}; expect \"password:\"; send \"$DEPLOY_SSH_PASSWORD\r\"; expect eof"
   fi
 }
 
@@ -97,22 +112,15 @@ fi
 echo "📦 步骤 1/3: 构建项目..."
 npm run build
 
-# 2. 清空服务器目录
-echo "🧹 步骤 2/3: 清空服务器目录..."
-run_ssh "rm -rf ${DEPLOY_PATH}/*"
+# 2. 增量同步文件（仅增量部署，按内容校验）
+echo "📤 步骤 2/3: 增量同步文件到服务器..."
+run_rsync_to_remote "dist/" "${DEPLOY_PATH}/"
 
-# 3. 上传文件
-echo "📤 步骤 3/3: 上传文件..."
-run_scp_to_remote "dist/*" "${DEPLOY_PATH}/"
-run_scp_to_remote "public/images/*" "${DEPLOY_PATH}/" 2>/dev/null || true
+# 3. 统一权限并重载 Nginx
+echo "🔐 步骤 3/3: 统一权限并重载 Nginx..."
+run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} + && find ${DEPLOY_PATH} -type f -exec chmod 644 {} + && nginx -t && systemctl reload nginx"
 
-# 4. 统一权限并重载 Nginx
-echo "🔐 统一权限并重载 Nginx..."
-run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} +"
-run_ssh "find ${DEPLOY_PATH} -type f -exec chmod 644 {} +"
-run_ssh "nginx -t && systemctl reload nginx"
-
-# 5. 基础可用性检查
+# 4. 基础可用性检查
 echo "🩺 校验线上可用性..."
 curl -sS -I https://www.tarmeer.com | head -n 1
 curl -sS -I https://www.tarmeer.com/images/designers/avatars/omar-farouk.jpg | head -n 1

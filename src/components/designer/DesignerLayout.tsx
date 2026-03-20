@@ -26,51 +26,16 @@ export default function DesignerLayout() {
     <div className="min-h-screen flex flex-col bg-[#faf9f7]">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-stone-200 bg-white px-4 md:px-10 py-3 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-6">
-          <Link to="/designer/dashboard" className="flex items-center gap-3 text-[#2c2c2c] cursor-pointer">
-            <div
-              className="size-8 rounded flex items-center justify-center"
-              style={{ backgroundColor: `${PRIMARY}20` }}
-            >
-              <LayoutDashboard className="w-5 h-5" style={{ color: PRIMARY }} />
-            </div>
-            <span className="text-lg font-bold">Tarmeer Dashboard</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <NavLink
-              to="/designer/dashboard"
-              className={({ isActive }) =>
-                `text-sm font-medium cursor-pointer ${isActive ? 'text-[#2c2c2c]' : 'text-stone-600 hover:text-[#2c2c2c]'}`
-              }
-            >
-              Dashboard
-            </NavLink>
-            <NavLink
-              to="/designer/projects"
-              className={({ isActive }) =>
-                `text-sm font-medium border-b-2 py-1 cursor-pointer ${isActive ? 'text-[#2c2c2c] border-[#b8864a]' : 'text-stone-600 hover:text-[#2c2c2c] border-transparent'}`
-              }
-            >
-              My Projects
-            </NavLink>
-            <NavLink
-              to="/designer/profile"
-              className={({ isActive }) =>
-                `text-sm font-medium cursor-pointer ${isActive ? 'text-[#2c2c2c]' : 'text-stone-600 hover:text-[#2c2c2c]'}`
-              }
-            >
-              Profile
-            </NavLink>
-          </nav>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg h-9 px-3 text-stone-600 hover:text-[#2c2c2c] text-sm font-medium transition cursor-pointer"
+        <Link to="/designer/dashboard" className="flex items-center gap-3 text-[#2c2c2c] cursor-pointer">
+          <div
+            className="size-8 rounded flex items-center justify-center"
+            style={{ backgroundColor: `${PRIMARY}20` }}
           >
-            <Home className="w-4 h-4" />
-            Home
-          </Link>
+            <LayoutDashboard className="w-5 h-5" style={{ color: PRIMARY }} />
+          </div>
+          <span className="text-lg font-bold">Tarmeer Dashboard</span>
+        </Link>
+        <div className="flex items-center gap-3">
           <Link
             to="/designer/profile"
             className="cursor-pointer"

@@ -175,7 +175,7 @@ export default function DesignerUploadPage() {
 
   // Upload progress state
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStageIndex, setUploadStageIndex] = useState(0);
+  const [, setUploadStageIndex] = useState(0);
   const [uploadStageLabel, setUploadStageLabel] = useState('');
   const [uploadStageIcon, setUploadStageIcon] = useState('upload');
   const [showProgress, setShowProgress] = useState(false);
