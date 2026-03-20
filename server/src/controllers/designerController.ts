@@ -184,6 +184,12 @@ export async function updateDesigner(req: any, res: any) {
     });
   } catch (error) {
     console.error('Update designer error:', error);
-    res.status(500).json({ error: 'Failed to update designer.' });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    // 数据包过大（通常是头像 base64 超出 MySQL 字段或请求体限制）
+    if (errMsg.includes('too large') || errMsg.includes('ER_DATA_TOO_LONG') || errMsg.includes('ECONNRESET')) {
+      res.status(413).json({ error: 'Profile photo is too large. Please choose a smaller image and try again.' });
+      return;
+    }
+    res.status(500).json({ error: `Failed to save profile: ${errMsg}` });
   }
 }

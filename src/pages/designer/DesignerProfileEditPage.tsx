@@ -63,7 +63,14 @@ export default function DesignerProfileEditPage() {
       });
       setSaved(true);
     } catch (err: any) {
-      setError(err.message || 'Failed to save profile.');
+      const msg: string = err.message || '';
+      if (msg.includes('413') || msg.includes('too large') || msg.includes('过大')) {
+        setError('Profile photo is too large. Please choose a smaller image and try again.');
+      } else if (msg.includes('Network error') || msg.includes('fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError(msg || 'Failed to save profile. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -166,6 +173,12 @@ export default function DesignerProfileEditPage() {
       return;
     }
 
+    // 文件大小上限 10MB（原始文件，压缩前）
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image file must be under 10MB. Please choose a smaller image.');
+      return;
+    }
+
     setError(null);
 
     try {
@@ -176,7 +189,7 @@ export default function DesignerProfileEditPage() {
       setForm((prev) => ({ ...prev, avatarUrl: compressedDataUrl }));
       setSaved(false);
     } catch (err) {
-      setError('Failed to process image. Please try another image.');
+      setError('Failed to process image. Please try a different image.');
       console.error('Image compression error:', err);
     }
   };
