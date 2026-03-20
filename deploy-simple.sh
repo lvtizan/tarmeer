@@ -108,7 +108,9 @@ run_scp_to_remote "public/images/*" "${DEPLOY_PATH}/" 2>/dev/null || true
 
 # 4. 统一权限并重载 Nginx
 echo "🔐 统一权限并重载 Nginx..."
-run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} \\\; && find ${DEPLOY_PATH} -type f -exec chmod 644 {} \\\; && nginx -t && systemctl reload nginx"
+run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} +"
+run_ssh "find ${DEPLOY_PATH} -type f -exec chmod 644 {} +"
+run_ssh "nginx -t && systemctl reload nginx"
 
 # 5. 基础可用性检查
 echo "🩺 校验线上可用性..."
