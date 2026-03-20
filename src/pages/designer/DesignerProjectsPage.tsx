@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useDesigner } from '../../contexts/DesignerContext';
 
 const PRIMARY = '#b8864a';
 
 export default function DesignerProjectsPage() {
+  const navigate = useNavigate();
   const { projects, deleteProject, isProjectsLoading, projectsError } = useDesigner();
   const hasProjects = projects.length > 0;
 
@@ -64,14 +65,18 @@ export default function DesignerProjectsPage() {
             {projects.map((p) => (
               <div
                 key={p.id}
-                className="bg-white rounded-lg border border-stone-200 overflow-hidden hover:shadow-lg transition"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/designer/upload/${p.id}`)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/designer/upload/${p.id}`); }}
+                className="bg-white rounded-lg border border-stone-200 overflow-hidden hover:shadow-lg hover:border-[#b8864a]/40 transition cursor-pointer group"
               >
-                <div className="aspect-video bg-stone-200">
+                <div className="aspect-video bg-stone-200 overflow-hidden">
                   {p.imageUrls[0] ? (
                     <img
                       src={p.imageUrls[0]}
                       alt={p.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-stone-400 text-sm">
@@ -81,7 +86,7 @@ export default function DesignerProjectsPage() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-1">
-                    <h3 className="font-semibold text-[#2c2c2c] truncate">{p.title}</h3>
+                    <h3 className="font-semibold text-[#2c2c2c] truncate group-hover:text-[#b8864a] transition-colors">{p.title}</h3>
                     <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium ${statusStyles[p.status] || statusStyles.draft}`}>
                       {p.status}
                     </span>
@@ -97,16 +102,16 @@ export default function DesignerProjectsPage() {
                     <p className="text-xs text-red-600 mb-3 line-clamp-2">{p.rejectionReason}</p>
                   )}
                   <div className="flex items-center gap-2">
-                    <Link
-                      to={`/designer/upload/${p.id}`}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg h-9 px-3 border border-stone-200 bg-white text-[#2c2c2c] text-sm font-medium hover:bg-stone-50 transition"
+                    <div
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg h-9 px-3 border border-stone-200 bg-white text-[#2c2c2c] text-sm font-medium group-hover:bg-stone-50 group-hover:border-[#b8864a]/30 transition"
                     >
                       <Pencil className="w-4 h-4" />
                       Edit
-                    </Link>
+                    </div>
                     <button
                       type="button"
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.stopPropagation();
                         if (window.confirm('Delete this project?')) {
                           await deleteProject(p.id);
                         }

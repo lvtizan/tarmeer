@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Trash2, ChevronDown, Calendar, ImagePlus, TriangleAlert, X, Info, Eye, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, ChevronDown, Calendar, ImagePlus, TriangleAlert, X, Info, Eye, GripVertical, ChevronLeft, ChevronRight, Loader2, CheckCircle2, Upload, Image, FileCheck } from 'lucide-react';
 import { useDesigner } from '../../contexts/DesignerContext';
 import SelectField from '../../components/form/SelectField';
 import {
@@ -32,6 +32,95 @@ type UploadNotice = {
   title: string;
   detail: string;
 };
+
+/* ─── Upload progress overlay ─── */
+type UploadStage = {
+  label: string;
+  icon: 'image' | 'upload' | 'check' | 'done';
+  progress: number; // target percentage for this stage
+};
+
+const UPLOAD_STAGES: UploadStage[] = [
+  { label: 'Preparing images...', icon: 'image', progress: 15 },
+  { label: 'Uploading project data...', icon: 'upload', progress: 50 },
+  { label: 'Processing on server...', icon: 'check', progress: 80 },
+  { label: 'Almost done...', icon: 'check', progress: 95 },
+];
+
+const SAVE_STAGES: UploadStage[] = [
+  { label: 'Saving draft...', icon: 'upload', progress: 40 },
+  { label: 'Processing...', icon: 'check', progress: 80 },
+  { label: 'Almost done...', icon: 'check', progress: 95 },
+];
+
+const StageIcon = ({ type, spinning }: { type: string; spinning?: boolean }) => {
+  const cls = `h-5 w-5 ${spinning ? 'animate-spin' : ''}`;
+  switch (type) {
+    case 'image': return <Image className={cls} />;
+    case 'upload': return <Upload className={cls} />;
+    case 'check': return <FileCheck className={cls} />;
+    case 'done': return <CheckCircle2 className={cls} />;
+    default: return <Loader2 className={cls} />;
+  }
+};
+
+function UploadProgressOverlay({
+  isVisible,
+  progress,
+  stageLabel,
+  stageIcon,
+  isPublish,
+}: {
+  isVisible: boolean;
+  progress: number;
+  stageLabel: string;
+  stageIcon: string;
+  isPublish: boolean;
+}) {
+  if (!isVisible) return null;
+  const displayProgress = Math.min(99, Math.round(progress));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="mx-4 w-full max-w-md rounded-3xl border border-stone-200 bg-white p-8 shadow-2xl">
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <div
+            className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl text-white"
+            style={{ backgroundColor: PRIMARY }}
+          >
+            <StageIcon type={stageIcon} spinning={stageIcon !== 'done'} />
+          </div>
+          <h3 className="text-lg font-bold text-[#2c2c2c]">
+            {isPublish ? 'Submitting Project' : 'Saving Draft'}
+          </h3>
+          <p className="mt-1 text-sm text-stone-500">{stageLabel}</p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mb-3">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
+            <div
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                width: `${displayProgress}%`,
+                backgroundColor: PRIMARY,
+              }}
+            />
+          </div>
+        </div>
+        <div className="text-center text-sm font-semibold" style={{ color: PRIMARY }}>
+          {displayProgress}%
+        </div>
+
+        {/* Subtle hint */}
+        <p className="mt-4 text-center text-xs text-stone-400">
+          Please do not close or refresh this page.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function reorderItems<T>(items: T[], fromIndex: number, toIndex: number) {
   if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= items.length || toIndex >= items.length) {
@@ -83,6 +172,67 @@ export default function DesignerUploadPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const [saveStatusText, setSaveStatusText] = useState('');
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+
+  // Upload progress state
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStageIndex, setUploadStageIndex] = useState(0);
+  const [uploadStageLabel, setUploadStageLabel] = useState('');
+  const [uploadStageIcon, setUploadStageIcon] = useState('upload');
+  const [showProgress, setShowProgress] = useState(false);
+  const [isPublishAction, setIsPublishAction] = useState(false);
+  const progressTimerRef = useRef<number | null>(null);
+
+  const startProgressSimulation = useCallback((publish: boolean) => {
+    const stages = publish ? UPLOAD_STAGES : SAVE_STAGES;
+    setIsPublishAction(publish);
+    setShowProgress(true);
+    setUploadStageIndex(0);
+    setUploadProgress(0);
+    setUploadStageLabel(stages[0].label);
+    setUploadStageIcon(stages[0].icon);
+
+    let currentStage = 0;
+    let currentProgress = 0;
+
+    const tick = () => {
+      const stage = stages[currentStage];
+      const target = stage.progress;
+      const increment = (target - currentProgress) * 0.12 + 0.3;
+      currentProgress = Math.min(target, currentProgress + increment);
+
+      setUploadProgress(currentProgress);
+      setUploadStageLabel(stage.label);
+      setUploadStageIcon(stage.icon);
+
+      if (currentProgress >= target - 0.5 && currentStage < stages.length - 1) {
+        currentStage += 1;
+        setUploadStageIndex(currentStage);
+      }
+
+      progressTimerRef.current = window.setTimeout(tick, 200);
+    };
+
+    progressTimerRef.current = window.setTimeout(tick, 100);
+  }, []);
+
+  const completeProgress = useCallback(async () => {
+    if (progressTimerRef.current) {
+      window.clearTimeout(progressTimerRef.current);
+    }
+    setUploadProgress(100);
+    setUploadStageLabel('Done!');
+    setUploadStageIcon('done');
+    await new Promise((r) => setTimeout(r, 600));
+    setShowProgress(false);
+  }, []);
+
+  const cancelProgress = useCallback(() => {
+    if (progressTimerRef.current) {
+      window.clearTimeout(progressTimerRef.current);
+    }
+    setShowProgress(false);
+    setUploadProgress(0);
+  }, []);
 
   // 点击外部关闭年份选择器
   useEffect(() => {
@@ -373,6 +523,9 @@ export default function DesignerUploadPage() {
       return;
     }
 
+    // Start progress overlay
+    startProgressSimulation(publish);
+
     const orderedImages = imageUrls.length === 0
       ? []
       : [imageUrls[coverIndex], ...imageUrls.filter((_, index) => index !== coverIndex)];
@@ -402,6 +555,9 @@ export default function DesignerUploadPage() {
         savedProjectId = saved.id;
       }
 
+      // Complete progress animation before navigating
+      await completeProgress();
+
       if (publish) {
         setSubmitSuccess('Project submitted successfully. It is now waiting for admin review.');
         navigate('/designer/projects');
@@ -413,6 +569,7 @@ export default function DesignerUploadPage() {
         }
       }
     } catch (error: any) {
+      cancelProgress();
       setSubmitError(error.message || 'Failed to save project.');
     } finally {
       setIsSubmitting(false);
@@ -698,6 +855,15 @@ export default function DesignerUploadPage() {
           </section>
         </aside>
       </form>
+
+      {/* Upload progress overlay */}
+      <UploadProgressOverlay
+        isVisible={showProgress}
+        progress={uploadProgress}
+        stageLabel={uploadStageLabel}
+        stageIcon={uploadStageIcon}
+        isPublish={isPublishAction}
+      />
 
       {previewIndex !== null && imageUrls[previewIndex] && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
