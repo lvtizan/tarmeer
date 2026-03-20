@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(lsof:*)",
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(timeout 90 npx playwright test --reporter=line)",
+      "Bash(./node_modules/.bin/playwright test:*)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(pkill:*)",
+      "Bash(chmod:*)",
+      "Bash(wc -l tests/project-upload*.spec.ts tests/test-upload.spec.ts)",
+      "Bash(du -sh tests/*)",
+      "Bash(mysql:*)",
+      "Bash(node -e \":*)",
+      "Bash(SECRET=\"dev_jwt_secret_min_32_chars_for_local_testing_only\" node -e \":*)",
+      "Bash(node -e \"const jwt = require\\(''jsonwebtoken''\\); const token = jwt.sign\\({ id: 2067, email: ''lvyiming@kp99.cn'' }, ''dev_jwt_secret_min_32_chars_for_local_testing_only'', { expiresIn: ''24h'' }\\); console.log\\(token\\);\")",
+      "Bash(ipconfig getifaddr:*)",
+      "Bash(git commit:*)",
+      "Bash(bash scripts/qa-smoke.sh)",
+      "Bash(DEPLOY_RULES_ACK=YES bash deploy-simple.sh)",
+      "Bash(DEPLOY_RULES_ACK=YES DEPLOY_SSH_KEY=~/.ssh/tarmeer_ecs bash deploy-simple.sh)",
+      "Bash(ssh:*)",
+      "Bash(./node_modules/.bin/tsc)",
+      "Bash(scp:*)"
+    ]
+  }
+}

@@ -10,7 +10,12 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  // 避免连接池缓存旧的schema信息
+  maxIdle: 0,
+  idleTimeout: 60000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
 export default pool;
