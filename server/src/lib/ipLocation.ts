@@ -115,46 +115,112 @@ export async function resolveLocationFromIp(ip: string): Promise<string | null> 
     return String(cached.location_label);
   }
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1800);
-    const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-      signal: controller.signal,
-      headers: { Accept: 'application/json' },
-    });
-    clearTimeout(timeout);
+  const providers: Array<() => Promise<{
+    countryCode?: string | null;
+    countryName?: string | null;
+    region?: string | null;
+    city?: string | null;
+  } | null>> = [
+    async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1800);
+      try {
+        const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
+          signal: controller.signal,
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) return null;
+        const data = await response.json() as any;
+        return {
+          countryCode: data.country_code,
+          countryName: data.country_name,
+          region: data.region || data.region_code,
+          city: data.city,
+        };
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+    async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1800);
+      try {
+        const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+          signal: controller.signal,
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) return null;
+        const data = await response.json() as any;
+        if (!data?.success) return null;
+        return {
+          countryCode: data.country_code,
+          countryName: data.country,
+          region: data.region,
+          city: data.city,
+        };
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+    async () => {
+      const token = normalize(process.env.IPINFO_TOKEN);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1800);
+      try {
+        const url = token
+          ? `https://ipinfo.io/${encodeURIComponent(ip)}/json?token=${encodeURIComponent(token)}`
+          : `https://ipinfo.io/${encodeURIComponent(ip)}/json`;
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) return null;
+        const data = await response.json() as any;
+        return {
+          countryCode: data.country,
+          countryName: data.country_name || null,
+          region: data.region,
+          city: data.city,
+        };
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+  ];
 
-    if (!response.ok) return null;
-    const data = await response.json() as any;
-    const locationLabel = buildLocationLabel({
-      countryCode: data.country_code,
-      countryName: data.country_name,
-      region: data.region || data.region_code,
-      city: data.city,
-    });
+  for (const provider of providers) {
+    try {
+      const geo = await provider();
+      if (!geo) continue;
+      const locationLabel = buildLocationLabel(geo);
 
-    await pool.execute(
-      `INSERT INTO visitor_ip_geo_cache (ip, location_label, country_code, country_name, region_name, city_name)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         location_label = VALUES(location_label),
-         country_code = VALUES(country_code),
-         country_name = VALUES(country_name),
-         region_name = VALUES(region_name),
-         city_name = VALUES(city_name),
-         updated_at = CURRENT_TIMESTAMP`,
-      [
-        ip,
-        locationLabel,
-        normalize(data.country_code) || null,
-        normalize(data.country_name) || null,
-        normalize(data.region || data.region_code) || null,
-        normalize(data.city) || null,
-      ]
-    );
+      await pool.execute(
+        `INSERT INTO visitor_ip_geo_cache (ip, location_label, country_code, country_name, region_name, city_name)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           location_label = VALUES(location_label),
+           country_code = VALUES(country_code),
+           country_name = VALUES(country_name),
+           region_name = VALUES(region_name),
+           city_name = VALUES(city_name),
+           updated_at = CURRENT_TIMESTAMP`,
+        [
+          ip,
+          locationLabel,
+          normalize(geo.countryCode) || null,
+          normalize(geo.countryName) || null,
+          normalize(geo.region) || null,
+          normalize(geo.city) || null,
+        ]
+      );
 
-    return locationLabel;
-  } catch {
-    return null;
+      if (locationLabel) {
+        return locationLabel;
+      }
+    } catch {
+      // Try next provider.
+    }
   }
+
+  return null;
 }
