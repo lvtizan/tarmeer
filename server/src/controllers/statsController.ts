@@ -1,14 +1,8 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
-
-// Get client IP
-function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.socket?.remoteAddress || 'unknown';
-}
+import { extractClientIp, formatVisitorLocation, sanitizePagePath } from '../lib/visitorTracking';
+import { ensureVisitorLogsTable } from '../lib/visitorLogStore';
+import { resolveLocationFromIp } from '../lib/ipLocation';
 
 // Record page view
 export async function recordPageView(req: Request, res: Response) {
@@ -23,7 +17,7 @@ export async function recordPageView(req: Request, res: Response) {
   }
   
   try {
-    const ip = getClientIp(req);
+    const ip = extractClientIp(req);
     const userAgent = req.headers['user-agent'] || '';
     const fingerprint = req.body.fingerprint || null;
     
@@ -98,7 +92,7 @@ export async function recordClick(req: Request, res: Response) {
   }
   
   try {
-    const ip = getClientIp(req);
+    const ip = extractClientIp(req);
     const today = new Date().toISOString().split('T')[0];
     
     // Insert click event
@@ -139,7 +133,7 @@ export async function batchRecord(req: Request, res: Response) {
   
   try {
     const today = new Date().toISOString().split('T')[0];
-    const ip = getClientIp(req);
+    const ip = extractClientIp(req);
     const userAgent = req.headers['user-agent']?.substring(0, 512) || '';
     
     for (const event of events) {
@@ -217,5 +211,35 @@ export async function getDesignerPublicStats(req: Request, res: Response) {
   } catch (error) {
     console.error('Error getting designer stats:', error);
     res.status(500).json({ error: 'Failed to get stats.' });
+  }
+}
+
+// Record a public website visit (for admin visitor analytics)
+export async function recordSiteVisit(req: Request, res: Response) {
+  try {
+    await ensureVisitorLogsTable();
+
+    const ip = extractClientIp(req);
+    let locationLabel = formatVisitorLocation(req);
+    if (locationLabel === 'Unknown') {
+      const resolved = await resolveLocationFromIp(ip);
+      if (resolved) {
+        locationLabel = resolved;
+      }
+    }
+    const pagePath = sanitizePagePath(req.body?.pagePath);
+    const referrer = typeof req.body?.referrer === 'string' ? req.body.referrer.slice(0, 512) : null;
+    const userAgent = (req.headers['user-agent'] || '').toString().slice(0, 512);
+
+    await pool.execute(
+      `INSERT INTO visitor_logs (viewer_ip, location_label, page_path, referrer, user_agent)
+       VALUES (?, ?, ?, ?, ?)`,
+      [ip || 'unknown', locationLabel, pagePath, referrer, userAgent]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error recording site visit:', error);
+    res.status(500).json({ error: 'Failed to record site visit.' });
   }
 }

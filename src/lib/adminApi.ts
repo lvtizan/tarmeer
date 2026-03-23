@@ -1,11 +1,29 @@
 // Admin API Client - separate token storage from designer auth
 import { safeGetItem, safeSetItem, safeRemoveItem } from './storage';
 
-const API_BASE = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD
-    ? `${window.location.origin}/api`
-    : 'http://localhost:3002/api'
-);
+function resolveApiBase() {
+  const envBase = import.meta.env.VITE_API_URL?.trim();
+  if (envBase) {
+    return envBase;
+  }
+
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3002/api';
+  }
+
+  if (import.meta.env.PROD) {
+    return `${window.location.origin}/api`;
+  }
+
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return `${window.location.protocol}//${host}:3002/api`;
+  }
+
+  return `${window.location.origin}/api`;
+}
+
+const API_BASE = resolveApiBase();
 
 const ADMIN_TOKEN_KEY = 'admin_token';
 
@@ -82,8 +100,26 @@ export interface AdminDesignerDetail {
   }>;
 }
 
+export interface VisitorOverview {
+  totalVisits: number;
+  uniqueIpCount: number;
+}
+
+export interface VisitorRecord {
+  ip: string;
+  location: string;
+  visitCount: number;
+  lastVisitedAt: string;
+  isPublicIp: boolean;
+}
+
 class AdminApiClient {
   private token: string | null = null;
+  private static readonly AUTH_PUBLIC_ENDPOINTS = new Set([
+    '/login',
+    '/install',
+    '/check-installation',
+  ]);
 
   setToken(token: string) {
     this.token = token;
@@ -102,6 +138,21 @@ class AdminApiClient {
     safeRemoveItem(ADMIN_TOKEN_KEY);
   }
 
+  private handleUnauthorized(endpoint: string, errorMessage: string) {
+    const isPublicEndpoint = AdminApiClient.AUTH_PUBLIC_ENDPOINTS.has(endpoint);
+    if (isPublicEndpoint) return;
+
+    const tokenRelated401 = /authentication token|invalid authentication token|admin id not found|admin not found|not authenticated|token/i.test(
+      errorMessage
+    );
+    if (!tokenRelated401) return;
+
+    this.clearToken();
+    if (typeof window !== 'undefined' && window.location.pathname !== '/admin/login') {
+      window.location.assign('/admin/login?reason=session_expired');
+    }
+  }
+
   private async request(endpoint: string, options: RequestInit = {}) {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -113,20 +164,40 @@ class AdminApiClient {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE}/admin${endpoint}`, {
-      ...options,
-      headers,
-    });
+    const requestUrl = `${API_BASE}/admin${endpoint}`;
+    let response: Response;
+    try {
+      response = await fetch(requestUrl, {
+        ...options,
+        headers,
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        const msg = err.message || '';
+        if (/fetch|network|failed|load/i.test(msg) || err.name === 'TypeError') {
+          throw new Error(
+            `无法连接后端接口 ${requestUrl}。请检查：1) 后端服务是否已启动（http://localhost:3002）；2) VITE_API_URL 是否配置正确；3) 是否被 CORS 或代理拦截。`
+          );
+        }
+        throw err;
+      }
+      throw new Error(`请求 ${requestUrl} 时发生未知错误。`);
+    }
 
     if (!response.ok) {
-      let errorMessage = 'Request failed';
+      let errorMessage = `HTTP ${response.status} ${response.statusText || 'Request failed'}`;
       try {
         const body = await response.json();
-        errorMessage = body.error || errorMessage;
+        if (body.error) {
+          errorMessage = `${body.error}（HTTP ${response.status}）`;
+        }
       } catch {
-        errorMessage = response.statusText || errorMessage;
+        // Keep status-based message when response body is not JSON.
       }
-      throw new Error(errorMessage);
+      if (response.status === 401) {
+        this.handleUnauthorized(endpoint, errorMessage);
+      }
+      throw new Error(`接口 /admin${endpoint} 请求失败：${errorMessage}`);
     }
 
     return response.json();
@@ -266,6 +337,20 @@ class AdminApiClient {
     if (params.adminId) query.set('adminId', String(params.adminId));
     if (params.action) query.set('action', params.action);
     return this.request(`/activity-logs?${query.toString()}`);
+  }
+
+  async getVisitorOverview(): Promise<VisitorOverview> {
+    return this.request('/visitors/overview');
+  }
+
+  async getVisitors(params: { page?: number; limit?: number } = {}): Promise<{
+    visitors: VisitorRecord[];
+    pagination: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.limit) query.set('limit', String(params.limit));
+    return this.request(`/visitors?${query.toString()}`);
   }
 
   // Admin management (super admin only)

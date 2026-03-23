@@ -82,6 +82,30 @@ CREATE TABLE IF NOT EXISTS click_events (
   FOREIGN KEY (designer_id) REFERENCES designers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Visitor logs (public website visits)
+CREATE TABLE IF NOT EXISTS visitor_logs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  viewer_ip VARCHAR(64) NOT NULL,
+  location_label VARCHAR(255) DEFAULT NULL,
+  page_path VARCHAR(255) DEFAULT NULL,
+  referrer VARCHAR(512) DEFAULT NULL,
+  user_agent VARCHAR(512) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_viewer_ip (viewer_ip),
+  INDEX idx_created (created_at),
+  INDEX idx_page_path (page_path)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS visitor_ip_geo_cache (
+  ip VARCHAR(64) PRIMARY KEY,
+  location_label VARCHAR(255) DEFAULT NULL,
+  country_code VARCHAR(8) DEFAULT NULL,
+  country_name VARCHAR(128) DEFAULT NULL,
+  region_name VARCHAR(128) DEFAULT NULL,
+  city_name VARCHAR(128) DEFAULT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Add display_order to designers table
 SET @add_display_order_column = (
   SELECT IF(

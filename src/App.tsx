@@ -31,13 +31,12 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminDesignersPage from './pages/admin/AdminDesignersPage';
 import AdminAdminsPage from './pages/admin/AdminAdminsPage';
 import AdminDesignerDetailPage from './pages/admin/AdminDesignerDetailPage';
+import AdminVisitorsPage from './pages/admin/AdminVisitorsPage';
 import { api } from './lib/api';
 
 function DesignerProtectedRoute({ children }: { children: ReactNode }) {
   const token = api.getToken();
-  const designer = typeof window !== 'undefined' ? localStorage.getItem('designer') : null;
-
-  if (!token || !designer) {
+  if (!token) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -52,6 +51,7 @@ function App() {
         <Route index element={<AdminDashboardPage />} />
         <Route path="designers" element={<AdminDesignersPage />} />
         <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
+        <Route path="visitors" element={<AdminVisitorsPage />} />
         <Route path="stats" element={<AdminDashboardPage />} />
         <Route path="admins" element={<AdminAdminsPage />} />
       </Route>

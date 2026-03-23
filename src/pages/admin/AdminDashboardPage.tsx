@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, CheckCircle, XCircle, Users } from 'lucide-react';
+import { Clock, CheckCircle, Users, Globe } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { formatCount, toNumber } from '../../lib/formatNumber';
@@ -38,6 +38,7 @@ export default function AdminDashboardPage() {
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
   const [topDesigners, setTopDesigners] = useState<TopDesigner[]>([]);
+  const [visitorUniqueIpCount, setVisitorUniqueIpCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -50,10 +51,14 @@ export default function AdminDashboardPage() {
 
   const loadData = async () => {
     try {
-      const result = await adminApi.getStatsOverview();
+      const [result, visitorOverview] = await Promise.all([
+        adminApi.getStatsOverview(),
+        adminApi.getVisitorOverview(),
+      ]);
       setOverview(result.overview);
       setDailyStats(result.dailyStats);
       setTopDesigners(result.topDesigners);
+      setVisitorUniqueIpCount(visitorOverview.uniqueIpCount);
     } catch (error) {
       console.error('Error loading stats:', error);
     } finally {
@@ -123,10 +128,13 @@ export default function AdminDashboardPage() {
         <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
           <div className="mb-3 flex items-center gap-3">
-            <XCircle className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Rejected</span>
+            <Globe className="w-6 h-6" style={{ color: PRIMARY }} />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Visitor IPs</span>
           </div>
-          <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.rejected_count)}</p>
+          <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(visitorUniqueIpCount)}</p>
+          <Link to="/admin/visitors" className="mt-3 inline-block text-sm font-semibold" style={{ color: PRIMARY }}>
+            View visitor list →
+          </Link>
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">

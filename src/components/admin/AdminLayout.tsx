@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart2, UserCog, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import Avatar from '../ui/Avatar';
 
@@ -8,6 +8,7 @@ const PRIMARY = '#b8864a';
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/designers', label: 'Designers', icon: Users, permission: 'can_approve' as const },
+  { to: '/admin/visitors', label: 'Visitors', icon: Globe, permission: 'can_view_stats' as const },
   { to: '/admin/stats', label: 'Statistics', icon: BarChart2, permission: 'can_view_stats' as const },
 ];
 

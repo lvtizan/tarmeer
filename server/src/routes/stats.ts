@@ -3,7 +3,8 @@ import {
   recordPageView,
   recordClick,
   batchRecord,
-  getDesignerPublicStats
+  getDesignerPublicStats,
+  recordSiteVisit
 } from '../controllers/statsController';
 
 const router = Router();
@@ -12,6 +13,7 @@ const router = Router();
 router.post('/page-view', recordPageView);
 router.post('/click', recordClick);
 router.post('/batch', batchRecord);
+router.post('/visit', recordSiteVisit);
 router.get('/designer/:id', getDesignerPublicStats);
 
 export default router;
