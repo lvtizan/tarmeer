@@ -33,6 +33,7 @@ import AdminAdminsPage from './pages/admin/AdminAdminsPage';
 import AdminDesignerDetailPage from './pages/admin/AdminDesignerDetailPage';
 import AdminVisitorsPage from './pages/admin/AdminVisitorsPage';
 import { api } from './lib/api';
+import SeoManager from './components/SeoManager';
 
 function DesignerProtectedRoute({ children }: { children: ReactNode }) {
   const token = api.getToken();
@@ -45,56 +46,59 @@ function DesignerProtectedRoute({ children }: { children: ReactNode }) {
 
 function App() {
   return (
-    <Routes>
-      {/* Admin Routes */}
-      <Route path="/admin" element={<AdminProvider><AdminLayout /></AdminProvider>}>
-        <Route index element={<AdminDashboardPage />} />
-        <Route path="designers" element={<AdminDesignersPage />} />
-        <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
-        <Route path="visitors" element={<AdminVisitorsPage />} />
-        <Route path="stats" element={<AdminDashboardPage />} />
-        <Route path="admins" element={<AdminAdminsPage />} />
-      </Route>
-      <Route path="/admin/login" element={<AdminProvider><AdminLoginPage /></AdminProvider>} />
-      <Route path="/admin/install" element={<AdminProvider><AdminInstallPage /></AdminProvider>} />
+    <>
+      <SeoManager />
+      <Routes>
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminProvider><AdminLayout /></AdminProvider>}>
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="designers" element={<AdminDesignersPage />} />
+          <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
+          <Route path="visitors" element={<AdminVisitorsPage />} />
+          <Route path="stats" element={<AdminDashboardPage />} />
+          <Route path="admins" element={<AdminAdminsPage />} />
+        </Route>
+        <Route path="/admin/login" element={<AdminProvider><AdminLoginPage /></AdminProvider>} />
+        <Route path="/admin/install" element={<AdminProvider><AdminInstallPage /></AdminProvider>} />
 
-      {/* Designer Routes */}
-      <Route path="/designer" element={<DesignerProtectedRoute><DesignerProvider><DesignerLayout /></DesignerProvider></DesignerProtectedRoute>}>
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<DesignerDashboardPage />} />
-        <Route path="profile" element={<DesignerProfileEditPage />} />
-        <Route path="projects" element={<DesignerProjectsPage />} />
-        <Route path="upload" element={<DesignerUploadPage />} />
-        <Route path="upload/:id" element={<DesignerUploadPage />} />
-      </Route>
+        {/* Designer Routes */}
+        <Route path="/designer" element={<DesignerProtectedRoute><DesignerProvider><DesignerLayout /></DesignerProvider></DesignerProtectedRoute>}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DesignerDashboardPage />} />
+          <Route path="profile" element={<DesignerProfileEditPage />} />
+          <Route path="projects" element={<DesignerProjectsPage />} />
+          <Route path="upload" element={<DesignerUploadPage />} />
+          <Route path="upload/:id" element={<DesignerUploadPage />} />
+        </Route>
 
-      {/* Public Routes */}
-      <Route path="/*" element={
-        <Layout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/designers" element={<DesignersPage />} />
-            <Route path="/designers/apply" element={<ApplyPage />} />
-            <Route path="/designers/:slug" element={<DesignerProfilePage />} />
-            <Route path="/designers/:slug/projects/:projectId" element={<DesignerProfileWithModalPage />} />
-            <Route path="/showrooms" element={<Navigate to="/materials" replace />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/login" element={<Navigate to="/auth" replace />} />
-            <Route path="/register" element={<Navigate to="/auth" replace />} />
-            <Route path="/materials" element={<ShowroomsPage />} />
-            <Route path="/materials/brands/:slug" element={<BrandPage />} />
-            <Route path="/materials/:category" element={<MaterialCategoryPage />} />
-            <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
-            <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-          </Routes>
-        </Layout>
-      } />
-    </Routes>
+        {/* Public Routes */}
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/designers" element={<DesignersPage />} />
+              <Route path="/designers/apply" element={<ApplyPage />} />
+              <Route path="/designers/:slug" element={<DesignerProfilePage />} />
+              <Route path="/designers/:slug/projects/:projectId" element={<DesignerProfileWithModalPage />} />
+              <Route path="/showrooms" element={<Navigate to="/materials" replace />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/login" element={<Navigate to="/auth" replace />} />
+              <Route path="/register" element={<Navigate to="/auth" replace />} />
+              <Route path="/materials" element={<ShowroomsPage />} />
+              <Route path="/materials/brands/:slug" element={<BrandPage />} />
+              <Route path="/materials/:category" element={<MaterialCategoryPage />} />
+              <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
+              <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+            </Routes>
+          </Layout>
+        } />
+      </Routes>
+    </>
   );
 }
 
