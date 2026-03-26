@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Share2 } from 'lucide-react';
 import { getDesignerBySlug, getDesignerProjects, type DesignerProject } from '../data/designers';
 import { WHATSAPP_LINK } from '../lib/constants';
+import { trackAnalyticsEvent } from '../lib/analytics';
 
 function shareProfile(name: string, url: string) {
   const text = `Meet ${name}, Tarmeer designer. View portfolio: ${url}`;
@@ -27,11 +28,7 @@ export default function DesignerProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const designer = slug ? getDesignerBySlug(slug) : null;
   const allProjects = slug ? getDesignerProjects(slug) : [];
-  const [selectedTag, setSelectedTag] = useMemo<[string | null, (tag: string | null) => void]>(() => {
-    let currentTag: string | null = null;
-    const setSelectedTag = (tag: string | null) => { currentTag = tag; };
-    return [currentTag, setSelectedTag];
-  }, []);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const uniqueTags = useMemo(() => {
     const set = new Set<string>();
@@ -43,6 +40,11 @@ export default function DesignerProfilePage() {
     if (!selectedTag) return allProjects;
     return allProjects.filter((p) => (p.tags ?? []).includes(selectedTag));
   }, [allProjects, selectedTag]);
+
+  useEffect(() => {
+    if (!designer) return;
+    trackAnalyticsEvent('view_designer_profile', { designer_slug: designer.slug, designer_name: designer.name });
+  }, [designer]);
 
   if (!designer) {
     return (
@@ -99,6 +101,7 @@ export default function DesignerProfilePage() {
                 href={WHATSAPP_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackAnalyticsEvent('click_whatsapp', { source: 'designer_profile_header', designer_slug: designer.slug })}
                 className="btn-primary text-white text-sm uppercase tracking-wider"
               >
                 Work with {designer.firstName}
@@ -206,6 +209,7 @@ export default function DesignerProfilePage() {
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackAnalyticsEvent('click_whatsapp', { source: 'designer_profile_footer', designer_slug: designer.slug })}
               className="btn-primary text-white px-8 py-4 text-sm uppercase tracking-wider"
             >
               Work with {designer.firstName}

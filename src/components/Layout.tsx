@@ -3,9 +3,11 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { WHATSAPP_LINK } from '../lib/constants';
 import { useVisitorTracking } from '../hooks/useVisitorTracking';
+import { useAnalyticsTracking } from '../hooks/useAnalyticsTracking';
 
 export default function Layout({ children }: { children: ReactNode }) {
   useVisitorTracking();
+  useAnalyticsTracking();
 
   return (
     <div className="min-h-screen flex flex-col">

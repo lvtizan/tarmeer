@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import PageContainer from '../components/PageContainer';
 import { Package, TrendingUp, Users, UserPlus, Store, Handshake } from 'lucide-react';
+import { api } from '../lib/api';
+import { trackAnalyticsEvent } from '../lib/analytics';
 
 const PRIMARY = '#b8864a';
 
@@ -27,12 +29,14 @@ const BENEFITS = [
 ];
 
 const STEPS = [
-  { title: 'Apply to Join', text: 'Submit your portfolio for review by our expert panel to ensure quality standards across the network.', icon: UserPlus },
-  { title: 'Showcase Profile', text: 'Once approved, create a stunning professional profile highlighting your best MENA region projects.', icon: Store },
-  { title: 'Get Projects', text: 'Start receiving matched project leads and access our exclusive supplier database instantly.', icon: Handshake },
+  { title: 'Free Registration', text: 'Create your account for free and submit your profile for review by our expert panel.', icon: UserPlus },
+  { title: 'Profile Approval', text: 'After approval, publish your professional profile and showcase your best MENA projects.', icon: Store },
+  { title: 'Start Getting Leads', text: 'Receive matched project opportunities and unlock supplier resources at no registration cost.', icon: Handshake },
 ];
 
 export default function ApplyPage() {
+  const applyTarget = api.getToken() ? '/designer/dashboard' : '/auth?tab=register';
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -48,29 +52,63 @@ export default function ApplyPage() {
             className="inline-block py-1.5 px-4 rounded-full text-sm font-bold tracking-wider uppercase mb-4"
             style={{ backgroundColor: `${PRIMARY}20`, color: PRIMARY, border: `1px solid ${PRIMARY}40` }}
           >
-            For Interior Designers
+            100% Free Registration
           </span>
           <h1 className="font-serif text-white text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-4">
-            Join the Tarmeer Designer Network
+            Free Join: Tarmeer Designer Network
           </h1>
           <p className="text-slate-200 text-lg sm:text-xl font-medium leading-relaxed max-w-2xl mx-auto mb-6">
-            Access Premium Chinese Supply Chains, Increase Your Project Volume, and Join the Top Design Community in MENA.
+            Register 100% free to access premium suppliers, quality project leads, and direct Tarmeer support.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth?tab=register" className="btn-primary inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 text-base lg:text-lg text-white">
-              Apply Now
-            </Link>
-            <a
-              href="#benefits"
-              className="inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 rounded-lg bg-white/10 text-white border border-white/20 font-medium hover:bg-white/20 transition"
+            <Link
+              to={applyTarget}
+              className="btn-primary inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 text-base lg:text-lg text-white"
+              onClick={() => trackAnalyticsEvent('apply_click', { placement: 'hero' })}
             >
-              Learn More
-            </a>
+              Free Apply Now
+            </Link>
           </div>
         </div>
       </section>
 
       <PageContainer className="py-12 sm:py-20">
+        {/* How It Works */}
+        <section className="mb-16 lg:mb-24 bg-stone-50 rounded-lg p-8 lg:p-12 border border-stone-200">
+          <div className="text-center mb-12">
+            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-4">
+              How It Works
+            </h2>
+            <p className="text-[#6b6b6b] text-lg max-w-2xl mx-auto">
+              Step 1 is free registration. Then we review, approve, and connect you with real opportunities.
+            </p>
+            <p className="mt-3 inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold" style={{ backgroundColor: `${PRIMARY}15`, color: PRIMARY }}>
+              Free to join. No registration fee.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-stone-200 z-0" />
+            {STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <div key={step.title} className="relative z-10 flex flex-col items-center text-center">
+                  <div
+                    className="w-24 h-24 rounded-full border-4 border-stone-100 flex items-center justify-center mb-6 shadow-sm bg-white"
+                    style={i === 2 ? { backgroundColor: PRIMARY, borderColor: 'transparent' } : {}}
+                  >
+                    <Icon
+                      className="w-10 h-10"
+                      style={{ color: i === 2 ? '#fff' : PRIMARY }}
+                    />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#2c2c2c] mb-2">{step.title}</h3>
+                  <p className="text-[#6b6b6b] text-sm px-4">{step.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Benefits */}
         <section id="benefits" className="mb-16 lg:mb-24">
           <div className="text-center mb-12">
@@ -107,39 +145,6 @@ export default function ApplyPage() {
           </div>
         </section>
 
-        {/* How It Works */}
-        <section className="mb-16 lg:mb-24 bg-stone-50 rounded-lg p-8 lg:p-12 border border-stone-200">
-          <div className="text-center mb-12">
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-4">
-              How It Works
-            </h2>
-            <p className="text-[#6b6b6b] text-lg max-w-2xl mx-auto">
-              A simple, streamlined process to accelerate your design career.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-stone-200 z-0" />
-            {STEPS.map((step, i) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.title} className="relative z-10 flex flex-col items-center text-center">
-                  <div
-                    className="w-24 h-24 rounded-full border-4 border-stone-100 flex items-center justify-center mb-6 shadow-sm bg-white"
-                    style={i === 2 ? { backgroundColor: PRIMARY, borderColor: 'transparent' } : {}}
-                  >
-                    <Icon
-                      className="w-10 h-10"
-                      style={{ color: i === 2 ? '#fff' : PRIMARY }}
-                    />
-                  </div>
-                  <h3 className="text-xl font-bold text-[#2c2c2c] mb-2">{step.title}</h3>
-                  <p className="text-[#6b6b6b] text-sm px-4">{step.text}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
         {/* CTA block */}
         <section className="mb-16">
           <div
@@ -156,10 +161,11 @@ export default function ApplyPage() {
                 Join hundreds of top designers who are already leveraging the Tarmeer network to source better and build faster.
               </p>
               <Link
-                to="/auth"
+                to={applyTarget}
                 className="btn-primary inline-flex items-center justify-center min-w-[200px] h-14 px-10 text-lg font-bold text-white"
+                onClick={() => trackAnalyticsEvent('apply_click', { placement: 'cta' })}
               >
-                Apply Now
+                Free Apply Now
               </Link>
             </div>
           </div>

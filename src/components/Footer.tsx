@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { GOOGLE_MAPS_URL, ADDRESS, INSTAGRAM_URL } from '../lib/constants';
 import { MapPin } from 'lucide-react';
+import { trackAnalyticsEvent } from '../lib/analytics';
 
 const footerNavLinks = [
   { to: '/', label: 'Home' },
@@ -72,6 +73,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
               href={whatsAppLink}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackAnalyticsEvent('click_whatsapp', { source: 'footer' })}
               className="text-sm text-white/80 hover:text-[#c6a065] transition block mb-3"
             >
               WhatsApp: +971 58 838 8922

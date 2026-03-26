@@ -3,6 +3,7 @@ import pool from '../config/database';
 import { extractClientIp, formatVisitorLocation, sanitizePagePath } from '../lib/visitorTracking';
 import { ensureVisitorLogsTable } from '../lib/visitorLogStore';
 import { resolveLocationFromIp } from '../lib/ipLocation';
+import { ensureAnalyticsEventsTable } from '../lib/analyticsEventStore';
 
 // Record page view
 export async function recordPageView(req: Request, res: Response) {
@@ -241,5 +242,42 @@ export async function recordSiteVisit(req: Request, res: Response) {
   } catch (error) {
     console.error('Error recording site visit:', error);
     res.status(500).json({ error: 'Failed to record site visit.' });
+  }
+}
+
+export async function recordAnalyticsEvent(req: Request, res: Response) {
+  const rawEventName = req.body?.eventName;
+  if (typeof rawEventName !== 'string' || rawEventName.trim().length === 0) {
+    return res.status(400).json({ error: 'eventName is required.' });
+  }
+
+  const eventName = rawEventName.trim().slice(0, 64);
+  const pagePath = sanitizePagePath(req.body?.pagePath);
+  const referrer = typeof req.body?.referrer === 'string'
+    ? req.body.referrer.slice(0, 512)
+    : (typeof req.headers.referer === 'string' ? req.headers.referer.slice(0, 512) : null);
+  const userAgent = (req.headers['user-agent'] || '').toString().slice(0, 512);
+  const payload = req.body?.payload && typeof req.body.payload === 'object' ? req.body.payload : null;
+
+  try {
+    await ensureAnalyticsEventsTable();
+
+    const ip = extractClientIp(req);
+    let locationLabel = formatVisitorLocation(req);
+    if (locationLabel === 'Unknown') {
+      const resolved = await resolveLocationFromIp(ip);
+      if (resolved) locationLabel = resolved;
+    }
+
+    await pool.execute(
+      `INSERT INTO analytics_events (event_name, page_path, viewer_ip, location_label, referrer, user_agent, payload)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [eventName, pagePath, ip || 'unknown', locationLabel, referrer, userAgent, payload ? JSON.stringify(payload) : null]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error recording analytics event:', error);
+    res.status(500).json({ error: 'Failed to record analytics event.' });
   }
 }

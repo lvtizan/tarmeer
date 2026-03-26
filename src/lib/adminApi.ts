@@ -113,6 +113,27 @@ export interface VisitorRecord {
   isPublicIp: boolean;
 }
 
+export interface AnalyticsOverview {
+  total_events: number;
+  unique_visitors: number;
+  page_views: number;
+  apply_clicks: number;
+  whatsapp_clicks: number;
+  contact_submits: number;
+}
+
+export interface AnalyticsEventRecord {
+  id: number;
+  event_name: string;
+  page_path: string | null;
+  viewer_ip: string | null;
+  location_label: string | null;
+  referrer: string | null;
+  user_agent: string | null;
+  payload: string | null;
+  created_at: string;
+}
+
 class AdminApiClient {
   private token: string | null = null;
   private static readonly AUTH_PUBLIC_ENDPOINTS = new Set([
@@ -351,6 +372,34 @@ class AdminApiClient {
     if (params.page) query.set('page', String(params.page));
     if (params.limit) query.set('limit', String(params.limit));
     return this.request(`/visitors?${query.toString()}`);
+  }
+
+  async getAnalyticsOverview(params: { startDate?: string; endDate?: string } = {}): Promise<{
+    overview: AnalyticsOverview;
+    topPages: Array<{ page_path: string; events: number }>;
+    dateRange: { start: string; end: string };
+  }> {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    return this.request(`/analytics/overview?${query.toString()}`);
+  }
+
+  async getAnalyticsEvents(params: {
+    page?: number;
+    limit?: number;
+    eventName?: string;
+    pagePath?: string;
+  } = {}): Promise<{
+    events: AnalyticsEventRecord[];
+    pagination: { page: number; limit: number; total: number; pages: number };
+  }> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.limit) query.set('limit', String(params.limit));
+    if (params.eventName) query.set('eventName', params.eventName);
+    if (params.pagePath) query.set('pagePath', params.pagePath);
+    return this.request(`/analytics/events?${query.toString()}`);
   }
 
   // Admin management (super admin only)

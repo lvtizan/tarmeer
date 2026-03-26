@@ -25,6 +25,7 @@ import {
   getActivityLogs
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
+import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import {
   authenticateAdmin,
   requireAdmin,
@@ -61,6 +62,8 @@ router.get('/stats/overview', requirePermission('can_view_stats'), getStatsOverv
 router.get('/activity-logs', getActivityLogs);
 router.get('/visitors/overview', requirePermission('can_view_stats'), getVisitorOverview);
 router.get('/visitors', requirePermission('can_view_stats'), listVisitors);
+router.get('/analytics/overview', requirePermission('can_view_stats'), getAnalyticsOverview);
+router.get('/analytics/events', requirePermission('can_view_stats'), listAnalyticsEvents);
 
 // Designer management
 router.get('/designers', getDesignersForAdmin);

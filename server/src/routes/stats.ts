@@ -4,7 +4,8 @@ import {
   recordClick,
   batchRecord,
   getDesignerPublicStats,
-  recordSiteVisit
+  recordSiteVisit,
+  recordAnalyticsEvent
 } from '../controllers/statsController';
 
 const router = Router();
@@ -14,6 +15,7 @@ router.post('/page-view', recordPageView);
 router.post('/click', recordClick);
 router.post('/batch', batchRecord);
 router.post('/visit', recordSiteVisit);
+router.post('/event', recordAnalyticsEvent);
 router.get('/designer/:id', getDesignerPublicStats);
 
 export default router;

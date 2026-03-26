@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Building2, Megaphone, MessageCircle, Store, MapPin, ArrowRight } from 'lucide-react';
 import PageContainer from '../components/PageContainer';
 import { WHATSAPP_LINK, ADDRESS, GOOGLE_MAPS_URL } from '../lib/constants';
+import { trackAnalyticsEvent } from '../lib/analytics';
 
 const PRIMARY = '#b8864a';
 
@@ -93,6 +94,7 @@ export default function ContactPage() {
                   href={WHATSAPP_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackAnalyticsEvent('click_whatsapp', { source: 'contact_partnership' })}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
                   style={{ backgroundColor: PRIMARY }}
                 >
@@ -101,6 +103,7 @@ export default function ContactPage() {
                 </a>
                 <a
                   href="mailto:partnership@tarmeer.com?subject=Showroom%20Alliance%20Partnership%20Inquiry"
+                  onClick={() => trackAnalyticsEvent('submit_contact_form', { source: 'contact_email_link' })}
                   className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-sm font-semibold text-[#2c2c2c] hover:bg-stone-100"
                 >
                   Email Partnership Team

@@ -32,6 +32,7 @@ import AdminDesignersPage from './pages/admin/AdminDesignersPage';
 import AdminAdminsPage from './pages/admin/AdminAdminsPage';
 import AdminDesignerDetailPage from './pages/admin/AdminDesignerDetailPage';
 import AdminVisitorsPage from './pages/admin/AdminVisitorsPage';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
 
@@ -55,6 +56,7 @@ function App() {
           <Route path="designers" element={<AdminDesignersPage />} />
           <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
           <Route path="visitors" element={<AdminVisitorsPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
           <Route path="stats" element={<AdminDashboardPage />} />
           <Route path="admins" element={<AdminAdminsPage />} />
         </Route>
