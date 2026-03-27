@@ -1,14 +1,16 @@
 {
   "name": "tarmeer-server",
-  "version": "1.0.0",
-  "description": "Tarmeer 4.0 Backend Server",
+  "version": "1.1.0",
+  "description": "Tarmeer 4.0 Backend Server with Enhanced Security",
   "main": "dist/app.js",
   "scripts": {
     "dev": "nodemon src/app.ts",
     "build": "rm -rf dist && tsc",
     "start": "node dist/app.js",
     "test": "npm run build && node --test dist/lib/*.test.js",
-    "test:smoke:public": "npm run build && node scripts/smoke-public-api.js"
+    "test:smoke:public": "npm run build && node scripts/smoke-public-api.js",
+    "generate-jwt": "ts-node scripts/generate-jwt-secret.ts",
+    "validate-config": "ts-node -e \"import('./dist/lib/jwtManager').then(m => m.validateJWTConfig())\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -21,7 +23,9 @@
     "iconv-lite": "^0.7.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.6.5",
-    "nodemailer": "^6.9.7"
+    "nodemailer": "^6.9.7",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

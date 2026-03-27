@@ -16,6 +16,7 @@ export const UPLOAD_MAX_RETRY_ATTEMPTS = 8;
 // Pagination
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_DESIGNERS_ON_HOME = 8;
+export const ADMIN_ANALYTICS_PAGE_SIZE = 50;
 
 // Validation
 export const MAX_NAME_LENGTH = 50;

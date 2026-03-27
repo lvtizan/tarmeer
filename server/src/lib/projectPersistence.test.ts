@@ -25,3 +25,16 @@ test('buildProjectPersistenceValues normalizes optional project fields for mysql
   assert.equal(result.tags, JSON.stringify([]));
   assert.equal(result.status, 'pending');
 });
+
+test('buildProjectPersistenceValues throws when project images are empty', () => {
+  assert.throws(
+    () =>
+      buildProjectPersistenceValues({
+        title: 'No image project',
+        description: 'Should fail',
+        images: [],
+        status: 'draft',
+      }),
+    /PROJECT_IMAGES_REQUIRED/,
+  );
+});

@@ -33,6 +33,8 @@ import AdminAdminsPage from './pages/admin/AdminAdminsPage';
 import AdminDesignerDetailPage from './pages/admin/AdminDesignerDetailPage';
 import AdminVisitorsPage from './pages/admin/AdminVisitorsPage';
 import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
+import CompaniesPage from './pages/CompaniesPage';
+import CompanyDetailPage from './pages/CompanyDetailPage';
 import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
 
@@ -96,6 +98,8 @@ function App() {
               <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/companies" element={<CompaniesPage />} />
+              <Route path="/companies/:id" element={<CompanyDetailPage />} />
             </Routes>
           </Layout>
         } />

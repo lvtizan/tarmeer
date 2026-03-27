@@ -24,6 +24,8 @@ type ProjectPersistenceValues = {
   status: string;
 };
 
+export const PROJECT_IMAGES_REQUIRED_ERROR = 'PROJECT_IMAGES_REQUIRED';
+
 function toNullableString(value: unknown) {
   if (value === undefined || value === null) {
     return null;
@@ -45,7 +47,27 @@ function toJsonArrayString(value: unknown) {
   return JSON.stringify(Array.isArray(value) ? value : []);
 }
 
+export function normalizeProjectImages(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter((item) => item.length > 0);
+}
+
+export function assertProjectHasImages(value: unknown): string[] {
+  const normalizedImages = normalizeProjectImages(value);
+  if (normalizedImages.length === 0) {
+    throw new Error(PROJECT_IMAGES_REQUIRED_ERROR);
+  }
+  return normalizedImages;
+}
+
 export function buildProjectPersistenceValues(input: ProjectPersistenceInput): ProjectPersistenceValues {
+  const normalizedImages = assertProjectHasImages(input.images);
+
   return {
     title: input.title,
     description: input.description,
@@ -54,7 +76,7 @@ export function buildProjectPersistenceValues(input: ProjectPersistenceInput): P
     area: toNullableString(input.area),
     year: toNullableString(input.year),
     cost: toNullableCost(input.cost),
-    images: toJsonArrayString(input.images),
+    images: toJsonArrayString(normalizedImages),
     tags: toJsonArrayString(input.tags),
     status: input.status,
   };

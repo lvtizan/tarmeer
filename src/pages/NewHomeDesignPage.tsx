@@ -223,10 +223,6 @@ export default function NewHomeDesignPage() {
           <div>
             <p className="text-xs sm:text-sm uppercase tracking-widest text-white/60 mb-2">Design Package</p>
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-white font-bold mb-2">New Home Full Case Design</h1>
-            <div className="inline-flex items-baseline gap-1 bg-[#b8864a] px-4 py-1.5 rounded-md">
-              <span className="text-2xl sm:text-3xl font-bold text-white">29</span>
-              <span className="text-white/90 text-sm">AED/m²</span>
-            </div>
             <p className="text-white/70 text-sm mt-3 max-w-lg hidden sm:block">Complete package: floor plans, 3D visuals, construction drawings, and material specifications.</p>
           </div>
         </div>

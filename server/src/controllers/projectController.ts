@@ -4,7 +4,11 @@ import { getProjectStatusForDesignerSubmit } from '../lib/projectReview';
 import { buildPublicProjectsListQuery } from '../lib/publicProjectsQuery';
 import { parseJsonField } from '../lib/parseJsonField';
 import { sanitizePublicProject } from '../lib/publicDesignerSerialization';
-import { buildProjectPersistenceValues } from '../lib/projectPersistence';
+import {
+  buildProjectPersistenceValues,
+  PROJECT_IMAGES_REQUIRED_ERROR,
+  assertProjectHasImages,
+} from '../lib/projectPersistence';
 
 function normalizeProject(project: any) {
   return {
@@ -41,6 +45,7 @@ export async function createProject(req: any, res: any) {
   try {
     const designer_id = req.user.id;
     const { title, description, style, location, area, year, cost, images, tags, status } = req.body;
+    const normalizedImages = assertProjectHasImages(images);
     const projectStatus = status === 'draft'
       ? getProjectStatusForDesignerSubmit(false)
       : getProjectStatusForDesignerSubmit(true);
@@ -52,7 +57,7 @@ export async function createProject(req: any, res: any) {
       area,
       year,
       cost,
-      images,
+      images: normalizedImages,
       tags,
       status: projectStatus,
     });
@@ -98,6 +103,9 @@ export async function createProject(req: any, res: any) {
       project: normalizeProject((project as any[])[0])
     });
   } catch (error) {
+    if (error instanceof Error && error.message === PROJECT_IMAGES_REQUIRED_ERROR) {
+      return res.status(400).json({ error: 'At least one project image is required.' });
+    }
     console.error('Create project error:', error);
     res.status(500).json({ error: 'Failed to submit project. Please try again.' });
   }
@@ -218,6 +226,7 @@ export async function updateProject(req: any, res: any) {
   try {
     const { id } = req.params;
     const { title, description, style, location, area, year, cost, images, tags, status } = req.body;
+    const normalizedImages = assertProjectHasImages(images);
     const nextStatus = status === 'draft'
       ? getProjectStatusForDesignerSubmit(false)
       : getProjectStatusForDesignerSubmit(true);
@@ -229,7 +238,7 @@ export async function updateProject(req: any, res: any) {
       area,
       year,
       cost,
-      images,
+      images: normalizedImages,
       tags,
       status: nextStatus,
     });
@@ -276,6 +285,9 @@ export async function updateProject(req: any, res: any) {
       project: normalizeProject((updatedProject as any[])[0])
     });
   } catch (error) {
+    if (error instanceof Error && error.message === PROJECT_IMAGES_REQUIRED_ERROR) {
+      return res.status(400).json({ error: 'At least one project image is required.' });
+    }
     console.error('Update project error:', error);
     res.status(500).json({ error: 'Failed to update project.' });
   }

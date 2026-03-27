@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Camera } from 'lucide-react';
 
 interface AvatarProps {
@@ -68,17 +69,25 @@ export default function Avatar({ name, avatarUrl, size = 'md', className = '', o
 
   const wrapperClass = editable ? 'cursor-pointer' : '';
 
-  // 如果有头像URL，显示图片
-  if (avatarUrl) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  // 如果有头像URL且未加载失败，显示图片（使用 img 标签以便检测加载失败）
+  if (avatarUrl && !imgFailed) {
     return (
-      <div 
-        className={`relative inline-flex ${wrapperClass} ${className}`} 
+      <div
+        className={`relative inline-flex ${wrapperClass} ${className}`}
         onClick={editable ? onClick : undefined}
       >
         <div
-          className={`${sizeClass} rounded-full bg-cover bg-center flex-shrink-0 border-2 border-white shadow-sm`}
-          style={{ backgroundImage: `url(${avatarUrl})` }}
-        />
+          className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm bg-stone-200`}
+        >
+          <img
+            src={avatarUrl}
+            alt={`${name} avatar`}
+            className="w-full h-full object-cover"
+            onError={() => setImgFailed(true)}
+          />
+        </div>
         {cameraButton}
       </div>
     );

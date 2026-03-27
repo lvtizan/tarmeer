@@ -1,9 +1,22 @@
+import { useEffect, useState } from 'react';
 import PageContainer from '../components/PageContainer';
 import DesignerCard from '../components/designers/DesignerCard';
-import { designersList } from '../data/designers';
+import { designersList, type Designer } from '../data/designers';
+import { loadOrderedDesignerSeeds } from '../lib/designerOrder';
 
 export default function DesignersPage() {
-  const designers = designersList;
+  const [designers, setDesigners] = useState<Designer[]>(designersList);
+
+  useEffect(() => {
+    let active = true;
+    loadOrderedDesignerSeeds().then((ordered) => {
+      if (!active) return;
+      setDesigners(ordered);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <PageContainer className="py-8 sm:py-12">

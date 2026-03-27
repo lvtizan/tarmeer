@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "deploy": "bash deploy.config.sh",
     "audit:images": "node scripts/audit-images.mjs",
-    "qa:smoke": "bash scripts/qa-smoke.sh"
+    "qa:smoke": "bash scripts/qa-smoke.sh",
+    "backend:up": "bash scripts/backend-up.sh",
+    "backend:health": "bash scripts/backend-health-check.sh"
   },
   "dependencies": {
     "framer-motion": "^12.0.6",

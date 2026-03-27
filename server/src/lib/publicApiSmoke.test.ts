@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   assertPublicDesignersPayload,
   assertPublicDesignerDetailPayload,
+  assertPublicCompaniesPayload,
+  assertPublicCompanyDetailPayload,
   assertPublicProjectsPayload,
   assertPublicProjectDetailPayload,
 } from './publicApiSmoke';
@@ -113,6 +115,66 @@ test('assertPublicProjectsPayload throws when list designer metadata is missing'
     },
     /designer_name/
   );
+});
+
+test('assertPublicCompaniesPayload accepts valid public companies payload', () => {
+  assert.doesNotThrow(() => {
+    assertPublicCompaniesPayload({
+      companies: [
+        {
+          id: 7,
+          slug: 'algedra',
+          name_en: 'Algedra Interior Design',
+          description: 'Luxury interior design studio.',
+          city: 'Dubai',
+          address: 'Business Bay, Dubai, UAE',
+          year_established: '2014',
+          website: 'https://algedra.ae',
+          instagram: 'https://www.instagram.com/algedradesign',
+          phone: '+971 52 811 1106',
+          email: 'hello@algedra.ae',
+          services: ['Interior Design'],
+          specialties: ['Residential'],
+          logo_url: '/images/uae-companies/logos/algedra.png',
+          cover_image: '/images/uae-companies/portfolio/algedra/1.png',
+          portfolio_images: ['/images/uae-companies/portfolio/algedra/1.png'],
+          project_count: 1,
+        },
+      ],
+      pagination: {
+        page: 1,
+        limit: 12,
+        total: 26,
+        totalPages: 3,
+      },
+    });
+  });
+});
+
+test('assertPublicCompanyDetailPayload validates company detail contract', () => {
+  assert.doesNotThrow(() => {
+    assertPublicCompanyDetailPayload({
+      company: {
+        id: 7,
+        slug: 'algedra',
+        name_en: 'Algedra Interior Design',
+        description: 'Luxury interior design studio.',
+        city: 'Dubai',
+        address: 'Business Bay, Dubai, UAE',
+        year_established: '2014',
+        website: 'https://algedra.ae',
+        instagram: 'https://www.instagram.com/algedradesign',
+        phone: '+971 52 811 1106',
+        email: 'hello@algedra.ae',
+        services: ['Interior Design'],
+        specialties: ['Residential'],
+        logo_url: '/images/uae-companies/logos/algedra.png',
+        cover_image: '/images/uae-companies/portfolio/algedra/1.png',
+        portfolio_images: ['/images/uae-companies/portfolio/algedra/1.png'],
+        project_count: 1,
+      },
+    });
+  });
 });
 
 test('assertPublicDesignerDetailPayload validates detail contract', () => {

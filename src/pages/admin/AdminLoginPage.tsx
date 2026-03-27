@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LayoutDashboard } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import PasswordInput from '../../components/admin/PasswordInput';
@@ -7,12 +7,20 @@ import PasswordInput from '../../components/admin/PasswordInput';
 const PRIMARY = '#b8864a';
 
 export default function AdminLoginPage() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, admin, isInstalled, isLoading: contextLoading } = useAdmin();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'session_expired') {
+      setError('登录已失效，请重新登录。');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (admin) {

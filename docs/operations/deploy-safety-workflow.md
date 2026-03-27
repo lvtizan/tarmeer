@@ -1,83 +1,76 @@
-# Tarmeer 部署前必读与执行流程
+# Deployment Safety Workflow
 
-最后更新：2026-03-20
+Last updated: 2026-03-26
 
-## 用途
+## Mandatory Rules
 
-这份文档用于约束线上部署，避免以下问题再次出现：
+1. Always ask the user for explicit publish approval before any deploy.
+2. Read this document before deploying and confirm with `DEPLOY_RULES_ACK=YES`.
+3. Never upload hashed assets (`/assets/*.js`, `/assets/*.css`) to the web root.
+4. Keep remote structure identical to local `dist/` structure.
+5. After deploy, verify every asset referenced by `dist/index.html` returns HTTP 200.
 
-- 图片 `403 Forbidden`
-- 首页白屏或 `500`（`index.html` / `assets` 不一致）
-- 半包上传导致新旧资源混用
-
-## 部署前必须先读
-
-部署脚本 `deploy-simple.sh` 会强制检查阅读确认。  
-未确认时会直接中止部署。
-
-先阅读：
+## Required Command
 
 ```bash
-cat docs/operations/deploy-safety-workflow.md
+DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh
 ```
 
-阅读后再执行：
+- `DEPLOY_RULES_ACK=YES`: confirms rules were read.
+- `DEPLOY_USER_APPROVED=YES`: confirms user approved this release.
 
+## Incremental Deploy Rules
+
+1. Build first: `npm run build`
+2. Sync `dist/` to remote deploy path: `/tarmeer/tarmeer_web_portal/`
+3. Do not manually copy only `index.html` unless matching new `/assets/*` files are also uploaded into `/assets/`
+4. Prefer rsync with checksums over manual scp to avoid mismatched versions
+
+## Pre-Deploy Checklist
+
+- User approved deployment in the current conversation
+- Rule file reviewed
+- Working tree has intended changes only
+- Build completed successfully
+
+## Post-Deploy Checklist
+
+- Homepage returns 200
+- Critical static asset(s) return 200
+- All JS/CSS refs extracted from `dist/index.html` return 200
+- Core admin route opens: `/admin/visitors`
+- **Avatar images return 200** (not 403) - verify at least one: `/images/designers/avatars/omar-farouk.jpg`
+
+## File Permissions (CRITICAL)
+
+### The Problem
+Static assets (images, fonts) must be readable by nginx. Files with `600` permissions cause 403 Forbidden.
+
+### Automatic Fix
+The deploy script automatically fixes permissions after rsync:
 ```bash
-DEPLOY_RULES_ACK=YES bash deploy-simple.sh
+find /tarmeer/tarmeer_web_portal -type d -exec chmod 755 {} +
+find /tarmeer/tarmeer_web_portal -type f -exec chmod 644 {} +
 ```
 
-## 强制规则
+### Manual Verification (if needed)
+```bash
+ssh root@47.91.108.104 "ls -la /tarmeer/tarmeer_web_portal/images/designers/avatars/ | head -3"
+# Should show: -rw-r--r-- (644) NOT -rw------- (600)
+```
 
-1. 未收到“允许上线”明确指令，不得部署生产。
-2. 仅允许通过 `deploy-simple.sh` 部署，禁止临时手工 `scp` 覆盖。
-3. 生产部署只允许 `rsync` 增量同步；禁止“先清空远端再全量上传”。
-4. 部署包来源必须是本地最新构建产物 `dist/`。
-5. 上传后必须统一权限：
-   - 目录：`755`
-   - 文件：`644`
-6. 部署后必须做线上可用性检查，任一失败即视为部署失败并立刻修复。
+### Local Prevention
+Ensure your local `dist/` has correct permissions before building:
+```bash
+chmod -R 755 dist/
+find dist/ -type f -exec chmod 644 {} +
+```
 
-## 标准执行顺序
+## Rollback Principle
 
-1. 本地检查（建议至少做）：
-   - `npm run qa:smoke`
-   - `npm run build`
-2. 执行部署脚本（含增量同步、权限修复、Nginx reload、健康检查）：
-   - `DEPLOY_RULES_ACK=YES bash deploy-simple.sh`
-3. 人工打开线上页面做一次强刷确认（`Cmd+Shift+R`）。
+If any check fails after deploy:
 
-## 脚本当前行为（deploy-simple.sh）
-
-1. 构建：`npm run build`
-2. 增量上传：`rsync -avz --delete dist/ -> /tarmeer/tarmeer_web_portal/`
-3. 服务器修复权限并重载 Nginx
-4. 基础健康检查：
-   - `https://www.tarmeer.com`
-   - `https://www.tarmeer.com/images/designers/avatars/omar-farouk.jpg`
-
-## 部署前检查清单
-
-- [ ] 已通读本文件
-- [ ] 已收到明确上线指令
-- [ ] 本地构建通过
-- [ ] 无不相关高风险改动混入
-- [ ] 当前分支与目标提交确认无误
-
-## 部署后检查清单
-
-- [ ] 首页返回 `200`
-- [ ] 关键资源 URL 返回 `200`
-- [ ] 图片资源返回 `200`
-- [ ] 浏览器强刷后页面正常加载
-
-## 故障快速处理
-
-若线上异常，按顺序处理：
-
-1. 重新上传 `dist/index.html` 与 `dist/assets`
-2. 若涉及静态素材，补传 `images/`
-3. 再次执行权限修复：
-   - `find /tarmeer/tarmeer_web_portal -type d -exec chmod 755 {} +`
-   - `find /tarmeer/tarmeer_web_portal -type f -exec chmod 644 {} +`
-4. 重新执行健康检查，全部 `200` 后再对外确认恢复
+1. Stop further changes
+2. Restore last known good `dist/` package
+3. Re-run asset 200 checks
+4. Report root cause and fix before next publish

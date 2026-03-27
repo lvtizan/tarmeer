@@ -6,8 +6,6 @@ const PACKAGES = [
     title: 'New Home Full Case Design',
     description:
       'Complete design package for your new home: floor plans, 3D visuals, full construction drawings, and material specs — all in one place.',
-    price: '29',
-    unit: 'AED/m²',
     cta: 'Get Started',
     link: '/services/new-home-design',
     features: ['Floor plans & 3D visuals', 'Full construction drawings', 'Material specifications'],
@@ -16,8 +14,6 @@ const PACKAGES = [
     title: 'Soft Decoration Design',
     description:
       'Transform your space with interior styling: layout, 720° virtual tour, mood boards, lighting and color plans, and product lists.',
-    price: '22',
-    unit: 'AED/m²',
     cta: 'Get Started',
     link: '/services/soft-decoration',
     features: ['Layout & 720° virtual tour', 'Mood boards & visuals', 'Lighting, color & product list'],
@@ -70,12 +66,6 @@ export default function PricingSection() {
                     </li>
                   ))}
                 </ul>
-                <div className="flex flex-wrap items-baseline gap-1 mb-6">
-                  <span className="font-semibold text-2xl sm:text-3xl text-[#2c2c2c]">
-                    {pkg.price}
-                  </span>
-                  <span className="text-sm text-[#6b6b6b]">{pkg.unit}</span>
-                </div>
                 <Link
                   to={pkg.link}
                   className="btn-primary block w-full text-center text-white"

@@ -30,21 +30,19 @@ interface DesignerSeed extends Designer {
 }
 
 function coverPath(index: number) {
-  const logicalIndex = index - 1;
-  const sourceIndex = (logicalIndex % 25) + 1;
-  const variantIndex = Math.floor(logicalIndex / 25) + 1;
-  const physicalIndex = (sourceIndex - 1) * 3 + variantIndex;
+  // 总共只有75个封面图片，使用循环来确保不超出范围
+  const totalAvailableCovers = 75;
+  const safeIndex = ((index - 1) % totalAvailableCovers) + 1;
 
-  return `/images/designers/projects/covers/cover-${String(physicalIndex).padStart(3, '0')}.jpg`;
+  return `/images/designers/projects/covers/cover-${String(safeIndex).padStart(3, '0')}.jpg`;
 }
 
 function detailPath(index: number, variant: number) {
-  const logicalIndex = index - 1;
-  const sourceIndex = (logicalIndex % 25) + 1;
-  const variantIndex = Math.floor(logicalIndex / 25) + 1;
-  const physicalIndex = (sourceIndex - 1) * 3 + variantIndex;
+  // 总共只有75个封面图片，使用循环来确保不超出范围
+  const totalAvailableCovers = 75;
+  const safeIndex = ((index - 1) % totalAvailableCovers) + 1;
 
-  return `/images/designers/projects/details-v2/cover-${String(physicalIndex).padStart(3, '0')}-${variant}.jpg`;
+  return `/images/designers/projects/details-v2/cover-${String(safeIndex).padStart(3, '0')}-${variant}.jpg`;
 }
 
 function designerImageSet(designerIndex: number, count = 5) {

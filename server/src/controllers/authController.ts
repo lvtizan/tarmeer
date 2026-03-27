@@ -5,6 +5,7 @@ import config from '../config';
 import { sendDesignerRegistrationEmail, sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
 import { buildRegisterEmailStatus } from '../lib/registerEmailPolicy';
 import { buildRegistrationAvailabilityResult } from '../lib/registrationAvailability';
+import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com',
@@ -107,8 +108,8 @@ export async function register(req: any, res: any) {
     const { token: verificationToken, expires: verificationExpires } = generateVerificationToken();
     
     const [result] = await pool.execute(
-      'INSERT INTO designers (email, password, full_name, phone, city, verification_token, verification_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [email, hashedPassword, name, phone || null, normalizeCity(city), verificationToken, verificationExpires]
+      'INSERT INTO designers (email, password, full_name, phone, city, verification_token, verification_expires, status, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [email, hashedPassword, name, phone || null, normalizeCity(city), verificationToken, verificationExpires, 'pending', 0]
     );
     
     const designerId = (result as any).insertId;
@@ -272,42 +273,47 @@ export async function resendVerification(req: any, res: any) {
 export async function login(req: any, res: any) {
   try {
     const { email, password } = req.body;
-    
+
     const [designer] = await pool.execute(
       'SELECT * FROM designers WHERE email = ?',
       [email]
     );
-    
+
     if ((designer as any[]).length === 0) {
+      recordAuthFailure(req, res, () => {}); // 记录失败尝试
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
-    
+
     const user = (designer as any[])[0];
 
     if (user.deleted_at) {
       return res.status(403).json({ error: 'Designer account is deleted.' });
     }
-    
+
     if (!user.email_verified) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Please verify your email address first.',
         needVerification: true,
         email: user.email
       });
     }
-    
+
     const isValid = await bcrypt.compare(password, user.password);
-    
+
     if (!isValid) {
+      recordAuthFailure(req, res, () => {}); // 记录失败尝试
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
-    
+
+    // 登录成功，清除失败尝试记录
+    recordAuthSuccess(req, res, () => {});
+
     const token = jwt.sign(
       { id: user.id, email: user.email },
       config.jwt.secret,
       { expiresIn: '7d' }
     );
-    
+
     res.json({
       token,
       designer: sanitizeDesignerSession(user)

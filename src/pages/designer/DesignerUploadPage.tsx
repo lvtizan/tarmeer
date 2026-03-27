@@ -24,6 +24,23 @@ const STYLES = [
   { value: 'industrial', label: 'Industrial' },
 ];
 
+const RENOVATION_TAG_OPTIONS = [
+  'Apartment',
+  'Villa',
+  'Bathroom',
+  'Kitchen',
+  'Living',
+  'Bedroom',
+  'Majlis',
+  'Dining',
+  'Workspace',
+  'Outdoor',
+  'Lighting',
+  'Storage',
+  'Renovation',
+  'Materials',
+];
+
 // 生成年份列表
 const YEARS = Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => new Date().getFullYear() + 1 - i);
 
@@ -158,6 +175,7 @@ export default function DesignerUploadPage() {
     year: String(new Date().getFullYear()),
   });
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [imageFingerprints, setImageFingerprints] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -260,6 +278,7 @@ export default function DesignerUploadPage() {
         year: existing.year,
       });
       setImageUrls(existing.imageUrls.length ? existing.imageUrls : []);
+      setSelectedTags(existing.productIds.length ? existing.productIds : []);
       setImageFingerprints(existing.imageUrls.length ? existing.imageUrls.map(() => '') : []);
     }
   }, [existing]);
@@ -276,6 +295,9 @@ export default function DesignerUploadPage() {
       }
       if (Array.isArray(parsed?.imageUrls)) {
         setImageUrls(parsed.imageUrls);
+      }
+      if (Array.isArray(parsed?.selectedTags)) {
+        setSelectedTags(parsed.selectedTags.map((tag: unknown) => String(tag)));
       }
       if (Array.isArray(parsed?.imageFingerprints)) {
         setImageFingerprints(parsed.imageFingerprints);
@@ -306,6 +328,7 @@ export default function DesignerUploadPage() {
           JSON.stringify({
             projectForm,
             imageUrls,
+            selectedTags,
             imageFingerprints,
             coverIndex,
             savedAt: Date.now(),
@@ -324,7 +347,7 @@ export default function DesignerUploadPage() {
         window.clearTimeout(autosaveTimerRef.current);
       }
     };
-  }, [autosaveKey, projectForm, imageUrls, imageFingerprints, coverIndex]);
+  }, [autosaveKey, projectForm, imageUrls, selectedTags, imageFingerprints, coverIndex]);
 
   const showUploadNotice = (notice: UploadNotice) => {
     setUploadNotice(notice);
@@ -345,6 +368,12 @@ export default function DesignerUploadPage() {
     setImageUrls((prev) => prev.filter((_, i) => i !== index));
     setImageFingerprints((prev) => prev.filter((_, i) => i !== index));
     if (coverIndex >= index && coverIndex > 0) setCoverIndex((c) => c - 1);
+  };
+
+  const toggleProjectTag = (tag: string) => {
+    setSelectedTags((prev) => (
+      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]
+    ));
   };
 
   const moveImage = (fromIndex: number, toIndex: number) => {
@@ -508,8 +537,8 @@ export default function DesignerUploadPage() {
     setSubmitError(null);
     setSubmitSuccess(null);
 
-    if (publish && imageUrls.length === 0) {
-      setSubmitError('Please upload at least one real project image before submitting for review.');
+    if (imageUrls.length === 0) {
+      setSubmitError('Please upload at least one real project image before saving.');
       setIsSubmitting(false);
       return;
     }
@@ -538,7 +567,7 @@ export default function DesignerUploadPage() {
       area: projectForm.area,
       year: projectForm.year,
       imageUrls: orderedImages,
-      productIds: [],
+      productIds: selectedTags,
       status: publish ? 'pending' as const : 'draft' as const,
     };
 
@@ -773,6 +802,29 @@ export default function DesignerUploadPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-semibold text-stone-700">Renovation Tags</label>
+              <p className="mb-2 text-xs text-stone-500">Select tags to classify this project (optional).</p>
+              <div className="flex flex-wrap gap-2">
+                {RENOVATION_TAG_OPTIONS.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleProjectTag(tag)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        active
+                          ? 'border-[#b8864a] bg-[#b8864a] text-white'
+                          : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-[#b8864a]/45'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -1,3 +1,28 @@
+const ALLOWED_SORT_FIELDS = [
+  'id',
+  'email',
+  'full_name',
+  'phone',
+  'city',
+  'status',
+  'is_approved',
+  'display_order',
+  'created_at',
+  'updated_at',
+  'profile_views',
+] as const;
+
+const SORT_FIELD_MAPPING: Record<string, string> = {
+  profile_views: 'total_profile_views',
+};
+
+function validateSortField(sortBy: string): string {
+  if (!ALLOWED_SORT_FIELDS.includes(sortBy as any)) {
+    throw new Error(`Invalid sort field: ${sortBy}. Allowed fields: ${ALLOWED_SORT_FIELDS.join(', ')}`);
+  }
+  return SORT_FIELD_MAPPING[sortBy] || `d.${sortBy}`;
+}
+
 type BuildAdminDesignersListQueryParams = {
   whereClause: string;
   safeSortBy: string;
@@ -13,10 +38,10 @@ export function buildAdminDesignersListQuery({
   safeLimit,
   offset,
 }: BuildAdminDesignersListQueryParams) {
-  const orderBy = safeSortBy === 'profile_views' ? 'total_profile_views' : `d.${safeSortBy}`;
+  const orderBy = validateSortField(safeSortBy);
 
   return {
-    sql: `SELECT 
+    sql: `SELECT
         d.id,
         d.email,
         d.full_name,
@@ -30,8 +55,6 @@ export function buildAdminDesignersListQuery({
         d.display_order,
         d.rejection_reason,
         d.deleted_at,
-        d.deleted_by_admin_id,
-        d.delete_reason,
         d.created_at,
         d.updated_at,
         COALESCE(SUM(ds.profile_views), 0) as total_profile_views,

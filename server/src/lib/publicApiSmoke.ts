@@ -39,6 +39,26 @@ function assertProjectShape(project: any) {
   assert.ok(Array.isArray(project.tags));
 }
 
+function assertCompanyShape(company: any) {
+  assert.ok(typeof company.id === 'number' || typeof company.id === 'string');
+  assertStringField(company.slug, 'slug');
+  assertStringField(company.name_en, 'name_en');
+  assertStringField(company.description, 'description');
+  assertStringField(company.city, 'city');
+  assertStringField(company.address, 'address');
+  assertStringField(company.year_established, 'year_established');
+  assertStringField(company.website, 'website');
+  assertStringField(company.instagram, 'instagram');
+  assertStringField(company.phone, 'phone');
+  assertStringField(company.email, 'email');
+  assert.ok(Array.isArray(company.services));
+  assert.ok(Array.isArray(company.specialties));
+  assertStringField(company.logo_url, 'logo_url');
+  assertStringField(company.cover_image, 'cover_image');
+  assert.ok(Array.isArray(company.portfolio_images));
+  assert.equal(typeof company.project_count, 'number');
+}
+
 function assertDesignerDetailShape(designer: any) {
   assertDesignerShape(designer);
 }
@@ -65,6 +85,15 @@ export function assertPublicProjectsPayload(payload: any) {
   }
 }
 
+export function assertPublicCompaniesPayload(payload: any) {
+  assert.ok(Array.isArray(payload?.companies));
+  assertPaginationShape(payload?.pagination);
+
+  for (const company of payload.companies) {
+    assertCompanyShape(company);
+  }
+}
+
 export function assertPublicDesignerDetailPayload(payload: any) {
   assert.ok(payload?.designer);
   assertDesignerDetailShape(payload.designer);
@@ -78,4 +107,9 @@ export function assertPublicDesignerDetailPayload(payload: any) {
 export function assertPublicProjectDetailPayload(payload: any) {
   assert.ok(payload?.project);
   assertProjectDetailShape(payload.project);
+}
+
+export function assertPublicCompanyDetailPayload(payload: any) {
+  assert.ok(payload?.company);
+  assertCompanyShape(payload.company);
 }

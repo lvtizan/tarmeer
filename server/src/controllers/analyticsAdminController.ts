@@ -1,15 +1,27 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import pool from '../config/database';
 import { ensureAnalyticsEventsTable } from '../lib/analyticsEventStore';
 
-function toDateString(input: unknown) {
+interface AnalyticsQueryParams {
+  endDate?: string;
+  startDate?: string;
+}
+
+interface AnalyticsEventsQueryParams {
+  page?: string;
+  limit?: string;
+  eventName?: string;
+  pagePath?: string;
+}
+
+function toDateString(input: unknown): string {
   if (typeof input !== 'string') return '';
   const value = input.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
   return value;
 }
 
-export async function getAnalyticsOverview(req: any, res: Response) {
+export async function getAnalyticsOverview(req: Request<{}, {}, {}, AnalyticsQueryParams>, res: Response): Promise<void> {
   const end = toDateString(req.query.endDate) || new Date().toISOString().slice(0, 10);
   const start = toDateString(req.query.startDate) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -40,13 +52,23 @@ export async function getAnalyticsOverview(req: any, res: Response) {
     const [topPagesRows] = await pool.execute(
       `SELECT
         page_path,
-        COUNT(*) AS events
+        COUNT(*) AS page_views,
+        COUNT(DISTINCT CASE
+          WHEN viewer_ip IS NOT NULL
+           AND viewer_ip <> ''
+           AND viewer_ip <> 'unknown'
+           AND viewer_ip <> '127.0.0.1'
+           AND viewer_ip <> '::1'
+           AND viewer_ip <> '::ffff:127.0.0.1'
+          THEN viewer_ip
+        END) AS visitors
        FROM analytics_events
        WHERE DATE(created_at) BETWEEN ? AND ?
+         AND event_name = 'page_view'
          AND page_path IS NOT NULL
          AND page_path <> ''
        GROUP BY page_path
-       ORDER BY events DESC
+       ORDER BY visitors DESC, page_views DESC
        LIMIT 10`,
       [start, end]
     );
@@ -69,7 +91,7 @@ export async function getAnalyticsOverview(req: any, res: Response) {
   }
 }
 
-export async function listAnalyticsEvents(req: any, res: Response) {
+export async function listAnalyticsEvents(req: Request<{}, {}, {}, AnalyticsEventsQueryParams>, res: Response): Promise<void> {
   const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
   const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '50'), 10) || 50));
   const offset = (page - 1) * limit;

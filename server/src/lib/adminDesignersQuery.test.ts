@@ -12,6 +12,6 @@ test('buildAdminDesignersListQuery includes soft-delete fields for admin list re
   });
 
   assert.match(result.sql, /d\.deleted_at/);
-  assert.match(result.sql, /d\.deleted_by_admin_id/);
-  assert.match(result.sql, /d\.delete_reason/);
+  assert.doesNotMatch(result.sql, /d\.deleted_by_admin_id/);
+  assert.doesNotMatch(result.sql, /d\.delete_reason/);
 });

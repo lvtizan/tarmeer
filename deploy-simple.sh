@@ -1,20 +1,87 @@
 #!/bin/bash
 # Tarmeer 网站快速部署脚本
 # 给 CodeX 使用
+#
+# 重要：文件权限修复
+# - rsync 后自动修复文件权限为 644（文件）和 755（目录）
+# - 部署后验证头像文件返回 200（不是 403）
+# - 历史问题：2026-03-26 头像因 600 权限导致 403 Forbidden
 
 set -euo pipefail
 
 RULES_FILE="docs/operations/deploy-safety-workflow.md"
 
-# 部署前强制阅读规则
-if [[ "${DEPLOY_RULES_ACK:-}" != "YES" ]]; then
-  echo "❌ 部署已阻止：请先阅读规则文件 ${RULES_FILE}"
-  echo "阅读后使用以下命令重新执行："
-  echo "DEPLOY_RULES_ACK=YES bash deploy-simple.sh"
+ensure_rules_file() {
+  if [[ ! -f "${RULES_FILE}" ]]; then
+    echo "❌ 部署已阻止：规则文件不存在 -> ${RULES_FILE}"
+    echo "请先创建规则文件后再执行发布。"
+    exit 1
+  fi
+}
+
+print_rules_digest() {
   echo ""
-  sed -n '1,80p' "${RULES_FILE}"
+  echo "📘 发布规则摘要（完整规则见 ${RULES_FILE}）"
+  sed -n '1,120p' "${RULES_FILE}"
+  echo ""
+}
+
+require_rules_ack() {
+  if [[ "${DEPLOY_RULES_ACK:-}" != "YES" ]]; then
+    echo "❌ 部署已阻止：请先阅读并确认规则文件 ${RULES_FILE}"
+    echo "阅读后使用以下命令重新执行："
+    echo "DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh"
+    print_rules_digest
+    exit 1
+  fi
+}
+
+require_user_approval() {
+  if [[ "${DEPLOY_USER_APPROVED:-}" == "YES" ]]; then
+    return 0
+  fi
+
+  echo "🛑 发布前确认：是否已得到用户明确批准发布？"
+  if [[ -t 0 ]]; then
+    local answer
+    read -r -p "输入 YES 继续发布，其它任意内容取消: " answer
+    if [[ "${answer}" != "YES" ]]; then
+      echo "❌ 已取消发布。"
+      exit 1
+    fi
+    return 0
+  fi
+
+  echo "❌ 非交互环境下未检测到发布批准。"
+  echo "请在命令中显式添加：DEPLOY_USER_APPROVED=YES"
   exit 1
-fi
+}
+
+validate_remote_assets() {
+  echo "🩺 校验线上资源可用性..."
+  local refs=()
+  mapfile -t refs < <(grep -oE '/assets/[A-Za-z0-9._-]+\.(js|css)' dist/index.html | sort -u)
+
+  if [[ ${#refs[@]} -eq 0 ]]; then
+    echo "❌ 未在 dist/index.html 中找到资产引用，停止发布。"
+    exit 1
+  fi
+
+  local ref
+  local code
+  for ref in "${refs[@]}"; do
+    code=$(curl -sS -o /dev/null -w "%{http_code}" "https://www.tarmeer.com${ref}")
+    if [[ "${code}" != "200" ]]; then
+      echo "❌ 资源校验失败：${ref} -> HTTP ${code}"
+      exit 1
+    fi
+    echo "✓ ${ref} -> HTTP 200"
+  done
+}
+
+ensure_rules_file
+require_rules_ack
+require_user_approval
 
 echo "🚀 开始部署 Tarmeer 网站..."
 
@@ -108,6 +175,27 @@ else
   echo "✅ 使用密码认证回退通道（expect）"
 fi
 
+# Schema验证 - 部署前检查数据库字段类型
+echo ""
+echo "🔍 步骤 0/4: 验证数据库Schema..."
+SCHEMA_CHECK_OUTPUT=$(run_ssh "cd /tarmeer/tarmeer_api && bash server/scripts/verify-schema.sh 2>&1" || true)
+
+if echo "$SCHEMA_CHECK_OUTPUT" | grep -q "✅ All schema checks passed"; then
+    echo "✓ Schema验证通过"
+else
+    echo "❌ Schema验证失败"
+    echo ""
+    echo "$SCHEMA_CHECK_OUTPUT"
+    echo ""
+    echo "数据库Schema不匹配，需要先运行迁移脚本"
+    echo "请联系系统管理员执行以下命令："
+    echo "  ssh ${SERVER_USER}@${SERVER_HOST} 'cd /tarmeer/tarmeer_api && bash server/scripts/apply-migration.sh'"
+    echo ""
+    echo "或者手动执行SQL迁移："
+    echo "  ssh ${SERVER_USER}@${SERVER_HOST} 'mysql -u root -p tarmeer < /tarmeer/tarmeer_api/server/schema/migration-2026-03-23-fix-image-fields.sql'"
+    exit 1
+fi
+
 # 1. 构建项目
 echo "📦 步骤 1/3: 构建项目..."
 npm run build
@@ -121,9 +209,24 @@ echo "🔐 步骤 3/3: 统一权限并重载 Nginx..."
 run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} + && find ${DEPLOY_PATH} -type f -exec chmod 644 {} + && nginx -t && systemctl reload nginx"
 
 # 4. 基础可用性检查
-echo "🩺 校验线上可用性..."
-curl -sS -I https://www.tarmeer.com | head -n 1
-curl -sS -I https://www.tarmeer.com/images/designers/avatars/omar-farouk.jpg | head -n 1
+echo "🩺 校验线上页面可用性..."
+HOMEPAGE_CODE=$(curl -sS -o /dev/null -w "%{http_code}" https://www.tarmeer.com)
+if [[ "${HOMEPAGE_CODE}" != "200" ]]; then
+  echo "❌ 首页校验失败：HTTP ${HOMEPAGE_CODE}"
+  exit 1
+fi
+echo "✓ 首页 -> HTTP 200"
+
+# 头像文件权限检查（防止 403 Forbidden）
+AVATAR_CODE=$(curl -sS -o /dev/null -w "%{http_code}" https://www.tarmeer.com/images/designers/avatars/omar-farouk.jpg)
+if [[ "${AVATAR_CODE}" != "200" ]]; then
+  echo "❌ 头像校验失败：/images/designers/avatars/omar-farouk.jpg -> HTTP ${AVATAR_CODE}"
+  echo "提示：这通常是文件权限问题（600 vs 644），请检查服务器文件权限"
+  exit 1
+fi
+echo "✓ 头像文件 -> HTTP 200"
+
+validate_remote_assets
 
 echo "✅ 部署完成！"
 echo "🌐 访问: https://www.tarmeer.com"

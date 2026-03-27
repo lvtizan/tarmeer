@@ -158,9 +158,15 @@ export default function MaterialsPage() {
                     <img
                       src={brand.logo}
                       alt={brand.nameEn}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
+                        // Logo加载失败时显示品牌名称
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-stone-400 text-sm font-medium p-4 text-center">${brand.nameEn}</div>`;
+                        }
                       }}
                     />
                   </div>

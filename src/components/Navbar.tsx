@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { api } from '../lib/api';
+import { safeGetJSON } from '../lib/storage';
+import Avatar from './ui/Avatar';
+import { useNavigationHandler } from '../hooks/useNavigationHandler';
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -11,21 +15,30 @@ const navLinks = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
 
-  const handleNavClick = (e: React.MouseEvent, to: string) => {
-    // 如果在首页点击 Home 链接，滚动到顶部而不是跳转
-    if (to === '/' && location.pathname === '/') {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  // Hide navbar completely on auth page
+  if (isAuthPage) return null;
+
+  const isDesignerLoggedIn = Boolean(api.getToken());
+  const designer = safeGetJSON<Record<string, unknown>>('designer');
+  const designerName = ((designer?.full_name as string) || (designer?.fullName as string) || '').trim() || 'Designer';
+  const designerAvatar = ((designer?.avatar_url as string) || (designer?.avatarUrl as string) || '').trim();
+  const accountEntry = isDesignerLoggedIn
+    ? { to: '/designer/dashboard', label: 'Dashboard' }
+    : { to: '/auth?tab=login', label: 'Log In' };
+
+  const handleClick = (to: string) => {
+    handleNavClick(to);
     setOpen(false);
   };
 
   const renderNavLink = (to: string, label: string, extraClasses = '') => (
     <Link
       to={to}
-      onClick={(e) => handleNavClick(e, to)}
+      onClick={() => handleClick(to)}
       className={`text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition ${extraClasses}`}
     >
       {label}
@@ -47,8 +60,20 @@ export default function Navbar() {
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map(({ to, label }) => renderNavLink(to, label))}
-          {renderNavLink('/auth?tab=login', 'Log In')}
-          <Link to="/contact" className="btn-primary ml-2 text-base text-white">
+          {isDesignerLoggedIn ? (
+            <Link
+              to={accountEntry.to}
+              onClick={() => handleClick(accountEntry.to)}
+              className="inline-flex items-center"
+              aria-label="Open dashboard"
+              title="Dashboard"
+            >
+              <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
+            </Link>
+          ) : (
+            renderNavLink(accountEntry.to, accountEntry.label)
+          )}
+          <Link to="/contact" onClick={() => handleClick('/contact')} className="btn-primary ml-2 text-base text-white">
             Contact Us
           </Link>
         </nav>
@@ -72,7 +97,18 @@ export default function Navbar() {
         <div className="md:hidden border-t border-stone-200 bg-white">
           <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-2">
             {navLinks.map(({ to, label }) => renderNavLink(to, label, 'py-2'))}
-            {renderNavLink('/auth?tab=login', 'Log In', 'py-2')}
+            {isDesignerLoggedIn ? (
+              <Link
+                to={accountEntry.to}
+                onClick={() => handleClick(accountEntry.to)}
+                className="py-2 inline-flex items-center gap-2 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+              >
+                <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
+                Dashboard
+              </Link>
+            ) : (
+              renderNavLink(accountEntry.to, accountEntry.label, 'py-2')
+            )}
           </div>
         </div>
       )}

@@ -24,6 +24,39 @@ function resolveApiBase() {
 
 const API_BASE = resolveApiBase();
 
+// 请求去重存储
+const pendingRequests = new Map<string, AbortController>();
+
+/**
+ * 生成请求唯一标识符
+ */
+function generateRequestKey(method: string, url: string, body?: any): string {
+  let key = `${method}:${url}`;
+  if (body) {
+    const normalizedBody = typeof body === 'string' ? body : JSON.stringify(body);
+    key += `:${normalizedBody}`;
+  }
+  return key;
+}
+
+/**
+ * 清理过期的请求
+ */
+function cleanupExpiredRequests(): void {
+  const now = Date.now();
+  for (const [key, controller] of pendingRequests.entries()) {
+    if (now - (controller as any).timestamp > 10000) { // 10秒过期
+      controller.abort();
+      pendingRequests.delete(key);
+    }
+  }
+}
+
+// 定期清理过期请求
+if (typeof setInterval !== 'undefined') {
+  setInterval(cleanupExpiredRequests, 30000); // 每30秒清理一次
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -44,7 +77,7 @@ class ApiClient {
     safeRemoveItem('token');
   }
 
-  async request(endpoint: string, options: RequestInit = {}) {
+  async request(endpoint: string, options: RequestInit = {}, deduplicate = true) {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -56,9 +89,36 @@ class ApiClient {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
 
+    // 请求去重检查
+    const method = options.method || 'GET';
+    const url = `${API_BASE}${endpoint}`;
+    const body = options.body;
+
+    if (deduplicate && method !== 'GET') {
+      const requestKey = generateRequestKey(method, endpoint, body);
+      const existingController = pendingRequests.get(requestKey);
+
+      if (existingController) {
+        throw new Error('Please wait before submitting again.');
+      }
+
+      // 创建新的AbortController
+      const controller = new AbortController();
+      (controller as any).timestamp = Date.now();
+      pendingRequests.set(requestKey, controller);
+
+      // 添加abort信号到请求选项
+      options.signal = controller.signal;
+
+      // 设置超时清理
+      setTimeout(() => {
+        pendingRequests.delete(requestKey);
+      }, 5000); // 5秒后自动清理
+    }
+
     let response: Response;
     try {
-      response = await fetch(`${API_BASE}${endpoint}`, {
+      response = await fetch(url, {
         ...options,
         headers,
       });
@@ -71,12 +131,22 @@ class ApiClient {
         throw err;
       }
       throw new Error('An unexpected error occurred while making the request');
+    } finally {
+      // 清理请求记录
+      if (deduplicate && method !== 'GET') {
+        const requestKey = generateRequestKey(method, endpoint, body);
+        setTimeout(() => {
+          pendingRequests.delete(requestKey);
+        }, 1000); // 1秒后清理，防止快速重复提交
+      }
     }
 
     if (!response.ok) {
       let errorMessage = 'Request failed';
       if (response.status === 413) {
         errorMessage = 'Uploaded images are too large. Please reduce image size or image count and try again.';
+      } else if (response.status === 429) {
+        errorMessage = 'Too many requests. Please wait a moment and try again.';
       }
 
       try {

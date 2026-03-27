@@ -1,10 +1,10 @@
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderOpen,
   User,
-  Home,
   LogOut,
+  ChevronRight,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useDesigner } from '../../contexts/DesignerContext';
@@ -14,7 +14,14 @@ const PRIMARY = '#b8864a';
 
 export default function DesignerLayout() {
   const navigate = useNavigate();
-  const { profile, logout } = useDesigner();
+  const location = useLocation();
+  const { profile, projects, logout } = useDesigner();
+  const sectionLabel =
+    location.pathname.startsWith('/designer/projects')
+      ? 'My Projects'
+      : location.pathname.startsWith('/designer/profile')
+        ? 'Profile'
+        : 'Dashboard';
 
   const handleLogout = () => {
     logout();
@@ -22,19 +29,41 @@ export default function DesignerLayout() {
     navigate('/auth', { replace: true });
   };
 
+  const profileChecklist = [
+    Boolean(profile.fullName.trim()),
+    Boolean(profile.title.trim()),
+    Boolean(profile.phone.trim()),
+    Boolean(profile.city.trim()),
+    Boolean(profile.bio.trim()),
+    Boolean(profile.avatarUrl.trim()),
+  ];
+  const profileDone = profileChecklist.filter(Boolean).length;
+  const profilePercent = Math.round((profileDone / profileChecklist.length) * 100);
+  const projectTarget = 3;
+  const projectCount = projects.length;
+
   return (
     <div className="min-h-screen flex flex-col bg-[#faf9f7]">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-stone-200 bg-white px-4 md:px-10 py-3 flex items-center justify-between gap-4 flex-wrap">
-        <Link to="/designer/dashboard" className="flex items-center gap-3 text-[#2c2c2c] cursor-pointer">
-          <div
-            className="size-8 rounded flex items-center justify-center"
-            style={{ backgroundColor: `${PRIMARY}20` }}
-          >
-            <LayoutDashboard className="w-5 h-5" style={{ color: PRIMARY }} />
+      <header className="sticky top-0 z-50 border-b border-stone-200 bg-white px-4 md:px-10 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link to="/designer/dashboard" className="flex items-center gap-3 text-[#2c2c2c] cursor-pointer shrink-0">
+            <div
+              className="size-8 rounded flex items-center justify-center"
+              style={{ backgroundColor: `${PRIMARY}20` }}
+            >
+              <LayoutDashboard className="w-5 h-5" style={{ color: PRIMARY }} />
+            </div>
+            <span className="text-lg font-bold">Tarmeer Dashboard</span>
+          </Link>
+          <div className="hidden md:flex items-center gap-2 text-sm text-stone-500 min-w-0">
+            <Link to="/" className="hover:text-[#2c2c2c] transition shrink-0">
+              Home
+            </Link>
+            <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />
+            <span className="text-[#2c2c2c] font-medium truncate">{sectionLabel}</span>
           </div>
-          <span className="text-lg font-bold">Tarmeer Dashboard</span>
-        </Link>
+        </div>
         <div className="flex items-center gap-3">
           <Link
             to="/designer/profile"
@@ -95,23 +124,26 @@ export default function DesignerLayout() {
                 <span className="text-sm font-medium">Profile</span>
               </NavLink>
             </nav>
-            <div className="pt-4 mt-4 border-t border-stone-200 flex flex-col gap-1">
-              <Link
-                to="/"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-stone-600 hover:bg-stone-50 transition cursor-pointer"
-              >
-                <Home className="w-5 h-5" />
-                <span className="text-sm font-medium">Back to Home</span>
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-stone-600 hover:bg-stone-50 transition w-full text-left cursor-pointer"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="text-sm font-medium">Log out</span>
-              </button>
+            <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3.5">
+              <p className="text-sm font-semibold text-[#2c2c2c]">Profile Incomplete</p>
+              <p className="mt-1 text-xs leading-5 text-stone-500">
+                After completing your profile and portfolio, our clients will contact you within two days.
+              </p>
+              <div className="mt-3">
+                <div className="mb-1 flex items-center justify-between text-[11px] text-stone-500">
+                  <span>Profile</span>
+                  <span>{profilePercent}%</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+                  <div className="h-full rounded-full" style={{ width: `${profilePercent}%`, backgroundColor: PRIMARY }} />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-[11px] text-stone-500">
+                <span>Portfolio</span>
+                <span>{projectCount}/{projectTarget}</span>
+              </div>
             </div>
+            <div className="pt-4 mt-4 border-t border-stone-200" />
           </div>
         </aside>
 

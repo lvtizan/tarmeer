@@ -18,6 +18,7 @@ import {
   deleteDesigner,
   restoreDesigner,
   bulkApproveDesigners,
+  bulkDeleteDesigners,
   updateDesignerOrder,
   approveProject,
   rejectProject,
@@ -73,6 +74,7 @@ router.put('/designers/:id/reject', requirePermission('can_approve'), rejectDesi
 router.delete('/designers/:id', requirePermission('can_approve'), deleteDesigner);
 router.post('/designers/:id/restore', requirePermission('can_approve'), restoreDesigner);
 router.put('/designers/bulk-approve', requirePermission('can_approve'), bulkApproveDesigners);
+router.put('/designers/bulk-delete', requirePermission('can_approve'), bulkDeleteDesigners);
 router.put('/designers/order', requirePermission('can_sort'), updateDesignerOrder);
 router.put('/projects/:projectId/approve', requirePermission('can_approve'), approveProject);
 router.put('/projects/:projectId/reject', requirePermission('can_approve'), rejectProject);

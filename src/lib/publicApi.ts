@@ -1,4 +1,5 @@
 import { sanitizeAvatarUrl, sanitizeImageUrls } from './imageCleanup';
+import { normalizeFoundedYear, summarizeCompanyDescription, type Company } from './companyData';
 
 const API_BASE = import.meta.env.VITE_API_URL || (
   import.meta.env.PROD
@@ -37,6 +38,25 @@ export interface PublicProjectData {
 
 export interface PublicDesignerDetailData extends PublicDesignerCardData {
   projects: PublicProjectData[];
+}
+
+interface PublicCompanyRecord {
+  id: string | number;
+  slug: string;
+  name_en: string;
+  description: string;
+  city: string;
+  address: string;
+  year_established: string;
+  website: string;
+  instagram: string;
+  phone: string;
+  email: string;
+  services: string[];
+  specialties: string[];
+  logo_url: string;
+  portfolio_images: string[];
+  project_count: number;
 }
 
 async function request<T>(endpoint: string): Promise<T> {
@@ -125,4 +145,39 @@ export async function fetchPublicDesignerDetail(id: string): Promise<PublicDesig
 export async function fetchPublicProject(projectId: string): Promise<PublicProjectData> {
   const result = await request<{ project: any }>(`/projects/${projectId}`);
   return toProject(result.project, result.project?.designer_city ? `${result.project.designer_city}, UAE` : 'UAE');
+}
+
+function toCompany(company: PublicCompanyRecord): Company {
+  const projectImages = sanitizeImageUrls(Array.isArray(company.portfolio_images) ? company.portfolio_images : []);
+  const description = company.description || '';
+
+  return {
+    id: String(company.slug || company.id),
+    name: company.name_en || 'Tarmeer Company',
+    description,
+    shortDescription: summarizeCompanyDescription(description),
+    city: company.city || 'UAE',
+    address: company.address || 'UAE',
+    foundedYear: normalizeFoundedYear(company.year_established),
+    website: company.website || '',
+    instagram: company.instagram || '',
+    phone: company.phone || '',
+    email: company.email || '',
+    styles: Array.isArray(company.specialties) ? company.specialties : [],
+    projectCount: company.project_count || projectImages.length,
+    services: Array.isArray(company.services) ? company.services : [],
+    featured: false,
+    coverImage: company.logo_url || '', // logo for small badge
+    projectImages, // only portfolio images for main display
+  };
+}
+
+export async function fetchPublicCompanies(limit = 50): Promise<Company[]> {
+  const result = await request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}`);
+  return (result.companies || []).map(toCompany);
+}
+
+export async function fetchPublicCompanyDetail(slug: string): Promise<Company> {
+  const result = await request<{ company: PublicCompanyRecord }>(`/companies/${slug}`);
+  return toCompany(result.company);
 }

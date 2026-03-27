@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import type { PublicDesignerCardData } from '../../lib/publicApi';
 import type { Designer } from '../../data/designers';
 import { getNextRenderableImageIndex } from '../../lib/imageCleanup';
+import Avatar from '../ui/Avatar';
 
 type DesignerCardData = Pick<Designer, 'slug' | 'name' | 'firstName' | 'location' | 'style' | 'bioShort' | 'avatar' | 'projectImages'>;
 
@@ -19,7 +20,6 @@ export default function DesignerCard({ designer }: DesignerCardProps) {
   const currentSrc = activeIndex === -1 ? '' : images[activeIndex];
   const hasMultiple = images.length > 1;
   const hasImage = Boolean(currentSrc);
-  const hasAvatar = Boolean(designer.avatar);
 
   const handleImageError = () => {
     if (activeIndex === -1) return;
@@ -80,18 +80,11 @@ export default function DesignerCard({ designer }: DesignerCardProps) {
 
       <div className="p-4 sm:p-5 flex flex-col flex-1">
         <div className="flex items-start gap-3 mb-3">
-          {hasAvatar && (
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md bg-stone-200 shrink-0">
-              <img
-                src={designer.avatar}
-                alt={`${designer.name} avatar`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
-          )}
+          <Avatar
+            name={designer.name}
+            avatarUrl={designer.avatar || undefined}
+            size="lg"
+          />
           <div className="flex-1 overflow-visible">
             <h3 className="font-semibold text-[#2c2c2c] group-hover:text-[#c6a065] transition text-left whitespace-nowrap">
               {designer.name}

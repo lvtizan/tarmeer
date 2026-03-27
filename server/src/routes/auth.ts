@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
 import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, checkAvailability } from '../controllers/authController';
 import rateLimit from 'express-rate-limit';
+import { authRateLimit, checkAccountLock } from '../middleware/authRateLimit';
 
 const router = Router();
 
@@ -65,6 +66,8 @@ router.post('/resend-verification',
 );
 
 router.post('/login',
+  authRateLimit, // 应用认证速率限制
+  checkAccountLock, // 检查账户锁定状态
   [
     body('email').isEmail().withMessage('Please enter a valid email address'),
     body('password').notEmpty().withMessage('Please enter your password')

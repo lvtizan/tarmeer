@@ -4,6 +4,7 @@ import { SCROLL_TIMEOUT_MS } from '../lib/constants';
 import Banner from '../components/home/Banner';
 import PricingSection from '../components/home/PricingSection';
 import DesignersSection from '../components/home/DesignersSection';
+import HomeDesignSection from '../components/home/HomeDesignSection';
 
 export default function HomePage() {
   const location = useLocation();
@@ -25,6 +26,7 @@ export default function HomePage() {
       <Banner />
       <PricingSection />
       <DesignersSection />
+      <HomeDesignSection />
     </>
   );
 }

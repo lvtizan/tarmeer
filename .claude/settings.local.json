@@ -22,7 +22,26 @@
       "Bash(DEPLOY_RULES_ACK=YES DEPLOY_SSH_KEY=~/.ssh/tarmeer_ecs bash deploy-simple.sh)",
       "Bash(ssh:*)",
       "Bash(./node_modules/.bin/tsc)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(openssl rand:*)",
+      "Bash(ssh-add:*)",
+      "Bash(ping:*)",
+      "Bash(ps:*)",
+      "Bash(rsync -avz -e \"ssh -i /Users/kp/.ssh/mastery_github -o StrictHostKeyChecking=accept-new\" --progress dist/ root@47.91.108.104:/tarmeer/tarmeer_web_portal/)",
+      "Bash(rsync -avz -e \"ssh -i /Users/kp/.ssh/mastery_github -o StrictHostKeyChecking=accept-new\" dist/ root@47.91.108.104:/tarmeer/tarmeer_web_portal/)",
+      "Bash(rsync -avz --delete --stats -e \"ssh -i /Users/kp/.ssh/mastery_github -o StrictHostKeyChecking=accept-new\" dist/ root@47.91.108.104:/tarmeer/tarmeer_web_portal/)",
+      "Bash(bash server/scripts/validate-fixes.sh)",
+      "Bash(./node_modules/.bin/vite --version 2>&1)",
+      "Bash(/tmp/test_urls.txt:*)",
+      "Bash(git checkout:*)",
+      "Bash(/usr/local/bin/npm run:*)",
+      "Bash(DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh 2>&1)",
+      "Bash(rsync:*)",
+      "Bash(bash /Users/kp/Code/tarmeer-4.0-local/scripts/start-local-companies.sh)",
+      "Bash(bash -c \"npm run build\")",
+      "Bash(bash -c \"npm run build 2>&1\")",
+      "Bash(kill 86544 86542)",
+      "Bash(bash -c \"cd /Users/kp/Code/tarmeer-4.0-local/server && npm run build\")"
     ]
   }
 }

@@ -8,6 +8,7 @@ import {
   validateDeleteReason,
 } from '../lib/designerSoftDelete';
 import { buildAdminDesignersListQuery } from '../lib/adminDesignersQuery';
+import { buildAutoPublishPendingProjectsQuery } from '../lib/designerApproval';
 
 // Get all designers with filters and pagination
 export async function getDesignersForAdmin(req: any, res: Response) {
@@ -185,22 +186,42 @@ export async function approveDesigner(req: any, res: Response) {
     if (designer.status === 'approved') {
       return res.status(400).json({ error: 'Designer is already approved.' });
     }
-    
-    await pool.execute(
-      `UPDATE designers 
-       SET status = 'approved', is_approved = 1, rejection_reason = NULL, updated_at = NOW()
-       WHERE id = ?`,
-      [id]
-    );
+
+    const conn = await pool.getConnection();
+    let autoApprovedProjects = 0;
+
+    try {
+      await conn.beginTransaction();
+
+      await conn.execute(
+        `UPDATE designers 
+         SET status = 'approved', is_approved = 1, rejection_reason = NULL, updated_at = NOW()
+         WHERE id = ?`,
+        [id]
+      );
+
+      const projectUpdate = buildAutoPublishPendingProjectsQuery([Number(id)]);
+      const [projectResult] = await conn.execute(projectUpdate.sql, projectUpdate.params);
+      autoApprovedProjects = (projectResult as any).affectedRows || 0;
+
+      await conn.commit();
+    } catch (txError) {
+      await conn.rollback();
+      throw txError;
+    } finally {
+      conn.release();
+    }
     
     await logActivity(req.admin.id, 'approve_designer', 'designer', parseInt(id), {
       name: designer.full_name,
-      email: designer.email
+      email: designer.email,
+      autoApprovedProjects,
     });
     
     res.json({ 
       message: 'Designer approved successfully.',
-      designer: { id, status: 'approved' }
+      designer: { id, status: 'approved' },
+      autoApprovedProjects,
     });
   } catch (error) {
     console.error('Error approving designer:', error);
@@ -363,27 +384,99 @@ export async function bulkApproveDesigners(req: any, res: Response) {
   try {
     const placeholders = designerIds.map(() => '?').join(',');
     
-    const [result] = await pool.execute(
-      `UPDATE designers 
-       SET status = 'approved', is_approved = 1, rejection_reason = NULL, updated_at = NOW()
-       WHERE id IN (${placeholders}) AND status != 'approved'`,
-      designerIds
-    );
-    
-    const affectedRows = (result as any).affectedRows;
+    const conn = await pool.getConnection();
+    let affectedRows = 0;
+    let autoApprovedProjects = 0;
+
+    try {
+      await conn.beginTransaction();
+
+      const [result] = await conn.execute(
+        `UPDATE designers 
+         SET status = 'approved', is_approved = 1, rejection_reason = NULL, updated_at = NOW()
+         WHERE id IN (${placeholders}) AND status != 'approved'`,
+        designerIds
+      );
+      affectedRows = (result as any).affectedRows || 0;
+
+      const projectUpdate = buildAutoPublishPendingProjectsQuery(designerIds.map((value: any) => Number(value)));
+      const [projectResult] = await conn.execute(projectUpdate.sql, projectUpdate.params);
+      autoApprovedProjects = (projectResult as any).affectedRows || 0;
+
+      await conn.commit();
+    } catch (txError) {
+      await conn.rollback();
+      throw txError;
+    } finally {
+      conn.release();
+    }
     
     await logActivity(req.admin.id, 'bulk_approve_designers', 'designer', null, {
       count: affectedRows,
-      ids: designerIds
+      ids: designerIds,
+      autoApprovedProjects,
     });
     
     res.json({ 
       message: `${affectedRows} designer(s) approved.`,
-      approvedCount: affectedRows
+      approvedCount: affectedRows,
+      autoApprovedProjects,
     });
   } catch (error) {
     console.error('Error bulk approving designers:', error);
     res.status(500).json({ error: 'Failed to approve designers.' });
+  }
+}
+
+export async function bulkDeleteDesigners(req: any, res: Response) {
+  const { designerIds } = req.body;
+  const reason = validateDeleteReason(req.body?.reason);
+
+  if (!designerIds || !Array.isArray(designerIds) || designerIds.length === 0) {
+    return res.status(400).json({ error: 'Designer IDs are required.' });
+  }
+
+  if (!reason) {
+    return res.status(400).json({ error: 'Delete reason is required.' });
+  }
+
+  const MAX_BATCH = 100;
+  if (designerIds.length > MAX_BATCH) {
+    return res.status(400).json({ error: `Maximum ${MAX_BATCH} designers can be deleted at once.` });
+  }
+
+  const normalizedIds = designerIds
+    .map((value: any) => Number(value))
+    .filter((value: number) => Number.isInteger(value) && value > 0);
+
+  if (normalizedIds.length === 0) {
+    return res.status(400).json({ error: 'No valid designer IDs provided.' });
+  }
+
+  try {
+    const placeholders = normalizedIds.map(() => '?').join(',');
+    const [result] = await pool.execute(
+      `UPDATE designers
+       SET deleted_at = NOW(), deleted_by_admin_id = ?, delete_reason = ?, updated_at = NOW()
+       WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
+      [req.admin.id, reason, ...normalizedIds]
+    );
+
+    const deletedCount = (result as any).affectedRows || 0;
+
+    await logActivity(req.admin.id, 'bulk_delete_designers', 'designer', null, {
+      count: deletedCount,
+      ids: normalizedIds,
+      reason,
+    });
+
+    res.json({
+      message: `${deletedCount} designer(s) deleted.`,
+      deletedCount,
+    });
+  } catch (error) {
+    console.error('Error bulk deleting designers:', error);
+    res.status(500).json({ error: 'Failed to delete designers.' });
   }
 }
 

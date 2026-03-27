@@ -3,9 +3,16 @@
 ## Rule
 Run `npm run qa:smoke` after every functional change before handing to QA.
 
+## Agent Rule
+Before reporting completion to user:
+1. Ask testing expert to review the changed path and verification coverage.
+2. Execute automated checks locally.
+3. If checks fail, fix first; do not hand back to user.
+4. Only report after checks pass, with concrete command outputs summarized.
+
 ## Command
 ```bash
-cd "/Users/kp/Library/Mobile Documents/com~apple~CloudDocs/AI项目/迪拜网站/tarmeer-4.0"
+cd "/Users/kp/Code/tarmeer-4.0-local"
 npm run qa:smoke
 ```
 

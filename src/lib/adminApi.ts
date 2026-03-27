@@ -174,6 +174,14 @@ class AdminApiClient {
     }
   }
 
+  private getDevelopmentErrorMessage(originalError: string, _requestUrl: string): string {
+    if (import.meta.env.DEV) {
+      return originalError;
+    }
+    // Production-friendly generic error message
+    return 'Unable to connect to the server. Please try again later or contact support if the problem persists.';
+  }
+
   private async request(endpoint: string, options: RequestInit = {}) {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -196,13 +204,13 @@ class AdminApiClient {
       if (err instanceof Error) {
         const msg = err.message || '';
         if (/fetch|network|failed|load/i.test(msg) || err.name === 'TypeError') {
-          throw new Error(
-            `无法连接后端接口 ${requestUrl}。请检查：1) 后端服务是否已启动（http://localhost:3002）；2) VITE_API_URL 是否配置正确；3) 是否被 CORS 或代理拦截。`
-          );
+          const devMessage = `无法连接后端接口 ${requestUrl}。请检查：1) 后端服务是否已启动（http://localhost:3002）；2) VITE_API_URL 是否配置正确；3) 是否被 CORS 或代理拦截。`;
+          throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));
         }
         throw err;
       }
-      throw new Error(`请求 ${requestUrl} 时发生未知错误。`);
+      const devMessage = `请求 ${requestUrl} 时发生未知错误。`;
+      throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));
     }
 
     if (!response.ok) {
@@ -218,7 +226,8 @@ class AdminApiClient {
       if (response.status === 401) {
         this.handleUnauthorized(endpoint, errorMessage);
       }
-      throw new Error(`接口 /admin${endpoint} 请求失败：${errorMessage}`);
+      const devMessage = `接口 /admin${endpoint} 请求失败：${errorMessage}`;
+      throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));
     }
 
     return response.json();
@@ -325,6 +334,13 @@ class AdminApiClient {
     });
   }
 
+  async bulkDeleteDesigners(designerIds: number[], reason: string) {
+    return this.request('/designers/bulk-delete', {
+      method: 'PUT',
+      body: JSON.stringify({ designerIds, reason }),
+    });
+  }
+
   async updateDesignerOrder(orders: { id: number; displayOrder: number }[]) {
     return this.request('/designers/order', {
       method: 'PUT',
@@ -376,7 +392,7 @@ class AdminApiClient {
 
   async getAnalyticsOverview(params: { startDate?: string; endDate?: string } = {}): Promise<{
     overview: AnalyticsOverview;
-    topPages: Array<{ page_path: string; events: number }>;
+    topPages: Array<{ page_path: string; page_views: number; visitors: number }>;
     dateRange: { start: string; end: string };
   }> {
     const query = new URLSearchParams();

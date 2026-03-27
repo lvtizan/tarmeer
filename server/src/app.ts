@@ -9,16 +9,21 @@ import projectRoutes from './routes/projects';
 import contactRoutes from './routes/contact';
 import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
+import companyRoutes from './routes/companies';
 import config from './config';
 import {
   isPayloadTooLargeError,
   PAYLOAD_TOO_LARGE_MESSAGE,
   UPLOAD_REQUEST_BODY_LIMIT,
 } from './lib/requestLimits';
-import { buildCorsOrigins } from './lib/corsOrigins';
+import { getCorsConfig, logCorsViolation } from './lib/corsOrigins';
 import { shouldSkipApiRateLimit } from './lib/rateLimitPolicy';
+import { validateJWTConfig } from './lib/jwtManager';
 
 dotenv.config();
+
+// 验证JWT配置
+validateJWTConfig();
 
 const app = express();
 const PORT = config.port;
@@ -63,13 +68,18 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-const corsOrigins = buildCorsOrigins(config.frontendUrl);
-app.use(cors({
-  origin: corsOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+// 使用新的CORS配置
+const corsConfig = getCorsConfig(config.frontendUrl);
+app.use(cors(corsConfig));
+
+// 添加CORS违规日志记录
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && !corsConfig.origin.includes(origin)) {
+    logCorsViolation(origin, req.path);
+  }
+  next();
+});
 
 app.use(express.json({ limit: UPLOAD_REQUEST_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: UPLOAD_REQUEST_BODY_LIMIT }));
@@ -103,6 +113,11 @@ app.get('/', (req, res) => {
         list: 'GET /api/contact'
       },
       health: 'GET /api/health'
+      ,
+      companies: {
+        list: 'GET /api/companies',
+        detail: 'GET /api/companies/:slug'
+      }
     }
   });
 });
@@ -121,6 +136,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/companies', companyRoutes);
 
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('Error:', err);

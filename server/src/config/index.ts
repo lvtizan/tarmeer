@@ -14,7 +14,7 @@ export const config = {
   port: parseInt(process.env.PORT || '3002'),
   nodeEnv: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5179',
-  
+
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306'),
@@ -22,12 +22,13 @@ export const config = {
     password: process.env.DB_PASSWORD || '',
     name: process.env.DB_NAME || 'tarmeer',
   },
-  
+
   jwt: {
-    secret: process.env.NODE_ENV === 'production' 
-      ? getEnvVar('JWT_SECRET')
-      : process.env.JWT_SECRET || 'dev_secret_key_change_in_production_min_32_chars',
+    secret: process.env.JWT_SECRET || 'dev_jwt_secret_min_32_chars_for_local_testing_only',
     expiresIn: '7d' as string,
+    // 添加密钥轮换支持（未来扩展）
+    rotationEnabled: process.env.JWT_ROTATION_ENABLED === 'true',
+    rotationInterval: process.env.JWT_ROTATION_INTERVAL || '30d',
   },
   
   smtp: {

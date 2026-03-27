@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { adminApi, Designer } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import SelectField from '../../components/form/SelectField';
@@ -10,6 +10,7 @@ type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type DeletedFilter = 'active' | 'deleted' | 'all';
 
 export default function AdminDesignersPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { hasPermission } = useAdmin();
   const [designers, setDesigners] = useState<Designer[]>([]);
@@ -29,6 +30,7 @@ export default function AdminDesignersPage() {
   const [rejectModal, setRejectModal] = useState<{ id: number; name: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'sort'>(() => searchParams.get('view') === 'sort' ? 'sort' : 'list');
@@ -55,9 +57,12 @@ export default function AdminDesignersPage() {
       setTotal(result.pagination.total);
       
       if (viewMode === 'sort') {
+        const totalCount = result.designers.length;
         setSortOrder(result.designers.map((d: Designer, index: number) => ({
           id: d.id,
-          displayOrder: d.display_order || index,
+          displayOrder: typeof d.display_order === 'number' && d.display_order > 0
+            ? d.display_order
+            : totalCount - index,
         })));
       }
     } catch (error: any) {
@@ -99,7 +104,11 @@ export default function AdminDesignersPage() {
     setSearchParams(next, { replace: true });
   }, [statusFilter, search, deletedFilter, page, viewMode, setSearchParams]);
 
-  const selectableDesigners = designers.filter((designer) => !designer.deleted_at && designer.status === 'pending');
+  const selectableDesigners = designers.filter((designer) => !designer.deleted_at);
+  const selectedPendingIds = selectedIds.filter((id) => {
+    const designer = designers.find((item) => item.id === id);
+    return Boolean(designer && !designer.deleted_at && designer.status === 'pending');
+  });
 
   const handleSelectAll = () => {
     if (selectedIds.length === selectableDesigners.length) {
@@ -180,13 +189,34 @@ export default function AdminDesignersPage() {
   };
 
   const handleBulkApprove = async () => {
-    if (selectedIds.length === 0) return;
+    if (selectedPendingIds.length === 0) return;
 
-    if (!confirm(`Approve ${selectedIds.length} designer(s)?`)) return;
+    if (!confirm(`Approve ${selectedPendingIds.length} designer(s)?`)) return;
 
     setIsSubmitting(true);
     try {
-      await adminApi.bulkApproveDesigners(selectedIds);
+      await adminApi.bulkApproveDesigners(selectedPendingIds);
+      setSelectedIds((prev) => prev.filter((id) => !selectedPendingIds.includes(id)));
+      await loadDesigners();
+    } catch (error: any) {
+      setPageError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!deleteReason.trim()) {
+      setPageError('Please provide a delete reason');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await adminApi.bulkDeleteDesigners(selectedIds, deleteReason.trim());
+      setBulkDeleteModalOpen(false);
+      setDeleteReason('');
       setSelectedIds([]);
       await loadDesigners();
     } catch (error: any) {
@@ -228,6 +258,14 @@ export default function AdminDesignersPage() {
       item.displayOrder = newOrder.length - i;
     });
     setSortOrder(newOrder);
+  };
+
+  const handleDisplayOrderChange = (id: number, rawValue: string) => {
+    const parsed = Number(rawValue);
+    const safeValue = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+    setSortOrder((prev) => prev.map((item) => (
+      item.id === id ? { ...item, displayOrder: safeValue } : item
+    )));
   };
 
   const getStatusBadge = (status: string) => {
@@ -344,13 +382,22 @@ export default function AdminDesignersPage() {
 
           {/* Bulk actions */}
           {canApprove && selectedIds.length > 0 && viewMode === 'list' && (
-            <button
-              onClick={handleBulkApprove}
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
-            >
-              Approve Selected ({selectedIds.length})
-            </button>
+            <>
+              <button
+                onClick={handleBulkApprove}
+                disabled={isSubmitting || selectedPendingIds.length === 0}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
+              >
+                Approve Selected ({selectedPendingIds.length})
+              </button>
+              <button
+                onClick={() => setBulkDeleteModalOpen(true)}
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-stone-800 text-white rounded-lg text-sm hover:bg-black disabled:opacity-50"
+              >
+                Delete Selected ({selectedIds.length})
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -409,14 +456,19 @@ export default function AdminDesignersPage() {
             </thead>
             <tbody>
               {designers.map((designer) => (
-                <tr key={designer.id} className="border-t border-stone-100 hover:bg-stone-50">
+                <tr
+                  key={designer.id}
+                  className="border-t border-stone-100 hover:bg-stone-50 cursor-pointer"
+                  onClick={() => navigate(`/admin/designers/${designer.id}`)}
+                >
                   {canApprove && (
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
                         checked={selectedIds.includes(designer.id)}
                         onChange={() => handleSelect(designer.id)}
-                        disabled={designer.deleted_at !== null && designer.deleted_at !== undefined || designer.status !== 'pending'}
+                        onClick={(event) => event.stopPropagation()}
+                        disabled={designer.deleted_at !== null && designer.deleted_at !== undefined}
                         className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                       />
                     </td>
@@ -459,10 +511,10 @@ export default function AdminDesignersPage() {
                     {new Date(designer.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>
                       <Link
                         to={`/admin/designers/${designer.id}`}
-                        className="text-sm font-medium text-[#b8864a] hover:text-[#a67c47]"
+                        className="inline-flex h-9 items-center rounded-lg border border-[#b8864a]/35 px-3 text-sm font-semibold text-[#b8864a] hover:bg-[#b8864a]/10 hover:text-[#a67c47]"
                       >
                         View details
                       </Link>
@@ -549,8 +601,15 @@ export default function AdminDesignersPage() {
                   <ChevronDown className="w-5 h-5" />
                 </button>
               </div>
-              <div className="w-8 text-center text-sm font-medium text-stone-400">
-                {index + 1}
+              <div className="w-20">
+                <label className="block text-[10px] text-stone-500 mb-1">Order</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={item.displayOrder}
+                  onChange={(event) => handleDisplayOrderChange(item.id, event.target.value)}
+                  className="w-full h-8 rounded border border-stone-200 px-2 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/35 focus:border-[#b8864a]"
+                />
               </div>
               {designer.avatar_url ? (
                 <img src={designer.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -686,6 +745,49 @@ export default function AdminDesignersPage() {
                 className="px-4 py-2 bg-stone-800 text-white rounded-lg hover:bg-black disabled:opacity-50"
               >
                 {isSubmitting ? 'Deleting...' : 'Delete Designer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-[#2c2c2c] mb-2">
+              Delete Selected Designers
+            </h3>
+            <p className="text-sm text-stone-600 mb-4">
+              You are deleting <strong>{selectedIds.length}</strong> selected designer(s).
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
+                Delete Reason *
+              </label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
+                placeholder="Please explain why these designers are being deleted..."
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setBulkDeleteModalOpen(false);
+                  setDeleteReason('');
+                }}
+                className="px-4 py-2 text-stone-600 hover:text-[#2c2c2c]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={isSubmitting || !deleteReason.trim()}
+                className="px-4 py-2 bg-stone-800 text-white rounded-lg hover:bg-black disabled:opacity-50"
+              >
+                {isSubmitting ? 'Deleting...' : `Delete ${selectedIds.length} Designers`}
               </button>
             </div>
           </div>
