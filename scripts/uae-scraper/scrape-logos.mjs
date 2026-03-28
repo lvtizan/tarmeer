@@ -123,7 +123,7 @@ function esc(val) {
 }
 
 function generateSeedSQL() {
-  let sql = `-- Seed data: 30 UAE home renovation companies
+  let sql = `-- Seed data: ${companies.length} UAE home renovation companies
 -- Generated: ${new Date().toISOString().slice(0, 10)}
 -- Run: mysql -u root -p tarmeer < server/schema/seed-uae-companies.sql
 
@@ -134,7 +134,9 @@ USE tarmeer;
   for (const c of companies) {
     const services = JSON.stringify(c.services);
     const specialties = JSON.stringify(c.specialties);
-    const portfolio = JSON.stringify(c.portfolio_local || []);
+    const portfolio = c.portfolio_categories
+      ? JSON.stringify(c.portfolio_categories)
+      : JSON.stringify(c.portfolio_local || []);
 
     sql += `INSERT INTO uae_companies (
   name_en, name_ar, slug, logo_url, description,
