@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { oauthConfig } from './oauth';
 
 dotenv.config();
 
@@ -44,6 +45,8 @@ export const config = {
   },
   
   notificationEmail: 'lvyiming@kp99.cn',
+
+  oauth: oauthConfig,
 };
 
 export default config;
