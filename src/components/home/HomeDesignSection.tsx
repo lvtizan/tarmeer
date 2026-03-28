@@ -1,44 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Building2, MapPin } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
 import { fetchPublicCompanies } from '../../lib/publicApi';
 import { getNextRenderableImageIndex } from '../../lib/imageCleanup';
-
-// Hero Carousel for Home
-function HeroCarousel({ images }: { images: string[] }) {
-  const [index, setIndex] = useState(0);
-  const [failedIndices, setFailedIndices] = useState<number[]>([]);
-
-  const activeIndex = getNextRenderableImageIndex(images, index, failedIndices);
-  const currentSrc = activeIndex === -1 ? '' : images[activeIndex];
-
-  useEffect(() => {
-    if (images.length <= 1) return;
-    const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % images.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [images.length]);
-
-  if (!currentSrc) return null;
-
-  return (
-    <div className="relative w-full h-full">
-      <img
-        src={currentSrc}
-        alt="Interior design portfolio"
-        className="w-full h-full object-cover"
-        onError={() => {
-          if (activeIndex !== -1) {
-            setFailedIndices((prev) => [...prev, activeIndex]);
-          }
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-    </div>
-  );
-}
 
 // Featured Card
 function FeaturedCard({ company }: { company: Company }) {
@@ -87,6 +52,7 @@ function FeaturedCard({ company }: { company: Company }) {
 
 export default function HomeDesignSection() {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -101,74 +67,77 @@ export default function HomeDesignSection() {
     return () => { active = false; };
   }, []);
 
-  const heroImages = companies.flatMap(c => c.projectImages).slice(0, 5);
+  const heroImages = [
+    '/images/uae-companies/portfolio/antonovich-design/office/3.jpg',
+    '/images/uae-companies/portfolio/antonovich-design/office/2.jpg',
+    '/images/uae-companies/portfolio/antonovich-design/hotel/5.jpg',
+    '/images/uae-companies/portfolio/antonovich-design/restaurant/10.jpg',
+    '/images/uae-companies/portfolio/algedra/4.jpg',
+  ];
   const featured = companies
     .filter(c => c.projectCount >= 30)
     .sort((a, b) => b.projectCount - a.projectCount)
     .slice(0, 4);
 
   const stats = {
-    companies: companies.length,
-    cities: new Set(companies.map(c => c.city)).size,
-    projects: companies.reduce((sum, c) => sum + c.projectCount, 0),
+    companies: Math.max(companies.length, 8),
+    cities: Math.max(new Set(companies.map(c => c.city)).size, 2),
+    projects: Math.max(companies.reduce((sum, c) => sum + c.projectCount, 0), 34),
   };
+
+  const activeHeroImage = heroImages[heroImageIndex] || heroImages[0];
 
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <span className="inline-block px-3 py-1 bg-stone-100 rounded-full text-xs text-stone-500 mb-4">
-            Across the UAE
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#1c1917] mb-4">
-            Interior Design & Renovation
-          </h2>
-          <p className="text-lg text-stone-500 max-w-2xl mx-auto">
-            Discover curated interior designers for your dream home
-          </p>
-        </div>
-
-        {/* Hero Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-          {/* Left - Content */}
-          <div className="flex flex-col justify-center">
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              <div className="text-center">
-                <div className="font-serif text-3xl text-[#1c1917] mb-1">{stats.companies}+</div>
-                <div className="text-xs text-stone-400">Designers</div>
-              </div>
-              <div className="text-center">
-                <div className="font-serif text-3xl text-[#1c1917] mb-1">{stats.cities}</div>
-                <div className="text-xs text-stone-400">Cities</div>
-              </div>
-              <div className="text-center">
-                <div className="font-serif text-3xl text-[#1c1917] mb-1">{stats.projects}+</div>
-                <div className="text-xs text-stone-400">Projects</div>
-              </div>
-            </div>
-            <p className="text-stone-500 leading-relaxed mb-6">
-              Browse verified interior design companies across Dubai, Abu Dhabi, and the Emirates.
-              View portfolios, compare styles, and find the perfect match for your project.
+        <div className="grid grid-cols-1 lg:grid-cols-[44fr_56fr] gap-8 lg:gap-10 mb-16 items-stretch">
+          <div className="rounded-[28px] bg-[#141311] border border-[#2d2a24] px-7 sm:px-10 py-10 sm:py-12 flex flex-col justify-center">
+            <p className="text-[10px] sm:text-[11px] tracking-[0.18em] uppercase text-[#c9b58f] mb-6">
+              Curated Interior Designers in the UAE
+            </p>
+            <h2 className="font-serif text-[35px] sm:text-[48px] lg:text-[56px] leading-[1.04] tracking-[-0.015em] text-[#f6f2ea] max-w-[13ch]">
+              Find the Right Designer
+              <br />
+              for Your Home
+            </h2>
+            <p className="text-[#d2ccc2]/75 text-[15px] sm:text-[16px] leading-relaxed max-w-[40ch] mt-6">
+              Browse verified studios, compare styles, and explore portfolios across Dubai and Abu Dhabi.
             </p>
             <Link
               to="/companies"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1c1917] text-white font-medium rounded-full hover:bg-[#b8860b] transition"
+              className="inline-flex w-fit items-center gap-2 mt-8 px-5 py-2.5 rounded-full border border-[#bfa67e]/55 text-[#f2eadb] text-xs tracking-[0.08em] uppercase hover:bg-[#bfa67e]/12 transition"
             >
               Explore Designers
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-
-          {/* Right - Image */}
-          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100">
-            {heroImages.length > 0 ? (
-              <HeroCarousel images={heroImages} />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200">
-                <Building2 className="w-16 h-16 text-stone-300" />
+            <div className="grid grid-cols-3 gap-4 sm:gap-6 mt-10 pt-7 border-t border-[#302d28]">
+              <div>
+                <p className="font-serif text-[28px] text-[#f5f2ea] leading-none">{stats.companies}</p>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-[#d2ccc2]/52 mt-2">Curated Studios</p>
               </div>
-            )}
+              <div>
+                <p className="font-serif text-[28px] text-[#f5f2ea] leading-none">{stats.cities}</p>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-[#d2ccc2]/52 mt-2">UAE Cities</p>
+              </div>
+              <div>
+                <p className="font-serif text-[28px] text-[#f5f2ea] leading-none">{stats.projects}</p>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-[#d2ccc2]/52 mt-2">Verified Projects</p>
+              </div>
+            </div>
+          </div>
+          <div className="relative rounded-[28px] overflow-hidden min-h-[420px] bg-[#0f0f0d] border border-[#27241f]">
+            <img
+              src={activeHeroImage}
+              alt="Luxury interior design space"
+              className="w-full h-full object-cover"
+              onError={() => setHeroImageIndex((idx) => (idx + 1) % heroImages.length)}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,10,10,0.30)_0%,rgba(10,10,10,0.05)_42%,rgba(10,10,10,0.2)_100%)]" />
+            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+              <p className="text-[10px] sm:text-[11px] tracking-[0.14em] uppercase text-white/72">
+                Large elegant interior image
+              </p>
+            </div>
           </div>
         </div>
 

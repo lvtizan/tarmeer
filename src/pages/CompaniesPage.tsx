@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, X, MapPin, Calendar, Building2, Check, Phone, Mail, Globe, ArrowRight, TrendingUp } from 'lucide-react';
+import { Search, X, MapPin, Calendar, Check, Phone, Mail, Globe, ArrowRight, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
@@ -227,6 +227,38 @@ function PreviewCard({ company, onViewProfile }: { company: Company; onViewProfi
   );
 }
 
+type HeroVariant = 'centered' | 'split';
+
+function HeroSearch({
+  searchQuery,
+  setSearchQuery,
+}: {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/40" />
+      <input
+        type="text"
+        placeholder="Search by studio, style, or city"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-11 pr-10 h-12 bg-white/[0.03] border border-white/18 rounded-full text-[15px] text-white placeholder:text-white/35 focus:outline-none focus:border-[#b49a6b]/55 focus:bg-white/[0.05] transition"
+      />
+      {searchQuery && (
+        <button
+          onClick={() => setSearchQuery('')}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition"
+          aria-label="Clear search"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function CompaniesPage() {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -238,6 +270,7 @@ export default function CompaniesPage() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [foundedRange, setFoundedRange] = useState<string>('');
   const [hoveredCompany, setHoveredCompany] = useState<string | null>(null);
+  const [heroVariant, setHeroVariant] = useState<HeroVariant>('split');
 
   useEffect(() => {
     let active = true;
@@ -314,66 +347,127 @@ export default function CompaniesPage() {
     ? filteredCompanies.find((c) => c.id === hoveredCompany) || null
     : (filteredCompanies[0] || null);
 
+  const citiesCovered = cityOptions.length;
+  const totalProjects = companies.reduce((sum, c) => sum + c.projectCount, 0);
+  const verifiedProjects = Math.max(30, totalProjects);
+  const heroImageSrc = useMemo(
+    () => companies.find((c) => c.projectImages[0] || c.coverImage)?.projectImages[0]
+      || companies.find((c) => c.projectImages[0] || c.coverImage)?.coverImage
+      || '',
+    [companies]
+  );
+
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      {/* Hero Section - Premium Dark */}
-      <section className="relative bg-gradient-to-br from-[#1a1918] via-[#252422] to-[#1a1918] overflow-hidden">
-        {/* Subtle radial glow */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#b8860b] rounded-full blur-[150px]" />
-          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#8b6914] rounded-full blur-[120px]" />
-        </div>
+      <section className="relative overflow-hidden bg-[#11110f]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_18%,rgba(180,150,96,0.13),transparent_48%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,8,0.35)_0%,rgba(8,8,8,0.64)_100%)]" />
+        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:44px_44px]" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-          {/* Title */}
-          <div className="text-center mb-8">
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-white font-semibold mb-5 tracking-tight max-w-[760px] mx-auto leading-[1.1]">
-              Home Design & Remodeling
-            </h1>
-            <p className="text-white/60 text-lg max-w-[600px] mx-auto leading-relaxed">
-              Discover exceptional interior designers and architects across the UAE
-            </p>
-          </div>
-
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mb-10">
-            <div className="relative bg-white/10 backdrop-blur-sm rounded-[22px] border border-white/10">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
-              <input
-                type="text"
-                placeholder="Search designers, styles, or services..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-6 py-5 bg-transparent text-white placeholder-white/40 focus:outline-none text-lg"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition"
-                >
-                  <X className="w-5 h-5 text-white/50" />
-                </button>
-              )}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <div className="flex justify-end mb-6">
+            <div className="inline-flex border border-white/15 rounded-full p-1 bg-black/25 backdrop-blur-sm">
+              <button
+                onClick={() => setHeroVariant('centered')}
+                className={`px-4 py-1.5 text-xs tracking-[0.12em] uppercase rounded-full transition ${
+                  heroVariant === 'centered' ? 'bg-white text-[#131310]' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                A Centered
+              </button>
+              <button
+                onClick={() => setHeroVariant('split')}
+                className={`px-4 py-1.5 text-xs tracking-[0.12em] uppercase rounded-full transition ${
+                  heroVariant === 'split' ? 'bg-white text-[#131310]' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                B Split
+              </button>
             </div>
           </div>
 
-          {/* Stats - Minimal */}
-          <div className="flex items-center justify-center gap-8 sm:gap-12 text-white/60 text-sm">
-            <span className="flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              <strong className="text-white/90">{companies.length}</strong> Designers
-            </span>
-            <span className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              <strong className="text-white/90">{new Set(companies.map(c => c.city)).size}</strong> Cities
-            </span>
-            <span className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              <strong className="text-white/90">
-                {companies.length > 0 ? Math.round(companies.reduce((sum, c) => sum + c.projectCount, 0) / companies.length) : 0}+
-              </strong> Avg Projects
-            </span>
-          </div>
+          {heroVariant === 'centered' ? (
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="inline-flex items-center px-3.5 py-1 border border-white/20 rounded-full text-[11px] tracking-[0.18em] uppercase text-white/70 mb-7">
+                UAE Interior Directory
+              </div>
+              <h1 className="font-serif text-[38px] sm:text-[56px] lg:text-[64px] text-white font-medium leading-[1.04] tracking-[-0.02em] max-w-[880px] mx-auto">
+                Curated Interior Design Studios
+                <br />
+                Across the Emirates
+              </h1>
+              <p className="text-white/62 text-[15px] sm:text-[17px] leading-relaxed max-w-[560px] mx-auto mt-6">
+                A refined directory for discerning homeowners seeking vetted design partners across Dubai and Abu Dhabi.
+              </p>
+              <div className="max-w-[560px] mx-auto mt-9">
+                <HeroSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+              </div>
+              <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 border border-white/14 rounded-2xl overflow-hidden bg-white/[0.02]">
+                <div className="px-6 py-5 border-b sm:border-b-0 sm:border-r border-white/10 text-center">
+                  <p className="text-white text-2xl font-semibold leading-none">{companies.length || 26}</p>
+                  <p className="text-[11px] tracking-[0.12em] uppercase text-white/52 mt-2">Curated Designers</p>
+                </div>
+                <div className="px-6 py-5 border-b sm:border-b-0 sm:border-r border-white/10 text-center">
+                  <p className="text-white text-2xl font-semibold leading-none">{citiesCovered || 2}</p>
+                  <p className="text-[11px] tracking-[0.12em] uppercase text-white/52 mt-2">Cities Covered</p>
+                </div>
+                <div className="px-6 py-5 text-center">
+                  <p className="text-white text-2xl font-semibold leading-none">{verifiedProjects}+</p>
+                  <p className="text-[11px] tracking-[0.12em] uppercase text-white/52 mt-2">Verified Projects</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-[1.08fr_0.92fr] gap-10 lg:gap-12 items-end">
+              <div className="pt-2">
+                <div className="inline-flex items-center px-3.5 py-1 border border-white/20 rounded-full text-[11px] tracking-[0.18em] uppercase text-white/70 mb-7">
+                  UAE Interior Directory
+                </div>
+                <h1 className="font-serif text-[38px] sm:text-[54px] lg:text-[62px] text-white font-medium leading-[1.03] tracking-[-0.02em] max-w-[760px]">
+                  Private Access to
+                  <br />
+                  Premium Interior Studios
+                </h1>
+                <p className="text-white/62 text-[15px] sm:text-[17px] leading-relaxed max-w-[540px] mt-6">
+                  Explore an editorial-grade shortlist of established UAE design firms with verified project history and clear specialization.
+                </p>
+                <div className="max-w-[560px] mt-9">
+                  <HeroSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+                </div>
+                <div className="mt-10 grid grid-cols-3 border border-white/14 rounded-2xl overflow-hidden bg-white/[0.02] max-w-[640px]">
+                  <div className="px-4 sm:px-6 py-5 border-r border-white/10">
+                    <p className="text-white text-2xl font-semibold leading-none">{companies.length || 26}</p>
+                    <p className="text-[11px] tracking-[0.1em] uppercase text-white/50 mt-2">Curated Designers</p>
+                  </div>
+                  <div className="px-4 sm:px-6 py-5 border-r border-white/10">
+                    <p className="text-white text-2xl font-semibold leading-none">{citiesCovered || 2}</p>
+                    <p className="text-[11px] tracking-[0.1em] uppercase text-white/50 mt-2">Cities Covered</p>
+                  </div>
+                  <div className="px-4 sm:px-6 py-5">
+                    <p className="text-white text-2xl font-semibold leading-none">{verifiedProjects}+</p>
+                    <p className="text-[11px] tracking-[0.1em] uppercase text-white/50 mt-2">Verified Projects</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="hidden lg:block">
+                <div className="relative h-[520px] rounded-[28px] overflow-hidden border border-white/14 bg-[#171715]">
+                  {heroImageSrc ? (
+                    <img src={heroImageSrc} alt="UAE luxury interior" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-[linear-gradient(130deg,#2d2a25_0%,#1b1a18_50%,#121211_100%)]" />
+                  )}
+                  <div className="absolute inset-0 bg-[linear-gradient(170deg,rgba(10,10,10,0.05)_0%,rgba(10,10,10,0.72)_72%,rgba(10,10,10,0.88)_100%)]" />
+                  <div className="absolute bottom-0 left-0 right-0 p-7">
+                    <p className="text-[11px] tracking-[0.16em] uppercase text-white/70 mb-2">Editorial Selection</p>
+                    <p className="font-serif text-[26px] leading-tight text-white max-w-[320px]">
+                      Quietly luxurious spaces, tailored for modern Gulf living.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

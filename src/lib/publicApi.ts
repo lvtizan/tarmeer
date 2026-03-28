@@ -199,6 +199,16 @@ export async function fetchPublicCompanies(limit = 50): Promise<Company[]> {
 }
 
 export async function fetchPublicCompanyDetail(slug: string): Promise<Company> {
-  const result = await request<{ company: PublicCompanyRecord }>(`/companies/${slug}`);
-  return toCompany(result.company);
+  try {
+    const result = await request<{ company: PublicCompanyRecord }>(`/companies/${slug}`);
+    return toCompany(result.company);
+  } catch (error) {
+    const normalizedSlug = String(slug || '').trim().toLowerCase();
+    const fallback = localCompanies.find((company) => company.id.toLowerCase() === normalizedSlug);
+    if (fallback) {
+      console.warn('[publicApi] Company detail API unavailable, using local data:', normalizedSlug);
+      return fallback;
+    }
+    throw error;
+  }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { api } from '../lib/api';
@@ -59,7 +59,9 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          {navLinks.map(({ to, label }) => renderNavLink(to, label))}
+          {navLinks.map(({ to, label }) => (
+            <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
+          ))}
           {isDesignerLoggedIn ? (
             <Link
               to={accountEntry.to}
@@ -96,7 +98,9 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden border-t border-stone-200 bg-white">
           <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-2">
-            {navLinks.map(({ to, label }) => renderNavLink(to, label, 'py-2'))}
+            {navLinks.map(({ to, label }) => (
+              <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
+            ))}
             {isDesignerLoggedIn ? (
               <Link
                 to={accountEntry.to}
