@@ -1,11 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD
-    ? `${window.location.origin}/api`
-    : 'http://localhost:3002/api'
-);
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 function buildSessionKey(path: string) {
   const date = new Date().toISOString().slice(0, 10);

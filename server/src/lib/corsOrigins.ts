@@ -69,9 +69,11 @@ function isValidOrigin(origin: string): boolean {
 export function buildCorsOrigins(frontendUrl?: string | null): string[] {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
-  let origins: string[] = isDevelopment
-    ? [...CORS_CONFIG.development]
-    : [...CORS_CONFIG.production];
+  // 始终保留本地开发来源，避免在非 development NODE_ENV 下阻塞本地联调
+  let origins: string[] = [...CORS_CONFIG.development];
+  if (!isDevelopment) {
+    origins = [...origins, ...CORS_CONFIG.production];
+  }
 
   // 添加配置的前端URL（如果提供且有效）
   if (frontendUrl && isValidOrigin(frontendUrl)) {

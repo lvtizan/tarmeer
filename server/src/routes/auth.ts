@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, checkAvailability, oauthCallback } from '../controllers/authController';
+import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, checkAvailability, oauthCallback, getMe } from '../controllers/authController';
 import rateLimit from 'express-rate-limit';
 import { authRateLimit, checkAccountLock } from '../middleware/authRateLimit';
+import { authenticate } from '../middleware/auth';
 import passport from '../middleware/passport';
+import config from '../config';
 
 const router = Router();
 
@@ -95,13 +97,16 @@ router.post('/reset-password',
   resetPassword
 );
 
+// 获取当前登录用户信息
+router.get('/me', authenticate, getMe);
+
 // Google OAuth
 router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
 router.get('/callback/google',
-  passport.authenticate('google', { failureRedirect: '/auth?error=google_failed' }),
+  passport.authenticate('google', { failureRedirect: `${config.frontendUrl}/auth?error=google_failed` }),
   oauthCallback
 );
 
@@ -111,7 +116,7 @@ router.get('/facebook',
 );
 
 router.get('/callback/facebook',
-  passport.authenticate('facebook', { failureRedirect: '/auth?error=facebook_failed' }),
+  passport.authenticate('facebook', { failureRedirect: `${config.frontendUrl}/auth?error=facebook_failed` }),
   oauthCallback
 );
 

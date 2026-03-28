@@ -62,30 +62,40 @@ async function verifyOAuthCallback(
   }
 }
 
-// 配置 Google 策略
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: config.oauth.google.clientId,
-      clientSecret: config.oauth.google.clientSecret,
-      callbackURL: config.oauth.google.callbackURL,
-    },
-    verifyOAuthCallback
-  )
-);
+// 配置 Google 策略（仅在有配置时启用）
+if (config.oauth.google.clientId && config.oauth.google.clientSecret) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: config.oauth.google.clientId,
+        clientSecret: config.oauth.google.clientSecret,
+        callbackURL: config.oauth.google.callbackURL,
+      },
+      verifyOAuthCallback
+    )
+  );
+  console.log('[passport] Google OAuth enabled');
+} else {
+  console.log('[passport] Google OAuth disabled (missing credentials)');
+}
 
-// 配置 Facebook 策略
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: config.oauth.facebook.appId,
-      clientSecret: config.oauth.facebook.appSecret,
-      callbackURL: config.oauth.facebook.callbackURL,
-      profileFields: ['id', 'displayName', 'emails', 'photos'],
-    },
-    verifyOAuthCallback
-  )
-);
+// 配置 Facebook 策略（仅在有配置时启用）
+if (config.oauth.facebook.appId && config.oauth.facebook.appSecret) {
+  passport.use(
+    new FacebookStrategy(
+      {
+        clientID: config.oauth.facebook.appId,
+        clientSecret: config.oauth.facebook.appSecret,
+        callbackURL: config.oauth.facebook.callbackURL,
+        profileFields: ['id', 'displayName', 'emails', 'photos'],
+      },
+      verifyOAuthCallback
+    )
+  );
+  console.log('[passport] Facebook OAuth enabled');
+} else {
+  console.log('[passport] Facebook OAuth disabled (missing credentials)');
+}
 
 // 序列化用户（存储到 session）
 passport.serializeUser((user: any, done) => {

@@ -2,11 +2,7 @@ import { sanitizeAvatarUrl, sanitizeImageUrls } from './imageCleanup';
 import { normalizeFoundedYear, summarizeCompanyDescription, type Company, type PortfolioCategories } from './companyData';
 import { companies as localCompanies } from '../data/companies';
 
-const API_BASE = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD
-    ? `${window.location.origin}/api`
-    : 'http://localhost:3002/api'
-);
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export interface PublicDesignerCardData {
   id: string;
@@ -158,7 +154,15 @@ function toCompany(company: PublicCompanyRecord): Company {
   if (company.portfolio_categories && typeof company.portfolio_categories === 'object' && !Array.isArray(company.portfolio_categories)) {
     portfolioCategories = company.portfolio_categories;
   } else if (projectImages.length > 0) {
-    portfolioCategories = { Projects: projectImages.map((url) => ({ url, title: '' })) };
+    portfolioCategories = { Projects: projectImages.map((url) => ({
+      url,
+      title: decodeURIComponent(url.split('/').pop()?.replace(/\.[^.]+$/, '') || '')
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b\d{3,}x\d{3,}\b/g, '')
+        .replace(/\b(min|scaled|11zon|webp|jpg|png)\b/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim(),
+    })) };
   }
 
   return {

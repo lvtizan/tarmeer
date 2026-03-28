@@ -3,7 +3,6 @@ import axios from 'axios';
 import fs from 'fs/promises';
 import path from 'path';
 import pool from '../config/database';
-import { generateVerificationToken } from '../services/emailService';
 
 interface OAuthProfile {
   id: string;
@@ -40,16 +39,16 @@ export async function downloadAvatar(
   try {
     await ensureUploadDir();
 
-    const response = await axios.get(url, {
-      responseType: 'arraybuffer',
-      timeout: 10000,
-    });
-
     const ext = url.includes('.png') ? '.png' : '.jpg';
     const filename = `${designerId}${ext}`;
     const filepath = path.join(UPLOAD_DIR, filename);
 
-    await fs.writeFile(filepath, response.data);
+    console.log('[avatar] Downloading from:', url);
+    const { execSync } = require('child_process');
+    const proxyEnv = process.env.HTTPS_PROXY || process.env.https_proxy;
+    const proxyArg = proxyEnv ? `-x ${proxyEnv}` : '';
+    execSync(`curl ${proxyArg} -sL --create-dirs -o "${filepath}" --max-time 10 "${url}"`);
+    console.log('[avatar] Saved to:', filepath);
 
     return `/uploads/avatars/${filename}`;
   } catch (error) {
@@ -135,28 +134,18 @@ export async function createOAuthDesigner(
     };
   }
 
-  // 创建新用户
+  // 创建新用户（OAuth 登录邮箱已由提供商验证，自动设为 verified）
   const field = provider === 'google' ? 'google_id' : 'facebook_id';
-  const { token: verificationToken, expires: verificationExpires } = generateVerificationToken();
-
-  // 下载头像
-  let avatarUrl: string | null = null;
-  if (photoUrl) {
-    avatarUrl = await downloadAvatar(photoUrl, 0); // 临时用 0，后面会替换
-  }
 
   const [result] = await pool.execute(
     `INSERT INTO designers
-     (email, full_name, ${field}, oauth_provider, avatar_url, verification_token, verification_expires, status, is_approved, city)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     (email, full_name, ${field}, oauth_provider, email_verified, status, is_approved, city)
+     VALUES (?, ?, ?, ?, TRUE, ?, ?, ?)`,
     [
       email,
       displayName,
       oauthId,
       provider,
-      avatarUrl,
-      verificationToken,
-      verificationExpires,
       'pending',
       0,
       'Dubai',
@@ -165,20 +154,14 @@ export async function createOAuthDesigner(
 
   const designerId = (result as any).insertId;
 
-  // 如果下载了头像，更新文件名
-  if (avatarUrl) {
-    const oldPath = path.join(UPLOAD_DIR, `0${photoUrl?.includes('.png') ? '.png' : '.jpg'}`);
-    const newPath = path.join(UPLOAD_DIR, `${designerId}${photoUrl?.includes('.png') ? '.png' : '.jpg'}`);
-    try {
-      await fs.rename(oldPath, newPath);
-      const finalAvatarUrl = `/uploads/avatars/${designerId}${photoUrl?.includes('.png') ? '.png' : '.jpg'}`;
+  // 下载头像（用真实 ID，避免竞态条件）
+  if (photoUrl) {
+    const avatarUrl = await downloadAvatar(photoUrl, designerId);
+    if (avatarUrl) {
       await pool.execute(
         'UPDATE designers SET avatar_url = ? WHERE id = ?',
-        [finalAvatarUrl, designerId]
+        [avatarUrl, designerId]
       );
-      avatarUrl = finalAvatarUrl;
-    } catch (error) {
-      console.error('Failed to rename avatar file:', error);
     }
   }
 
@@ -190,6 +173,6 @@ export async function createOAuthDesigner(
   return {
     designer: (designer as DesignerResult[])[0],
     isNew: true,
-    needsVerification: true,
+    needsVerification: false,
   };
 }

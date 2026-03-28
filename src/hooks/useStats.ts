@@ -1,10 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD
-    ? `${window.location.origin}/api`
-    : 'http://localhost:3002/api'
-);
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Generate a simple fingerprint based on browser info
 function generateFingerprint(): string {

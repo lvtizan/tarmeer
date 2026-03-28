@@ -1,10 +1,6 @@
 type AnalyticsPayload = Record<string, unknown>;
 
-const API_BASE = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD
-    ? `${window.location.origin}/api`
-    : 'http://localhost:3002/api'
-);
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 function getCurrentPath() {
   if (typeof window === 'undefined') return '/';

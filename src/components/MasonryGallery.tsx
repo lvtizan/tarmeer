@@ -73,8 +73,8 @@ export default function MasonryGallery({ categories, onImageClick }: MasonryGall
     activeTab === 'All' ? allItems.length : (nonEmptyCategories.find(([n]) => n === activeTab)?.[1].length ?? 0);
 
   return (
-    <section className="py-16 lg:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <section className="py-10 lg:py-14 bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <div className="flex items-end justify-between mb-8">
           <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Portfolio</h2>
@@ -120,7 +120,7 @@ export default function MasonryGallery({ categories, onImageClick }: MasonryGall
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4"
+            className="columns-1 sm:columns-2 lg:columns-3 gap-4"
           >
             {visibleItems.map((item, i) => {
               const delay = Math.min(i * 0.04, 0.5);

@@ -9,6 +9,16 @@ export default defineConfig({
     host: '0.0.0.0', // 允许内网访问
     port: 5173,
     headers: { 'Cache-Control': 'no-cache' },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3005',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3005',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     rollupOptions: {

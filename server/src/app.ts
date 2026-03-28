@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import session from 'express-session';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import designerRoutes from './routes/designers';
@@ -39,10 +40,12 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      connectSrc: ["'self'", 'https://accounts.google.com', 'https://www.facebook.com'],
+      formAction: ["'self'", 'https://accounts.google.com', 'https://www.facebook.com'],
     },
   },
-  crossOriginEmbedderPolicy: true,
-  crossOriginOpenerPolicy: true,
+  crossOriginEmbedderPolicy: false, // OAuth 重定向需要
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
   crossOriginResourcePolicy: { policy: "cross-origin" },
   dnsPrefetchControl: true,
   frameguard: { action: 'deny' },
@@ -72,6 +75,17 @@ app.use('/api/', limiter);
 // 使用新的CORS配置
 const corsConfig = getCorsConfig(config.frontendUrl);
 app.use(cors(corsConfig));
+
+// Session（Passport OAuth 需要）
+app.use(session({
+  secret: config.jwt.secret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: config.nodeEnv === 'production',
+    maxAge: 10 * 60 * 1000, // 10 分钟，仅用于 OAuth 流程
+  },
+}));
 
 // Passport 初始化
 app.use(passport.initialize());
@@ -134,6 +148,9 @@ app.get('/api/health', (req, res) => {
     environment: config.nodeEnv
   });
 });
+
+import path from 'path';
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/designers', designerRoutes);

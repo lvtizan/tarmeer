@@ -41,7 +41,9 @@
       "Bash(bash -c \"npm run build\")",
       "Bash(bash -c \"npm run build 2>&1\")",
       "Bash(kill 86544 86542)",
-      "Bash(bash -c \"cd /Users/kp/Code/tarmeer-4.0-local/server && npm run build\")"
+      "Bash(bash -c \"cd /Users/kp/Code/tarmeer-4.0-local/server && npm run build\")",
+      "Bash(pm2 list:*)",
+      "Bash(bash /Users/kp/Code/tarmeer-4.0-local/scripts/backend-up.sh)"
     ]
   }
 }

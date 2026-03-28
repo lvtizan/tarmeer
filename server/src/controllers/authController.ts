@@ -430,18 +430,43 @@ export async function resetPassword(req: any, res: any) {
   }
 }
 
+// 获取当前用户信息
+export async function getMe(req: any, res: any) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT * FROM designers WHERE id = ? AND deleted_at IS NULL',
+      [req.user.id]
+    );
+
+    const designers = rows as any[];
+    if (designers.length === 0) {
+      return res.status(404).json({ error: 'Designer not found.' });
+    }
+
+    res.json({ designer: sanitizeDesignerSession(designers[0]) });
+  } catch (error) {
+    console.error('Get me error:', error);
+    res.status(500).json({ error: 'Failed to get user info.' });
+  }
+}
+
 // OAuth 回调处理
 export async function oauthCallback(req: any, res: any) {
+  const frontendUrl = config.frontendUrl || 'http://localhost:5173';
+
   try {
     const user = req.user as any;
 
     if (!user) {
-      return res.redirect('/auth?error=oauth_failed');
+      return res.redirect(`${frontendUrl}/auth?error=oauth_failed`);
     }
 
-    // 检查邮箱是否已验证
+    // 如果是已有账号通过 OAuth 关联但邮箱未验证，自动验证
     if (!user.email_verified) {
-      return res.redirect('/auth?error=verify_email');
+      await pool.execute(
+        'UPDATE designers SET email_verified = TRUE WHERE id = ?',
+        [user.id]
+      );
     }
 
     // 生成 JWT token
@@ -452,11 +477,9 @@ export async function oauthCallback(req: any, res: any) {
     );
 
     // 重定向到前端，携带 token
-    const frontendUrl = config.frontendUrl || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=oauth`);
   } catch (error) {
     console.error('OAuth callback error:', error);
-    const frontendUrl = config.frontendUrl || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/auth?error=oauth_error`);
   }
 }

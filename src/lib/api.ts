@@ -1,28 +1,6 @@
 import { safeGetItem, safeSetItem, safeRemoveItem } from './storage';
 
-function resolveApiBase() {
-  const envBase = import.meta.env.VITE_API_URL?.trim();
-  if (envBase) {
-    return envBase;
-  }
-
-  if (typeof window === 'undefined') {
-    return 'http://localhost:3002/api';
-  }
-
-  if (import.meta.env.PROD) {
-    return `${window.location.origin}/api`;
-  }
-
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return `${window.location.protocol}//${host}:3002/api`;
-  }
-
-  return `${window.location.origin}/api`;
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 // 请求去重存储
 const pendingRequests = new Map<string, AbortController>();

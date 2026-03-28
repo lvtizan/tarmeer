@@ -70,7 +70,7 @@ export default function Lightbox({
       {open && (
         <motion.div
           key="lightbox-overlay"
-          className="fixed inset-0 z-50 flex flex-col bg-[#faf9f7]/95 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -83,17 +83,17 @@ export default function Lightbox({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-[#1c1917]">{categoryName}</span>
-              <span className="text-sm text-[#2c2c2c]/60">
+              <span className="text-sm font-medium text-white">{categoryName}</span>
+              <span className="text-sm text-white/60">
                 {currentIndex + 1} of {images.length}
               </span>
             </div>
             <button
               onClick={onClose}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white shadow-md hover:bg-stone-50 border border-stone-100 transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               aria-label="Close lightbox"
             >
-              <X size={18} className="text-[#1c1917]" />
+              <X size={18} className="text-white" />
             </button>
           </div>
 
@@ -106,10 +106,10 @@ export default function Lightbox({
             {currentIndex > 0 && (
               <button
                 onClick={() => onNavigate(currentIndex - 1)}
-                className="absolute left-3 flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md hover:bg-stone-50 border border-stone-100 transition-colors z-10"
+                className="absolute left-3 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
                 aria-label="Previous image"
               >
-                <ChevronLeft size={20} className="text-[#1c1917]" />
+                <ChevronLeft size={20} className="text-white" />
               </button>
             )}
 
@@ -127,10 +127,10 @@ export default function Lightbox({
                 <img
                   src={currentImage.url}
                   alt={currentImage.title || `Image ${currentIndex + 1}`}
-                  className="max-w-[85vw] max-h-[70vh] object-contain rounded-lg shadow-lg"
+                  className="max-w-[92vw] max-h-[82vh] object-contain rounded-lg"
                 />
                 {currentImage.title && (
-                  <p className="text-sm text-[#2c2c2c] text-center max-w-md">
+                  <p className="text-sm text-white/80 text-center max-w-md">
                     {currentImage.title}
                   </p>
                 )}
@@ -141,17 +141,17 @@ export default function Lightbox({
             {currentIndex < images.length - 1 && (
               <button
                 onClick={() => onNavigate(currentIndex + 1)}
-                className="absolute right-3 flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md hover:bg-stone-50 border border-stone-100 transition-colors z-10"
+                className="absolute right-3 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
                 aria-label="Next image"
               >
-                <ChevronRight size={20} className="text-[#1c1917]" />
+                <ChevronRight size={20} className="text-white" />
               </button>
             )}
           </div>
 
           {/* Thumbnail strip */}
           <div
-            className="shrink-0 bg-white border-t border-stone-100 shadow-sm py-3"
+            className="shrink-0 bg-black/50 border-t border-white/10 py-3"
             onClick={(e) => e.stopPropagation()}
           >
             <div
