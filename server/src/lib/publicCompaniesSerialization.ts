@@ -11,8 +11,50 @@ function sanitizeCompanyImage(value: unknown) {
   return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/') ? url : '';
 }
 
+type PortfolioCategoryItem = { url: string; title: string };
+type PortfolioCategories = Record<string, PortfolioCategoryItem[]>;
+
+function buildPortfolioData(rawField: unknown): {
+  portfolio_images: string[];
+  portfolio_categories: PortfolioCategories;
+} {
+  const parsed = parseJsonField(rawField);
+
+  // New format: object with category keys mapping to arrays of { url, title }
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    const categories: PortfolioCategories = {};
+    const flatUrls: string[] = [];
+
+    for (const [category, items] of Object.entries(parsed as Record<string, unknown>)) {
+      if (!Array.isArray(items)) continue;
+      const sanitizedItems: PortfolioCategoryItem[] = [];
+      for (const item of items) {
+        if (item && typeof item === 'object' && 'url' in item) {
+          const url = sanitizeCompanyImage((item as any).url);
+          if (url) {
+            const title = typeof (item as any).title === 'string' ? (item as any).title : '';
+            sanitizedItems.push({ url, title });
+            flatUrls.push(url);
+          }
+        }
+      }
+      categories[category] = sanitizedItems;
+    }
+
+    return { portfolio_images: flatUrls, portfolio_categories: categories };
+  }
+
+  // Legacy format: flat array of URL strings
+  const flatUrls = sanitizeImageUrls(Array.isArray(parsed) ? parsed : []);
+  const categories: PortfolioCategories = {
+    Projects: flatUrls.map((url) => ({ url, title: '' })),
+  };
+
+  return { portfolio_images: flatUrls, portfolio_categories: categories };
+}
+
 export function sanitizePublicCompany(company: any) {
-  const portfolioImages = sanitizeImageUrls(parseJsonField(company.portfolio_images) || []);
+  const { portfolio_images, portfolio_categories } = buildPortfolioData(company.portfolio_images);
 
   return {
     id: company.id,
@@ -29,7 +71,8 @@ export function sanitizePublicCompany(company: any) {
     services: parseJsonField(company.services) || [],
     specialties: parseJsonField(company.specialties) || [],
     logo_url: sanitizeCompanyImage(company.logo_url),
-    portfolio_images: portfolioImages,
-    project_count: portfolioImages.length,
+    portfolio_images,
+    portfolio_categories,
+    project_count: portfolio_images.length,
   };
 }

@@ -31,3 +31,78 @@ test('sanitizePublicCompany normalizes json fields and portfolio images', () => 
   assert.deepEqual(company.portfolio_images, ['/images/uae-companies/portfolio/algedra/1.png', '/images/uae-companies/portfolio/algedra/2.png']);
   assert.equal(company.project_count, 2);
 });
+
+test('sanitizePublicCompany handles categorized portfolio_images object', () => {
+  const company = sanitizePublicCompany({
+    id: 1,
+    slug: 'test-co',
+    name_en: 'Test Co',
+    description: 'A test company.',
+    city: 'Dubai',
+    address: 'Dubai, UAE',
+    year_established: '2020',
+    website: 'https://test.com',
+    instagram: '',
+    phone: '',
+    email: '',
+    services: '["Interior Design"]',
+    specialties: '["Residential"]',
+    logo_url: '/images/logo.png',
+    portfolio_images: JSON.stringify({
+      "Residential": [
+        { "url": "/images/portfolio/test-co/residential/1.jpg", "title": "Villa A" },
+        { "url": "/images/portfolio/test-co/residential/2.jpg", "title": "Villa B" }
+      ],
+      "Commercial": [
+        { "url": "/images/portfolio/test-co/commercial/1.jpg", "title": "Office" }
+      ]
+    }),
+    google_reviews_count: 50,
+  });
+
+  assert.deepEqual(company.portfolio_categories, {
+    Residential: [
+      { url: '/images/portfolio/test-co/residential/1.jpg', title: 'Villa A' },
+      { url: '/images/portfolio/test-co/residential/2.jpg', title: 'Villa B' },
+    ],
+    Commercial: [
+      { url: '/images/portfolio/test-co/commercial/1.jpg', title: 'Office' },
+    ],
+  });
+  assert.equal(company.project_count, 3);
+  assert.deepEqual(company.portfolio_images, [
+    '/images/portfolio/test-co/residential/1.jpg',
+    '/images/portfolio/test-co/residential/2.jpg',
+    '/images/portfolio/test-co/commercial/1.jpg',
+  ]);
+});
+
+test('sanitizePublicCompany still handles legacy flat portfolio_images array', () => {
+  const company = sanitizePublicCompany({
+    id: 2,
+    slug: 'legacy-co',
+    name_en: 'Legacy Co',
+    description: '',
+    city: 'Dubai',
+    address: '',
+    year_established: '2010',
+    website: '',
+    instagram: '',
+    phone: '',
+    email: '',
+    services: '[]',
+    specialties: '[]',
+    logo_url: '/images/logo.png',
+    portfolio_images: '["/images/1.jpg", "/images/2.jpg"]',
+    google_reviews_count: 10,
+  });
+
+  assert.deepEqual(company.portfolio_images, ['/images/1.jpg', '/images/2.jpg']);
+  assert.deepEqual(company.portfolio_categories, {
+    Projects: [
+      { url: '/images/1.jpg', title: '' },
+      { url: '/images/2.jpg', title: '' },
+    ],
+  });
+  assert.equal(company.project_count, 2);
+});
