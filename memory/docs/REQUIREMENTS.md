@@ -179,11 +179,19 @@
 
 ## 13. 登录/注册（/auth）
 
-- **形式**：单页 Tab 切换（Log In / Create Account），无重复站点头部。
-- **Banner**：顶部配图（优先 `/images/register-banner.jpg`，失败时用与「设计师/注册」相关的备用图，不要与首页大图相同）。
-- **登录**：邮箱、密码、Remember；提交后跳转 `/designer/dashboard`（使用 `navigate` 推历史，以便浏览器返回可回到登录页）。
-- **注册**：姓名、邮箱、电话、城市、设计理念等；同意条款；提交后同样跳转 `/designer/dashboard`。
-- **主按钮**：主色底、白色字；「Login to Studio」等按钮无多余图标。
+- **形式**：单页分步流程，无重复站点头部。
+- **OAuth 登录**：
+  - Google OAuth 2.0 登录
+  - Facebook OAuth 2.0 登录
+  - 自动关联已有账号（通过邮箱匹配）
+  - 头像自动下载存储
+  - 回调：`/api/auth/callback/google`、`/api/auth/callback/facebook`
+- **邮箱登录/注册**：
+  - 邮箱输入 → 检测是否已注册 → 显示状态提示
+  - 已注册邮箱：输入密码登录
+  - 新邮箱：输入密码注册
+  - 提交后跳转 `/designer/dashboard`（使用 `navigate` 推历史）
+- **主按钮**：主色底、白色字；「Continue with Google/Facebook」按钮。
 
 ---
 
