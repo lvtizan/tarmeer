@@ -1,18 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Globe, Instagram, Phone, Mail, MapPin, Briefcase, X, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import type { Company } from '../lib/companyData';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowLeft, Globe, Instagram, Phone, Mail, MapPin, Briefcase, ExternalLink, ChevronDown } from 'lucide-react';
+import type { Company, PortfolioItem } from '../lib/companyData';
 import { fetchPublicCompanyDetail } from '../lib/publicApi';
-import { getNextRenderableImageIndex } from '../lib/imageCleanup';
+import MasonryGallery from '../components/MasonryGallery';
+import Lightbox from '../components/Lightbox';
 
 export default function CompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [imgIndex, setImgIndex] = useState(0);
-  const [failedIndices, setFailedIndices] = useState<number[]>([]);
+
+  // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxCategory, setLightboxCategory] = useState('');
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Parallax
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 600], [0, 150]);
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0.3]);
 
   useEffect(() => {
     if (!id) {
@@ -24,8 +33,6 @@ export default function CompanyDetailPage() {
     let active = true;
     setLoading(true);
     setLoadError('');
-    setFailedIndices([]);
-    setImgIndex(0);
 
     fetchPublicCompanyDetail(id)
       .then((item) => {
@@ -46,9 +53,26 @@ export default function CompanyDetailPage() {
     };
   }, [id]);
 
+  const handleImageClick = useCallback(
+    (_url: string, categoryName: string, indexInCategory: number) => {
+      setLightboxCategory(categoryName);
+      setLightboxIndex(indexInCategory);
+      setLightboxOpen(true);
+    },
+    []
+  );
+
+  const handleLightboxNavigate = useCallback((index: number) => {
+    setLightboxIndex(index);
+  }, []);
+
+  const handleLightboxClose = useCallback(() => {
+    setLightboxOpen(false);
+  }, []);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#faf9f7] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="w-12 h-12 rounded-full border-4 border-[#c6a065]/20 border-t-[#c6a065] animate-spin" />
       </div>
     );
@@ -56,7 +80,7 @@ export default function CompanyDetailPage() {
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-[#faf9f7] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-serif text-2xl text-[#2c2c2c] mb-4">{loadError || 'Company not found'}</h1>
           <Link to="/companies" className="text-[#c6a065] hover:underline">
@@ -67,51 +91,19 @@ export default function CompanyDetailPage() {
     );
   }
 
-  const images = company.projectImages;
-  const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
-  const currentSrc = activeIndex === -1 ? '' : images[activeIndex];
-  const hasMultiple = images.length > 1;
+  const heroImage = company.projectImages[0] || company.coverImage;
   const instagramHref = company.instagram || '';
   const instagramLabel = instagramHref
     ? instagramHref.replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '')
     : '';
 
-  const handleImageError = () => {
-    if (activeIndex === -1) return;
-    const nextFailed = [...failedIndices, activeIndex];
-    setFailedIndices(nextFailed);
-    const nextIndex = getNextRenderableImageIndex(images, activeIndex + 1, nextFailed);
-    if (nextIndex !== -1) setImgIndex(nextIndex);
-  };
-
-  const goNext = () => {
-    const nextIndex = getNextRenderableImageIndex(images, activeIndex + 1, failedIndices);
-    if (nextIndex !== -1) setImgIndex(nextIndex);
-  };
-
-  const goPrev = () => {
-    const newIndex = activeIndex - 1;
-    if (newIndex >= 0 && !failedIndices.includes(newIndex)) {
-      setImgIndex(newIndex);
-      return;
-    }
-
-    for (let index = images.length - 1; index >= 0; index -= 1) {
-      if (index !== activeIndex && !failedIndices.includes(index)) {
-        setImgIndex(index);
-        break;
-      }
-    }
-  };
-
-  const openLightbox = (index: number) => {
-    setImgIndex(index);
-    setLightboxOpen(true);
-  };
+  // Get images for the active lightbox category
+  const lightboxImages: PortfolioItem[] =
+    company.portfolioCategories[lightboxCategory] ?? [];
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Minimal Top Navigation */}
+      {/* Fixed Top Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link
@@ -148,76 +140,59 @@ export default function CompanyDetailPage() {
         </div>
       </nav>
 
-      {/* Hero Section with Full-Width Image */}
-      <section className="relative pt-16">
-        {currentSrc && (
-          <div className="relative aspect-[16/9] lg:aspect-[21/8] bg-stone-100">
+      {/* Full-Screen Hero with Parallax */}
+      <section className="relative h-screen min-h-[500px] overflow-hidden">
+        <motion.div
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="absolute inset-0"
+        >
+          {heroImage ? (
             <img
-              src={currentSrc}
-              alt={`${company.name} portfolio`}
+              src={heroImage}
+              alt={`${company.name} hero`}
               className="w-full h-full object-cover"
-              onError={handleImageError}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          ) : (
+            <div className="w-full h-full bg-stone-200" />
+          )}
+        </motion.div>
 
-            {/* Image Navigation */}
-            {hasMultiple && (
-              <>
-                <button
-                  onClick={goPrev}
-                  className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 flex items-center justify-center border border-white/20 transition z-20"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="w-6 h-6 text-white" />
-                </button>
-                <button
-                  onClick={goNext}
-                  className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 flex items-center justify-center border border-white/20 transition z-20"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="w-6 h-6 text-white" />
-                </button>
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                  {images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setImgIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === activeIndex ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/80'
-                      }`}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-            {/* Company Info Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12 lg:p-16 text-white">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {company.styles.slice(0, 3).map((style) => (
-                    <span
-                      key={style}
-                      className="px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-white/20"
-                    >
-                      {style}
-                    </span>
-                  ))}
-                </div>
-                <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold mb-4 tracking-tight">
-                  {company.name}
-                </h1>
-                <p className="text-white/90 text-lg sm:text-xl max-w-2xl leading-relaxed">
-                  {company.shortDescription}
-                </p>
-              </div>
+        {/* Hero Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12 lg:p-16 text-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-wrap gap-2 mb-4">
+              {company.styles.slice(0, 3).map((style) => (
+                <span
+                  key={style}
+                  className="px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-white/20"
+                >
+                  {style}
+                </span>
+              ))}
             </div>
+            <h1 className="font-serif text-4xl sm:text-5xl lg:text-7xl font-semibold mb-4 tracking-tight">
+              {company.name}
+            </h1>
+            <p className="text-white/90 text-lg sm:text-xl max-w-2xl leading-relaxed">
+              {company.shortDescription}
+            </p>
           </div>
-        )}
+        </div>
+
+        {/* Scroll-Down Indicator */}
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <ChevronDown className="w-8 h-8 text-white/60" />
+        </motion.div>
       </section>
 
-      {/* Key Stats Bar */}
+      {/* Stats Bar */}
       <section className="bg-[#1c1917] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
@@ -249,7 +224,7 @@ export default function CompanyDetailPage() {
         </div>
       </section>
 
-      {/* Main Content */}
+      {/* About + Contact 2-Column */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 lg:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
           {/* Left Content */}
@@ -276,32 +251,6 @@ export default function CompanyDetailPage() {
                     </div>
                     <span className="font-medium text-[#1c1917]">{service}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Portfolio Gallery */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-serif text-3xl text-[#1c1917] font-semibold">Featured Projects</h2>
-                <span className="text-sm text-[#6b6b6b]">{images.length} projects</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => openLightbox(index)}
-                    className="group relative aspect-[4/3] rounded-xl overflow-hidden bg-stone-100"
-                  >
-                    <img
-                      src={image}
-                      alt={`Project ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-300 flex items-center justify-center">
-                      <ExternalLink className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition" />
-                    </div>
-                  </button>
                 ))}
               </div>
             </div>
@@ -418,47 +367,34 @@ export default function CompanyDetailPage() {
         </div>
       </section>
 
+      {/* Portfolio Gallery (Masonry with Category Tabs) */}
+      <MasonryGallery
+        categories={company.portfolioCategories}
+        onImageClick={handleImageClick}
+      />
+
       {/* Lightbox */}
-      {lightboxOpen && currentSrc && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-          onClick={() => setLightboxOpen(false)}
-        >
-          <button
-            onClick={() => setLightboxOpen(false)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
+      <Lightbox
+        open={lightboxOpen}
+        images={lightboxImages}
+        currentIndex={lightboxIndex}
+        categoryName={lightboxCategory}
+        onClose={handleLightboxClose}
+        onNavigate={handleLightboxNavigate}
+      />
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              goPrev();
-            }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+      {/* Footer CTA */}
+      <section className="border-t border-stone-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 text-center">
+          <Link
+            to="/companies"
+            className="inline-flex items-center gap-2 text-sm text-[#6b6b6b] hover:text-[#c6a065] transition"
           >
-            <ChevronLeft className="w-6 h-6 text-white" />
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              goNext();
-            }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-          >
-            <ChevronRight className="w-6 h-6 text-white" />
-          </button>
-
-          <img
-            src={currentSrc}
-            alt={`${company.name} project`}
-            className="max-w-[90vw] max-h-[90vh] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+            <ArrowLeft className="w-4 h-4" />
+            Back to Companies
+          </Link>
         </div>
-      )}
+      </section>
     </div>
   );
 }
