@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { extractLogoUrl, extractPortfolioImages } from './scrape-logos-lib.mjs';
+import { extractLogoUrl, extractPortfolioImages, extractCategoryLinks } from './scrape-logos-lib.mjs';
 
 test('extractLogoUrl prioritizes actual logo assets over social og:image links', () => {
   const html = `
@@ -54,4 +54,27 @@ test('extractPortfolioImages keeps real project uploads and skips logos/icons', 
   const result = extractPortfolioImages(html, 'https://www.winteriorsdecor.com');
 
   assert.deepEqual(result, ['https://www.winteriorsdecor.com/uploads/topics/17574181212261.jpg']);
+});
+
+test('extractCategoryLinks finds portfolio category navigation links', () => {
+  const html = `
+    <nav>
+      <a href="/projects/residential">Residential</a>
+      <a href="/projects/commercial">Commercial</a>
+      <a href="/portfolio/hospitality">Hospitality</a>
+      <a href="/about">About Us</a>
+    </nav>
+  `;
+  const result = extractCategoryLinks(html, 'https://example.com');
+  assert.deepEqual(result, [
+    { url: 'https://example.com/projects/residential', category: 'Residential' },
+    { url: 'https://example.com/projects/commercial', category: 'Commercial' },
+    { url: 'https://example.com/portfolio/hospitality', category: 'Hospitality' },
+  ]);
+});
+
+test('extractCategoryLinks returns empty array when no categories found', () => {
+  const html = `<nav><a href="/about">About</a><a href="/contact">Contact</a></nav>`;
+  const result = extractCategoryLinks(html, 'https://example.com');
+  assert.deepEqual(result, []);
 });

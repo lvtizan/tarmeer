@@ -317,8 +317,71 @@ export function extractPortfolioImages(html, baseUrl) {
   }
 
   return uniqueUrls([...simpleAttributeUrls, ...srcsetUrls])
-    .filter(isLikelyContentImage)
-    .slice(0, 12);
+    .filter(isLikelyContentImage);
+}
+
+const CATEGORY_URL_PREFIXES = [
+  'projects', 'portfolio', 'works', 'gallery', 'case-study',
+];
+
+const CATEGORY_KEYWORDS = [
+  'Residential', 'Commercial', 'Hospitality', 'Villa', 'Office',
+  'Retail', 'Penthouse', 'Apartment', 'Restaurant', 'Hotel',
+  'Spa', 'Salon', 'Clinic', 'Mosque', 'Palace',
+];
+
+const CATEGORY_KEYWORDS_LOWER = CATEGORY_KEYWORDS.map((k) => k.toLowerCase());
+
+export function extractCategoryLinks(html, baseUrl) {
+  const seen = new Set();
+  const results = [];
+
+  const anchorPattern = /<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let match;
+
+  while ((match = anchorPattern.exec(html)) !== null) {
+    const href = match[1].trim();
+    const text = match[2].replace(/<[^>]+>/g, '').trim();
+
+    const normalized = normalizeUrl(href, baseUrl);
+    if (!normalized || seen.has(normalized)) continue;
+
+    // Check if the URL path matches a portfolio/category prefix
+    let category = null;
+    try {
+      const pathname = new URL(normalized).pathname.toLowerCase();
+      const segments = pathname.replace(/^\//, '').split('/');
+      if (segments.length >= 2 && CATEGORY_URL_PREFIXES.includes(segments[0])) {
+        const slug = segments[1];
+        // Find matching keyword (case-insensitive)
+        const idx = CATEGORY_KEYWORDS_LOWER.indexOf(slug);
+        if (idx !== -1) {
+          category = CATEGORY_KEYWORDS[idx];
+        } else {
+          // Capitalize the slug as the category name
+          category = slug.charAt(0).toUpperCase() + slug.slice(1);
+        }
+      }
+    } catch {
+      // ignore invalid URLs
+    }
+
+    // If no URL-based category found, check link text
+    if (!category) {
+      const textLower = text.toLowerCase();
+      const idx = CATEGORY_KEYWORDS_LOWER.indexOf(textLower);
+      if (idx !== -1) {
+        category = CATEGORY_KEYWORDS[idx];
+      }
+    }
+
+    if (category) {
+      seen.add(normalized);
+      results.push({ url: normalized, category });
+    }
+  }
+
+  return results;
 }
 
 export function getExtension(url, contentType) {
