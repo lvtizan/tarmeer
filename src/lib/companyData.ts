@@ -1,3 +1,10 @@
+export interface PortfolioItem {
+  url: string;
+  title: string;
+}
+
+export type PortfolioCategories = Record<string, PortfolioItem[]>;
+
 export interface Company {
   id: string;
   name: string;
@@ -16,6 +23,7 @@ export interface Company {
   featured: boolean;
   coverImage: string;
   projectImages: string[];
+  portfolioCategories: PortfolioCategories;
 }
 
 export function summarizeCompanyDescription(description: string): string {

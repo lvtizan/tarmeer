@@ -1,5 +1,6 @@
 import { sanitizeAvatarUrl, sanitizeImageUrls } from './imageCleanup';
-import { normalizeFoundedYear, summarizeCompanyDescription, type Company } from './companyData';
+import { normalizeFoundedYear, summarizeCompanyDescription, type Company, type PortfolioCategories } from './companyData';
+import { companies as localCompanies } from '../data/companies';
 
 const API_BASE = import.meta.env.VITE_API_URL || (
   import.meta.env.PROD
@@ -57,6 +58,7 @@ interface PublicCompanyRecord {
   logo_url: string;
   portfolio_images: string[];
   project_count: number;
+  portfolio_categories?: Record<string, { url: string; title: string }[]>;
 }
 
 async function request<T>(endpoint: string): Promise<T> {
@@ -151,6 +153,14 @@ function toCompany(company: PublicCompanyRecord): Company {
   const projectImages = sanitizeImageUrls(Array.isArray(company.portfolio_images) ? company.portfolio_images : []);
   const description = company.description || '';
 
+  // Build portfolioCategories from API data or fall back to flat images
+  let portfolioCategories: PortfolioCategories = {};
+  if (company.portfolio_categories && typeof company.portfolio_categories === 'object' && !Array.isArray(company.portfolio_categories)) {
+    portfolioCategories = company.portfolio_categories;
+  } else if (projectImages.length > 0) {
+    portfolioCategories = { Projects: projectImages.map((url) => ({ url, title: '' })) };
+  }
+
   return {
     id: String(company.slug || company.id),
     name: company.name_en || 'Tarmeer Company',
@@ -169,12 +179,19 @@ function toCompany(company: PublicCompanyRecord): Company {
     featured: false,
     coverImage: company.logo_url || '', // logo for small badge
     projectImages, // only portfolio images for main display
+    portfolioCategories,
   };
 }
 
 export async function fetchPublicCompanies(limit = 50): Promise<Company[]> {
-  const result = await request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}`);
-  return (result.companies || []).map(toCompany);
+  try {
+    const result = await request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}`);
+    return (result.companies || []).map(toCompany);
+  } catch (error) {
+    console.warn('[publicApi] API unavailable, using local data:', error instanceof Error ? error.message : error);
+    // Fallback to local static data
+    return localCompanies.slice(0, limit);
+  }
 }
 
 export async function fetchPublicCompanyDetail(slug: string): Promise<Company> {
