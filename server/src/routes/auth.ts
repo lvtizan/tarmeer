@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, checkAvailability } from '../controllers/authController';
+import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, checkAvailability, oauthCallback } from '../controllers/authController';
 import rateLimit from 'express-rate-limit';
 import { authRateLimit, checkAccountLock } from '../middleware/authRateLimit';
+import passport from '../middleware/passport';
 
 const router = Router();
 
@@ -92,6 +93,26 @@ router.post('/reset-password',
   ],
   handleValidation,
   resetPassword
+);
+
+// Google OAuth
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get('/callback/google',
+  passport.authenticate('google', { failureRedirect: '/auth?error=google_failed' }),
+  oauthCallback
+);
+
+// Facebook OAuth
+router.get('/facebook',
+  passport.authenticate('facebook', { scope: ['email'] })
+);
+
+router.get('/callback/facebook',
+  passport.authenticate('facebook', { failureRedirect: '/auth?error=facebook_failed' }),
+  oauthCallback
 );
 
 export default router;

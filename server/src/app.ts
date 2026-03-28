@@ -19,6 +19,7 @@ import {
 import { getCorsConfig, logCorsViolation } from './lib/corsOrigins';
 import { shouldSkipApiRateLimit } from './lib/rateLimitPolicy';
 import { validateJWTConfig } from './lib/jwtManager';
+import passport from './middleware/passport';
 
 dotenv.config();
 
@@ -71,6 +72,10 @@ app.use('/api/', limiter);
 // 使用新的CORS配置
 const corsConfig = getCorsConfig(config.frontendUrl);
 app.use(cors(corsConfig));
+
+// Passport 初始化
+app.use(passport.initialize());
+app.use(passport.session());
 
 // 添加CORS违规日志记录
 app.use((req, res, next) => {

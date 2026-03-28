@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import passport from 'passport';
 import pool from '../config/database';
 import config from '../config';
 import { sendDesignerRegistrationEmail, sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
@@ -426,5 +427,36 @@ export async function resetPassword(req: any, res: any) {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ error: 'Failed to reset password. Please try again.' });
+  }
+}
+
+// OAuth 回调处理
+export async function oauthCallback(req: any, res: any) {
+  try {
+    const user = req.user as any;
+
+    if (!user) {
+      return res.redirect('/auth?error=oauth_failed');
+    }
+
+    // 检查邮箱是否已验证
+    if (!user.email_verified) {
+      return res.redirect('/auth?error=verify_email');
+    }
+
+    // 生成 JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      config.jwt.secret,
+      { expiresIn: '7d' }
+    );
+
+    // 重定向到前端，携带 token
+    const frontendUrl = config.frontendUrl || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=oauth`);
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    const frontendUrl = config.frontendUrl || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/auth?error=oauth_error`);
   }
 }
