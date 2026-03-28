@@ -14,6 +14,7 @@ import ShowroomsPage from './pages/ShowroomsPage';
 import MaterialCategoryPage from './pages/MaterialCategoryPage';
 import BrandPage from './pages/BrandPage';
 import AuthPage from './pages/AuthPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -86,6 +87,7 @@ function App() {
               <Route path="/designers/:slug/projects/:projectId" element={<DesignerProfileWithModalPage />} />
               <Route path="/showrooms" element={<Navigate to="/materials" replace />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
