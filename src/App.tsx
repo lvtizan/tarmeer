@@ -45,6 +45,7 @@ const AdminVisitorsPage = lazy(() => import('./pages/admin/AdminVisitorsPage'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminCompaniesPage = lazy(() => import('./pages/admin/AdminCompaniesPage'));
+const AdminInquiriesPage = lazy(() => import('./pages/admin/AdminInquiriesPage'));
 
 function PageLoader() {
   return <div className="min-h-[40vh] flex items-center justify-center text-sm text-stone-500">Loading...</div>;
@@ -76,6 +77,7 @@ function App() {
             <Route path="stats" element={<AdminDashboardPage />} />
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />
+            <Route path="inquiries" element={<AdminInquiriesPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
           </Route>
           <Route path="/admin/login" element={<AdminProvider><AdminLoginPage /></AdminProvider>} />
