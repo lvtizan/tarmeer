@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, MapPin, Check, Phone, Globe, ArrowRight, TrendingUp, ClipboardList, Users, Handshake, Mail } from 'lucide-react';
+import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
@@ -78,7 +78,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
   return (
     <div
       onClick={onClick}
-      className="group flex border-b border-stone-200/60 cursor-pointer py-5 gap-5"
+      className="group flex border-b border-stone-200/60 hover:bg-stone-50/50 transition-colors duration-150 cursor-pointer py-5 gap-5"
     >
       {/* Left - Project Image */}
       <div className="w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100">
@@ -86,7 +86,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
           <img
             src={currentSrc}
             alt={`${company.name} project`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
             onError={handleImageError}
             onLoad={handleImageLoad}
           />
@@ -105,7 +105,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
               <img src={company.coverImage} alt="" className="w-6 h-6 rounded object-contain bg-white flex-shrink-0"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             )}
-            <h3 className="font-semibold text-[17px] text-[#1c1917] truncate">
+            <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
               {company.name}
             </h3>
           </div>
@@ -190,70 +190,6 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
 }
 
 // Hover Preview Popup - Landscape
-function HoverPreview({ company, onViewProfile }: { company: Company; onViewProfile: () => void }) {
-  const images = company.projectImages;
-  const previewImages = images.slice(0, 3);
-
-  return (
-    <div className="absolute right-0 top-0 z-50 w-[560px] bg-white rounded-xl border border-stone-200 shadow-xl shadow-stone-200/60 overflow-hidden animate-fade-in">
-      <div className="flex">
-        {/* Left - Image grid */}
-        <div className="w-[220px] flex-shrink-0 bg-stone-100">
-          {previewImages.length > 0 ? (
-            <div className="grid grid-rows-2 h-full">
-              <img src={previewImages[0]} alt="" className="w-full h-[110px] object-cover" />
-              <div className="grid grid-cols-2">
-                {previewImages[1] ? (
-                  <img src={previewImages[1]} alt="" className="w-full h-[110px] object-cover" />
-                ) : <div className="bg-stone-100" />}
-                {previewImages[2] ? (
-                  <img src={previewImages[2]} alt="" className="w-full h-[110px] object-cover" />
-                ) : <div className="bg-stone-50" />}
-              </div>
-            </div>
-          ) : (
-            <div className="w-full h-full min-h-[220px] flex items-center justify-center">
-              <span className="font-serif text-4xl text-stone-200">{company.name.charAt(0)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Right - Info */}
-        <div className="flex-1 p-5 flex flex-col justify-between">
-          <div>
-            <h4 className="font-serif text-lg font-semibold text-[#1c1917] mb-1">{company.name}</h4>
-            <p className="text-stone-500 text-sm leading-relaxed mb-3 line-clamp-2">
-              {company.shortDescription}
-            </p>
-            <div className="space-y-1.5 text-sm">
-              <div className="flex items-center gap-2 text-stone-600">
-                <MapPin className="w-3.5 h-3.5 text-stone-400" />
-                {company.city}, UAE
-              </div>
-              <div className="flex items-center gap-2 text-stone-600">
-                <TrendingUp className="w-3.5 h-3.5 text-stone-400" />
-                {company.projectCount}+ projects &middot; Since {company.foundedYear}
-              </div>
-              {company.phone && (
-                <div className="flex items-center gap-2 text-stone-600">
-                  <Phone className="w-3.5 h-3.5 text-stone-400" />
-                  {company.phone}
-                </div>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onViewProfile(); }}
-            className="mt-4 w-full py-2 rounded-lg bg-[#1c1917] text-white text-sm font-medium hover:bg-[#b8860b] transition flex items-center justify-center gap-2"
-          >
-            View Profile <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function CompaniesPage() {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -264,7 +200,6 @@ export default function CompaniesPage() {
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [foundedRange, setFoundedRange] = useState<string>('');
-  const [hoveredCompany, setHoveredCompany] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -517,20 +452,11 @@ export default function CompaniesPage() {
                   <div
                     key={company.id}
                     className="relative"
-                    onMouseEnter={() => setHoveredCompany(company.id)}
-                    onMouseLeave={() => setHoveredCompany(null)}
                   >
                     <CompanyCard
                       company={company}
                       onClick={() => navigate(`/companies/${company.id}`)}
                     />
-                    {/* Hover Preview Popup */}
-                    {hoveredCompany === company.id && (
-                      <HoverPreview
-                        company={company}
-                        onViewProfile={() => navigate(`/companies/${company.id}`)}
-                      />
-                    )}
                   </div>
                 ))}
               </div>
