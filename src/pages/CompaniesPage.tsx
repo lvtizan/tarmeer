@@ -78,7 +78,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
   return (
     <div
       onClick={onClick}
-      className="group flex border-b border-stone-200/60 hover:bg-stone-50/50 transition-colors duration-150 cursor-pointer py-5 gap-5"
+      className="group flex border-b border-stone-200/60 cursor-pointer py-5 gap-5"
     >
       {/* Left - Project Image */}
       <div className="w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100">
@@ -86,7 +86,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
           <img
             src={currentSrc}
             alt={`${company.name} project`}
-            className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
+            className="w-full h-full object-cover"
             onError={handleImageError}
             onLoad={handleImageLoad}
           />
@@ -105,7 +105,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
               <img src={company.coverImage} alt="" className="w-6 h-6 rounded object-contain bg-white flex-shrink-0"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             )}
-            <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
+            <h3 className="font-semibold text-[17px] text-[#1c1917] truncate">
               {company.name}
             </h3>
           </div>

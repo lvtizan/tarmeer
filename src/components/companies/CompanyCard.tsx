@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, MapPin, Calendar, Instagram, Globe, Briefcase } from 'lucide-react';
+import { ChevronRight, MapPin, Calendar, Instagram, Globe, Briefcase, Mail } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
 import { getNextRenderableImageIndex } from '../../lib/imageCleanup';
 
@@ -123,18 +123,29 @@ export default function CompanyCard({ company }: CompanyCardProps) {
           )}
         </div>
 
-        {/* Footer with stats and CTA */}
-        <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-          <div className="text-sm text-[#6b6b6b]">
-            <span className="font-medium text-[#2c2c2c]">{company.projectCount}+</span> projects
-          </div>
+        {/* Footer with Send Message and View */}
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-stone-100">
           <Link
             to={`/companies/${company.id}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#c6a065] text-white font-medium hover:bg-[#a67c47] transition text-sm"
+            className="inline-flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg border border-[#c6a065] text-[#c6a065] font-semibold whitespace-nowrap hover:bg-[#c6a065] hover:text-white transition-colors text-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Mail className="w-4 h-4" />
+            Send Message
+          </Link>
+          <Link
+            to={`/companies/${company.id}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#c6a065] text-white font-medium hover:bg-[#a67c47] transition text-sm"
           >
             View
             <ChevronRight className="w-4 h-4" />
           </Link>
+        </div>
+
+        {/* Location info */}
+        <div className="flex items-center gap-1.5 mt-2.5 text-xs text-[#6b6b6b]">
+          <MapPin className="w-3.5 h-3.5 text-[#c6a065] flex-shrink-0" />
+          <span>{company.projectCount}+ projects in the {company.city} area</span>
         </div>
 
         {/* Social links */}
