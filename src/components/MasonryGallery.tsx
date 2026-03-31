@@ -7,6 +7,8 @@ const ITEMS_PER_PAGE = 12;
 interface MasonryGalleryProps {
   categories: PortfolioCategories;
   onImageClick: (url: string, categoryName: string, indexInCategory: number) => void;
+  /** If set, clicking images opens this URL instead of triggering onImageClick */
+  externalWebsite?: string;
 }
 
 interface FlatItem extends PortfolioItem {
@@ -14,7 +16,7 @@ interface FlatItem extends PortfolioItem {
   indexInCategory: number;
 }
 
-export default function MasonryGallery({ categories, onImageClick }: MasonryGalleryProps) {
+export default function MasonryGallery({ categories, onImageClick, externalWebsite }: MasonryGalleryProps) {
   // Filter out empty categories up front
   const nonEmptyCategories = useMemo(
     () =>
@@ -131,7 +133,13 @@ export default function MasonryGallery({ categories, onImageClick }: MasonryGall
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay, ease: 'easeOut' }}
                   className="break-inside-avoid mb-4 rounded-xl overflow-hidden group relative cursor-pointer"
-                  onClick={() => onImageClick(item.url, item.categoryName, item.indexInCategory)}
+                  onClick={() => {
+                    if (externalWebsite) {
+                      window.open(externalWebsite, '_blank', 'noopener,noreferrer');
+                    } else {
+                      onImageClick(item.url, item.categoryName, item.indexInCategory);
+                    }
+                  }}
                 >
                   <img
                     src={item.url}
@@ -140,7 +148,11 @@ export default function MasonryGallery({ categories, onImageClick }: MasonryGall
                     className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
                     onLoad={(e) => {
                       const img = e.currentTarget;
-                      if (img.naturalWidth < 200 || img.naturalHeight < 150) {
+                      const w = img.naturalWidth;
+                      const h = img.naturalHeight;
+                      const ratio = w / h;
+                      // Hide: too small, extreme aspect ratio (banners/strips), or tiny textures
+                      if (w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25) {
                         img.closest('.break-inside-avoid')?.classList.add('hidden');
                       }
                     }}
@@ -157,6 +169,9 @@ export default function MasonryGallery({ categories, onImageClick }: MasonryGall
                       </p>
                     )}
                     <p className="text-[#c6a065] text-xs mt-0.5">{item.categoryName}</p>
+                    {externalWebsite && (
+                      <p className="text-white/60 text-xs mt-1">View on original website &rarr;</p>
+                    )}
                   </div>
                 </motion.div>
               );

@@ -64,10 +64,13 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
 
   const handleImageError = () => skipToNext();
 
-  // Skip small/low-quality images after they load
+  // Skip small/low-quality/banner images after they load
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    if (img.naturalWidth < 200 || img.naturalHeight < 150) {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const ratio = w / h;
+    if (w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25) {
       skipToNext();
     }
   };
@@ -98,8 +101,9 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
-            {company.coverImage && (
-              <img src={company.coverImage} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />
+            {company.coverImage && company.coverImage.includes('/logos/') && (
+              <img src={company.coverImage} alt="" className="w-6 h-6 rounded object-contain bg-white flex-shrink-0"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             )}
             <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
               {company.name}

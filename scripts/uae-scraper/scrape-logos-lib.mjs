@@ -328,6 +328,90 @@ export function extractPortfolioImages(html, baseUrl) {
     .filter(isLikelyContentImage);
 }
 
+/**
+ * Extract portfolio images WITH associated text (project titles, alt text, captions).
+ * Returns array of { url, title } objects.
+ *
+ * Strategy: find each <img> and look for associated text in:
+ * 1. alt attribute
+ * 2. Nearest heading (h1-h6) in parent container
+ * 3. Nearest <a> text wrapping the image
+ * 4. Nearest <figcaption>
+ * 5. title attribute
+ */
+export function extractPortfolioImagesWithText(html, baseUrl) {
+  const results = [];
+  const seenUrls = new Set();
+
+  // Pattern: find img tags with surrounding context (up to 500 chars before)
+  // Match: optional wrapping <a> with text, then <img> with src and alt
+  const imgPattern = /<img[^>]+(?:src|data-src|data-lazy-src)=["']([^"']+)["'][^>]*>/gi;
+  let imgMatch;
+
+  while ((imgMatch = imgPattern.exec(html)) !== null) {
+    const imgTag = imgMatch[0];
+    const rawSrc = imgMatch[1];
+    const url = normalizeUrl(rawSrc, baseUrl);
+    if (!url || seenUrls.has(url) || !isLikelyContentImage(url)) continue;
+    seenUrls.add(url);
+
+    // Extract alt text
+    const altMatch = imgTag.match(/alt=["']([^"']*?)["']/i);
+    const alt = altMatch ? altMatch[1].trim() : '';
+
+    // Extract title attribute
+    const titleAttrMatch = imgTag.match(/title=["']([^"']*?)["']/i);
+    const titleAttr = titleAttrMatch ? titleAttrMatch[1].trim() : '';
+
+    // Look backwards in HTML for nearest heading or link text (within 800 chars)
+    const pos = imgMatch.index;
+    const contextBefore = html.substring(Math.max(0, pos - 800), pos);
+
+    // Find last heading before this image
+    let headingTitle = '';
+    const headingMatches = [...contextBefore.matchAll(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi)];
+    if (headingMatches.length > 0) {
+      headingTitle = headingMatches[headingMatches.length - 1][1]
+        .replace(/<[^>]+>/g, '').trim();
+    }
+
+    // Find wrapping <a> title
+    let linkTitle = '';
+    const linkMatches = [...contextBefore.matchAll(/<a[^>]*?title=["']([^"']+)["']/gi)];
+    if (linkMatches.length > 0) {
+      linkTitle = linkMatches[linkMatches.length - 1][1].trim();
+    }
+
+    // Look forward for figcaption
+    let captionTitle = '';
+    const contextAfter = html.substring(pos, Math.min(html.length, pos + 500));
+    const captionMatch = contextAfter.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/i);
+    if (captionMatch) {
+      captionTitle = captionMatch[1].replace(/<[^>]+>/g, '').trim();
+    }
+
+    // Pick best title: prefer heading > caption > link title > alt > title attr
+    let title = headingTitle || captionTitle || linkTitle || alt || titleAttr || '';
+
+    // Clean up: remove generic SEO spam, limit length
+    if (title) {
+      title = title
+        .replace(/\s+/g, ' ')
+        .replace(/^(interior design|design|project|image|photo|picture)\s*/i, '')
+        .trim();
+      if (title.length > 120) title = title.substring(0, 117) + '...';
+      // Skip if it's just generic keywords
+      if (/^(interior design|design company|best|top|luxury)\s*(in|of|for)?\s*(dubai|uae|abu dhabi)?$/i.test(title)) {
+        title = '';
+      }
+    }
+
+    results.push({ url, title });
+  }
+
+  return results;
+}
+
 const CATEGORY_URL_PREFIXES = [
   'projects', 'project', 'portfolio', 'works', 'work', 'gallery',
   'case-study', 'case-studies', 'our-work', 'our-projects',

@@ -26,6 +26,7 @@ import {
   extractCategoryLinks,
   extractPortfolioPageLinks,
   extractPortfolioImages,
+  extractPortfolioImagesWithText,
   downloadFile,
   getExtension,
   fetchUrl,
@@ -244,14 +245,14 @@ function extractProjectPageLinks(html, baseUrl) {
 }
 
 /**
- * Scrape images for a single category page. Returns an array of image URLs.
+ * Scrape images for a single category page.
+ * Returns array of { url, title } objects with associated text.
  */
 async function scrapeImagesFromPage(browser, pageUrl, baseUrl) {
   let html;
   try {
     html = await fetchRenderedHtml(browser, pageUrl);
   } catch (err) {
-    // Fallback to plain HTTP fetch if Puppeteer fails
     console.log(`    Puppeteer failed (${err.message}), falling back to fetchUrl`);
     try {
       const res = await fetchUrl(pageUrl);
@@ -262,20 +263,28 @@ async function scrapeImagesFromPage(browser, pageUrl, baseUrl) {
     }
   }
 
-  return extractPortfolioImages(html, baseUrl);
+  // Try extracting with text first
+  const withText = extractPortfolioImagesWithText(html, baseUrl);
+  if (withText.length > 0) return withText;
+
+  // Fallback: extract URLs only, return with empty titles
+  return extractPortfolioImages(html, baseUrl).map(url => ({ url, title: '' }));
 }
 
 /**
  * Download images for a category, returning the saved local paths.
+ * @param {Array<{url: string, title: string} | string>} imageItems - image URLs or {url, title} objects
  */
-async function downloadCategoryImages(imageUrls, destDir, categorySlug, companySlug) {
+async function downloadCategoryImages(imageItems, destDir, categorySlug, companySlug) {
   fs.mkdirSync(destDir, { recursive: true });
 
   const saved = [];
-  const limit = Math.min(imageUrls.length, MAX_IMAGES_PER_CATEGORY);
+  const limit = Math.min(imageItems.length, MAX_IMAGES_PER_CATEGORY);
 
   for (let i = 0; i < limit; i++) {
-    const imageUrl = imageUrls[i];
+    const item = imageItems[i];
+    const imageUrl = typeof item === 'string' ? item : item.url;
+    const originalTitle = typeof item === 'string' ? '' : (item.title || '');
     const ext = getExtension(imageUrl);
     const n = i + 1;
     const fname = `${n}${ext}`;
@@ -284,7 +293,7 @@ async function downloadCategoryImages(imageUrls, destDir, categorySlug, companyS
 
     try {
       await downloadFile(imageUrl, destPath);
-      saved.push({ url: localPath, title: `${categorySlug} ${n}` });
+      saved.push({ url: localPath, title: originalTitle || '' });
     } catch (err) {
       console.log(`    Failed to download image ${n}: ${err.message}`);
     }
