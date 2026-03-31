@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import { register, login, verifyEmail, resendVerification, forgotPassword, resetPassword, checkAvailability, oauthCallback, getMe } from '../controllers/authController';
+import { checkAvailability } from '../controllers/authController';
+import * as userAuth from '../controllers/userAuthController';
 import rateLimit from 'express-rate-limit';
 import { authRateLimit, checkAccountLock } from '../middleware/authRateLimit';
 import { authenticate } from '../middleware/auth';
@@ -39,7 +40,7 @@ router.post('/register',
     body('full_name').notEmpty().withMessage('Please enter your name')
   ],
   handleValidation,
-  register
+  userAuth.register
 );
 
 router.post('/check-availability',
@@ -56,7 +57,7 @@ router.post('/verify-email',
     body('token').notEmpty().withMessage('Verification token is required')
   ],
   handleValidation,
-  verifyEmail
+  userAuth.verifyEmail
 );
 
 router.post('/resend-verification',
@@ -65,7 +66,7 @@ router.post('/resend-verification',
     body('email').isEmail().withMessage('Please enter a valid email address')
   ],
   handleValidation,
-  resendVerification
+  userAuth.resendVerification
 );
 
 router.post('/login',
@@ -76,7 +77,7 @@ router.post('/login',
     body('password').notEmpty().withMessage('Please enter your password')
   ],
   handleValidation,
-  login
+  userAuth.login
 );
 
 router.post('/forgot-password',
@@ -85,7 +86,7 @@ router.post('/forgot-password',
     body('email').isEmail().withMessage('Please enter a valid email address')
   ],
   handleValidation,
-  forgotPassword
+  userAuth.forgotPassword
 );
 
 router.post('/reset-password',
@@ -94,11 +95,23 @@ router.post('/reset-password',
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
   ],
   handleValidation,
-  resetPassword
+  userAuth.resetPassword
 );
 
 // 获取当前登录用户信息
-router.get('/me', authenticate, getMe);
+router.get('/me', authenticate, userAuth.getMe);
+
+// Update profile
+router.put('/me', authenticate, userAuth.updateProfile);
+
+// Google One Tap 登录（ID Token 验证）
+router.post('/google/one-tap',
+  [
+    body('credential').notEmpty().withMessage('Google credential is required')
+  ],
+  handleValidation,
+  userAuth.googleOneTap
+);
 
 // Google OAuth
 router.get('/google',
@@ -107,7 +120,7 @@ router.get('/google',
 
 router.get('/callback/google',
   passport.authenticate('google', { failureRedirect: `${config.frontendUrl}/auth?error=google_failed` }),
-  oauthCallback
+  userAuth.oauthCallback
 );
 
 // Facebook OAuth
@@ -117,7 +130,7 @@ router.get('/facebook',
 
 router.get('/callback/facebook',
   passport.authenticate('facebook', { failureRedirect: `${config.frontendUrl}/auth?error=facebook_failed` }),
-  oauthCallback
+  userAuth.oauthCallback
 );
 
 export default router;

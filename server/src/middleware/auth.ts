@@ -8,31 +8,62 @@ export interface AuthRequest extends Request {
 
 export async function authenticate(req: any, res: any, next: any) {
   const token = req.headers.authorization?.split(' ')[1];
-  
+
   if (!token) {
     return res.status(401).json({ error: 'Authentication token is required.' });
   }
-  
+
   try {
-    const decoded = jwt.verify(token, config.jwt.secret);
-    const user = decoded as { id?: number; email?: string };
+    const decoded = jwt.verify(token, config.jwt.secret) as any;
 
-    if (!user.id) {
-      return res.status(401).json({ error: 'Invalid authentication token.' });
+    // New token format: { userId, email, role }
+    if (decoded.userId) {
+      const [rows] = await pool.execute(
+        'SELECT id, email, role, status FROM users WHERE id = ?',
+        [decoded.userId]
+      );
+      const users = rows as any[];
+      if (users.length === 0) {
+        return res.status(401).json({ error: 'User account not found.' });
+      }
+      if (users[0].status === 'suspended') {
+        return res.status(403).json({ error: 'Account suspended.' });
+      }
+      req.user = { userId: users[0].id, id: users[0].id, email: users[0].email, role: users[0].role };
+      return next();
     }
 
-    const [rows] = await pool.execute(
-      'SELECT id, email FROM designers WHERE id = ?',
-      [user.id]
-    );
+    // Legacy token format: { id, email } (designer tokens)
+    if (decoded.id) {
+      const [rows] = await pool.execute(
+        'SELECT id, email, user_id FROM designers WHERE id = ? AND deleted_at IS NULL',
+        [decoded.id]
+      );
+      const designers = rows as any[];
+      if (designers.length === 0) {
+        return res.status(401).json({ error: 'Designer account not found.' });
+      }
 
-    const designers = rows as any[];
-    if (designers.length === 0) {
-      return res.status(401).json({ error: 'Designer account not found.' });
+      const designer = designers[0];
+      // If designer is linked to a user, use user info
+      if (designer.user_id) {
+        const [userRows] = await pool.execute(
+          'SELECT id, email, role, status FROM users WHERE id = ?',
+          [designer.user_id]
+        );
+        if ((userRows as any[]).length > 0) {
+          const user = (userRows as any[])[0];
+          req.user = { userId: user.id, id: designer.id, email: user.email, role: user.role };
+          return next();
+        }
+      }
+
+      // Fallback: use designer directly (for unlinked designers)
+      req.user = { id: designer.id, email: designer.email, role: 'designer' };
+      return next();
     }
 
-    req.user = { id: designers[0].id, email: designers[0].email };
-    next();
+    return res.status(401).json({ error: 'Invalid authentication token.' });
   } catch (error) {
     console.error('Auth middleware error:', error);
     res.status(401).json({ error: 'Invalid authentication token.' });
