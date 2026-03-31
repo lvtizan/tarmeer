@@ -74,5 +74,6 @@ export function sanitizePublicCompany(company: any) {
     portfolio_images,
     portfolio_categories,
     project_count: portfolio_images.length,
+    is_claimed: !!(company.owner_user_id),
   };
 }

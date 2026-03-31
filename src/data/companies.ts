@@ -17,6 +17,7 @@ export interface Company {
   coverImage: string;
   projectImages: string[];
   portfolioCategories: Record<string, { url: string; title: string }[]>;
+  isClaimed: boolean;
 }
 
 export const STYLE_OPTIONS = [
@@ -83,6 +84,7 @@ export const companies: Company[] = [
     featured: true,
     coverImage: coverPath(1),
     projectImages: imageSet(1, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(1, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -103,6 +105,7 @@ export const companies: Company[] = [
     featured: true,
     coverImage: coverPath(6),
     projectImages: imageSet(6, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(6, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -123,6 +126,7 @@ export const companies: Company[] = [
     featured: true,
     coverImage: coverPath(11),
     projectImages: imageSet(11, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(11, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -143,6 +147,7 @@ export const companies: Company[] = [
     featured: true,
     coverImage: coverPath(16),
     projectImages: imageSet(16, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(16, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -163,6 +168,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(21),
     projectImages: imageSet(21, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(21, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -183,6 +189,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(26),
     projectImages: imageSet(26, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(26, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -203,6 +210,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(31),
     projectImages: imageSet(31, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(31, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -223,6 +231,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(36),
     projectImages: imageSet(36, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(36, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -243,6 +252,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(41),
     projectImages: imageSet(41, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(41, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -263,6 +273,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(46),
     projectImages: imageSet(46, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(46, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -283,6 +294,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(51),
     projectImages: imageSet(51, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(51, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -303,6 +315,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(56),
     projectImages: imageSet(56, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(56, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -323,6 +336,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(61),
     projectImages: imageSet(61, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(61, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -343,6 +357,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(66),
     projectImages: imageSet(66, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(66, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -363,6 +378,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(71),
     projectImages: imageSet(71, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(71, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -383,6 +399,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(1),
     projectImages: imageSet(1, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(1, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -403,6 +420,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(11),
     projectImages: imageSet(11, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(11, 5).map(url => ({ url, title: '' })) },
   },
   {
@@ -423,6 +441,7 @@ export const companies: Company[] = [
     featured: false,
     coverImage: coverPath(21),
     projectImages: imageSet(21, 5),
+    isClaimed: false,
     portfolioCategories: { Projects: imageSet(21, 5).map(url => ({ url, title: '' })) },
   },
 ];

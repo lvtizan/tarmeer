@@ -24,6 +24,8 @@ export interface Company {
   coverImage: string;
   projectImages: string[];
   portfolioCategories: PortfolioCategories;
+  /** true if a real user has claimed and manages this company */
+  isClaimed: boolean;
 }
 
 export function summarizeCompanyDescription(description: string): string {

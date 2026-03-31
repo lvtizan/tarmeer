@@ -55,6 +55,7 @@ interface PublicCompanyRecord {
   portfolio_images: string[];
   project_count: number;
   portfolio_categories?: Record<string, { url: string; title: string }[]>;
+  is_claimed?: boolean;
 }
 
 async function request<T>(endpoint: string): Promise<T> {
@@ -206,6 +207,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     coverImage: company.logo_url || '', // logo for small badge
     projectImages, // flat list from all categories for listing/card display
     portfolioCategories,
+    isClaimed: !!company.is_claimed,
   };
 }
 

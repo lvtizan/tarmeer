@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, MapPin, Check, Phone, Globe, ArrowRight, TrendingUp, ClipboardList, Users, Handshake } from 'lucide-react';
+import { X, MapPin, Check, Phone, Globe, ArrowRight, TrendingUp, ClipboardList, Users, Handshake, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
@@ -145,6 +145,44 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
               <Globe className="w-3 h-3" /> Website
             </span>
           )}
+        </div>
+
+        {/* Mobile: Send Message & Location (stacked below on small screens) */}
+        <div className="flex sm:hidden items-center gap-3 mt-3 pt-3 border-t border-stone-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#b8860b] text-[#b8860b] font-semibold text-xs whitespace-nowrap hover:bg-[#b8860b] hover:text-white transition-colors duration-200"
+          >
+            <Mail className="w-3.5 h-3.5" />
+            Send Message
+          </button>
+          <span className="flex items-center gap-1 text-xs text-stone-400">
+            <MapPin className="w-3 h-3 flex-shrink-0" />
+            {company.city}, UAE
+          </span>
+        </div>
+      </div>
+
+      {/* Right - Send Message & Location (Houzz-style) */}
+      <div className="hidden sm:flex flex-col items-center justify-center flex-shrink-0 w-[160px] pl-4 border-l border-stone-100">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[#b8860b] text-[#b8860b] font-semibold text-sm whitespace-nowrap hover:bg-[#b8860b] hover:text-white transition-colors duration-200"
+        >
+          <Mail className="w-4 h-4" />
+          Send Message
+        </button>
+        <div className="mt-3 flex items-start gap-1.5 text-xs text-stone-400 text-center leading-snug">
+          <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-stone-400" />
+          <span>
+            {company.projectCount}+ projects in the {company.city} area
+          </span>
         </div>
       </div>
     </div>

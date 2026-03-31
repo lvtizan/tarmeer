@@ -378,7 +378,7 @@ export default function CompanyDetailPage() {
         <MasonryGallery
           categories={normalizedCategories}
           onImageClick={handleImageClick}
-          externalWebsite={company.website || undefined}
+          externalWebsite={company.isClaimed ? undefined : (company.website || undefined)}
         />
       </div>
 

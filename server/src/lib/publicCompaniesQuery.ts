@@ -16,7 +16,8 @@ export function buildPublicCompaniesListQuery(input: { limit: number; offset: nu
          specialties,
          logo_url,
          portfolio_images,
-         google_reviews_count
+         google_reviews_count,
+         owner_user_id
        FROM uae_companies
        WHERE is_active = 1
        ORDER BY google_rating DESC, google_reviews_count DESC, name_en ASC
@@ -43,7 +44,8 @@ export function buildPublicCompanyDetailQuery(slug: string) {
          specialties,
          logo_url,
          portfolio_images,
-         google_reviews_count
+         google_reviews_count,
+         owner_user_id
        FROM uae_companies
        WHERE slug = ?
          AND is_active = 1
