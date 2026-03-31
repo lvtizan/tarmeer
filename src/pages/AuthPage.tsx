@@ -6,7 +6,9 @@ import LoadingButton from '../components/ui/LoadingButton';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const ENABLE_GOOGLE_AUTH = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
+// Google Auth: enabled by default (backend is configured), disable explicitly with 'false'
+const ENABLE_GOOGLE_AUTH = import.meta.env.VITE_ENABLE_GOOGLE_AUTH !== 'false';
+// Facebook Auth: disabled by default until configured
 const ENABLE_FACEBOOK_AUTH = import.meta.env.VITE_ENABLE_FACEBOOK_AUTH === 'true';
 
 type AuthStep = 'initial' | 'password' | 'done';
@@ -112,8 +114,10 @@ export default function AuthPage() {
     try {
       const response = await api.post('/auth/login', { email, password });
       api.setToken(response.token);
-      localStorage.setItem('designer', JSON.stringify(response.designer));
-      navigate('/designer/dashboard');
+      if (response.designer) {
+        localStorage.setItem('designer', JSON.stringify(response.designer));
+      }
+      navigate('/dashboard');
     } catch (err: any) {
       setLoading(false);
       if (err.message?.includes('not found') || err.message?.includes('Invalid credentials') || err.message?.includes('Invalid email or password')) {
@@ -247,7 +251,30 @@ export default function AuthPage() {
                   {ENABLE_GOOGLE_AUTH && (
                     <button
                       type="button"
-                      onClick={() => window.location.href = '/api/auth/google'}
+                      onClick={async () => {
+                        setError(null);
+                        try {
+                          // Pre-check: verify the OAuth endpoint is reachable before redirecting
+                          const apiBase = import.meta.env.VITE_API_URL || '/api';
+                          const resp = await fetch(`${apiBase}/auth/google`, {
+                            method: 'GET',
+                            redirect: 'manual', // Don't follow redirect, just check it exists
+                          });
+                          // A 302/303 redirect to Google means the endpoint is working
+                          if (resp.type === 'opaqueredirect' || resp.status === 302 || resp.status === 303 || resp.status === 301) {
+                            window.location.href = `${apiBase}/auth/google`;
+                          } else if (resp.ok) {
+                            // Some browsers return opaque for cross-origin redirects — just go
+                            window.location.href = `${apiBase}/auth/google`;
+                          } else {
+                            setError('Google sign-in is temporarily unavailable. Please use email instead.');
+                          }
+                        } catch {
+                          // Network error or backend not reachable — redirect anyway, let browser handle
+                          // (in production behind nginx, fetch with redirect:manual may behave differently)
+                          window.location.href = `${import.meta.env.VITE_API_URL || '/api'}/auth/google`;
+                        }
+                      }}
                       className={socialButtonClass}
                     >
                       <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24">
