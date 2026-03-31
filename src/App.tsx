@@ -35,6 +35,13 @@ const DesignerProfileEditPage = lazy(() => import('./pages/designer/DesignerProf
 const DesignerProjectsPage = lazy(() => import('./pages/designer/DesignerProjectsPage'));
 const DesignerUploadPage = lazy(() => import('./pages/designer/DesignerUploadPage'));
 
+const UserDashboardLayout = lazy(() => import('./layouts/UserDashboardLayout'));
+const DashboardHomePage = lazy(() => import('./pages/dashboard/DashboardHomePage'));
+const DashboardProfilePage = lazy(() => import('./pages/dashboard/DashboardProfilePage'));
+const ApplyDesignerPage = lazy(() => import('./pages/dashboard/ApplyDesignerPage'));
+const ApplyCompanyPage = lazy(() => import('./pages/dashboard/ApplyCompanyPage'));
+const MyInquiriesPage = lazy(() => import('./pages/dashboard/MyInquiriesPage'));
+
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminInstallPage = lazy(() => import('./pages/admin/AdminInstallPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
@@ -91,6 +98,18 @@ function App() {
             <Route path="projects" element={<DesignerProjectsPage />} />
             <Route path="upload" element={<DesignerUploadPage />} />
             <Route path="upload/:id" element={<DesignerUploadPage />} />
+          </Route>
+
+          {/* Unified User Dashboard */}
+          <Route path="/dashboard" element={<DesignerProtectedRoute><UserDashboardLayout /></DesignerProtectedRoute>}>
+            <Route index element={<DashboardHomePage />} />
+            <Route path="profile" element={<DashboardProfilePage />} />
+            <Route path="projects" element={<DesignerProvider><DesignerProjectsPage /></DesignerProvider>} />
+            <Route path="upload" element={<DesignerProvider><DesignerUploadPage /></DesignerProvider>} />
+            <Route path="upload/:id" element={<DesignerProvider><DesignerUploadPage /></DesignerProvider>} />
+            <Route path="inquiries" element={<MyInquiriesPage />} />
+            <Route path="apply/designer" element={<ApplyDesignerPage />} />
+            <Route path="apply/company" element={<ApplyCompanyPage />} />
           </Route>
 
           {/* Public Routes */}

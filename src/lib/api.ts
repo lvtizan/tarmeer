@@ -164,6 +164,14 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  async getMe() {
+    return this.get('/auth/me');
+  }
+
+  async updateProfile(data: { fullName?: string; phone?: string; city?: string }) {
+    return this.put('/auth/me', data);
+  }
 }
 
 export const api = new ApiClient();
