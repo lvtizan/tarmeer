@@ -4,6 +4,7 @@ import { DesignerProvider } from './contexts/DesignerContext';
 import { AdminProvider } from './contexts/AdminContext';
 import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
+import GoogleOneTap from './components/GoogleOneTap';
 
 const Layout = lazy(() => import('./components/Layout'));
 const DesignerLayout = lazy(() => import('./components/designer/DesignerLayout'));
@@ -42,6 +43,7 @@ const AdminAdminsPage = lazy(() => import('./pages/admin/AdminAdminsPage'));
 const AdminDesignerDetailPage = lazy(() => import('./pages/admin/AdminDesignerDetailPage'));
 const AdminVisitorsPage = lazy(() => import('./pages/admin/AdminVisitorsPage'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 
 function PageLoader() {
   return <div className="min-h-[40vh] flex items-center justify-center text-sm text-stone-500">Loading...</div>;
@@ -60,6 +62,7 @@ function App() {
   return (
     <>
       <SeoManager />
+      <GoogleOneTap />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Admin Routes */}
@@ -70,6 +73,7 @@ function App() {
             <Route path="visitors" element={<AdminVisitorsPage />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
             <Route path="stats" element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
           </Route>
           <Route path="/admin/login" element={<AdminProvider><AdminLoginPage /></AdminProvider>} />

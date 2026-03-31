@@ -26,6 +26,8 @@ import {
   getActivityLogs
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
+import { listUsers, getUserDetail, updateUserStatus, updateUserRole } from '../controllers/userAdminController';
+import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
 import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import {
   authenticateAdmin,
@@ -78,6 +80,17 @@ router.put('/designers/bulk-delete', requirePermission('can_approve'), bulkDelet
 router.put('/designers/order', requirePermission('can_sort'), updateDesignerOrder);
 router.put('/projects/:projectId/approve', requirePermission('can_approve'), approveProject);
 router.put('/projects/:projectId/reject', requirePermission('can_approve'), rejectProject);
+
+// Inquiry management (admin)
+router.get('/inquiries', getInquiries);
+router.get('/inquiries/export', exportInquiries);
+router.put('/inquiries/:id/status', updateInquiryStatus);
+
+// User management
+router.get('/users', listUsers);
+router.get('/users/:id', getUserDetail);
+router.put('/users/:id/status', requireSuperAdmin, updateUserStatus);
+router.put('/users/:id/role', requireSuperAdmin, updateUserRole);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);

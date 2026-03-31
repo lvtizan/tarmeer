@@ -422,6 +422,84 @@ class AdminApiClient {
   async deleteAdmin(id: number) {
     return this.request(`/admins/${id}`, { method: 'DELETE' });
   }
+
+  // User management
+  async getUsers(params?: { page?: number; limit?: number; role?: string; status?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.role) query.set('role', params.role);
+    if (params?.status) query.set('status', params.status);
+    if (params?.search) query.set('search', params.search);
+    return this.request(`/users?${query.toString()}`);
+  }
+
+  async getUserDetail(id: number) {
+    return this.request(`/users/${id}`);
+  }
+
+  async updateUserStatus(id: number, status: 'active' | 'suspended') {
+    return this.request(`/users/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+  }
+
+  async updateUserRole(id: number, role: 'user' | 'designer' | 'company') {
+    return this.request(`/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
+  }
+
+  // Inquiry management
+  async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.status) query.set('status', params.status);
+    if (params?.search) query.set('search', params.search);
+    return this.request(`/inquiries?${query.toString()}`);
+  }
+
+  async updateInquiryStatus(id: number, status: string, adminNotes?: string) {
+    return this.request(`/inquiries/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, admin_notes: adminNotes }),
+    });
+  }
+
+  getInquiriesExportUrl(params?: { status?: string }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    const token = this.getToken();
+    if (token) query.set('token', token);
+    return `${API_BASE}/admin/inquiries/export?${query.toString()}`;
+  }
+
+  // Company management
+  async getCompanies(params?: { page?: number; limit?: number; claimed?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.claimed) query.set('claimed', params.claimed);
+    if (params?.search) query.set('search', params.search);
+    return this.request(`/companies?${query.toString()}`);
+  }
+
+  async getCompanyApplications(params?: { page?: number; limit?: number; status?: string }) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.status) query.set('status', params.status);
+    return this.request(`/company-applications?${query.toString()}`);
+  }
+
+  async reviewCompanyApplication(id: number, data: { status: 'approved' | 'rejected'; admin_notes?: string }) {
+    return this.request(`/company-applications/${id}/review`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async bindUserToCompany(companyId: number, userId: number) {
+    return this.request(`/companies/${companyId}/bind`, { method: 'POST', body: JSON.stringify({ userId }) });
+  }
+
+  async unbindCompany(companyId: number) {
+    return this.request(`/companies/${companyId}/bind`, { method: 'DELETE' });
+  }
 }
 
 export const adminApi = new AdminApiClient();
