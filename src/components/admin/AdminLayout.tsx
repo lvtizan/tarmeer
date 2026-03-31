@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import Avatar from '../ui/Avatar';
 
@@ -7,7 +7,10 @@ const PRIMARY = '#b8864a';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/designers', label: 'Designers', icon: Users, permission: 'can_approve' as const },
+  { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/designers', label: 'Designers', icon: Palette, permission: 'can_approve' as const },
+  { to: '/admin/companies', label: 'Companies', icon: Building2 },
+  { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
   { to: '/admin/visitors', label: 'Visitors', icon: Globe, permission: 'can_view_stats' as const },
   { to: '/admin/analytics', label: 'Analytics', icon: Activity, permission: 'can_view_stats' as const },
   { to: '/admin/stats', label: 'Statistics', icon: BarChart2, permission: 'can_view_stats' as const },
