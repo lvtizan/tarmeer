@@ -28,6 +28,7 @@ import {
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
+import { listCompanies, listCompanyApplications, reviewCompanyApplication, bindUserToCompany, unbindCompany } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import {
   authenticateAdmin,
@@ -85,6 +86,13 @@ router.put('/projects/:projectId/reject', requirePermission('can_approve'), reje
 router.get('/inquiries', getInquiries);
 router.get('/inquiries/export', exportInquiries);
 router.put('/inquiries/:id/status', updateInquiryStatus);
+
+// Company management
+router.get('/companies', listCompanies);
+router.get('/company-applications', listCompanyApplications);
+router.put('/company-applications/:id/review', requirePermission('can_approve'), reviewCompanyApplication);
+router.post('/companies/:companyId/bind', requireSuperAdmin, bindUserToCompany);
+router.delete('/companies/:companyId/bind', requireSuperAdmin, unbindCompany);
 
 // User management
 router.get('/users', listUsers);
