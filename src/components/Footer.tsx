@@ -98,6 +98,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
           </p>
           <div className="flex gap-6 text-xs text-white/60">
             <a href="/privacy" className="hover:text-white/80">Privacy</a>
+            <a href="/dmca" className="hover:text-white/80">DMCA / Copyright</a>
           </div>
         </div>
       </div>

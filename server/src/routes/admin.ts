@@ -28,6 +28,7 @@ import {
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
+import { getComplaints, updateComplaintStatus, getNewCounts } from '../controllers/complaintController';
 import { listCompanies, listCompanyApplications, reviewCompanyApplication, bindUserToCompany, unbindCompany } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import {
@@ -86,6 +87,13 @@ router.put('/projects/:projectId/reject', requirePermission('can_approve'), reje
 router.get('/inquiries', getInquiries);
 router.get('/inquiries/export', exportInquiries);
 router.put('/inquiries/:id/status', updateInquiryStatus);
+
+// Complaint management (admin)
+router.get('/complaints', getComplaints);
+router.put('/complaints/:id/status', updateComplaintStatus);
+
+// Notification counts (admin)
+router.get('/notifications/counts', getNewCounts);
 
 // Company management
 router.get('/companies', listCompanies);

@@ -175,3 +175,26 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
+
+// Public (no auth) helper for submitting DMCA complaints
+export async function submitComplaint(data: {
+  name: string;
+  email: string;
+  phone?: string;
+  infringing_url: string;
+  original_work_url?: string;
+  description: string;
+}) {
+  const res = await fetch(`${API_BASE}/complaints`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Failed to submit complaint');
+  }
+
+  return res.json();
+}

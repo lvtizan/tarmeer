@@ -78,7 +78,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
   return (
     <div
       onClick={onClick}
-      className="group flex border-b border-stone-200/60 hover:bg-stone-50/50 transition-colors duration-150 cursor-pointer py-5 gap-5"
+      className="group flex border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 cursor-pointer py-5 gap-5"
     >
       {/* Left - Project Image */}
       <div className="w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100">

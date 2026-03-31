@@ -24,6 +24,7 @@ const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const DmcaPage = lazy(() => import('./pages/DmcaPage'));
 const NewHomeDesignPage = lazy(() => import('./pages/NewHomeDesignPage'));
 const SoftDecorationPage = lazy(() => import('./pages/SoftDecorationPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
@@ -53,6 +54,7 @@ const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage')
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminCompaniesPage = lazy(() => import('./pages/admin/AdminCompaniesPage'));
 const AdminInquiriesPage = lazy(() => import('./pages/admin/AdminInquiriesPage'));
+const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'));
 
 function PageLoader() {
   return <div className="min-h-[40vh] flex items-center justify-center text-sm text-stone-500">Loading...</div>;
@@ -85,6 +87,7 @@ function App() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />
             <Route path="inquiries" element={<AdminInquiriesPage />} />
+            <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
           </Route>
           <Route path="/admin/login" element={<AdminProvider><AdminLoginPage /></AdminProvider>} />
@@ -136,6 +139,7 @@ function App() {
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/dmca" element={<DmcaPage />} />
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />
               </Routes>

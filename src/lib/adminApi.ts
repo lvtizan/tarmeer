@@ -500,6 +500,28 @@ class AdminApiClient {
   async unbindCompany(companyId: number) {
     return this.request(`/companies/${companyId}/bind`, { method: 'DELETE' });
   }
+
+  // Complaint management
+  async getComplaints(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.status) query.set('status', params.status);
+    if (params?.search) query.set('search', params.search);
+    return this.request(`/complaints?${query}`);
+  }
+
+  async updateComplaintStatus(id: number, status: string, adminNotes?: string) {
+    return this.request(`/complaints/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, admin_notes: adminNotes }),
+    });
+  }
+
+  // Notification counts
+  async getNotificationCounts() {
+    return this.request('/notifications/counts');
+  }
 }
 
 export const adminApi = new AdminApiClient();

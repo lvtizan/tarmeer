@@ -1,6 +1,8 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette, ShieldAlert } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
+import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
 
 const PRIMARY = '#b8864a';
@@ -11,6 +13,7 @@ const navItems = [
   { to: '/admin/designers', label: 'Designers', icon: Palette, permission: 'can_approve' as const },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
   { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
+  { to: '/admin/complaints', label: 'Complaints', icon: ShieldAlert },
   { to: '/admin/visitors', label: 'Visitors', icon: Globe, permission: 'can_view_stats' as const },
   { to: '/admin/analytics', label: 'Analytics', icon: Activity, permission: 'can_view_stats' as const },
   { to: '/admin/stats', label: 'Statistics', icon: BarChart2, permission: 'can_view_stats' as const },
@@ -20,9 +23,37 @@ const adminItems = [
   { to: '/admin/admins', label: 'Admin Users', icon: UserCog, superAdminOnly: true },
 ];
 
+// Map nav paths to notification keys
+const NOTIFICATION_MAP: Record<string, string> = {
+  '/admin/complaints': 'newComplaints',
+  '/admin/designers': 'newDesignerApps',
+};
+
 export default function AdminLayout() {
   const { admin, logout, hasPermission, isSuperAdmin, isLoading } = useAdmin();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
+
+  const fetchNotificationCounts = useCallback(async () => {
+    try {
+      const data = await adminApi.getNotificationCounts();
+      setNotifCounts(data);
+    } catch {
+      // Silently ignore notification count errors
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotificationCounts();
+    const interval = setInterval(fetchNotificationCounts, 60000);
+    return () => clearInterval(interval);
+  }, [fetchNotificationCounts]);
+
+  // Refresh counts on navigation
+  useEffect(() => {
+    fetchNotificationCounts();
+  }, [location.pathname, fetchNotificationCounts]);
 
   if (isLoading) {
     return (
@@ -64,13 +95,15 @@ export default function AdminLayout() {
         <nav className="flex-1 p-4 space-y-1">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
+            const notifKey = NOTIFICATION_MAP[item.to];
+            const hasNotif = notifKey && (notifCounts[notifKey] ?? 0) > 0;
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  `relative flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-[#b8864a]/10 text-[#2c2c2c] border-l-4 border-[#b8864a]'
                       : 'text-stone-600 hover:bg-stone-50'
@@ -79,6 +112,9 @@ export default function AdminLayout() {
               >
                 <Icon className="w-5 h-5 shrink-0" />
                 {item.label}
+                {hasNotif && (
+                  <span className="absolute top-2 left-7 w-2 h-2 bg-red-500 rounded-full" />
+                )}
               </NavLink>
             );
           })}
