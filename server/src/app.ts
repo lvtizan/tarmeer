@@ -11,6 +11,7 @@ import contactRoutes from './routes/contact';
 import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
 import companyRoutes from './routes/companies';
+import companyApplicationRoutes from './routes/companyApplications';
 import config from './config';
 import {
   isPayloadTooLargeError,
@@ -20,6 +21,7 @@ import {
 import { getCorsConfig, logCorsViolation } from './lib/corsOrigins';
 import { shouldSkipApiRateLimit } from './lib/rateLimitPolicy';
 import { validateJWTConfig } from './lib/jwtManager';
+import { runAutoMigrate } from './lib/autoMigrate';
 import passport from './middleware/passport';
 
 dotenv.config();
@@ -159,6 +161,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/company-applications', companyApplicationRoutes);
 
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('Error:', err);
@@ -182,10 +185,13 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${config.nodeEnv}`);
   console.log(`🔒 Security: Helmet enabled, Rate limiting active`);
+
+  // 启动后自动检查并补齐数据库结构
+  await runAutoMigrate();
 });
 
 export default app;
