@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, X, MapPin, Calendar, Check, Phone, Mail, Globe, ArrowRight, TrendingUp } from 'lucide-react';
+import { X, MapPin, Check, Phone, Globe, ArrowRight, TrendingUp, ClipboardList, Users, Handshake } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
@@ -65,16 +65,15 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
   return (
     <div
       onClick={onClick}
-      className="group flex bg-white rounded-[22px] border border-stone-100 hover:border-[#d4c4a8] hover:shadow-lg hover:shadow-stone-100/50 transition-all duration-300 cursor-pointer overflow-hidden"
-      style={{ minHeight: '220px' }}
+      className="group flex border-b border-stone-200/60 hover:bg-stone-50/50 transition-colors duration-150 cursor-pointer py-5 gap-5"
     >
-      {/* Left - Large Project Image */}
-      <div className="w-[38%] flex-shrink-0 bg-stone-100 h-[220px]">
+      {/* Left - Project Image (Houzz-style: fixed 280x186) */}
+      <div className="w-[280px] h-[186px] flex-shrink-0 rounded-lg overflow-hidden bg-stone-100">
         {currentSrc ? (
           <img
             src={currentSrc}
             alt={`${company.name} project`}
-            className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+            className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
             onError={handleImageError}
           />
         ) : (
@@ -85,176 +84,119 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
       </div>
 
       {/* Right - Company Info */}
-      <div className="flex-1 p-6 flex flex-col justify-between">
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
-          {/* Company Name + Logo Badge */}
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <h3 className="font-serif text-xl font-semibold text-[#1c1917] group-hover:text-[#b8860b] transition-colors">
+          <div className="flex items-center gap-2.5 mb-1">
+            {company.coverImage && (
+              <img src={company.coverImage} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />
+            )}
+            <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
               {company.name}
             </h3>
-            {company.coverImage && (
-              <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-stone-50">
-                <img src={company.coverImage} alt={company.name} className="w-full h-full object-cover" />
-              </div>
-            )}
           </div>
 
-          {/* Tagline */}
-          <p className="text-stone-500 text-sm leading-relaxed mb-3 line-clamp-2">
+          {/* Rating + Reviews placeholder */}
+          <div className="flex items-center gap-2 mb-2 text-sm">
+            <span className="text-[#b8860b] font-medium">{company.projectCount}+ projects</span>
+            <span className="text-stone-300">&middot;</span>
+            <span className="text-stone-400">{company.city}, UAE</span>
+            <span className="text-stone-300">&middot;</span>
+            <span className="text-stone-400">Since {company.foundedYear}</span>
+          </div>
+
+          <p className="text-stone-500 text-[13px] leading-relaxed line-clamp-2 mb-2.5">
             {company.shortDescription}
           </p>
 
-          {/* Style Tags */}
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {company.styles.slice(0, 3).map((style) => (
-              <span
-                key={style}
-                className="px-3 py-1 bg-[#f9f7f4] text-stone-500 text-xs rounded-full border border-stone-100"
-              >
-                {style}
+          {/* Services / Styles */}
+          <div className="flex flex-wrap gap-1.5">
+            {company.services.slice(0, 4).map((svc) => (
+              <span key={svc} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded">
+                {svc}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Meta Info */}
-        <div className="flex items-center gap-5 text-xs text-stone-400">
-          <span className="flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" />
-            {company.city}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5" />
-            Since {company.foundedYear}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <TrendingUp className="w-3.5 h-3.5" />
-            {company.projectCount}+ projects
-          </span>
-        </div>
-
-        {/* Arrow Indicator */}
-        <ArrowRight className="w-5 h-5 text-[#b8860b] opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300 absolute top-6 right-6" />
-      </div>
-    </div>
-  );
-}
-
-// Preview Card - Right Sidebar
-function PreviewCard({ company, onViewProfile }: { company: Company; onViewProfile: () => void }) {
-  const images = company.projectImages;
-  const coverSrc = images[0] || company.coverImage || '';
-
-  return (
-    <div className="bg-white rounded-[22px] border border-stone-100 overflow-hidden shadow-sm shadow-stone-100/50">
-      {/* Cover Image */}
-      <div className="aspect-[4/5] bg-stone-100 relative overflow-hidden">
-        {coverSrc ? (
-          <img src={coverSrc} alt={company.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-50 to-stone-100">
-            <span className="font-serif text-5xl text-stone-200">{company.name.charAt(0)}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-5">
-        <h4 className="font-serif text-lg font-semibold text-[#1c1917] mb-2">{company.name}</h4>
-        <p className="text-stone-500 text-sm leading-relaxed mb-4 line-clamp-2">
-          {company.shortDescription}
-        </p>
-
-        {/* Contact Info */}
-        <div className="space-y-3 mb-5">
-          <div className="flex items-center gap-3 text-sm">
-            <MapPin className="w-4 h-4 text-stone-400" />
-            <span className="text-[#1c1917]">{company.city}, UAE</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Calendar className="w-4 h-4 text-stone-400" />
-            <span className="text-[#1c1917]">Since {company.foundedYear}</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <TrendingUp className="w-4 h-4 text-stone-400" />
-            <span className="text-[#1c1917]">{company.projectCount}+ projects</span>
-          </div>
-        </div>
-
-        {/* Quick Links */}
-        <div className="space-y-2 mb-5">
-          {company.website && (
-            <a
-              href={company.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-stone-500 hover:text-[#b8860b] transition"
-            >
-              <Globe className="w-4 h-4" />
-              Website
-            </a>
-          )}
+        {/* Bottom row: contact hints */}
+        <div className="flex items-center gap-4 mt-3 text-xs text-stone-400">
           {company.phone && (
-            <a
-              href={`tel:${company.phone}`}
-              className="flex items-center gap-2 text-sm text-stone-500 hover:text-[#b8860b] transition"
-            >
-              <Phone className="w-4 h-4" />
-              {company.phone}
-            </a>
+            <span className="flex items-center gap-1">
+              <Phone className="w-3 h-3" /> {company.phone}
+            </span>
           )}
-          {company.email && (
-            <a
-              href={`mailto:${company.email}`}
-              className="flex items-center gap-2 text-sm text-stone-500 hover:text-[#b8860b] transition"
-            >
-              <Mail className="w-4 h-4" />
-              Email
-            </a>
+          {company.website && (
+            <span className="flex items-center gap-1">
+              <Globe className="w-3 h-3" /> Website
+            </span>
           )}
         </div>
-
-        {/* CTA */}
-        <button
-          onClick={onViewProfile}
-          className="w-full py-3 rounded-xl bg-[#1c1917] text-white font-medium hover:bg-[#b8860b] transition flex items-center justify-center gap-2"
-        >
-          View Full Profile
-          <ArrowRight className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
 }
 
-type HeroVariant = 'centered' | 'split';
+// Hover Preview Popup - Landscape
+function HoverPreview({ company, onViewProfile }: { company: Company; onViewProfile: () => void }) {
+  const images = company.projectImages;
+  const previewImages = images.slice(0, 3);
 
-function HeroSearch({
-  searchQuery,
-  setSearchQuery,
-}: {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
-}) {
   return (
-    <div className="relative">
-      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/40" />
-      <input
-        type="text"
-        placeholder="Search by studio, style, or city"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full pl-11 pr-10 h-12 bg-white/[0.03] border border-white/18 rounded-full text-[15px] text-white placeholder:text-white/35 focus:outline-none focus:border-[#b49a6b]/55 focus:bg-white/[0.05] transition"
-      />
-      {searchQuery && (
-        <button
-          onClick={() => setSearchQuery('')}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition"
-          aria-label="Clear search"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
+    <div className="absolute right-0 top-0 z-50 w-[560px] bg-white rounded-xl border border-stone-200 shadow-xl shadow-stone-200/60 overflow-hidden animate-fade-in">
+      <div className="flex">
+        {/* Left - Image grid */}
+        <div className="w-[220px] flex-shrink-0 bg-stone-100">
+          {previewImages.length > 0 ? (
+            <div className="grid grid-rows-2 h-full">
+              <img src={previewImages[0]} alt="" className="w-full h-[110px] object-cover" />
+              <div className="grid grid-cols-2">
+                {previewImages[1] ? (
+                  <img src={previewImages[1]} alt="" className="w-full h-[110px] object-cover" />
+                ) : <div className="bg-stone-100" />}
+                {previewImages[2] ? (
+                  <img src={previewImages[2]} alt="" className="w-full h-[110px] object-cover" />
+                ) : <div className="bg-stone-50" />}
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-full min-h-[220px] flex items-center justify-center">
+              <span className="font-serif text-4xl text-stone-200">{company.name.charAt(0)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right - Info */}
+        <div className="flex-1 p-5 flex flex-col justify-between">
+          <div>
+            <h4 className="font-serif text-lg font-semibold text-[#1c1917] mb-1">{company.name}</h4>
+            <p className="text-stone-500 text-sm leading-relaxed mb-3 line-clamp-2">
+              {company.shortDescription}
+            </p>
+            <div className="space-y-1.5 text-sm">
+              <div className="flex items-center gap-2 text-stone-600">
+                <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                {company.city}, UAE
+              </div>
+              <div className="flex items-center gap-2 text-stone-600">
+                <TrendingUp className="w-3.5 h-3.5 text-stone-400" />
+                {company.projectCount}+ projects &middot; Since {company.foundedYear}
+              </div>
+              {company.phone && (
+                <div className="flex items-center gap-2 text-stone-600">
+                  <Phone className="w-3.5 h-3.5 text-stone-400" />
+                  {company.phone}
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onViewProfile(); }}
+            className="mt-4 w-full py-2 rounded-lg bg-[#1c1917] text-white text-sm font-medium hover:bg-[#b8860b] transition flex items-center justify-center gap-2"
+          >
+            View Profile <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -270,7 +212,6 @@ export default function CompaniesPage() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [foundedRange, setFoundedRange] = useState<string>('');
   const [hoveredCompany, setHoveredCompany] = useState<string | null>(null);
-  const [heroVariant, setHeroVariant] = useState<HeroVariant>('split');
 
   useEffect(() => {
     let active = true;
@@ -343,131 +284,64 @@ export default function CompaniesPage() {
     return labels[range] || range;
   };
 
-  const previewCompany = hoveredCompany
-    ? filteredCompanies.find((c) => c.id === hoveredCompany) || null
-    : (filteredCompanies[0] || null);
-
   const citiesCovered = cityOptions.length;
   const totalProjects = companies.reduce((sum, c) => sum + c.projectCount, 0);
   const verifiedProjects = Math.max(30, totalProjects);
-  const heroImageSrc = useMemo(
-    () => companies.find((c) => c.projectImages[0] || c.coverImage)?.projectImages[0]
-      || companies.find((c) => c.projectImages[0] || c.coverImage)?.coverImage
-      || '',
-    [companies]
-  );
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      <section className="relative overflow-hidden bg-[#11110f]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_18%,rgba(180,150,96,0.13),transparent_48%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,8,0.35)_0%,rgba(8,8,8,0.64)_100%)]" />
-        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:44px_44px]" />
+      {/* Hero - Match with Professionals */}
+      <section className="relative bg-[#2c2620] overflow-hidden">
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.04] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.8)_1px,transparent_0)] [background-size:32px_32px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,74,0.12),transparent_70%)]" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
+          <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mb-10">
+            Find the Right Design & Renovation Pro in UAE
+          </h1>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-          <div className="flex justify-end mb-6">
-            <div className="inline-flex border border-white/15 rounded-full p-1 bg-black/25 backdrop-blur-sm">
-              <button
-                onClick={() => setHeroVariant('centered')}
-                className={`px-4 py-1.5 text-xs tracking-[0.12em] uppercase rounded-full transition ${
-                  heroVariant === 'centered' ? 'bg-white text-[#131310]' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                A Centered
-              </button>
-              <button
-                onClick={() => setHeroVariant('split')}
-                className={`px-4 py-1.5 text-xs tracking-[0.12em] uppercase rounded-full transition ${
-                  heroVariant === 'split' ? 'bg-white text-[#131310]' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                B Split
-              </button>
-            </div>
+          {/* 3-Step Flow */}
+          <div className="flex items-center justify-center gap-0 mb-10">
+            {[
+              { icon: ClipboardList, label: 'Tell us about\nyour project' },
+              { icon: Users, label: 'Get matched with\nlocal professionals' },
+              { icon: Handshake, label: 'Hire the right\npro with confidence' },
+            ].map((step, i) => (
+              <div key={i} className="flex items-center">
+                {i > 0 && <div className="w-16 sm:w-24 h-px bg-white/25" />}
+                <div className="flex flex-col items-center gap-2.5">
+                  <div className="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center">
+                    <step.icon className="w-5 h-5 text-white/80" />
+                  </div>
+                  <p className="text-white/70 text-xs sm:text-sm leading-snug whitespace-pre-line max-w-[120px]">
+                    {step.label}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {heroVariant === 'centered' ? (
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-flex items-center px-3.5 py-1 border border-white/20 rounded-full text-[11px] tracking-[0.18em] uppercase text-white/70 mb-7">
-                UAE Interior Directory
-              </div>
-              <h1 className="font-serif text-[38px] sm:text-[56px] lg:text-[64px] text-white font-medium leading-[1.04] tracking-[-0.02em] max-w-[880px] mx-auto">
-                Curated Interior Design Studios
-                <br />
-                Across the Emirates
-              </h1>
-              <p className="text-white/62 text-[15px] sm:text-[17px] leading-relaxed max-w-[560px] mx-auto mt-6">
-                A refined directory for discerning homeowners seeking vetted design partners across Dubai and Abu Dhabi.
-              </p>
-              <div className="max-w-[560px] mx-auto mt-9">
-                <HeroSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-              </div>
-              <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 border border-white/14 rounded-2xl overflow-hidden bg-white/[0.02]">
-                <div className="px-6 py-5 border-b sm:border-b-0 sm:border-r border-white/10 text-center">
-                  <p className="text-white text-2xl font-semibold leading-none">{companies.length || 26}</p>
-                  <p className="text-[11px] tracking-[0.12em] uppercase text-white/52 mt-2">Curated Designers</p>
-                </div>
-                <div className="px-6 py-5 border-b sm:border-b-0 sm:border-r border-white/10 text-center">
-                  <p className="text-white text-2xl font-semibold leading-none">{citiesCovered || 2}</p>
-                  <p className="text-[11px] tracking-[0.12em] uppercase text-white/52 mt-2">Cities Covered</p>
-                </div>
-                <div className="px-6 py-5 text-center">
-                  <p className="text-white text-2xl font-semibold leading-none">{verifiedProjects}+</p>
-                  <p className="text-[11px] tracking-[0.12em] uppercase text-white/52 mt-2">Verified Projects</p>
-                </div>
-              </div>
+          {/* Search Bar */}
+          <div className="max-w-md mx-auto flex gap-0">
+            <div className="relative flex-1">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                type="text"
+                placeholder="Search by city or company name"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-12 pl-10 pr-4 bg-white rounded-l-lg text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none"
+              />
             </div>
-          ) : (
-            <div className="grid lg:grid-cols-[1.08fr_0.92fr] gap-10 lg:gap-12 items-end">
-              <div className="pt-2">
-                <div className="inline-flex items-center px-3.5 py-1 border border-white/20 rounded-full text-[11px] tracking-[0.18em] uppercase text-white/70 mb-7">
-                  UAE Interior Directory
-                </div>
-                <h1 className="font-serif text-[38px] sm:text-[54px] lg:text-[62px] text-white font-medium leading-[1.03] tracking-[-0.02em] max-w-[760px]">
-                  Private Access to
-                  <br />
-                  Premium Interior Studios
-                </h1>
-                <p className="text-white/62 text-[15px] sm:text-[17px] leading-relaxed max-w-[540px] mt-6">
-                  Explore an editorial-grade shortlist of established UAE design firms with verified project history and clear specialization.
-                </p>
-                <div className="max-w-[560px] mt-9">
-                  <HeroSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-                </div>
-                <div className="mt-10 grid grid-cols-3 border border-white/14 rounded-2xl overflow-hidden bg-white/[0.02] max-w-[640px]">
-                  <div className="px-4 sm:px-6 py-5 border-r border-white/10">
-                    <p className="text-white text-2xl font-semibold leading-none">{companies.length || 26}</p>
-                    <p className="text-[11px] tracking-[0.1em] uppercase text-white/50 mt-2">Curated Designers</p>
-                  </div>
-                  <div className="px-4 sm:px-6 py-5 border-r border-white/10">
-                    <p className="text-white text-2xl font-semibold leading-none">{citiesCovered || 2}</p>
-                    <p className="text-[11px] tracking-[0.1em] uppercase text-white/50 mt-2">Cities Covered</p>
-                  </div>
-                  <div className="px-4 sm:px-6 py-5">
-                    <p className="text-white text-2xl font-semibold leading-none">{verifiedProjects}+</p>
-                    <p className="text-[11px] tracking-[0.1em] uppercase text-white/50 mt-2">Verified Projects</p>
-                  </div>
-                </div>
-              </div>
+            <button className="h-12 px-6 bg-[#b8864a] hover:bg-[#a67c47] text-white text-sm font-semibold rounded-r-lg transition whitespace-nowrap">
+              Get Started
+            </button>
+          </div>
 
-              <div className="hidden lg:block">
-                <div className="relative h-[520px] rounded-[28px] overflow-hidden border border-white/14 bg-[#171715]">
-                  {heroImageSrc ? (
-                    <img src={heroImageSrc} alt="UAE luxury interior" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-[linear-gradient(130deg,#2d2a25_0%,#1b1a18_50%,#121211_100%)]" />
-                  )}
-                  <div className="absolute inset-0 bg-[linear-gradient(170deg,rgba(10,10,10,0.05)_0%,rgba(10,10,10,0.72)_72%,rgba(10,10,10,0.88)_100%)]" />
-                  <div className="absolute bottom-0 left-0 right-0 p-7">
-                    <p className="text-[11px] tracking-[0.16em] uppercase text-white/70 mb-2">Editorial Selection</p>
-                    <p className="font-serif text-[26px] leading-tight text-white max-w-[320px]">
-                      Quietly luxurious spaces, tailored for modern Gulf living.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Stats line */}
+          <p className="text-white/40 text-xs mt-5">
+            {companies.length}+ studios &middot; {citiesCovered} cities &middot; {verifiedProjects}+ verified projects
+          </p>
         </div>
       </section>
 
@@ -496,21 +370,9 @@ export default function CompaniesPage() {
         </div>
       )}
 
-      {/* Results Header */}
-      <div className="bg-white border-b border-stone-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <p className="text-stone-500">
-              <span className="font-semibold text-[#1c1917]">{filteredCompanies.length}</span> Designers Found
-            </p>
-            <span className="text-xs text-stone-400">Sorted by Relevance</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content - Three Column */}
+      {/* Main Content - Two Column (Sidebar + List) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex gap-6">
+        <div className="flex gap-8">
           {/* Left Sidebar - Filters */}
           <aside className="w-60 flex-shrink-0 hidden lg:block">
             <div className="lg:sticky lg:top-24">
@@ -584,7 +446,7 @@ export default function CompaniesPage() {
             </div>
           </aside>
 
-          {/* Center - Company List */}
+          {/* Main - Company List (full remaining width) */}
           <div className="flex-1 min-w-0">
             {loading ? (
               <div className="text-center py-20 bg-white rounded-[22px] border border-stone-100">
@@ -601,12 +463,21 @@ export default function CompaniesPage() {
                 {filteredCompanies.map((company) => (
                   <div
                     key={company.id}
+                    className="relative"
                     onMouseEnter={() => setHoveredCompany(company.id)}
+                    onMouseLeave={() => setHoveredCompany(null)}
                   >
                     <CompanyCard
                       company={company}
                       onClick={() => navigate(`/companies/${company.id}`)}
                     />
+                    {/* Hover Preview Popup */}
+                    {hoveredCompany === company.id && (
+                      <HoverPreview
+                        company={company}
+                        onViewProfile={() => navigate(`/companies/${company.id}`)}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -619,30 +490,10 @@ export default function CompaniesPage() {
               </div>
             )}
           </div>
-
-          {/* Right Sidebar - Preview Card */}
-          <aside className="w-72 flex-shrink-0 hidden xl:block">
-            <div className="lg:sticky lg:top-24">
-              <div className="mb-4">
-                <h3 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider">Featured Studio</h3>
-              </div>
-
-              {previewCompany ? (
-                <PreviewCard
-                  company={previewCompany}
-                  onViewProfile={() => navigate(`/companies/${previewCompany.id}`)}
-                />
-              ) : (
-                <div className="bg-white rounded-[22px] border border-stone-100 p-8 text-center">
-                  <p className="text-sm text-stone-400">Hover over a designer to preview</p>
-                </div>
-              )}
-            </div>
-          </aside>
         </div>
       </div>
 
-      {/* Custom scrollbar styles */}
+      {/* Custom scrollbar + hover animation styles */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
@@ -656,6 +507,13 @@ export default function CompaniesPage() {
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #a8a29e;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateX(8px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.2s ease-out;
         }
       `}</style>
     </div>

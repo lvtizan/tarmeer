@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:all": "node -e \"const{spawn}=require('child_process');const b=spawn('npm',['run','dev'],{cwd:'server',stdio:'inherit',shell:true});const f=spawn('npm',['run','dev'],{stdio:'inherit',shell:true});process.on('SIGINT',()=>{b.kill();f.kill();process.exit()})\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "deploy": "bash deploy.config.sh",

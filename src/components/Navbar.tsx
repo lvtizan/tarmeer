@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User, Briefcase } from 'lucide-react';
 import { api } from '../lib/api';
 import { safeGetJSON } from '../lib/storage';
 import Avatar from './ui/Avatar';
@@ -9,6 +9,7 @@ import { useNavigationHandler } from '../hooks/useNavigationHandler';
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/designers', label: 'Find Designers' },
+  { to: '/companies', label: 'Find Companies' },
   { to: '/materials', label: 'Showrooms' },
   { to: '/designers/apply', label: 'Join as Designer' },
 ];
@@ -22,6 +23,9 @@ export default function Navbar() {
   // Hide navbar completely on auth page
   if (isAuthPage) return null;
 
+  // Only show login/register on designer sub-pages
+  const isDesignerSection = location.pathname.startsWith('/designers');
+
   const isDesignerLoggedIn = Boolean(api.getToken());
   const designer = safeGetJSON<Record<string, unknown>>('designer');
   const designerName = ((designer?.full_name as string) || (designer?.fullName as string) || '').trim() || 'Designer';
@@ -29,6 +33,9 @@ export default function Navbar() {
   const accountEntry = isDesignerLoggedIn
     ? { to: '/designer/dashboard', label: 'Dashboard' }
     : { to: '/auth?tab=login', label: 'Log In' };
+
+  // Show account entry only on designer pages or when logged in
+  const showAccountEntry = isDesignerSection || isDesignerLoggedIn;
 
   const handleClick = (to: string) => {
     handleNavClick(to);
@@ -62,26 +69,41 @@ export default function Navbar() {
           {navLinks.map(({ to, label }) => (
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
-          {isDesignerLoggedIn ? (
-            <Link
-              to={accountEntry.to}
-              onClick={() => handleClick(accountEntry.to)}
-              className="inline-flex items-center"
-              aria-label="Open dashboard"
-              title="Dashboard"
-            >
-              <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
-            </Link>
-          ) : (
-            renderNavLink(accountEntry.to, accountEntry.label)
+          {showAccountEntry && (
+            isDesignerLoggedIn ? (
+              <Link
+                to={accountEntry.to}
+                onClick={() => handleClick(accountEntry.to)}
+                className="inline-flex items-center"
+                aria-label="Open dashboard"
+                title="Dashboard"
+              >
+                <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
+              </Link>
+            ) : (
+              <Link
+                to={accountEntry.to}
+                onClick={() => handleClick(accountEntry.to)}
+                className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+              >
+                <User className="w-4 h-4" />
+                {accountEntry.label}
+              </Link>
+            )
           )}
-          <Link to="/contact" onClick={() => handleClick('/contact')} className="btn-primary ml-2 text-base text-white">
+          <Link
+            to="/contact"
+            onClick={() => handleClick('/contact')}
+            className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-stone-50 transition"
+          >
+            <Briefcase className="w-4 h-4" />
             Contact Us
           </Link>
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
-          <Link to="/contact" className="btn-primary px-3 py-2 text-sm text-white">
+          <Link to="/contact" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
+            <Briefcase className="w-3.5 h-3.5" />
             Contact
           </Link>
           <button
@@ -101,17 +123,19 @@ export default function Navbar() {
             {navLinks.map(({ to, label }) => (
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
-            {isDesignerLoggedIn ? (
-              <Link
-                to={accountEntry.to}
-                onClick={() => handleClick(accountEntry.to)}
-                className="py-2 inline-flex items-center gap-2 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-              >
-                <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
-                Dashboard
-              </Link>
-            ) : (
-              renderNavLink(accountEntry.to, accountEntry.label, 'py-2')
+            {showAccountEntry && (
+              isDesignerLoggedIn ? (
+                <Link
+                  to={accountEntry.to}
+                  onClick={() => handleClick(accountEntry.to)}
+                  className="py-2 inline-flex items-center gap-2 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+                >
+                  <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
+                  Dashboard
+                </Link>
+              ) : (
+                renderNavLink(accountEntry.to, accountEntry.label, 'py-2')
+              )
             )}
           </div>
         </div>

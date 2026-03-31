@@ -19,8 +19,6 @@ export function buildPublicCompaniesListQuery(input: { limit: number; offset: nu
          google_reviews_count
        FROM uae_companies
        WHERE is_active = 1
-         AND logo_url IS NOT NULL
-         AND logo_url <> ''
        ORDER BY google_rating DESC, google_reviews_count DESC, name_en ASC
        LIMIT ${input.limit} OFFSET ${input.offset}`,
     params: [],
@@ -49,8 +47,6 @@ export function buildPublicCompanyDetailQuery(slug: string) {
        FROM uae_companies
        WHERE slug = ?
          AND is_active = 1
-         AND logo_url IS NOT NULL
-         AND logo_url <> ''
        LIMIT 1`,
     params: [slug],
   };

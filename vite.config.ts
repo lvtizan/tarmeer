@@ -11,13 +11,16 @@ export default defineConfig({
     headers: { 'Cache-Control': 'no-cache' },
     proxy: {
       '/api': {
-        target: 'http://localhost:3005',
+        target: 'http://47.91.108.104:3002',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://localhost:3005',
+        target: 'http://47.91.108.104:3002',
         changeOrigin: true,
       },
+    },
+    fs: {
+      allow: ['.'],
     },
   },
   build: {

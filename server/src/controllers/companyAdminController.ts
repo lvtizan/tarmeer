@@ -30,8 +30,8 @@ export async function listCompanies(req: any, res: any) {
        LEFT JOIN users u ON c.owner_user_id = u.id
        ${where}
        ORDER BY c.id ASC
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+       LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
+      params
     );
 
     res.json({
@@ -68,8 +68,8 @@ export async function listCompanyApplications(req: any, res: any) {
        JOIN users u ON ca.user_id = u.id
        ${where}
        ORDER BY ca.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+       LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
+      params
     );
 
     res.json({

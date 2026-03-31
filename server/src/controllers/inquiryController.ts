@@ -74,14 +74,14 @@ export async function getInquiries(req: any, res: any) {
     const [rows] = await pool.execute(
       `SELECT di.*,
         d.full_name as designer_name,
-        c.name as company_name
+        c.name_en as company_name
        FROM design_inquiries di
        LEFT JOIN designers d ON di.designer_id = d.id
        LEFT JOIN uae_companies c ON di.company_id = c.id
        ${where}
        ORDER BY di.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+       LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
+      params
     );
 
     res.json({
@@ -140,7 +140,7 @@ export async function exportInquiries(req: any, res: any) {
     const [rows] = await pool.execute(
       `SELECT di.*,
         d.full_name as designer_name,
-        c.name as company_name
+        c.name_en as company_name
        FROM design_inquiries di
        LEFT JOIN designers d ON di.designer_id = d.id
        LEFT JOIN uae_companies c ON di.company_id = c.id
@@ -217,8 +217,8 @@ export async function getMyInquiries(req: any, res: any) {
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.execute(
-      `SELECT * FROM design_inquiries ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      `SELECT * FROM design_inquiries ${where} ORDER BY created_at DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
+      params
     );
 
     res.json({

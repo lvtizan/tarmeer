@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tarmeer - Designer Onboarding Preview</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.344.0/umd/lucide.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #faf9f7; color: #2c2c2c; }
+
+  :root {
+    --primary: #b8864a;
+    --primary-light: #fdf8f3;
+    --primary-10: rgba(184, 134, 74, 0.1);
+    --shadow-card: 0 16px 46px rgba(28, 18, 8, 0.05);
+    --shadow-sm: 0 10px 30px rgba(28, 18, 8, 0.04);
+  }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 260px; border-right: 1px solid #e7e5e4; background: #fff;
+    padding: 24px; flex-shrink: 0;
+  }
+  .main { flex: 1; padding: 40px; overflow-y: auto; }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    position: sticky; top: 0; z-index: 50;
+    border-bottom: 1px solid #e7e5e4; background: #fff;
+    padding: 12px 40px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: var(--primary-10); display: flex; align-items: center; justify-content: center;
+  }
+  .header-title { font-size: 18px; font-weight: 700; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #78716c; margin-left: 12px; }
+  .breadcrumb strong { color: #2c2c2c; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .avatar-sm {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #b8864a30, #b8864a60);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--primary);
+    border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .btn-logout {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 14px; color: #78716c; background: none; border: none; cursor: pointer;
+  }
+
+  /* Sidebar */
+  .sidebar-profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+  .avatar-lg {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, #b8864a20, #b8864a50);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: var(--primary);
+    border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .sidebar-name { font-size: 15px; font-weight: 700; }
+  .sidebar-subtitle { font-size: 12px; color: #a8a29e; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 500;
+    color: #78716c; cursor: pointer; transition: all .15s;
+    text-decoration: none; margin-bottom: 4px;
+  }
+  .nav-item:hover { background: #fafaf9; }
+  .nav-item.active {
+    background: var(--primary-10); color: #2c2c2c;
+    border-left: 4px solid var(--primary);
+  }
+  .sidebar-card {
+    margin-top: 16px; border-radius: 12px; border: 1px solid #e7e5e4;
+    background: #fafaf9; padding: 14px;
+  }
+  .sidebar-card-title { font-size: 14px; font-weight: 600; }
+  .sidebar-card-text { font-size: 12px; color: #a8a29e; line-height: 1.5; margin-top: 4px; }
+  .progress-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #a8a29e; margin-top: 12px; }
+  .progress-bar { height: 6px; border-radius: 99px; background: #e7e5e4; margin-top: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; background: var(--primary); }
+
+  /* Hero */
+  .hero {
+    position: relative; overflow: hidden;
+    border-radius: 24px; border: 1px solid #e7e5e4;
+    background: linear-gradient(135deg, #fdf8f3, #fff, #f5efe8);
+    padding: 32px; margin-bottom: 24px; box-shadow: var(--shadow-card);
+  }
+  .hero-circle-1 {
+    position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: radial-gradient(circle, var(--primary), transparent);
+    opacity: 0.1; pointer-events: none;
+  }
+  .hero-circle-2 {
+    position: absolute; bottom: -24px; left: -24px;
+    width: 96px; height: 96px; border-radius: 50%;
+    background: radial-gradient(circle, var(--primary), transparent);
+    opacity: 0.07; pointer-events: none;
+  }
+  .hero-content { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .hero-left { max-width: 540px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 99px; border: 1px solid #fde68a; background: #fffbeb;
+    padding: 4px 12px; font-size: 12px; font-weight: 600; color: var(--primary);
+    margin-bottom: 12px;
+  }
+  .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; line-height: 1.3; }
+  .hero p { font-size: 14px; color: #78716c; line-height: 1.7; }
+  .hero p strong { color: #44403c; }
+  .hero-right { text-align: center; flex-shrink: 0; }
+  .stars { display: flex; gap: 2px; justify-content: center; margin-bottom: 8px; }
+  .star { color: #fbbf24; }
+  .hero-quote { font-size: 12px; color: #78716c; max-width: 160px; margin: 0 auto; line-height: 1.5; }
+  .hero-author { font-size: 11px; font-weight: 600; color: #a8a29e; margin-top: 4px; }
+
+  /* Steps */
+  .steps-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .steps-header h2 { font-size: 18px; font-weight: 700; }
+  .steps-badge { font-size: 12px; font-weight: 600; color: #78716c; background: #f5f5f4; border-radius: 99px; padding: 2px 10px; }
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+
+  .step-card {
+    position: relative; display: flex; flex-direction: column;
+    border-radius: 20px; border: 1px solid #e7e5e4; background: #fff;
+    padding: 20px; transition: all .2s; cursor: pointer; text-decoration: none; color: inherit;
+  }
+  .step-card:hover { border-color: #d6d3d1; box-shadow: 0 14px 40px rgba(28, 18, 8, 0.08); }
+  .step-card.highlight {
+    border-color: rgba(184, 134, 74, 0.3); background: var(--primary-light);
+    box-shadow: 0 10px 30px rgba(184, 134, 74, 0.08);
+  }
+  .step-card.highlight:hover { box-shadow: 0 14px 40px rgba(184, 134, 74, 0.12); }
+  .step-card.done { border-color: #bbf7d0; background: rgba(240, 253, 244, 0.5); }
+
+  .step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .step-number {
+    width: 40px; height: 40px; border-radius: 12px; background: #fffbeb;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--primary);
+  }
+  .step-number.done { background: #dcfce7; }
+  .step-cta { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--primary); opacity: 0; transition: opacity .2s; }
+  .step-card:hover .step-cta, .step-card.highlight .step-cta { opacity: 1; }
+  .step-completed { font-size: 12px; font-weight: 600; color: #16a34a; }
+
+  .step-mid { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .step-icon { color: var(--primary); }
+  .step-card.done .step-icon { color: #16a34a; }
+  .step-title { font-size: 14px; font-weight: 700; }
+  .step-card.done .step-title { color: #166534; }
+  .step-desc { font-size: 12px; color: #78716c; line-height: 1.6; }
+  .step-card.done .step-desc { color: rgba(22, 101, 52, 0.7); }
+
+  /* Why section */
+  .why-section {
+    border-radius: 24px; border: 1px solid #e7e5e4;
+    background: #fff; padding: 24px; box-shadow: var(--shadow-card);
+  }
+  .why-section h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .why-card { display: flex; gap: 12px; border-radius: 12px; background: #fafaf9; padding: 16px; }
+  .why-icon {
+    width: 40px; height: 40px; border-radius: 12px; background: #fffbeb;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    color: var(--primary);
+  }
+  .why-title { font-size: 14px; font-weight: 600; }
+  .why-text { font-size: 12px; color: #78716c; margin-top: 2px; line-height: 1.5; }
+
+  /* Toggle */
+  .toggle-bar {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; background: #2c2c2c; border-radius: 12px;
+    padding: 8px 16px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .toggle-btn {
+    padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: #a8a29e; background: transparent;
+    transition: all .15s;
+  }
+  .toggle-btn.active { background: var(--primary); color: #fff; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { padding: 20px; }
+    .steps-grid, .why-grid { grid-template-columns: 1fr; }
+    .hero-content { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8864a" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </div>
+    <span class="header-title">Tarmeer Dashboard</span>
+    <div class="breadcrumb">
+      <span>Home</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <strong>Dashboard</strong>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="avatar-sm">CL</div>
+    <button class="btn-logout">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Log out
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-profile">
+      <div class="avatar-lg">CL</div>
+      <div>
+        <div class="sidebar-name">claude lv</div>
+        <div class="sidebar-subtitle">Complete your profile</div>
+      </div>
+    </div>
+    <nav>
+      <a class="nav-item active" href="#">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        My Projects
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profile
+      </a>
+    </nav>
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">Profile Incomplete</div>
+      <div class="sidebar-card-text">After completing your profile and portfolio, our clients will contact you within two days.</div>
+      <div class="progress-row"><span>Profile</span><span>50%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+      <div class="progress-row" style="margin-top:8px"><span>Portfolio</span><span>0/3</span></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="container" id="content-area"></div>
+  </div>
+</div>
+
+<!-- Toggle -->
+<div class="toggle-bar">
+  <button class="toggle-btn active" onclick="showView('new')">New Designer</button>
+  <button class="toggle-btn" onclick="showView('returning')">Returning Designer</button>
+</div>
+
+<script>
+const newDesignerHTML = `
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-circle-1"></div>
+  <div class="hero-circle-2"></div>
+  <div class="hero-content">
+    <div class="hero-left">
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        Welcome to Tarmeer
+      </div>
+      <h1>Hi Claude, let's build your portfolio!</h1>
+      <p>Designers with complete profiles and 3+ projects get <strong>5x more client inquiries</strong>. Follow the steps below to start receiving leads.</p>
+    </div>
+    <div class="hero-right">
+      <div class="stars">
+        ${[1,2,3,4,5].map(() => '<svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>').join('')}
+      </div>
+      <div class="hero-quote">"I got my first client within a week of completing my profile."</div>
+      <div class="hero-author">— Tarmeer Designer</div>
+    </div>
+  </div>
+</div>
+
+<!-- Steps -->
+<div class="steps-header">
+  <h2>Get Started</h2>
+  <span class="steps-badge">0/3 done</span>
+</div>
+<div class="steps-grid">
+  <div class="step-card highlight">
+    <div class="step-top">
+      <div class="step-number">1</div>
+      <div class="step-cta">
+        Edit Profile
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+    </div>
+    <div class="step-mid">
+      <div class="step-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg></div>
+      <div class="step-title">Complete Your Profile</div>
+    </div>
+    <div class="step-desc">Add your name, title, city, and a brief bio. Clients see this first — make a great impression.</div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-top">
+      <div class="step-number">2</div>
+      <div class="step-cta">
+        Add Photo
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+    </div>
+    <div class="step-mid">
+      <div class="step-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+      <div class="step-title">Upload a Profile Photo</div>
+    </div>
+    <div class="step-desc">Profiles with a photo receive 3x more views. A professional headshot works best.</div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-top">
+      <div class="step-number">3</div>
+      <div class="step-cta">
+        Upload Now
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+    </div>
+    <div class="step-mid">
+      <div class="step-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+      <div class="step-title">Upload Projects (0/3)</div>
+    </div>
+    <div class="step-desc">Showcase your best work. Three projects is the minimum to appear in client search results.</div>
+  </div>
+</div>
+
+<!-- Why -->
+<div class="why-section">
+  <h2>Why complete your portfolio?</h2>
+  <div class="why-grid">
+    <div class="why-card">
+      <div class="why-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <div>
+        <div class="why-title">Get Discovered</div>
+        <div class="why-text">Your profile appears in client search results across Dubai.</div>
+      </div>
+    </div>
+    <div class="why-card">
+      <div class="why-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></div>
+      <div>
+        <div class="why-title">Receive Client Leads</div>
+        <div class="why-text">Clients can contact you directly through the platform — for free.</div>
+      </div>
+    </div>
+    <div class="why-card">
+      <div class="why-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div>
+        <div class="why-title">Grow Your Business</div>
+        <div class="why-text">Top designers on Tarmeer receive 10+ inquiries per month.</div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+const returningDesignerHTML = `
+<div class="hero" style="background: #fff; padding: 24px;">
+  <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 4px;">Welcome back, Claude</h1>
+  <p style="font-size: 14px; color: #78716c;">Here's an overview of your designer studio.</p>
+</div>
+
+<div class="steps-grid" style="margin-bottom: 24px;">
+  <div style="border-radius: 20px; border: 1px solid #e7e5e4; background: #fff; padding: 20px; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <div style="border-radius: 12px; background: #fffbeb; padding: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8864a" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <span style="font-size: 14px; font-weight: 500; color: #78716c;">Total Projects</span>
+    </div>
+    <div style="font-size: 30px; font-weight: 800;">5</div>
+  </div>
+  <div style="border-radius: 20px; border: 1px solid #e7e5e4; background: #fff; padding: 20px; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <div style="border-radius: 12px; background: #fffbeb; padding: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8864a" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <span style="font-size: 14px; font-weight: 500; color: #78716c;">Profile Views</span>
+    </div>
+    <div style="font-size: 30px; font-weight: 800;">128</div>
+  </div>
+  <div style="border-radius: 20px; border: 1px solid #e7e5e4; background: #fff; padding: 20px; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <div style="border-radius: 12px; background: #fffbeb; padding: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8864a" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <span style="font-size: 14px; font-weight: 500; color: #78716c;">Leads This Month</span>
+    </div>
+    <div style="font-size: 30px; font-weight: 800;">7</div>
+  </div>
+</div>
+
+<div class="why-section">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f5f5f4; padding-bottom: 12px; margin-bottom: 16px;">
+    <div>
+      <h2 style="margin-bottom: 2px;">Your Projects</h2>
+      <p style="font-size: 12px; color: #78716c;">Recent work and quick actions</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button style="border: 1px solid #e7e5e4; background: #fff; border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">Manage all</button>
+      <button style="border: none; background: var(--primary); color: #fff; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer;">Upload New Project</button>
+    </div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+    ${['Modern Villa Interior','Luxury Apartment Redesign','Minimalist Office Space'].map((t, i) => `
+    <div style="border-radius: 18px; border: 1px solid #e7e5e4; overflow: hidden; cursor: pointer; transition: all .2s;">
+      <div style="aspect-ratio: 16/10; background: linear-gradient(135deg, ${['#e8d5c4','#d4c5b0','#c7b8a2'][i]}, ${['#f0e6d8','#e5ddd0','#ddd4c5'][i]}); display: flex; align-items: center; justify-content: center;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#b8864a80" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      </div>
+      <div style="padding: 16px;">
+        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; min-height: 2.75rem;">${t}</h3>
+        <p style="font-size: 12px; color: #78716c;">Dubai · 2026</p>
+        <div style="margin-top: 12px; text-align: right;">
+          <span style="display: inline-flex; border: 1px solid #fde68a; background: #fffbeb; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--primary);">Edit →</span>
+        </div>
+      </div>
+    </div>
+    `).join('')}
+  </div>
+</div>
+`;
+
+function showView(view) {
+  const area = document.getElementById('content-area');
+  area.innerHTML = view === 'new' ? newDesignerHTML : returningDesignerHTML;
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.includes(view === 'new' ? 'New' : 'Returning'));
+  });
+}
+
+// 初始显示
+showView('new');
+</script>
+</body>
+</html>

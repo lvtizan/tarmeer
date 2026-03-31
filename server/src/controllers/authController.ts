@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
 import passport from 'passport';
 import pool from '../config/database';
 import config from '../config';
@@ -7,6 +8,7 @@ import { sendDesignerRegistrationEmail, sendVerificationEmail, generateVerificat
 import { buildRegisterEmailStatus } from '../lib/registerEmailPolicy';
 import { buildRegistrationAvailabilityResult } from '../lib/registrationAvailability';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
+import { findDesignerByOAuthId, createOAuthDesigner } from '../lib/oauthHandler';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com',
@@ -481,5 +483,81 @@ export async function oauthCallback(req: any, res: any) {
   } catch (error) {
     console.error('OAuth callback error:', error);
     res.redirect(`${frontendUrl}/auth?error=oauth_error`);
+  }
+}
+
+// Google One Tap 登录
+export async function googleOneTap(req: any, res: any) {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({ error: 'Missing credential' });
+    }
+
+    // 用 Google tokeninfo 端点验证 ID Token
+    const tokenInfoUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`;
+    const { data: payload } = await axios.get(tokenInfoUrl, { timeout: 5000 });
+
+    // 验证 audience（client_id）
+    if (payload.aud !== config.oauth.google.clientId) {
+      console.error('[GoogleOneTap] Invalid audience:', payload.aud);
+      return res.status(401).json({ error: 'Invalid token audience' });
+    }
+
+    // 验证 issuer
+    if (!['accounts.google.com', 'https://accounts.google.com'].includes(payload.iss)) {
+      console.error('[GoogleOneTap] Invalid issuer:', payload.iss);
+      return res.status(401).json({ error: 'Invalid token issuer' });
+    }
+
+    const googleId = payload.sub;
+    const email = payload.email;
+    const name = payload.name || payload.email?.split('@')[0] || 'Designer';
+    const picture = payload.picture || '';
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email not available from Google' });
+    }
+
+    // 查找或创建用户（复用现有 OAuth 逻辑）
+    let designer = await findDesignerByOAuthId('google', googleId);
+
+    if (!designer) {
+      const result = await createOAuthDesigner({
+        id: googleId,
+        email,
+        displayName: name,
+        photoUrl: picture,
+        provider: 'google',
+      });
+      designer = result.designer;
+
+      // 如果是已有账号关联但邮箱未验证，自动验证
+      if (result.needsVerification) {
+        await pool.execute(
+          'UPDATE designers SET email_verified = TRUE WHERE id = ?',
+          [designer.id]
+        );
+      }
+    }
+
+    // 生成 JWT
+    const token = jwt.sign(
+      { id: designer.id, email: designer.email },
+      config.jwt.secret,
+      { expiresIn: '7d' }
+    );
+
+    console.log(`[GoogleOneTap] Login success: ${designer.email} (id=${designer.id})`);
+
+    res.json({ token });
+  } catch (error: any) {
+    // Google tokeninfo 返回 400 表示 token 无效
+    if (error.response?.status === 400) {
+      return res.status(401).json({ error: 'Invalid Google credential' });
+    }
+    console.error('[GoogleOneTap] Error:', error.message || error);
+    res.status(500).json({ error: 'One Tap login failed' });
   }
 }

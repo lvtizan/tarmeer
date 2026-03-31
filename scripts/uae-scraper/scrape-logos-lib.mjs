@@ -74,7 +74,15 @@ function isLikelyContentImage(url) {
     || lower.includes('/uploads/')
     || lower.includes('/wp-content/uploads/')
     || lower.includes('s3.')
-    || lower.includes('/file/');
+    || lower.includes('/file/')
+    || lower.includes('res.cloudinary.com')
+    || lower.includes('images.unsplash.com')
+    || lower.includes('cdn.sanity.io')
+    || lower.includes('images.prismic.io')
+    || lower.includes('images.contentful.com')
+    || lower.includes('imagedelivery.net')
+    || /\/f_auto[,/]/.test(lower)
+    || /\/image\//.test(lower);
 }
 
 function isLikelyLogo(url) {
@@ -321,20 +329,85 @@ export function extractPortfolioImages(html, baseUrl) {
 }
 
 const CATEGORY_URL_PREFIXES = [
-  'projects', 'portfolio', 'works', 'gallery', 'case-study',
+  'projects', 'project', 'portfolio', 'works', 'work', 'gallery',
+  'case-study', 'case-studies', 'our-work', 'our-projects',
+  'fitout-projects', 'design-work', 'our-design-work',
+  'services', 'sectors', 'expertise',
 ];
 
 const CATEGORY_KEYWORDS = [
   'Residential', 'Commercial', 'Hospitality', 'Villa', 'Office',
   'Retail', 'Penthouse', 'Apartment', 'Restaurant', 'Hotel',
   'Spa', 'Salon', 'Clinic', 'Mosque', 'Palace',
+  'Healthcare', 'Education', 'Industrial', 'Landscape',
+  'Exterior', 'Interior', 'Fit-Out', 'Fitout', 'Renovation',
+  'Luxury', 'Contemporary', 'Classic', 'Modern', 'Minimalist',
+  'Corporate', 'Workplace', 'Mixed-Use', 'Cultural', 'Leisure',
+  'Master-Plan', 'Masterplan', 'Urban', 'Tower', 'High-Rise',
+  'F&B', 'Dining', 'Cafe', 'Lounge', 'Bar',
+  'Boutique', 'Showroom', 'Exhibition', 'Museum', 'Theater',
+  'Dubai', 'Abu-Dhabi', 'Sharjah', 'Ajman', 'Fujairah',
+  'Al-Ain', 'Ras-Al-Khaimah',
 ];
 
 const CATEGORY_KEYWORDS_LOWER = CATEGORY_KEYWORDS.map((k) => k.toLowerCase());
 
+/**
+ * Strip language prefix from pathname segments.
+ * e.g. ['en', 'projects', 'residential'] -> ['projects', 'residential']
+ */
+function stripLangPrefix(segments) {
+  if (segments.length > 0 && /^(en|ar|fr|de|es|ru|zh|ja|ko)$/.test(segments[0])) {
+    return segments.slice(1);
+  }
+  return segments;
+}
+
+/**
+ * Try to extract a category name from URL path segments.
+ * Handles patterns like:
+ *   /projects/residential
+ *   /en/fitout-projects/dubai
+ *   /en/services/interior-design/residential
+ *   /portfolio/category-name
+ *   projects.php (with link text as category)
+ */
+function categoryFromPath(pathname) {
+  const clean = pathname.replace(/\.php$/, '').replace(/^\//, '').replace(/\/+$/, '');
+  const segments = stripLangPrefix(clean.split('/').filter(Boolean));
+
+  if (segments.length < 2) return null;
+
+  // Check if any segment is a known portfolio prefix
+  for (let i = 0; i < segments.length - 1; i++) {
+    if (CATEGORY_URL_PREFIXES.includes(segments[i])) {
+      // The category is the last segment (deepest level)
+      const slug = segments[segments.length - 1];
+      const idx = CATEGORY_KEYWORDS_LOWER.indexOf(slug);
+      if (idx !== -1) return CATEGORY_KEYWORDS[idx];
+      // Capitalize slug: 'mixed-use' -> 'Mixed-Use'
+      return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('-');
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if a URL looks like a portfolio/project listing page (not just a category).
+ * Used as fallback when no category links are found.
+ */
+function isPortfolioListingUrl(pathname) {
+  const clean = pathname.replace(/\.php$/, '').replace(/^\//, '').toLowerCase();
+  const segments = stripLangPrefix(clean.split('/').filter(Boolean));
+  if (segments.length === 0) return false;
+  return CATEGORY_URL_PREFIXES.includes(segments[0]);
+}
+
 export function extractCategoryLinks(html, baseUrl) {
   const seen = new Set();
   const results = [];
+  const baseHost = new URL(baseUrl).hostname;
 
   const anchorPattern = /<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   let match;
@@ -346,32 +419,47 @@ export function extractCategoryLinks(html, baseUrl) {
     const normalized = normalizeUrl(href, baseUrl);
     if (!normalized || seen.has(normalized)) continue;
 
-    // Check if the URL path matches a portfolio/category prefix
+    // Only same-host links
+    try {
+      if (new URL(normalized).hostname !== baseHost) continue;
+    } catch { continue; }
+
     let category = null;
     try {
       const pathname = new URL(normalized).pathname.toLowerCase();
-      const segments = pathname.replace(/^\//, '').split('/');
-      if (segments.length >= 2 && CATEGORY_URL_PREFIXES.includes(segments[0])) {
-        const slug = segments[1];
-        // Find matching keyword (case-insensitive)
-        const idx = CATEGORY_KEYWORDS_LOWER.indexOf(slug);
-        if (idx !== -1) {
-          category = CATEGORY_KEYWORDS[idx];
-        } else {
-          // Capitalize the slug as the category name
-          category = slug.charAt(0).toUpperCase() + slug.slice(1);
-        }
-      }
+      category = categoryFromPath(pathname);
     } catch {
-      // ignore invalid URLs
+      // ignore
     }
 
-    // If no URL-based category found, check link text
-    if (!category) {
-      const textLower = text.toLowerCase();
+    // If no URL-based category, check link text against keywords
+    if (!category && text) {
+      const textLower = text.toLowerCase().trim();
       const idx = CATEGORY_KEYWORDS_LOWER.indexOf(textLower);
       if (idx !== -1) {
-        category = CATEGORY_KEYWORDS[idx];
+        // Verify the URL at least looks portfolio-related
+        try {
+          const pathname = new URL(normalized).pathname.toLowerCase();
+          if (isPortfolioListingUrl(pathname) || pathname.includes(textLower)) {
+            category = CATEGORY_KEYWORDS[idx];
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
+    // Fallback: link text is a keyword and href contains it
+    if (!category && text) {
+      const textLower = text.toLowerCase().trim();
+      for (let i = 0; i < CATEGORY_KEYWORDS_LOWER.length; i++) {
+        if (textLower === CATEGORY_KEYWORDS_LOWER[i] || textLower.startsWith(CATEGORY_KEYWORDS_LOWER[i] + ' ')) {
+          try {
+            const hrefLower = new URL(normalized).pathname.toLowerCase();
+            if (hrefLower.includes(CATEGORY_KEYWORDS_LOWER[i].replace(/[- ]/g, ''))) {
+              category = CATEGORY_KEYWORDS[i];
+              break;
+            }
+          } catch { /* ignore */ }
+        }
       }
     }
 
@@ -379,6 +467,37 @@ export function extractCategoryLinks(html, baseUrl) {
       seen.add(normalized);
       results.push({ url: normalized, category });
     }
+  }
+
+  return results;
+}
+
+/**
+ * Extract portfolio listing page URLs (non-categorized).
+ * These are top-level pages like /projects, /portfolio, /en/our-design-work.
+ * Used when extractCategoryLinks finds nothing.
+ */
+export function extractPortfolioPageLinks(html, baseUrl) {
+  const seen = new Set();
+  const results = [];
+  const baseHost = new URL(baseUrl).hostname;
+
+  const anchorPattern = /<a\s[^>]*href=["']([^"']+)["'][^>]*>/gi;
+  let match;
+
+  while ((match = anchorPattern.exec(html)) !== null) {
+    const href = match[1].trim();
+    const normalized = normalizeUrl(href, baseUrl);
+    if (!normalized || seen.has(normalized)) continue;
+
+    try {
+      const url = new URL(normalized);
+      if (url.hostname !== baseHost) continue;
+      if (isPortfolioListingUrl(url.pathname)) {
+        seen.add(normalized);
+        results.push(normalized);
+      }
+    } catch { continue; }
   }
 
   return results;

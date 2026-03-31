@@ -146,23 +146,34 @@ export async function fetchPublicProject(projectId: string): Promise<PublicProje
 }
 
 function toCompany(company: PublicCompanyRecord): Company {
-  const projectImages = sanitizeImageUrls(Array.isArray(company.portfolio_images) ? company.portfolio_images : []);
   const description = company.description || '';
 
   // Build portfolioCategories from API data or fall back to flat images
   let portfolioCategories: PortfolioCategories = {};
+  let projectImages: string[] = [];
+
   if (company.portfolio_categories && typeof company.portfolio_categories === 'object' && !Array.isArray(company.portfolio_categories)) {
     portfolioCategories = company.portfolio_categories;
-  } else if (projectImages.length > 0) {
-    portfolioCategories = { Projects: projectImages.map((url) => ({
-      url,
-      title: decodeURIComponent(url.split('/').pop()?.replace(/\.[^.]+$/, '') || '')
-        .replace(/[-_]+/g, ' ')
-        .replace(/\b\d{3,}x\d{3,}\b/g, '')
-        .replace(/\b(min|scaled|11zon|webp|jpg|png)\b/gi, '')
-        .replace(/\s{2,}/g, ' ')
-        .trim(),
-    })) };
+    // Extract flat image list from categories for listing pages
+    projectImages = Object.values(portfolioCategories)
+      .flatMap(items => items.map(item => item.url))
+      .filter(Boolean);
+  }
+
+  // Fallback: legacy flat array format
+  if (projectImages.length === 0) {
+    projectImages = sanitizeImageUrls(Array.isArray(company.portfolio_images) ? company.portfolio_images : []);
+    if (projectImages.length > 0 && Object.keys(portfolioCategories).length === 0) {
+      portfolioCategories = { Projects: projectImages.map((url) => ({
+        url,
+        title: decodeURIComponent(url.split('/').pop()?.replace(/\.[^.]+$/, '') || '')
+          .replace(/[-_]+/g, ' ')
+          .replace(/\b\d{3,}x\d{3,}\b/g, '')
+          .replace(/\b(min|scaled|11zon|webp|jpg|png)\b/gi, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim(),
+      })) };
+    }
   }
 
   return {
@@ -182,7 +193,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     services: Array.isArray(company.services) ? company.services : [],
     featured: false,
     coverImage: company.logo_url || '', // logo for small badge
-    projectImages, // only portfolio images for main display
+    projectImages, // flat list from all categories for listing/card display
     portfolioCategories,
   };
 }

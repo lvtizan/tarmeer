@@ -27,8 +27,8 @@ export async function listUsers(req: any, res: any) {
       `SELECT id, email, full_name, phone, city, avatar_url, role, status, email_verified, created_at, updated_at
        FROM users ${where}
        ORDER BY created_at DESC
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+       LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
+      params
     );
 
     res.json({

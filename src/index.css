@@ -29,6 +29,21 @@ body {
   color: var(--color-tarmeer-text);
 }
 
+/* 交互元素统一手型光标，避免出现默认箭头 */
+button,
+a[href],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+[role='button'] {
+  cursor: pointer;
+}
+button:disabled,
+input:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 /* 全站主按钮：暗金色底、白色字 */
 .btn-primary {
   display: inline-block;

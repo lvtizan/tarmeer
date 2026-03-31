@@ -5,11 +5,7 @@ import {
   buildPublicCompanyDetailQuery,
 } from '../lib/publicCompaniesQuery';
 
-const PUBLIC_COMPANY_WHERE = `
-  WHERE is_active = 1
-    AND logo_url IS NOT NULL
-    AND logo_url <> ''
-`;
+const PUBLIC_COMPANY_WHERE = `WHERE is_active = 1`;
 
 export async function getCompanies(req: any, res: any) {
   try {
