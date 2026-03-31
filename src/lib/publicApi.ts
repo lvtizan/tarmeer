@@ -154,10 +154,21 @@ function toCompany(company: PublicCompanyRecord): Company {
 
   if (company.portfolio_categories && typeof company.portfolio_categories === 'object' && !Array.isArray(company.portfolio_categories)) {
     portfolioCategories = company.portfolio_categories;
-    // Extract flat image list from categories for listing pages
+    // Extract flat image list from categories for listing pages, filtering low-quality
     projectImages = Object.values(portfolioCategories)
       .flatMap(items => items.map(item => item.url))
-      .filter(Boolean);
+      .filter(url => {
+        if (!url) return false;
+        const lower = url.toLowerCase();
+        // Filter out logos, icons, SVGs, tiny thumbnails
+        if (/logo|icon|favicon|brand|badge/i.test(lower)) return false;
+        if (/[_-](150x150|100x100|thumb|small|mini)/i.test(lower)) return false;
+        if (/placeholder|spacer|blank|pixel/i.test(lower)) return false;
+        if (/\.svg(\?|$)/i.test(lower)) return false;
+        if (/facebook|twitter|linkedin|youtube|instagram/i.test(lower)) return false;
+        if (/\/wp-includes\/|\/plugins\//i.test(lower)) return false;
+        return true;
+      });
   }
 
   // Fallback: legacy flat array format

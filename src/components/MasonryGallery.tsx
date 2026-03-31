@@ -138,6 +138,15 @@ export default function MasonryGallery({ categories, onImageClick }: MasonryGall
                     alt={item.title || `${item.categoryName} project`}
                     loading="lazy"
                     className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      if (img.naturalWidth < 200 || img.naturalHeight < 150) {
+                        img.closest('.break-inside-avoid')?.classList.add('hidden');
+                      }
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.closest('.break-inside-avoid')?.classList.add('hidden');
+                    }}
                   />
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors duration-300 rounded-xl" />

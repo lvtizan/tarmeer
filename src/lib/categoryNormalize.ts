@@ -118,8 +118,39 @@ export interface NormalizedCategories {
 }
 
 /**
+ * Filter out low-quality images: logos, tiny icons, placeholder images.
+ */
+function isHighQualityImage(url: string): boolean {
+  const lower = url.toLowerCase();
+
+  // Skip logos and icons
+  if (/logo|icon|favicon|brand|badge/i.test(lower)) return false;
+
+  // Skip tiny thumbnails (common patterns like 150x150, 32x32)
+  if (/[_-](150x150|100x100|72x72|32x32|48x48|64x64|thumb|small|mini)/i.test(lower)) return false;
+
+  // Skip placeholder/tracking images
+  if (/placeholder|spacer|blank|pixel|tracking|transparent/i.test(lower)) return false;
+
+  // Skip social media icons
+  if (/facebook|twitter|linkedin|youtube|instagram|whatsapp|telegram/i.test(lower)) return false;
+
+  // Skip common non-portfolio paths
+  if (/\/wp-includes\/|\/plugins\/|\/themes\/.*\/images\//i.test(lower)) return false;
+
+  // Skip SVG (usually icons/logos, not portfolio photos)
+  if (/\.svg(\?|$)/i.test(lower)) return false;
+
+  // Skip very short filenames (likely auto-generated icons)
+  const filename = lower.split('/').pop() || '';
+  if (filename.length < 3) return false;
+
+  return true;
+}
+
+/**
  * Take raw portfolio_categories and merge into normalized display categories.
- * Deduplicates images by URL.
+ * Deduplicates images by URL. Filters out low-quality/logo images.
  */
 export function normalizePortfolioCategories(
   raw: Record<string, { url: string; title: string }[]>
@@ -132,7 +163,7 @@ export function normalizePortfolioCategories(
     if (!result[displayName]) result[displayName] = [];
 
     for (const item of items) {
-      if (!seenUrls.has(item.url)) {
+      if (!seenUrls.has(item.url) && isHighQualityImage(item.url)) {
         seenUrls.add(item.url);
         result[displayName].push(item);
       }

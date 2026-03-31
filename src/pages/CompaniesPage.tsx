@@ -54,7 +54,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
   const currentSrc = activeIndex === -1 ? '' : images[activeIndex];
 
-  const handleImageError = () => {
+  const skipToNext = () => {
     if (activeIndex === -1) return;
     const nextFailed = [...failedIndices, activeIndex];
     setFailedIndices(nextFailed);
@@ -62,19 +62,30 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
     if (nextIndex !== -1) setImgIndex(nextIndex);
   };
 
+  const handleImageError = () => skipToNext();
+
+  // Skip small/low-quality images after they load
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth < 200 || img.naturalHeight < 150) {
+      skipToNext();
+    }
+  };
+
   return (
     <div
       onClick={onClick}
       className="group flex border-b border-stone-200/60 hover:bg-stone-50/50 transition-colors duration-150 cursor-pointer py-5 gap-5"
     >
-      {/* Left - Project Image (Houzz-style: fixed 280x186) */}
-      <div className="w-[280px] h-[186px] flex-shrink-0 rounded-lg overflow-hidden bg-stone-100">
+      {/* Left - Project Image */}
+      <div className="w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100">
         {currentSrc ? (
           <img
             src={currentSrc}
             alt={`${company.name} project`}
             className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
             onError={handleImageError}
+            onLoad={handleImageLoad}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-50 to-stone-100">
@@ -303,9 +314,9 @@ export default function CompaniesPage() {
           {/* 3-Step Flow */}
           <div className="flex items-center justify-center gap-0 mb-10">
             {[
-              { icon: ClipboardList, label: 'Tell us about\nyour project' },
-              { icon: Users, label: 'Get matched with\nlocal professionals' },
-              { icon: Handshake, label: 'Hire the right\npro with confidence' },
+              { icon: ClipboardList, label: 'Tell us about your project' },
+              { icon: Users, label: 'Get matched with local professionals' },
+              { icon: Handshake, label: 'Hire the right pro with confidence' },
             ].map((step, i) => (
               <div key={i} className="flex items-center">
                 {i > 0 && <div className="w-16 sm:w-24 h-px bg-white/25" />}
@@ -313,7 +324,7 @@ export default function CompaniesPage() {
                   <div className="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center">
                     <step.icon className="w-5 h-5 text-white/80" />
                   </div>
-                  <p className="text-white/70 text-xs sm:text-sm leading-snug whitespace-pre-line max-w-[120px]">
+                  <p className="text-white/70 text-xs sm:text-sm leading-snug text-center max-w-[140px]">
                     {step.label}
                   </p>
                 </div>

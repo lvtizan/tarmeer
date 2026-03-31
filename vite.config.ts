@@ -11,11 +11,11 @@ export default defineConfig({
     headers: { 'Cache-Control': 'no-cache' },
     proxy: {
       '/api': {
-        target: 'http://47.91.108.104:3002',
+        target: 'http://127.0.0.1:3005',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://47.91.108.104:3002',
+        target: 'http://127.0.0.1:3005',
         changeOrigin: true,
       },
     },
