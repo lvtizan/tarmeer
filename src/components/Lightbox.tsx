@@ -97,10 +97,9 @@ export default function Lightbox({
             </button>
           </div>
 
-          {/* Main image area */}
+          {/* Main image area - clicking empty space closes */}
           <div
             className="flex-1 flex items-center justify-center relative px-12 min-h-0"
-            onClick={(e) => e.stopPropagation()}
           >
             {/* Prev button */}
             {currentIndex > 0 && (
