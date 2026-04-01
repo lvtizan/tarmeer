@@ -1,0 +1,29 @@
+{
+  "name": "Fix It Design",
+  "website": "https://fixitdesign.ae",
+  "scrapedAt": "2026-04-01T03:31:02.339Z",
+  "projectCount": 4,
+  "imageCount": 148,
+  "projects": [
+    {
+      "title": "Interior desinging",
+      "url": "https://fixitdesign.ae/category/interior-desinging/",
+      "imageCount": 5
+    },
+    {
+      "title": "<img decoding=\"async\" width=\"850\" height=\"500\" src=\"https://fixitdesign.ae/wp-co",
+      "url": "https://fixitdesign.ae/interior-design-companies-in-dubai/",
+      "imageCount": 13
+    },
+    {
+      "title": "Villa Renovation",
+      "url": "https://fixitdesign.ae/villa-renovation/",
+      "imageCount": 57
+    },
+    {
+      "title": "Apartment Renovation",
+      "url": "https://fixitdesign.ae/apartment-renovation/",
+      "imageCount": 26
+    }
+  ]
+}
