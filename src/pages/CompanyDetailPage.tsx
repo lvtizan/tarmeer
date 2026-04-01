@@ -11,6 +11,7 @@ import { fetchPublicCompanyDetail, fetchPublicCompanies } from '../lib/publicApi
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
 import MasonryGallery from '../components/MasonryGallery';
 import Lightbox from '../components/Lightbox';
+import SelectField from '../components/form/SelectField';
 
 export default function CompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -289,9 +290,11 @@ export default function CompanyDetailPage() {
                 </p>
                 <p className="text-xs text-stone-500 mb-4">Tell us about your project and we'll connect you.</p>
                 <div className="space-y-3">
-                  <input type="text" placeholder="Your name" className="w-full h-10 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-[#b8864a] focus:ring-1 focus:ring-[#b8864a]/30" />
-                  <input type="tel" placeholder="Phone number" className="w-full h-10 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-[#b8864a] focus:ring-1 focus:ring-[#b8864a]/30" />
-                  <select className="w-full h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-500 focus:outline-none focus:border-[#b8864a] focus:ring-1 focus:ring-[#b8864a]/30">
+                  <input type="text" placeholder="Your name"
+                    className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
+                  <input type="tel" placeholder="Phone number"
+                    className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
+                  <SelectField>
                     <option value="">Select city</option>
                     <option>Dubai</option>
                     <option>Abu Dhabi</option>
@@ -300,18 +303,18 @@ export default function CompanyDetailPage() {
                     <option>Ras Al Khaimah</option>
                     <option>Fujairah</option>
                     <option>Umm Al Quwain</option>
-                  </select>
-                  <select className="w-full h-10 px-3 border border-stone-200 rounded-lg text-sm text-stone-500 focus:outline-none focus:border-[#b8864a] focus:ring-1 focus:ring-[#b8864a]/30">
+                  </SelectField>
+                  <SelectField>
                     <option value="">Select area size</option>
                     <option>&lt; 50 m²</option>
                     <option>50 - 100 m²</option>
                     <option>100 - 200 m²</option>
                     <option>200 - 500 m²</option>
                     <option>500 m²+</option>
-                  </select>
+                  </SelectField>
                   <textarea placeholder="Message (optional)" rows={3}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm resize-none focus:outline-none focus:border-[#b8864a] focus:ring-1 focus:ring-[#b8864a]/30" />
-                  <button className="w-full h-10 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-medium rounded-lg transition">
+                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
+                  <button className="w-full h-12 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-semibold rounded-lg transition">
                     Send Message
                   </button>
                 </div>
@@ -437,29 +440,31 @@ export default function CompanyDetailPage() {
               </div>
               {/* Form */}
               <div className="space-y-2.5">
-                <input type="text" placeholder="Your name" className="w-full h-9 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-[#b8864a]" />
-                <input type="tel" placeholder="Phone number" className="w-full h-9 px-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-[#b8864a]" />
+                <input type="text" placeholder="Your name"
+                  className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
+                <input type="tel" placeholder="Phone number"
+                  className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
                 <div className="flex gap-2">
-                  <select className="flex-1 h-9 px-2 border border-stone-200 rounded-lg text-sm text-stone-500 focus:outline-none focus:border-[#b8864a]">
+                  <SelectField className="h-11 text-xs" wrapperClassName="flex-1">
                     <option value="">City</option>
                     <option>Dubai</option>
                     <option>Abu Dhabi</option>
                     <option>Sharjah</option>
                     <option>Ajman</option>
                     <option>RAK</option>
-                  </select>
-                  <select className="flex-1 h-9 px-2 border border-stone-200 rounded-lg text-sm text-stone-500 focus:outline-none focus:border-[#b8864a]">
+                  </SelectField>
+                  <SelectField className="h-11 text-xs" wrapperClassName="flex-1">
                     <option value="">Area</option>
                     <option>&lt; 50m²</option>
                     <option>50-100m²</option>
                     <option>100-200m²</option>
                     <option>200-500m²</option>
                     <option>500m²+</option>
-                  </select>
+                  </SelectField>
                 </div>
                 <textarea placeholder="Message (optional)" rows={2}
-                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm resize-none focus:outline-none focus:border-[#b8864a]" />
-                <button className="w-full h-9 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-medium rounded-lg transition">
+                  className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
+                <button className="w-full h-11 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-semibold rounded-lg transition">
                   Send Message
                 </button>
               </div>

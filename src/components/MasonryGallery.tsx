@@ -1,8 +1,44 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PortfolioCategories, PortfolioItem } from '../lib/companyData';
 
 const ITEMS_PER_PAGE = 12;
+const THUMB_SIZE = 16; // canvas thumbnail size for fingerprinting
+const DARK_THRESHOLD = 45; // average brightness below this = too dark
+const SIMILARITY_THRESHOLD = 0.92; // above this = duplicate
+
+/** Downscale image to tiny canvas and return pixel data + average brightness */
+function getImageFingerprint(img: HTMLImageElement): { pixels: number[]; brightness: number } | null {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = THUMB_SIZE;
+    canvas.height = THUMB_SIZE;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, THUMB_SIZE, THUMB_SIZE);
+    const data = ctx.getImageData(0, 0, THUMB_SIZE, THUMB_SIZE).data;
+    const pixels: number[] = [];
+    let totalBrightness = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+      pixels.push(gray);
+      totalBrightness += gray;
+    }
+    return { pixels, brightness: totalBrightness / pixels.length };
+  } catch {
+    return null; // CORS or other error
+  }
+}
+
+/** Compare two fingerprints, return similarity 0-1 */
+function compareFingerprints(a: number[], b: number[]): number {
+  if (a.length !== b.length) return 0;
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    sum += 1 - Math.abs(a[i] - b[i]) / 255;
+  }
+  return sum / a.length;
+}
 
 interface MasonryGalleryProps {
   categories: PortfolioCategories;
@@ -17,6 +53,7 @@ interface FlatItem extends PortfolioItem {
 }
 
 export default function MasonryGallery({ categories, onImageClick, externalWebsite }: MasonryGalleryProps) {
+  const fingerprintsRef = useRef<number[][]>([]);
   // Filter out empty categories up front
   const nonEmptyCategories = useMemo(
     () =>
@@ -67,6 +104,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setVisibleCount(ITEMS_PER_PAGE);
+    fingerprintsRef.current = []; // reset fingerprints on tab switch
   };
 
   const tabs = showAllTab ? ['All', ...categoryNames] : categoryNames;
@@ -151,13 +189,36 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                       const w = img.naturalWidth;
                       const h = img.naturalHeight;
                       const ratio = w / h;
-                      // Hide: too small, extreme aspect ratio (banners/strips), or tiny textures
+                      const container = img.closest('.break-inside-avoid') as HTMLElement | null;
+                      if (!container) return;
+
+                      // Hide: too small or extreme aspect ratio
                       if (w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25) {
-                        img.closest('.break-inside-avoid')?.classList.add('hidden');
+                        container.classList.add('hidden');
+                        return;
+                      }
+
+                      // Fingerprint check: dark images + duplicates
+                      const fp = getImageFingerprint(img);
+                      if (fp) {
+                        // Too dark
+                        if (fp.brightness < DARK_THRESHOLD) {
+                          container.classList.add('hidden');
+                          return;
+                        }
+                        // Duplicate check
+                        const isDuplicate = fingerprintsRef.current.some(
+                          existing => compareFingerprints(existing, fp.pixels) > SIMILARITY_THRESHOLD
+                        );
+                        if (isDuplicate) {
+                          container.classList.add('hidden');
+                          return;
+                        }
+                        fingerprintsRef.current.push(fp.pixels);
                       }
                     }}
                     onError={(e) => {
-                      e.currentTarget.closest('.break-inside-avoid')?.classList.add('hidden');
+                      (e.currentTarget.closest('.break-inside-avoid') as HTMLElement | null)?.classList.add('hidden');
                     }}
                   />
                   {/* Hover overlay */}
