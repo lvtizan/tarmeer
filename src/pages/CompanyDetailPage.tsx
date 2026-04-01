@@ -116,14 +116,14 @@ export default function CompanyDetailPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Back nav */}
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-4 pb-2">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
         <Link to="/companies" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition">
           <ArrowLeft className="w-4 h-4" /> Back to Companies
         </Link>
       </div>
 
       {/* ===== Top Section: Hero + Inquiry Form ===== */}
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex gap-6">
 
           {/* Left: Image Carousel */}
@@ -377,7 +377,7 @@ export default function CompanyDetailPage() {
       </div>
 
       {/* ===== Projects Section - Full Width ===== */}
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 mt-2">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-2">
         <MasonryGallery
           categories={normalizedCategories}
           onImageClick={handleImageClick}
@@ -388,7 +388,7 @@ export default function CompanyDetailPage() {
       {/* ===== Similar Companies ===== */}
       {similar.length > 0 && (
         <section className="border-t border-stone-200 bg-stone-50 py-10 mt-8">
-          <div className="max-w-[1100px] mx-auto px-4 sm:px-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <h2 className="font-serif text-xl font-semibold text-[#1c1917] mb-5">
               Similar Companies in {company.city}
             </h2>

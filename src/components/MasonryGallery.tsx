@@ -114,7 +114,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
 
   return (
     <section className="py-10 lg:py-14 bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div>
         {/* Section Header */}
         <div className="flex items-end justify-between mb-8">
           <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Portfolio</h2>

@@ -38,10 +38,6 @@
           "title": "building-designs 2"
         },
         {
-          "url": "/images/uae-companies/portfolio/algedra/building-designs/3.jpg",
-          "title": "building-designs 3"
-        },
-        {
           "url": "/images/uae-companies/portfolio/algedra/building-designs/5.jpg",
           "title": "building-designs 5"
         },
@@ -174,10 +170,6 @@
         {
           "url": "/images/uae-companies/portfolio/algedra/towers/18.jpg",
           "title": "towers 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/algedra/towers/19.jpg",
-          "title": "towers 19"
         }
       ],
       "Palaces-Design": [
@@ -260,28 +252,8 @@
       ],
       "Villas-Design": [
         {
-          "url": "/images/uae-companies/portfolio/algedra/villas-design/3.jpg",
-          "title": "villas-design 3"
-        },
-        {
           "url": "/images/uae-companies/portfolio/algedra/villas-design/5.jpg",
           "title": "villas-design 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/algedra/villas-design/6.jpg",
-          "title": "villas-design 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/algedra/villas-design/8.jpg",
-          "title": "villas-design 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/algedra/villas-design/15.jpg",
-          "title": "villas-design 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/algedra/villas-design/17.jpg",
-          "title": "villas-design 17"
         },
         {
           "url": "/images/uae-companies/portfolio/algedra/villas-design/19.jpg",
@@ -330,16 +302,8 @@
           "title": "malls 11"
         },
         {
-          "url": "/images/uae-companies/portfolio/algedra/malls/12.jpg",
-          "title": "malls 12"
-        },
-        {
           "url": "/images/uae-companies/portfolio/algedra/malls/14.jpg",
           "title": "malls 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/algedra/malls/15.jpg",
-          "title": "malls 15"
         }
       ],
       "Banks": [
@@ -397,56 +361,20 @@
           "title": "Luxury Swivel armchair"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/2.webp",
-          "title": "Luxury Desk"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/3.webp",
-          "title": "Elegant Small Desk"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/4.webp",
-          "title": "Trendy Design Office Table"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/5.webp",
-          "title": "Elegant Swivel armchair in black polished lacquering"
-        },
-        {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/6.webp",
           "title": "Luxurious Sideboard"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/7.webp",
-          "title": "Royal Class Office Table Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/8.webp",
           "title": "Classic Style Office Chair"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/9.webp",
-          "title": "Finest Classic Style Office Table Set"
-        },
-        {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/10.webp",
           "title": "Classic Style - Luxury Table Set"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/11.webp",
-          "title": "Customized Artistic Office Table Set"
-        },
-        {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/12.webp",
           "title": "Luxurious Office Table"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/13.webp",
-          "title": "Elegant Office Table Set"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/14.webp",
-          "title": "Classic Style Office Furniture Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/15.webp",
@@ -475,91 +403,11 @@
       ],
       "Dining": [
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/1.webp",
-          "title": "Modern dining furniture set 024"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/2.webp",
-          "title": "Modern dining furniture set 023"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/3.webp",
-          "title": "Contemporary dining set 003"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/4.webp",
-          "title": "Modern dining furniture set 021"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/5.webp",
-          "title": "Contemporary dining set 001"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/6.webp",
-          "title": "dining room furniture set 001"
-        },
-        {
           "url": "/images/uae-companies/portfolio/antonovich-design/dining/7.webp",
           "title": "Modern dining furniture set 020"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/8.webp",
-          "title": "Modern dining furniture set 019"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/9.webp",
-          "title": "Modern dining furniture set 018"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/10.webp",
-          "title": "Modern dining furniture set 014"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/11.webp",
-          "title": "Modern dining furniture set 017"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/12.webp",
-          "title": "Modern dining furniture set 013"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/13.webp",
-          "title": "Modern dining furniture set 016"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/14.webp",
-          "title": "Modern dining furniture set 015"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/15.webp",
-          "title": "Modern dining furniture set 012"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/16.webp",
-          "title": "Modern dining furniture set 011"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/17.jpg",
-          "title": "Palm Jumeirah Masterpiece by Trusted Villa Builder Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/18.jpg",
-          "title": "The Highest Standard in Turnkey Villa Construction Dubai by Antonovich Group"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/19.jpg",
-          "title": "Mastering Luxury Villa Construction Dubai with Iconic Landscape Design"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/dining/20.jpg",
-          "title": "Antonovich Group: Redefining Excellence as the Top Villa Construction Company in Dubai"
         }
       ],
       "Villa": [
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/villa/1.png",
-          "title": "Dubai"
-        },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/villa/2.jpg",
           "title": "ANTONOVICH GROUP: TRANSFORMING DREAMS INTO TIMELESS ELEGANCE"
@@ -645,10 +493,6 @@
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/apartment/2.jpg",
           "title": "– Address The Beach JBR Apartment Dubai | Antonovich Group"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/3.png",
-          "title": "Modern Apartment Project at Address The Beach JBR Dubai | Design &amp; Execution by Antonovich Group"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/apartment/4.jpg",
@@ -832,37 +676,7 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "Hotel": [
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/3.png",
-          "title": "Hotel 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/8.png",
-          "title": "Hotel 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/9.png",
-          "title": "Hotel 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/10.png",
-          "title": "Hotel 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/11.png",
-          "title": "Hotel 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/12.png",
-          "title": "Hotel 12"
-        }
-      ],
       "Office": [
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/3.png",
-          "title": "Office 3"
-        },
         {
           "url": "/images/uae-companies/portfolio/appello-interiors/office/4.jpg",
           "title": "Office 4"
@@ -906,28 +720,6 @@
         {
           "url": "/images/uae-companies/portfolio/appello-interiors/office/15.jpg",
           "title": "Office 15"
-        }
-      ],
-      "Retail": [
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/retail/3.png",
-          "title": "Retail 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/retail/8.png",
-          "title": "Retail 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/retail/9.png",
-          "title": "Retail 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/retail/11.png",
-          "title": "Retail 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/appello-interiors/retail/12.png",
-          "title": "Retail 12"
         }
       ]
     }
@@ -1013,10 +805,6 @@
         {
           "url": "/images/uae-companies/portfolio/fitout-squad/interior/1.jpg",
           "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fitout-squad/interior/2.jpg",
-          "title": ""
         }
       ]
     }
@@ -1059,10 +847,6 @@
           "title": "Office Fitout Company in Dubai | Office Fitout Dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/offices/2.webp",
-          "title": "od2"
-        },
-        {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/3.jpg",
           "title": "planters"
         },
@@ -1081,49 +865,11 @@
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/7.jpg",
           "title": "villa-pool"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/offices/8.png",
-          "title": ""
-        }
-      ],
-      "Shopping-Malls": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/1.webp",
-          "title": "Shopping Mall Fit-Out Works in Dubai | Mall Interior Company in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/2.jpg",
-          "title": "planters"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/3.jpg",
-          "title": "pergola"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/4.jpg",
-          "title": "water-feature"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/5.jpg",
-          "title": "gazebo"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/6.jpg",
-          "title": "villa-pool"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/7.png",
-          "title": ""
         }
       ],
       "Emirates-Lounge": [
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/1.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/2.webp",
           "title": ""
         },
         {
@@ -1137,208 +883,18 @@
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/5.jpg",
           "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/6.png",
-          "title": ""
         }
       ],
       "Pullman-Hotel": [
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/1.jpg",
           "title": "hotel fitout contractor in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/5.png",
-          "title": ""
-        }
-      ],
-      "Dnata-Travel-Office": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/5.png",
-          "title": ""
-        }
-      ],
-      "Etihad-Rail-New-Office": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/5.png",
-          "title": ""
-        }
-      ],
-      "Cosmic-Tech-Office": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/5.png",
-          "title": ""
         }
       ],
       "Bay-Square-Office": [
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/1.jpg",
           "title": "office fitout company in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/5.png",
-          "title": ""
-        }
-      ],
-      "Coterra-Cafe": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/5.png",
-          "title": ""
-        }
-      ],
-      "Grazer-Restaurant": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/5.png",
-          "title": ""
-        }
-      ],
-      "Private-Villa": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/5.png",
-          "title": ""
-        }
-      ],
-      "Meadows-Villa": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/2.jpg",
-          "title": "Related Portfolio"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/3.jpg",
-          "title": "Melissa Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/4.jpg",
-          "title": "Al Furjan Private Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/5.png",
-          "title": ""
         }
       ]
     }
@@ -1376,31 +932,11 @@
     "portfolio_categories": {
       "Interior-Fitout-Company-In-Dubai-Marina-Premium-Fitout-Contractors-In-Dubai": [
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-dubai-marina-premium-fitout-contractors-in-dubai/1.webp",
-          "title": "Top Interior Fitout Company in Dubai"
-        },
-        {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-dubai-marina-premium-fitout-contractors-in-dubai/2.webp",
           "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-dubai-marina-premium-fitout-contractors-in-dubai/3.webp",
-          "title": "Interior Fitout Company in Dubai Marina"
         }
       ],
       "Interior-Fitout-Company-In-Business-Bay-Expert-Fitout-Contractors-In-Dubai": [
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/1.webp",
-          "title": "interior fitout company in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/2.webp",
-          "title": "interior fitout company in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/3.webp",
-          "title": "interior fitout company in dubai"
-        },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/4.webp",
           "title": ""
@@ -1416,78 +952,26 @@
           "title": "Custom dining area design and fitout Dubai Palm Jumeirah"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/3.webp",
-          "title": "Retail fitout Dubai – luxury boutique in Palm Jumeirah"
-        },
-        {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/4.webp",
           "title": "Custom bedroom fitout Dubai Palm Jumeirah luxury home"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/5.webp",
-          "title": "Corporate office interior fitout Palm Jumeirah by fitout contractors in Dubai"
         }
       ],
       "Interior-Fitout-Company-In-Difc-Dubai-Premium-Difc-Fitout-Contractors-In-Dubai": [
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/1.webp",
           "title": "Luxury corporate office interior fitout in DIFC Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/2.png",
-          "title": "Premium office workspace design in DIFC Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/3.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/4.png",
-          "title": "High-end retail store fitout in DIFC Dubai by fitout contractors"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/5.webp",
-          "title": "Outdoor dining fitout in DIFC Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/6.webp",
-          "title": ""
         }
       ],
       "Interior-Fitout-Companies-In-Dubai-Hills-Dubai-Expert-Dubai-Hills-Fitout-Contractors": [
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/1.webp",
-          "title": "Modern office interior fitout in Dubai Hills by fitout contractors"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/2.webp",
-          "title": "Luxury villa interior fitout in al barsha by Build Craft Interiors"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/3.webp",
-          "title": "Luxury villa interior fitout in Dubai Hills by Build Craft Interiors"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/4.png",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/5.jpg",
           "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/6.webp",
-          "title": "Modern office interior fitout in Dubai Hills by fitout contractors"
         }
       ],
       "Interior-Fitout-Companies-In-Al-Barsha-Dubai-Trusted-Fitout-Contractors": [
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-al-barsha-dubai-trusted-fitout-contractors/1.jpg",
           "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-al-barsha-dubai-trusted-fitout-contractors/2.webp",
-          "title": "Luxury villa interior fitout in al barsha by Build Craft Interiors"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-al-barsha-dubai-trusted-fitout-contractors/3.jpg",
@@ -1506,114 +990,6 @@
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-damac-hills-dubai-best-dubai-fitout-contractors/3.jpg",
           "title": "interior fitout company in dubai"
-        }
-      ],
-      "Commercial-Fitout-Dubai": [
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/1.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/2.png",
-          "title": "commercial fitout dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/3.png",
-          "title": "commercial fitout dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/4.png",
-          "title": "commercial fitout dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/5.png",
-          "title": "commercial fitout dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/6.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/7.png",
-          "title": "Commercial fitout dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/8.png",
-          "title": "commercial fitout company dubai 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/9.png",
-          "title": "commercial fitout company dubai 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/10.png",
-          "title": "commercial fitout company dubai 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/11.png",
-          "title": "commercial fitout company dubai 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/12.png",
-          "title": "commercial fitout company dubai 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/13.png",
-          "title": "commercial fitout company dubai"
-        }
-      ],
-      "Residential-Interior-Fitout-In-Dubai": [
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/1.png",
-          "title": "&nbsp;"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/2.png",
-          "title": "residential fitout company in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/3.png",
-          "title": "residential fitout company in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/4.png",
-          "title": "residential fitout company in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/5.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/6.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/7.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/8.png",
-          "title": "Residential Fitout Company Dubai 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/9.png",
-          "title": "Residential Fitout Company Dubai 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/10.png",
-          "title": "Residential Fitout Company Dubai 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/11.png",
-          "title": "Residential Fitout Company Dubai 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/12.png",
-          "title": "Residential Fitout Company Dubai 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/13.png",
-          "title": "Residential Fitout Company Dubai 9"
         }
       ],
       "Joinery-Company-In-Dubai": [
@@ -1657,142 +1033,6 @@
           "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/10.jpg",
           "title": "JOINERYDUBAI2 (5)"
         }
-      ],
-      "Office-Fitout": [
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/1.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/2.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/3.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/4.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/5.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/6.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/7.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/8.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/9.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/10.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/11.png",
-          "title": "office fitout"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/12.png",
-          "title": "Interior Fitout Company In Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/13.png",
-          "title": "BCI - DESIGN - 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/14.png",
-          "title": "Turnkey Interior Fitout Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/15.png",
-          "title": "office fitout companies in dubai 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/16.png",
-          "title": "office fitout companies in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/17.png",
-          "title": "office fitout companies in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/18.png",
-          "title": "office fitout companies in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/19.png",
-          "title": "commercial fitout dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/20.png",
-          "title": "office fitout companies in dubai"
-        }
-      ],
-      "Villa-Renovation": [
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/1.png",
-          "title": "Villa Renovation"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/2.png",
-          "title": "Villa Renovation 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/3.png",
-          "title": "Villa Renovation 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/4.png",
-          "title": "Villa Renovation 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/5.png",
-          "title": "Villa Renovation 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/6.png",
-          "title": "Villa Renovation 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/7.png",
-          "title": "Villa Renovation 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/8.png",
-          "title": "Villa Renovation 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/9.png",
-          "title": "Villa Renovation 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/10.png",
-          "title": "Villa Renovation 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/11.png",
-          "title": "Villa Renovation 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/12.png",
-          "title": "Villa Renovation 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/13.png",
-          "title": "Villa Renovation 12"
-        }
       ]
     }
   },
@@ -1831,52 +1071,8 @@
     "portfolio_categories": {
       "Ab-prime-realty": [
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/2.png",
-          "title": "Ab-prime-realty 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/3.png",
-          "title": "Ab-prime-realty 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/4.png",
-          "title": "Ab-prime-realty 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/5.png",
-          "title": "Ab-prime-realty 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/6.png",
-          "title": "Ab-prime-realty 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/7.png",
-          "title": "Ab-prime-realty 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/8.png",
-          "title": "Ab-prime-realty 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/9.png",
-          "title": "Ab-prime-realty 9"
-        },
-        {
           "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/11.jpg",
           "title": "Ab-prime-realty 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/12.png",
-          "title": "Ab-prime-realty 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/13.png",
-          "title": "Ab-prime-realty 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/14.png",
-          "title": "Ab-prime-realty 14"
         },
         {
           "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/15.jpg",
@@ -1885,28 +1081,6 @@
         {
           "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/16.jpg",
           "title": "Ab-prime-realty 16"
-        }
-      ],
-      "Icework-dubai": [
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/icework-dubai/3.png",
-          "title": "Icework-dubai 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/icework-dubai/4.png",
-          "title": "Icework-dubai 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/icework-dubai/5.png",
-          "title": "Icework-dubai 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/icework-dubai/6.png",
-          "title": "Icework-dubai 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/icework-dubai/7.png",
-          "title": "Icework-dubai 7"
         }
       ],
       "Jamjoom-pharma": [
@@ -1933,10 +1107,6 @@
       ],
       "Land-sterling-hq": [
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/3.png",
-          "title": "Land-sterling-hq 3"
-        },
-        {
           "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/4.png",
           "title": "Land-sterling-hq 4"
         },
@@ -1947,14 +1117,6 @@
         {
           "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/6.png",
           "title": "Land-sterling-hq 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/7.png",
-          "title": "Land-sterling-hq 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/8.png",
-          "title": "Land-sterling-hq 8"
         },
         {
           "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/9.png",
@@ -1971,10 +1133,6 @@
         {
           "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/12.png",
           "title": "Land-sterling-hq 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/13.png",
-          "title": "Land-sterling-hq 13"
         }
       ],
       "Landmark-group-jafza": [
@@ -2156,85 +1314,9 @@
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/2.jpg",
           "title": "commercial 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/3.png",
-          "title": "commercial 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/4.png",
-          "title": "commercial 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/5.png",
-          "title": "commercial 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/6.png",
-          "title": "commercial 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/7.png",
-          "title": "commercial 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/8.png",
-          "title": "commercial 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/9.png",
-          "title": "commercial 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/10.png",
-          "title": "commercial 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/11.png",
-          "title": "commercial 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/12.png",
-          "title": "commercial 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/13.png",
-          "title": "commercial 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/14.png",
-          "title": "commercial 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/15.png",
-          "title": "commercial 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/16.png",
-          "title": "commercial 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/17.png",
-          "title": "commercial 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/18.png",
-          "title": "commercial 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/19.png",
-          "title": "commercial 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/20.png",
-          "title": "commercial 20"
         }
       ],
       "Office": [
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/office/1.png",
-          "title": "office 1"
-        },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/2.png",
           "title": "office 2"
@@ -2270,10 +1352,6 @@
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/14.png",
           "title": "office 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/office/15.png",
-          "title": "office 15"
         }
       ],
       "Retail": [
@@ -2282,17 +1360,7 @@
           "title": "retail 1"
         }
       ],
-      "Spa": [
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/spa/1.webp",
-          "title": "spa 1"
-        }
-      ],
       "Salon": [
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/salon/1.webp",
-          "title": "salon 1"
-        },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/salon/18.jpg",
           "title": "salon 18"
@@ -2398,16 +1466,6 @@
         {
           "url": "/images/uae-companies/portfolio/alec-fitout/mandarin-oriental/2.jpg",
           "title": "Mandarin-oriental 2"
-        }
-      ],
-      "Marsa-al-arab-public-areas": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/marsa-al-arab-public-areas/2.png",
-          "title": "Marsa-al-arab-public-areas 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/marsa-al-arab-public-areas/4.png",
-          "title": "Marsa-al-arab-public-areas 4"
         }
       ],
       "Morocco-pavilion": [
@@ -2674,14 +1732,6 @@
         {
           "url": "/images/uae-companies/portfolio/fix-it-design/mosque/6.jpg",
           "title": "mosque 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fix-it-design/mosque/11.webp",
-          "title": "mosque 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fix-it-design/mosque/15.webp",
-          "title": "mosque 15"
         }
       ]
     }
@@ -2780,120 +1830,6 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "Confidential-uae": [
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/confidential-uae/1.webp",
-          "title": "Confidential-uae 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/confidential-uae/2.webp",
-          "title": "Confidential-uae 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/confidential-uae/3.webp",
-          "title": "Confidential-uae 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/confidential-uae/4.webp",
-          "title": "Confidential-uae 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/confidential-uae/5.webp",
-          "title": "Confidential-uae 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/confidential-uae/6.png",
-          "title": "Confidential-uae 6"
-        }
-      ],
-      "Gibson-dunn": [
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/gibson-dunn/1.webp",
-          "title": "Gibson-dunn 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/gibson-dunn/2.webp",
-          "title": "Gibson-dunn 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/gibson-dunn/3.webp",
-          "title": "Gibson-dunn 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/gibson-dunn/4.webp",
-          "title": "Gibson-dunn 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/gibson-dunn/5.webp",
-          "title": "Gibson-dunn 5"
-        }
-      ],
-      "Hadef-partners": [
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hadef-partners/1.webp",
-          "title": "Hadef-partners 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hadef-partners/2.webp",
-          "title": "Hadef-partners 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hadef-partners/3.webp",
-          "title": "Hadef-partners 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hadef-partners/4.webp",
-          "title": "Hadef-partners 4"
-        }
-      ],
-      "Hogan-lovells": [
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hogan-lovells/1.webp",
-          "title": "Hogan-lovells 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hogan-lovells/2.webp",
-          "title": "Hogan-lovells 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hogan-lovells/3.webp",
-          "title": "Hogan-lovells 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hogan-lovells/4.webp",
-          "title": "Hogan-lovells 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hogan-lovells/5.webp",
-          "title": "Hogan-lovells 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/hogan-lovells/6.webp",
-          "title": "Hogan-lovells 6"
-        }
-      ],
-      "Only-kids": [
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/only-kids/1.webp",
-          "title": "Only-kids 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/only-kids/2.webp",
-          "title": "Only-kids 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/only-kids/3.webp",
-          "title": "Only-kids 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/only-kids/4.webp",
-          "title": "Only-kids 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/only-kids/5.webp",
-          "title": "Only-kids 5"
-        }
-      ],
       "Pif-daycare": [
         {
           "url": "/images/uae-companies/portfolio/inc-solutions/pif-daycare/1.jpg",
@@ -2902,88 +1838,12 @@
         {
           "url": "/images/uae-companies/portfolio/inc-solutions/pif-daycare/2.jpg",
           "title": "Pif-daycare 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/pif-daycare/3.webp",
-          "title": "Pif-daycare 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/pif-daycare/4.webp",
-          "title": "Pif-daycare 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/pif-daycare/5.webp",
-          "title": "Pif-daycare 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/pif-daycare/6.webp",
-          "title": "Pif-daycare 6"
         }
       ],
       "Sarcc": [
         {
-          "url": "/images/uae-companies/portfolio/inc-solutions/sarcc/2.webp",
-          "title": "Sarcc 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/sarcc/3.webp",
-          "title": "Sarcc 3"
-        },
-        {
           "url": "/images/uae-companies/portfolio/inc-solutions/sarcc/4.jpg",
           "title": "Sarcc 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/sarcc/5.webp",
-          "title": "Sarcc 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/sarcc/6.webp",
-          "title": "Sarcc 6"
-        }
-      ],
-      "Visa-corporate-office": [
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-corporate-office/1.webp",
-          "title": "Visa-corporate-office 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-corporate-office/2.webp",
-          "title": "Visa-corporate-office 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-corporate-office/3.webp",
-          "title": "Visa-corporate-office 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-corporate-office/4.webp",
-          "title": "Visa-corporate-office 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-corporate-office/5.webp",
-          "title": "Visa-corporate-office 5"
-        }
-      ],
-      "Visa-innovation-centre": [
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-innovation-centre/1.webp",
-          "title": "Visa-innovation-centre 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-innovation-centre/2.webp",
-          "title": "Visa-innovation-centre 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-innovation-centre/3.webp",
-          "title": "Visa-innovation-centre 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-innovation-centre/4.webp",
-          "title": "Visa-innovation-centre 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/inc-solutions/visa-innovation-centre/5.webp",
-          "title": "Visa-innovation-centre 5"
         }
       ]
     }
@@ -3033,29 +1893,9 @@
         {
           "url": "/images/uae-companies/portfolio/arcave-design/landscape/1.jpg",
           "title": "landscape 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/arcave-design/landscape/2.png",
-          "title": "landscape 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/arcave-design/landscape/3.png",
-          "title": "landscape 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/arcave-design/landscape/6.webp",
-          "title": "landscape 6"
         }
       ],
       "Office": [
-        {
-          "url": "/images/uae-companies/portfolio/arcave-design/office/1.jpg",
-          "title": "office 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/arcave-design/office/2.jpg",
-          "title": "office 2"
-        },
         {
           "url": "/images/uae-companies/portfolio/arcave-design/office/3.jpg",
           "title": "office 3"
@@ -3124,10 +1964,6 @@
         {
           "url": "/images/uae-companies/portfolio/patina-interiors/classic-french-style-majlis-section/5.jpg",
           "title": "classic-french-style-majlis-section 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/patina-interiors/classic-french-style-majlis-section/6.jpg",
-          "title": "classic-french-style-majlis-section 6"
         },
         {
           "url": "/images/uae-companies/portfolio/patina-interiors/classic-french-style-majlis-section/7.jpg",
@@ -3492,14 +2328,6 @@
           "title": "interior 2"
         },
         {
-          "url": "/images/uae-companies/portfolio/winteriors-decor/interior/3.png",
-          "title": "interior 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/winteriors-decor/interior/4.png",
-          "title": "interior 4"
-        },
-        {
           "url": "/images/uae-companies/portfolio/winteriors-decor/interior/5.jpg",
           "title": "interior 5"
         },
@@ -3508,38 +2336,18 @@
           "title": "interior 6"
         },
         {
-          "url": "/images/uae-companies/portfolio/winteriors-decor/interior/1.png",
-          "title": "interior 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/winteriors-decor/interior/3.jpg",
           "title": "interior 3"
         },
         {
           "url": "/images/uae-companies/portfolio/winteriors-decor/interior/4.jpg",
           "title": "interior 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/winteriors-decor/interior/5.png",
-          "title": "interior 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/winteriors-decor/interior/6.png",
-          "title": "interior 6"
         }
       ],
       "Office": [
         {
-          "url": "/images/uae-companies/portfolio/winteriors-decor/office/1.png",
-          "title": "office 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/winteriors-decor/office/2.png",
           "title": "office 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/winteriors-decor/office/3.png",
-          "title": "office 3"
         },
         {
           "url": "/images/uae-companies/portfolio/winteriors-decor/office/1.jpg",
@@ -3607,51 +2415,9 @@
         {
           "url": "/images/uae-companies/portfolio/safeway-groups/villa/5.webp",
           "title": "villa 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/villa/6.webp",
-          "title": "villa 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/villa/7.webp",
-          "title": "villa 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/villa/8.webp",
-          "title": "villa 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/villa/9.webp",
-          "title": "villa 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/villa/10.webp",
-          "title": "villa 10"
-        }
-      ],
-      "Penthouse": [
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/penthouse/6.webp",
-          "title": "penthouse 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/penthouse/7.webp",
-          "title": "penthouse 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/penthouse/8.webp",
-          "title": "penthouse 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/penthouse/9.webp",
-          "title": "penthouse 9"
         }
       ],
       "Office": [
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/office/6.webp",
-          "title": "office 6"
-        },
         {
           "url": "/images/uae-companies/portfolio/safeway-groups/office/7.webp",
           "title": "office 7"
@@ -3663,29 +2429,9 @@
         {
           "url": "/images/uae-companies/portfolio/safeway-groups/office/9.webp",
           "title": "office 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/office/10.webp",
-          "title": "office 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/office/11.webp",
-          "title": "office 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/office/12.webp",
-          "title": "office 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/office/13.webp",
-          "title": "office 13"
         }
       ],
       "Hospitality": [
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/hospitality/6.webp",
-          "title": "hospitality 6"
-        },
         {
           "url": "/images/uae-companies/portfolio/safeway-groups/hospitality/7.webp",
           "title": "hospitality 7"
@@ -3697,51 +2443,9 @@
         {
           "url": "/images/uae-companies/portfolio/safeway-groups/hospitality/9.webp",
           "title": "hospitality 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/hospitality/10.webp",
-          "title": "hospitality 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/hospitality/11.webp",
-          "title": "hospitality 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/hospitality/12.webp",
-          "title": "hospitality 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/hospitality/13.webp",
-          "title": "hospitality 13"
-        }
-      ],
-      "Commercial": [
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/commercial/6.webp",
-          "title": "commercial 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/commercial/7.webp",
-          "title": "commercial 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/commercial/8.webp",
-          "title": "commercial 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/commercial/9.webp",
-          "title": "commercial 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/commercial/10.webp",
-          "title": "commercial 10"
         }
       ],
       "Residential": [
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/residential/6.webp",
-          "title": "residential 6"
-        },
         {
           "url": "/images/uae-companies/portfolio/safeway-groups/residential/7.webp",
           "title": "residential 7"
@@ -3753,26 +2457,6 @@
         {
           "url": "/images/uae-companies/portfolio/safeway-groups/residential/9.webp",
           "title": "residential 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/residential/10.webp",
-          "title": "residential 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/residential/11.webp",
-          "title": "residential 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/residential/12.webp",
-          "title": "residential 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/residential/13.webp",
-          "title": "residential 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/safeway-groups/residential/14.webp",
-          "title": "residential 14"
         }
       ]
     }
@@ -3809,10 +2493,6 @@
     "source_platform": "web_search",
     "portfolio_categories": {
       "Interior": [
-        {
-          "url": "/images/uae-companies/portfolio/luxury-and-more/interior/1.webp",
-          "title": "interior 1"
-        },
         {
           "url": "/images/uae-companies/portfolio/luxury-and-more/interior/2.avif",
           "title": "interior 2"
@@ -3949,10 +2629,6 @@
           "title": "commercial 4"
         },
         {
-          "url": "/images/uae-companies/portfolio/la-firma/commercial/5.jpg",
-          "title": "commercial 5"
-        },
-        {
           "url": "/images/uae-companies/portfolio/la-firma/commercial/8.jpg",
           "title": "commercial 8"
         },
@@ -3983,10 +2659,6 @@
       ],
       "Retail": [
         {
-          "url": "/images/uae-companies/portfolio/la-firma/retail/3.jpg",
-          "title": "retail 3"
-        },
-        {
           "url": "/images/uae-companies/portfolio/la-firma/retail/5.jpg",
           "title": "retail 5"
         },
@@ -3996,10 +2668,6 @@
         }
       ],
       "Residential": [
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/residential/3.webp",
-          "title": "residential 3"
-        },
         {
           "url": "/images/uae-companies/portfolio/la-firma/residential/4.jpg",
           "title": "residential 4"
@@ -4015,88 +2683,6 @@
         {
           "url": "/images/uae-companies/portfolio/la-firma/residential/7.jpg",
           "title": "residential 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/residential/8.jpg",
-          "title": "residential 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/residential/11.webp",
-          "title": "residential 11"
-        }
-      ],
-      "Private-villa-at-dubai-hill": [
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/3.webp",
-          "title": "private-villa-at-dubai-hill 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/4.webp",
-          "title": "private-villa-at-dubai-hill 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/5.webp",
-          "title": "private-villa-at-dubai-hill 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/6.webp",
-          "title": "private-villa-at-dubai-hill 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/7.webp",
-          "title": "private-villa-at-dubai-hill 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/8.webp",
-          "title": "private-villa-at-dubai-hill 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/9.webp",
-          "title": "private-villa-at-dubai-hill 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/10.webp",
-          "title": "private-villa-at-dubai-hill 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/11.webp",
-          "title": "private-villa-at-dubai-hill 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/12.webp",
-          "title": "private-villa-at-dubai-hill 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/13.webp",
-          "title": "private-villa-at-dubai-hill 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/14.webp",
-          "title": "private-villa-at-dubai-hill 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/15.webp",
-          "title": "private-villa-at-dubai-hill 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/16.webp",
-          "title": "private-villa-at-dubai-hill 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/17.webp",
-          "title": "private-villa-at-dubai-hill 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/18.webp",
-          "title": "private-villa-at-dubai-hill 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/19.webp",
-          "title": "private-villa-at-dubai-hill 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-at-dubai-hill/20.webp",
-          "title": "private-villa-at-dubai-hill 20"
         }
       ],
       "Private-villa-3": [
@@ -4119,22 +2705,6 @@
         {
           "url": "/images/uae-companies/portfolio/la-firma/private-villa-3/7.jpg",
           "title": "private-villa-3 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-3/12.jpg",
-          "title": "private-villa-3 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-3/18.jpg",
-          "title": "private-villa-3 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-3/19.jpg",
-          "title": "private-villa-3 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/la-firma/private-villa-3/20.jpg",
-          "title": "private-villa-3 20"
         }
       ]
     }
@@ -4268,10 +2838,6 @@
       ],
       "L-olive-restaurant": [
         {
-          "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/1.webp",
-          "title": "l-olive-restaurant 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/3.jpg",
           "title": "l-olive-restaurant 3"
         },
@@ -4379,36 +2945,6 @@
           "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/18.jpg",
           "title": "first-motors 18"
         }
-      ],
-      "Il-primo-tower-penthouse": [
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/il-primo-tower-penthouse/1.webp",
-          "title": "il-primo-tower-penthouse 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/il-primo-tower-penthouse/2.webp",
-          "title": "il-primo-tower-penthouse 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/il-primo-tower-penthouse/3.webp",
-          "title": "il-primo-tower-penthouse 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/il-primo-tower-penthouse/4.webp",
-          "title": "il-primo-tower-penthouse 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/il-primo-tower-penthouse/5.webp",
-          "title": "il-primo-tower-penthouse 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/il-primo-tower-penthouse/6.webp",
-          "title": "il-primo-tower-penthouse 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/il-primo-tower-penthouse/7.webp",
-          "title": "il-primo-tower-penthouse 7"
-        }
       ]
     }
   },
@@ -4493,10 +3029,6 @@
           "title": "projects 13"
         },
         {
-          "url": "/images/uae-companies/portfolio/blak-interiors/projects/14.jpg",
-          "title": "projects 14"
-        },
-        {
           "url": "/images/uae-companies/portfolio/blak-interiors/projects/20.jpg",
           "title": "projects 20"
         }
@@ -4576,34 +3108,6 @@
           "title": "projects 12"
         },
         {
-          "url": "/images/uae-companies/portfolio/rayfitout/projects/14.webp",
-          "title": "projects 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rayfitout/projects/15.webp",
-          "title": "projects 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rayfitout/projects/16.webp",
-          "title": "projects 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rayfitout/projects/17.webp",
-          "title": "projects 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rayfitout/projects/18.webp",
-          "title": "projects 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rayfitout/projects/19.webp",
-          "title": "projects 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rayfitout/projects/20.webp",
-          "title": "projects 20"
-        },
-        {
           "url": "/images/uae-companies/portfolio/rayfitout/projects/1.webp",
           "title": "projects 1"
         }
@@ -4644,49 +3148,9 @@
         {
           "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/1.jpg",
           "title": "rpm-luxury-villa-construction-dubai-hills-estate 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/4.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/5.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/6.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/7.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/8.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/17.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/18.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/19.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/20.webp",
-          "title": "rpm-luxury-villa-construction-dubai-hills-estate 20"
         }
       ],
       "Art-villa-pearl-jumeirah": [
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/1.webp",
-          "title": "art-villa-pearl-jumeirah 1"
-        },
         {
           "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/2.jpg",
           "title": "art-villa-pearl-jumeirah 2"
@@ -4706,148 +3170,6 @@
         {
           "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/6.jpg",
           "title": "art-villa-pearl-jumeirah 6"
-        }
-      ],
-      "District-one-mansion": [
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/2.png",
-          "title": "district-one-mansion 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/3.png",
-          "title": "district-one-mansion 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/4.webp",
-          "title": "district-one-mansion 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/5.webp",
-          "title": "district-one-mansion 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/6.webp",
-          "title": "district-one-mansion 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/7.webp",
-          "title": "district-one-mansion 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/8.webp",
-          "title": "district-one-mansion 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/9.webp",
-          "title": "district-one-mansion 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/district-one-mansion/11.webp",
-          "title": "district-one-mansion 11"
-        }
-      ],
-      "Amn-villa": [
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/2.webp",
-          "title": "amn-villa 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/3.webp",
-          "title": "amn-villa 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/4.webp",
-          "title": "amn-villa 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/5.webp",
-          "title": "amn-villa 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/6.webp",
-          "title": "amn-villa 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/7.webp",
-          "title": "amn-villa 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/8.webp",
-          "title": "amn-villa 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/9.webp",
-          "title": "amn-villa 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/11.webp",
-          "title": "amn-villa 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/12.webp",
-          "title": "amn-villa 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/13.webp",
-          "title": "amn-villa 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/14.webp",
-          "title": "amn-villa 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/amn-villa/15.webp",
-          "title": "amn-villa 15"
-        }
-      ],
-      "Cc1-luxury-villa-renovation": [
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/1.webp",
-          "title": "cc1-luxury-villa-renovation 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/2.png",
-          "title": "cc1-luxury-villa-renovation 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/3.png",
-          "title": "cc1-luxury-villa-renovation 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/4.webp",
-          "title": "cc1-luxury-villa-renovation 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/5.webp",
-          "title": "cc1-luxury-villa-renovation 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/6.webp",
-          "title": "cc1-luxury-villa-renovation 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/7.webp",
-          "title": "cc1-luxury-villa-renovation 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/8.webp",
-          "title": "cc1-luxury-villa-renovation 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/9.webp",
-          "title": "cc1-luxury-villa-renovation 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/12.webp",
-          "title": "cc1-luxury-villa-renovation 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/13.webp",
-          "title": "cc1-luxury-villa-renovation 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/cc1-luxury-villa-renovation/14.webp",
-          "title": "cc1-luxury-villa-renovation 14"
         }
       ]
     }
@@ -4926,68 +3248,8 @@
           "title": "hospitality 3"
         },
         {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/4.png",
-          "title": "hospitality 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/5.png",
-          "title": "hospitality 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/7.png",
-          "title": "hospitality 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/8.png",
-          "title": "hospitality 8"
-        },
-        {
           "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/9.jpg",
           "title": "hospitality 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/10.webp",
-          "title": "hospitality 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/11.webp",
-          "title": "hospitality 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/12.webp",
-          "title": "hospitality 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/13.webp",
-          "title": "hospitality 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/14.webp",
-          "title": "hospitality 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/15.webp",
-          "title": "hospitality 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/16.webp",
-          "title": "hospitality 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/17.webp",
-          "title": "hospitality 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/18.webp",
-          "title": "hospitality 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/19.webp",
-          "title": "hospitality 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/hospitality/20.webp",
-          "title": "hospitality 20"
         }
       ],
       "Residential": [
@@ -4998,34 +3260,6 @@
         {
           "url": "/images/uae-companies/portfolio/atg-interiors/residential/3.webp",
           "title": "residential 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/residential/4.webp",
-          "title": "residential 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/residential/5.webp",
-          "title": "residential 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/residential/6.webp",
-          "title": "residential 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/residential/7.webp",
-          "title": "residential 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/residential/8.webp",
-          "title": "residential 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/residential/9.jpg",
-          "title": "residential 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/atg-interiors/residential/10.webp",
-          "title": "residential 10"
         }
       ]
     }
@@ -5059,32 +3293,7 @@
     "linkedin": "https://www.linkedin.com/company/eminent-interio/",
     "logo_url": "",
     "source_platform": "web_search",
-    "portfolio_categories": {
-      "Commercial": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/commercial/2.png",
-          "title": "commercial 2"
-        }
-      ],
-      "Hospitality": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/hospitality/2.png",
-          "title": "hospitality 2"
-        }
-      ],
-      "Office": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/office/2.png",
-          "title": "office 2"
-        }
-      ],
-      "Residential": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/residential/2.png",
-          "title": "residential 2"
-        }
-      ]
-    }
+    "portfolio_categories": {}
   },
   {
     "name_en": "Decor Home",
@@ -5120,83 +3329,83 @@
       "General": [
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/1.png",
-          "title": "general 1"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/2.png",
-          "title": "general 2"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/3.png",
-          "title": "general 3"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/4.png",
-          "title": "general 4"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/5.jpg",
-          "title": "general 5"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/6.jpg",
-          "title": "general 6"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/7.jpg",
-          "title": "general 7"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/8.jpg",
-          "title": "general 8"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/9.jpg",
-          "title": "general 9"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/10.jpg",
-          "title": "general 10"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/11.jpg",
-          "title": "general 11"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/12.jpg",
-          "title": "general 12"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/13.jpg",
-          "title": "general 13"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/14.jpg",
-          "title": "general 14"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/15.jpg",
-          "title": "general 15"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/16.jpg",
-          "title": "general 16"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/17.jpg",
-          "title": "general 17"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/18.jpg",
-          "title": "general 18"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/19.jpg",
-          "title": "general 19"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/decor-home/general/20.jpg",
-          "title": "general 20"
+          "title": ""
         }
       ]
     }
@@ -5230,70 +3439,7 @@
     "linkedin": "",
     "logo_url": "",
     "source_platform": "web_search",
-    "portfolio_categories": {
-      "Projects": [
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/4.webp",
-          "title": "projects 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/5.webp",
-          "title": "projects 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/6.webp",
-          "title": "projects 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/7.webp",
-          "title": "projects 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/8.webp",
-          "title": "projects 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/9.webp",
-          "title": "projects 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/10.webp",
-          "title": "projects 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/11.webp",
-          "title": "projects 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/12.webp",
-          "title": "projects 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/13.webp",
-          "title": "projects 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/14.webp",
-          "title": "projects 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/15.webp",
-          "title": "projects 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/16.webp",
-          "title": "projects 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/17.webp",
-          "title": "projects 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/18.webp",
-          "title": "projects 18"
-        }
-      ]
-    }
+    "portfolio_categories": {}
   },
   {
     "name_en": "Accouter Design",
@@ -5406,20 +3552,12 @@
           "title": "luxury 12"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/13.png",
-          "title": "luxury 13"
-        },
-        {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/17.jpg",
           "title": "luxury 17"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/18.jpg",
           "title": "luxury 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/12.png",
-          "title": "luxury 12"
         }
       ],
       "Interior": [
@@ -5674,15 +3812,7 @@
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/advisory-services/11.png",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/perkins-and-will/advisory-services/12.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/advisory-services/13.png",
           "title": ""
         },
         {
@@ -5760,10 +3890,6 @@
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/aviation/12.png",
-          "title": "headshot of Carl D"
-        },
-        {
           "url": "/images/uae-companies/portfolio/perkins-and-will/aviation/13.jpg",
           "title": ""
         },
@@ -5826,16 +3952,8 @@
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/branded-environments/12.jpg",
-          "title": "Land O"
-        },
-        {
           "url": "/images/uae-companies/portfolio/perkins-and-will/branded-environments/13.jpg",
           "title": "Exterior dusk shot"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/branded-environments/14.jpg",
-          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/perkins-and-will/branded-environments/15.jpg",
@@ -5868,15 +3986,7 @@
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/2.jpg",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/3.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/4.png",
           "title": ""
         },
         {
@@ -5888,20 +3998,12 @@
           "title": "150 Holborn, London"
         },
         {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/7.jpg",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/8.jpg",
           "title": "Exterior view of LeBreton Flats Library Parcel Development"
         },
         {
           "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/9.jpg",
           "title": "MIT Site 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/10.jpg",
-          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/11.jpg",
@@ -5934,10 +4036,6 @@
         {
           "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/18.jpg",
           "title": "i3 Illumina Campus"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/19.jpg",
-          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/perkins-and-will/corporate-and-commercial/20.jpg",
@@ -6046,10 +4144,6 @@
         {
           "url": "/images/uae-companies/portfolio/dwp-design/hospitality/12.jpg",
           "title": "W Dubai – The Palm"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dwp-design/hospitality/13.jpg",
-          "title": "Subscribe newsletter"
         }
       ],
       "Education": [
@@ -6064,10 +4158,6 @@
         {
           "url": "/images/uae-companies/portfolio/dwp-design/education/3.jpg",
           "title": "RMIT Building 22"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dwp-design/education/4.jpg",
-          "title": "Subscribe newsletter"
         }
       ],
       "Residential": [
@@ -6118,17 +4208,9 @@
         {
           "url": "/images/uae-companies/portfolio/dwp-design/residential/12.jpg",
           "title": "Tilal Al Ghaf"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dwp-design/residential/13.jpg",
-          "title": "Subscribe newsletter"
         }
       ],
       "Retail": [
-        {
-          "url": "/images/uae-companies/portfolio/dwp-design/retail/1.jpg",
-          "title": "Where Iconic Design Meets Immersive Experience"
-        },
         {
           "url": "/images/uae-companies/portfolio/dwp-design/retail/2.jpg",
           "title": "Porsche Centre Pattaya"
@@ -6164,10 +4246,6 @@
         {
           "url": "/images/uae-companies/portfolio/dwp-design/retail/10.jpg",
           "title": "Crystal Design Center Phase II"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dwp-design/retail/11.jpg",
-          "title": "Subscribe newsletter"
         }
       ]
     }
@@ -6212,40 +4290,8 @@
           "title": "general 6"
         },
         {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/7.png",
-          "title": "general 7"
-        },
-        {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/8.jpg",
           "title": "general 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/9.png",
-          "title": "general 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/10.png",
-          "title": "general 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/11.png",
-          "title": "general 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/12.png",
-          "title": "general 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/13.png",
-          "title": "general 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/14.png",
-          "title": "general 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/15.png",
-          "title": "general 15"
         },
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/16.jpg",
@@ -6254,18 +4300,6 @@
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/17.jpg",
           "title": "general 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/18.png",
-          "title": "general 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/19.png",
-          "title": "general 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/20.png",
-          "title": "general 20"
         }
       ]
     }
@@ -6386,10 +4420,6 @@
           "title": "sydney-central-station 4"
         },
         {
-          "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/5.png",
-          "title": "sydney-central-station 5"
-        },
-        {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/7.jpg",
           "title": "sydney-central-station 7"
         },
@@ -6428,10 +4458,6 @@
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/18.jpg",
           "title": "sydney-central-station 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/19.png",
-          "title": "sydney-central-station 19"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/20.jpg",
@@ -6839,10 +4865,6 @@
           "title": "market 3"
         },
         {
-          "url": "/images/uae-companies/portfolio/hok/market/4.png",
-          "title": "market 4"
-        },
-        {
           "url": "/images/uae-companies/portfolio/hok/market/5.jpg",
           "title": "market 5"
         },
@@ -7209,10 +5231,6 @@
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/14.jpg",
           "title": "the-chedi-al-bait 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/15.png",
-          "title": "the-chedi-al-bait 15"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/16.jpg",
@@ -7731,10 +5749,6 @@
     "portfolio_local": [],
     "portfolio_categories": {
       "Projects": [
-        {
-          "url": "/images/uae-companies/portfolio/dar-al-handasah/projects/2.png",
-          "title": "projects 2"
-        },
         {
           "url": "/images/uae-companies/portfolio/dar-al-handasah/projects/3.jpg",
           "title": "projects 3"
@@ -8744,10 +6758,6 @@
         {
           "url": "/images/uae-companies/portfolio/h2r-design/vida-beach-resort/8.jpg",
           "title": "vida-beach-resort 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/h2r-design/vida-beach-resort/9.jpg",
-          "title": "vida-beach-resort 9"
         }
       ],
       "Al-alamein": [
@@ -8774,10 +6784,6 @@
         {
           "url": "/images/uae-companies/portfolio/h2r-design/al-alamein/7.jpg",
           "title": "al-alamein 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/h2r-design/al-alamein/8.jpg",
-          "title": "al-alamein 8"
         }
       ],
       "Brau": [
@@ -8808,10 +6814,6 @@
         {
           "url": "/images/uae-companies/portfolio/h2r-design/brau/8.jpg",
           "title": "brau 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/h2r-design/brau/9.jpg",
-          "title": "brau 9"
         }
       ],
       "Brew": [
@@ -8834,10 +6836,6 @@
         {
           "url": "/images/uae-companies/portfolio/h2r-design/brew/6.jpg",
           "title": "brew 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/h2r-design/brew/7.jpg",
-          "title": "brew 7"
         }
       ],
       "Cassette": [
@@ -8864,10 +6862,6 @@
         {
           "url": "/images/uae-companies/portfolio/h2r-design/cassette/7.jpg",
           "title": "cassette 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/h2r-design/cassette/8.jpg",
-          "title": "cassette 8"
         }
       ]
     }
@@ -8911,18 +6905,6 @@
         {
           "url": "/images/uae-companies/portfolio/lulie-fisher/projects/1.jpg",
           "title": "projects 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/lulie-fisher/projects/2.png",
-          "title": "projects 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/lulie-fisher/projects/3.png",
-          "title": "projects 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/lulie-fisher/projects/4.png",
-          "title": "projects 4"
         }
       ]
     }
@@ -9362,14 +7344,6 @@
     "portfolio_categories": {
       "Schneider-electric-sustainable-fit-out-dubai": [
         {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/2.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/3.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 3"
-        },
-        {
           "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/4.webp",
           "title": "schneider-electric-sustainable-fit-out-dubai 4"
         },
@@ -9378,85 +7352,15 @@
           "title": "schneider-electric-sustainable-fit-out-dubai 5"
         },
         {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/6.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/7.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/8.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/9.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/10.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/11.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/12.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 12"
-        },
-        {
           "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/13.webp",
           "title": "schneider-electric-sustainable-fit-out-dubai 13"
         },
         {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/14.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 14"
-        },
-        {
           "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/15.webp",
           "title": "schneider-electric-sustainable-fit-out-dubai 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/16.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/17.png",
-          "title": "schneider-electric-sustainable-fit-out-dubai 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/18.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/19.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/schneider-electric-sustainable-fit-out-dubai/20.webp",
-          "title": "schneider-electric-sustainable-fit-out-dubai 20"
-        }
-      ],
-      "Global-law-firm": [
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/global-law-firm/18.webp",
-          "title": "global-law-firm 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/global-law-firm/19.webp",
-          "title": "global-law-firm 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/global-law-firm/20.webp",
-          "title": "global-law-firm 20"
         }
       ],
       "Designbuild-for-capital-management-hedge-fund": [
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/designbuild-for-capital-management-hedge-fund/1.png",
-          "title": "designbuild-for-capital-management-hedge-fund 1"
-        },
         {
           "url": "/images/uae-companies/portfolio/summertown-interiors/designbuild-for-capital-management-hedge-fund/18.jpg",
           "title": "designbuild-for-capital-management-hedge-fund 18"
@@ -9474,20 +7378,6 @@
         {
           "url": "/images/uae-companies/portfolio/summertown-interiors/picnic-square-times-square-center/19.webp",
           "title": "picnic-square-times-square-center 19"
-        }
-      ],
-      "Salesforce": [
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/salesforce/18.webp",
-          "title": "salesforce 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/salesforce/19.webp",
-          "title": "salesforce 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/summertown-interiors/salesforce/20.webp",
-          "title": "salesforce 20"
         }
       ]
     }
@@ -9631,24 +7521,8 @@
     "portfolio_categories": {
       "Projects": [
         {
-          "url": "/images/uae-companies/portfolio/isg-middle-east/projects/1.webp",
-          "title": "projects 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/isg-middle-east/projects/2.webp",
-          "title": "projects 2"
-        },
-        {
           "url": "/images/uae-companies/portfolio/isg-middle-east/projects/3.webp",
           "title": "projects 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/isg-middle-east/projects/4.webp",
-          "title": "projects 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/isg-middle-east/projects/5.webp",
-          "title": "projects 5"
         }
       ]
     }
@@ -9701,14 +7575,6 @@
           "title": "residential 3"
         },
         {
-          "url": "/images/uae-companies/portfolio/intermass-engineering/residential/4.png",
-          "title": "residential 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/intermass-engineering/residential/5.png",
-          "title": "residential 5"
-        },
-        {
           "url": "/images/uae-companies/portfolio/intermass-engineering/residential/6.jpg",
           "title": "residential 6"
         },
@@ -9719,21 +7585,9 @@
         {
           "url": "/images/uae-companies/portfolio/intermass-engineering/residential/8.jpg",
           "title": "residential 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/intermass-engineering/residential/9.png",
-          "title": "residential 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/intermass-engineering/residential/10.png",
-          "title": "residential 10"
         }
       ],
       "Commercial": [
-        {
-          "url": "/images/uae-companies/portfolio/intermass-engineering/commercial/1.png",
-          "title": "commercial 1"
-        },
         {
           "url": "/images/uae-companies/portfolio/intermass-engineering/commercial/2.jpg",
           "title": "commercial 2"
@@ -10040,10 +7894,6 @@
     "portfolio_categories": {
       "Commercial": [
         {
-          "url": "/images/uae-companies/portfolio/lacasa-architects/commercial/1.png",
-          "title": "commercial 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/lacasa-architects/commercial/5.jpg",
           "title": "commercial 5"
         },
@@ -10221,10 +8071,6 @@
           "title": "transport 8"
         },
         {
-          "url": "/images/uae-companies/portfolio/rsp-architects/transport/9.png",
-          "title": "transport 9"
-        },
-        {
           "url": "/images/uae-companies/portfolio/rsp-architects/transport/10.jpg",
           "title": "transport 10"
         },
@@ -10319,10 +8165,6 @@
         {
           "url": "/images/uae-companies/portfolio/rsp-architects/residential/17.jpg",
           "title": "residential 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rsp-architects/residential/18.png",
-          "title": "residential 18"
         },
         {
           "url": "/images/uae-companies/portfolio/rsp-architects/residential/19.jpg",
@@ -10621,40 +8463,12 @@
       ],
       "Chelsea-barracks-development": [
         {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/1.png",
-          "title": "chelsea-barracks-development 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/2.png",
-          "title": "chelsea-barracks-development 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/3.webp",
-          "title": "chelsea-barracks-development 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/4.webp",
-          "title": "chelsea-barracks-development 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/5.webp",
-          "title": "chelsea-barracks-development 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/6.webp",
-          "title": "chelsea-barracks-development 6"
-        },
-        {
           "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/7.jpg",
           "title": "chelsea-barracks-development 7"
         },
         {
           "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/8.jpg",
           "title": "chelsea-barracks-development 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/10.webp",
-          "title": "chelsea-barracks-development 10"
         },
         {
           "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/11.jpg",
@@ -10669,16 +8483,8 @@
           "title": "chelsea-barracks-development 13"
         },
         {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/14.webp",
-          "title": "chelsea-barracks-development 14"
-        },
-        {
           "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/15.jpg",
           "title": "chelsea-barracks-development 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/16.webp",
-          "title": "chelsea-barracks-development 16"
         },
         {
           "url": "/images/uae-companies/portfolio/elicyon/chelsea-barracks-development/17.jpg",
@@ -10879,20 +8685,8 @@
           "title": "commercial 14"
         },
         {
-          "url": "/images/uae-companies/portfolio/muse-interior-design/commercial/15.webp",
-          "title": "commercial 15"
-        },
-        {
           "url": "/images/uae-companies/portfolio/muse-interior-design/commercial/16.webp",
           "title": "commercial 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/muse-interior-design/commercial/17.webp",
-          "title": "commercial 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/muse-interior-design/commercial/18.webp",
-          "title": "commercial 18"
         },
         {
           "url": "/images/uae-companies/portfolio/muse-interior-design/commercial/19.jpg",
@@ -11062,50 +8856,6 @@
         {
           "url": "/images/uae-companies/portfolio/dz-design/hospitality/2.jpg",
           "title": "hospitality 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/3.webp",
-          "title": "hospitality 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/4.webp",
-          "title": "hospitality 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/5.webp",
-          "title": "hospitality 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/6.webp",
-          "title": "hospitality 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/7.webp",
-          "title": "hospitality 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/8.webp",
-          "title": "hospitality 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/9.webp",
-          "title": "hospitality 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/11.webp",
-          "title": "hospitality 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/12.webp",
-          "title": "hospitality 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/13.webp",
-          "title": "hospitality 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/hospitality/14.webp",
-          "title": "hospitality 14"
         },
         {
           "url": "/images/uae-companies/portfolio/dz-design/hospitality/15.jpg",
@@ -11308,14 +9058,6 @@
         {
           "url": "/images/uae-companies/portfolio/dz-design/commercial/10.jpg",
           "title": "commercial 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/commercial/18.webp",
-          "title": "commercial 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/dz-design/commercial/19.webp",
-          "title": "commercial 19"
         }
       ],
       "Retail": [
@@ -11839,42 +9581,6 @@
           "title": "Motif Interiors team showcasing expertise in office fit out"
         },
         {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/1.jpg",
-          "title": "office refurbishment in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/2.png",
-          "title": "Office Refurbishment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/3.png",
-          "title": "office refurbishments project done by motif interiors for M&amp;M Real estate"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/1.png",
-          "title": "of Office furniture"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/2.jpg",
-          "title": "of Office Furniture Project done by Motif Interiors"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/3.jpg",
-          "title": "Virtual Tour Image"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/1.webp",
-          "title": "Office"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/2.jpg",
-          "title": "ABB HQ (OFFICE)"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/3.jpg",
-          "title": "FGS"
-        },
-        {
           "url": "/images/uae-companies/portfolio/motif-interiors/office/4.jpg",
           "title": "GFS"
         },
@@ -11897,30 +9603,6 @@
         {
           "url": "/images/uae-companies/portfolio/motif-interiors/office/9.jpg",
           "title": "Onex Feature Image"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/10.webp",
-          "title": "Wanta Shipping by Motif Interiors. Best Office Fiout Projects in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/11.webp",
-          "title": "Envision Energy Project by Motif Interiors. Best Office Fitout Company in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/12.webp",
-          "title": "Government Project by Motif Interiors. Best Office Fitout Company in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/13.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/14.webp",
-          "title": "Turn-key Office Fit Out by Motif Interiors"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/office/15.webp",
-          "title": "Office Design and Build in UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/motif-interiors/office/16.jpg",
@@ -11953,64 +9635,14 @@
           "title": "Refine Showroom U-Bora Tower"
         },
         {
-          "url": "/images/uae-companies/portfolio/motif-interiors/retail/3.webp",
-          "title": "Nordic Living by Nordic Homeworx"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/retail/4.webp",
-          "title": "Boardroom of the future - Workspace"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/retail/5.webp",
-          "title": "ADIB Private Banking"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/retail/6.png",
-          "title": "IBV International Vaults"
-        },
-        {
           "url": "/images/uae-companies/portfolio/motif-interiors/retail/7.jpg",
           "title": "Pupil of Fate"
         }
       ],
       "Healthcare": [
         {
-          "url": "/images/uae-companies/portfolio/motif-interiors/healthcare/1.webp",
-          "title": "Healthcare"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/healthcare/2.png",
-          "title": "Sulaiman Al Habib Outpatient Clinic"
-        },
-        {
           "url": "/images/uae-companies/portfolio/motif-interiors/healthcare/3.jpg",
           "title": "The Face Clinic"
-        }
-      ],
-      "Sulaiman-Al-Habib-Outpatient-Clinic": [
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/sulaiman-al-habib-outpatient-clinic/1.webp",
-          "title": "Sulaiman Al Habib Outpatient Clinic"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/sulaiman-al-habib-outpatient-clinic/2.webp",
-          "title": "Sulaiman Al Habib Outpatient Clinic"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/sulaiman-al-habib-outpatient-clinic/3.webp",
-          "title": "Sulaiman Al Habib Outpatient Clinic"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/sulaiman-al-habib-outpatient-clinic/4.webp",
-          "title": "Sulaiman Al Habib Outpatient Clinic"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/sulaiman-al-habib-outpatient-clinic/5.webp",
-          "title": "Sulaiman Al Habib Outpatient Clinic"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/sulaiman-al-habib-outpatient-clinic/6.webp",
-          "title": "Sulaiman Al Habib Outpatient Clinic"
         }
       ],
       "Refine-Showroom-U-Bora-Tower": [
@@ -12063,84 +9695,6 @@
         {
           "url": "/images/uae-companies/portfolio/motif-interiors/nordic-living-by-nordic-homeworx/6.jpg",
           "title": "Nordic Living by Nordic Homeworx"
-        }
-      ],
-      "Boardroom-Of-The-Future-Workspace": [
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/boardroom-of-the-future-workspace/1.webp",
-          "title": "Boardroom of the future - Workspace"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/boardroom-of-the-future-workspace/2.webp",
-          "title": "Boardroom of the Future"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/boardroom-of-the-future-workspace/3.webp",
-          "title": "Boardroom of the Future"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/boardroom-of-the-future-workspace/4.webp",
-          "title": "Boardroom of the Future"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/boardroom-of-the-future-workspace/5.webp",
-          "title": "Boardroom of the Future"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/boardroom-of-the-future-workspace/6.webp",
-          "title": "Boardroom of the Future"
-        }
-      ],
-      "Adib-Private-Banking": [
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/adib-private-banking/1.webp",
-          "title": "ADIB Private Banking"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/adib-private-banking/2.webp",
-          "title": "ADIB"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/adib-private-banking/3.webp",
-          "title": "ADIB"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/adib-private-banking/4.webp",
-          "title": "ADIB"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/adib-private-banking/5.webp",
-          "title": "ADIB"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/adib-private-banking/6.webp",
-          "title": "ADIB"
-        }
-      ],
-      "Abb-Hq-Office": [
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/abb-hq-office/1.webp",
-          "title": "ABB HQ (OFFICE)"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/abb-hq-office/2.webp",
-          "title": "ABB HQ"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/abb-hq-office/3.webp",
-          "title": "ABB HQ"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/abb-hq-office/4.webp",
-          "title": "ABB HQ"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/abb-hq-office/5.webp",
-          "title": "ABB HQ"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/motif-interiors/abb-hq-office/6.webp",
-          "title": "ABB HQ"
         }
       ]
     }
@@ -12263,10 +9817,6 @@
       ],
       "Residential": [
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/residential/1.webp",
-          "title": "Luxury palace interior design in Dubai with Arabic and neoclassical details by Spazio"
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/residential/2.jpg",
           "title": "Elegant villa interior design in Dubai with custom furniture and modern finishes"
         },
@@ -12275,16 +9825,8 @@
           "title": "CHANGE IMAGE TO AN APARMTENT AND MAKE ALT TEXT ACCORDINGLY"
         },
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/residential/4.png",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/residential/5.webp",
           "title": "LIVING ROOM DESIGN"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/residential/6.webp",
-          "title": "BEDROOM DESIGN BY SPAZIO IN DUBAI"
         },
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/residential/7.webp",
@@ -12307,20 +9849,12 @@
           "title": "HALL DESIGN"
         },
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/residential/12.webp",
-          "title": "Home office interior design by spazio"
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/residential/13.jpg",
           "title": "Home office design"
         },
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/residential/14.jpg",
           "title": "ENTERTAINMENT ROOMs"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/residential/15.png",
-          "title": "Majlis Interior, designed in Dubai by Spazio"
         },
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/residential/16.jpg",
@@ -12345,18 +9879,6 @@
       ],
       "Commercial": [
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/commercial/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/commercial/2.jpg",
-          "title": "Luxurious hotel main lobby and reception interior design with marble flooring and modern chandeliers"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/commercial/3.webp",
-          "title": "Luxury Spa Interior Design &amp; Fitout in Dubai​"
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/commercial/4.jpg",
           "title": "Elegant hotel reception area in Dubai featuring contemporary furnishings and warm lighting"
         },
@@ -12375,10 +9897,6 @@
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/commercial/8.jpg",
           "title": "Modern retail store design in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/commercial/9.png",
-          "title": "fitout interior design in dubai"
         }
       ],
       "Hospitality": [
@@ -12407,43 +9925,11 @@
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/7.webp",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/8.webp",
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/9.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/10.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/11.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/12.jpg",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/13.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/14.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/15.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/hospitality/16.png",
           "title": ""
         }
       ],
@@ -12457,27 +9943,11 @@
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/3.jpg",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/palace/4.jpg",
           "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/palace/5.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/6.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/7.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/8.webp",
           "title": ""
         },
         {
@@ -12507,26 +9977,6 @@
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/palace/15.jpg",
           "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/16.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/17.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/18.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/19.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/20.webp",
-          "title": ""
         }
       ],
       "Fit-Out": [
@@ -12535,19 +9985,7 @@
           "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/2.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/3.webp",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/4.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/5.webp",
           "title": ""
         },
         {
@@ -12568,18 +10006,6 @@
         },
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/10.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/11.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/12.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/fit-out/13.jpg",
           "title": ""
         },
         {
@@ -12691,10 +10117,6 @@
         {
           "url": "/images/uae-companies/portfolio/killa-design/museum-of-the-future/5.jpg",
           "title": "museum-of-the-future 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/killa-design/museum-of-the-future/6.png",
-          "title": "museum-of-the-future 6"
         },
         {
           "url": "/images/uae-companies/portfolio/killa-design/museum-of-the-future/7.jpg",
@@ -12915,10 +10337,6 @@
           "title": "sea-breeze-baku 2"
         },
         {
-          "url": "/images/uae-companies/portfolio/killa-design/sea-breeze-baku/3.png",
-          "title": "sea-breeze-baku 3"
-        },
-        {
           "url": "/images/uae-companies/portfolio/killa-design/sea-breeze-baku/4.jpg",
           "title": "sea-breeze-baku 4"
         },
@@ -13004,84 +10422,8 @@
     "portfolio_categories": {
       "Commercial": [
         {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/1.webp",
-          "title": "commercial 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/2.webp",
-          "title": "commercial 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/3.webp",
-          "title": "commercial 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/4.webp",
-          "title": "commercial 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/5.webp",
-          "title": "commercial 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/6.webp",
-          "title": "commercial 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/7.webp",
-          "title": "commercial 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/8.webp",
-          "title": "commercial 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/9.webp",
-          "title": "commercial 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/10.webp",
-          "title": "commercial 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/11.webp",
-          "title": "commercial 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/12.webp",
-          "title": "commercial 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/13.webp",
-          "title": "commercial 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/14.webp",
-          "title": "commercial 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/15.webp",
-          "title": "commercial 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/16.webp",
-          "title": "commercial 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/17.webp",
-          "title": "commercial 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/18.webp",
-          "title": "commercial 18"
-        },
-        {
           "url": "/images/uae-companies/portfolio/ae7/commercial/19.webp",
           "title": "commercial 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ae7/commercial/20.webp",
-          "title": "commercial 20"
         }
       ]
     }
@@ -13121,10 +10463,6 @@
     "portfolio_local": [],
     "portfolio_categories": {
       "Residential": [
-        {
-          "url": "/images/uae-companies/portfolio/rady-interior/residential/1.webp",
-          "title": "residential 1"
-        },
         {
           "url": "/images/uae-companies/portfolio/rady-interior/residential/2.webp",
           "title": "residential 2"
@@ -13168,10 +10506,6 @@
       ],
       "Office": [
         {
-          "url": "/images/uae-companies/portfolio/rady-interior/office/1.webp",
-          "title": "office 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/rady-interior/office/2.webp",
           "title": "office 2"
         },
@@ -13200,10 +10534,6 @@
           "title": "office 8"
         },
         {
-          "url": "/images/uae-companies/portfolio/rady-interior/office/12.webp",
-          "title": "office 12"
-        },
-        {
           "url": "/images/uae-companies/portfolio/rady-interior/office/13.webp",
           "title": "office 13"
         },
@@ -13222,10 +10552,6 @@
       ],
       "Hospitality": [
         {
-          "url": "/images/uae-companies/portfolio/rady-interior/hospitality/1.webp",
-          "title": "hospitality 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/rady-interior/hospitality/2.webp",
           "title": "hospitality 2"
         },
@@ -13236,10 +10562,6 @@
         {
           "url": "/images/uae-companies/portfolio/rady-interior/hospitality/4.webp",
           "title": "hospitality 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rady-interior/hospitality/8.webp",
-          "title": "hospitality 8"
         }
       ],
       "Retail": [
@@ -13270,10 +10592,6 @@
         {
           "url": "/images/uae-companies/portfolio/rady-interior/retail/7.webp",
           "title": "retail 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/rady-interior/retail/11.jpg",
-          "title": "retail 11"
         }
       ]
     }
@@ -13778,22 +11096,6 @@
           "title": "st-regis-saadiyat-island-abu-dhabi 5"
         },
         {
-          "url": "/images/uae-companies/portfolio/creative-kingdom-design/st-regis-saadiyat-island-abu-dhabi/6.png",
-          "title": "st-regis-saadiyat-island-abu-dhabi 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/creative-kingdom-design/st-regis-saadiyat-island-abu-dhabi/7.png",
-          "title": "st-regis-saadiyat-island-abu-dhabi 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/creative-kingdom-design/st-regis-saadiyat-island-abu-dhabi/8.png",
-          "title": "st-regis-saadiyat-island-abu-dhabi 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/creative-kingdom-design/st-regis-saadiyat-island-abu-dhabi/10.png",
-          "title": "st-regis-saadiyat-island-abu-dhabi 10"
-        },
-        {
           "url": "/images/uae-companies/portfolio/creative-kingdom-design/st-regis-saadiyat-island-abu-dhabi/11.jpg",
           "title": "st-regis-saadiyat-island-abu-dhabi 11"
         },
@@ -13845,10 +11147,6 @@
         }
       ],
       "One-And-Only-The-Plam": [
-        {
-          "url": "/images/uae-companies/portfolio/creative-kingdom-design/one-and-only-the-plam/6.png",
-          "title": "one-and-only-the-plam 6"
-        },
         {
           "url": "/images/uae-companies/portfolio/creative-kingdom-design/one-and-only-the-plam/7.jpg",
           "title": "one-and-only-the-plam 7"
@@ -14038,10 +11336,6 @@
       ],
       "Residential": [
         {
-          "url": "/images/uae-companies/portfolio/swiss-bureau/residential/1.jpg",
-          "title": "residential 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/swiss-bureau/residential/2.jpg",
           "title": "residential 2"
         },
@@ -14179,20 +11473,12 @@
           "title": "hospitality 1"
         },
         {
-          "url": "/images/uae-companies/portfolio/tao-designs/hospitality/2.png",
-          "title": "hospitality 2"
-        },
-        {
           "url": "/images/uae-companies/portfolio/tao-designs/hospitality/3.jpg",
           "title": "hospitality 3"
         },
         {
           "url": "/images/uae-companies/portfolio/tao-designs/hospitality/4.jpg",
           "title": "hospitality 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/tao-designs/hospitality/6.png",
-          "title": "hospitality 6"
         },
         {
           "url": "/images/uae-companies/portfolio/tao-designs/hospitality/7.jpg",
@@ -14427,10 +11713,6 @@
           "title": "residential 4"
         },
         {
-          "url": "/images/uae-companies/portfolio/balcon-studio/residential/5.webp",
-          "title": "residential 5"
-        },
-        {
           "url": "/images/uae-companies/portfolio/balcon-studio/residential/16.webp",
           "title": "residential 16"
         }
@@ -14475,22 +11757,6 @@
       ],
       "Lua-residences-by-swank-development": [
         {
-          "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/1.webp",
-          "title": "lua-residences-by-swank-development 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/2.webp",
-          "title": "lua-residences-by-swank-development 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/3.webp",
-          "title": "lua-residences-by-swank-development 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/4.webp",
-          "title": "lua-residences-by-swank-development 4"
-        },
-        {
           "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/5.webp",
           "title": "lua-residences-by-swank-development 5"
         },
@@ -14513,10 +11779,6 @@
         {
           "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/10.webp",
           "title": "lua-residences-by-swank-development 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/11.webp",
-          "title": "lua-residences-by-swank-development 11"
         },
         {
           "url": "/images/uae-companies/portfolio/balcon-studio/lua-residences-by-swank-development/12.jpg",
@@ -14595,10 +11857,6 @@
       ],
       "Townhouse-in-tiial-al-ghaf": [
         {
-          "url": "/images/uae-companies/portfolio/balcon-studio/townhouse-in-tiial-al-ghaf/1.webp",
-          "title": "townhouse-in-tiial-al-ghaf 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/balcon-studio/townhouse-in-tiial-al-ghaf/2.webp",
           "title": "townhouse-in-tiial-al-ghaf 2"
         },
@@ -14633,10 +11891,6 @@
         {
           "url": "/images/uae-companies/portfolio/balcon-studio/townhouse-in-tiial-al-ghaf/10.webp",
           "title": "townhouse-in-tiial-al-ghaf 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/balcon-studio/townhouse-in-tiial-al-ghaf/11.webp",
-          "title": "townhouse-in-tiial-al-ghaf 11"
         },
         {
           "url": "/images/uae-companies/portfolio/balcon-studio/townhouse-in-tiial-al-ghaf/13.webp",
@@ -14724,10 +11978,6 @@
         {
           "url": "/images/uae-companies/portfolio/livspace-dubai/interior/2.jpg",
           "title": "interior 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/livspace-dubai/interior/3.png",
-          "title": "interior 3"
         },
         {
           "url": "/images/uae-companies/portfolio/livspace-dubai/interior/4.jpg",
@@ -14890,14 +12140,6 @@
           "title": "luxury-retail 12"
         },
         {
-          "url": "/images/uae-companies/portfolio/havelock-one/luxury-retail/13.webp",
-          "title": "luxury-retail 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/luxury-retail/14.webp",
-          "title": "luxury-retail 14"
-        },
-        {
           "url": "/images/uae-companies/portfolio/havelock-one/luxury-retail/15.jpg",
           "title": "luxury-retail 15"
         }
@@ -14910,10 +12152,6 @@
         {
           "url": "/images/uae-companies/portfolio/havelock-one/hospitality/4.webp",
           "title": "hospitality 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/hospitality/5.webp",
-          "title": "hospitality 5"
         },
         {
           "url": "/images/uae-companies/portfolio/havelock-one/hospitality/6.webp",
@@ -14934,14 +12172,6 @@
         {
           "url": "/images/uae-companies/portfolio/havelock-one/hospitality/10.webp",
           "title": "hospitality 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/hospitality/11.webp",
-          "title": "hospitality 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/hospitality/12.webp",
-          "title": "hospitality 12"
         },
         {
           "url": "/images/uae-companies/portfolio/havelock-one/hospitality/13.jpg",
@@ -14976,14 +12206,6 @@
         {
           "url": "/images/uae-companies/portfolio/havelock-one/commercial/9.webp",
           "title": "commercial 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/commercial/10.webp",
-          "title": "commercial 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/commercial/11.webp",
-          "title": "commercial 11"
         }
       ],
       "Fb": [
@@ -15004,10 +12226,6 @@
           "title": "fb 6"
         },
         {
-          "url": "/images/uae-companies/portfolio/havelock-one/fb/7.webp",
-          "title": "fb 7"
-        },
-        {
           "url": "/images/uae-companies/portfolio/havelock-one/fb/8.webp",
           "title": "fb 8"
         },
@@ -15024,10 +12242,6 @@
           "title": "fb 11"
         },
         {
-          "url": "/images/uae-companies/portfolio/havelock-one/fb/12.webp",
-          "title": "fb 12"
-        },
-        {
           "url": "/images/uae-companies/portfolio/havelock-one/fb/13.webp",
           "title": "fb 13"
         },
@@ -15038,10 +12252,6 @@
         {
           "url": "/images/uae-companies/portfolio/havelock-one/fb/15.webp",
           "title": "fb 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/fb/16.jpg",
-          "title": "fb 16"
         },
         {
           "url": "/images/uae-companies/portfolio/havelock-one/fb/17.webp",
@@ -15082,10 +12292,6 @@
           "title": "entertainment 7"
         },
         {
-          "url": "/images/uae-companies/portfolio/havelock-one/entertainment/8.webp",
-          "title": "entertainment 8"
-        },
-        {
           "url": "/images/uae-companies/portfolio/havelock-one/entertainment/9.webp",
           "title": "entertainment 9"
         },
@@ -15104,14 +12310,6 @@
         {
           "url": "/images/uae-companies/portfolio/havelock-one/entertainment/14.webp",
           "title": "entertainment 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/entertainment/15.webp",
-          "title": "entertainment 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/havelock-one/entertainment/16.webp",
-          "title": "entertainment 16"
         }
       ]
     }
