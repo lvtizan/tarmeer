@@ -224,21 +224,30 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
     const data = safeGetJSON<Record<string, unknown>>('designer');
     const id = data?.id as string | undefined;
 
-    if (!id) {
-      throw new Error('Designer session not found. Please log in again.');
+    let result: any;
+    if (id) {
+      // Has designer record — update via designer API
+      result = await api.put(`/designers/${id}`, {
+        full_name: payload.fullName,
+        title: payload.title,
+        phone: payload.phone,
+        city: payload.city,
+        address: payload.address,
+        bio: payload.bio,
+        avatar_url: payload.avatarUrl,
+        style: (data?.style as string) || null,
+        expertise: (data?.expertise as string[]) || [],
+      });
+    } else {
+      // No designer record — update via user profile API
+      result = await api.put('/auth/me', {
+        full_name: payload.fullName,
+        phone: payload.phone,
+        city: payload.city,
+        avatar_url: payload.avatarUrl,
+      });
+      result = { designer: { ...data, ...result.user } };
     }
-
-    const result = await api.put(`/designers/${id}`, {
-      full_name: payload.fullName,
-      title: payload.title,
-      phone: payload.phone,
-      city: payload.city,
-      address: payload.address,
-      bio: payload.bio,
-      avatar_url: payload.avatarUrl,
-      style: (data?.style as string) || null,
-      expertise: (data?.expertise as string[]) || [],
-    });
 
     const nextDesigner = {
       ...data,
