@@ -1192,10 +1192,6 @@
     "portfolio_categories": {
       "Projects": [
         {
-          "url": "/images/uae-companies/portfolio/fitout-bureau/projects/1.jpg",
-          "title": "Projects 1"
-        },
-        {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/2.jpg",
           "title": "Projects 2"
         },
@@ -3293,7 +3289,32 @@
     "linkedin": "https://www.linkedin.com/company/eminent-interio/",
     "logo_url": "",
     "source_platform": "web_search",
-    "portfolio_categories": {}
+    "portfolio_categories": {
+      "Commercial": [
+        {
+          "url": "/images/uae-companies/portfolio/eminent-interio/commercial/1.png",
+          "title": "Commercial Interior Design in Dubai ​"
+        }
+      ],
+      "Hospitality": [
+        {
+          "url": "/images/uae-companies/portfolio/eminent-interio/hospitality/1.png",
+          "title": "Top 10 Interior Fit Out Companies in Abu Dhabi"
+        }
+      ],
+      "Office": [
+        {
+          "url": "/images/uae-companies/portfolio/eminent-interio/office/1.png",
+          "title": "Top 10 Interior Fit Out Companies in Abu Dhabi"
+        }
+      ],
+      "Residential": [
+        {
+          "url": "/images/uae-companies/portfolio/eminent-interio/residential/1.png",
+          "title": "Top 10 Interior Fit Out Companies in Abu Dhabi"
+        }
+      ]
+    }
   },
   {
     "name_en": "Decor Home",
@@ -3439,7 +3460,70 @@
     "linkedin": "",
     "logo_url": "",
     "source_platform": "web_search",
-    "portfolio_categories": {}
+    "portfolio_categories": {
+      "Projects": [
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/1.webp",
+          "title": "Apartment Texas"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/2.webp",
+          "title": "Apartment Texas"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/3.webp",
+          "title": "Villa Roneela"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/4.webp",
+          "title": "Apartment In The Elit Life Residence"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/5.webp",
+          "title": "VILLA DUBAI"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/6.webp",
+          "title": "Istanbul Appartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/7.webp",
+          "title": "Villa Austuria"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/8.webp",
+          "title": "Villa Trabzon"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/9.webp",
+          "title": "Istanbul Marter Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/10.webp",
+          "title": "Istanbul Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/11.webp",
+          "title": "Istanbul Apartment Core"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/12.webp",
+          "title": "Lybia Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/13.webp",
+          "title": "Heavy Classic in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/14.webp",
+          "title": "Kuwait Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/smd-decoration/projects/15.webp",
+          "title": "Cennet Koru Florya"
+        }
+      ]
+    }
   },
   {
     "name_en": "Accouter Design",
@@ -3475,109 +3559,115 @@
       "Dubai": [
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/1.jpg",
-          "title": "dubai 1"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/2.jpg",
-          "title": "dubai 2"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/3.jpg",
-          "title": "dubai 3"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/4.jpg",
-          "title": "dubai 4"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/5.jpg",
-          "title": "dubai 5"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/6.jpg",
-          "title": "dubai 6"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/7.jpg",
-          "title": "dubai 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/dubai/13.jpg",
-          "title": "dubai 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/dubai/14.jpg",
-          "title": "dubai 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/dubai/15.jpg",
-          "title": "dubai 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/dubai/16.jpg",
-          "title": "dubai 16"
+          "title": ""
         }
       ],
       "Luxury": [
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/1.jpg",
-          "title": "luxury 1"
+          "title": "A beige-themed living room designed by luxury interior designers in London working for Accouter"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/2.jpg",
-          "title": "luxury 2"
+          "title": "A stylish kitchen design by luxury interior design studio London, Accouter"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/3.jpg",
-          "title": "luxury 3"
+          "title": "Gold accent work-desk designed by Accouter"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/4.jpg",
-          "title": "luxury 4"
+          "title": "072A9565.jpg"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/6.jpg",
-          "title": "luxury 6"
+          "title": "072A9584.jpg"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/8.jpg",
-          "title": "luxury 8"
+          "url": "/images/uae-companies/portfolio/accouter-design/luxury/7.jpg",
+          "title": "the_sw1_townhouse_web-2.jpg"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/accouter-design/luxury/9.jpg",
+          "title": "the_sw1_townhouse_web-45.jpg"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/10.jpg",
-          "title": "luxury 10"
+          "title": "AC_CH_21791.jpg"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/accouter-design/luxury/11.png",
+          "title": "Chelsea_Waterfront.png"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/12.jpg",
-          "title": "luxury 12"
+          "title": "AC_CH_21906v1.jpg"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/17.jpg",
-          "title": "luxury 17"
+          "url": "/images/uae-companies/portfolio/accouter-design/luxury/14.jpg",
+          "title": "Accouter Design Boscobel Masterbedroom 2.jpg"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/18.jpg",
-          "title": "luxury 18"
+          "url": "/images/uae-companies/portfolio/accouter-design/luxury/15.jpg",
+          "title": "Accouter Design Boscobel kitchen 1.jpeg"
         }
       ],
       "Interior": [
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/2.jpg",
-          "title": "interior 2"
+          "url": "/images/uae-companies/portfolio/accouter-design/interior/3.jpg",
+          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_2_032.jpg"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/accouter-design/interior/5.jpg",
+          "title": "accouter_atlantis_the_royal_residences_terrace_019.jpg"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/accouter-design/interior/7.jpg",
+          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_1_003.jpg"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/interior/8.jpg",
-          "title": "interior 8"
+          "title": "A bedroom in Duabi, with interior design by Accouter Designs"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/accouter-design/interior/9.jpg",
+          "title": ""
         }
       ],
       "Villa": [
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/villa/5.jpg",
-          "title": "villa 5"
-        },
+          "url": "/images/uae-companies/portfolio/accouter-design/villa/2.jpg",
+          "title": "Accouter Design providing luxury interior design in Dubai"
+        }
+      ],
+      "Penthouse": [
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/villa/7.jpg",
-          "title": "villa 7"
+          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/8.jpg",
+          "title": "A luxury penthouse apartment in Atlantis the Royal in Dubai with interior design by Accouter"
         }
       ]
     }
@@ -5081,190 +5171,276 @@
     "logo_local": "",
     "portfolio_local": [],
     "portfolio_categories": {
-      "Dubai-creek-golf-club": [
+      "Dubai-Creek-Golf-Club": [
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/8.jpg",
-          "title": "dubai-creek-golf-club 8"
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/1.jpg",
+          "title": "Dubai Creek Top view"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/2.jpg",
+          "title": "Dubai Creek Top view drawing"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/3.jpg",
+          "title": "Dubai golf clubhouse"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/9.jpg",
-          "title": "dubai-creek-golf-club 9"
+          "title": "Golf clubhouse under construction"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/10.jpg",
-          "title": "dubai-creek-golf-club 10"
+          "title": "New Project - 2023-06-15T163317.080"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/16.jpg",
-          "title": "dubai-creek-golf-club 16"
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/11.jpg",
+          "title": "Creek Golf Club Carousel 1"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/17.jpg",
-          "title": "dubai-creek-golf-club 17"
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/12.jpg",
+          "title": "Creek Golf Club Carousel 2"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/18.jpg",
-          "title": "dubai-creek-golf-club 18"
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/13.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/19.jpg",
-          "title": "dubai-creek-golf-club 19"
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/14.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/20.jpg",
-          "title": "dubai-creek-golf-club 20"
+          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/15.jpg",
+          "title": ""
         }
       ],
-      "Wb-abu-dhabi": [
+      "Wb-Abu-Dhabi": [
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/9.jpg",
-          "title": "wb-abu-dhabi 9"
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/2.jpg",
+          "title": "Warner Bros World Abu Dhabi"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/10.jpg",
-          "title": "wb-abu-dhabi 10"
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/3.jpg",
+          "title": "WB Hotel lobby"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/4.jpg",
+          "title": "WB living archive staircase"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/5.jpg",
+          "title": "WB Carousel 00"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/6.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/7.jpg",
+          "title": "Lusail Beach Resort Doha, Qatar"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/8.jpg",
+          "title": "Crowne Plaza Hotel Bahrain"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/11.jpg",
-          "title": "wb-abu-dhabi 11"
+          "title": "The Chedi Al Bait-Hospitality Sharjah, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/12.jpg",
-          "title": "wb-abu-dhabi 12"
+          "title": "Mysk Al Mouj Muscat, Oman"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/13.jpg",
-          "title": "wb-abu-dhabi 13"
+          "title": "Doubletree By Hilton &amp; Hilton Garden Inn Riyadh, KSA"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/14.jpg",
-          "title": "wb-abu-dhabi 14"
+          "title": "Hilton Garden Inn Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/15.jpg",
-          "title": "wb-abu-dhabi 15"
+          "title": "Vida Creek Harbour Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/16.jpg",
-          "title": "wb-abu-dhabi 16"
+          "title": "Jebel Ali Resort Dubai, UAE"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/17.jpg",
+          "title": "Banyan Tree AlUla KSA"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/18.jpg",
-          "title": "wb-abu-dhabi 18"
+          "title": "Al Wathba, Desert Resort &amp; Spa Abu Dhabi, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/19.jpg",
-          "title": "wb-abu-dhabi 19"
+          "title": "The Chedi Khorfakkan Sharjah, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/20.jpg",
-          "title": "wb-abu-dhabi 20"
+          "title": "Hatta Mountain Resort Dubai, UAE"
         }
       ],
-      "Jafar-centre-dubai-college": [
+      "Jafar-Centre-Dubai-College": [
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/1.jpg",
+          "title": "DRAWING PACKAGE_2"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/2.jpg",
+          "title": "Godwin Austen Johnson - Dubai College - C-hub - AJPG - 4"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/3.jpg",
+          "title": "The Jafar Centre Dubai College 2"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/4.jpg",
+          "title": "Untitled-1"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/5.jpg",
+          "title": "Godwin Austen Johnson - Dubai College - C-hub - AJPG - 11"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/7.jpg",
+          "title": "The Jafar Centre 2"
+        },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/8.jpg",
-          "title": "jafar-centre-dubai-college 8"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/9.jpg",
-          "title": "jafar-centre-dubai-college 9"
+          "title": "Ladybird Nursery Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/10.jpg",
-          "title": "jafar-centre-dubai-college 10"
+          "title": "Arcadia Global Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/11.jpg",
-          "title": "jafar-centre-dubai-college 11"
+          "title": "Jafar Centre, Dubai College Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/12.jpg",
-          "title": "jafar-centre-dubai-college 12"
+          "title": "Arcadia High School Dubai, UAE"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/13.jpg",
+          "title": "Ladybird Early Learning Centre Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/14.jpg",
-          "title": "jafar-centre-dubai-college 14"
+          "title": "Dubai College - New Admin Building Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/15.jpg",
-          "title": "jafar-centre-dubai-college 15"
+          "title": "Citizen School Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/16.jpg",
-          "title": "jafar-centre-dubai-college 16"
+          "title": "Cranleigh Abu Dhabi, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/17.jpg",
-          "title": "jafar-centre-dubai-college 17"
+          "title": "GEMS School International Dubai, UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/18.jpg",
-          "title": "jafar-centre-dubai-college 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/19.jpg",
-          "title": "jafar-centre-dubai-college 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/20.jpg",
-          "title": "jafar-centre-dubai-college 20"
+          "title": "GEMS Metropole Dubai, UAE"
         }
       ],
-      "The-chedi-al-bait": [
+      "The-Chedi-Al-Bait": [
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/8.jpg",
-          "title": "the-chedi-al-bait 8"
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/1.jpg",
+          "title": "Al Bait Heritage references"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/2.jpg",
+          "title": "5. PROPOSED URBAN FABRIC"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/3.jpg",
+          "title": "1. 1960 URBAN PLAN"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/4.jpg",
+          "title": "2. 2010 URBAN PLAN"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/7.jpg",
+          "title": "Al Bait Sharjah - Aerial View"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/8.png",
+          "title": "heritage buildings"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/9.jpg",
-          "title": "the-chedi-al-bait 9"
+          "title": "Courtyard Section"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/10.jpg",
-          "title": "the-chedi-al-bait 10"
+          "title": "Carousel Images 8"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/11.jpg",
-          "title": "the-chedi-al-bait 11"
+          "title": "Carousel Images 7"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/12.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/13.jpg",
+          "title": "Bab Al Shams Abu Dhabi,UAE"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/14.jpg",
-          "title": "the-chedi-al-bait 14"
+          "title": "Al Wathba, Desert Resort &amp; Spa Abu Dhabi, UAE"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/15.jpg",
+          "title": "Four Points by Sheraton Unaizah, KSA"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/16.jpg",
-          "title": "the-chedi-al-bait 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/17.jpg",
-          "title": "the-chedi-al-bait 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/18.jpg",
-          "title": "the-chedi-al-bait 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/19.jpg",
-          "title": "the-chedi-al-bait 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/20.jpg",
-          "title": "the-chedi-al-bait 20"
+          "title": "The Chedi Al Bait Sharjah, UAE"
         }
       ],
-      "Palace-hotel-dubai-creek-harbour": [
+      "Palace-Hotel-Dubai-Creek-Harbour": [
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/13.jpg",
-          "title": "palace-hotel-dubai-creek-harbour 13"
+          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/6.jpg",
+          "title": "Godwin Austen Johnson - Palace Creek Exterior - 010"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/14.jpg",
-          "title": "palace-hotel-dubai-creek-harbour 14"
+          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/7.jpg",
+          "title": "Godwin Austen Johnson - Palace Creek Exterior - 01"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/15.jpg",
-          "title": "palace-hotel-dubai-creek-harbour 15"
+          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/8.jpg",
+          "title": "Godwin Austen Johnson - Palace Creek Exterior - 09"
+        }
+      ],
+      "Lunate-Offices-Al-Maryah-Tower": [
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/lunate-offices-al-maryah-tower/1.jpg",
+          "title": "DSC_2144"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/lunate-offices-al-maryah-tower/2.jpg",
+          "title": "DSC_2065"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/lunate-offices-al-maryah-tower/3.jpg",
+          "title": "DSC_2088"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/gaj-architects/lunate-offices-al-maryah-tower/4.jpg",
+          "title": "DSC_2208"
         }
       ]
     }
@@ -9936,10 +10112,6 @@
       "Palace": [
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/palace/1.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/2.webp",
           "title": ""
         },
         {
