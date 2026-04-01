@@ -52,6 +52,7 @@ export default function CompanyDetailPage() {
     setLoadError('');
     setHeroIndex(0);
     setAboutExpanded(false);
+    window.scrollTo(0, 0);
 
     fetchPublicCompanyDetail(id)
       .then((item) => { if (active) setCompany(item); })

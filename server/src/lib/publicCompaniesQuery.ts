@@ -16,6 +16,7 @@ export function buildPublicCompaniesListQuery(input: { limit: number; offset: nu
          specialties,
          logo_url,
          portfolio_images,
+         portfolio_images AS portfolio_categories,
          google_reviews_count,
          owner_user_id
        FROM uae_companies
@@ -44,6 +45,7 @@ export function buildPublicCompanyDetailQuery(slug: string) {
          specialties,
          logo_url,
          portfolio_images,
+         portfolio_images AS portfolio_categories,
          google_reviews_count,
          owner_user_id
        FROM uae_companies

@@ -92,19 +92,19 @@ export default function Navbar() {
             )
           )}
           <Link
-            to="/contact"
-            onClick={() => handleClick('/contact')}
+            to="/designers/apply"
+            onClick={() => handleClick('/designers/apply')}
             className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-stone-50 transition"
           >
             <Briefcase className="w-4 h-4" />
-            Contact Us
+            Join as Pro
           </Link>
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
-          <Link to="/contact" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
+          <Link to="/designers/apply" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
             <Briefcase className="w-3.5 h-3.5" />
-            Contact
+            Join as Pro
           </Link>
           <button
             type="button"

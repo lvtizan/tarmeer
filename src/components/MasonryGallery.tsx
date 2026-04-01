@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PortfolioCategories, PortfolioItem } from '../lib/companyData';
 
@@ -74,6 +74,13 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
     showAllTab ? 'All' : (categoryNames[0] ?? '')
   );
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+
+  // Reset tab and pagination when categories change (e.g. navigating to a different company)
+  useEffect(() => {
+    setActiveTab(showAllTab ? 'All' : (categoryNames[0] ?? ''));
+    setVisibleCount(ITEMS_PER_PAGE);
+    fingerprintsRef.current = [];
+  }, [categories]);
 
   // Return null if no non-empty categories
   if (nonEmptyCategories.length === 0) return null;

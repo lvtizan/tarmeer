@@ -272,10 +272,6 @@ export default function CompaniesPage() {
     return labels[range] || range;
   };
 
-  const citiesCovered = cityOptions.length;
-  const totalProjects = companies.reduce((sum, c) => sum + c.projectCount, 0);
-  const verifiedProjects = Math.max(30, totalProjects);
-
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       {/* Hero - Match with Professionals */}
@@ -326,10 +322,6 @@ export default function CompaniesPage() {
             </button>
           </div>
 
-          {/* Stats line */}
-          <p className="text-white/40 text-xs mt-5">
-            {companies.length}+ studios &middot; {citiesCovered} cities &middot; {verifiedProjects}+ verified projects
-          </p>
         </div>
       </section>
 

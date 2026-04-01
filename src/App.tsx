@@ -90,7 +90,7 @@ function App() {
             <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
           </Route>
-          <Route path="/admin/login" element={<AdminProvider><AdminLoginPage /></AdminProvider>} />
+          <Route path="/admin/login" element={<Layout><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/install" element={<AdminProvider><AdminInstallPage /></AdminProvider>} />
 
           {/* Designer Routes */}

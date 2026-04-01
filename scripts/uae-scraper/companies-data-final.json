@@ -676,50 +676,190 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
+      "Barakat-Our-Project-Min.png": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/barakat-our-project-min-png/1.png",
+          "title": ""
+        }
+      ],
+      "Img_0373.jpg": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/img-0373-jpg/1.jpg",
+          "title": ""
+        }
+      ],
+      "Interior": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/interior/1.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/interior/2.jpg",
+          "title": "Our Interior Fit Out Work Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/interior/3.jpg",
+          "title": "Our Interior Fit Out Work Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/interior/4.jpg",
+          "title": "Our Interior Fit Out Work Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/interior/5.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/interior/6.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/interior/7.jpg",
+          "title": "Start Conversation: Fit Out Companies in Dubai"
+        }
+      ],
       "Office": [
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/4.jpg",
-          "title": "Office 4"
+          "url": "/images/uae-companies/portfolio/appello-interiors/office/1.png",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/5.jpg",
-          "title": "Office 5"
+          "url": "/images/uae-companies/portfolio/appello-interiors/office/2.png",
+          "title": "Our Office Interior Design Dubai Portfolio"
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/6.jpg",
-          "title": "Office 6"
+          "url": "/images/uae-companies/portfolio/appello-interiors/office/3.png",
+          "title": "Our Office Interior Design Dubai Portfolio"
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/7.jpg",
-          "title": "Office 7"
+          "url": "/images/uae-companies/portfolio/appello-interiors/office/4.png",
+          "title": "Collaborative Office Interiors"
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/8.jpg",
-          "title": "Office 8"
+          "url": "/images/uae-companies/portfolio/appello-interiors/office/5.png",
+          "title": "Luxury Lounge and Reception Fit Out"
+        }
+      ],
+      "Retail": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/retail/1.png",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/9.jpg",
-          "title": "Office 9"
+          "url": "/images/uae-companies/portfolio/appello-interiors/retail/2.png",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/10.jpg",
-          "title": "Office 10"
+          "url": "/images/uae-companies/portfolio/appello-interiors/retail/3.png",
+          "title": "Gallery"
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/11.jpg",
-          "title": "Office 11"
+          "url": "/images/uae-companies/portfolio/appello-interiors/retail/5.png",
+          "title": "Gallery"
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/13.jpg",
-          "title": "Office 13"
+          "url": "/images/uae-companies/portfolio/appello-interiors/retail/6.png",
+          "title": ""
+        }
+      ],
+      "Restaurant": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/restaurant/1.jpg",
+          "title": "Contemporary restaurant interior designed by Appello Interiors in Dubai, showcasing modern layout and ambient lighting"
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/14.jpg",
-          "title": "Office 14"
+          "url": "/images/uae-companies/portfolio/appello-interiors/restaurant/2.jpg",
+          "title": "Gallery"
         },
         {
-          "url": "/images/uae-companies/portfolio/appello-interiors/office/15.jpg",
-          "title": "Office 15"
+          "url": "/images/uae-companies/portfolio/appello-interiors/restaurant/3.jpg",
+          "title": "Gallery"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/restaurant/4.jpg",
+          "title": "Elegant dining space with ambient lighting and custom finishes by Appello Interiors"
+        }
+      ],
+      "Commercial": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/1.png",
+          "title": "First slide"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/2.jpg",
+          "title": "Second slide"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/3.png",
+          "title": "Third slide"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/4.jpg",
+          "title": "Commercial Interior Design Work Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/5.jpg",
+          "title": "Commercial Interior Design Work Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/6.jpg",
+          "title": "Commercial Interior Design Work Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/7.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/commercial/8.jpg",
+          "title": ""
+        }
+      ],
+      "Hotel": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/1.png",
+          "title": "Hotel interior concept developed by Appello Interiors featuring contemporary lighting and layout"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/2.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/3.png",
+          "title": "Gallery"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/4.png",
+          "title": "Gallery"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/5.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/hotel/6.png",
+          "title": ""
+        }
+      ],
+      "Cafe": [
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/cafe/1.png",
+          "title": "Cafe Interior Design Services in Dubai – Create Spaces That Inspire"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/cafe/2.png",
+          "title": "low budget small cafe interior design"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/cafe/3.png",
+          "title": "Gallery"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/cafe/4.png",
+          "title": "Gallery"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/appello-interiors/cafe/5.png",
+          "title": "coffee shop interior design"
         }
       ]
     }
@@ -1069,92 +1209,232 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "Ab-prime-realty": [
+      "Interior": [
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/11.jpg",
-          "title": "Ab-prime-realty 11"
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/1.jpg",
+          "title": "best interior design companies in dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/15.jpg",
-          "title": "Ab-prime-realty 15"
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/2.jpg",
+          "title": "best interior design companies in dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/ab-prime-realty/16.jpg",
-          "title": "Ab-prime-realty 16"
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/3.jpg",
+          "title": "Top interior design companies"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/4.jpg",
+          "title": "best interior design companies in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/5.jpg",
+          "title": "Commercial Interior Design services"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/6.jpg",
+          "title": "Company"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/7.jpg",
+          "title": "THE FUTURE IS NOW FOR HI-TECH SMART HOMES IN THE UAE"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/8.webp",
+          "title": "Company"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/9.jpg",
+          "title": "ing Company"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/10.jpg",
+          "title": "Company in Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/11.jpg",
+          "title": "company"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/12.jpg",
+          "title": "Company"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/13.jpg",
+          "title": "Company"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/14.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/15.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/16.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/17.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/18.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/19.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/interior/20.jpg",
+          "title": "KNAUF Fit Out"
         }
       ],
-      "Jamjoom-pharma": [
+      "Fit-Out": [
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/jamjoom-pharma/2.jpg",
-          "title": "Jamjoom-pharma 2"
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/1.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/jamjoom-pharma/3.jpg",
-          "title": "Jamjoom-pharma 3"
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/9.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/jamjoom-pharma/4.jpg",
-          "title": "Jamjoom-pharma 4"
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/10.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/jamjoom-pharma/5.jpg",
-          "title": "Jamjoom-pharma 5"
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/11.jpg",
+          "title": "Play With Colour Psychology"
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/jamjoom-pharma/6.jpg",
-          "title": "Jamjoom-pharma 6"
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/12.png",
+          "title": "case study - Icework Business Bay Office A modern fit-out for collaboration and growth"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/13.jpg",
+          "title": "Exportera DMCC - Horton Interiors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/14.jpg",
+          "title": "Horton Interiors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/15.png",
+          "title": "Jamjoom Pharma"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/16.png",
+          "title": "Horton Interiors HQ"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/17.png",
+          "title": "Land Sterling HQ"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/18.png",
+          "title": "AB Prime Realty"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/19.jpg",
+          "title": "Icework"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/fit-out/20.jpg",
+          "title": "Horton Interiors"
         }
       ],
-      "Land-sterling-hq": [
+      "Residential": [
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/4.png",
-          "title": "Land-sterling-hq 4"
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/1.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/5.png",
-          "title": "Land-sterling-hq 5"
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/2.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/6.png",
-          "title": "Land-sterling-hq 6"
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/3.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/9.png",
-          "title": "Land-sterling-hq 9"
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/4.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/10.png",
-          "title": "Land-sterling-hq 10"
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/5.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/11.png",
-          "title": "Land-sterling-hq 11"
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/6.jpg",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/land-sterling-hq/12.png",
-          "title": "Land-sterling-hq 12"
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/7.jpg",
+          "title": "Residential Fit out Company"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/8.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/9.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/10.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/residential/11.jpg",
+          "title": ""
         }
       ],
-      "Landmark-group-jafza": [
+      "Office": [
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/landmark-group-jafza/3.jpg",
-          "title": "Landmark-group-jafza 3"
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/1.jpg",
+          "title": "Fit out Workplace"
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/landmark-group-jafza/4.jpg",
-          "title": "Landmark-group-jafza 4"
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/2.webp",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/landmark-group-jafza/5.jpg",
-          "title": "Landmark-group-jafza 5"
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/4.webp",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/landmark-group-jafza/6.jpg",
-          "title": "Landmark-group-jafza 6"
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/5.webp",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/horton-interiors/landmark-group-jafza/7.jpg",
-          "title": "Landmark-group-jafza 7"
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/6.webp",
+          "title": "Home of Office Design Fit out services"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/7.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/8.jpg",
+          "title": "Fit out Workplace"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/office/9.jpg",
+          "title": ""
+        }
+      ],
+      "Retail": [
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/retail/5.jpg",
+          "title": "Horton Interiors - Design is the new logo: Why interiors are brand marketing"
+        }
+      ],
+      "Workplace": [
+        {
+          "url": "/images/uae-companies/portfolio/horton-interiors/workplace/7.jpg",
+          "title": "Landmark Group JAFZA"
         }
       ]
     }

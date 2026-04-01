@@ -79,12 +79,6 @@ export default function HomeDesignSection() {
     .sort((a, b) => b.projectCount - a.projectCount)
     .slice(0, 4);
 
-  const stats = {
-    companies: Math.max(companies.length, 8),
-    cities: Math.max(new Set(companies.map(c => c.city)).size, 2),
-    projects: Math.max(companies.reduce((sum, c) => sum + c.projectCount, 0), 34),
-  };
-
   const activeHeroImage = heroImages[heroImageIndex] || heroImages[0];
 
   return (
@@ -105,25 +99,11 @@ export default function HomeDesignSection() {
             </p>
             <Link
               to="/companies"
-              className="inline-flex w-fit items-center gap-2 mt-8 px-5 py-2.5 rounded-full border border-[#bfa67e]/55 text-[#f2eadb] text-xs tracking-[0.08em] uppercase hover:bg-[#bfa67e]/12 transition"
+              className="inline-flex w-fit items-center gap-2 mt-8 px-7 py-3.5 rounded-full border border-[#bfa67e]/55 text-[#f2eadb] text-sm tracking-[0.08em] uppercase hover:bg-[#bfa67e]/12 transition"
             >
               Explore Designers
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <div className="grid grid-cols-3 gap-4 sm:gap-6 mt-10 pt-7 border-t border-[#302d28]">
-              <div>
-                <p className="font-serif text-[28px] text-[#f5f2ea] leading-none">{stats.companies}</p>
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-[#d2ccc2]/52 mt-2">Curated Studios</p>
-              </div>
-              <div>
-                <p className="font-serif text-[28px] text-[#f5f2ea] leading-none">{stats.cities}</p>
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-[#d2ccc2]/52 mt-2">UAE Cities</p>
-              </div>
-              <div>
-                <p className="font-serif text-[28px] text-[#f5f2ea] leading-none">{stats.projects}</p>
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] text-[#d2ccc2]/52 mt-2">Verified Projects</p>
-              </div>
-            </div>
           </div>
           <div className="relative rounded-[28px] overflow-hidden min-h-[420px] bg-[#0f0f0d] border border-[#27241f]">
             <img
