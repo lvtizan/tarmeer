@@ -115,6 +115,10 @@ function App() {
             <Route path="apply/company" element={<ApplyCompanyPage />} />
           </Route>
 
+          {/* Auth with Layout */}
+          <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
+          <Route path="/auth/callback" element={<Layout><AuthCallbackPage /></Layout>} />
+
           {/* Public Routes */}
           <Route path="/*" element={
             <Layout>
@@ -125,8 +129,6 @@ function App() {
                 <Route path="/designers/:slug" element={<DesignerProfilePage />} />
                 <Route path="/designers/:slug/projects/:projectId" element={<DesignerProfileWithModalPage />} />
                 <Route path="/showrooms" element={<Navigate to="/materials" replace />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />

@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ChevronRight, Briefcase, Users } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
-// import Navbar from '../components/Navbar';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -174,7 +173,21 @@ export default function AuthPage() {
   const showSocialAuth = ENABLE_GOOGLE_AUTH || ENABLE_FACEBOOK_AUTH;
 
   return (
-    <div className="bg-[#FAFAF9] flex items-start justify-center px-4 sm:px-6 pt-[10vh] pb-16 relative overflow-hidden min-h-[85vh]">
+    <div className="min-h-screen bg-[#FAFAF9]">
+      {/* Top Navigation */}
+      <header className="border-b border-stone-200 bg-white px-6 py-3 flex items-center justify-between">
+        <a href="/" className="flex items-center gap-2.5 hover:opacity-80 transition">
+          <img src="/images/tarmeer_logo.svg" alt="Tarmeer" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span className="font-serif text-lg font-bold text-[#1c1917] tracking-tight">TARMEER</span>
+        </a>
+        <div className="flex items-center gap-4 text-sm">
+          <a href="/" className="text-stone-500 hover:text-[#1c1917] transition">Home</a>
+          <a href="/companies" className="text-stone-500 hover:text-[#1c1917] transition">Find Companies</a>
+          <a href="/designers" className="text-stone-500 hover:text-[#1c1917] transition">Find Designers</a>
+        </div>
+      </header>
+
+      <div className="flex items-start justify-center px-4 sm:px-6 pt-[8vh] pb-16 relative overflow-hidden min-h-[85vh]">
       {/* Premium Ambient Background */}
       <div className="absolute top-0 left-0 w-[700px] h-[700px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
@@ -438,6 +451,7 @@ export default function AuthPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
