@@ -68,7 +68,7 @@ async function checkExistingDesignerFields(email?: string, phone?: string | null
   const normalizedPhone = phone?.trim();
   const checks = await Promise.all([
     email
-      ? pool.execute('SELECT id FROM designers WHERE email = ? LIMIT 1', [email])
+      ? pool.execute('SELECT id FROM designers WHERE email = ? UNION SELECT id FROM users WHERE email = ? LIMIT 1', [email, email])
       : Promise.resolve([[ ]]),
     normalizedPhone
       ? pool.execute('SELECT id FROM designers WHERE phone = ? LIMIT 1', [normalizedPhone])

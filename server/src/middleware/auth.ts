@@ -29,7 +29,18 @@ export async function authenticate(req: any, res: any, next: any) {
       if (users[0].status === 'suspended') {
         return res.status(403).json({ error: 'Account suspended.' });
       }
-      req.user = { userId: users[0].id, id: users[0].id, email: users[0].email, role: users[0].role };
+      // If user has a linked designer, set id to designer.id for backward compat
+      const [designerRows] = await pool.execute(
+        'SELECT id FROM designers WHERE user_id = ? AND deleted_at IS NULL LIMIT 1',
+        [users[0].id]
+      );
+      const linkedDesigner = (designerRows as any[])[0];
+      req.user = {
+        userId: users[0].id,
+        id: linkedDesigner ? linkedDesigner.id : users[0].id,
+        email: users[0].email,
+        role: users[0].role,
+      };
       return next();
     }
 

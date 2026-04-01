@@ -49,7 +49,7 @@ function generateToken(user: { id: number; email: string; role: string }) {
 export async function register(req: any, res: any) {
   try {
     const { email, password, fullName, full_name, phone, city } = req.body;
-    const name = fullName || full_name;
+    const name = fullName || full_name || email.split('@')[0];
 
     if (isTempEmail(email)) {
       return res.status(400).json({ error: 'Temporary email addresses are not allowed. Please use a valid email.' });

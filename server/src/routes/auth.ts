@@ -37,7 +37,7 @@ router.post('/register',
   [
     body('email').isEmail().withMessage('Please enter a valid email address'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('full_name').notEmpty().withMessage('Please enter your name')
+    body('full_name').optional()
   ],
   handleValidation,
   userAuth.register
