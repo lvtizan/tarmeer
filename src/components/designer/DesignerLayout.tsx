@@ -66,6 +66,12 @@ export default function DesignerLayout() {
         </div>
         <div className="flex items-center gap-3">
           <Link
+            to="/"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg h-9 px-3 border border-stone-200 text-stone-600 hover:text-[#b8864a] hover:border-[#b8864a] text-sm font-medium transition"
+          >
+            Back to Site
+          </Link>
+          <Link
             to="/designer/profile"
             className="cursor-pointer"
             aria-label="Profile"
