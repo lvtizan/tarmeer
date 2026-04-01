@@ -393,252 +393,410 @@
     "portfolio_categories": {
       "Office": [
         {
+          "url": "/images/uae-companies/portfolio/antonovich-design/office/1.webp",
+          "title": "Luxury Swivel armchair"
+        },
+        {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/2.webp",
-          "title": "office 2"
+          "title": "Luxury Desk"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/3.webp",
-          "title": "office 3"
+          "title": "Elegant Small Desk"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/4.webp",
-          "title": "office 4"
+          "title": "Trendy Design Office Table"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/5.webp",
-          "title": "office 5"
+          "title": "Elegant Swivel armchair in black polished lacquering"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/6.webp",
-          "title": "office 6"
+          "title": "Luxurious Sideboard"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/7.webp",
-          "title": "office 7"
+          "title": "Royal Class Office Table Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/8.webp",
-          "title": "office 8"
+          "title": "Classic Style Office Chair"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/9.webp",
-          "title": "office 9"
+          "title": "Finest Classic Style Office Table Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/10.webp",
-          "title": "office 10"
+          "title": "Classic Style - Luxury Table Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/11.webp",
-          "title": "office 11"
+          "title": "Customized Artistic Office Table Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/12.webp",
-          "title": "office 12"
+          "title": "Luxurious Office Table"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/13.webp",
-          "title": "office 13"
+          "title": "Elegant Office Table Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/14.webp",
-          "title": "office 14"
+          "title": "Classic Style Office Furniture Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/15.webp",
-          "title": "office 15"
+          "title": "Modern Functional Office Table Set"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/16.webp",
-          "title": "office 16"
+          "title": "Elegant Design Study Chair"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/17.webp",
-          "title": "office 17"
+          "url": "/images/uae-companies/portfolio/antonovich-design/office/17.jpg",
+          "title": "Palm Jumeirah Masterpiece by Trusted Villa Builder Dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/18.webp",
-          "title": "office 18"
+          "url": "/images/uae-companies/portfolio/antonovich-design/office/18.jpg",
+          "title": "The Highest Standard in Turnkey Villa Construction Dubai by Antonovich Group"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/19.jpg",
-          "title": "office 19"
+          "title": "Mastering Luxury Villa Construction Dubai with Iconic Landscape Design"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/office/20.jpg",
-          "title": "office 20"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/2.jpg",
-          "title": "office 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/3.jpg",
-          "title": "office 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/19.webp",
-          "title": "office 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/office/20.webp",
-          "title": "office 20"
+          "title": "Antonovich Group: Redefining Excellence as the Top Villa Construction Company in Dubai"
         }
       ],
-      "Restaurant": [
+      "Dining": [
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/2.jpg",
-          "title": "restaurant 2"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/1.webp",
+          "title": "Modern dining furniture set 024"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/3.jpg",
-          "title": "restaurant 3"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/2.webp",
+          "title": "Modern dining furniture set 023"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/4.jpg",
-          "title": "restaurant 4"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/3.webp",
+          "title": "Contemporary dining set 003"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/5.jpg",
-          "title": "restaurant 5"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/4.webp",
+          "title": "Modern dining furniture set 021"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/6.jpg",
-          "title": "restaurant 6"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/5.webp",
+          "title": "Contemporary dining set 001"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/7.jpg",
-          "title": "restaurant 7"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/6.webp",
+          "title": "dining room furniture set 001"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/8.webp",
-          "title": "restaurant 8"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/7.webp",
+          "title": "Modern dining furniture set 020"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/9.jpg",
-          "title": "restaurant 9"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/8.webp",
+          "title": "Modern dining furniture set 019"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/10.jpg",
-          "title": "restaurant 10"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/9.webp",
+          "title": "Modern dining furniture set 018"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/11.jpg",
-          "title": "restaurant 11"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/10.webp",
+          "title": "Modern dining furniture set 014"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/12.jpg",
-          "title": "restaurant 12"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/11.webp",
+          "title": "Modern dining furniture set 017"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/13.jpg",
-          "title": "restaurant 13"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/12.webp",
+          "title": "Modern dining furniture set 013"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/14.jpg",
-          "title": "restaurant 14"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/13.webp",
+          "title": "Modern dining furniture set 016"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/15.webp",
-          "title": "restaurant 15"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/14.webp",
+          "title": "Modern dining furniture set 015"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/16.webp",
-          "title": "restaurant 16"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/15.webp",
+          "title": "Modern dining furniture set 012"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/17.webp",
-          "title": "restaurant 17"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/16.webp",
+          "title": "Modern dining furniture set 011"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/18.webp",
-          "title": "restaurant 18"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/17.jpg",
+          "title": "Palm Jumeirah Masterpiece by Trusted Villa Builder Dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/19.webp",
-          "title": "restaurant 19"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/18.jpg",
+          "title": "The Highest Standard in Turnkey Villa Construction Dubai by Antonovich Group"
         },
         {
-          "url": "/images/uae-companies/portfolio/antonovich-design/restaurant/20.webp",
-          "title": "restaurant 20"
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/19.jpg",
+          "title": "Mastering Luxury Villa Construction Dubai with Iconic Landscape Design"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/dining/20.jpg",
+          "title": "Antonovich Group: Redefining Excellence as the Top Villa Construction Company in Dubai"
+        }
+      ],
+      "Villa": [
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/1.png",
+          "title": "Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/2.jpg",
+          "title": "ANTONOVICH GROUP: TRANSFORMING DREAMS INTO TIMELESS ELEGANCE"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/3.jpg",
+          "title": "LUXURY AL MARJAN ISLAND VILLA DESIGN: WHERE COASTAL ELEGANCE MEETS CONTEMPORARY LIVING"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/4.jpg",
+          "title": "house in La Mer Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/5.jpg",
+          "title": "Villa Sobha Hartland, Mohammed Bin Rashid City"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/6.jpg",
+          "title": "Luxury Modern Villa interior design in Dubai Hills"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/7.jpg",
+          "title": "Villa In Meydan Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/8.jpg",
+          "title": "Comfort family villa interior"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/9.jpg",
+          "title": "Dubai Island - Luxury Interior Design Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/10.jpg",
+          "title": "AL BARARI MODERN VILLA"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/11.jpg",
+          "title": "Palm Jumeirah Villa Interior Renovation"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/12.jpg",
+          "title": "Gorgeous Interior Design in Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/13.jpg",
+          "title": "THE VILLA COMMUNITY DUBAI LAND RENOVATION"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/14.jpg",
+          "title": "Luxurious Villa Renovation Interior Design"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/15.jpg",
+          "title": "VILLA INTERIOR DESIGN IN DUBAI"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/16.jpg",
+          "title": "Gorgeous Villa Design Idea"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/17.jpg",
+          "title": "Interior &amp; Fitout Contractor Saudi Arabia"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/18.jpg",
+          "title": "COMPLETE PROJECT MANAGEMENT FOR LUXURY MANSION"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/19.jpg",
+          "title": "Best luxury expression in Dubai Palm Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/villa/20.jpg",
+          "title": "Modern Villa Design UAE"
+        }
+      ],
+      "Apartment": [
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/1.jpg",
+          "title": "BEST PROVIDER OF RENOVATION APARTMENTS DUBAI"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/2.jpg",
+          "title": "– Address The Beach JBR Apartment Dubai | Antonovich Group"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/3.png",
+          "title": "Modern Apartment Project at Address The Beach JBR Dubai | Design &amp; Execution by Antonovich Group"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/4.jpg",
+          "title": "Dubai for Luxury Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/5.jpg",
+          "title": "LUXURY APARTMENTS IN JBR BEACH RESORT"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/6.jpg",
+          "title": "Stylish Apartment Design in Dubai - Sobha Hartland"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/7.jpg",
+          "title": "Apartment Dubai down town Luxury City"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/apartment/8.jpg",
+          "title": "THE LATEST INNOVATION IN MODERN APARTMENT"
+        }
+      ],
+      "Exterior": [
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/1.jpg",
+          "title": "Exterior &amp; Landscape Design in Modern Innovations"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/2.jpg",
+          "title": "Bulgari Residence Jumeirah Bay Island"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/3.jpg",
+          "title": "Best Exterior design UAE"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/4.jpg",
+          "title": "Palm Jumeirah Modern Renovation Exteriors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/5.jpg",
+          "title": "Meydan Exterior Renovation"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/6.jpg",
+          "title": "ULTRA-LUXURY VILLA IN LA MER ISLAND"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/7.jpg",
+          "title": "Modern Villa in Al Marjan Island Ras Al Khaimah"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/8.jpg",
+          "title": "Bringing Architectural Elegance to Life with Comprehensive Fit-Out Expertise"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/9.jpg",
+          "title": "Fabulous Facade Design in UAE"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/10.jpg",
+          "title": "Luxury Villa Dubai - Exterior and Landscape Design Solution"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/11.jpg",
+          "title": "Luxury Architecture Villa Abu Dhabi"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/12.jpg",
+          "title": "Antonovich Group"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/13.jpg",
+          "title": "Best Exterior Design"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/14.jpg",
+          "title": "architecture and interior design CA"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/15.jpg",
+          "title": "JUMEIRAH GOLF VILLA EXTERIOR RENOVATION"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/16.jpg",
+          "title": "A Modern Villa Exterior &amp; Landscape Design in Al Barari, Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/17.jpg",
+          "title": "Modern Villa in Meydan Exteriors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/18.jpg",
+          "title": "Luxury villa interior design in Oman"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/19.jpg",
+          "title": "Best exterior designing ideas"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/antonovich-design/exterior/20.jpg",
+          "title": "The BULGARI Luxury Villa Jumeirah Bay Dubai"
         }
       ],
       "Hotel": [
         {
+          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/1.jpg",
+          "title": "Finest Hotel Project Execution"
+        },
+        {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/2.jpg",
-          "title": "hotel 2"
+          "title": "INTERIOR AND FIT-OUT SOLUTIONS FOR LUXURY HOTELS"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/3.jpg",
-          "title": "hotel 3"
+          "title": "Luxury Furniture Production for High-Rise Hotels in Dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/4.jpg",
-          "title": "hotel 4"
+          "title": "Мodern design luxury hotel"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/5.jpg",
-          "title": "hotel 5"
+          "title": "Top Hotel Designs In The World"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/6.jpg",
-          "title": "hotel 6"
+          "title": "Best hotel interior design dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/7.jpg",
-          "title": "hotel 7"
+          "title": "project for hotel 5 stars in Riyadh"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/8.jpg",
-          "title": "hotel 8"
+          "title": "Hotel lobby Interior Design Dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/9.jpg",
-          "title": "hotel 9"
+          "title": "Hotel interior Design In Saudi Arabia| top Hospitality interior design project in Riyadh"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/10.jpg",
-          "title": "hotel 10"
+          "title": "Hospitality Interior Design in Saudi Arabia"
         },
         {
           "url": "/images/uae-companies/portfolio/antonovich-design/hotel/11.jpg",
-          "title": "hotel 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/12.jpg",
-          "title": "hotel 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/13.jpg",
-          "title": "hotel 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/14.jpg",
-          "title": "hotel 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/15.jpg",
-          "title": "hotel 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/16.jpg",
-          "title": "hotel 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/17.jpg",
-          "title": "hotel 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/18.jpg",
-          "title": "hotel 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/19.jpg",
-          "title": "hotel 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/antonovich-design/hotel/20.jpg",
-          "title": "hotel 20"
+          "title": "Hotel lobby design dubai"
         }
       ]
     }
@@ -807,62 +965,58 @@
     "portfolio_categories": {
       "Residential": [
         {
+          "url": "/images/uae-companies/portfolio/fitout-squad/residential/1.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fitout-squad/residential/2.webp",
+          "title": ""
+        },
+        {
           "url": "/images/uae-companies/portfolio/fitout-squad/residential/3.jpg",
-          "title": "residential 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fitout-squad/residential/4.webp",
-          "title": "residential 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fitout-squad/residential/5.jpg",
-          "title": "residential 5"
+          "title": ""
         }
       ],
       "Commercial": [
         {
-          "url": "/images/uae-companies/portfolio/fitout-squad/commercial/3.jpg",
-          "title": "commercial 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fitout-squad/commercial/5.jpg",
-          "title": "commercial 5"
+          "url": "/images/uae-companies/portfolio/fitout-squad/commercial/1.jpg",
+          "title": ""
         }
       ],
       "Office": [
         {
-          "url": "/images/uae-companies/portfolio/fitout-squad/office/3.jpg",
-          "title": "office 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fitout-squad/office/11.jpg",
-          "title": "office 11"
+          "url": "/images/uae-companies/portfolio/fitout-squad/office/1.jpg",
+          "title": ""
         }
       ],
       "Retail": [
         {
-          "url": "/images/uae-companies/portfolio/fitout-squad/retail/3.avif",
-          "title": "retail 3"
+          "url": "/images/uae-companies/portfolio/fitout-squad/retail/1.avif",
+          "title": ""
         }
       ],
       "Restaurant": [
         {
+          "url": "/images/uae-companies/portfolio/fitout-squad/restaurant/1.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fitout-squad/restaurant/2.jpg",
+          "title": ""
+        },
+        {
           "url": "/images/uae-companies/portfolio/fitout-squad/restaurant/3.jpg",
-          "title": "restaurant 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fitout-squad/restaurant/4.jpg",
-          "title": "restaurant 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/fitout-squad/restaurant/5.jpg",
-          "title": "restaurant 5"
+          "title": ""
         }
       ],
       "Interior": [
         {
-          "url": "/images/uae-companies/portfolio/fitout-squad/interior/3.jpg",
-          "title": "interior 3"
+          "url": "/images/uae-companies/portfolio/fitout-squad/interior/1.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fitout-squad/interior/2.jpg",
+          "title": ""
         }
       ]
     }
@@ -899,88 +1053,292 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "Dnata-travel-office": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/1.webp",
-          "title": "Dnata-travel-office 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/3.jpg",
-          "title": "Dnata-travel-office 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/4.jpg",
-          "title": "Dnata-travel-office 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/5.jpg",
-          "title": "Dnata-travel-office 5"
-        }
-      ],
-      "Emirates-lounge": [
-        {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/1.jpg",
-          "title": "Emirates-lounge 1"
-        }
-      ],
       "Offices": [
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/1.jpg",
-          "title": "Offices 1"
+          "title": "Office Fitout Company in Dubai | Office Fitout Dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/2.webp",
-          "title": "Offices 2"
+          "title": "od2"
         },
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/3.jpg",
-          "title": "Offices 3"
+          "title": "planters"
         },
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/4.jpg",
-          "title": "Offices 4"
+          "title": "pergola"
         },
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/5.jpg",
-          "title": "Offices 5"
+          "title": "water-feature"
         },
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/6.jpg",
-          "title": "Offices 6"
+          "title": "gazebo"
         },
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/offices/7.jpg",
-          "title": "Offices 7"
+          "title": "villa-pool"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/offices/8.png",
+          "title": ""
         }
       ],
-      "Pullman-hotel": [
+      "Shopping-Malls": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/1.webp",
+          "title": "Shopping Mall Fit-Out Works in Dubai | Mall Interior Company in Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/2.jpg",
+          "title": "planters"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/3.jpg",
+          "title": "pergola"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/4.jpg",
+          "title": "water-feature"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/5.jpg",
+          "title": "gazebo"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/6.jpg",
+          "title": "villa-pool"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/shopping-malls/7.png",
+          "title": ""
+        }
+      ],
+      "Emirates-Lounge": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/1.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/2.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/3.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/4.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/5.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/emirates-lounge/6.png",
+          "title": ""
+        }
+      ],
+      "Pullman-Hotel": [
         {
           "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/1.jpg",
-          "title": "Pullman-hotel 1"
+          "title": "hotel fitout contractor in dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/10.jpg",
-          "title": "Pullman-hotel 10"
+          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/2.jpg",
+          "title": "Related Portfolio"
         },
         {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/12.jpg",
-          "title": "Pullman-hotel 12"
+          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/3.jpg",
+          "title": "Melissa Apartment"
         },
         {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/14.jpg",
-          "title": "Pullman-hotel 14"
+          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/4.jpg",
+          "title": "Al Furjan Private Villa"
         },
         {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/16.jpg",
-          "title": "Pullman-hotel 16"
+          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/5.png",
+          "title": ""
+        }
+      ],
+      "Dnata-Travel-Office": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/1.webp",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/18.jpg",
-          "title": "Pullman-hotel 18"
+          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/2.jpg",
+          "title": "Related Portfolio"
         },
         {
-          "url": "/images/uae-companies/portfolio/usbc-interiors/pullman-hotel/20.jpg",
-          "title": "Pullman-hotel 20"
+          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/dnata-travel-office/5.png",
+          "title": ""
+        }
+      ],
+      "Etihad-Rail-New-Office": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/1.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/2.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/etihad-rail-new-office/5.png",
+          "title": ""
+        }
+      ],
+      "Cosmic-Tech-Office": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/1.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/2.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/cosmic-tech-office/5.png",
+          "title": ""
+        }
+      ],
+      "Bay-Square-Office": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/1.jpg",
+          "title": "office fitout company in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/2.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/bay-square-office/5.png",
+          "title": ""
+        }
+      ],
+      "Coterra-Cafe": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/1.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/2.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/coterra-cafe/5.png",
+          "title": ""
+        }
+      ],
+      "Grazer-Restaurant": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/1.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/2.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/grazer-restaurant/5.png",
+          "title": ""
+        }
+      ],
+      "Private-Villa": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/1.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/2.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/private-villa/5.png",
+          "title": ""
+        }
+      ],
+      "Meadows-Villa": [
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/1.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/2.jpg",
+          "title": "Related Portfolio"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/3.jpg",
+          "title": "Melissa Apartment"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/4.jpg",
+          "title": "Al Furjan Private Villa"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/usbc-interiors/meadows-villa/5.png",
+          "title": ""
         }
       ]
     }
@@ -1016,262 +1374,424 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "214804393": [
+      "Interior-Fitout-Company-In-Dubai-Marina-Premium-Fitout-Contractors-In-Dubai": [
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/1.png",
-          "title": "214804393 1"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-dubai-marina-premium-fitout-contractors-in-dubai/1.webp",
+          "title": "Top Interior Fitout Company in Dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/3.png",
-          "title": "214804393 3"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-dubai-marina-premium-fitout-contractors-in-dubai/2.webp",
+          "title": ""
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/5.png",
-          "title": "214804393 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/6.png",
-          "title": "214804393 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/7.png",
-          "title": "214804393 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/8.png",
-          "title": "214804393 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/9.png",
-          "title": "214804393 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/12.png",
-          "title": "214804393 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/214804393/15.webp",
-          "title": "214804393 15"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-dubai-marina-premium-fitout-contractors-in-dubai/3.webp",
+          "title": "Interior Fitout Company in Dubai Marina"
         }
       ],
-      "Hotel-fitout-companies-in-dubai": [
+      "Interior-Fitout-Company-In-Business-Bay-Expert-Fitout-Contractors-In-Dubai": [
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/2.png",
-          "title": "Hotel-fitout-companies-in-dubai 2"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/1.webp",
+          "title": "interior fitout company in dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/3.png",
-          "title": "Hotel-fitout-companies-in-dubai 3"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/2.webp",
+          "title": "interior fitout company in dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/4.png",
-          "title": "Hotel-fitout-companies-in-dubai 4"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/3.webp",
+          "title": "interior fitout company in dubai"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/5.png",
-          "title": "Hotel-fitout-companies-in-dubai 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/6.png",
-          "title": "Hotel-fitout-companies-in-dubai 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/7.png",
-          "title": "Hotel-fitout-companies-in-dubai 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/8.png",
-          "title": "Hotel-fitout-companies-in-dubai 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/9.png",
-          "title": "Hotel-fitout-companies-in-dubai 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/10.png",
-          "title": "Hotel-fitout-companies-in-dubai 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/11.png",
-          "title": "Hotel-fitout-companies-in-dubai 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/12.png",
-          "title": "Hotel-fitout-companies-in-dubai 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/hotel-fitout-companies-in-dubai/13.png",
-          "title": "Hotel-fitout-companies-in-dubai 13"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-business-bay-expert-fitout-contractors-in-dubai/4.webp",
+          "title": ""
         }
       ],
-      "Mall-fitout-companies-in-dubai": [
+      "Interior-Fitout-Company-In-Palm-Jumeirah-Dubai-Luxury-Fitout-Contractors-In-Dubai": [
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/mall-fitout-companies-in-dubai/2.png",
-          "title": "Mall-fitout-companies-in-dubai 2"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/1.webp",
+          "title": "interior fitout company near palm jumeirah"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/mall-fitout-companies-in-dubai/3.png",
-          "title": "Mall-fitout-companies-in-dubai 3"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/2.webp",
+          "title": "Custom dining area design and fitout Dubai Palm Jumeirah"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/mall-fitout-companies-in-dubai/4.png",
-          "title": "Mall-fitout-companies-in-dubai 4"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/3.webp",
+          "title": "Retail fitout Dubai – luxury boutique in Palm Jumeirah"
         },
         {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/mall-fitout-companies-in-dubai/5.png",
-          "title": "Mall-fitout-companies-in-dubai 5"
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/4.webp",
+          "title": "Custom bedroom fitout Dubai Palm Jumeirah luxury home"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-palm-jumeirah-dubai-luxury-fitout-contractors-in-dubai/5.webp",
+          "title": "Corporate office interior fitout Palm Jumeirah by fitout contractors in Dubai"
         }
       ],
-      "Office-fitout": [
+      "Interior-Fitout-Company-In-Difc-Dubai-Premium-Difc-Fitout-Contractors-In-Dubai": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/1.webp",
+          "title": "Luxury corporate office interior fitout in DIFC Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/2.png",
+          "title": "Premium office workspace design in DIFC Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/3.webp",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/4.png",
+          "title": "High-end retail store fitout in DIFC Dubai by fitout contractors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/5.webp",
+          "title": "Outdoor dining fitout in DIFC Dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-difc-dubai-premium-difc-fitout-contractors-in-dubai/6.webp",
+          "title": ""
+        }
+      ],
+      "Interior-Fitout-Companies-In-Dubai-Hills-Dubai-Expert-Dubai-Hills-Fitout-Contractors": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/1.webp",
+          "title": "Modern office interior fitout in Dubai Hills by fitout contractors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/2.webp",
+          "title": "Luxury villa interior fitout in al barsha by Build Craft Interiors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/3.webp",
+          "title": "Luxury villa interior fitout in Dubai Hills by Build Craft Interiors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/4.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/5.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-dubai-hills-dubai-expert-dubai-hills-fitout-contractors/6.webp",
+          "title": "Modern office interior fitout in Dubai Hills by fitout contractors"
+        }
+      ],
+      "Interior-Fitout-Companies-In-Al-Barsha-Dubai-Trusted-Fitout-Contractors": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-al-barsha-dubai-trusted-fitout-contractors/1.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-al-barsha-dubai-trusted-fitout-contractors/2.webp",
+          "title": "Luxury villa interior fitout in al barsha by Build Craft Interiors"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-companies-in-al-barsha-dubai-trusted-fitout-contractors/3.jpg",
+          "title": ""
+        }
+      ],
+      "Interior-Fitout-Company-In-Damac-Hills-Dubai-Best-Dubai-Fitout-Contractors": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-damac-hills-dubai-best-dubai-fitout-contractors/1.jpg",
+          "title": "interior fitout company in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-damac-hills-dubai-best-dubai-fitout-contractors/2.jpg",
+          "title": "interior fitout company in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/interior-fitout-company-in-damac-hills-dubai-best-dubai-fitout-contractors/3.jpg",
+          "title": "interior fitout company in dubai"
+        }
+      ],
+      "Commercial-Fitout-Dubai": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/1.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/2.png",
+          "title": "commercial fitout dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/3.png",
+          "title": "commercial fitout dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/4.png",
+          "title": "commercial fitout dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/5.png",
+          "title": "commercial fitout dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/6.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/7.png",
+          "title": "Commercial fitout dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/8.png",
+          "title": "commercial fitout company dubai 2"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/9.png",
+          "title": "commercial fitout company dubai 3"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/10.png",
+          "title": "commercial fitout company dubai 4"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/11.png",
+          "title": "commercial fitout company dubai 5"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/12.png",
+          "title": "commercial fitout company dubai 6"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/commercial-fitout-dubai/13.png",
+          "title": "commercial fitout company dubai"
+        }
+      ],
+      "Residential-Interior-Fitout-In-Dubai": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/1.png",
+          "title": "&nbsp;"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/2.png",
+          "title": "residential fitout company in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/3.png",
+          "title": "residential fitout company in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/4.png",
+          "title": "residential fitout company in dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/5.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/6.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/7.png",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/8.png",
+          "title": "Residential Fitout Company Dubai 2"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/9.png",
+          "title": "Residential Fitout Company Dubai 3"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/10.png",
+          "title": "Residential Fitout Company Dubai 4"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/11.png",
+          "title": "Residential Fitout Company Dubai 5"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/12.png",
+          "title": "Residential Fitout Company Dubai 7"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/residential-interior-fitout-in-dubai/13.png",
+          "title": "Residential Fitout Company Dubai 9"
+        }
+      ],
+      "Joinery-Company-In-Dubai": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/1.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/2.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/3.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/4.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/5.jpg",
+          "title": ""
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/6.jpg",
+          "title": "JOINERYDUBAI2 (8)"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/7.jpg",
+          "title": "JOINERYDUBAI2 (7)"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/8.jpg",
+          "title": "JOINERYDUBAI2 (1)"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/9.jpg",
+          "title": "JOINERYDUBAI2 (6)"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/joinery-company-in-dubai/10.jpg",
+          "title": "JOINERYDUBAI2 (5)"
+        }
+      ],
+      "Office-Fitout": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/1.png",
+          "title": "office fitout"
+        },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/2.png",
-          "title": "Office-fitout 2"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/3.png",
-          "title": "Office-fitout 3"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/4.png",
-          "title": "Office-fitout 4"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/5.png",
-          "title": "Office-fitout 5"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/6.png",
-          "title": "Office-fitout 6"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/7.png",
-          "title": "Office-fitout 7"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/8.png",
-          "title": "Office-fitout 8"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/9.png",
-          "title": "Office-fitout 9"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/10.png",
-          "title": "Office-fitout 10"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/11.png",
-          "title": "Office-fitout 11"
+          "title": "office fitout"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/12.png",
-          "title": "Office-fitout 12"
+          "title": "Interior Fitout Company In Dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/13.png",
-          "title": "Office-fitout 13"
+          "title": "BCI - DESIGN - 5"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/14.png",
-          "title": "Office-fitout 14"
+          "title": "Turnkey Interior Fitout Dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/15.png",
-          "title": "Office-fitout 15"
+          "title": "office fitout companies in dubai 1"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/16.png",
-          "title": "Office-fitout 16"
+          "title": "office fitout companies in dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/17.png",
-          "title": "Office-fitout 17"
+          "title": "office fitout companies in dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/18.png",
-          "title": "Office-fitout 18"
+          "title": "office fitout companies in dubai"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/19.png",
-          "title": "Office-fitout 19"
+          "title": "commercial fitout dubai"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/office-fitout/20.png",
+          "title": "office fitout companies in dubai"
         }
       ],
-      "Villa-renovation": [
+      "Villa-Renovation": [
+        {
+          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/1.png",
+          "title": "Villa Renovation"
+        },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/2.png",
-          "title": "Villa-renovation 2"
+          "title": "Villa Renovation 1"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/3.png",
-          "title": "Villa-renovation 3"
+          "title": "Villa Renovation 2"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/4.png",
-          "title": "Villa-renovation 4"
+          "title": "Villa Renovation 3"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/5.png",
-          "title": "Villa-renovation 5"
+          "title": "Villa Renovation 4"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/6.png",
-          "title": "Villa-renovation 6"
+          "title": "Villa Renovation 5"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/7.png",
-          "title": "Villa-renovation 7"
+          "title": "Villa Renovation 6"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/8.png",
-          "title": "Villa-renovation 8"
+          "title": "Villa Renovation 7"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/9.png",
-          "title": "Villa-renovation 9"
+          "title": "Villa Renovation 8"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/10.png",
-          "title": "Villa-renovation 10"
+          "title": "Villa Renovation 9"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/11.png",
-          "title": "Villa-renovation 11"
+          "title": "Villa Renovation 10"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/12.png",
-          "title": "Villa-renovation 12"
+          "title": "Villa Renovation 11"
         },
         {
           "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/13.png",
-          "title": "Villa-renovation 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/14.png",
-          "title": "Villa-renovation 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/15.png",
-          "title": "Villa-renovation 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/16.png",
-          "title": "Villa-renovation 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/17.png",
-          "title": "Villa-renovation 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/18.png",
-          "title": "Villa-renovation 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/19.png",
-          "title": "Villa-renovation 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/build-craft-interiors/villa-renovation/20.png",
-          "title": "Villa-renovation 20"
+          "title": "Villa Renovation 12"
         }
       ]
     }
@@ -5688,64 +6208,64 @@
     "portfolio_categories": {
       "General": [
         {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/1.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/2.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/3.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/4.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/5.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/6.png",
-          "title": ""
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/6.jpg",
+          "title": "general 6"
         },
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/7.png",
-          "title": ""
+          "title": "general 7"
         },
         {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/8.png",
-          "title": ""
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/8.jpg",
+          "title": "general 8"
         },
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/9.png",
-          "title": ""
+          "title": "general 9"
         },
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/10.png",
-          "title": ""
+          "title": "general 10"
         },
         {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/11.jpg",
-          "title": ""
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/11.png",
+          "title": "general 11"
         },
         {
-          "url": "/images/uae-companies/portfolio/wilson-associates/general/12.jpg",
-          "title": ""
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/12.png",
+          "title": "general 12"
         },
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/13.png",
-          "title": ""
+          "title": "general 13"
         },
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/14.png",
-          "title": ""
+          "title": "general 14"
         },
         {
           "url": "/images/uae-companies/portfolio/wilson-associates/general/15.png",
-          "title": ""
+          "title": "general 15"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/16.jpg",
+          "title": "general 16"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/17.jpg",
+          "title": "general 17"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/18.png",
+          "title": "general 18"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/19.png",
+          "title": "general 19"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/wilson-associates/general/20.png",
+          "title": "general 20"
         }
       ]
     }
@@ -5785,34 +6305,30 @@
     "logo_local": "",
     "portfolio_local": [],
     "portfolio_categories": {
-      "Urban": [
+      "Projects": [
         {
-          "url": "/images/uae-companies/portfolio/benoy/urban/1.jpg",
-          "title": "Qin Pang"
+          "url": "/images/uae-companies/portfolio/benoy/projects/1.jpg",
+          "title": "projects 1"
         },
         {
-          "url": "/images/uae-companies/portfolio/benoy/urban/2.jpg",
-          "title": "14483 N3 hd 1"
+          "url": "/images/uae-companies/portfolio/benoy/projects/2.jpg",
+          "title": "projects 2"
         },
         {
-          "url": "/images/uae-companies/portfolio/benoy/urban/3.jpg",
-          "title": "12111 N10 hd"
+          "url": "/images/uae-companies/portfolio/benoy/projects/3.jpg",
+          "title": "projects 3"
         },
         {
-          "url": "/images/uae-companies/portfolio/benoy/urban/4.jpg",
-          "title": "6985 N9 hd"
+          "url": "/images/uae-companies/portfolio/benoy/projects/4.jpg",
+          "title": "projects 4"
         },
         {
-          "url": "/images/uae-companies/portfolio/benoy/urban/5.jpg",
-          "title": "15412 N8 hd"
+          "url": "/images/uae-companies/portfolio/benoy/projects/5.jpg",
+          "title": "projects 5"
         },
         {
-          "url": "/images/uae-companies/portfolio/benoy/urban/6.jpg",
-          "title": "14450 N50 hd"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/benoy/urban/7.jpg",
-          "title": "16681 N11 hd"
+          "url": "/images/uae-companies/portfolio/benoy/projects/6.jpg",
+          "title": "projects 6"
         }
       ]
     }
@@ -5852,324 +6368,284 @@
     "logo_local": "",
     "portfolio_local": [],
     "portfolio_categories": {
-      "Sydney-Central-Station": [
+      "Sydney-central-station": [
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/1.jpg",
-          "title": "Central Destination"
+          "title": "sydney-central-station 1"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/2.jpg",
-          "title": "Rail"
+          "title": "sydney-central-station 2"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/3.jpg",
-          "title": ""
+          "title": "sydney-central-station 3"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/4.jpg",
-          "title": ""
+          "title": "sydney-central-station 4"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/5.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/6.jpg",
-          "title": ""
+          "title": "sydney-central-station 5"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/7.jpg",
-          "title": ""
+          "title": "sydney-central-station 7"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/8.jpg",
-          "title": ""
+          "title": "sydney-central-station 8"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/9.jpg",
-          "title": ""
+          "title": "sydney-central-station 9"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/10.jpg",
-          "title": ""
+          "title": "sydney-central-station 10"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/11.jpg",
-          "title": ""
+          "title": "sydney-central-station 11"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/12.jpg",
-          "title": ""
+          "title": "sydney-central-station 12"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/13.jpg",
-          "title": ""
+          "title": "sydney-central-station 13"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/14.jpg",
-          "title": ""
+          "title": "sydney-central-station 14"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/15.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/16.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/17.png",
-          "title": ""
+          "title": "sydney-central-station 15"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/18.jpg",
-          "title": ""
+          "title": "sydney-central-station 18"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/19.png",
-          "title": ""
+          "title": "sydney-central-station 19"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/sydney-central-station/20.jpg",
-          "title": ""
+          "title": "sydney-central-station 20"
         }
       ],
-      "Lax-Msc-South": [
+      "Lax-msc-south": [
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/1.jpg",
-          "title": "AviationIn Progress"
+          "title": "lax-msc-south 1"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/2.jpg",
-          "title": ""
+          "title": "lax-msc-south 2"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/3.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/4.jpg",
-          "title": ""
+          "title": "lax-msc-south 3"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/5.jpg",
-          "title": ""
+          "title": "lax-msc-south 5"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/6.jpg",
-          "title": ""
+          "title": "lax-msc-south 6"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/7.jpg",
-          "title": ""
+          "title": "lax-msc-south 7"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/8.jpg",
-          "title": ""
+          "title": "lax-msc-south 8"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/9.jpg",
-          "title": ""
+          "title": "lax-msc-south 9"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/10.jpg",
-          "title": "How First Nations Art is Transforming Sydney’s Central Station"
+          "title": "lax-msc-south 10"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/11.jpg",
-          "title": "Rethinking Urban Mobility: “For Living, Not Working.”"
+          "title": "lax-msc-south 11"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/12.jpg",
-          "title": "Journey Beyond Gold Premium Carriages"
+          "title": "lax-msc-south 12"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/13.jpg",
-          "title": "Linking art and ancestry through First Nations design"
+          "title": "lax-msc-south 13"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/14.jpg",
-          "title": "Spotlight – Model Maker, Peter Wake"
+          "title": "lax-msc-south 14"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/15.jpg",
-          "title": "Local snapshot – Sydney"
+          "title": "lax-msc-south 15"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/16.jpg",
-          "title": "Art and architecture"
+          "title": "lax-msc-south 16"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/17.jpg",
-          "title": "‘Modern Methods of Construction’ are over nineteen-hundred years old"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/lax-msc-south/18.jpg",
-          "title": "Woods Bagot on Pinterest"
+          "title": "lax-msc-south 17"
         }
       ],
-      "University-Of-Tasmania-Forestry-Building": [
+      "University-of-tasmania-forestry-building": [
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/1.jpg",
-          "title": "Education and Science"
+          "title": "university-of-tasmania-forestry-building 1"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/2.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 2"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/3.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 3"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/4.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 4"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/5.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 5"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/6.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 6"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/7.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 7"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/8.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 8"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/9.jpg",
-          "title": "UTAS"
+          "title": "university-of-tasmania-forestry-building 9"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/10.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 10"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/11.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 11"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/12.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 12"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/13.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 13"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/14.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 14"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/15.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 15"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/16.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 16"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/17.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 17"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/18.jpg",
-          "title": ""
+          "title": "university-of-tasmania-forestry-building 18"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/19.jpg",
-          "title": "Maggie Craig wins Designer Rug competition for under 30s category"
+          "title": "university-of-tasmania-forestry-building 19"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/university-of-tasmania-forestry-building/20.jpg",
-          "title": "Woods Bagot Delivers Facilities Planning &amp; Design Insights at CUHK&nbsp;"
+          "title": "university-of-tasmania-forestry-building 20"
         }
       ],
-      "Christchurch-Convention-Centre": [
+      "Christchurch-convention-centre": [
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/1.jpg",
-          "title": "River Recovery"
+          "title": "christchurch-convention-centre 1"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/2.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 2"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/3.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/4.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/5.png",
-          "title": ""
+          "title": "christchurch-convention-centre 3"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/6.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 6"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/7.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 7"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/8.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 8"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/9.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 9"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/10.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 10"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/11.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/12.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 11"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/13.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/14.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 13"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/15.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/16.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 15"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/17.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 17"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/18.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 18"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/19.jpg",
-          "title": ""
+          "title": "christchurch-convention-centre 19"
         },
         {
           "url": "/images/uae-companies/portfolio/woods-bagot/christchurch-convention-centre/20.jpg",
-          "title": "Beyond Convention"
+          "title": "christchurch-convention-centre 20"
         }
       ]
     }
