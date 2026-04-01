@@ -28,10 +28,56 @@ const MIN_WIDTH = 200;
 const MIN_HEIGHT = 150;
 const MAX_ASPECT_RATIO = 3.5;
 const MIN_ASPECT_RATIO = 0.25;
+const TEXT_OVERLAY_THRESHOLD = 0.08; // >8% of pixels are near-white + high edge = likely text banner
 
 const args = process.argv.slice(2);
 const DRY_RUN = !args.includes('--apply');
 const SLUG_FILTER = args.includes('--slug') ? args[args.indexOf('--slug') + 1] : null;
+
+/**
+ * Detect text/banner overlays.
+ * Strategy: text banners have bright white text → lots of near-white pixels (>240)
+ * combined with sharp edges adjacent to them.
+ * Returns true if image looks like a promotional banner with text overlay.
+ */
+async function hasTextOverlay(filePath) {
+  try {
+    const size = 64;
+    const { data } = await sharp(filePath)
+      .resize(size, size, { fit: 'fill' })
+      .grayscale()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const totalPixels = size * size;
+    let brightPixels = 0;    // near-white (>240)
+    let brightEdges = 0;     // bright pixel next to dark pixel = text edge
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const idx = y * size + x;
+        const val = data[idx];
+
+        if (val > 240) {
+          brightPixels++;
+          // Check if adjacent pixel is much darker (text edge)
+          if (x > 0 && data[idx - 1] < 180) brightEdges++;
+          if (x < size - 1 && data[idx + 1] < 180) brightEdges++;
+          if (y > 0 && data[idx - size] < 180) brightEdges++;
+          if (y < size - 1 && data[idx + size] < 180) brightEdges++;
+        }
+      }
+    }
+
+    const brightRatio = brightPixels / totalPixels;
+    const edgeRatio = brightEdges / totalPixels;
+
+    // Banner with text: >8% bright pixels AND >3% bright-edge transitions
+    return brightRatio > TEXT_OVERLAY_THRESHOLD && edgeRatio > 0.03;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Get 16x16 grayscale fingerprint + metadata for an image file.
@@ -49,6 +95,11 @@ async function getFingerprint(filePath) {
     const ratio = width / height;
     if (ratio > MAX_ASPECT_RATIO || ratio < MIN_ASPECT_RATIO) {
       return { skip: true, reason: `bad ratio (${ratio.toFixed(1)})` };
+    }
+
+    // Check for text/banner overlay
+    if (await hasTextOverlay(filePath)) {
+      return { skip: true, reason: 'text/banner overlay' };
     }
 
     // Generate 16x16 grayscale thumbnail
