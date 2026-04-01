@@ -1193,83 +1193,83 @@
       "Projects": [
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/1.jpg",
-          "title": "Projects 1"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/2.jpg",
-          "title": "Projects 2"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/3.jpg",
-          "title": "Projects 3"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/4.jpg",
-          "title": "Projects 4"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/5.jpg",
-          "title": "Projects 5"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/6.jpg",
-          "title": "Projects 6"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/7.jpg",
-          "title": "Projects 7"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/8.jpg",
-          "title": "Projects 8"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/9.jpg",
-          "title": "Projects 9"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/10.jpg",
-          "title": "Projects 10"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/11.jpg",
-          "title": "Projects 11"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/12.jpg",
-          "title": "Projects 12"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/13.jpg",
-          "title": "Projects 13"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/14.jpg",
-          "title": "Projects 14"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/15.jpg",
-          "title": "Projects 15"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/16.jpg",
-          "title": "Projects 16"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/17.jpg",
-          "title": "Projects 17"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/18.jpg",
-          "title": "Projects 18"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/19.jpg",
-          "title": "Projects 19"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/fitout-bureau/projects/20.jpg",
-          "title": "Projects 20"
+          "title": ""
         }
       ]
     }
@@ -1309,69 +1309,65 @@
       "Commercial": [
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/1.jpg",
-          "title": "commercial 1"
+          "title": ""
         },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/commercial/2.jpg",
-          "title": "commercial 2"
+          "title": ""
         }
       ],
       "Office": [
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/2.png",
-          "title": "office 2"
+          "title": "53-1-1.png"
         },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/4.png",
-          "title": "office 4"
+          "title": "-51-1.png"
         },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/5.png",
-          "title": "office 5"
+          "title": "-50-1.png"
         },
         {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/office/7.png",
-          "title": "office 7"
+          "url": "/images/uae-companies/portfolio/mgm-interiors/office/8.png",
+          "title": "-27-1.png"
         },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/9.png",
-          "title": "office 9"
+          "title": "-25-1.png"
         },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/10.png",
-          "title": "office 10"
+          "title": "-23-1.png"
         },
         {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/office/11.png",
-          "title": "office 11"
+          "url": "/images/uae-companies/portfolio/mgm-interiors/office/12.png",
+          "title": "-21-1.png"
         },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/office/13.png",
-          "title": "office 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/office/14.png",
-          "title": "office 14"
+          "title": "-20-1.png"
         }
       ],
       "Retail": [
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/retail/1.jpg",
-          "title": "retail 1"
+          "title": ""
         }
       ],
       "Salon": [
         {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/salon/18.jpg",
-          "title": "salon 18"
+          "url": "/images/uae-companies/portfolio/mgm-interiors/salon/17.jpg",
+          "title": "01"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/mgm-interiors/salon/18.webp",
+          "title": "SDA"
         },
         {
           "url": "/images/uae-companies/portfolio/mgm-interiors/salon/19.webp",
-          "title": "salon 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/mgm-interiors/salon/20.webp",
-          "title": "salon 20"
+          "title": "DFF"
         }
       ]
     }
@@ -1407,160 +1403,7 @@
     "linkedin": "https://www.linkedin.com/company/alec-fitout/",
     "logo_url": "",
     "source_platform": "web_search",
-    "portfolio_categories": {
-      "Address-skyviews": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/address-skyviews/2.jpg",
-          "title": "Address-skyviews 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/address-skyviews/4.jpg",
-          "title": "Address-skyviews 4"
-        }
-      ],
-      "Atmosphere-grill-and-lounge-refurbishment": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/atmosphere-grill-and-lounge-refurbishment/2.jpg",
-          "title": "Atmosphere-grill-and-lounge-refurbishment 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/atmosphere-grill-and-lounge-refurbishment/4.jpg",
-          "title": "Atmosphere-grill-and-lounge-refurbishment 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/atmosphere-grill-and-lounge-refurbishment/5.jpg",
-          "title": "Atmosphere-grill-and-lounge-refurbishment 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/atmosphere-grill-and-lounge-refurbishment/6.jpg",
-          "title": "Atmosphere-grill-and-lounge-refurbishment 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/atmosphere-grill-and-lounge-refurbishment/7.jpg",
-          "title": "Atmosphere-grill-and-lounge-refurbishment 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/atmosphere-grill-and-lounge-refurbishment/9.jpg",
-          "title": "Atmosphere-grill-and-lounge-refurbishment 9"
-        }
-      ],
-      "Bvlgari-hotel-spa": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/bvlgari-hotel-spa/2.jpg",
-          "title": "Bvlgari-hotel-spa 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/bvlgari-hotel-spa/4.jpg",
-          "title": "Bvlgari-hotel-spa 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/bvlgari-hotel-spa/5.jpg",
-          "title": "Bvlgari-hotel-spa 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/bvlgari-hotel-spa/6.jpg",
-          "title": "Bvlgari-hotel-spa 6"
-        }
-      ],
-      "Mandarin-oriental": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/mandarin-oriental/2.jpg",
-          "title": "Mandarin-oriental 2"
-        }
-      ],
-      "Morocco-pavilion": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/morocco-pavilion/2.jpg",
-          "title": "Morocco-pavilion 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/morocco-pavilion/4.jpg",
-          "title": "Morocco-pavilion 4"
-        }
-      ],
-      "Natural-history-museum-abu-dhabi": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/natural-history-museum-abu-dhabi/2.jpg",
-          "title": "Natural-history-museum-abu-dhabi 2"
-        }
-      ],
-      "One-only-one-zaabeel": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/one-only-one-zaabeel/2.jpg",
-          "title": "One-only-one-zaabeel 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/one-only-one-zaabeel/4.jpg",
-          "title": "One-only-one-zaabeel 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/one-only-one-zaabeel/5.jpg",
-          "title": "One-only-one-zaabeel 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/one-only-one-zaabeel/6.jpg",
-          "title": "One-only-one-zaabeel 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/one-only-one-zaabeel/7.jpg",
-          "title": "One-only-one-zaabeel 7"
-        }
-      ],
-      "Qiddiya-water-theme-park": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/qiddiya-water-theme-park/2.jpg",
-          "title": "Qiddiya-water-theme-park 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/qiddiya-water-theme-park/4.jpg",
-          "title": "Qiddiya-water-theme-park 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/qiddiya-water-theme-park/5.jpg",
-          "title": "Qiddiya-water-theme-park 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/qiddiya-water-theme-park/6.jpg",
-          "title": "Qiddiya-water-theme-park 6"
-        }
-      ],
-      "Red-line-south-elevated-metro": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/red-line-south-elevated-metro/2.jpg",
-          "title": "Red-line-south-elevated-metro 2"
-        }
-      ],
-      "Sheikh-zayed-museum-architectural-fit-out": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/sheikh-zayed-museum-architectural-fit-out/2.jpg",
-          "title": "Sheikh-zayed-museum-architectural-fit-out 2"
-        }
-      ],
-      "United-nations-africa-hall-refurbishment": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/united-nations-africa-hall-refurbishment/2.jpg",
-          "title": "United-nations-africa-hall-refurbishment 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/united-nations-africa-hall-refurbishment/4.jpg",
-          "title": "United-nations-africa-hall-refurbishment 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/united-nations-africa-hall-refurbishment/5.jpg",
-          "title": "United-nations-africa-hall-refurbishment 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/united-nations-africa-hall-refurbishment/6.jpg",
-          "title": "United-nations-africa-hall-refurbishment 6"
-        }
-      ],
-      "Vvip-pavilion-for-dubai-airshow-expo-202": [
-        {
-          "url": "/images/uae-companies/portfolio/alec-fitout/vvip-pavilion-for-dubai-airshow-expo-202/2.jpg",
-          "title": "Vvip-pavilion-for-dubai-airshow-expo-202 2"
-        }
-      ]
-    }
+    "portfolio_categories": {}
   },
   {
     "name_en": "Fix It Design",
@@ -3144,60 +2987,32 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "Villa-Design-In-Dubai": [
+      "Rpm-luxury-villa-construction-dubai-hills-estate": [
         {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-design-in-dubai/1.webp",
-          "title": "Villa Renovation Company in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-design-in-dubai/2.webp",
-          "title": "Villa Design Service in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-design-in-dubai/3.webp",
-          "title": "LDV- Villa Design Services in UAE"
+          "url": "/images/uae-companies/portfolio/luxe-design-villas/rpm-luxury-villa-construction-dubai-hills-estate/1.jpg",
+          "title": "rpm-luxury-villa-construction-dubai-hills-estate 1"
         }
       ],
-      "Villa-Construction-In-Dubai": [
+      "Art-villa-pearl-jumeirah": [
         {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-construction-in-dubai/1.webp",
-          "title": "Villa Construction Company in Dubai"
+          "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/2.jpg",
+          "title": "art-villa-pearl-jumeirah 2"
         },
         {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-construction-in-dubai/2.webp",
-          "title": "Trusted Villa Construction Experts Who Understand Your Vision"
+          "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/3.jpg",
+          "title": "art-villa-pearl-jumeirah 3"
         },
         {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-construction-in-dubai/3.webp",
-          "title": "Step-by-Step Villa Construction Process in Dubai"
-        }
-      ],
-      "Villa-Renovation-In-Dubai": [
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-renovation-in-dubai/1.webp",
-          "title": "Villa Renovation Company Dubai"
+          "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/4.jpg",
+          "title": "art-villa-pearl-jumeirah 4"
         },
         {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-renovation-in-dubai/2.webp",
-          "title": "Luxury Villa Renovation in Dubai"
+          "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/5.jpg",
+          "title": "art-villa-pearl-jumeirah 5"
         },
         {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/villa-renovation-in-dubai/3.webp",
-          "title": "LDV- Villa Renovation Services in Dubai"
-        }
-      ],
-      "Interior-Design-In-Dubai": [
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/interior-design-in-dubai/1.webp",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/interior-design-in-dubai/2.png",
-          "title": "MINIMAL INTERIOR DESIGN"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/luxe-design-villas/interior-design-in-dubai/3.webp",
-          "title": "LDV"
+          "url": "/images/uae-companies/portfolio/luxe-design-villas/art-villa-pearl-jumeirah/6.jpg",
+          "title": "art-villa-pearl-jumeirah 6"
         }
       ]
     }
@@ -3321,32 +3136,7 @@
     "linkedin": "https://www.linkedin.com/company/eminent-interio/",
     "logo_url": "",
     "source_platform": "web_search",
-    "portfolio_categories": {
-      "Commercial": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/commercial/1.png",
-          "title": "Commercial Interior Design in Dubai ​"
-        }
-      ],
-      "Hospitality": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/hospitality/1.png",
-          "title": "Top 10 Interior Fit Out Companies in Abu Dhabi"
-        }
-      ],
-      "Office": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/office/1.png",
-          "title": "Top 10 Interior Fit Out Companies in Abu Dhabi"
-        }
-      ],
-      "Residential": [
-        {
-          "url": "/images/uae-companies/portfolio/eminent-interio/residential/1.png",
-          "title": "Top 10 Interior Fit Out Companies in Abu Dhabi"
-        }
-      ]
-    }
+    "portfolio_categories": {}
   },
   {
     "name_en": "Decor Home",
@@ -3381,19 +3171,7 @@
     "portfolio_categories": {
       "General": [
         {
-          "url": "/images/uae-companies/portfolio/decor-home/general/1.png",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/decor-home/general/2.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/decor-home/general/3.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/decor-home/general/4.png",
           "title": ""
         },
         {
@@ -3492,190 +3270,7 @@
     "linkedin": "",
     "logo_url": "",
     "source_platform": "web_search",
-    "portfolio_categories": {
-      "Projects": [
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/1.webp",
-          "title": "Apartment Texas"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/2.webp",
-          "title": "Apartment Texas"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/3.webp",
-          "title": "Villa Roneela"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/4.webp",
-          "title": "Apartment In The Elit Life Residence"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/5.webp",
-          "title": "VILLA DUBAI"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/6.webp",
-          "title": "Istanbul Appartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/7.webp",
-          "title": "Villa Austuria"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/8.webp",
-          "title": "Villa Trabzon"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/9.webp",
-          "title": "Istanbul Marter Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/10.webp",
-          "title": "Istanbul Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/11.webp",
-          "title": "Istanbul Apartment Core"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/12.webp",
-          "title": "Lybia Villa"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/13.webp",
-          "title": "Heavy Classic in dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/14.webp",
-          "title": "Kuwait Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/15.webp",
-          "title": "Cennet Koru Florya"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/1.webp",
-          "title": "تصميم متجر فيرجن موبايل التجريبي - تحفة فنية ذكية من SMD ديكوريشن"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/2.webp",
-          "title": "تصميم متجر فيرجن موبايل التجريبي - تحفة فنية ذكية من SMD ديكوريشن"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/3.webp",
-          "title": "baking colony"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/4.webp",
-          "title": "Jakamen"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/5.webp",
-          "title": "Istanbul Cafe"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/6.webp",
-          "title": "KSA Office"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/7.webp",
-          "title": "Good Father Coffee"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/8.webp",
-          "title": "Mia Restaurant"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/9.webp",
-          "title": "Faster Mobile Service"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/10.webp",
-          "title": "Real State Office"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/11.webp",
-          "title": "Coffee 3Dots"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/12.webp",
-          "title": "Coffee Over 82"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/13.webp",
-          "title": "Coffee KSA"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/14.webp",
-          "title": "Real State Office Beylikdüzü"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/15.webp",
-          "title": "Stand Abo Shaker"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/1.webp",
-          "title": "مميزاتنا"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/2.webp",
-          "title": "تصميم متجر فيرجن موبايل التجريبي - تحفة فنية ذكية من SMD ديكوريشن"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/3.webp",
-          "title": "Apartment Texas"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/4.webp",
-          "title": "Villa Roneela"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/5.webp",
-          "title": "baking colony"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/6.webp",
-          "title": "Jakamen"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/7.webp",
-          "title": "Apartment In The Elit Life Residence"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/8.webp",
-          "title": "VILLA DUBAI"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/9.webp",
-          "title": "Istanbul Cafe"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/10.webp",
-          "title": "Istanbul Appartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/11.webp",
-          "title": "Villa Austuria"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/12.webp",
-          "title": "Villa Trabzon"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/13.webp",
-          "title": "KSA Office"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/14.webp",
-          "title": "Istanbul Marter Apartment"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/smd-decoration/projects/15.webp",
-          "title": "Istanbul Apartment"
-        }
-      ]
-    }
+    "portfolio_categories": {}
   },
   {
     "name_en": "Accouter Design",
@@ -3736,10 +3331,6 @@
         {
           "url": "/images/uae-companies/portfolio/accouter-design/dubai/7.jpg",
           "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/dubai/8.png",
-          "title": ""
         }
       ],
       "Luxury": [
@@ -3760,20 +3351,12 @@
           "title": "072A9565.jpg"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/5.jpg",
-          "title": "072A9595.jpg"
-        },
-        {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/6.jpg",
           "title": "072A9584.jpg"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/7.jpg",
           "title": "the_sw1_townhouse_web-2.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/8.jpg",
-          "title": "the_sw1_townhouse_web-5.jpg"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/9.jpg",
@@ -3784,16 +3367,8 @@
           "title": "AC_CH_21791.jpg"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/11.png",
-          "title": "Chelsea_Waterfront.png"
-        },
-        {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/12.jpg",
           "title": "AC_CH_21906v1.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/13.jpg",
-          "title": "Accouter Design Boscobel Masterbedroom 1.jpg"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/14.jpg",
@@ -3802,68 +3377,16 @@
         {
           "url": "/images/uae-companies/portfolio/accouter-design/luxury/15.jpg",
           "title": "Accouter Design Boscobel kitchen 1.jpeg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/16.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/1.jpg",
-          "title": "Luxurious master bedroom design in beige and natural colors by Accouter London"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/2.jpg",
-          "title": "Luxurious living room design featuring big round mirror and a navy blue side desk"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/3.jpg",
-          "title": "A home in the London area, with luxury interior designers having worked on the design of the house"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/4.jpg",
-          "title": "Furniture in a home being designed by Accouter"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/5.jpg",
-          "title": "Furniture in a home being designed by Accouter"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/6.jpg",
-          "title": "Details in a home being designed by Accouter"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/7.jpg",
-          "title": "Details in a home being designed by Accouter"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/luxury/8.png",
-          "title": ""
         }
       ],
       "Interior": [
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/1.jpg",
-          "title": "Living area interior design by Accouter in Dubai, Atlantis The Royal Residences"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/2.jpg",
-          "title": ""
-        },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/interior/3.jpg",
           "title": "accouter_atlantis_the_royal_residences_guest_bedroom_2_032.jpg"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/4.jpg",
-          "title": "accouter_atlantis_the_royal_residences_terrace_019.jpg"
-        },
-        {
           "url": "/images/uae-companies/portfolio/accouter-design/interior/5.jpg",
           "title": "accouter_atlantis_the_royal_residences_terrace_019.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/6.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_1_003.jpg"
         },
         {
           "url": "/images/uae-companies/portfolio/accouter-design/interior/7.jpg",
@@ -3874,134 +3397,20 @@
           "title": "A bedroom in Duabi, with interior design by Accouter Designs"
         },
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/9.png",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/1.jpg",
-          "title": "top interior designers London (Copy)"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/2.jpg",
-          "title": "top interior designers London (Copy)"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/3.jpg",
-          "title": "A townhouse in London with luxury interior design by Accouter Design."
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/4.jpg",
-          "title": "A townhouse in London with luxury interior design by Accouter Design."
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/5.jpg",
-          "title": "KNP_ChelseaWaterfront_01.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/6.jpg",
-          "title": "KNP_ChelseaWaterfront_01.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/7.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/8.jpg",
-          "title": ""
-        },
-        {
           "url": "/images/uae-companies/portfolio/accouter-design/interior/9.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/interior/10.png",
           "title": ""
         }
       ],
       "Villa": [
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/villa/1.jpg",
-          "title": "A Dubai villa with interior design completed by Accouter Designs"
-        },
-        {
           "url": "/images/uae-companies/portfolio/accouter-design/villa/2.jpg",
           "title": "Accouter Design providing luxury interior design in Dubai"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/villa/3.png",
-          "title": ""
-        }
-      ],
-      "Residential": [
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/1.jpg",
-          "title": "accouter_atlantis_the_royal_residences_living_area_009.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/2.jpg",
-          "title": "accouter_atlantis_the_royal_residences_living_area_009.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/3.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_2_032.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/4.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_2_032.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/5.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_1_003.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/6.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_1_003.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/7.jpg",
-          "title": "Accouter Design showing their bespoke residential interior design in the Atlantis the Royal Residences"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/residential/8.png",
-          "title": ""
         }
       ],
       "Penthouse": [
         {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/1.jpg",
-          "title": "accouter_atlantis_the_royal_residences_living_area_009.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/2.jpg",
-          "title": "accouter_atlantis_the_royal_residences_living_area_009.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/3.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_2_032.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/4.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_2_032.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/5.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_1_003.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/6.jpg",
-          "title": "accouter_atlantis_the_royal_residences_guest_bedroom_1_003.jpg"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/7.jpg",
-          "title": "A view from a penthouse apartment in Dubai with bespoke interior design by Accouter Design"
-        },
-        {
           "url": "/images/uae-companies/portfolio/accouter-design/penthouse/8.jpg",
           "title": "A luxury penthouse apartment in Atlantis the Royal in Dubai with interior design by Accouter"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/accouter-design/penthouse/9.png",
-          "title": ""
         }
       ]
     }
@@ -5519,14 +4928,6 @@
           "title": "dubai-creek-golf-club 10"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/16.jpg",
-          "title": "dubai-creek-golf-club 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/17.jpg",
-          "title": "dubai-creek-golf-club 17"
-        },
-        {
           "url": "/images/uae-companies/portfolio/gaj-architects/dubai-creek-golf-club/18.jpg",
           "title": "dubai-creek-golf-club 18"
         },
@@ -5543,10 +4944,6 @@
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/9.jpg",
           "title": "wb-abu-dhabi 9"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/10.jpg",
-          "title": "wb-abu-dhabi 10"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/wb-abu-dhabi/11.jpg",
@@ -5629,10 +5026,6 @@
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/19.jpg",
           "title": "jafar-centre-dubai-college 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/jafar-centre-dubai-college/20.jpg",
-          "title": "jafar-centre-dubai-college 20"
         }
       ],
       "The-chedi-al-bait": [
@@ -5661,34 +5054,12 @@
           "title": "the-chedi-al-bait 16"
         },
         {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/17.jpg",
-          "title": "the-chedi-al-bait 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/18.jpg",
-          "title": "the-chedi-al-bait 18"
-        },
-        {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/19.jpg",
           "title": "the-chedi-al-bait 19"
         },
         {
           "url": "/images/uae-companies/portfolio/gaj-architects/the-chedi-al-bait/20.jpg",
           "title": "the-chedi-al-bait 20"
-        }
-      ],
-      "Palace-hotel-dubai-creek-harbour": [
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/13.jpg",
-          "title": "palace-hotel-dubai-creek-harbour 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/14.jpg",
-          "title": "palace-hotel-dubai-creek-harbour 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/gaj-architects/palace-hotel-dubai-creek-harbour/15.jpg",
-          "title": "palace-hotel-dubai-creek-harbour 15"
         }
       ]
     }
@@ -10360,10 +9731,6 @@
       "Palace": [
         {
           "url": "/images/uae-companies/portfolio/spazio-interior/palace/1.jpg",
-          "title": ""
-        },
-        {
-          "url": "/images/uae-companies/portfolio/spazio-interior/palace/2.webp",
           "title": ""
         },
         {
