@@ -313,19 +313,59 @@ export function extractPortfolioImages(html, baseUrl) {
     }
   }
 
+  // From srcset, pick the LARGEST version (highest width descriptor)
   const srcsetUrls = [];
   for (const raw of srcsetCandidates) {
-    for (const entry of raw.split(',')) {
-      const firstToken = entry.trim().split(/\s+/)[0];
-      const normalized = normalizeUrl(firstToken, baseUrl);
-      if (normalized) {
-        srcsetUrls.push(normalized);
-      }
+    const entries = raw.split(',').map(entry => {
+      const parts = entry.trim().split(/\s+/);
+      const url = parts[0];
+      const descriptor = parts[1] || '0w';
+      const width = parseInt(descriptor) || 0;
+      return { url, width };
+    }).filter(e => e.url);
+
+    // Sort by width descending, pick largest
+    entries.sort((a, b) => b.width - a.width);
+    if (entries.length > 0) {
+      const normalized = normalizeUrl(entries[0].url, baseUrl);
+      if (normalized) srcsetUrls.push(normalized);
     }
   }
 
-  return uniqueUrls([...simpleAttributeUrls, ...srcsetUrls])
+  // Merge and deduplicate
+  let allUrls = uniqueUrls([...simpleAttributeUrls, ...srcsetUrls])
     .filter(isLikelyContentImage);
+
+  // Upgrade WordPress thumbnail URLs to full-size originals
+  // e.g. image-300x200.jpg -> image.jpg
+  allUrls = allUrls.map(url => {
+    return url.replace(/-\d{2,4}x\d{2,4}(\.\w+)$/, '$1');
+  });
+
+  // Upgrade Next.js image optimizer URLs to higher quality
+  // e.g. /_next/image?url=...&w=384&q=75 -> &w=1200&q=90
+  allUrls = allUrls.map(url => {
+    if (url.includes('/_next/image')) {
+      return url
+        .replace(/[&?]w=\d+/, '&w=1200')
+        .replace(/[&?]q=\d+/, '&q=90');
+    }
+    return url;
+  });
+
+  // Upgrade Cloudinary to higher quality
+  // e.g. /w_400,h_300,c_fill/ -> /w_1200,c_fill,q_auto/
+  allUrls = allUrls.map(url => {
+    if (url.includes('cloudinary.com') && /\/w_\d+/.test(url)) {
+      return url
+        .replace(/\/w_\d+/, '/w_1200')
+        .replace(/\/h_\d+,?/, '')
+        .replace(/\/q_\d+/, '/q_auto');
+    }
+    return url;
+  });
+
+  return uniqueUrls(allUrls);
 }
 
 /**
@@ -351,8 +391,17 @@ export function extractPortfolioImagesWithText(html, baseUrl) {
   while ((imgMatch = imgPattern.exec(html)) !== null) {
     const imgTag = imgMatch[0];
     const rawSrc = imgMatch[1];
-    const url = normalizeUrl(rawSrc, baseUrl);
-    if (!url || seenUrls.has(url) || !isLikelyContentImage(url)) continue;
+    let url = normalizeUrl(rawSrc, baseUrl);
+    if (!url || !isLikelyContentImage(url)) continue;
+    // Upgrade to full-size image
+    url = url.replace(/-\d{2,4}x\d{2,4}(\.\w+)$/, '$1');
+    if (url.includes('/_next/image')) {
+      url = url.replace(/[&?]w=\d+/, '&w=1200').replace(/[&?]q=\d+/, '&q=90');
+    }
+    if (url.includes('cloudinary.com') && /\/w_\d+/.test(url)) {
+      url = url.replace(/\/w_\d+/, '/w_1200').replace(/\/h_\d+,?/, '').replace(/\/q_\d+/, '/q_auto');
+    }
+    if (seenUrls.has(url)) continue;
     seenUrls.add(url);
 
     // Extract alt text

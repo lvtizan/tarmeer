@@ -21,7 +21,11 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { execFile as execFileCb } from 'child_process';
+import { promisify } from 'util';
 import puppeteer from 'puppeteer';
+
+const execFileAsync = promisify(execFileCb);
 import {
   extractCategoryLinks,
   extractPortfolioPageLinks,
@@ -41,6 +45,8 @@ const MANIFEST_FILE = path.join(__dirname, 'crawl-manifest.json');
 
 const MAX_IMAGES_PER_CATEGORY = 20;
 const MAX_IMAGES_PER_COMPANY = 100;
+const MIN_IMAGE_WIDTH = 400;
+const MIN_FILE_SIZE = 15000; // 15KB
 const REQUEST_DELAY_MS = 2000;
 const PUPPETEER_TIMEOUT = 30000;
 const DEFAULT_MAX_AGE_DAYS = 14;
@@ -275,27 +281,58 @@ async function scrapeImagesFromPage(browser, pageUrl, baseUrl) {
  * Download images for a category, returning the saved local paths.
  * @param {Array<{url: string, title: string} | string>} imageItems - image URLs or {url, title} objects
  */
+async function checkImageQuality(filePath) {
+  try {
+    const stat = fs.statSync(filePath);
+    if (stat.size < MIN_FILE_SIZE) return { ok: false, reason: `small (${(stat.size/1024).toFixed(0)}KB)` };
+
+    const { stdout } = await execFileAsync('sips', ['-g', 'pixelWidth', filePath]);
+    const m = stdout.match(/pixelWidth:\s*(\d+)/);
+    if (m) {
+      const width = parseInt(m[1]);
+      if (width < MIN_IMAGE_WIDTH) return { ok: false, reason: `narrow (${width}px)` };
+    }
+    return { ok: true };
+  } catch {
+    // sips not available or file issue — accept it
+    return { ok: true };
+  }
+}
+
 async function downloadCategoryImages(imageItems, destDir, categorySlug, companySlug) {
   fs.mkdirSync(destDir, { recursive: true });
 
   const saved = [];
-  const limit = Math.min(imageItems.length, MAX_IMAGES_PER_CATEGORY);
+  let fileNum = 0;
 
-  for (let i = 0; i < limit; i++) {
+  // Try more images than the limit to fill slots when some fail quality check
+  const maxAttempts = Math.min(imageItems.length, MAX_IMAGES_PER_CATEGORY * 2);
+
+  for (let i = 0; i < maxAttempts && saved.length < MAX_IMAGES_PER_CATEGORY; i++) {
     const item = imageItems[i];
     const imageUrl = typeof item === 'string' ? item : item.url;
     const originalTitle = typeof item === 'string' ? '' : (item.title || '');
     const ext = getExtension(imageUrl);
-    const n = i + 1;
-    const fname = `${n}${ext}`;
+    fileNum++;
+    const fname = `${fileNum}${ext}`;
     const destPath = path.join(destDir, fname);
     const localPath = `/images/uae-companies/portfolio/${companySlug}/${categorySlug}/${fname}`;
 
     try {
       await downloadFile(imageUrl, destPath);
+
+      // Quality gate: check file size and image dimensions
+      const quality = await checkImageQuality(destPath);
+      if (!quality.ok) {
+        try { fs.unlinkSync(destPath); } catch {}
+        fileNum--; // reuse the number
+        continue;
+      }
+
       saved.push({ url: localPath, title: originalTitle || '' });
     } catch (err) {
-      console.log(`    Failed to download image ${n}: ${err.message}`);
+      fileNum--; // reuse the number
+      console.log(`    Failed to download image: ${err.message}`);
     }
   }
 
