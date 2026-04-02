@@ -1717,144 +1717,402 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "Office": [
+      "Projects": [
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/office/9.jpg",
-          "title": "office 9"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-1.jpg",
+          "title": "Project 1"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/office/16.jpg",
-          "title": "office 16"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-10.jpg",
+          "title": "Project 10"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/office/17.jpg",
-          "title": "office 17"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-11.jpg",
+          "title": "Project 11"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/office/20.jpg",
-          "title": "office 20"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-12.jpg",
+          "title": "Project 12"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/office/3.webp",
-          "title": "office 3"
-        }
-      ],
-      "Hotel": [
-        {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/2.png",
-          "title": "hotel 2"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-13.jpg",
+          "title": "Project 13"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/7.png",
-          "title": "hotel 7"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-14.jpg",
+          "title": "Project 14"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/8.jpg",
-          "title": "hotel 8"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-15.jpg",
+          "title": "Project 15"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/9.jpg",
-          "title": "hotel 9"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-16.jpg",
+          "title": "Project 16"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/10.jpg",
-          "title": "hotel 10"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-17.jpg",
+          "title": "Project 17"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/11.jpg",
-          "title": "hotel 11"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-18.jpg",
+          "title": "Project 18"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/12.jpg",
-          "title": "hotel 12"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-19.jpg",
+          "title": "Project 19"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/13.jpg",
-          "title": "hotel 13"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-2.jpg",
+          "title": "Project 2"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/14.jpg",
-          "title": "hotel 14"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-20.jpg",
+          "title": "Project 20"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/15.jpg",
-          "title": "hotel 15"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-21.jpg",
+          "title": "Project 21"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/16.jpg",
-          "title": "hotel 16"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-22.jpg",
+          "title": "Project 22"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/17.jpg",
-          "title": "hotel 17"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-23.jpg",
+          "title": "Project 23"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/hotel/20.jpg",
-          "title": "hotel 20"
-        }
-      ],
-      "Exhibition": [
-        {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/2.png",
-          "title": "exhibition 2"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-24.jpg",
+          "title": "Project 24"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/7.jpg",
-          "title": "exhibition 7"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-25.jpg",
+          "title": "Project 25"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/8.jpg",
-          "title": "exhibition 8"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-26.jpg",
+          "title": "Project 26"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/9.jpg",
-          "title": "exhibition 9"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-27.jpg",
+          "title": "Project 27"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/10.jpg",
-          "title": "exhibition 10"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-28.jpg",
+          "title": "Project 28"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/11.jpg",
-          "title": "exhibition 11"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-29.jpg",
+          "title": "Project 29"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/13.jpg",
-          "title": "exhibition 13"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-3.jpg",
+          "title": "Project 3"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/14.jpg",
-          "title": "exhibition 14"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-30.jpg",
+          "title": "Project 30"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/15.jpg",
-          "title": "exhibition 15"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-31.jpg",
+          "title": "Project 31"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/16.jpg",
-          "title": "exhibition 16"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-32.jpg",
+          "title": "Project 32"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/17.webp",
-          "title": "exhibition 17"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-33.jpg",
+          "title": "Project 33"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/18.jpg",
-          "title": "exhibition 18"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-34.jpg",
+          "title": "Project 34"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/19.jpg",
-          "title": "exhibition 19"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-35.jpg",
+          "title": "Project 35"
         },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/exhibition/20.jpg",
-          "title": "exhibition 20"
-        }
-      ],
-      "Mosque": [
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-36.jpg",
+          "title": "Project 36"
+        },
         {
-          "url": "/images/uae-companies/portfolio/fix-it-design/mosque/6.jpg",
-          "title": "mosque 6"
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-37.jpg",
+          "title": "Project 37"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-38.png",
+          "title": "Project 38"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-39.jpg",
+          "title": "Project 39"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-4.jpg",
+          "title": "Project 4"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-40.jpg",
+          "title": "Project 40"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-41.jpg",
+          "title": "Project 41"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-42.jpg",
+          "title": "Project 42"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-43.jpg",
+          "title": "Project 43"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-44.jpg",
+          "title": "Project 44"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-45.jpg",
+          "title": "Project 45"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-46.jpg",
+          "title": "Project 46"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-47.jpg",
+          "title": "Project 47"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-48.jpg",
+          "title": "Project 48"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-49.png",
+          "title": "Project 49"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-5.jpg",
+          "title": "Project 5"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-50.png",
+          "title": "Project 50"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-51.jpg",
+          "title": "Project 51"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-52.jpg",
+          "title": "Project 52"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-53.jpg",
+          "title": "Project 53"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-54.jpg",
+          "title": "Project 54"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-55.jpg",
+          "title": "Project 55"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-56.jpg",
+          "title": "Project 56"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-57.jpg",
+          "title": "Project 57"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-58.jpg",
+          "title": "Project 58"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-59.jpg",
+          "title": "Project 59"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-6.jpg",
+          "title": "Project 6"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-60.jpg",
+          "title": "Project 60"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-61.jpg",
+          "title": "Project 61"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-62.jpg",
+          "title": "Project 62"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-63.jpg",
+          "title": "Project 63"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-64.jpg",
+          "title": "Project 64"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-65.jpg",
+          "title": "Project 65"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-66.jpg",
+          "title": "Project 66"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-67.jpg",
+          "title": "Project 67"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-68.jpg",
+          "title": "Project 68"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-69.jpg",
+          "title": "Project 69"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-7.jpg",
+          "title": "Project 7"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-70.jpg",
+          "title": "Project 70"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-71.jpg",
+          "title": "Project 71"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-72.jpg",
+          "title": "Project 72"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-73.jpg",
+          "title": "Project 73"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-74.jpg",
+          "title": "Project 74"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-75.jpg",
+          "title": "Project 75"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-76.jpg",
+          "title": "Project 76"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-77.jpg",
+          "title": "Project 77"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-78.jpg",
+          "title": "Project 78"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-79.png",
+          "title": "Project 79"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-8.jpg",
+          "title": "Project 8"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-80.png",
+          "title": "Project 80"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-81.png",
+          "title": "Project 81"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-82.png",
+          "title": "Project 82"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-83.png",
+          "title": "Project 83"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-84.png",
+          "title": "Project 84"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-85.png",
+          "title": "Project 85"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-86.jpg",
+          "title": "Project 86"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-87.png",
+          "title": "Project 87"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-88.jpg",
+          "title": "Project 88"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-89.jpg",
+          "title": "Project 89"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-9.jpg",
+          "title": "Project 9"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-90.jpg",
+          "title": "Project 90"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-91.jpg",
+          "title": "Project 91"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-92.jpg",
+          "title": "Project 92"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-93.jpg",
+          "title": "Project 93"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-94.jpg",
+          "title": "Project 94"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-95.jpg",
+          "title": "Project 95"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-96.png",
+          "title": "Project 96"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-97.jpg",
+          "title": "Project 97"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-98.jpg",
+          "title": "Project 98"
+        },
+        {
+          "url": "/images/uae-companies/portfolio/fix-it-design/fix-it-design-99.jpg",
+          "title": "Project 99"
         }
       ]
     }
