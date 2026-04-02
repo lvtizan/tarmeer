@@ -38,7 +38,7 @@ export default function DashboardProfilePage() {
   if (loading) return <div className="py-20 text-center text-stone-400">Loading...</div>;
 
   return (
-    <div>
+    <div className="max-w-lg mx-auto">
       <h1 className="text-2xl font-bold text-stone-800 mb-6">Edit Profile</h1>
 
       <form onSubmit={handleSave} className="space-y-5">

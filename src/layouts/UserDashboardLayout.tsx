@@ -114,9 +114,7 @@ export default function UserDashboardLayout() {
         </aside>
 
         <main className="flex-1 overflow-y-auto p-6 md:p-10">
-          <div className="max-w-2xl mx-auto">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>
