@@ -27,10 +27,10 @@ export default function AuthCallbackPage() {
           if (data.designer) {
             localStorage.setItem('designer', JSON.stringify(data.designer));
           }
-          navigate('/designer/dashboard');
+          navigate('/dashboard');
         })
         .catch(() => {
-          navigate('/designer/dashboard');
+          navigate('/dashboard');
         });
     } else if (error) {
       // 错误处理

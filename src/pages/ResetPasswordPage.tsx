@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
       localStorage.setItem('designer', JSON.stringify(response.designer));
       setSuccess(true);
       setTimeout(() => {
-        navigate('/designer/dashboard');
+        navigate('/dashboard');
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'Failed to reset password. Please try again.');

@@ -43,7 +43,7 @@ export default function DesignersPage() {
           <div className="flex items-center gap-3">
             {isDesignerLoggedIn ? (
               <Link
-                to="/designer/dashboard"
+                to="/dashboard"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f5f0e8] text-[#2c2c2c] text-sm font-medium hover:bg-[#ede5d6] transition"
               >
                 <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />

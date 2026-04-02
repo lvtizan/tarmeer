@@ -35,7 +35,7 @@ const STEPS = [
 ];
 
 export default function ApplyPage() {
-  const applyTarget = api.getToken() ? '/designer/dashboard' : '/auth?tab=register';
+  const applyTarget = api.getToken() ? '/dashboard' : '/auth?tab=register';
 
   return (
     <div className="min-h-screen">

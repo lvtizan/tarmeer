@@ -28,7 +28,7 @@ export default function VerifyEmailPage() {
         setStatus('success');
         
         setTimeout(() => {
-          navigate('/designer/dashboard');
+          navigate('/dashboard');
         }, 2000);
       } catch (err: any) {
         setStatus('error');
@@ -62,12 +62,12 @@ export default function VerifyEmailPage() {
                 Email verified successfully!
               </h1>
               <p className="text-[#6b6b6b] mb-4">
-                Your email has been verified. Redirecting to designer dashboard...
+                Your email has been verified. Redirecting to dashboard...
               </p>
               <div className="text-sm text-[#6b6b6b]">
                 If redirect doesn't happen,
                 <button
-                  onClick={() => navigate('/designer/dashboard')}
+                  onClick={() => navigate('/dashboard')}
                   className="text-[#b8864a] font-semibold hover:underline ml-1"
                 >
                   click here

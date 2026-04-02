@@ -7,9 +7,10 @@ import SeoManager from './components/SeoManager';
 import GoogleOneTap from './components/GoogleOneTap';
 
 const Layout = lazy(() => import('./components/Layout'));
-const DesignerLayout = lazy(() => import('./components/designer/DesignerLayout'));
+const CompanyLayout = lazy(() => import('./components/company/CompanyLayout'));
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
 
+// Public pages
 const HomePage = lazy(() => import('./pages/HomePage'));
 const DesignersPage = lazy(() => import('./pages/DesignersPage'));
 const DesignerProfilePage = lazy(() => import('./pages/DesignerProfilePage'));
@@ -31,18 +32,27 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const CompaniesPage = lazy(() => import('./pages/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
 
-const DesignerDashboardPage = lazy(() => import('./pages/designer/DesignerDashboardPage'));
-const DesignerProfileEditPage = lazy(() => import('./pages/designer/DesignerProfileEditPage'));
+// Onboarding (V2 user system)
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+
+// Designer (shared project/upload components, used in homeowner/company dashboards)
 const DesignerProjectsPage = lazy(() => import('./pages/designer/DesignerProjectsPage'));
 const DesignerUploadPage = lazy(() => import('./pages/designer/DesignerUploadPage'));
 
+// Company portal (V2)
+const CompanyDashboardPage = lazy(() => import('./pages/company/CompanyDashboardPage'));
+const CompanyUploadPage = lazy(() => import('./pages/company/CompanyUploadPage'));
+
+// Homeowner / user dashboard
 const UserDashboardLayout = lazy(() => import('./layouts/UserDashboardLayout'));
+const HomeownerDashboardPage = lazy(() => import('./pages/dashboard/HomeownerDashboardPage'));
 const DashboardHomePage = lazy(() => import('./pages/dashboard/DashboardHomePage'));
 const DashboardProfilePage = lazy(() => import('./pages/dashboard/DashboardProfilePage'));
 const ApplyDesignerPage = lazy(() => import('./pages/dashboard/ApplyDesignerPage'));
 const ApplyCompanyPage = lazy(() => import('./pages/dashboard/ApplyCompanyPage'));
 const MyInquiriesPage = lazy(() => import('./pages/dashboard/MyInquiriesPage'));
 
+// Admin
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminInstallPage = lazy(() => import('./pages/admin/AdminInstallPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
@@ -55,17 +65,17 @@ const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminCompaniesPage = lazy(() => import('./pages/admin/AdminCompaniesPage'));
 const AdminInquiriesPage = lazy(() => import('./pages/admin/AdminInquiriesPage'));
 const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'));
+const AdminRoleManagementPage = lazy(() => import('./pages/admin/AdminRoleManagementPage'));
 
 function PageLoader() {
   return <div className="min-h-[40vh] flex items-center justify-center text-sm text-stone-500">Loading...</div>;
 }
 
-function DesignerProtectedRoute({ children }: { children: ReactNode }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const token = api.getToken();
   if (!token) {
     return <Navigate to="/auth" replace />;
   }
-
   return <>{children}</>;
 }
 
@@ -76,7 +86,7 @@ function App() {
       <GoogleOneTap />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Admin Routes */}
+          {/* ====== Admin Routes ====== */}
           <Route path="/admin" element={<AdminProvider><AdminLayout /></AdminProvider>}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="designers" element={<AdminDesignersPage />} />
@@ -89,23 +99,30 @@ function App() {
             <Route path="inquiries" element={<AdminInquiriesPage />} />
             <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
+            {/* V2: Three-role management */}
+            <Route path="roles" element={<AdminRoleManagementPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/install" element={<AdminProvider><AdminInstallPage /></AdminProvider>} />
 
-          {/* Designer Routes */}
-          <Route path="/designer" element={<DesignerProtectedRoute><DesignerProvider><DesignerLayout /></DesignerProvider></DesignerProtectedRoute>}>
+          {/* ====== Legacy redirect ====== */}
+          <Route path="/designer/dashboard" element={<Navigate to="/dashboard" replace />} />
+
+          {/* ====== Onboarding (V2 Identity Selection) ====== */}
+          <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+
+          {/* ====== Company Routes (V2) ====== */}
+          <Route path="/company" element={<ProtectedRoute><CompanyLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<DesignerDashboardPage />} />
-            <Route path="profile" element={<DesignerProfileEditPage />} />
-            <Route path="projects" element={<DesignerProjectsPage />} />
-            <Route path="upload" element={<DesignerUploadPage />} />
-            <Route path="upload/:id" element={<DesignerUploadPage />} />
+            <Route path="dashboard" element={<CompanyDashboardPage />} />
+            <Route path="projects" element={<DesignerProvider><DesignerProjectsPage /></DesignerProvider>} />
+            <Route path="upload" element={<CompanyUploadPage />} />
           </Route>
 
-          {/* Unified User Dashboard */}
-          <Route path="/dashboard" element={<DesignerProtectedRoute><UserDashboardLayout /></DesignerProtectedRoute>}>
-            <Route index element={<DashboardHomePage />} />
+          {/* ====== User Dashboard (Homeowner + legacy) ====== */}
+          <Route path="/dashboard" element={<ProtectedRoute><UserDashboardLayout /></ProtectedRoute>}>
+            <Route index element={<HomeownerDashboardPage />} />
+            <Route path="home" element={<DashboardHomePage />} />
             <Route path="profile" element={<DashboardProfilePage />} />
             <Route path="projects" element={<DesignerProvider><DesignerProjectsPage /></DesignerProvider>} />
             <Route path="upload" element={<DesignerProvider><DesignerUploadPage /></DesignerProvider>} />
@@ -115,11 +132,11 @@ function App() {
             <Route path="apply/company" element={<ApplyCompanyPage />} />
           </Route>
 
-          {/* Auth with Layout */}
+          {/* ====== Auth ====== */}
           <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
           <Route path="/auth/callback" element={<Layout><AuthCallbackPage /></Layout>} />
 
-          {/* Public Routes */}
+          {/* ====== Public Routes ====== */}
           <Route path="/*" element={
             <Layout>
               <Routes>

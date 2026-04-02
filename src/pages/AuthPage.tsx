@@ -124,7 +124,7 @@ export default function AuthPage() {
         designerData.avatar_url = designerData.avatar_url || response.user.avatar_url;
       }
       localStorage.setItem('designer', JSON.stringify(designerData));
-      navigate('/designer/dashboard');
+      navigate('/dashboard');
     } catch (err: any) {
       setLoading(false);
       setError(err.message || 'Invalid email or password. Please try again.');

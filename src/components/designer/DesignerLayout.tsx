@@ -47,7 +47,7 @@ export default function DesignerLayout() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-stone-200 bg-white px-4 md:px-10 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <Link to="/designer/dashboard" className="flex items-center gap-3 text-[#2c2c2c] cursor-pointer shrink-0">
+          <Link to="/dashboard" className="flex items-center gap-3 text-[#2c2c2c] cursor-pointer shrink-0">
             <div
               className="size-8 rounded flex items-center justify-center"
               style={{ backgroundColor: `${PRIMARY}20` }}
@@ -103,7 +103,7 @@ export default function DesignerLayout() {
             </div>
             <nav className="flex flex-col gap-1">
               <NavLink
-                to="/designer/dashboard"
+                to="/dashboard"
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-lg transition cursor-pointer ${isActive ? 'bg-[#b8864a]/10 text-[#2c2c2c] border-l-4 border-[#b8864a]' : 'text-stone-600 hover:bg-stone-50'}`
                 }

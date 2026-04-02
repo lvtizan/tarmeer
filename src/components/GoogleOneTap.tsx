@@ -88,7 +88,7 @@ export default function GoogleOneTap() {
           localStorage.setItem('designer', JSON.stringify(meData.designer));
         }
 
-        navigate('/designer/dashboard');
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('[GoogleOneTap] Login failed:', error);
