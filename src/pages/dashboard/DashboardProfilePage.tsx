@@ -38,7 +38,7 @@ export default function DashboardProfilePage() {
   if (loading) return <div className="py-20 text-center text-stone-400">Loading...</div>;
 
   return (
-    <div className="max-w-lg">
+    <div>
       <h1 className="text-2xl font-bold text-stone-800 mb-6">Edit Profile</h1>
 
       <form onSubmit={handleSave} className="space-y-5">
@@ -80,7 +80,7 @@ export default function DashboardProfilePage() {
         <button
           type="submit"
           disabled={saving}
-          className="h-10 px-6 bg-[#b8864a] text-white text-sm font-medium rounded-lg hover:bg-[#a07840] disabled:opacity-50 transition"
+          className="btn-primary h-10 px-6 text-sm disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>

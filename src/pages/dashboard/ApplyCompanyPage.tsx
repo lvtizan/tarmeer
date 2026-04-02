@@ -123,7 +123,7 @@ export default function ApplyCompanyPage() {
         {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
 
         <button type="submit" disabled={submitting || !companyName}
-          className="h-10 px-6 bg-[#b8864a] text-white text-sm font-medium rounded-lg hover:bg-[#a07840] disabled:opacity-50 transition">
+          className="btn-primary h-10 px-6 text-sm disabled:opacity-50">
           {submitting ? 'Submitting...' : 'Submit Application'}
         </button>
       </form>
