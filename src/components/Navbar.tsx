@@ -11,7 +11,6 @@ const navLinks = [
   { to: '/designers', label: 'Find Designers' },
   { to: '/companies', label: 'Find Companies' },
   { to: '/materials', label: 'Showrooms' },
-  { to: '/designers/apply', label: 'Join as Designer' },
 ];
 
 export default function Navbar() {
@@ -69,27 +68,25 @@ export default function Navbar() {
           {navLinks.map(({ to, label }) => (
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
-          {showAccountEntry && (
-            isDesignerLoggedIn ? (
-              <Link
-                to={accountEntry.to}
-                onClick={() => handleClick(accountEntry.to)}
-                className="inline-flex items-center"
-                aria-label="Open dashboard"
-                title="Dashboard"
-              >
-                <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
-              </Link>
-            ) : (
-              <Link
-                to={accountEntry.to}
-                onClick={() => handleClick(accountEntry.to)}
-                className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-              >
-                <User className="w-4 h-4" />
-                {accountEntry.label}
-              </Link>
-            )
+          {isDesignerLoggedIn ? (
+            <Link
+              to={accountEntry.to}
+              onClick={() => handleClick(accountEntry.to)}
+              className="inline-flex items-center"
+              aria-label="Open dashboard"
+              title="Dashboard"
+            >
+              <Avatar name={designerName} avatarUrl={designerAvatar} size="sm" />
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              onClick={() => handleClick('/auth')}
+              className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+            >
+              <User className="w-4 h-4" />
+              Log In
+            </Link>
           )}
           <Link
             to="/designers/apply"

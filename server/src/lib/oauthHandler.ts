@@ -18,6 +18,9 @@ interface DesignerResult {
   email_verified: boolean;
   full_name: string;
   avatar_url?: string;
+  phone?: string;
+  city?: string;
+  user_id?: number;
 }
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'avatars');
@@ -115,6 +118,24 @@ export async function createOAuthDesigner(
     // 关联 OAuth ID
     await linkOAuthToDesigner(existing.id, provider, oauthId);
 
+    // Ensure user record exists in users table
+    if (!existing.user_id) {
+      const [existingUser] = await pool.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+      let userId: number;
+      if ((existingUser as any[]).length > 0) {
+        userId = (existingUser as any[])[0].id;
+      } else {
+        const [ur] = await pool.execute(
+          `INSERT INTO users (email, password, full_name, phone, city, role, status, email_verified)
+           VALUES (?, '', ?, ?, ?, 'designer', 'active', 1)`,
+          [email, existing.full_name || displayName, existing.phone || '', existing.city || 'Dubai']
+        );
+        userId = (ur as any).insertId;
+      }
+      await pool.execute('UPDATE designers SET user_id = ? WHERE id = ?', [userId, existing.id]);
+      existing.user_id = userId;
+    }
+
     // 下载头像
     if (photoUrl) {
       const avatarUrl = await downloadAvatar(photoUrl, existing.id);
@@ -134,13 +155,22 @@ export async function createOAuthDesigner(
     };
   }
 
-  // 创建新用户（OAuth 登录邮箱已由提供商验证，自动设为 verified）
+  // 创建新用户：先在 users 表创建，再在 designers 表创建并关联
   const field = provider === 'google' ? 'google_id' : 'facebook_id';
 
+  // Step 1: Create user record
+  const [userResult] = await pool.execute(
+    `INSERT INTO users (email, password, full_name, phone, city, avatar_url, role, status, email_verified)
+     VALUES (?, '', ?, '', 'Dubai', ?, 'designer', 'active', 1)`,
+    [email, displayName, photoUrl || null]
+  );
+  const userId = (userResult as any).insertId;
+
+  // Step 2: Create designer record linked to user
   const [result] = await pool.execute(
     `INSERT INTO designers
-     (email, full_name, ${field}, oauth_provider, email_verified, status, is_approved, city)
-     VALUES (?, ?, ?, ?, TRUE, ?, ?, ?)`,
+     (email, full_name, ${field}, oauth_provider, email_verified, status, is_approved, city, user_id)
+     VALUES (?, ?, ?, ?, TRUE, ?, ?, ?, ?)`,
     [
       email,
       displayName,
@@ -149,6 +179,7 @@ export async function createOAuthDesigner(
       'pending',
       0,
       'Dubai',
+      userId,
     ]
   );
 
