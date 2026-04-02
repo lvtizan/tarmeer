@@ -40,7 +40,7 @@ export default function DesignerProjectsPage() {
         </div>
       ) : !hasProjects ? (
         <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
-          <p className="text-stone-500 mb-6">You haven’t added any projects yet.</p>
+          <p className="text-stone-500 mb-6">You haven't added any projects yet.</p>
           <Link
             to="/dashboard/upload"
             className="btn-primary inline-flex items-center gap-2 h-11 px-6 text-sm font-bold"
@@ -63,7 +63,7 @@ export default function DesignerProjectsPage() {
                 role="button"
                 tabIndex={0}
                 onClick={() => navigate(`/dashboard/upload/${p.id}`)}
-                onKeyDown={(e) => { if (e.key === ‘Enter’ || e.key === ‘ ‘) navigate(`/dashboard/upload/${p.id}`); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/dashboard/upload/${p.id}`); }}
                 className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg hover:border-[#b8864a]/40 transition cursor-pointer group"
               >
                 <div className="aspect-[4/3] bg-stone-100 overflow-hidden">
@@ -87,10 +87,10 @@ export default function DesignerProjectsPage() {
                     </span>
                   </div>
                   <p className="text-xs text-stone-500 mb-3">{p.location} · {p.year}</p>
-                  {p.status === ‘uploading’ && (
+                  {p.status === 'uploading' && (
                     <p className="mb-3 text-xs text-blue-700">uploading...</p>
                   )}
-                  {p.status === ‘upload_failed’ && (
+                  {p.status === 'upload_failed' && (
                     <p className="mb-3 text-xs text-red-600">Upload failed. Auto retry limit reached.</p>
                   )}
                   {p.rejectionReason && (
@@ -105,7 +105,7 @@ export default function DesignerProjectsPage() {
                       type="button"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        if (window.confirm(‘Delete this project?’)) {
+                        if (window.confirm('Delete this project?')) {
                           await deleteProject(p.id);
                         }
                       }}
