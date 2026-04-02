@@ -122,7 +122,7 @@ function App() {
           {/* ====== User Dashboard (Homeowner + legacy) ====== */}
           <Route path="/dashboard" element={<ProtectedRoute><UserDashboardLayout /></ProtectedRoute>}>
             <Route index element={<HomeownerDashboardPage />} />
-            <Route path="home" element={<DashboardHomePage />} />
+            <Route path="home" element={<DesignerProvider><DashboardHomePage /></DesignerProvider>} />
             <Route path="profile" element={<DashboardProfilePage />} />
             <Route path="projects" element={<DesignerProvider><DesignerProjectsPage /></DesignerProvider>} />
             <Route path="upload" element={<DesignerProvider><DesignerUploadPage /></DesignerProvider>} />
