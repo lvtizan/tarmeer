@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, LogOut, Settings } from 'lucide-react';
+import { Building2, FolderOpen, Settings } from 'lucide-react';
 import Navbar from '../Navbar';
 
 const PRIMARY = '#b8864a';
@@ -12,17 +12,8 @@ const navCls = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export default function CompanyLayout() {
-  const navigate = useNavigate();
   const token = api.getToken();
   if (!token) return <Navigate to="/auth" replace />;
-
-  const handleLogout = () => {
-    api.clearToken();
-    localStorage.removeItem('user');
-    localStorage.removeItem('active_role');
-    localStorage.removeItem('designer');
-    navigate('/auth', { replace: true });
-  };
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
@@ -51,14 +42,6 @@ export default function CompanyLayout() {
             <ProfileCard />
           </div>
 
-          {/* Bottom: notifications + logout */}
-          <div className="mt-auto p-4 border-t border-stone-200">
-            <button onClick={handleLogout}
-              className="flex items-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm text-stone-600 hover:text-red-600 hover:bg-stone-50 transition cursor-pointer">
-              <LogOut className="w-4 h-4" />
-              Log out
-            </button>
-          </div>
         </aside>
 
         <main className="flex-1 overflow-y-auto md:ml-64">
@@ -95,7 +78,7 @@ function ProfileCard() {
     }).catch(() => {});
   }, []);
 
-  const complete = profilePct >= 80 && projectCount >= 3;
+  const complete = profilePct >= 80 && projectCount > 0;
 
   return (
     <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3.5">
@@ -117,8 +100,8 @@ function ProfileCard() {
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px] text-stone-500">
-        <span>Portfolio</span>
-        <span>{projectCount}/3</span>
+        <span>Portfolio Items</span>
+        <span>{projectCount}</span>
       </div>
     </div>
   );

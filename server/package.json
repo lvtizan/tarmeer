@@ -9,6 +9,7 @@
     "start": "node dist/app.js",
     "test": "npm run build && node --test dist/lib/*.test.js",
     "test:smoke:public": "npm run build && node scripts/smoke-public-api.js",
+    "migrate:project-images": "ts-node scripts/migrate-project-images-to-files.ts",
     "generate-jwt": "ts-node scripts/generate-jwt-secret.ts",
     "validate-config": "ts-node -e \"import('./dist/lib/jwtManager').then(m => m.validateJWTConfig())\""
   },

@@ -1,6 +1,6 @@
 import { Fragment, useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, User, Briefcase, ChevronDown, LayoutDashboard, LogOut, Settings } from 'lucide-react';
+import { Menu, X, User, Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { safeGetJSON } from '../lib/storage';
@@ -342,15 +342,10 @@ function UserMenu({ userName, userAvatar, dashboardTo, onNavigate }: {
             className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition">
             <LayoutDashboard className="w-4 h-4 text-stone-400" />Dashboard
           </Link>
-          <Link to={dashboardTo.replace(/\/dashboard$|\/company$/, '') + (dashboardTo.includes('company') ? '/company/settings' : '/dashboard/settings')}
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition">
-            <Settings className="w-4 h-4 text-stone-400" />Settings
-          </Link>
           <div className="border-t border-stone-100 my-1" />
           <button onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition text-left">
-            <LogOut className="w-4 h-4" />Log out
+            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition text-left">
+            <LogOut className="w-4 h-4 text-stone-400" />Log out
           </button>
         </div>
       )}

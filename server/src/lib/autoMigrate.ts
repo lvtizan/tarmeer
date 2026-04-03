@@ -32,6 +32,8 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'designers', column: 'google_id', type: 'VARCHAR(255) NULL', unique: true },
   { table: 'designers', column: 'facebook_id', type: 'VARCHAR(255) NULL', unique: true },
   { table: 'designers', column: 'oauth_provider', type: "ENUM('google','facebook') NULL" },
+  { table: 'admin_users', column: 'reset_token', type: 'VARCHAR(255) NULL' },
+  { table: 'admin_users', column: 'reset_token_expires', type: 'DATETIME NULL' },
 
   // 以后新增字段在这里追加即可，例如：
   // { table: 'designers', column: 'wechat_id', type: 'VARCHAR(255) NULL' },

@@ -34,7 +34,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setIsInstalled(result.installed);
     } catch (error) {
       console.error('Error checking installation:', error);
-      setIsInstalled(false);
+      // Fail closed to login flow: transient API/rate-limit errors must not force install mode.
+      setIsInstalled(true);
     }
   }, []);
 

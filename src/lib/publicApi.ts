@@ -1,6 +1,7 @@
 import { sanitizeAvatarUrl, sanitizeImageUrls } from './imageCleanup';
 import { normalizeFoundedYear, summarizeCompanyDescription, type Company, type PortfolioCategories } from './companyData';
 import { companies as localCompanies } from '../data/companies';
+import { api } from './api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -56,6 +57,21 @@ interface PublicCompanyRecord {
   project_count: number;
   portfolio_categories?: Record<string, { url: string; title: string }[]>;
   is_claimed?: boolean;
+}
+
+function parseJsonArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || '')).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((item) => String(item || '')).filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 async function request<T>(endpoint: string): Promise<T> {
@@ -235,4 +251,77 @@ export async function fetchPublicCompanyDetail(slug: string): Promise<Company> {
     }
     throw error;
   }
+}
+
+export async function fetchCompanyPreviewDetail(profileId: string): Promise<Company> {
+  const token = api.getToken();
+  if (!token) {
+    throw new Error('Login required for preview.');
+  }
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  const [profileRes, projectsRes] = await Promise.all([
+    fetch(`${API_BASE}/auth/company/profile`, { headers }),
+    fetch(`${API_BASE}/auth/company/projects`, { headers }),
+  ]);
+
+  if (!profileRes.ok) {
+    throw new Error('Failed to load company profile preview.');
+  }
+
+  const profileBody = await profileRes.json();
+  const profile = profileBody?.profile || profileBody;
+  if (!profile || !profile.id) {
+    throw new Error('Company profile not found.');
+  }
+  if (String(profile.id) !== String(profileId)) {
+    throw new Error('Preview is only available for your own company profile.');
+  }
+
+  const projectsBody = projectsRes.ok ? await projectsRes.json() : { projects: [] };
+  const projects = Array.isArray(projectsBody?.projects) ? projectsBody.projects : [];
+
+  const categories: PortfolioCategories = {};
+  const allImages: string[] = [];
+
+  projects.forEach((project: any) => {
+    const projectImages = sanitizeImageUrls(parseJsonArray(project.images));
+    if (!projectImages.length) return;
+    const category = String(project.style || 'Projects');
+    const titleBase = String(project.title || 'Project');
+    const items = projectImages.map((url: string, idx: number) => ({
+      url,
+      title: projectImages.length > 1 ? `${titleBase} ${idx + 1}` : titleBase,
+    }));
+    categories[category] = [...(categories[category] || []), ...items];
+    allImages.push(...projectImages);
+  });
+
+  const services = parseJsonArray(profile.services);
+  const specialties = parseJsonArray(profile.specialties);
+
+  return {
+    id: String(profile.id),
+    name: String(profile.company_name || 'Company'),
+    description: String(profile.description || ''),
+    shortDescription: summarizeCompanyDescription(String(profile.description || '')),
+    city: String(profile.city || 'UAE'),
+    address: String(profile.address || 'UAE'),
+    foundedYear: normalizeFoundedYear(profile.establishment_year),
+    website: String(profile.website || ''),
+    instagram: '',
+    phone: String(profile.phone || ''),
+    email: '',
+    styles: specialties,
+    projectCount: projects.length || allImages.length,
+    services,
+    featured: false,
+    coverImage: String(profile.logo_url || ''),
+    projectImages: allImages,
+    portfolioCategories: categories,
+    isClaimed: true,
+  };
 }

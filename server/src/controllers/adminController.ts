@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/database';
 import config from '../config';
 import { AdminUser } from '../middleware/adminAuth';
+import { generatePasswordResetToken, sendAdminPasswordResetEmail } from '../services/emailService';
 
 // Check if system is installed (has any admin)
 export async function checkInstallation(req: Request, res: Response) {
@@ -146,6 +147,95 @@ export async function login(req: Request, res: Response) {
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Failed to login.' });
+  }
+}
+
+// Admin forgot password
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const [rows] = await pool.execute(
+      'SELECT id, email, is_active FROM admin_users WHERE email = ?',
+      [normalizedEmail]
+    );
+
+    // Always return generic message to avoid user enumeration
+    const genericMessage = 'If that email is registered, you will receive a password reset link.';
+
+    if ((rows as any[]).length === 0) {
+      return res.json({ message: genericMessage });
+    }
+
+    const admin = (rows as any[])[0];
+    if (!admin.is_active) {
+      return res.json({ message: genericMessage });
+    }
+
+    const { token, expires } = generatePasswordResetToken();
+    await pool.execute(
+      'UPDATE admin_users SET reset_token = ?, reset_token_expires = ? WHERE id = ?',
+      [token, expires, admin.id]
+    );
+
+    setImmediate(async () => {
+      try {
+        await sendAdminPasswordResetEmail(admin.email, token, config.frontendUrl);
+      } catch (emailError: any) {
+        console.error('[SMTP] Admin password reset email failed:', emailError?.message || emailError);
+      }
+    });
+
+    res.json({ message: genericMessage });
+  } catch (error) {
+    console.error('Admin forgot password error:', error);
+    res.status(500).json({ error: 'Failed to process request. Please try again.' });
+  }
+}
+
+// Admin reset password
+export async function resetPassword(req: Request, res: Response) {
+  const { token, password } = req.body;
+
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({ error: 'Reset token is required.' });
+  }
+
+  if (!password || typeof password !== 'string' || password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  }
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id
+       FROM admin_users
+       WHERE reset_token = ? AND reset_token_expires > NOW()`,
+      [token]
+    );
+
+    if ((rows as any[]).length === 0) {
+      return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
+    }
+
+    const admin = (rows as any[])[0];
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await pool.execute(
+      `UPDATE admin_users
+       SET password = ?, reset_token = NULL, reset_token_expires = NULL
+       WHERE id = ?`,
+      [hashedPassword, admin.id]
+    );
+
+    res.json({ message: 'Password reset successfully.' });
+  } catch (error) {
+    console.error('Admin reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset password. Please try again.' });
   }
 }
 

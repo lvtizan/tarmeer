@@ -77,7 +77,7 @@ export default function CompanyDashboardPage() {
     setSaveText(manual ? 'Saving...' : 'Saving...');
 
     try {
-      await api.post('/auth/company/profile', {
+      const response = await api.post('/auth/company/profile', {
         company_name: current.company_name,
         description: current.description,
         contact_person: current.contact_person,
@@ -91,6 +91,10 @@ export default function CompanyDashboardPage() {
         establishment_year: current.establishment_year,
         specialties: current.specialties,
       });
+      const savedProfile = response?.profile || response;
+      if (savedProfile?.id) {
+        setProfileId(Number(savedProfile.id));
+      }
       setIsNew(false);
       lastSavedSnapshotRef.current = serializeProfile(current);
       setSaveText(manual ? 'Saved' : 'Saved just now');
@@ -187,7 +191,7 @@ export default function CompanyDashboardPage() {
                 Save
               </button>
               {profileId && (
-                <a href={`/companies/${profileId}`} target="_blank" rel="noopener noreferrer"
+                <a href={`/companies/${profileId}?preview=1&from=company-dashboard`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition">
                   <Eye className="w-4 h-4" />Preview
                 </a>

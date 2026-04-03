@@ -157,6 +157,43 @@ export async function sendPasswordResetEmail(email: string, token: string, front
   });
 }
 
+export async function sendAdminPasswordResetEmail(email: string, token: string, frontendUrl?: string) {
+  const resetLink = `${normalizeFrontendUrl(frontendUrl)}/admin/reset-password?token=${token}`;
+
+  const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #b8864a;">Admin Password Reset Request</h2>
+        <p>We received a request to reset your Tarmeer admin password.</p>
+        <p>Click the button below to set a new password:</p>
+        <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #b8864a; color: white; text-decoration: none; border-radius: 8px; margin: 20px 0;">Reset Admin Password</a>
+        <p style="color: #666; font-size: 14px;">This link is valid for 1 hour.</p>
+        <p style="color: #666; font-size: 14px;">If you did not request a password reset, please ignore this email.</p>
+        <br>
+        <p style="color: #b8864a; font-weight: bold;">Tarmeer Team</p>
+      </div>
+    `;
+
+  const text = [
+    'Admin Password Reset Request',
+    '',
+    'We received a request to reset your Tarmeer admin password.',
+    'Use the link below to set a new password:',
+    resetLink,
+    '',
+    'This link is valid for 1 hour.',
+    'If you did not request a password reset, please ignore this email.',
+    '',
+    'Tarmeer Team',
+  ].join('\n');
+
+  await sendTransactionalMail({
+    to: email,
+    subject: '[Tarmeer Admin] Reset Your Password',
+    html,
+    text,
+  });
+}
+
 export function generatePasswordResetToken(): { token: string; expires: Date } {
   const token = crypto.randomBytes(32).toString('hex');
   const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour

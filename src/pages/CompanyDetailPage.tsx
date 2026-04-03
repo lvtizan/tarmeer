@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Instagram, MapPin, Briefcase,
@@ -7,7 +7,7 @@ import {
   Share2, ExternalLink, X,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
-import { fetchPublicCompanyDetail, fetchPublicCompanies } from '../lib/publicApi';
+import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies } from '../lib/publicApi';
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
 import MasonryGallery from '../components/MasonryGallery';
 import Lightbox from '../components/Lightbox';
@@ -15,7 +15,12 @@ import SelectField from '../components/form/SelectField';
 
 export default function CompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const previewMode = searchParams.get('preview') === '1';
+  const from = searchParams.get('from');
+  const backTo = previewMode || from === 'company-dashboard' ? '/company/dashboard' : '/companies';
+  const backLabel = previewMode || from === 'company-dashboard' ? 'Back to Company Dashboard' : 'Back to Companies';
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -54,17 +59,25 @@ export default function CompanyDetailPage() {
     setAboutExpanded(false);
     window.scrollTo(0, 0);
 
-    fetchPublicCompanyDetail(id)
+    const detailRequest = previewMode
+      ? fetchCompanyPreviewDetail(id)
+      : fetchPublicCompanyDetail(id);
+
+    detailRequest
       .then((item) => { if (active) setCompany(item); })
       .catch((error) => { if (active) setLoadError(error instanceof Error ? error.message : 'Failed to load'); })
       .finally(() => { if (active) setLoading(false); });
 
-    fetchPublicCompanies(100)
-      .then((all) => { if (active) setSimilarCompanies(all); })
-      .catch(() => {});
+    if (!previewMode) {
+      fetchPublicCompanies(100)
+        .then((all) => { if (active) setSimilarCompanies(all); })
+        .catch(() => {});
+    } else if (active) {
+      setSimilarCompanies([]);
+    }
 
     return () => { active = false; };
-  }, [id]);
+  }, [id, searchParams]);
 
   const normalizedCategories = useMemo(() => {
     if (!company?.portfolioCategories) return {};
@@ -92,7 +105,7 @@ export default function CompanyDetailPage() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-serif text-2xl text-[#2c2c2c] mb-4">{loadError || 'Company not found'}</h1>
-          <Link to="/companies" className="text-[#c6a065] hover:underline">Back to companies</Link>
+          <Link to={backTo} className="text-[#c6a065] hover:underline">{backLabel}</Link>
         </div>
       </div>
     );
@@ -118,8 +131,8 @@ export default function CompanyDetailPage() {
     <div className="min-h-screen bg-white">
       {/* Back nav */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-        <Link to="/companies" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Companies
+        <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition">
+          <ArrowLeft className="w-4 h-4" /> {backLabel}
         </Link>
       </div>
 
@@ -486,8 +499,8 @@ export default function CompanyDetailPage() {
 
       {/* Footer */}
       <div className="border-t border-stone-200 py-6 text-center">
-        <Link to="/companies" className="text-sm text-stone-500 hover:text-[#b8864a] transition">
-          <ArrowLeft className="w-4 h-4 inline mr-1" /> Back to Companies
+        <Link to={backTo} className="text-sm text-stone-500 hover:text-[#b8864a] transition">
+          <ArrowLeft className="w-4 h-4 inline mr-1" /> {backLabel}
         </Link>
       </div>
     </div>

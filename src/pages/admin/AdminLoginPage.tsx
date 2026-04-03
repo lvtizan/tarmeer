@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAdmin } from '../../contexts/AdminContext';
 import PasswordInput from '../../components/admin/PasswordInput';
 
@@ -93,6 +93,12 @@ export default function AdminLoginPage() {
               placeholder="Enter your password"
               required
             />
+
+            <div className="text-right -mt-2">
+              <Link to="/admin/forgot-password" className="text-sm text-[#b8864a] hover:underline">
+                Forgot password?
+              </Link>
+            </div>
 
             <button
               type="submit"

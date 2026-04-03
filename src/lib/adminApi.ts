@@ -122,6 +122,8 @@ class AdminApiClient {
     '/login',
     '/install',
     '/check-installation',
+    '/forgot-password',
+    '/reset-password',
   ]);
 
   setToken(token: string) {
@@ -248,6 +250,20 @@ class AdminApiClient {
       this.setToken(result.token);
     }
     return result;
+  }
+
+  async forgotPassword(email: string) {
+    return this.request('/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string) {
+    return this.request('/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
   }
 
   async getProfile(): Promise<{ id: number; email: string; fullName: string; role: string; permissions: AdminUser['permissions'] | null }> {

@@ -9,6 +9,7 @@ import {
   PROJECT_IMAGES_REQUIRED_ERROR,
   assertProjectHasImages,
 } from '../lib/projectPersistence';
+import { persistProjectImages } from '../lib/projectImageStorage';
 
 function normalizeProject(project: any) {
   return {
@@ -46,6 +47,10 @@ export async function createProject(req: any, res: any) {
     const designer_id = req.user.id;
     const { title, description, style, location, area, year, cost, images, tags, status } = req.body;
     const normalizedImages = assertProjectHasImages(images);
+    const persistedImages = await persistProjectImages(normalizedImages, {
+      designerId: designer_id,
+    });
+    const finalImages = assertProjectHasImages(persistedImages);
     const projectStatus = status === 'draft'
       ? getProjectStatusForDesignerSubmit(false)
       : getProjectStatusForDesignerSubmit(true);
@@ -57,7 +62,7 @@ export async function createProject(req: any, res: any) {
       area,
       year,
       cost,
-      images: normalizedImages,
+      images: finalImages,
       tags,
       status: projectStatus,
     });
@@ -227,6 +232,11 @@ export async function updateProject(req: any, res: any) {
     const { id } = req.params;
     const { title, description, style, location, area, year, cost, images, tags, status } = req.body;
     const normalizedImages = assertProjectHasImages(images);
+    const persistedImages = await persistProjectImages(normalizedImages, {
+      designerId: req.user.id,
+      projectId: id,
+    });
+    const finalImages = assertProjectHasImages(persistedImages);
     const nextStatus = status === 'draft'
       ? getProjectStatusForDesignerSubmit(false)
       : getProjectStatusForDesignerSubmit(true);
@@ -238,7 +248,7 @@ export async function updateProject(req: any, res: any) {
       area,
       year,
       cost,
-      images: normalizedImages,
+      images: finalImages,
       tags,
       status: nextStatus,
     });

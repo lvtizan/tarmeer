@@ -1,13 +1,11 @@
-import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import {
-  Home, User, FolderOpen, LogOut, Settings,
+  Home, User, FolderOpen, Settings,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 
 export default function UserDashboardLayout() {
-  const navigate = useNavigate();
-
   // Redirect company users to /company, unset users to /onboarding
   const activeRole = localStorage.getItem('active_role');
   if (activeRole === 'company') {
@@ -25,14 +23,6 @@ export default function UserDashboardLayout() {
     }
     return <Navigate to="/onboarding" replace />;
   }
-
-  const handleLogout = () => {
-    api.clearToken();
-    localStorage.removeItem('user');
-    localStorage.removeItem('active_role');
-    localStorage.removeItem('designer');
-    navigate('/auth', { replace: true });
-  };
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg transition cursor-pointer ${
@@ -66,18 +56,6 @@ export default function UserDashboardLayout() {
                 <span className="text-sm font-medium">Settings</span>
               </NavLink>
             </nav>
-          </div>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-stone-200">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 transition cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              Log out
-            </button>
           </div>
         </aside>
 

@@ -15,7 +15,43 @@ test('skips rate limiting for health checks', () => {
   assert.equal(shouldSkipApiRateLimit({
     nodeEnv: 'production',
     method: 'GET',
-    path: '/api/health',
+    path: '/health',
+    ip: '203.0.113.10',
+  }), true);
+});
+
+test('skips rate limiting for oauth routes', () => {
+  assert.equal(shouldSkipApiRateLimit({
+    nodeEnv: 'production',
+    method: 'GET',
+    path: '/auth/google',
+    ip: '203.0.113.10',
+  }), true);
+  assert.equal(shouldSkipApiRateLimit({
+    nodeEnv: 'production',
+    method: 'GET',
+    path: '/api/auth/callback/google',
+    ip: '203.0.113.10',
+  }), true);
+});
+
+test('skips rate limiting for admin install check routes', () => {
+  assert.equal(shouldSkipApiRateLimit({
+    nodeEnv: 'production',
+    method: 'GET',
+    path: '/admin/check-installation',
+    ip: '203.0.113.10',
+  }), true);
+  assert.equal(shouldSkipApiRateLimit({
+    nodeEnv: 'production',
+    method: 'POST',
+    path: '/api/admin/install',
+    ip: '203.0.113.10',
+  }), true);
+  assert.equal(shouldSkipApiRateLimit({
+    nodeEnv: 'production',
+    method: 'POST',
+    path: '/api/admin/forgot-password',
     ip: '203.0.113.10',
   }), true);
 });

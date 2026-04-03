@@ -13,9 +13,63 @@ export default function Banner() {
   const [area, setArea] = useState('');
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phone, setPhone] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
+
+  const getAreaRange = (value: number) => {
+    if (value < 50) return '< 50m²';
+    if (value <= 100) return '50-100m²';
+    if (value <= 200) return '100-200m²';
+    if (value <= 500) return '200-500m²';
+    return '500m²+';
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const numericArea = Number(area);
+    if (!area || !Number.isFinite(numericArea) || numericArea <= 0) {
+      setError('Area must be a valid number.');
+      return;
+    }
+
+    if (phone.length !== phoneRegion.maxDigits) {
+      setError(`Phone number must be exactly ${phoneRegion.maxDigits} digits for ${phoneRegion.label}.`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE}/inquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Website Visitor',
+          phone: `${phoneRegion.code}${phone}`,
+          city: 'Dubai',
+          area_range: getAreaRange(numericArea),
+          message: `Quick booking from home banner. Area: ${numericArea}m².`,
+        }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || 'Failed to submit booking request.');
+      }
+
+      setSuccess('Submitted successfully. Our team will contact you soon.');
+      setArea('');
+      setPhone('');
+    } catch (submitError: any) {
+      setError(submitError?.message || 'Failed to submit booking request.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -45,7 +99,10 @@ export default function Banner() {
                   type="text"
                   inputMode="numeric"
                   value={area}
-                  onChange={(event) => setArea(event.target.value)}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value.replace(/\D/g, '');
+                    setArea(digitsOnly);
+                  }}
                   className="w-full bg-transparent text-[1.65rem] font-semibold text-[#1c1917] outline-none placeholder:text-stone-300"
                   placeholder="Enter area"
                 />
@@ -79,11 +136,24 @@ export default function Banner() {
                     const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, phoneRegion.maxDigits);
                     setPhone(digitsOnly);
                   }}
+                  maxLength={phoneRegion.maxDigits}
                   className="min-w-0 w-full bg-transparent text-base font-medium text-[#1c1917] outline-none placeholder:text-stone-300"
                   placeholder={`Enter ${phoneRegion.maxDigits}-digit number`}
                 />
               </div>
             </div>
+
+            {error && (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
+                {error}
+              </p>
+            )}
+
+            {success && (
+              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] leading-5 text-emerald-700">
+                {success}
+              </p>
+            )}
 
             <p className="text-left text-[11px] leading-5 text-stone-500">
               Share your area and phone number. Our team will contact you to discuss a custom design brief and recommend the right studio.
@@ -91,9 +161,10 @@ export default function Banner() {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-lg font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.24)] transition hover:bg-[#a4763f]"
             >
-              Book Now
+              {isSubmitting ? 'Submitting...' : 'Book Now'}
             </button>
           </div>
         </form>
