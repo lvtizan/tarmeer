@@ -1,29 +1,118 @@
-import { Link } from 'react-router-dom';
-import { getCurrentConfig } from '../../config/site-config';
+import { useState } from 'react';
+
+const GCC_PHONE_OPTIONS = [
+  { label: 'UAE', code: '+971', maxDigits: 9 },
+  { label: 'KSA', code: '+966', maxDigits: 9 },
+  { label: 'Qatar', code: '+974', maxDigits: 8 },
+  { label: 'Kuwait', code: '+965', maxDigits: 8 },
+  { label: 'Oman', code: '+968', maxDigits: 8 },
+  { label: 'Bahrain', code: '+973', maxDigits: 8 },
+];
 
 export default function Banner() {
-  const config = getCurrentConfig();
+  const [area, setArea] = useState('');
+  const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
+  const [phone, setPhone] = useState('');
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+  };
 
   return (
-    <section className="relative min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[420px] overflow-hidden py-8 sm:min-h-[500px] sm:py-10">
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=85)`,
+          backgroundImage: 'url(/images/uae-companies/portfolio/hba-hirsch-bedner/general/6.jpg)',
         }}
       />
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.42)_0%,rgba(0,0,0,0.28)_38%,rgba(0,0,0,0.2)_100%)]" />
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center text-white">
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight mb-4">
-          {config.bannerTitle}
-        </h1>
-        <p className="text-lg sm:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-          {config.bannerSubtitle}
-        </p>
-        <Link to="/#designers" className="btn-primary text-white">
-          {config.bannerCta}
-        </Link>
+      <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[340px_1fr] lg:gap-16">
+        <form
+          onSubmit={handleSubmit}
+          className="overflow-hidden rounded-[20px] border border-white/80 bg-white/94 shadow-[0_18px_44px_rgba(28,25,23,0.14)] backdrop-blur-sm"
+        >
+          <div className="space-y-3.5 px-6 py-5">
+            <div>
+              <h2 className="text-[22px] font-semibold tracking-tight text-[#1c1917]">Book a Design</h2>
+            </div>
+
+            <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">Area</label>
+              <div className="flex items-center justify-between gap-4">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={area}
+                  onChange={(event) => setArea(event.target.value)}
+                  className="w-full bg-transparent text-[1.65rem] font-semibold text-[#1c1917] outline-none placeholder:text-stone-300"
+                  placeholder="Enter area"
+                />
+                <span className="shrink-0 text-2xl font-semibold text-stone-700">m²</span>
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">Phone/WA Number</label>
+              <div className="grid grid-cols-[112px_1fr] items-center gap-3">
+                <select
+                  value={phoneRegion.code}
+                  onChange={(event) => {
+                    const nextRegion = GCC_PHONE_OPTIONS.find((option) => option.code === event.target.value) || GCC_PHONE_OPTIONS[0];
+                    setPhoneRegion(nextRegion);
+                    setPhone((current) => current.slice(0, nextRegion.maxDigits));
+                  }}
+                  className="h-11 rounded-[16px] border border-stone-200 bg-white/90 px-3 text-sm font-medium text-[#1c1917] outline-none"
+                >
+                  {GCC_PHONE_OPTIONS.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.label} {option.code}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={phone}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, phoneRegion.maxDigits);
+                    setPhone(digitsOnly);
+                  }}
+                  className="min-w-0 w-full bg-transparent text-base font-medium text-[#1c1917] outline-none placeholder:text-stone-300"
+                  placeholder={`Enter ${phoneRegion.maxDigits}-digit number`}
+                />
+              </div>
+            </div>
+
+            <p className="text-left text-[11px] leading-5 text-stone-500">
+              Share your area and phone number. Our team will contact you to discuss a custom design brief and recommend the right studio.
+            </p>
+
+            <button
+              type="submit"
+              className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-lg font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.24)] transition hover:bg-[#a4763f]"
+            >
+              Book Now
+            </button>
+          </div>
+        </form>
+
+        <div className="max-w-2xl text-white lg:justify-self-end">
+          <p className="mb-3 text-xs font-medium uppercase tracking-[0.32em] text-white/80">
+            Tailored For UAE Homes
+          </p>
+          <h1 className="font-serif text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-[3.5rem]">
+            Bespoke Design Services
+            <br />
+            for Villas, Apartments
+            <br />
+            and Signature Spaces
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-white/88 sm:text-lg">
+            Connect with curated design partners for concept development, space planning, material direction and premium residential interiors across Dubai and the UAE.
+          </p>
+        </div>
       </div>
     </section>
   );

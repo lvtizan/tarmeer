@@ -21,6 +21,7 @@
 
 - 认证流程：`tests/auth-flow.spec.ts`
 - 注册持久化：`tests/auth-registration-persistence.spec.ts`
+- 本地真实链路冒烟：`tests/local-real-auth-portfolio.smoke.spec.ts`
 - 设计师种子数据：`tests/designers-seed.spec.ts`
 - 作品上传：`tests/project-upload.spec.ts`
 - 作品上传简版：`tests/project-upload-simple.spec.ts`

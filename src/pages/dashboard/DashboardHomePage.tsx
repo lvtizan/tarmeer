@@ -109,7 +109,6 @@ export default function DashboardHomePage() {
   const checklist = buildChecklist(user, projects);
   const firstName = (user.full_name || '').split(' ')[0] || 'there';
   const joinYear = user.created_at ? new Date(user.created_at).getFullYear() : 2026;
-  const yearsExp = 2026 - joinYear || 1;
 
   return (
     <div className="space-y-8">

@@ -45,6 +45,18 @@ echo ""
 echo "🧪 运行测试套件..."
 echo ""
 
+# 运行本地真实链路冒烟
+echo "0️⃣ 运行本地真实链路冒烟..."
+npx playwright test tests/local-real-auth-portfolio.smoke.spec.ts --reporter=line
+
+if [ $? -eq 0 ]; then
+    echo "✅ 本地真实链路冒烟通过"
+else
+    echo "❌ 本地真实链路冒烟失败"
+fi
+
+echo ""
+
 # 运行基础测试
 echo "1️⃣ 运行基础页面测试..."
 npx playwright test tests/test-upload.spec.ts --reporter=line

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Home,
@@ -57,7 +56,6 @@ const STAGE_OPTIONS = ['Researching', 'Has Design', 'Ready to Start', 'In Progre
 const BUDGET_OPTIONS = ['<50K', '50-100K', '100-300K', '300K-1M', '>1M AED'];
 
 export default function HomeownerDashboardPage() {
-  const navigate = useNavigate();
   const [profile, setProfile] = useState<HomeownerProfile | null>(null);
   const [designer, setDesigner] = useState<DesignerInfo | null>(null);
   const [loading, setLoading] = useState(true);

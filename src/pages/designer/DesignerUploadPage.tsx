@@ -589,12 +589,12 @@ export default function DesignerUploadPage() {
 
       if (publish) {
         setSubmitSuccess('Project submitted successfully. It is now waiting for admin review.');
-        navigate('/designer/projects');
+        navigate('/dashboard/projects');
       } else {
         setSubmitSuccess('Draft saved successfully.');
         localStorage.removeItem(autosaveKey);
         if (savedProjectId) {
-          navigate(`/designer/upload/${savedProjectId}`, { replace: true });
+          navigate(`/dashboard/upload/${savedProjectId}`, { replace: true });
         }
       }
     } catch (error: any) {
@@ -666,7 +666,7 @@ export default function DesignerUploadPage() {
           <div className="min-w-0 flex-1">
             <button
               type="button"
-              onClick={() => navigate('/designer/projects')}
+              onClick={() => navigate('/dashboard/projects')}
               className="mb-2 text-sm font-medium text-stone-500 hover:text-stone-800"
             >
               ← Back to My Projects
