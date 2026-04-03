@@ -14,6 +14,7 @@ import {
 const PRIMARY = '#b8864a';
 const STYLES = [{ value:'', label:'Select a style' },{ value:'modern', label:'Modern Contemporary' },{ value:'islamic', label:'Modern Islamic' },{ value:'classic', label:'Neo-Classic' },{ value:'minimalist', label:'Minimalist' },{ value:'industrial', label:'Industrial' }];
 const TAGS = ['Apartment','Villa','Bathroom','Kitchen','Living','Bedroom','Majlis','Dining','Workspace','Outdoor','Lighting','Storage','Renovation','Materials'];
+const CITIES = ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain','Riyadh','Jeddah','Other'];
 
 const fieldCls = "h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35";
 const textareaCls = "w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 resize-none";
@@ -185,8 +186,11 @@ export default function CompanyProjectsPage() {
               </div>
               <div>
                 <label className={labelCls}>Location (City) *</label>
-                <input type="text" value={form.location} onChange={e=>setForm(p=>({...p,location:e.target.value}))} placeholder="Enter city" className={`${fieldCls} ${tried&&!form.location.trim()?'!border-red-400':''}`}/>
-                {tried&&!form.location.trim()&&<p className="mt-1 text-xs text-red-500">City is required</p>}
+                <SelectField name="location" value={form.location} onChange={e=>setForm(p=>({...p,location:(e.target as any).value}))} className={tried&&!form.location?'!border-red-400':''}>
+                  <option value="">Select city</option>
+                  {CITIES.map(c=><option key={c} value={c}>{c}</option>)}
+                </SelectField>
+                {tried&&!form.location&&<p className="mt-1 text-xs text-red-500">City is required</p>}
               </div>
               <div>
                 <label className={labelCls}>Project Area</label>
