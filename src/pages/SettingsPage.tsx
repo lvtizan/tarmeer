@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Lock, CheckCircle, AlertCircle, ArrowLeftRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { FormInput, FormLabel } from '../components/form/FormInput';
 
@@ -18,6 +19,7 @@ function StatusMessage({ type, message }: { type: 'success' | 'error'; message: 
 }
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   // Current user info
   const [currentName, setCurrentName] = useState('');
   const [currentEmail, setCurrentEmail] = useState('');
@@ -223,6 +225,30 @@ export default function SettingsPage() {
             </button>
           </form>
         )}
+      </div>
+
+      {/* ── Switch Role ── */}
+      <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-5">
+          <ArrowLeftRight className="w-5 h-5 text-[#b8864a]" />
+          <h2 className="text-lg font-semibold text-[#2c2c2c]">Switch Role</h2>
+        </div>
+
+        <p className="text-sm text-stone-600 mb-4">
+          Change between homeowner and company roles.
+        </p>
+
+        <div className="mb-4 text-sm text-stone-600">
+          Current role: <span className="font-medium text-[#2c2c2c] capitalize">{localStorage.getItem('active_role') || '—'}</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => navigate('/onboarding')}
+          className="btn-primary px-6 py-2.5 text-sm font-semibold"
+        >
+          Switch Role
+        </button>
       </div>
     </div>
   );
