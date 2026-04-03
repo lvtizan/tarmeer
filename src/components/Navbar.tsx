@@ -1,6 +1,6 @@
-import { Fragment, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Briefcase, ChevronDown } from 'lucide-react';
+import { Fragment, useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, User, Briefcase, ChevronDown, LayoutDashboard, LogOut, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { safeGetJSON } from '../lib/storage';
@@ -181,15 +181,12 @@ export default function Navbar({
           {showUserEntry ? (
             <div className="flex items-center gap-3">
               <NotificationBell />
-              <Link
-                to={accountEntry.to}
-                onClick={() => handleClick(accountEntry.to)}
-                className="inline-flex items-center"
-                aria-label="Open dashboard"
-                title="Dashboard"
-              >
-                <Avatar name={userName} avatarUrl={userAvatar} size="sm" />
-              </Link>
+              <UserMenu
+                userName={userName}
+                userAvatar={userAvatar}
+                dashboardTo={accountEntry.to}
+                onNavigate={handleClick}
+              />
             </div>
           ) : showLogInLink ? (
             <Link
@@ -308,5 +305,55 @@ export default function Navbar({
         </div>
       )}
     </header>
+  );
+}
+
+/* ── User avatar dropdown menu ── */
+function UserMenu({ userName, userAvatar, dashboardTo, onNavigate }: {
+  userName: string; userAvatar: string; dashboardTo: string; onNavigate: (to: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const nav = useNavigate();
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleLogout = () => {
+    api.clearToken();
+    localStorage.removeItem('user');
+    localStorage.removeItem('active_role');
+    localStorage.removeItem('designer');
+    setOpen(false);
+    nav('/auth', { replace: true });
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(!open)} className="inline-flex items-center" aria-label="User menu">
+        <Avatar name={userName} avatarUrl={userAvatar} size="sm" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-stone-200 z-50 py-1">
+          <Link to={dashboardTo} onClick={() => { onNavigate(dashboardTo); setOpen(false); }}
+            className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition">
+            <LayoutDashboard className="w-4 h-4 text-stone-400" />Dashboard
+          </Link>
+          <Link to={dashboardTo.replace(/\/dashboard$|\/company$/, '') + (dashboardTo.includes('company') ? '/company/settings' : '/dashboard/settings')}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition">
+            <Settings className="w-4 h-4 text-stone-400" />Settings
+          </Link>
+          <div className="border-t border-stone-100 my-1" />
+          <button onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition text-left">
+            <LogOut className="w-4 h-4" />Log out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
