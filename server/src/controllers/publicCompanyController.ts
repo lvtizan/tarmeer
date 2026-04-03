@@ -91,11 +91,10 @@ export async function listApprovedCompanies(req: any, res: any) {
       JOIN users u ON cp.user_id = u.id
       WHERE ${whereClause}
       ORDER BY cp.display_order DESC, cp.created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT ${Number(limitNum)} OFFSET ${Number(offset)}
     `;
 
-    const listParams = [...params, limitNum, offset];
-    const [companies] = await pool.execute(listQuery, listParams);
+    const [companies] = await pool.execute(listQuery, params);
 
     // Format response
     const formattedCompanies = (companies as any[]).map((company) => {
