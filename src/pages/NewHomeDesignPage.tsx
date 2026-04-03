@@ -265,38 +265,6 @@ export default function NewHomeDesignPage() {
               <p className="text-sm text-[#2c2c2c] text-center"><span className="font-semibold">Included:</span> PDF + CAD source files</p>
             </div>
 
-            {/* CTA */}
-            <div className="mt-6 p-6 bg-white rounded-lg border border-stone-200">
-              <h3 className="font-serif text-xl font-semibold text-[#2c2c2c] mb-3">Ready to Start Your Project?</h3>
-              <p className="text-[#6b6b6b] mb-4 text-sm">Contact our design team to discuss your new home project.</p>
-              <a
-                href="https://wa.me/971501234567?text=Hi,%20I'm%20interested%20in%20New%20Home%20Full%20Case%20Design%20service."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-8 py-3 rounded-lg bg-[#b8864a] text-white font-semibold hover:bg-[#a67c47] transition"
-              >
-                GET STARTED
-              </a>
-            </div>
-          </div>
-
-          {/* Right: Projects */}
-          <div className="lg:w-1/2">
-            <h2 className="font-serif text-xl sm:text-2xl text-[#2c2c2c] font-semibold mb-6">Recent Projects</h2>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {DISPLAY_PROJECTS.map((project) => (
-                <button key={project.id} type="button" onClick={() => setSelectedProject(project)} className="group text-left">
-                  <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-200 mb-2">
-                    <img src={project.coverImage} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
-                  </div>
-                  <h3 className="text-sm font-medium text-[#2c2c2c] truncate">{project.title}</h3>
-                  <p className="text-xs text-[#6b6b6b]">{project.area} · {project.style}</p>
-                </button>
-              ))}
-            </div>
-            {DISPLAY_PROJECTS.length === 0 && (
-              <p className="text-sm text-[#6b6b6b]">No valid project images are available right now.</p>
-            )}
           </div>
 
         </div>
