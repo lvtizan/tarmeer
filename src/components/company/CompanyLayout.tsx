@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, LogOut } from 'lucide-react';
+import { Building2, FolderOpen, LogOut, Settings } from 'lucide-react';
 import Navbar from '../Navbar';
 
 const PRIMARY = '#b8864a';
@@ -40,6 +40,10 @@ export default function CompanyLayout() {
               <NavLink to="/company/projects" className={navCls}>
                 <FolderOpen className="w-5 h-5" />
                 <span className="text-sm font-medium">Projects</span>
+              </NavLink>
+              <NavLink to="/company/settings" className={navCls}>
+                <Settings className="w-5 h-5" />
+                <span className="text-sm font-medium">Settings</span>
               </NavLink>
             </nav>
 

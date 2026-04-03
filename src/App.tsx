@@ -38,6 +38,7 @@ const CompanyProjectsPage = lazy(() => import('./pages/company/CompanyProjectsPa
 const UserDashboardLayout = lazy(() => import('./layouts/UserDashboardLayout'));
 const HomeownerDashboardPage = lazy(() => import('./pages/dashboard/HomeownerDashboardPage'));
 const DashboardProfilePage = lazy(() => import('./pages/dashboard/DashboardProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 // Admin
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
@@ -103,12 +104,14 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<CompanyDashboardPage />} />
             <Route path="projects" element={<CompanyProjectsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* ====== Homeowner Dashboard ====== */}
           <Route path="/dashboard" element={<ProtectedRoute><UserDashboardLayout /></ProtectedRoute>}>
             <Route index element={<HomeownerDashboardPage />} />
             <Route path="profile" element={<DashboardProfilePage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* ====== Legacy redirects ====== */}

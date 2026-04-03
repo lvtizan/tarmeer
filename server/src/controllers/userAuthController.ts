@@ -370,6 +370,78 @@ export async function updateProfile(req: any, res: any) {
   }
 }
 
+// Update full name (requires current password for security)
+export async function updateName(req: any, res: any) {
+  try {
+    const { full_name, current_password } = req.body;
+    const userId = req.user.userId;
+
+    if (!full_name || !full_name.trim()) {
+      return res.status(400).json({ error: 'Name is required.' });
+    }
+    if (!current_password) {
+      return res.status(400).json({ error: 'Current password is required.' });
+    }
+
+    const [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    const user = (rows as any[])[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    if (!user.password) {
+      return res.status(400).json({ error: 'OAuth accounts cannot change name via password. Please update your profile instead.' });
+    }
+
+    const isValid = await bcrypt.compare(current_password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+
+    await pool.execute('UPDATE users SET full_name = ? WHERE id = ?', [full_name.trim(), userId]);
+
+    const [updated] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    res.json({ message: 'Name updated successfully.', user: sanitizeUser((updated as any[])[0]) });
+  } catch (error) {
+    console.error('Update name error:', error);
+    res.status(500).json({ error: 'Failed to update name. Please try again.' });
+  }
+}
+
+// Change password (requires current password)
+export async function changePassword(req: any, res: any) {
+  try {
+    const { current_password, new_password } = req.body;
+    const userId = req.user.userId;
+
+    if (!current_password) {
+      return res.status(400).json({ error: 'Current password is required.' });
+    }
+    if (!new_password || new_password.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+    }
+
+    const [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
+    const user = (rows as any[])[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    if (!user.password) {
+      return res.status(400).json({ error: 'OAuth accounts do not have a password to change. Please use your social login.' });
+    }
+
+    const isValid = await bcrypt.compare(current_password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await pool.execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+
+    res.json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password. Please try again.' });
+  }
+}
+
 // Google One Tap login — creates user (not designer)
 export async function googleOneTap(req: any, res: any) {
   try {

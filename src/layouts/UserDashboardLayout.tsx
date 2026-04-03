@@ -1,6 +1,6 @@
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, User, FolderOpen, LogOut,
+  LayoutDashboard, User, FolderOpen, LogOut, Settings,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
@@ -60,6 +60,10 @@ export default function UserDashboardLayout() {
               <NavLink to="/dashboard/profile" className={navClass}>
                 <User className="w-5 h-5" />
                 <span className="text-sm font-medium">Profile</span>
+              </NavLink>
+              <NavLink to="/dashboard/settings" className={navClass}>
+                <Settings className="w-5 h-5" />
+                <span className="text-sm font-medium">Settings</span>
               </NavLink>
             </nav>
           </div>

@@ -107,6 +107,28 @@ router.get('/me', authenticate, onboarding.getMeEnhanced);
 // Update profile
 router.put('/me', authenticate, userAuth.updateProfile);
 
+// Update name (requires current password)
+router.put('/update-name',
+  authenticate,
+  [
+    body('full_name').notEmpty().withMessage('Name is required'),
+    body('current_password').notEmpty().withMessage('Current password is required')
+  ],
+  handleValidation,
+  userAuth.updateName
+);
+
+// Change password (requires current password + new password)
+router.put('/change-password',
+  authenticate,
+  [
+    body('current_password').notEmpty().withMessage('Current password is required'),
+    body('new_password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+  ],
+  handleValidation,
+  userAuth.changePassword
+);
+
 // ====== Role Selection & Switching ======
 router.post('/select-role', authenticate, onboarding.selectRole);
 router.post('/switch-role', authenticate, onboarding.switchRole);
