@@ -431,13 +431,28 @@ export default function AuthPage() {
                   <p className="text-stone-500 text-sm mb-6 max-w-xs mx-auto">
                     We've sent a verification link to <strong className="text-stone-700">{email}</strong>
                   </p>
-                  <button
-                    onClick={() => { setStep('initial'); setSuccess(null); setEmail(''); setPassword(''); }}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 transition"
-                  >
-                    <ChevronRight className="w-4 h-4 rotate-180" />
-                    Back to Sign In
-                  </button>
+                  <div className="flex flex-col items-center gap-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.post('/auth/resend-verification', { email });
+                          setSuccess('Verification email resent! Please check your inbox.');
+                        } catch (err: any) {
+                          setError(err.message || 'Failed to resend verification email.');
+                        }
+                      }}
+                      className="text-sm font-medium text-[#b8864a] hover:text-[#a67c47] transition underline underline-offset-2"
+                    >
+                      Didn't receive it? Resend verification email
+                    </button>
+                    <button
+                      onClick={() => { setStep('initial'); setSuccess(null); setEmail(''); setPassword(''); }}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 transition"
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                      Back to Sign In
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
