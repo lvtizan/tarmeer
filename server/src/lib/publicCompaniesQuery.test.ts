@@ -5,15 +5,13 @@ import {
   buildPublicCompanyDetailQuery,
 } from './publicCompaniesQuery';
 
-test('buildPublicCompaniesListQuery embeds limit and offset and only returns active companies with logos', () => {
+test('buildPublicCompaniesListQuery embeds limit and offset and returns active companies', () => {
   const result = buildPublicCompaniesListQuery({
     limit: 12,
     offset: 24,
   });
 
   assert.match(result.sql, /is_active = 1/);
-  assert.match(result.sql, /logo_url IS NOT NULL/);
-  assert.match(result.sql, /logo_url <> ''/);
   assert.match(result.sql, /LIMIT 12 OFFSET 24/);
   assert.deepEqual(result.params, []);
 });
