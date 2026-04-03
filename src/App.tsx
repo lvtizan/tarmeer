@@ -37,6 +37,7 @@ const CompanyProjectsPage = lazy(() => import('./pages/company/CompanyProjectsPa
 // Homeowner dashboard
 const UserDashboardLayout = lazy(() => import('./layouts/UserDashboardLayout'));
 const HomeownerDashboardPage = lazy(() => import('./pages/dashboard/HomeownerDashboardPage'));
+const HomeownerProjectsPage = lazy(() => import('./pages/dashboard/HomeownerProjectsPage'));
 const DashboardProfilePage = lazy(() => import('./pages/dashboard/DashboardProfilePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
@@ -110,6 +111,7 @@ function App() {
           {/* ====== Homeowner Dashboard ====== */}
           <Route path="/dashboard" element={<ProtectedRoute><UserDashboardLayout /></ProtectedRoute>}>
             <Route index element={<HomeownerDashboardPage />} />
+            <Route path="projects" element={<HomeownerProjectsPage />} />
             <Route path="profile" element={<DashboardProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
