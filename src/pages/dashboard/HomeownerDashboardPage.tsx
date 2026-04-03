@@ -140,8 +140,8 @@ export default function HomeownerDashboardPage() {
   };
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault(); setIsDropActive(false);
-    const files = await getDroppedImageFiles(e);
-    if (files.length > 0) await addFiles(files);
+    const result = await getDroppedImageFiles(e);
+    if (result.files.length > 0) await addFiles(result.files);
   };
   const removeImage = (i: number) => {
     setImageUrls(prev => prev.filter((_, idx) => idx !== i));

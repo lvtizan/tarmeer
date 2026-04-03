@@ -78,8 +78,14 @@ export default function CompanyProjectsPage() {
   const hFS = async (e:React.ChangeEvent<HTMLInputElement>) => { if(e.target.files?.length){await addFiles(e.target.files);e.target.value=''} };
   const hDrop = async (e:React.DragEvent) => {
     e.preventDefault(); setDropActive(false);
-    const files = await getDroppedImageFiles(e);
-    if (files.length > 0) await addFiles(files);
+    const result = await getDroppedImageFiles(e);
+    if (result.files.length > 0) {
+      // Auto-fill project title from folder name
+      if (result.folderName && !form.title.trim()) {
+        setForm(p => ({ ...p, title: result.folderName! }));
+      }
+      await addFiles(result.files);
+    }
   };
   const rmImg = (i:number) => { setImgs(p=>p.filter((_,x)=>x!==i));setFps(p=>p.filter((_,x)=>x!==i));if(cover>=i&&cover>0)setCover(c=>c-1) };
   const mvImg = (f:number,t:number) => { setImgs(p=>reorder(p,f,t));setFps(p=>reorder(p,f,t));if(cover===f)setCover(t) };
@@ -185,37 +191,69 @@ export default function CompanyProjectsPage() {
             </div>
           </section>
 
-          {/* RIGHT: Image Board */}
+          {/* RIGHT: Image Board — unified single block */}
           <aside className="min-w-0 space-y-4 xl:sticky xl:top-28 xl:self-start">
             <section className="min-w-0 rounded-[24px] border border-stone-200 bg-white p-[18px] shadow-[0_18px_50px_rgba(28,18,8,0.06)]">
               <div className="mb-2.5 flex items-start justify-between gap-3">
-                <div><h2 className="text-lg font-bold text-[#2c2c2c]">Image Board</h2><p className="mt-0.5 text-xs text-stone-500">{imgs.length>0?`${imgs.length} images uploaded · ${formatFileSize(gb)}`:'No images uploaded yet'}</p></div>
-                {imgs[cover]&&<div className="w-[128px] rounded-xl border border-stone-200 bg-stone-50 p-1.5"><div className="text-[10px] font-semibold text-stone-500">Current Cover</div><div className="mt-1 aspect-video w-full rounded-lg bg-cover bg-center" style={{backgroundImage:`url(${imgs[cover]})`}}/></div>}
+                <div><h2 className="text-lg font-bold text-[#2c2c2c]">Image Board</h2><p className="mt-0.5 text-xs text-stone-500">{imgs.length>0?`${imgs.length} images · ${formatFileSize(gb)}`:'Add images to your project'}</p></div>
+                {imgs[cover]&&<div className="w-[128px] rounded-xl border border-stone-200 bg-stone-50 p-1.5"><div className="text-[10px] font-semibold text-stone-500">Cover</div><div className="mt-1 aspect-video w-full rounded-lg bg-cover bg-center" style={{backgroundImage:`url(${imgs[cover]})`}}/></div>}
               </div>
-
-              {/* URL scraper */}
-              <div className="mb-2 flex gap-2">
-                <div className="relative flex-1"><Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"/><input type="url" value={scrapeUrl} onChange={e=>setScrapeUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&doScrape()} placeholder="Paste URL to import images..." className={fieldCls+" pl-10 !h-10 text-sm"}/></div>
-                <button type="button" onClick={doScrape} disabled={scraping||!scrapeUrl.trim()} className="h-10 px-4 rounded-lg text-sm font-bold text-white transition disabled:opacity-50" style={{backgroundColor:PRIMARY}}>{scraping?<Loader2 className="w-4 h-4 animate-spin"/>:'Import'}</button>
-              </div>
-              {scrapeErr&&<p className="text-xs text-red-600 mb-2">{scrapeErr}</p>}
-              {scrapeRes&&<div className="rounded-xl border border-stone-200 bg-stone-50 p-3 mb-2"><div className="flex items-center justify-between mb-2"><span className="text-xs font-medium text-stone-700">Found {scrapeRes.images.length} images</span><div className="flex gap-2"><button type="button" onClick={()=>setScrapeRes(null)} className="text-xs text-stone-500">Cancel</button><button type="button" onClick={applyScrape} className="text-xs font-bold text-white px-3 py-1 rounded-lg" style={{backgroundColor:PRIMARY}}>Use these</button></div></div><div className="flex gap-1.5 overflow-x-auto pb-1">{scrapeRes.images.slice(0,8).map((img,i)=><img key={i} src={img} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-stone-200"/>)}{scrapeRes.images.length>8&&<div className="w-14 h-14 rounded-lg bg-stone-200 flex items-center justify-center flex-shrink-0 text-xs">+{scrapeRes.images.length-8}</div>}</div></div>}
 
               {notice&&<div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 flex justify-between">{notice}<button type="button" onClick={()=>setNotice('')}><X className="w-3 h-3"/></button></div>}
 
-              {/* Drop zone */}
+              {/* Scrape result preview */}
+              {scrapeRes&&<div className="rounded-xl border border-stone-200 bg-stone-50 p-3 mb-3"><div className="flex items-center justify-between mb-2"><span className="text-xs font-medium text-stone-700">Found {scrapeRes.images.length} images</span><div className="flex gap-2"><button type="button" onClick={()=>setScrapeRes(null)} className="text-xs text-stone-500">Cancel</button><button type="button" onClick={applyScrape} className="text-xs font-bold text-white px-3 py-1 rounded-lg" style={{backgroundColor:PRIMARY}}>Use these</button></div></div><div className="flex gap-1.5 overflow-x-auto pb-1">{scrapeRes.images.slice(0,8).map((img,i)=><img key={i} src={img} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-stone-200"/>)}{scrapeRes.images.length>8&&<div className="w-14 h-14 rounded-lg bg-stone-200 flex items-center justify-center flex-shrink-0 text-xs">+{scrapeRes.images.length-8}</div>}</div></div>}
+
+              {/* Unified drop zone — files, folders, or URL */}
               <input id="g-up" type="file" accept="image/*" multiple className="hidden" onChange={hFS} disabled={prepping}/>
               <input id="f-up" type="file" accept="image/*" multiple {...{webkitdirectory:'',directory:''} as any} className="hidden" onChange={hFS} disabled={prepping}/>
+
               <label htmlFor="g-up" onDrop={hDrop} onDragOver={e=>{e.preventDefault();setDropActive(true)}} onDragLeave={()=>setDropActive(false)}
-                className={`flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed px-3 py-3 transition ${dropActive?'border-[#b8864a] bg-amber-50':'border-stone-300 bg-stone-50 hover:bg-stone-100'}`}>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm"><ImagePlus className="h-5 w-5 text-stone-500"/></div>
-                <div className="min-w-0 flex-1"><div className="font-semibold text-[#2c2c2c]">{prepping?'Uploading...':'Add case images'}</div><div className="text-xs text-stone-500">Drag images here or upload from your device. JPG, PNG, WEBP. Total under {formatFileSize(MAX_TOTAL_UPLOAD_BYTES)}.</div></div>
-                <label htmlFor="f-up" onClick={e=>e.stopPropagation()} className="shrink-0 flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 cursor-pointer hover:bg-stone-50"><FolderOpen className="w-3.5 h-3.5"/>Folder</label>
+                className={`block cursor-pointer rounded-2xl border-2 border-dashed p-5 transition ${
+                  tried&&imgs.length===0 ? 'border-red-300 bg-red-50' :
+                  dropActive ? 'border-[#b8864a] bg-amber-50' :
+                  'border-stone-300 bg-stone-50 hover:bg-stone-100 hover:border-stone-400'
+                }`}>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                    <ImagePlus className="h-6 w-6 text-[#b8864a]"/>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[#2c2c2c]">{prepping ? 'Processing images...' : 'Drop images or folders here'}</div>
+                    <div className="text-xs text-stone-500 mt-0.5">
+                      Drag files, entire folders, or click to browse. JPG, PNG, WEBP. Under {formatFileSize(MAX_TOTAL_UPLOAD_BYTES)}.
+                    </div>
+                  </div>
+                  <label htmlFor="f-up" onClick={e=>e.stopPropagation()}
+                    className="shrink-0 flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 cursor-pointer hover:bg-stone-50">
+                    <FolderOpen className="w-3.5 h-3.5"/>Select Folder
+                  </label>
+                </div>
+
+                {/* URL import row — inside the same drop zone */}
+                <div className="mt-3 pt-3 border-t border-stone-200/60" onClick={e=>e.preventDefault()}>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"/>
+                      <input type="url" value={scrapeUrl} onChange={e=>{e.stopPropagation();setScrapeUrl(e.target.value)}} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();doScrape()}}}
+                        onClick={e=>e.stopPropagation()}
+                        placeholder="Or paste a URL to import images..."
+                        className={fieldCls+" pl-10 !h-9 text-xs !bg-white"}/>
+                    </div>
+                    <button type="button" onClick={e=>{e.stopPropagation();e.preventDefault();doScrape()}} disabled={scraping||!scrapeUrl.trim()}
+                      className="h-9 px-3 rounded-lg text-xs font-bold text-white transition disabled:opacity-50" style={{backgroundColor:PRIMARY}}>
+                      {scraping?<Loader2 className="w-3.5 h-3.5 animate-spin"/>:'Import'}
+                    </button>
+                  </div>
+                  {scrapeErr&&<p className="text-xs text-red-600 mt-1">{scrapeErr}</p>}
+                </div>
+
+                {tried&&imgs.length===0&&<p className="text-xs text-red-500 mt-2 text-center">Please upload at least one image</p>}
               </label>
 
               {/* Image grid */}
-              <div className="mt-3 max-h-[420px] overflow-y-auto pr-0.5 pb-0.5">
-                {imgs.length>0?(
+              {imgs.length>0&&(
+                <div className="mt-3 max-h-[420px] overflow-y-auto pr-0.5 pb-0.5">
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {imgs.map((url,i)=>(
                       <div key={i} draggable onDragStart={()=>setDragI(i)} onDragOver={e=>{e.preventDefault();if(dragO!==i)setDragO(i)}} onDrop={e=>{e.preventDefault();if(dragI!==null)mvImg(dragI,i);setDragI(null);setDragO(null)}} onDragEnd={()=>{setDragI(null);setDragO(null)}}
@@ -232,12 +270,8 @@ export default function CompanyProjectsPage() {
                       </div>
                     ))}
                   </div>
-                ):(
-                  <div className={`rounded-2xl border px-4 py-10 text-center text-sm ${tried&&imgs.length===0?'border-red-300 bg-red-50 text-red-600':'border-stone-200 bg-stone-50 text-stone-500'}`}>
-                    {tried&&imgs.length===0?'Please upload at least one image':'Upload at least one image. Set as Cover to choose your project thumbnail.'}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </section>
           </aside>
         </form>
