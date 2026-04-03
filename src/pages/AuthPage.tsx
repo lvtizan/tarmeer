@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ChevronRight, Briefcase, Users } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
+import Navbar from '../components/Navbar';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -16,13 +17,13 @@ type AuthStep = 'initial' | 'password' | 'done';
 const valuePoints = [
   {
     icon: Briefcase,
-    title: 'Showcase your portfolio',
-    description: 'Present your best projects, services, and studio identity in one polished profile.',
+    title: 'Find the right company',
+    description: 'Browse verified renovation companies and design studios across the UAE.',
   },
   {
     icon: Users,
-    title: 'Reach high-intent clients',
-    description: 'Be discovered by homeowners across the UAE searching for trusted design partners.',
+    title: 'Get matched with professionals',
+    description: 'Submit your requirements and connect with trusted partners for your project.',
   },
 ];
 
@@ -114,17 +115,19 @@ export default function AuthPage() {
     try {
       const response = await api.post('/auth/login', { email, password });
       api.setToken(response.token);
-      // Store designer data with email fallback from user
-      const designerData = response.designer || {};
       if (response.user) {
-        designerData.email = designerData.email || response.user.email;
-        designerData.full_name = designerData.full_name || response.user.full_name;
-        designerData.phone = designerData.phone || response.user.phone;
-        designerData.city = designerData.city || response.user.city;
-        designerData.avatar_url = designerData.avatar_url || response.user.avatar_url;
+        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem('active_role', response.user.active_role || '');
       }
-      localStorage.setItem('designer', JSON.stringify(designerData));
-      navigate('/dashboard');
+      // Route based on active_role
+      const activeRole = response.user?.active_role;
+      if (!activeRole) {
+        navigate('/onboarding');
+      } else if (activeRole === 'company') {
+        navigate('/company');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setLoading(false);
       setError(err.message || 'Invalid email or password. Please try again.');
@@ -174,20 +177,9 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
-      {/* Top Navigation */}
-      <header className="border-b border-stone-200 bg-white px-6 py-3 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2.5 hover:opacity-80 transition">
-          <img src="/images/tarmeer_logo.svg" alt="Tarmeer" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <span className="font-serif text-lg font-bold text-[#1c1917] tracking-tight">TARMEER</span>
-        </a>
-        <div className="flex items-center gap-4 text-sm">
-          <a href="/" className="text-stone-500 hover:text-[#1c1917] transition">Home</a>
-          <a href="/companies" className="text-stone-500 hover:text-[#1c1917] transition">Find Companies</a>
-          <a href="/designers" className="text-stone-500 hover:text-[#1c1917] transition">Find Designers</a>
-        </div>
-      </header>
+      <Navbar forceShowOnAuth />
 
-      <div className="flex items-start justify-center px-4 sm:px-6 pt-[8vh] pb-16 relative overflow-hidden min-h-[85vh]">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
       {/* Premium Ambient Background */}
       <div className="absolute top-0 left-0 w-[700px] h-[700px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
@@ -199,17 +191,17 @@ export default function AuthPage() {
         <div className="max-w-[580px]">
           {/* Eyebrow */}
           <p className="text-xs font-medium text-[#B8864A] tracking-[0.2em] mb-3 uppercase">
-            For Interior Designers & Studios
+            UAE's Renovation Platform
           </p>
 
           {/* Main Title */}
           <h1 className="font-serif text-[32px] sm:text-[38px] lg:text-[42px] text-[#1c1917] mb-4 leading-[1.2] tracking-tight">
-            Join the UAE's Premier<br />Design Community
+            Your Home Renovation<br />Starts Here
           </h1>
 
           {/* Description */}
           <p className="text-stone-600 text-base leading-relaxed mb-8 max-w-[480px]">
-            Build a premium presence and connect with homeowners seeking trusted design partners.
+            Connect with top renovation companies and design studios across the UAE.
           </p>
 
           {/* Value Points */}

@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
 import { checkAvailability } from '../controllers/authController';
 import * as userAuth from '../controllers/userAuthController';
+import * as onboarding from '../controllers/onboardingController';
+import * as homeowner from '../controllers/homeownerController';
+import * as companyProfile from '../controllers/companyProfileController';
 import rateLimit from 'express-rate-limit';
 import { authRateLimit, checkAccountLock } from '../middleware/authRateLimit';
 import { authenticate } from '../middleware/auth';
@@ -98,11 +101,40 @@ router.post('/reset-password',
   userAuth.resetPassword
 );
 
-// 获取当前登录用户信息
-router.get('/me', authenticate, userAuth.getMe);
+// 获取当前登录用户信息 (enhanced: returns all profiles)
+router.get('/me', authenticate, onboarding.getMeEnhanced);
 
 // Update profile
 router.put('/me', authenticate, userAuth.updateProfile);
+
+// ====== Role Selection & Switching ======
+router.post('/select-role', authenticate, onboarding.selectRole);
+router.post('/switch-role', authenticate, onboarding.switchRole);
+
+// ====== Homeowner Routes ======
+router.post('/homeowner/profile', authenticate, homeowner.upsertProfile);
+router.get('/homeowner/profile', authenticate, homeowner.getProfile);
+router.get('/homeowner/assigned-designer', authenticate, homeowner.getAssignedDesigner);
+
+// ====== Company Profile Routes ======
+router.post('/company/profile', authenticate, companyProfile.upsertProfile);
+router.get('/company/profile', authenticate, companyProfile.getProfile);
+router.get('/company/projects', authenticate, companyProfile.getCompanyProjects);
+router.get('/company/services', companyProfile.getServiceOptions);
+
+// Portfolio scrape from URL
+router.post('/company/scrape-portfolio', authenticate, async (req: any, res: any) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: 'URL is required.' });
+    const { scrapePortfolio } = await import('../services/portfolioScraper');
+    const result = await scrapePortfolio(url);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Scrape portfolio error:', error.message);
+    res.status(400).json({ error: `Failed to scrape: ${error.message || 'Unknown error'}` });
+  }
+});
 
 // Google One Tap 登录（ID Token 验证）
 router.post('/google/one-tap',

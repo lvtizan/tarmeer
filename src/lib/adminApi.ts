@@ -164,7 +164,7 @@ class AdminApiClient {
     return 'Unable to connect to the server. Please try again later or contact support if the problem persists.';
   }
 
-  private async request(endpoint: string, options: RequestInit = {}) {
+  async request(endpoint: string, options: RequestInit = {}) {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -197,9 +197,11 @@ class AdminApiClient {
 
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status} ${response.statusText || 'Request failed'}`;
+      let serverError = '';
       try {
         const body = await response.json();
         if (body.error) {
+          serverError = body.error;
           errorMessage = `${body.error}（HTTP ${response.status}）`;
         }
       } catch {
@@ -207,6 +209,11 @@ class AdminApiClient {
       }
       if (response.status === 401) {
         this.handleUnauthorized(endpoint, errorMessage);
+      }
+      // For auth endpoints, show the server's actual error (e.g. "Invalid email or password")
+      const isPublicEndpoint = AdminApiClient.AUTH_PUBLIC_ENDPOINTS.has(endpoint);
+      if (isPublicEndpoint && serverError) {
+        throw new Error(serverError);
       }
       const devMessage = `接口 /admin${endpoint} 请求失败：${errorMessage}`;
       throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));

@@ -1,5 +1,6 @@
 import pool from '../config/database';
 import * as XLSX from 'xlsx';
+import { notifyNewInquiry } from '../services/notificationService';
 
 const VALID_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const VALID_AREA_RANGES = ['< 50m²', '50-100m²', '100-200m²', '200-500m²', '500m²+'];
@@ -7,7 +8,7 @@ const VALID_AREA_RANGES = ['< 50m²', '50-100m²', '100-200m²', '200-500m²', '
 // Submit inquiry (public, no auth required)
 export async function submitInquiry(req: any, res: any) {
   try {
-    const { name, phone, city, area_range, message, designer_id, company_id } = req.body;
+    const { name, phone, city, area_range, message, company_id } = req.body;
 
     if (!name || !phone || !city || !area_range) {
       return res.status(400).json({ error: 'Name, phone, city, and area range are required.' });
@@ -22,14 +23,26 @@ export async function submitInquiry(req: any, res: any) {
     }
 
     const [result] = await pool.execute(
-      `INSERT INTO design_inquiries (name, phone, city, area_range, message, designer_id, company_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, phone, city, area_range, message || null, designer_id || null, company_id || null]
+      `INSERT INTO design_inquiries (name, phone, city, area_range, message, company_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [name, phone, city, area_range, message || null, company_id || null]
     );
+
+    const inquiryId = (result as any).insertId;
+
+    // Async notification (don't block response)
+    let companyName: string | undefined;
+    if (company_id) {
+      const [cRows] = await pool.execute('SELECT company_name FROM company_profiles WHERE id = ?', [company_id]);
+      companyName = (cRows as any[])[0]?.company_name;
+    }
+    setImmediate(() => {
+      notifyNewInquiry({ id: inquiryId, name, phone, city, area_range, message, companyName }).catch(() => {});
+    });
 
     res.status(201).json({
       message: 'Inquiry submitted successfully. We will contact you soon.',
-      inquiryId: (result as any).insertId,
+      inquiryId,
     });
   } catch (error) {
     console.error('Submit inquiry error:', error);
@@ -52,10 +65,6 @@ export async function getInquiries(req: any, res: any) {
       where += ' AND di.status = ?';
       params.push(status);
     }
-    if (designer_id) {
-      where += ' AND di.designer_id = ?';
-      params.push(designer_id);
-    }
     if (company_id) {
       where += ' AND di.company_id = ?';
       params.push(company_id);
@@ -73,11 +82,9 @@ export async function getInquiries(req: any, res: any) {
 
     const [rows] = await pool.execute(
       `SELECT di.*,
-        d.full_name as designer_name,
-        c.name_en as company_name
+        cp.company_name
        FROM design_inquiries di
-       LEFT JOIN designers d ON di.designer_id = d.id
-       LEFT JOIN uae_companies c ON di.company_id = c.id
+       LEFT JOIN company_profiles cp ON di.company_id = cp.id
        ${where}
        ORDER BY di.created_at DESC
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
@@ -134,16 +141,13 @@ export async function exportInquiries(req: any, res: any) {
     const params: any[] = [];
 
     if (status) { where += ' AND di.status = ?'; params.push(status); }
-    if (designer_id) { where += ' AND di.designer_id = ?'; params.push(designer_id); }
     if (company_id) { where += ' AND di.company_id = ?'; params.push(company_id); }
 
     const [rows] = await pool.execute(
       `SELECT di.*,
-        d.full_name as designer_name,
-        c.name_en as company_name
+        cp.company_name
        FROM design_inquiries di
-       LEFT JOIN designers d ON di.designer_id = d.id
-       LEFT JOIN uae_companies c ON di.company_id = c.id
+       LEFT JOIN company_profiles cp ON di.company_id = cp.id
        ${where}
        ORDER BY di.created_at DESC`,
       params
@@ -156,7 +160,6 @@ export async function exportInquiries(req: any, res: any) {
       'City': row.city,
       'Area Range': row.area_range,
       'Message': row.message || '',
-      'Designer': row.designer_name || '',
       'Company': row.company_name || '',
       'Status': row.status,
       'Admin Notes': row.admin_notes || '',
@@ -188,28 +191,19 @@ export async function getMyInquiries(req: any, res: any) {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    // Find linked designer and company
-    const [designerRows] = await pool.execute(
-      'SELECT id FROM designers WHERE user_id = ? AND deleted_at IS NULL', [userId]
-    );
+    // Find company profile for this user
     const [companyRows] = await pool.execute(
-      'SELECT id FROM uae_companies WHERE owner_user_id = ?', [userId]
+      'SELECT id FROM company_profiles WHERE user_id = ?', [userId]
     );
 
-    const designerId = (designerRows as any[])[0]?.id;
     const companyId = (companyRows as any[])[0]?.id;
 
-    if (!designerId && !companyId) {
+    if (!companyId) {
       return res.json({ inquiries: [], pagination: { page, limit, total: 0, totalPages: 0 } });
     }
 
-    let where = 'WHERE (';
-    const conditions: string[] = [];
-    const params: any[] = [];
-
-    if (designerId) { conditions.push('designer_id = ?'); params.push(designerId); }
-    if (companyId) { conditions.push('company_id = ?'); params.push(companyId); }
-    where += conditions.join(' OR ') + ')';
+    const where = 'WHERE company_id = ?';
+    const params: any[] = [companyId];
 
     const [countRows] = await pool.execute(
       `SELECT COUNT(*) as total FROM design_inquiries ${where}`, params

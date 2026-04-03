@@ -14,12 +14,11 @@ const AREA_RANGES = [
 ];
 
 interface InquiryFormProps {
-  designerId?: number | string;
   companyId?: number | string;
   recipientName?: string;
 }
 
-export default function InquiryForm({ designerId, companyId, recipientName = 'our team' }: InquiryFormProps) {
+export default function InquiryForm({ companyId, recipientName = 'our team' }: InquiryFormProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
@@ -46,7 +45,6 @@ export default function InquiryForm({ designerId, companyId, recipientName = 'ou
           city,
           area_range: areaRange,
           message: message || undefined,
-          designer_id: designerId || undefined,
           company_id: companyId || undefined,
         }),
       });

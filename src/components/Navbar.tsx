@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { safeGetJSON } from '../lib/storage';
 import Avatar from './ui/Avatar';
+import NotificationBell from './NotificationBell';
 import { useNavigationHandler } from '../hooks/useNavigationHandler';
 
 const serviceCategories = {
@@ -33,10 +34,9 @@ const serviceCategories = {
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/materials', label: 'Showrooms' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ forceShowOnAuth = false }: { forceShowOnAuth?: boolean }) {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { handleNavClick } = useNavigationHandler();
@@ -44,10 +44,10 @@ export default function Navbar() {
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
 
   // Hide navbar completely on auth page
-  if (isAuthPage) return null;
+  if (isAuthPage && !forceShowOnAuth) return null;
 
   const isLoggedIn = Boolean(api.getToken());
-  const user = safeGetJSON<Record<string, unknown>>('user');
+  const user = safeGetJSON<Record<string, unknown>>('user') || safeGetJSON<Record<string, unknown>>('designer');
   const activeRole = localStorage.getItem('active_role');
 
   let accountEntry = { to: '/auth?tab=login', label: 'Log In' };
@@ -88,7 +88,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-stone-200">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
+      <div className="w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between h-14 sm:h-16">
         <Link to="/" className="flex items-center gap-2 font-serif text-xl sm:text-2xl font-bold text-[#2c2c2c]">
           <img
             src="/images/tarmeer_logo.svg"
@@ -164,16 +164,21 @@ export default function Navbar() {
             </AnimatePresence>
           </div>
 
+          {renderNavLink('/materials', 'Showrooms')}
+
           {isLoggedIn ? (
-            <Link
-              to={accountEntry.to}
-              onClick={() => handleClick(accountEntry.to)}
-              className="inline-flex items-center"
-              aria-label="Open dashboard"
-              title="Dashboard"
-            >
-              <Avatar name={userName} avatarUrl={userAvatar} size="sm" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <NotificationBell />
+              <Link
+                to={accountEntry.to}
+                onClick={() => handleClick(accountEntry.to)}
+                className="inline-flex items-center"
+                aria-label="Open dashboard"
+                title="Dashboard"
+              >
+                <Avatar name={userName} avatarUrl={userAvatar} size="sm" />
+              </Link>
+            </div>
           ) : (
             <Link
               to="/auth"
@@ -190,14 +195,14 @@ export default function Navbar() {
             className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-stone-50 transition"
           >
             <Briefcase className="w-4 h-4" />
-            Join as Pro
+            Join as Company
           </Link>
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
           <Link to="/onboarding" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
             <Briefcase className="w-3.5 h-3.5" />
-            Join as Pro
+            Join as Company
           </Link>
           <button
             type="button"
@@ -268,6 +273,8 @@ export default function Navbar() {
                 )}
               </AnimatePresence>
             </div>
+
+            {renderNavLink('/materials', 'Showrooms', 'py-2')}
 
             {isLoggedIn ? (
               <Link

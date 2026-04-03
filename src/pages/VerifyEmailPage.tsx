@@ -21,14 +21,25 @@ export default function VerifyEmailPage() {
     const verifyEmail = async () => {
       try {
         const response = await api.post('/auth/verify-email', { token });
-        
+
         api.setToken(response.token);
-        localStorage.setItem('designer', JSON.stringify(response.designer));
-        
+        if (response.user) {
+          localStorage.setItem('user', JSON.stringify(response.user));
+          localStorage.setItem('active_role', response.user.active_role || '');
+        }
+
         setStatus('success');
-        
+
+        // New users (no active_role) go to onboarding
+        const activeRole = response.user?.active_role;
         setTimeout(() => {
-          navigate('/dashboard');
+          if (!activeRole) {
+            navigate('/onboarding');
+          } else if (activeRole === 'company') {
+            navigate('/company');
+          } else {
+            navigate('/dashboard');
+          }
         }, 2000);
       } catch (err: any) {
         setStatus('error');
@@ -67,7 +78,10 @@ export default function VerifyEmailPage() {
               <div className="text-sm text-[#6b6b6b]">
                 If redirect doesn't happen,
                 <button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => {
+                    const role = localStorage.getItem('active_role');
+                    navigate(role ? (role === 'company' ? '/company' : '/dashboard') : '/onboarding');
+                  }}
                   className="text-[#b8864a] font-semibold hover:underline ml-1"
                 >
                   click here

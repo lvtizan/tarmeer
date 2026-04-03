@@ -35,25 +35,34 @@ function upsertCanonical(url: string) {
 function getSeoForPath(pathname: string): SeoMeta {
   if (pathname === '/') {
     return {
-      title: 'Tarmeer | Interior Design & Build in UAE',
-      description: 'Find interior designers in Dubai, Sharjah and across the UAE. Compare portfolios and start your renovation with Tarmeer.',
+      title: 'Tarmeer | Interior Design & Renovation in UAE',
+      description: 'Find top renovation companies and design studios in Dubai, Sharjah and across the UAE. Compare portfolios and start your project with Tarmeer.',
       canonicalPath: '/',
     };
   }
 
-  if (pathname.startsWith('/designers/')) {
+  if (pathname.startsWith('/companies/')) {
     return {
-      title: 'Designer Portfolio | Tarmeer UAE',
-      description: 'Browse designer portfolios, project cases, and styles on Tarmeer. Connect with verified interior designers in the UAE.',
+      title: 'Company Portfolio | Tarmeer UAE',
+      description: 'Browse company portfolios, project cases, and services on Tarmeer. Connect with verified renovation companies in the UAE.',
       canonicalPath: pathname,
     };
   }
 
-  if (pathname === '/designers') {
+  if (pathname === '/companies') {
     return {
-      title: 'Find Interior Designers in UAE | Tarmeer',
-      description: 'Explore verified interior designers in Dubai, Sharjah, and Abu Dhabi. Filter by style and project type.',
-      canonicalPath: '/designers',
+      title: 'Find Renovation Companies in UAE | Tarmeer',
+      description: 'Explore verified renovation companies and design studios in Dubai, Sharjah, and Abu Dhabi. Filter by service and city.',
+      canonicalPath: '/companies',
+    };
+  }
+
+  // Legacy /designers paths redirect to /companies, but handle SEO gracefully
+  if (pathname.startsWith('/designers')) {
+    return {
+      title: 'Find Renovation Companies in UAE | Tarmeer',
+      description: 'Explore verified renovation companies and design studios in the UAE.',
+      canonicalPath: '/companies',
     };
   }
 
@@ -74,8 +83,8 @@ function getSeoForPath(pathname: string): SeoMeta {
   }
 
   return {
-    title: 'Tarmeer | Interior Design Platform UAE',
-    description: 'Tarmeer connects homeowners with designers, project inspiration, and trusted renovation services in the UAE.',
+    title: 'Tarmeer | Interior Design & Renovation Platform UAE',
+    description: 'Tarmeer connects homeowners with renovation companies, design studios, and trusted renovation services in the UAE.',
     canonicalPath: pathname,
   };
 }

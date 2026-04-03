@@ -1,19 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette, ShieldAlert, Mail, FileUp } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
+import NotificationBell from '../NotificationBell';
 
 const PRIMARY = '#b8864a';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/users', label: 'Users', icon: Users },
-  { to: '/admin/designers', label: 'Designers', icon: Palette, permission: 'can_approve' as const },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
+  { to: '/admin/roles', label: 'Approvals', icon: Palette, permission: 'can_approve' as const },
   { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
   { to: '/admin/complaints', label: 'Complaints', icon: ShieldAlert },
+  { to: '/admin/company-import', label: 'Import Company', icon: FileUp },
+  { to: '/admin/notification-emails', label: 'Notify Emails', icon: Mail },
   { to: '/admin/visitors', label: 'Visitors', icon: Globe, permission: 'can_view_stats' as const },
   { to: '/admin/analytics', label: 'Analytics', icon: Activity, permission: 'can_view_stats' as const },
   { to: '/admin/stats', label: 'Statistics', icon: BarChart2, permission: 'can_view_stats' as const },
@@ -26,7 +29,6 @@ const adminItems = [
 // Map nav paths to notification keys
 const NOTIFICATION_MAP: Record<string, string> = {
   '/admin/complaints': 'newComplaints',
-  '/admin/designers': 'newDesignerApps',
 };
 
 export default function AdminLayout() {
@@ -88,7 +90,8 @@ export default function AdminLayout() {
           >
             <LayoutDashboard className="w-5 h-5" style={{ color: PRIMARY }} />
           </div>
-          <span className="ml-3 text-lg font-bold text-[#2c2c2c]">Tarmeer Admin</span>
+          <span className="ml-3 text-lg font-bold text-[#2c2c2c] flex-1">Tarmeer Admin</span>
+          <NotificationBell />
         </div>
 
         {/* Navigation - active: left border + light bg like designer */}

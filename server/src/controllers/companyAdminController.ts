@@ -143,6 +143,110 @@ export async function bindUserToCompany(req: any, res: any) {
   }
 }
 
+// Get single scraped company detail (for edit form)
+export async function getScrapedCompany(req: any, res: any) {
+  try {
+    const [rows] = await pool.execute('SELECT * FROM uae_companies WHERE id = ?', [req.params.companyId]);
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Company not found.' });
+    res.json({ company: (rows as any[])[0] });
+  } catch (error) {
+    console.error('Get scraped company error:', error);
+    res.status(500).json({ error: 'Failed to get company.' });
+  }
+}
+
+// Edit scraped company (uae_companies)
+export async function editScrapedCompany(req: any, res: any) {
+  try {
+    const { companyId } = req.params;
+    const { name_en, name_ar, phone, email, website, whatsapp, city, area, address, services, specialties, year_established, license_number, instagram, facebook, linkedin, description } = req.body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name_en !== undefined) { updates.push('name_en = ?'); values.push(name_en); }
+    if (name_ar !== undefined) { updates.push('name_ar = ?'); values.push(name_ar); }
+    if (phone !== undefined) { updates.push('phone = ?'); values.push(phone || null); }
+    if (email !== undefined) { updates.push('email = ?'); values.push(email || null); }
+    if (website !== undefined) { updates.push('website = ?'); values.push(website || null); }
+    if (whatsapp !== undefined) { updates.push('whatsapp = ?'); values.push(whatsapp || null); }
+    if (city !== undefined) { updates.push('city = ?'); values.push(city || null); }
+    if (area !== undefined) { updates.push('area = ?'); values.push(area || null); }
+    if (address !== undefined) { updates.push('address = ?'); values.push(address || null); }
+    if (description !== undefined) { updates.push('description = ?'); values.push(description || null); }
+    if (services !== undefined) { updates.push('services = ?'); values.push(JSON.stringify(services)); }
+    if (specialties !== undefined) { updates.push('specialties = ?'); values.push(JSON.stringify(specialties)); }
+    if (year_established !== undefined) { updates.push('year_established = ?'); values.push(year_established || null); }
+    if (license_number !== undefined) { updates.push('license_number = ?'); values.push(license_number || null); }
+    if (instagram !== undefined) { updates.push('instagram = ?'); values.push(instagram || null); }
+    if (facebook !== undefined) { updates.push('facebook = ?'); values.push(facebook || null); }
+    if (linkedin !== undefined) { updates.push('linkedin = ?'); values.push(linkedin || null); }
+
+    if (updates.length === 0) return res.status(400).json({ error: 'No fields to update.' });
+
+    values.push(companyId);
+    await pool.execute(`UPDATE uae_companies SET ${updates.join(', ')} WHERE id = ?`, values);
+
+    const [rows] = await pool.execute('SELECT * FROM uae_companies WHERE id = ?', [companyId]);
+    res.json({ company: (rows as any[])[0] });
+  } catch (error) {
+    console.error('Edit scraped company error:', error);
+    res.status(500).json({ error: 'Failed to edit company.' });
+  }
+}
+
+// Get single company profile detail (for edit form)
+export async function getCompanyProfile(req: any, res: any) {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT cp.*, u.email as user_email, u.full_name as user_name
+       FROM company_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.id = ?`,
+      [req.params.id]
+    );
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Profile not found.' });
+    res.json({ profile: (rows as any[])[0] });
+  } catch (error) {
+    console.error('Get company profile error:', error);
+    res.status(500).json({ error: 'Failed to get profile.' });
+  }
+}
+
+// Edit company profile (company_profiles) by admin
+export async function editCompanyProfile(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const { company_name, description, contact_person, phone, website, city, address, services, specialties, company_type, trade_license_number, establishment_year, status } = req.body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (company_name !== undefined) { updates.push('company_name = ?'); values.push(company_name); }
+    if (description !== undefined) { updates.push('description = ?'); values.push(description); }
+    if (contact_person !== undefined) { updates.push('contact_person = ?'); values.push(contact_person); }
+    if (phone !== undefined) { updates.push('phone = ?'); values.push(phone); }
+    if (website !== undefined) { updates.push('website = ?'); values.push(website || null); }
+    if (city !== undefined) { updates.push('city = ?'); values.push(city); }
+    if (address !== undefined) { updates.push('address = ?'); values.push(address); }
+    if (company_type !== undefined) { updates.push('company_type = ?'); values.push(company_type); }
+    if (trade_license_number !== undefined) { updates.push('trade_license_number = ?'); values.push(trade_license_number || null); }
+    if (establishment_year !== undefined) { updates.push('establishment_year = ?'); values.push(establishment_year || null); }
+    if (status !== undefined) { updates.push('status = ?'); values.push(status); }
+    if (services !== undefined) { updates.push('services = ?'); values.push(JSON.stringify(services)); }
+    if (specialties !== undefined) { updates.push('specialties = ?'); values.push(JSON.stringify(specialties)); }
+
+    if (updates.length === 0) return res.status(400).json({ error: 'No fields to update.' });
+
+    values.push(id);
+    await pool.execute(`UPDATE company_profiles SET ${updates.join(', ')} WHERE id = ?`, values);
+
+    const [rows] = await pool.execute('SELECT * FROM company_profiles WHERE id = ?', [id]);
+    res.json({ profile: (rows as any[])[0] });
+  } catch (error) {
+    console.error('Edit company profile error:', error);
+    res.status(500).json({ error: 'Failed to edit profile.' });
+  }
+}
+
 // Unbind company
 export async function unbindCompany(req: any, res: any) {
   try {

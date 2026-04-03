@@ -84,11 +84,19 @@ export default function GoogleOneTap() {
         });
         const meData = await meResult.json();
 
-        if (meData.designer) {
-          localStorage.setItem('designer', JSON.stringify(meData.designer));
+        if (meData.user) {
+          localStorage.setItem('user', JSON.stringify(meData.user));
+          localStorage.setItem('active_role', meData.user.active_role || '');
         }
 
-        navigate('/dashboard');
+        const activeRole = meData.user?.active_role;
+        if (!activeRole) {
+          navigate('/onboarding');
+        } else if (activeRole === 'company') {
+          navigate('/company');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       console.error('[GoogleOneTap] Login failed:', error);

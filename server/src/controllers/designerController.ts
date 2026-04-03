@@ -4,6 +4,7 @@ import {
   sanitizePublicProject,
 } from '../lib/publicDesignerSerialization';
 import { buildPublicDesignersListQuery } from '../lib/publicDesignersQuery';
+import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 import { parseJsonField } from '../lib/parseJsonField';
 
 function normalizeCity(city?: string | null): string | null {
@@ -132,6 +133,7 @@ export async function updateDesigner(req: any, res: any) {
   try {
     const { id } = req.params;
     const { full_name, title, phone, city, address, bio, avatar_url, style, expertise } = req.body;
+    const requestedDesignerId = parseInt(id, 10);
 
     console.log('=== UPDATE DESIGNER ===');
     console.log('Designer ID:', id);
@@ -140,17 +142,35 @@ export async function updateDesigner(req: any, res: any) {
     console.log('Avatar URL length:', avatar_url?.length || 0);
     console.log('Avatar URL preview:', avatar_url?.substring(0, 100) || 'none');
 
-    if (req.user.id !== parseInt(id)) {
+    if (req.user.id !== requestedDesignerId) {
       return res.status(403).json({ error: 'You cannot edit another designer\'s profile.' });
     }
 
-    const [existingRows] = await pool.execute(
+    let effectiveDesignerId = requestedDesignerId;
+    let [existingRows] = await pool.execute(
       'SELECT * FROM designers WHERE id = ? AND deleted_at IS NULL',
-      [id]
+      [effectiveDesignerId]
     );
 
     if ((existingRows as any[]).length === 0) {
-      return res.status(404).json({ error: 'Designer not found.' });
+      const linkedDesigner = await findOrLinkDesignerForUser({
+        id: req.user.userId,
+        email: req.user.email,
+      });
+
+      if (!linkedDesigner) {
+        return res.status(404).json({ error: 'Designer not found.' });
+      }
+
+      effectiveDesignerId = linkedDesigner.id;
+      [existingRows] = await pool.execute(
+        'SELECT * FROM designers WHERE id = ? AND deleted_at IS NULL',
+        [effectiveDesignerId]
+      );
+
+      if ((existingRows as any[]).length === 0) {
+        return res.status(404).json({ error: 'Designer not found.' });
+      }
     }
 
     const existing = (existingRows as any[])[0];
@@ -169,13 +189,13 @@ export async function updateDesigner(req: any, res: any) {
         avatar_url ?? existing.avatar_url,
         style ?? existing.style,
         JSON.stringify(expertise ?? parseJsonField(existing.expertise) ?? []),
-        id,
+        effectiveDesignerId,
       ]
     );
     
     const [designer] = await pool.execute(
       'SELECT * FROM designers WHERE id = ?',
-      [id]
+      [effectiveDesignerId]
     );
     
     res.json({

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
+import CompanyEditModal from '../../components/admin/CompanyEditModal';
 
 type Tab = 'companies' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -64,6 +65,7 @@ export default function AdminCompaniesPage() {
 
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [editId, setEditId] = useState<{ type: 'scraped' | 'profile'; id: number } | null>(null);
 
   const loadCompanies = useCallback(async () => {
     setCompanyLoading(true);
@@ -221,6 +223,12 @@ export default function AdminCompaniesPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 space-x-2">
+                      <button
+                        onClick={() => setEditId({ type: 'scraped', id: c.id })}
+                        className="text-xs px-3 py-1 rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200"
+                      >
+                        Edit
+                      </button>
                       {c.owner_user_id ? (
                         <button
                           onClick={() => handleUnbind(c.id)}
@@ -368,6 +376,16 @@ export default function AdminCompaniesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {editId && (
+        <CompanyEditModal
+          type={editId.type}
+          id={editId.id}
+          onClose={() => setEditId(null)}
+          onSaved={() => { loadCompanies(); loadApplications(); }}
+        />
       )}
 
       {/* Bind Modal */}

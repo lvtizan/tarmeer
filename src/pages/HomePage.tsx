@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { SCROLL_TIMEOUT_MS } from '../lib/constants';
 import Banner from '../components/home/Banner';
 import PricingSection from '../components/home/PricingSection';
-import DesignersSection from '../components/home/DesignersSection';
 import HomeDesignSection from '../components/home/HomeDesignSection';
 
 export default function HomePage() {
@@ -12,7 +11,7 @@ export default function HomePage() {
   useEffect(() => {
     if (location.pathname !== '/') return;
     const hash = location.hash;
-    const id = hash === '#pricing' ? 'pricing' : hash === '#designers' ? 'designers' : null;
+    const id = hash === '#pricing' ? 'pricing' : hash === '#companies' ? 'companies' : null;
     if (!id) return;
     const el = document.getElementById(id);
     if (el) {
@@ -25,7 +24,6 @@ export default function HomePage() {
     <>
       <Banner />
       <PricingSection />
-      <DesignersSection />
       <HomeDesignSection />
     </>
   );

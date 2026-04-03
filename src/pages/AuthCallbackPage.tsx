@@ -13,10 +13,9 @@ export default function AuthCallbackPage() {
     const error = searchParams.get('error');
 
     if (token) {
-      // 存储 token
       api.setToken(token);
 
-      // 获取用户信息
+      // Fetch user info and route based on active_role
       fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -24,13 +23,21 @@ export default function AuthCallbackPage() {
       })
         .then(res => res.json())
         .then(data => {
-          if (data.designer) {
-            localStorage.setItem('designer', JSON.stringify(data.designer));
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('active_role', data.user.active_role || '');
           }
-          navigate('/dashboard');
+          const activeRole = data.user?.active_role;
+          if (!activeRole) {
+            navigate('/onboarding');
+          } else if (activeRole === 'company') {
+            navigate('/company');
+          } else {
+            navigate('/dashboard');
+          }
         })
         .catch(() => {
-          navigate('/dashboard');
+          navigate('/onboarding');
         });
     } else if (error) {
       // 错误处理

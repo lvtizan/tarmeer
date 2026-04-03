@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import config from '../config';
 import pool from '../config/database';
+import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -19,7 +20,7 @@ export async function authenticate(req: any, res: any, next: any) {
     // New token format: { userId, email, role }
     if (decoded.userId) {
       const [rows] = await pool.execute(
-        'SELECT id, email, role, status FROM users WHERE id = ?',
+        'SELECT id, email, role, active_role, status FROM users WHERE id = ?',
         [decoded.userId]
       );
       const users = rows as any[];
@@ -29,22 +30,22 @@ export async function authenticate(req: any, res: any, next: any) {
       if (users[0].status === 'suspended') {
         return res.status(403).json({ error: 'Account suspended.' });
       }
-      // If user has a linked designer, set id to designer.id for backward compat
-      const [designerRows] = await pool.execute(
-        'SELECT id FROM designers WHERE user_id = ? AND deleted_at IS NULL LIMIT 1',
-        [users[0].id]
-      );
-      const linkedDesigner = (designerRows as any[])[0];
+      const linkedDesigner = await findOrLinkDesignerForUser({
+        id: users[0].id,
+        email: users[0].email,
+      });
       req.user = {
         userId: users[0].id,
         id: linkedDesigner ? linkedDesigner.id : users[0].id,
         email: users[0].email,
         role: users[0].role,
+        active_role: users[0].active_role,
       };
       return next();
     }
 
     // Legacy token format: { id, email } (designer tokens)
+    // These users should re-login to get a new token, but handle gracefully
     if (decoded.id) {
       const [rows] = await pool.execute(
         'SELECT id, email, user_id FROM designers WHERE id = ? AND deleted_at IS NULL',
@@ -52,26 +53,25 @@ export async function authenticate(req: any, res: any, next: any) {
       );
       const designers = rows as any[];
       if (designers.length === 0) {
-        return res.status(401).json({ error: 'Designer account not found.' });
+        return res.status(401).json({ error: 'Account not found. Please log in again.' });
       }
 
       const designer = designers[0];
       // If designer is linked to a user, use user info
       if (designer.user_id) {
         const [userRows] = await pool.execute(
-          'SELECT id, email, role, status FROM users WHERE id = ?',
+          'SELECT id, email, role, active_role, status FROM users WHERE id = ?',
           [designer.user_id]
         );
         if ((userRows as any[]).length > 0) {
           const user = (userRows as any[])[0];
-          req.user = { userId: user.id, id: designer.id, email: user.email, role: user.role };
+          req.user = { userId: user.id, id: user.id, email: user.email, role: user.role, active_role: user.active_role };
           return next();
         }
       }
 
-      // Fallback: use designer directly (for unlinked designers)
-      req.user = { id: designer.id, email: designer.email, role: 'designer' };
-      return next();
+      // Unlinked designer — prompt re-login
+      return res.status(401).json({ error: 'Please log in again to continue.' });
     }
 
     return res.status(401).json({ error: 'Invalid authentication token.' });

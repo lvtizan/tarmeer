@@ -5,6 +5,7 @@ import pool from '../config/database';
 import config from '../config';
 import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
+import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email',
@@ -43,6 +44,22 @@ function generateToken(user: { id: number; email: string; role: string }) {
     config.jwt.secret,
     { expiresIn: '7d' }
   );
+}
+
+async function getLinkedDesignerPayload(user: { id: number; email: string }) {
+  const linkedDesigner = await findOrLinkDesignerForUser(user);
+  if (!linkedDesigner) {
+    return null;
+  }
+
+  const [rows] = await pool.execute(
+    `SELECT id, email, full_name, title, phone, city, address, bio, avatar_url, style, expertise, status, is_approved, email_verified, display_order, created_at, updated_at
+     FROM designers
+     WHERE id = ? AND deleted_at IS NULL`,
+    [linkedDesigner.id]
+  );
+
+  return (rows as any[])[0] || null;
 }
 
 // Register a new user (role = 'user' by default)
@@ -138,15 +155,15 @@ export async function login(req: any, res: any) {
     recordAuthSuccess(req, res, () => {});
 
     const token = generateToken(user);
-
-    // Get linked designer/company info
-    const linkedData = await getLinkedData(user);
+    const designer = await getLinkedDesignerPayload({
+      id: user.id,
+      email: user.email,
+    });
 
     res.json({
       token,
       user: sanitizeUser(user),
-      // Backward compat: if user is a designer, also return designer object
-      ...(linkedData.designer ? { designer: linkedData.designer } : {}),
+      designer,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -172,12 +189,6 @@ export async function verifyEmail(req: any, res: any) {
 
     await pool.execute(
       'UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_token_expires = NULL WHERE id = ?',
-      [user.id]
-    );
-
-    // Also update linked designer if exists
-    await pool.execute(
-      'UPDATE designers SET email_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE user_id = ?',
       [user.id]
     );
 
@@ -291,12 +302,6 @@ export async function resetPassword(req: any, res: any) {
       [hashedPassword, user.id]
     );
 
-    // Also update linked designer password
-    await pool.execute(
-      'UPDATE designers SET password = ?, reset_token = NULL, reset_expires = NULL WHERE user_id = ?',
-      [hashedPassword, user.id]
-    );
-
     const loginToken = generateToken(user);
 
     res.json({
@@ -321,13 +326,14 @@ export async function getMe(req: any, res: any) {
     }
 
     const user = users[0];
-    const linkedData = await getLinkedData(user);
+    const designer = await getLinkedDesignerPayload({
+      id: user.id,
+      email: user.email,
+    });
 
     res.json({
       user: sanitizeUser(user),
-      // Backward compat
-      designer: linkedData.designer || null,
-      company: linkedData.company || null,
+      designer,
     });
   } catch (error) {
     console.error('Get me error:', error);
@@ -355,16 +361,6 @@ export async function updateProfile(req: any, res: any) {
 
     values.push(userId);
     await pool.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
-
-    // Also sync to linked designer
-    if (updates.length > 0) {
-      const designerUpdates = updates.map(u => u); // same field names
-      const designerValues = [...values.slice(0, -1), userId];
-      await pool.execute(
-        `UPDATE designers SET ${designerUpdates.join(', ')} WHERE user_id = ?`,
-        designerValues
-      ).catch(() => {}); // ignore if no linked designer
-    }
 
     const [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
     res.json({ user: sanitizeUser((rows as any[])[0]) });
@@ -423,7 +419,6 @@ export async function googleOneTap(req: any, res: any) {
         // If there was an unlinked designer with this email, link them
         if (existingDesigner) {
           await pool.execute('UPDATE designers SET user_id = ? WHERE id = ?', [userId, existingDesigner.id]);
-          await pool.execute("UPDATE users SET role = 'designer' WHERE id = ?", [userId]);
         }
 
         [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
@@ -466,7 +461,7 @@ export async function oauthCallback(req: any, res: any) {
     if (!user) {
       const [result] = await pool.execute(
         `INSERT INTO users (email, password, full_name, avatar_url, role, email_verified, status)
-         VALUES (?, '', ?, ?, 'designer', TRUE, 'active')`,
+         VALUES (?, '', ?, ?, 'user', TRUE, 'active')`,
         [passportUser.email, passportUser.full_name, passportUser.avatar_url || '']
       );
       const userId = (result as any).insertId;
@@ -484,34 +479,4 @@ export async function oauthCallback(req: any, res: any) {
     console.error('OAuth callback error:', error);
     res.redirect(`${frontendUrl}/auth?error=oauth_error`);
   }
-}
-
-// Helper: get linked designer and company data
-async function getLinkedData(user: any) {
-  const result: { designer: any; company: any } = { designer: null, company: null };
-
-  if (user.role === 'designer' || true) {
-    // Always check — user might have a linked designer even if role is 'user' during transition
-    const [rows] = await pool.execute(
-      'SELECT * FROM designers WHERE user_id = ? AND deleted_at IS NULL',
-      [user.id]
-    );
-    const designers = rows as any[];
-    if (designers.length > 0) {
-      const { password, verification_token, verification_expires, reset_token, reset_expires, ...safe } = designers[0];
-      result.designer = safe;
-    }
-  }
-
-  if (user.role === 'company') {
-    const [rows] = await pool.execute(
-      'SELECT * FROM uae_companies WHERE owner_user_id = ?',
-      [user.id]
-    );
-    if ((rows as any[]).length > 0) {
-      result.company = (rows as any[])[0];
-    }
-  }
-
-  return result;
 }
