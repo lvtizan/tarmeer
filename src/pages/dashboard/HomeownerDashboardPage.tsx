@@ -5,6 +5,7 @@ import {
   Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { getDroppedImageFiles } from '../../lib/dropFiles';
 import Avatar from '../../components/ui/Avatar';
 import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
@@ -139,7 +140,8 @@ export default function HomeownerDashboardPage() {
   };
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault(); setIsDropActive(false);
-    if (e.dataTransfer.files?.length) await addFiles(e.dataTransfer.files);
+    const files = await getDroppedImageFiles(e);
+    if (files.length > 0) await addFiles(files);
   };
   const removeImage = (i: number) => {
     setImageUrls(prev => prev.filter((_, idx) => idx !== i));

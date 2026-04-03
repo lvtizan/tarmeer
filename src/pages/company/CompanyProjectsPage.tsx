@@ -4,6 +4,7 @@ import {
   Link2, Loader2, FolderOpen, Image,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { getDroppedImageFiles } from '../../lib/dropFiles';
 import SelectField from '../../components/form/SelectField';
 import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
@@ -75,7 +76,11 @@ export default function CompanyProjectsPage() {
     finally { setPrepping(false); }
   };
   const hFS = async (e:React.ChangeEvent<HTMLInputElement>) => { if(e.target.files?.length){await addFiles(e.target.files);e.target.value=''} };
-  const hDrop = async (e:React.DragEvent) => { e.preventDefault();setDropActive(false);if(e.dataTransfer.files?.length)await addFiles(e.dataTransfer.files) };
+  const hDrop = async (e:React.DragEvent) => {
+    e.preventDefault(); setDropActive(false);
+    const files = await getDroppedImageFiles(e);
+    if (files.length > 0) await addFiles(files);
+  };
   const rmImg = (i:number) => { setImgs(p=>p.filter((_,x)=>x!==i));setFps(p=>p.filter((_,x)=>x!==i));if(cover>=i&&cover>0)setCover(c=>c-1) };
   const mvImg = (f:number,t:number) => { setImgs(p=>reorder(p,f,t));setFps(p=>reorder(p,f,t));if(cover===f)setCover(t) };
 
