@@ -229,9 +229,28 @@ export default function AuthPage() {
             <div className="bg-white rounded-[28px] border border-stone-100/80 shadow-[0_4px_40px_rgba(0,0,0,0.04)] p-8 sm:p-10">
               {/* Error/Success Messages */}
               {error && (
-                <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-100 bg-red-50/50 p-3.5">
-                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600">{error}</p>
+                <div className="mb-5 rounded-xl border border-red-100 bg-red-50/50 p-3.5">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                  {/verify/i.test(error) && email && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await api.post('/auth/resend-verification', { email });
+                          setError(null);
+                          setSuccess('Verification email resent! Please check your inbox.');
+                        } catch (err: any) {
+                          setError(err.message || 'Failed to resend.');
+                        }
+                      }}
+                      className="mt-2 ml-8 text-sm font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2 transition"
+                    >
+                      Resend verification email
+                    </button>
+                  )}
                 </div>
               )}
 
