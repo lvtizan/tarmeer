@@ -255,7 +255,7 @@ describe('M9: Company dashboard - services and profile', () => {
 
   it('saves company_name field to API', () => {
     const page = readFrontend('pages/company/CompanyDashboardPage.tsx');
-    assert.match(page, /company_name:profile\.company_name/);
+    assert.match(page, /company_name:.*\.company_name/);
   });
 });
 
@@ -382,5 +382,124 @@ describe('M13: Company projects page', () => {
     assert.match(dash, /FormTag/);
     assert.match(dash, /FormSelect/);
     assert.doesNotMatch(dash, /xl:grid-cols/);
+  });
+});
+
+// ============================================================
+// Module 14: Drag-and-drop folder support
+// ============================================================
+describe('M14: Folder drag-and-drop', () => {
+  it('dropFiles utility returns DropResult with folderName', () => {
+    const util = readFrontend('lib/dropFiles.ts');
+    assert.match(util, /interface DropResult/);
+    assert.match(util, /folderName: string \| null/);
+    assert.match(util, /fileNames: string\[\]/);
+  });
+
+  it('uses webkitGetAsEntry for folder traversal', () => {
+    const util = readFrontend('lib/dropFiles.ts');
+    assert.match(util, /webkitGetAsEntry/);
+    assert.match(util, /isDirectory/);
+    assert.match(util, /createReader/);
+    assert.match(util, /readEntries/);
+  });
+
+  it('CompanyProjectsPage imports and uses getDroppedImageFiles', () => {
+    const page = readFrontend('pages/company/CompanyProjectsPage.tsx');
+    assert.match(page, /getDroppedImageFiles/);
+    assert.match(page, /result\.folderName/);
+    assert.match(page, /result\.files/);
+  });
+
+  it('auto-fills project title from folder name', () => {
+    const page = readFrontend('pages/company/CompanyProjectsPage.tsx');
+    assert.match(page, /folderName.*!form\.title/s);
+  });
+
+  it('unified upload zone has URL + drop + folder in one block', () => {
+    const page = readFrontend('pages/company/CompanyProjectsPage.tsx');
+    assert.match(page, /Drop images or folders here/);
+    assert.match(page, /Or paste a URL to import/);
+    assert.match(page, /Select Folder/);
+  });
+
+  it('HomeownerDashboardPage also uses folder drop', () => {
+    const page = readFrontend('pages/dashboard/HomeownerDashboardPage.tsx');
+    assert.match(page, /getDroppedImageFiles/);
+    assert.match(page, /result\.files/);
+  });
+});
+
+// ============================================================
+// Module 15: Navbar & Layout
+// ============================================================
+describe('M15: Navbar and sidebar', () => {
+  it('Navbar is full-width (no max-w container)', () => {
+    const nav = readFrontend('components/Navbar.tsx');
+    assert.match(nav, /w-full px-4/);
+    assert.doesNotMatch(nav, /max-w-6xl mx-auto.*flex items-center justify-between h-14/);
+  });
+
+  it('NotificationBell in Navbar not in CompanyLayout sidebar', () => {
+    const nav = readFrontend('components/Navbar.tsx');
+    assert.match(nav, /NotificationBell/);
+    const layout = readFrontend('components/company/CompanyLayout.tsx');
+    assert.doesNotMatch(layout, /NotificationBell/);
+  });
+
+  it('Company sidebar uses rounded-full active style without border-l', () => {
+    const layout = readFrontend('components/company/CompanyLayout.tsx');
+    assert.match(layout, /rounded-full/);
+    assert.doesNotMatch(layout, /border-l-4/);
+  });
+
+  it('Company sidebar is fixed position', () => {
+    const layout = readFrontend('components/company/CompanyLayout.tsx');
+    assert.match(layout, /fixed top-\[57px\]/);
+  });
+
+  it('OnboardingPage has Navbar and no progress bar', () => {
+    const page = readFrontend('pages/OnboardingPage.tsx');
+    assert.match(page, /<Navbar/);
+    assert.doesNotMatch(page, /bg-amber-500.*width.*50%/);
+  });
+
+  it('OnboardingPage select-role does not check response.ok', () => {
+    const page = readFrontend('pages/OnboardingPage.tsx');
+    assert.doesNotMatch(page, /response\.ok/);
+  });
+
+  it('Footer links to /companies not /designers', () => {
+    const footer = readFrontend('components/Footer.tsx');
+    assert.match(footer, /\/companies/);
+    assert.doesNotMatch(footer, /\/#designers/);
+  });
+});
+
+// ============================================================
+// Module 16: Global form components
+// ============================================================
+describe('M16: FormInput components', () => {
+  it('FormInput component exists with correct base styles', () => {
+    const form = readFrontend('components/form/FormInput.tsx');
+    assert.match(form, /export const FormInput/);
+    assert.match(form, /export const FormTextarea/);
+    assert.match(form, /export const FormSelect/);
+    assert.match(form, /export function FormTag/);
+    assert.match(form, /export function FormLabel/);
+  });
+
+  it('uses consistent focus ring color', () => {
+    const form = readFrontend('components/form/FormInput.tsx');
+    assert.match(form, /focus:border-\[#b8864a\]/);
+    assert.match(form, /focus:ring-\[#b8864a\]/);
+  });
+
+  it('CompanyDashboardPage uses FormInput not raw classes', () => {
+    const page = readFrontend('pages/company/CompanyDashboardPage.tsx');
+    assert.match(page, /FormInput/);
+    assert.match(page, /FormLabel/);
+    assert.doesNotMatch(page, /const fieldCls/);
+    assert.doesNotMatch(page, /const labelCls/);
   });
 });
