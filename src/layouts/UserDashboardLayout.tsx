@@ -46,7 +46,7 @@ export default function UserDashboardLayout() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white overflow-y-auto">
+        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-[57px] bottom-0 left-0 z-10 overflow-y-auto">
           <div className="flex-1 p-6">
             <nav className="flex flex-col gap-1">
               <NavLink to="/dashboard" end className={navClass}>
@@ -81,7 +81,7 @@ export default function UserDashboardLayout() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-10">
+        <main className="flex-1 overflow-y-auto p-6 md:ml-64 md:p-10">
           <Outlet />
         </main>
       </div>

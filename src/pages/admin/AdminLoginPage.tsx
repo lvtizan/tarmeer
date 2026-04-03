@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import PasswordInput from '../../components/admin/PasswordInput';
-
-const PRIMARY = '#b8864a';
 
 export default function AdminLoginPage() {
   const [searchParams] = useSearchParams();
@@ -58,12 +55,9 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#faf9f7] px-4 pb-16 pt-[clamp(28px,10vh,96px)] sm:px-6 sm:pt-[clamp(40px,12vh,120px)] lg:px-8">
+      <div className="mx-auto w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center size-12 rounded-xl mb-4" style={{ backgroundColor: `${PRIMARY}20` }}>
-            <LayoutDashboard className="w-7 h-7" style={{ color: PRIMARY }} />
-          </div>
           <h1 className="text-3xl font-bold text-[#2c2c2c]">Tarmeer Admin</h1>
           <p className="mt-2 text-sm text-stone-600">Sign in to manage designers</p>
         </div>

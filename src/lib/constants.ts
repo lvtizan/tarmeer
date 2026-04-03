@@ -1,5 +1,5 @@
 export const GOOGLE_MAPS_URL =
-  'https://www.google.com/maps/place/Al+Tameer+United+Building+Materials+L.L.C/@25.3009785,55.629547,17z';
+  'https://www.google.com/maps/place/Al+Tameer+United+Building+Materials+Trading+L.L.C/@25.3009785,55.629547,17z/data=!4m6!3m5!1s0x3e5f59cee2235cd5:0xa305167fd1075aa8!8m2!3d25.3006521!4d55.629911!16s%2Fg%2F11xzfmy5zx?entry=ttu&g_ep=EgoyMDI2MDMzMS4wIKXMDSoASAFQAw%3D%3D';
 export const ADDRESS =
   '1 - 2a 147 street - Al Sajaa - Sharjah - United Arab Emirates';
 export const WHATSAPP_NUMBER = '971588388922';

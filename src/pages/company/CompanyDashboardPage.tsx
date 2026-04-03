@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, Phone, Globe, AlertCircle, CheckCircle2, Clock, Eye } from 'lucide-react';
+import { MapPin, Phone, Globe, AlertCircle, CheckCircle2, Clock, Eye, Save } from 'lucide-react';
 import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormSelect, FormLabel, FormTag } from '../../components/form/FormInput';
 
@@ -21,18 +21,133 @@ export default function CompanyDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveText, setSaveText] = useState('');
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveTextTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileRef = useRef(profile);
+  const initializedRef = useRef(false);
+  const lastSavedSnapshotRef = useRef('');
 
-  useEffect(()=>{(async()=>{try{const r=await api.get('/auth/company/profile');const d=r.profile||r;if(d&&d.company_name){setProfile(pp(d))}else{setIsNew(true)}}catch{setIsNew(true)}finally{setLoading(false)}})()},[]);
+  const serializeProfile = useCallback((value: Profile) => JSON.stringify(value), []);
 
-  const saveProfile = useCallback(async()=>{
-    if(!profile.company_name)return;
-    setSaving(true);setSaveText('Saving...');
-    try{await api.post('/auth/company/profile',{company_name:profile.company_name,description:profile.description,contact_person:profile.contact_person,phone:profile.phone,website:profile.website,city:profile.city,address:profile.address,services:profile.services.length>0?profile.services:['Interior Design'],company_type:profile.company_type,trade_license_number:profile.trade_license_number,establishment_year:profile.establishment_year,specialties:profile.specialties});setIsNew(false);setSaveText('Saved');setTimeout(()=>setSaveText(''),2000)}catch{setSaveText('Failed')}finally{setSaving(false)}
-  },[profile]);
-  const triggerSave=()=>{if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(saveProfile,600)};
-  const set=(f:string,v:string)=>setProfile(p=>({...p,[f]:v}));
-  const toggleTag=(f:'services'|'specialties',t:string)=>{setProfile(p=>{const a=p[f];return{...p,[f]:a.includes(t)?a.filter(x=>x!==t):[...a,t]}});setTimeout(triggerSave,50)};
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await api.get('/auth/company/profile');
+        const d = r.profile || r;
+        if (d && d.company_name) {
+          const nextProfile = pp(d);
+          setProfile(nextProfile);
+          lastSavedSnapshotRef.current = serializeProfile(nextProfile);
+        } else {
+          setIsNew(true);
+          lastSavedSnapshotRef.current = serializeProfile(EMPTY);
+        }
+      } catch {
+        setIsNew(true);
+        lastSavedSnapshotRef.current = serializeProfile(EMPTY);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [serializeProfile]);
+
+  const clearSaveTextLater = useCallback(() => {
+    if (saveTextTimer.current) {
+      clearTimeout(saveTextTimer.current);
+    }
+    saveTextTimer.current = setTimeout(() => setSaveText(''), 2500);
+  }, []);
+
+  const saveProfile = useCallback(async (manual = false) => {
+    const current = profileRef.current;
+    if (!current.company_name.trim()) {
+      if (manual) {
+        setSaveText('Company name is required to save.');
+      }
+      return;
+    }
+
+    setSaving(true);
+    setSaveText(manual ? 'Saving...' : 'Saving...');
+
+    try {
+      await api.post('/auth/company/profile', {
+        company_name: current.company_name,
+        description: current.description,
+        contact_person: current.contact_person,
+        phone: current.phone,
+        website: current.website,
+        city: current.city,
+        address: current.address,
+        services: current.services.length > 0 ? current.services : ['Interior Design'],
+        company_type: current.company_type,
+        trade_license_number: current.trade_license_number,
+        establishment_year: current.establishment_year,
+        specialties: current.specialties,
+      });
+      setIsNew(false);
+      lastSavedSnapshotRef.current = serializeProfile(current);
+      setSaveText(manual ? 'Saved' : 'Saved just now');
+      clearSaveTextLater();
+    } catch (error: any) {
+      setSaveText(error?.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }, [clearSaveTextLater, serializeProfile]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    const snapshot = serializeProfile(profile);
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      lastSavedSnapshotRef.current = snapshot;
+      return;
+    }
+
+    if (snapshot === lastSavedSnapshotRef.current) {
+      return;
+    }
+
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+    }
+
+    setSaveText('Saving...');
+    saveTimer.current = setTimeout(() => {
+      void saveProfile(false);
+    }, 900);
+
+    return () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+      }
+    };
+  }, [loading, profile, saveProfile, serializeProfile]);
+
+  useEffect(() => () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+    }
+    if (saveTextTimer.current) {
+      clearTimeout(saveTextTimer.current);
+    }
+  }, []);
+
+  const set = (f: string, v: string) => setProfile((p) => ({ ...p, [f]: v }));
+  const toggleTag = (f: 'services'|'specialties', t: string) => {
+    setProfile((p) => {
+      const a = p[f];
+      return { ...p, [f]: a.includes(t) ? a.filter((x) => x !== t) : [...a, t] };
+    });
+  };
 
   if(loading) return <div className="flex items-center justify-center py-20 text-stone-400">Loading...</div>;
 
@@ -49,11 +164,26 @@ export default function CompanyDashboardPage() {
             </div>
             <div className="flex items-center gap-3">
               {saveText && (
-                <span className={`text-sm font-medium ${saveText === 'Saved' ? 'text-emerald-600' : 'text-stone-400'}`}>
+                <span className={`text-sm font-medium ${
+                  saveText === 'Saved' || saveText === 'Saved just now'
+                    ? 'text-emerald-600'
+                    : saveText === 'Saving...'
+                      ? 'text-stone-400'
+                      : 'text-red-600'
+                }`}>
                   {saving && <span className="inline-block w-3 h-3 border-2 border-[#b8864a] border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />}
                   {saveText}
                 </span>
               )}
+              <button
+                type="button"
+                onClick={() => void saveProfile(true)}
+                disabled={saving}
+                className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition disabled:opacity-60"
+              >
+                <Save className="w-4 h-4" />
+                Save
+              </button>
               <a href="/companies/preview" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition">
                 <Eye className="w-4 h-4" />Preview
@@ -90,47 +220,47 @@ export default function CompanyDashboardPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <FormLabel required>Company Name</FormLabel>
-              <FormInput value={profile.company_name} onChange={e => set('company_name', e.target.value)} onBlur={triggerSave} placeholder="Enter company name" />
+              <FormInput value={profile.company_name} onChange={e => set('company_name', e.target.value)} placeholder="Enter company name" />
             </div>
             <div>
               <FormLabel required>Contact Person</FormLabel>
-              <FormInput value={profile.contact_person} onChange={e => set('contact_person', e.target.value)} onBlur={triggerSave} placeholder="Full name" />
+              <FormInput value={profile.contact_person} onChange={e => set('contact_person', e.target.value)} placeholder="Full name" />
             </div>
             <div>
               <FormLabel required icon={<Phone className="w-3.5 h-3.5" />}>Phone</FormLabel>
-              <FormInput type="tel" value={profile.phone} onChange={e => set('phone', e.target.value)} onBlur={triggerSave} placeholder="+971 50 123 4567" />
+              <FormInput type="tel" value={profile.phone} onChange={e => set('phone', e.target.value)} placeholder="+971 50 123 4567" />
             </div>
             <div className="md:col-span-2">
               <FormLabel required>Description</FormLabel>
-              <FormTextarea value={profile.description} rows={3} onChange={e => set('description', e.target.value)} onBlur={triggerSave} placeholder="Tell us about your company..." />
+              <FormTextarea value={profile.description} rows={3} onChange={e => set('description', e.target.value)} placeholder="Tell us about your company..." />
             </div>
             <div>
               <FormLabel icon={<Globe className="w-3.5 h-3.5" />}>Website</FormLabel>
-              <FormInput type="url" value={profile.website} onChange={e => set('website', e.target.value)} onBlur={triggerSave} placeholder="https://example.com" />
+              <FormInput type="url" value={profile.website} onChange={e => set('website', e.target.value)} placeholder="https://example.com" />
             </div>
             <div>
               <FormLabel icon={<MapPin className="w-3.5 h-3.5" />}>City</FormLabel>
-              <FormSelect value={profile.city} onChange={e => { set('city', e.target.value); triggerSave(); }}>
+              <FormSelect value={profile.city} onChange={e => { set('city', e.target.value); }}>
                 {EMIRATES.map(c => <option key={c} value={c}>{c}</option>)}
               </FormSelect>
             </div>
             <div>
               <FormLabel>Address</FormLabel>
-              <FormInput value={profile.address} onChange={e => set('address', e.target.value)} onBlur={triggerSave} placeholder="Street address" />
+              <FormInput value={profile.address} onChange={e => set('address', e.target.value)} placeholder="Street address" />
             </div>
             <div>
               <FormLabel>Company Type</FormLabel>
-              <FormSelect value={profile.company_type} onChange={e => { set('company_type', e.target.value); triggerSave(); }}>
+              <FormSelect value={profile.company_type} onChange={e => { set('company_type', e.target.value); }}>
                 {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </FormSelect>
             </div>
             <div>
               <FormLabel>Trade License No.</FormLabel>
-              <FormInput value={profile.trade_license_number} onChange={e => set('trade_license_number', e.target.value)} onBlur={triggerSave} placeholder="DED-12345" />
+              <FormInput value={profile.trade_license_number} onChange={e => set('trade_license_number', e.target.value)} placeholder="DED-12345" />
             </div>
             <div>
               <FormLabel>Est. Year</FormLabel>
-              <FormInput type="number" value={profile.establishment_year ?? ''} onChange={e => set('establishment_year', e.target.value)} onBlur={triggerSave} placeholder="2010" />
+              <FormInput type="number" value={profile.establishment_year ?? ''} onChange={e => set('establishment_year', e.target.value)} placeholder="2010" />
             </div>
           </div>
         </section>

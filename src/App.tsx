@@ -93,7 +93,7 @@ function App() {
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />
             <Route path="company-import" element={<AdminCompanyImportPage />} />
           </Route>
-          <Route path="/admin/login" element={<Layout><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
+          <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/install" element={<AdminProvider><AdminInstallPage /></AdminProvider>} />
 
           {/* ====== Onboarding ====== */}

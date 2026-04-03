@@ -107,7 +107,16 @@ export default function CompanyProjectsPage() {
     setSubmitting(true);setMsg('');
     try{
       const ordered=[imgs[cover],...imgs.filter((_,i)=>i!==cover)];
-      await api.post('/projects',{title:form.title,description:form.description,style:form.style,location:form.location,area:form.area,imageUrls:ordered,productIds:tags,status:publish?'pending':'draft'});
+      await api.post('/projects', {
+        title: form.title,
+        description: form.description,
+        style: form.style,
+        location: form.location,
+        area: form.area,
+        images: ordered,
+        tags,
+        status: publish ? 'pending' : 'draft',
+      });
       setMsg(publish?'Project submitted for review!':'Draft saved!');
       setForm({title:'',description:'',style:'',location:'',area:''});setTags([]);setImgs([]);setFps([]);setCover(0);
       refreshProjects();

@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     host: '0.0.0.0', // 允许内网访问
-    port: 5173,
+    port: 5180,
     headers: { 'Cache-Control': 'no-cache' },
     proxy: {
       '/api': {

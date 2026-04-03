@@ -64,6 +64,40 @@ function imageSet(startIndex: number, count = 3): string[] {
   return Array.from({ length: count }, (_, i) => coverPath(startIndex + i));
 }
 
+const HBA_PORTFOLIO_IMAGES = Array.from(
+  { length: 20 },
+  (_, index) => `/images/uae-companies/portfolio/hba-hirsch-bedner/general/${index + 1}${index === 0 ? '.png' : '.jpg'}`
+);
+
+const BISHOP_DESIGN_IMAGES = Array.from(
+  { length: 20 },
+  (_, index) => `/images/uae-companies/portfolio/bishop-design/work/${index + 1}.jpg`
+);
+
+const AL_HABTOOR_DESIGN_IMAGES = [
+  '/images/uae-companies/portfolio/algedra/villas-design/11.jpg',
+  '/images/uae-companies/portfolio/algedra/villas-design/12.jpg',
+  '/images/uae-companies/portfolio/algedra/villas-design/13.jpg',
+  '/images/uae-companies/portfolio/algedra/villas-design/14.jpg',
+  '/images/uae-companies/portfolio/algedra/villas-design/15.jpg',
+];
+
+const LW_DESIGN_IMAGES = [
+  '/images/uae-companies/portfolio/accouter-design/interior/11.jpg',
+  '/images/uae-companies/portfolio/accouter-design/interior/13.jpg',
+  '/images/uae-companies/portfolio/accouter-design/interior/15.jpg',
+  '/images/uae-companies/portfolio/accouter-design/interior/17.jpg',
+  '/images/uae-companies/portfolio/accouter-design/interior/19.jpg',
+];
+
+const ROCHE_BOBOIS_DUBAI_IMAGES = [
+  '/images/uae-companies/portfolio/livspace-dubai/interior/10.jpg',
+  '/images/uae-companies/portfolio/livspace-dubai/interior/16.jpg',
+  '/images/uae-companies/portfolio/livspace-dubai/interior/17.jpg',
+  '/images/uae-companies/portfolio/livspace-dubai/interior/18.jpg',
+  '/images/uae-companies/portfolio/livspace-dubai/interior/19.jpg',
+];
+
 // UAE design companies data - featuring companies from across all emirates
 export const companies: Company[] = [
   {
@@ -82,10 +116,10 @@ export const companies: Company[] = [
     projectCount: 150,
     services: ['Interior Design', 'Architecture', 'Fit-out', 'Project Management'],
     featured: true,
-    coverImage: coverPath(1),
-    projectImages: imageSet(1, 5),
+    coverImage: BISHOP_DESIGN_IMAGES[10],
+    projectImages: BISHOP_DESIGN_IMAGES,
     isClaimed: false,
-    portfolioCategories: { Projects: imageSet(1, 5).map(url => ({ url, title: '' })) },
+    portfolioCategories: { Work: BISHOP_DESIGN_IMAGES.map(url => ({ url, title: '' })) },
   },
   {
     id: 'al-habtoor-design',
@@ -103,10 +137,10 @@ export const companies: Company[] = [
     projectCount: 110,
     services: ['Interior Design', 'Architecture', 'Fit-out', 'Project Management'],
     featured: true,
-    coverImage: coverPath(6),
-    projectImages: imageSet(6, 5),
+    coverImage: AL_HABTOOR_DESIGN_IMAGES[0],
+    projectImages: AL_HABTOOR_DESIGN_IMAGES,
     isClaimed: false,
-    portfolioCategories: { Projects: imageSet(6, 5).map(url => ({ url, title: '' })) },
+    portfolioCategories: { Projects: AL_HABTOOR_DESIGN_IMAGES.map(url => ({ url, title: '' })) },
   },
   {
     id: 'lw-design',
@@ -124,10 +158,10 @@ export const companies: Company[] = [
     projectCount: 95,
     services: ['Interior Design', 'Fit-out', 'Project Management'],
     featured: true,
-    coverImage: coverPath(11),
-    projectImages: imageSet(11, 5),
+    coverImage: LW_DESIGN_IMAGES[0],
+    projectImages: LW_DESIGN_IMAGES,
     isClaimed: false,
-    portfolioCategories: { Projects: imageSet(11, 5).map(url => ({ url, title: '' })) },
+    portfolioCategories: { Projects: LW_DESIGN_IMAGES.map(url => ({ url, title: '' })) },
   },
   {
     id: 'sharjah-creative',
@@ -166,10 +200,10 @@ export const companies: Company[] = [
     projectCount: 80,
     services: ['Interior Design', 'Furniture Design', 'Project Management'],
     featured: false,
-    coverImage: coverPath(21),
-    projectImages: imageSet(21, 5),
+    coverImage: ROCHE_BOBOIS_DUBAI_IMAGES[0],
+    projectImages: ROCHE_BOBOIS_DUBAI_IMAGES,
     isClaimed: false,
-    portfolioCategories: { Projects: imageSet(21, 5).map(url => ({ url, title: '' })) },
+    portfolioCategories: { Projects: ROCHE_BOBOIS_DUBAI_IMAGES.map(url => ({ url, title: '' })) },
   },
   {
     id: 'hba',
@@ -184,13 +218,13 @@ export const companies: Company[] = [
     phone: '+971 4 362 8400',
     email: 'dubai@hba.com',
     styles: ['Luxury', 'Modern', 'Contemporary'],
-    projectCount: 120,
+    projectCount: HBA_PORTFOLIO_IMAGES.length,
     services: ['Interior Design', 'Architecture', 'Project Management'],
     featured: false,
-    coverImage: coverPath(26),
-    projectImages: imageSet(26, 5),
+    coverImage: HBA_PORTFOLIO_IMAGES[0],
+    projectImages: HBA_PORTFOLIO_IMAGES,
     isClaimed: false,
-    portfolioCategories: { Projects: imageSet(26, 5).map(url => ({ url, title: '' })) },
+    portfolioCategories: { General: HBA_PORTFOLIO_IMAGES.map(url => ({ url, title: '' })) },
   },
   {
     id: 'zen-interiors',

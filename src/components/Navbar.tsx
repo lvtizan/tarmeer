@@ -36,7 +36,15 @@ const navLinks = [
   { to: '/', label: 'Home' },
 ];
 
-export default function Navbar({ forceShowOnAuth = false }: { forceShowOnAuth?: boolean }) {
+type NavbarVariant = 'default' | 'admin-auth';
+
+export default function Navbar({
+  forceShowOnAuth = false,
+  variant = 'default',
+}: {
+  forceShowOnAuth?: boolean;
+  variant?: NavbarVariant;
+}) {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { handleNavClick } = useNavigationHandler();
@@ -49,6 +57,10 @@ export default function Navbar({ forceShowOnAuth = false }: { forceShowOnAuth?: 
   const isLoggedIn = Boolean(api.getToken());
   const user = safeGetJSON<Record<string, unknown>>('user') || safeGetJSON<Record<string, unknown>>('designer');
   const activeRole = localStorage.getItem('active_role');
+  const isAdminAuthVariant = variant === 'admin-auth';
+  const showUserEntry = !isAdminAuthVariant && isLoggedIn;
+  const showJoinAsCompany = !isAdminAuthVariant && !isLoggedIn;
+  const showLogInLink = !isAdminAuthVariant && !isLoggedIn;
 
   let accountEntry = { to: '/auth?tab=login', label: 'Log In' };
   let userName = 'User';
@@ -166,7 +178,7 @@ export default function Navbar({ forceShowOnAuth = false }: { forceShowOnAuth?: 
 
           {renderNavLink('/materials', 'Showrooms')}
 
-          {isLoggedIn ? (
+          {showUserEntry ? (
             <div className="flex items-center gap-3">
               <NotificationBell />
               <Link
@@ -179,7 +191,7 @@ export default function Navbar({ forceShowOnAuth = false }: { forceShowOnAuth?: 
                 <Avatar name={userName} avatarUrl={userAvatar} size="sm" />
               </Link>
             </div>
-          ) : (
+          ) : showLogInLink ? (
             <Link
               to="/auth"
               onClick={() => handleClick('/auth')}
@@ -188,8 +200,8 @@ export default function Navbar({ forceShowOnAuth = false }: { forceShowOnAuth?: 
               <User className="w-4 h-4" />
               Log In
             </Link>
-          )}
-          {!isLoggedIn && (
+          ) : null}
+          {showJoinAsCompany && (
             <Link
               to="/onboarding"
               onClick={() => handleClick('/onboarding')}
@@ -202,7 +214,7 @@ export default function Navbar({ forceShowOnAuth = false }: { forceShowOnAuth?: 
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
-          {!isLoggedIn && (
+          {showJoinAsCompany && (
             <Link to="/onboarding" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
               <Briefcase className="w-3.5 h-3.5" />
               Join as Company

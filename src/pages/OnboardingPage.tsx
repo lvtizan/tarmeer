@@ -75,38 +75,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-[#faf9f7]">
       <Navbar />
 
-      <motion.div
-        className="border-b border-stone-200 bg-white/90 backdrop-blur"
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
-          <div className="text-sm font-medium text-stone-500">
-            Account setup
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
-            >
-              <LogOut className="h-4 w-4" />
-              Log out
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      <div className="flex min-h-[calc(100vh-109px)] items-center justify-center px-4 py-8">
+      <div className="flex min-h-[calc(100vh-57px)] justify-center px-4 pb-10 pt-[clamp(28px,12vh,120px)] sm:pt-[clamp(40px,14vh,140px)]">
         <div className="w-full max-w-2xl">
 
           {/* Header */}
