@@ -156,11 +156,9 @@ export default function SoftDecorationPage() {
       </section>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          
-          {/* Left: Services + CTA */}
-          <div className="lg:w-1/2 lg:sticky lg:top-4 lg:self-start">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
+        <div>
+          <div>
             <div className="flex items-center gap-3 mb-6">
               <Link to="/#pricing" className="inline-flex items-center gap-1.5 text-sm text-[#6b6b6b] hover:text-[#b8864a] transition shrink-0">
                 <ArrowLeft className="w-4 h-4" />

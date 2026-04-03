@@ -284,14 +284,14 @@ describe('M11: NotificationBell component', () => {
     assert.match(bell, /read-all/);
   });
 
-  it('renders in AdminLayout', () => {
+  it('is temporarily disabled in AdminLayout', () => {
     const layout = readFrontend('components/admin/AdminLayout.tsx');
-    assert.match(layout, /NotificationBell/);
+    assert.doesNotMatch(layout, /NotificationBell/);
   });
 
-  it('renders in Navbar (moved from CompanyLayout)', () => {
+  it('is temporarily disabled in Navbar', () => {
     const navbar = readFrontend('components/Navbar.tsx');
-    assert.match(navbar, /NotificationBell/);
+    assert.doesNotMatch(navbar, /NotificationBell/);
   });
 });
 
@@ -440,9 +440,9 @@ describe('M15: Navbar and sidebar', () => {
     assert.doesNotMatch(nav, /max-w-6xl mx-auto.*flex items-center justify-between h-14/);
   });
 
-  it('NotificationBell in Navbar not in CompanyLayout sidebar', () => {
+  it('User menu in Navbar, NotificationBell not in CompanyLayout sidebar', () => {
     const nav = readFrontend('components/Navbar.tsx');
-    assert.match(nav, /NotificationBell/);
+    assert.match(nav, /UserMenu/);
     const layout = readFrontend('components/company/CompanyLayout.tsx');
     assert.doesNotMatch(layout, /NotificationBell/);
   });
