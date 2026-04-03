@@ -17,6 +17,7 @@ function pp(r:any):Profile{ return{company_name:r.company_name||'',description:r
 
 export default function CompanyDashboardPage() {
   const [profile, setProfile] = useState<Profile>(EMPTY);
+  const [profileId, setProfileId] = useState<number | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,6 +42,7 @@ export default function CompanyDashboardPage() {
         if (d && d.company_name) {
           const nextProfile = pp(d);
           setProfile(nextProfile);
+          if (d.id) setProfileId(d.id);
           lastSavedSnapshotRef.current = serializeProfile(nextProfile);
         } else {
           setIsNew(true);
@@ -184,10 +186,12 @@ export default function CompanyDashboardPage() {
                 <Save className="w-4 h-4" />
                 Save
               </button>
-              <a href="/companies/preview" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition">
-                <Eye className="w-4 h-4" />Preview
-              </a>
+              {profileId && (
+                <a href={`/companies/${profileId}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition">
+                  <Eye className="w-4 h-4" />Preview
+                </a>
+              )}
             </div>
           </div>
           {!isNew && (
