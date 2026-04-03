@@ -46,11 +46,20 @@ export async function downloadAvatar(
     const filename = `${designerId}${ext}`;
     const filepath = path.join(UPLOAD_DIR, filename);
 
+    // Validate URL to prevent SSRF
+    if (!url.startsWith('https://')) {
+      console.error('[avatar] Rejected non-HTTPS URL:', url);
+      return null;
+    }
+
     console.log('[avatar] Downloading from:', url);
-    const { execSync } = require('child_process');
-    const proxyEnv = process.env.HTTPS_PROXY || process.env.https_proxy;
-    const proxyArg = proxyEnv ? `-x ${proxyEnv}` : '';
-    execSync(`curl ${proxyArg} -sL --create-dirs -o "${filepath}" --max-time 10 "${url}"`);
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 10000,
+      maxRedirects: 3,
+      maxContentLength: 5 * 1024 * 1024, // 5MB max
+    });
+    await fs.writeFile(filepath, Buffer.from(response.data));
     console.log('[avatar] Saved to:', filepath);
 
     return `/uploads/avatars/${filename}`;

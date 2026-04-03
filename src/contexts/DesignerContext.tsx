@@ -178,7 +178,7 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
       const result = await api.get('/projects/my');
       setProjects((result.projects || []).map(mapProject));
     } catch (error: any) {
-      setProjects([]);
+      // Keep existing projects in state (e.g. optimistically added ones) instead of wiping them
       setProjectsError(error.message || 'Failed to load projects');
     } finally {
       setIsProjectsLoading(false);

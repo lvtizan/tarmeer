@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import pool from '../config/database';
+import { adminLoginRateLimit } from '../middleware/antiScraping';
 import {
   checkInstallation,
   install,
   login,
+  forgotPassword,
+  resetPassword,
   getProfile,
   createSubAdmin,
   listAdmins,
@@ -55,8 +58,10 @@ router.get('/check-installation', checkInstallation);
 // Install: Create first super admin (only if no admins exist)
 router.post('/install', install);
 
-// Login
-router.post('/login', login);
+// Login (rate limited: 5 attempts per 15 min per IP)
+router.post('/login', adminLoginRateLimit, login);
+router.post('/forgot-password', adminLoginRateLimit, forgotPassword);
+router.post('/reset-password', adminLoginRateLimit, resetPassword);
 
 
 // ============ Protected routes (require admin auth) ============

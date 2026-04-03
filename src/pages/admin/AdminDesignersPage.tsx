@@ -3,11 +3,15 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { adminApi, Designer } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
+import { resolveImageUrl } from '../../lib/imageUrl';
 import SelectField from '../../components/form/SelectField';
 import { formatCount } from '../../lib/formatNumber';
+import { PageSpinner } from '../../components/ui/Spinner';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type DeletedFilter = 'active' | 'deleted' | 'all';
+type NumericSortKey = 'total_profile_views' | 'project_count';
+type NumericSortDirection = 'asc' | 'desc';
 
 export default function AdminDesignersPage() {
   const navigate = useNavigate();
@@ -35,6 +39,7 @@ export default function AdminDesignersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'sort'>(() => searchParams.get('view') === 'sort' ? 'sort' : 'list');
   const [sortOrder, setSortOrder] = useState<{ id: number; displayOrder: number }[]>([]);
+  const [numericSort, setNumericSort] = useState<{ key: NumericSortKey; direction: NumericSortDirection } | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
 
   const canApprove = hasPermission('can_approve');
@@ -105,6 +110,18 @@ export default function AdminDesignersPage() {
   }, [statusFilter, search, deletedFilter, page, viewMode, setSearchParams]);
 
   const selectableDesigners = designers.filter((designer) => !designer.deleted_at);
+  const listDesigners = (() => {
+    if (!numericSort) return designers;
+    const sorted = [...designers];
+    const { key, direction } = numericSort;
+    sorted.sort((a, b) => {
+      const av = Number(a[key] ?? 0);
+      const bv = Number(b[key] ?? 0);
+      if (av !== bv) return direction === 'asc' ? av - bv : bv - av;
+      return Number(b.id) - Number(a.id);
+    });
+    return sorted;
+  })();
   const selectedPendingIds = selectedIds.filter((id) => {
     const designer = designers.find((item) => item.id === id);
     return Boolean(designer && !designer.deleted_at && designer.status === 'pending');
@@ -293,6 +310,25 @@ export default function AdminDesignersPage() {
     return getStatusBadge(designer.status);
   };
 
+  const toggleNumericSort = (key: NumericSortKey) => {
+    setNumericSort((prev) => {
+      if (!prev || prev.key !== key) {
+        return { key, direction: 'desc' };
+      }
+      return { key, direction: prev.direction === 'desc' ? 'asc' : 'desc' };
+    });
+  };
+
+  const getNumericSortIcon = (key: NumericSortKey) => {
+    if (!numericSort || numericSort.key !== key) {
+      return <ChevronDown className="h-3.5 w-3.5 text-stone-300" />;
+    }
+    if (numericSort.direction === 'asc') {
+      return <ChevronUp className="h-3.5 w-3.5 text-[#b8864a]" />;
+    }
+    return <ChevronDown className="h-3.5 w-3.5 text-[#b8864a]" />;
+  };
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -425,7 +461,7 @@ export default function AdminDesignersPage() {
 
       {/* Designer List */}
       {isLoading ? (
-        <div className="text-center py-12 text-stone-500">Loading...</div>
+        <PageSpinner />
       ) : designers.length === 0 ? (
         <div className="bg-white rounded-lg border border-stone-200 p-12 text-center">
           <p className="text-stone-500">No designers found</p>
@@ -448,14 +484,32 @@ export default function AdminDesignersPage() {
                 <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Designer</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Contact</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Status</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Views</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Projects</th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">
+                  <button
+                    type="button"
+                    onClick={() => toggleNumericSort('total_profile_views')}
+                    className="inline-flex items-center gap-1.5 text-stone-500 hover:text-[#2c2c2c]"
+                  >
+                    <span>Views</span>
+                    {getNumericSortIcon('total_profile_views')}
+                  </button>
+                </th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">
+                  <button
+                    type="button"
+                    onClick={() => toggleNumericSort('project_count')}
+                    className="inline-flex items-center gap-1.5 text-stone-500 hover:text-[#2c2c2c]"
+                  >
+                    <span>Projects</span>
+                    {getNumericSortIcon('project_count')}
+                  </button>
+                </th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Registered</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {designers.map((designer) => (
+              {listDesigners.map((designer) => (
                 <tr
                   key={designer.id}
                   className="border-t border-stone-100 hover:bg-stone-50 cursor-pointer"
@@ -477,7 +531,7 @@ export default function AdminDesignersPage() {
                     <div className="flex items-center gap-3">
                       {designer.avatar_url ? (
                         <img
-                          src={designer.avatar_url}
+                          src={resolveImageUrl(designer.avatar_url)}
                           alt=""
                           className="w-10 h-10 rounded-full object-cover"
                         />
@@ -612,7 +666,7 @@ export default function AdminDesignersPage() {
                 />
               </div>
               {designer.avatar_url ? (
-                <img src={designer.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                <img src={resolveImageUrl(designer.avatar_url)} alt="" className="w-10 h-10 rounded-full object-cover" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center">
                   <span className="text-stone-500">{designer.full_name.charAt(0)}</span>

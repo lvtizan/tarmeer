@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
+import { TableSpinner } from '../../components/ui/Spinner';
 
 type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
 
@@ -164,7 +165,7 @@ export default function AdminInquiriesPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400">Loading...</td></tr>
+                <TableSpinner colSpan={7} />
               ) : inquiries.length === 0 ? (
                 <tr><td colSpan={7} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
               ) : inquiries.map((inq) => (

@@ -43,6 +43,8 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 // Admin
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
+const AdminForgotPasswordPage = lazy(() => import('./pages/admin/AdminForgotPasswordPage'));
+const AdminResetPasswordPage = lazy(() => import('./pages/admin/AdminResetPasswordPage'));
 const AdminInstallPage = lazy(() => import('./pages/admin/AdminInstallPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminDesignersPage = lazy(() => import('./pages/admin/AdminDesignersPage'));
@@ -51,6 +53,7 @@ const AdminDesignerDetailPage = lazy(() => import('./pages/admin/AdminDesignerDe
 const AdminVisitorsPage = lazy(() => import('./pages/admin/AdminVisitorsPage'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
+const AdminUserDetailPage = lazy(() => import('./pages/admin/AdminUserDetailPage'));
 const AdminCompaniesPage = lazy(() => import('./pages/admin/AdminCompaniesPage'));
 const AdminInquiriesPage = lazy(() => import('./pages/admin/AdminInquiriesPage'));
 const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'));
@@ -59,7 +62,14 @@ const AdminNotificationEmailsPage = lazy(() => import('./pages/admin/AdminNotifi
 const AdminCompanyImportPage = lazy(() => import('./pages/admin/AdminCompanyImportPage'));
 
 function PageLoader() {
-  return <div className="min-h-[40vh] flex items-center justify-center text-sm text-stone-500">Loading...</div>;
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center">
+      <span className="inline-flex items-center gap-2.5 text-stone-400">
+        <svg className="w-6 h-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+        <span className="text-sm">Loading...</span>
+      </span>
+    </div>
+  );
 }
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -86,6 +96,7 @@ function App() {
             <Route path="analytics" element={<AdminAnalyticsPage />} />
             <Route path="stats" element={<AdminDashboardPage />} />
             <Route path="users" element={<AdminUsersPage />} />
+            <Route path="users/:id" element={<AdminUserDetailPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />
             <Route path="inquiries" element={<AdminInquiriesPage />} />
             <Route path="complaints" element={<AdminComplaintsPage />} />
@@ -95,6 +106,8 @@ function App() {
             <Route path="company-import" element={<AdminCompanyImportPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
+          <Route path="/admin/forgot-password" element={<Layout navbarVariant="admin-auth"><AdminForgotPasswordPage /></Layout>} />
+          <Route path="/admin/reset-password" element={<Layout navbarVariant="admin-auth"><AdminResetPasswordPage /></Layout>} />
           <Route path="/admin/install" element={<AdminProvider><AdminInstallPage /></AdminProvider>} />
 
           {/* ====== Onboarding ====== */}

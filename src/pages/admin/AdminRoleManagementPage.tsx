@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
+import { PageSpinner } from '../../components/ui/Spinner';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 type RoleTab = 'homeowners' | 'companies';
@@ -593,9 +594,7 @@ export const AdminRoleManagementPage: React.FC = () => {
           {/* Content */}
           <div className="p-6">
             {isLoading ? (
-              <div className="text-center py-12">
-                <p className="text-slate-600">Loading...</p>
-              </div>
+              <PageSpinner />
             ) : activeTab === 'homeowners' ? (
               <HomeownersTab
                 homeowners={homeowners}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette, ShieldAlert, Mail, FileUp } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette, ShieldAlert, Mail, FileUp, CheckCircle } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -12,14 +12,11 @@ const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
-  { to: '/admin/roles', label: 'Approvals', icon: Palette, permission: 'can_approve' as const },
   { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
   { to: '/admin/complaints', label: 'Complaints', icon: ShieldAlert },
   { to: '/admin/company-import', label: 'Import Company', icon: FileUp },
   { to: '/admin/notification-emails', label: 'Notify Emails', icon: Mail },
-  { to: '/admin/visitors', label: 'Visitors', icon: Globe, permission: 'can_view_stats' as const },
   { to: '/admin/analytics', label: 'Analytics', icon: Activity, permission: 'can_view_stats' as const },
-  { to: '/admin/stats', label: 'Statistics', icon: BarChart2, permission: 'can_view_stats' as const },
 ];
 
 const adminItems = [
@@ -88,10 +85,9 @@ export default function AdminLayout() {
             className="size-8 rounded flex items-center justify-center shrink-0"
             style={{ backgroundColor: `${PRIMARY}20` }}
           >
-            <LayoutDashboard className="w-5 h-5" style={{ color: PRIMARY }} />
+            <img src="/images/tarmeer_logo.svg" alt="" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           </div>
-          <span className="ml-3 text-lg font-bold text-[#2c2c2c] flex-1">Tarmeer Admin</span>
-          <NotificationBell />
+          <span className="ml-3 text-lg font-bold text-[#2c2c2c] flex-1">TARMEER</span>
         </div>
 
         {/* Navigation - active: left border + light bg like designer */}

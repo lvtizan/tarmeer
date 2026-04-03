@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
+import { PageSpinner } from '../../components/ui/Spinner';
 
 interface EmailEntry {
   id: number;
@@ -70,7 +71,7 @@ export default function AdminNotificationEmailsPage() {
     }
   };
 
-  if (loading) return <div className="p-8 text-stone-500">Loading...</div>;
+  if (loading) return <div className="p-8"><PageSpinner /></div>;
 
   return (
     <div className="max-w-2xl">

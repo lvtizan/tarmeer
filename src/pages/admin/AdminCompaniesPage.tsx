@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
+import { PageSpinner, TableSpinner } from '../../components/ui/Spinner';
 
-type Tab = 'companies' | 'applications';
+const AdminDesignersPage = lazy(() => import('./AdminDesignersPage'));
+
+type Tab = 'companies' | 'applications' | 'approvals';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
 type AppStatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
@@ -36,7 +39,12 @@ interface ApplicationRecord {
 
 export default function AdminCompaniesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tab, setTab] = useState<Tab>(() => searchParams.get('tab') === 'applications' ? 'applications' : 'companies');
+  const [tab, setTab] = useState<Tab>(() => {
+    const t = searchParams.get('tab');
+    if (t === 'applications') return 'applications';
+    if (t === 'approvals') return 'approvals';
+    return 'companies';
+  });
 
   // Companies state
   const [companies, setCompanies] = useState<CompanyRecord[]>([]);
@@ -156,6 +164,12 @@ export default function AdminCompaniesPage() {
         >
           Applications ({appTotal})
         </button>
+        <button
+          onClick={() => setTab('approvals')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === 'approvals' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
+        >
+          Approvals
+        </button>
       </div>
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
@@ -199,7 +213,7 @@ export default function AdminCompaniesPage() {
               </thead>
               <tbody>
                 {companyLoading ? (
-                  <tr><td colSpan={4} className="text-center py-12 text-stone-400">Loading...</td></tr>
+                  <TableSpinner colSpan={4} />
                 ) : companies.map((c) => (
                   <tr key={c.id} className="border-b border-stone-100 hover:bg-stone-50">
                     <td className="px-4 py-3">
@@ -296,7 +310,7 @@ export default function AdminCompaniesPage() {
               </thead>
               <tbody>
                 {appLoading ? (
-                  <tr><td colSpan={6} className="text-center py-12 text-stone-400">Loading...</td></tr>
+                  <TableSpinner colSpan={6} />
                 ) : applications.length === 0 ? (
                   <tr><td colSpan={6} className="text-center py-12 text-stone-400">No applications</td></tr>
                 ) : applications.map((app) => (
@@ -413,6 +427,12 @@ export default function AdminCompaniesPage() {
             </div>
           </div>
         </div>
+      )}
+      {/* Approvals Tab — embedded Designers page */}
+      {tab === 'approvals' && (
+        <Suspense fallback={<PageSpinner />}>
+          <AdminDesignersPage />
+        </Suspense>
       )}
     </div>
   );

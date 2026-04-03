@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi, VisitorRecord } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
+import { PageSpinner } from '../../components/ui/Spinner';
 
 const PAGE_SIZE = 50;
 
@@ -59,7 +60,7 @@ export default function AdminVisitorsPage() {
 
       <div className="rounded-lg border border-stone-200 bg-white">
         {isLoading ? (
-          <div className="p-6 text-stone-500">Loading visitor records...</div>
+          <PageSpinner text="Loading visitor records..." />
         ) : error ? (
           <div className="p-6 text-red-600">{error}</div>
         ) : rows.length === 0 ? (

@@ -157,6 +157,14 @@ app.get('/api/health', (req, res) => {
 
 import path from 'path';
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
+
+import { antiScraping } from './middleware/antiScraping';
+
+// Anti-scraping protection on public data endpoints
+app.use('/api/designers', antiScraping);
+app.use('/api/projects', antiScraping);
+app.use('/api/public/companies', antiScraping);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/designers', designerRoutes);
@@ -182,9 +190,8 @@ app.use((err: any, req: any, res: any, next: any) => {
   if (config.nodeEnv === 'production') {
     res.status(500).json({ error: 'Internal server error' });
   } else {
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message || 'Internal server error',
-      stack: err.stack
     });
   }
 });

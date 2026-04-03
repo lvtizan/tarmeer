@@ -59,9 +59,27 @@ export async function getUserDetail(req: any, res: any) {
 
     // Get linked designer
     const [designerRows] = await pool.execute(
-      'SELECT id, status, is_approved, created_at FROM designers WHERE user_id = ? AND deleted_at IS NULL',
+      'SELECT id, full_name, status, is_approved, bio, style, city, avatar_url, created_at FROM designers WHERE user_id = ? AND deleted_at IS NULL',
       [id]
     );
+
+    const designer = (designerRows as any[])[0] || null;
+
+    // Get designer's projects if linked
+    let projects: any[] = [];
+    if (designer) {
+      const [projectRows] = await pool.execute(
+        'SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at, updated_at FROM projects WHERE designer_id = ? ORDER BY created_at DESC',
+        [designer.id]
+      );
+      projects = (projectRows as any[]).map((p: any) => {
+        let parsedImages = p.images;
+        if (typeof parsedImages === 'string') {
+          try { parsedImages = JSON.parse(parsedImages); } catch { parsedImages = []; }
+        }
+        return { ...p, images: Array.isArray(parsedImages) ? parsedImages : [] };
+      });
+    }
 
     // Get linked company
     const [companyRows] = await pool.execute(
@@ -77,7 +95,8 @@ export async function getUserDetail(req: any, res: any) {
 
     res.json({
       user,
-      designer: (designerRows as any[])[0] || null,
+      designer,
+      projects,
       company: (companyRows as any[])[0] || null,
       companyApplications: appRows,
     });

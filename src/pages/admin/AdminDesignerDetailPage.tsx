@@ -4,6 +4,8 @@ import { ArrowLeft, Eye, MousePointerClick, FolderOpen, MapPin, CheckCircle, XCi
 import { adminApi, AdminDesignerDetail, AdminDesignerProject } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { formatCount } from '../../lib/formatNumber';
+import { resolveImageUrl } from '../../lib/imageUrl';
+import { PageSpinner } from '../../components/ui/Spinner';
 
 const PRIMARY = '#b8864a';
 
@@ -107,7 +109,7 @@ export default function AdminDesignerDetailPage() {
   };
 
   if (isLoading) {
-    return <div className="text-stone-500">Loading designer details...</div>;
+    return <PageSpinner text="Loading designer details..." />;
   }
 
   if (error) {
@@ -145,7 +147,7 @@ export default function AdminDesignerDetailPage() {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <div className="flex items-start gap-4">
             {designer.avatar_url ? (
-              <img src={designer.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover" />
+              <img src={resolveImageUrl(designer.avatar_url)} alt="" className="w-16 h-16 rounded-full object-cover" />
             ) : (
               <div className="w-16 h-16 rounded-full bg-stone-200 flex items-center justify-center text-xl font-semibold text-stone-500">
                 {designer.full_name.charAt(0).toUpperCase()}
@@ -238,7 +240,7 @@ export default function AdminDesignerDetailPage() {
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="w-full lg:w-40 h-28 rounded-lg overflow-hidden bg-stone-100 shrink-0">
                     {project.images[0] ? (
-                      <img src={project.images[0]} alt={project.title} className="w-full h-full object-cover" />
+                      <img src={resolveImageUrl(project.images[0])} alt={project.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-sm text-stone-400">No image</div>
                     )}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { adminApi } from '../../lib/adminApi';
+import { PageSpinner } from '../../components/ui/Spinner';
 
 interface Admin {
   id: number;
@@ -123,7 +124,7 @@ export default function AdminAdminsPage() {
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="text-stone-500">Loading...</div>
+        <PageSpinner />
       </div>
     );
   }

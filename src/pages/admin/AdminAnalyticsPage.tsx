@@ -3,6 +3,7 @@ import { adminApi, AnalyticsEventRecord, AnalyticsOverview } from '../../lib/adm
 import { formatCount } from '../../lib/formatNumber';
 import { useAdmin } from '../../contexts/AdminContext';
 import { ADMIN_ANALYTICS_PAGE_SIZE } from '../../lib/constants';
+import { PageSpinner } from '../../components/ui/Spinner';
 
 const INITIAL_OVERVIEW: AnalyticsOverview = {
   total_events: 0,
@@ -165,7 +166,7 @@ export default function AdminAnalyticsPage() {
 
       <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
         {loading ? (
-          <div className="p-6 text-stone-500">Loading analytics...</div>
+          <PageSpinner text="Loading analytics..." />
         ) : (
           <table className="w-full text-sm table-fixed">
             <colgroup>

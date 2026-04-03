@@ -34,7 +34,10 @@ router.get('/', authenticate, async (req: any, res) => {
 // Mark one as read
 router.put('/:id/read', authenticate, async (req: any, res) => {
   try {
-    await pool.execute('UPDATE notifications SET is_read = 1 WHERE id = ?', [req.params.id]);
+    await pool.execute(
+      'UPDATE notifications SET is_read = 1 WHERE id = ? AND (user_id = ? OR user_id IS NULL)',
+      [req.params.id, req.user.userId]
+    );
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update notification.' });

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { resolveImageUrl } from '../../lib/imageUrl';
 import {
   ImagePlus, Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight,
-  Link2, Loader2, FolderOpen, Image,
+  Link2, Loader2, FolderOpen, Image, Pencil,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { getDroppedImageFiles } from '../../lib/dropFiles';
@@ -23,11 +24,26 @@ const tagOn = "border-[#b8864a] bg-[#b8864a] text-white";
 const tagOff = "border-stone-200 bg-stone-50 text-stone-700 hover:border-[#b8864a]/45";
 
 function reorder<T>(a:T[],f:number,t:number):T[]{if(f===t)return a;const n=[...a];const[m]=n.splice(f,1);n.splice(t,0,m);return n;}
+function parseMaybeArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item)).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((item) => String(item)).filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 export default function CompanyProjectsPage() {
   /* ── project form ── */
   const [form, setForm] = useState({ title:'', description:'', style:'', location:'', area:'' });
   const [tags, setTags] = useState<string[]>([]);
+  const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
 
   /* ── image board ── */
   const [imgs, setImgs] = useState<string[]>([]);
@@ -53,8 +69,19 @@ export default function CompanyProjectsPage() {
 
   /* ── existing projects ── */
   const [projects, setProjects] = useState<any[]>([]);
+  const [projectsLoadError, setProjectsLoadError] = useState('');
   const refreshProjects = useCallback(() => {
-    api.get('/auth/company/projects').then(d => setProjects(Array.isArray(d.projects||d) ? (d.projects||d) : [])).catch(()=>{});
+    setProjectsLoadError('');
+    api.get('/auth/company/projects')
+      .then((d) => {
+        const raw = Array.isArray(d.projects || d) ? (d.projects || d) : [];
+        setProjects(raw.map((project: any) => ({
+          ...project,
+          images: parseMaybeArray(project.images),
+          tags: parseMaybeArray(project.tags),
+        })));
+      })
+      .catch(() => setProjectsLoadError('Failed to load projects. Please refresh the page.'));
   }, []);
   useEffect(() => { refreshProjects(); }, [refreshProjects]);
 
@@ -108,7 +135,7 @@ export default function CompanyProjectsPage() {
     setSubmitting(true);setMsg('');
     try{
       const ordered=[imgs[cover],...imgs.filter((_,i)=>i!==cover)];
-      await api.post('/projects', {
+      const payload = {
         title: form.title,
         description: form.description,
         style: form.style,
@@ -117,11 +144,64 @@ export default function CompanyProjectsPage() {
         images: ordered,
         tags,
         status: publish ? 'pending' : 'draft',
-      });
-      setMsg(publish?'Project submitted for review!':'Draft saved!');
+      };
+
+      if (editingProjectId) {
+        await api.put(`/projects/${editingProjectId}`, payload);
+        setMsg(publish ? 'Project updated and submitted for review!' : 'Draft updated!');
+      } else {
+        await api.post('/projects', payload);
+        setMsg(publish ? 'Project submitted for review!' : 'Draft saved!');
+      }
+
+      setEditingProjectId(null);
       setForm({title:'',description:'',style:'',location:'',area:''});setTags([]);setImgs([]);setFps([]);setCover(0);
       refreshProjects();
     }catch(e:any){setMsg(e.message||'Failed')}finally{setSubmitting(false)}
+  };
+
+  const startEdit = (project: any) => {
+    const projectImages = parseMaybeArray(project.images);
+    setEditingProjectId(Number(project.id));
+    setForm({
+      title: project.title || '',
+      description: project.description || '',
+      style: project.style || '',
+      location: project.location || '',
+      area: project.area || '',
+    });
+    setTags(parseMaybeArray(project.tags));
+    setImgs(projectImages);
+    setFps(projectImages.map((url, index) => `existing:${project.id}:${index}:${url.slice(-30)}`));
+    setCover(0);
+    setMsg('');
+    setTried(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingProjectId(null);
+    setForm({title:'',description:'',style:'',location:'',area:''});
+    setTags([]);
+    setImgs([]);
+    setFps([]);
+    setCover(0);
+    setTried(false);
+    setMsg('');
+  };
+
+  const removeProject = async (projectId: number) => {
+    if (!window.confirm('Delete this project?')) return;
+    try {
+      await api.delete(`/projects/${projectId}`);
+      if (editingProjectId === projectId) {
+        cancelEdit();
+      }
+      refreshProjects();
+      setMsg('Project deleted.');
+    } catch (error: any) {
+      setMsg(error?.message || 'Failed to delete project.');
+    }
   };
 
   const canPublish = !!(form.title.trim()&&form.style&&form.location&&imgs.length>0);
@@ -144,14 +224,24 @@ export default function CompanyProjectsPage() {
               <p className="text-sm text-stone-500">Complete your project and submit it for review.</p>
             </div>
             <div className="flex w-full shrink-0 gap-3 sm:w-auto">
+              {editingProjectId && (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  disabled={submitting}
+                  className="h-10 flex-1 rounded-lg border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 sm:flex-none disabled:opacity-50"
+                >
+                  Cancel Edit
+                </button>
+              )}
               <button type="button" onClick={()=>submit(false)} disabled={submitting||imgs.length===0}
                 className="h-10 flex-1 rounded-lg border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 sm:flex-none disabled:opacity-50">
-                {submitting?'Saving...':'Save Draft'}
+                {submitting ? 'Saving...' : editingProjectId ? 'Update Draft' : 'Save Draft'}
               </button>
               <button type="button" onClick={()=>submit(true)} disabled={submitting||!canPublish}
                 className="h-10 flex-1 rounded-lg px-5 text-sm font-bold text-white transition disabled:opacity-60 sm:flex-none"
                 style={{backgroundColor:PRIMARY}}>
-                {submitting?'Submitting...':'Submit for Review'}
+                {submitting ? 'Submitting...' : editingProjectId ? 'Update & Submit' : 'Submit for Review'}
               </button>
             </div>
           </div>
@@ -289,26 +379,58 @@ export default function CompanyProjectsPage() {
           </aside>
         </form>
 
-        {/* ── Existing projects ── */}
-        {projects.length>0&&(
-          <div className="mt-8">
-            <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Uploaded Projects ({projects.length})</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* ── Project List ── */}
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-bold text-[#2c2c2c]">Project List ({projects.length})</h2>
+
+          {projectsLoadError && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+              {projectsLoadError}
+            </div>
+          )}
+
+          {projects.length > 0 ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {projects.map((p:any)=>{
                 const cover = Array.isArray(p.images)&&p.images.length>0?(typeof p.images[0]==='string'?p.images[0]:''):'';
                 return(
-                  <div key={p.id} className="group rounded-[20px] border border-stone-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                    <div className="relative aspect-[4/3] bg-stone-100 overflow-hidden">
-                      {cover?<img src={cover} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>:<div className="w-full h-full flex items-center justify-center text-stone-300"><Image className="w-10 h-10"/></div>}
-                      <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${p.status==='published'?'bg-green-100 text-green-800':p.status==='pending'?'bg-amber-100 text-amber-800':p.status==='rejected'?'bg-red-100 text-red-800':'bg-stone-100 text-stone-700'}`}>{p.status==='published'?'Approved':p.status==='pending'?'Under Review':p.status==='rejected'?'Rejected':'Draft'}</span>
+                  <div key={p.id} className="group overflow-hidden rounded-[20px] border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+                      {cover?<img src={resolveImageUrl(cover)} alt={p.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/>:<div className="flex h-full w-full items-center justify-center text-stone-300"><Image className="h-10 w-10"/></div>}
+                      <span className={`absolute left-3 top-3 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${p.status==='published'?'bg-green-100 text-green-800':p.status==='pending'?'bg-amber-100 text-amber-800':p.status==='rejected'?'bg-red-100 text-red-800':'bg-stone-100 text-stone-700'}`}>{p.status==='published'?'Approved':p.status==='pending'?'Under Review':p.status==='rejected'?'Rejected':'Draft'}</span>
                     </div>
-                    <div className="p-4"><h3 className="font-semibold text-[#2c2c2c] truncate">{p.title||'Untitled'}</h3><p className="text-xs text-stone-500 mt-1">{[p.style,p.location].filter(Boolean).join(' · ')||'No details'}</p></div>
+                    <div className="p-4">
+                      <h3 className="truncate font-semibold text-[#2c2c2c]">{p.title||'Untitled'}</h3>
+                      <p className="mt-1 text-xs text-stone-500">{[p.style,p.location].filter(Boolean).join(' · ')||'No details'}</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(p)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg h-9 px-3 border border-stone-200 bg-white text-[#2c2c2c] text-sm font-medium hover:bg-stone-50 hover:border-[#b8864a]/30 transition"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void removeProject(Number(p.id))}
+                          className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-red-200 text-red-500 hover:bg-red-50 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center">
+              <p className="text-sm font-semibold text-stone-700">No projects yet</p>
+              <p className="mt-1 text-xs text-stone-500">Create your first project above, then it will appear in this list.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Lightbox ── */}

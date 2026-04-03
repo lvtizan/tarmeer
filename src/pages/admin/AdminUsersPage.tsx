@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
+import { TableSpinner } from '../../components/ui/Spinner';
 
 type RoleFilter = 'all' | 'user' | 'designer' | 'company';
 type StatusFilter = 'all' | 'active' | 'suspended';
@@ -29,6 +30,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function AdminUsersPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,10 +47,6 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-
-  // Detail panel
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -93,18 +91,6 @@ export default function AdminUsersPage() {
       alert(err.message || 'Failed to update status');
     } finally {
       setActionLoading(null);
-    }
-  };
-
-  const handleViewDetail = async (userId: number) => {
-    setDetailLoading(true);
-    try {
-      const data = await adminApi.getUserDetail(userId);
-      setSelectedUser(data);
-    } catch {
-      setSelectedUser(null);
-    } finally {
-      setDetailLoading(false);
     }
   };
 
@@ -172,14 +158,14 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-12 text-stone-400">Loading...</td></tr>
+                <TableSpinner colSpan={6} />
               ) : users.length === 0 ? (
                 <tr><td colSpan={6} className="text-center py-12 text-stone-400">No users found</td></tr>
               ) : users.map((user) => (
                 <tr
                   key={user.id}
                   className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition"
-                  onClick={() => handleViewDetail(user.id)}
+                  onClick={() => navigate(`/admin/users/${user.id}`)}
                 >
                   <td className="px-4 py-3">
                     <div className="font-medium text-stone-800">{user.full_name}</div>
@@ -242,67 +228,6 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* Detail Panel */}
-      {selectedUser && (
-        <div className="bg-white rounded-xl border border-stone-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-stone-800">
-              {selectedUser.user.full_name}
-            </h2>
-            <button onClick={() => setSelectedUser(null)} className="text-stone-400 hover:text-stone-600 text-sm">
-              Close
-            </button>
-          </div>
-          {detailLoading ? (
-            <div className="text-stone-400">Loading...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-stone-500">Email:</span>{' '}
-                <span className="text-stone-800">{selectedUser.user.email}</span>
-              </div>
-              <div>
-                <span className="text-stone-500">Phone:</span>{' '}
-                <span className="text-stone-800">{selectedUser.user.phone || '—'}</span>
-              </div>
-              <div>
-                <span className="text-stone-500">City:</span>{' '}
-                <span className="text-stone-800">{selectedUser.user.city || '—'}</span>
-              </div>
-              <div>
-                <span className="text-stone-500">Role:</span>{' '}
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[selectedUser.user.role]}`}>
-                  {selectedUser.user.role}
-                </span>
-              </div>
-              {selectedUser.designer && (
-                <div className="col-span-2 p-3 bg-amber-50 rounded-lg">
-                  <span className="text-amber-800 font-medium">Linked Designer:</span>{' '}
-                  ID #{selectedUser.designer.id}, status: {selectedUser.designer.status}
-                </div>
-              )}
-              {selectedUser.company && (
-                <div className="col-span-2 p-3 bg-blue-50 rounded-lg">
-                  <span className="text-blue-800 font-medium">Linked Company:</span>{' '}
-                  {selectedUser.company.slug} (ID #{selectedUser.company.id})
-                </div>
-              )}
-              {selectedUser.companyApplications?.length > 0 && (
-                <div className="col-span-2 p-3 bg-stone-50 rounded-lg">
-                  <span className="text-stone-700 font-medium">Company Applications:</span>
-                  <ul className="mt-1 space-y-1">
-                    {selectedUser.companyApplications.map((app: any) => (
-                      <li key={app.id} className="text-xs text-stone-600">
-                        {app.company_name} — <span className={app.status === 'approved' ? 'text-green-600' : app.status === 'rejected' ? 'text-red-600' : 'text-amber-600'}>{app.status}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
