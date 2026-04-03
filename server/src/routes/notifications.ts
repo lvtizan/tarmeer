@@ -12,10 +12,10 @@ const router = Router();
 // Get notifications for current user (admins see broadcast notifications)
 router.get('/', authenticate, async (req: any, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 20), 100);
     const [rows] = await pool.execute(
-      `SELECT * FROM notifications WHERE user_id IS NULL OR user_id = ? ORDER BY created_at DESC LIMIT ?`,
-      [req.user.userId, limit]
+      `SELECT * FROM notifications WHERE user_id IS NULL OR user_id = ? ORDER BY created_at DESC LIMIT ${Number(limit)}`,
+      [req.user.userId]
     );
     const [unreadRows] = await pool.execute(
       `SELECT COUNT(*) as count FROM notifications WHERE (user_id IS NULL OR user_id = ?) AND is_read = 0`,
