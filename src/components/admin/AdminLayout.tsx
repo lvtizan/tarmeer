@@ -81,7 +81,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-[#faf9f7] flex">
       {/* Sidebar - match DesignerLayout style */}
-      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col">
+      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-y-auto">
         {/* Logo - match designer: icon in rounded box + title */}
         <div className="h-16 flex items-center px-6 border-b border-stone-200">
           <div
