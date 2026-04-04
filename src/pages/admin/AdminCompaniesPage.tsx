@@ -6,7 +6,7 @@ import { PageSpinner, TableSpinner } from '../../components/ui/Spinner';
 
 const AdminDesignersPage = lazy(() => import('./AdminDesignersPage'));
 
-type Tab = 'companies' | 'applications' | 'approvals';
+type Tab = 'registered' | 'applications' | 'scraped';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
 type AppStatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type SortField = 'default' | 'project_count';
@@ -46,8 +46,8 @@ export default function AdminCompaniesPage() {
   const [tab, setTab] = useState<Tab>(() => {
     const t = searchParams.get('tab');
     if (t === 'applications') return 'applications';
-    if (t === 'approvals') return 'approvals';
-    return 'companies';
+    if (t === 'scraped') return 'scraped';
+    return 'registered';
   });
 
   // Companies state
@@ -108,7 +108,7 @@ export default function AdminCompaniesPage() {
     finally { setAppLoading(false); }
   }, [appPage, appStatusFilter]);
 
-  useEffect(() => { if (tab === 'companies') loadCompanies(); }, [tab, loadCompanies]);
+  useEffect(() => { if (tab === 'scraped') loadCompanies(); }, [tab, loadCompanies]);
   useEffect(() => { if (tab === 'applications') loadApplications(); }, [tab, loadApplications]);
 
   useEffect(() => {
@@ -159,10 +159,10 @@ export default function AdminCompaniesPage() {
       {/* Tabs */}
       <div className="flex gap-1 bg-stone-100 rounded-lg p-1 w-fit">
         <button
-          onClick={() => setTab('companies')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === 'companies' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
+          onClick={() => setTab('registered')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === 'registered' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
         >
-          Companies ({companyTotal})
+          Registered
         </button>
         <button
           onClick={() => setTab('applications')}
@@ -171,17 +171,24 @@ export default function AdminCompaniesPage() {
           Applications ({appTotal})
         </button>
         <button
-          onClick={() => setTab('approvals')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === 'approvals' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
+          onClick={() => setTab('scraped')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === 'scraped' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
         >
-          Approvals
+          Scraped ({companyTotal})
         </button>
       </div>
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
-      {/* Companies Tab */}
-      {tab === 'companies' && (
+      {/* Registered Tab — self-registered companies (designers table, sortable by project count) */}
+      {tab === 'registered' && (
+        <Suspense fallback={<PageSpinner />}>
+          <AdminDesignersPage />
+        </Suspense>
+      )}
+
+      {/* Scraped Tab — external scraped companies */}
+      {tab === 'scraped' && (
         <>
           <div className="flex flex-wrap gap-3 items-end">
             <div>
@@ -454,12 +461,6 @@ export default function AdminCompaniesPage() {
             </div>
           </div>
         </div>
-      )}
-      {/* Approvals Tab — embedded Designers page */}
-      {tab === 'approvals' && (
-        <Suspense fallback={<PageSpinner />}>
-          <AdminDesignersPage />
-        </Suspense>
       )}
     </div>
   );
