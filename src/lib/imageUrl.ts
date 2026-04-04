@@ -73,6 +73,10 @@ export function resolveImageUrl(url: string | null | undefined): string {
     const [path, query = ''] = normalized.split('?');
     const rewritten = rewriteKnownBrokenPath(path);
     normalized = query ? `${rewritten}?${query}` : rewritten;
+    // Unified uploads source: always read uploaded files via backend static route.
+    if (normalized.startsWith('/uploads/')) {
+      normalized = `/api${normalized}`;
+    }
   }
 
   if (normalized.startsWith('/') && UPLOADS_BASE) {

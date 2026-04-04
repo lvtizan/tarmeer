@@ -80,6 +80,7 @@ export default function AdminLayout() {
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_LANG_KEY) : null;
     return saved === 'zh' ? 'zh' : 'en';
   });
+  const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
 
   const fetchNotificationCounts = useCallback(async () => {
     try {
@@ -130,6 +131,15 @@ export default function AdminLayout() {
       return next;
     });
   };
+  const showTooltip = (event: any, text: string) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltip({
+      text,
+      top: Math.round(rect.top + rect.height / 2),
+      left: Math.round(rect.right + 12),
+    });
+  };
+  const hideTooltip = () => setTooltip(null);
 
   return (
     <div className="min-h-screen bg-[#faf9f7] flex">
@@ -162,11 +172,12 @@ export default function AdminLayout() {
                 <Icon className="w-5 h-5 shrink-0" />
                 <span className="flex items-center gap-1.5">
                   <span>{t(item.labelEn, item.labelZh)}</span>
-                  <span className="relative inline-flex items-center">
+                  <span
+                    className="relative inline-flex items-center"
+                    onMouseEnter={(e) => showTooltip(e, t(item.infoEn, item.infoZh))}
+                    onMouseLeave={hideTooltip}
+                  >
                     <Info className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-500" />
-                    <span className="pointer-events-none absolute left-5 top-1/2 z-[120] hidden w-80 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-3 text-sm leading-relaxed text-stone-700 shadow-xl group-hover:block">
-                      {t(item.infoEn, item.infoZh)}
-                    </span>
                   </span>
                 </span>
                 {hasNotif && (
@@ -194,11 +205,12 @@ export default function AdminLayout() {
                     <Icon className="w-5 h-5 shrink-0" />
                     <span className="flex items-center gap-1.5">
                         <span>{t(item.labelEn, item.labelZh)}</span>
-                      <span className="relative inline-flex items-center">
+                      <span
+                        className="relative inline-flex items-center"
+                        onMouseEnter={(e) => showTooltip(e, t(item.infoEn, item.infoZh))}
+                        onMouseLeave={hideTooltip}
+                      >
                         <Info className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-500" />
-                        <span className="pointer-events-none absolute left-5 top-1/2 z-[120] hidden w-80 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-3 text-sm leading-relaxed text-stone-700 shadow-xl group-hover:block">
-                          {t(item.infoEn, item.infoZh)}
-                        </span>
                       </span>
                     </span>
                   </SidebarNavLink>
@@ -242,6 +254,14 @@ export default function AdminLayout() {
       <main className="flex-1 overflow-auto p-6 md:p-10">
         <Outlet />
       </main>
+      {tooltip && (
+        <div
+          className="pointer-events-none fixed z-[9999] w-80 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-3 text-sm leading-relaxed text-stone-700 shadow-xl"
+          style={{ top: `${tooltip.top}px`, left: `${tooltip.left}px` }}
+        >
+          {tooltip.text}
+        </div>
+      )}
     </div>
   );
 }

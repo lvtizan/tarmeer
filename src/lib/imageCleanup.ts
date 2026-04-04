@@ -48,6 +48,21 @@ function rewriteAdminAbsoluteUrl(url: string): string {
   }
 }
 
+function rewriteUploadsToApi(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('/uploads/')) return `/api${url}`;
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.startsWith('/uploads/')) {
+      parsed.pathname = `/api${parsed.pathname}`;
+      return parsed.toString();
+    }
+  } catch {
+    // ignore parse error and keep original
+  }
+  return url;
+}
+
 export function imageDedupKey(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return '';
@@ -68,13 +83,14 @@ export function sanitizeImageUrl(value: unknown): string {
   const url = toTrimmedString(value);
   if (!url) return '';
   if (url.startsWith('data:')) return url;
-  if (url.startsWith('http://') || url.startsWith('https://')) return rewriteAdminAbsoluteUrl(url);
+  if (url.startsWith('http://') || url.startsWith('https://')) return rewriteUploadsToApi(rewriteAdminAbsoluteUrl(url));
   if (url.startsWith('//')) return `https:${url}`;
   if (url.startsWith('/')) {
     const [path, query = ''] = url.split('?');
     const rewritten = rewriteKnownBrokenPortfolioPath(path);
     const normalized = query ? `${rewritten}?${query}` : rewritten;
-    return ROOT_STATIC_BASE ? `${ROOT_STATIC_BASE}${normalized}` : normalized;
+    const apiNormalized = rewriteUploadsToApi(normalized);
+    return ROOT_STATIC_BASE ? `${ROOT_STATIC_BASE}${apiNormalized}` : apiNormalized;
   }
   if (url.startsWith('./')) return `/${url.replace(/^\.\/+/, '')}`;
   if (url.startsWith('www.')) return `https://${url}`;
@@ -172,7 +188,30 @@ export function getImageFallbackCandidates(url: string): string[] {
     if (ext === originalExt) continue;
     candidates.push(`${base}.${ext}${query}`);
   }
-  return candidates;
+
+  const expanded: string[] = [];
+  const seen = new Set<string>();
+
+  const addCandidate = (candidate: string) => {
+    if (!candidate || seen.has(candidate)) return;
+    seen.add(candidate);
+    expanded.push(candidate);
+  };
+
+  const withCollapsedProjectsPath = (candidate: string) => {
+    return candidate.replace(
+      /\/api\/uploads\/projects\/(\d+)\/\d+\/(\d{4})\/(\d{2})\/([^/?]+)(\?.*)?$/i,
+      '/api/uploads/projects/$1/$2/$3/$4$5'
+    );
+  };
+
+  for (const candidate of candidates) {
+    addCandidate(candidate);
+    addCandidate(rewriteUploadsToApi(candidate));
+    addCandidate(withCollapsedProjectsPath(rewriteUploadsToApi(candidate)));
+  }
+
+  return expanded;
 }
 
 function moveImageToFront(images: string[], targetIndex: number): string[] {

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { TableSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
+import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -379,7 +379,7 @@ export default function AdminCompaniesPage() {
                     className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
                     onClick={() => navigate(`/admin/profile-companies/${c.id}`)}
                   >
-                    <td className="px-4 py-3 relative">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {c.logo_url ? (
                           <SmartImage src={c.logo_url} alt="" className="w-8 h-8 rounded-lg object-contain bg-stone-100" />
@@ -390,14 +390,6 @@ export default function AdminCompaniesPage() {
                         )}
                         <span className="font-medium text-stone-800">{c.company_name}</span>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteProfile(c); }}
-                        disabled={profileDeleteLoadingId === c.id}
-                        title="Delete company"
-                        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-200 bg-white text-red-500 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-50 disabled:opacity-50"
-                      >
-                        {profileDeleteLoadingId === c.id ? '...' : <Trash2 className="h-3.5 w-3.5" />}
-                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -444,7 +436,15 @@ export default function AdminCompaniesPage() {
                         className="w-16 h-8 px-2 border border-stone-200 rounded-md text-sm bg-white"
                       />
                     </td>
-                    <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
+                    <td className="relative px-4 py-3 text-stone-500 text-xs">
+                      <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                      <HoverDeleteIconButton
+                        title="Delete company"
+                        loading={profileDeleteLoadingId === c.id}
+                        disabled={profileDeleteLoadingId === c.id}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteProfile(c); }}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>

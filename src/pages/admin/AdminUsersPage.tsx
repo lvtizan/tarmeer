@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
+import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
 
 type RoleFilter = 'all' | 'user' | 'designer' | 'company';
 type StatusFilter = 'all' | 'active' | 'suspended';
@@ -183,17 +183,9 @@ export default function AdminUsersPage() {
                   className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition"
                   onClick={() => navigate(`/admin/users/${user.id}`)}
                 >
-                  <td className="px-4 py-3 relative">
+                  <td className="px-4 py-3">
                     <div className="font-medium text-stone-800">{user.full_name}</div>
                     {user.city && <div className="text-xs text-stone-400">{user.city}</div>}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
-                      disabled={deleteLoadingId === user.id}
-                      title="Delete user"
-                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-200 bg-white text-red-500 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      {deleteLoadingId === user.id ? '...' : <Trash2 className="h-3.5 w-3.5" />}
-                    </button>
                   </td>
                   <td className="px-4 py-3 text-stone-600">{user.email}</td>
                   <td className="px-4 py-3">
@@ -206,8 +198,14 @@ export default function AdminUsersPage() {
                       {user.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-stone-500 text-xs">
-                    {new Date(user.created_at).toLocaleDateString()}
+                  <td className="relative px-4 py-3 text-stone-500 text-xs">
+                    <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                    <HoverDeleteIconButton
+                      title="Delete user"
+                      loading={deleteLoadingId === user.id}
+                      disabled={deleteLoadingId === user.id}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <button
