@@ -115,9 +115,9 @@ export default function AdminDesignerDetailPage() {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto">
-        <Link to="/admin/designers" className="inline-flex items-center gap-2 text-sm font-medium mb-6" style={{ color: PRIMARY }}>
+        <Link to="/admin/companies" className="inline-flex items-center gap-2 text-sm font-medium mb-6" style={{ color: PRIMARY }}>
           <ArrowLeft className="w-4 h-4" />
-          Back to designers
+          Back to companies
         </Link>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{error}</div>
       </div>
@@ -132,9 +132,9 @@ export default function AdminDesignerDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <Link to="/admin/designers" className="inline-flex items-center gap-2 text-sm font-medium mb-6" style={{ color: PRIMARY }}>
+      <Link to="/admin/companies" className="inline-flex items-center gap-2 text-sm font-medium mb-6" style={{ color: PRIMARY }}>
         <ArrowLeft className="w-4 h-4" />
-        Back to designers
+        Back to companies
       </Link>
 
       {actionError && (
