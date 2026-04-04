@@ -3,7 +3,11 @@ import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
 import fs from 'fs';
 import path from 'path';
 
-const PUBLIC_UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
+// Runtime note:
+// - ts-node/dev: __dirname => server/src/controllers
+// - build/prod: __dirname => server/dist/controllers
+// In both cases, ../../public/uploads points to server/public/uploads.
+const PUBLIC_UPLOADS_DIR = path.join(__dirname, '..', '..', 'public', 'uploads');
 
 function normalizeLegacyImageUrl(url: string): string {
   const value = url.trim();
