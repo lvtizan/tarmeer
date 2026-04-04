@@ -45,6 +45,25 @@ npm run backend:health
 
 如果 `backend:health` 返回 `HTTP/1.1 200`，前端提交 `/admin/install` 才会成功连到后端。
 
+### 固定本地启动顺序（避免 500）
+```bash
+# 终端1：后端
+cd /Users/yiming/Code/tarmeer/server
+npm run dev
+
+# 终端2：前端
+cd /Users/yiming/Code/tarmeer
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+- 本地 `VITE_API_URL` 建议留默认 `/api`（走 Vite 代理到 `3002`）。
+- 若看到 `POST /api/stats/event 500` 或 `GET /api/admin/check-installation 500`，按下列顺序检查：
+```bash
+curl -i --max-time 8 http://127.0.0.1:3002/api/admin/check-installation
+curl -i --max-time 8 -H 'Content-Type: application/json' -d '{"eventName":"page_view","pagePath":"/admin/login"}' http://127.0.0.1:3002/api/stats/event
+curl -i --max-time 8 http://127.0.0.1:5173/api/admin/check-installation
+```
+
 ### 方法1: 使用PM2（推荐）
 ```bash
 # 1. 进入API目录（如果存在）
@@ -118,6 +137,39 @@ nodemon --exec ts-node src/index.ts
 2. 创建新作品
 3. 上传作品图片
 4. **预期**: 图片成功保存，无截断错误
+
+---
+
+## 🖼️ 图片 URL 系统方法（工作手册约定）
+
+从 `2026-04-03` 晚到 `2026-04-04` 上午，项目统一为下面这套方法，后续不要重复造轮子：
+
+1. 前端展示层
+- 所有后台/前台图片渲染统一调用 `resolveImageUrl()`：
+  - 文件：`src/lib/imageUrl.ts`
+- 目的：
+  - 处理 `admin.*` 子域下 `/uploads/...` 访问，自动改写到 `www.*`；
+  - 保留 `data:` 和绝对 URL 直出。
+- 强制要求：
+  - 图片链接必须动态解析（来自数据库字段或接口返回）；
+  - 禁止写死图片域名或占位图链接（如 `picsum.photos` / `placeholder.com`）。
+
+2. 后端存储层
+- 项目图上传统一走 `persistProjectImages()`：
+  - 文件：`server/src/lib/projectImageStorage.ts`
+- 存储结果统一为 URL 路径（不再存 base64）：
+  - `/uploads/projects/{designerId}/{projectId}/{yyyy}/{mm}/{uuid}.{ext}`
+- 兼容旧数据时，使用可追溯的规则映射（deterministic mapping），不要用随机占位图兜底。
+
+3. 服务与代理要求
+- 后端必须提供静态目录：
+  - `app.use('/uploads', express.static(...))`
+- Nginx 必须保证 `/uploads/` 规则优先命中并反代到 `3002`。
+
+4. 排查顺序（固定流程）
+- 先看接口返回的图片字段是否为可访问 URL；
+- 再看前端是否通过 `resolveImageUrl()` 渲染；
+- 最后检查 `/uploads/...` 文件是否存在和 Nginx 路由。
 
 ---
 

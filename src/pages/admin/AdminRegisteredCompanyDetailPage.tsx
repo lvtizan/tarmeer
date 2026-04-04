@@ -1,34 +1,32 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
+import { useAdmin } from '../../contexts/AdminContext';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import { PageSpinner } from '../../components/ui/Spinner';
 
-interface CompanyDetail {
+interface CompanyProfile {
   id: number;
-  name_en: string;
-  name_ar: string | null;
-  slug: string;
-  city: string | null;
-  area: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  whatsapp: string | null;
-  instagram: string | null;
-  facebook: string | null;
-  linkedin: string | null;
+  company_name: string;
+  company_type: 'design_studio' | 'renovation_company' | string;
+  status: 'pending' | 'approved' | 'rejected';
   description: string | null;
-  logo_url: string | null;
-  year_established: number | null;
-  license_number: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  website: string | null;
+  city: string | null;
+  address: string | null;
   services: string | null;
   specialties: string | null;
-  owner_user_id: number | null;
-  owner_name: string | null;
-  owner_email: string | null;
-  owner_id: number | null;
+  trade_license_number: string | null;
+  establishment_year: number | null;
+  logo_url: string | null;
+  admin_notes: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  user_id: number;
+  user_email: string;
+  user_name: string;
 }
 
 interface Project {
@@ -41,12 +39,8 @@ interface Project {
   images: string[];
   tags: string[];
   status: string;
+  rejection_reason: string | null;
   created_at: string;
-}
-
-function parseJsonArray(val: string | null | undefined): string[] {
-  if (!val) return [];
-  try { return JSON.parse(val); } catch { return []; }
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -56,26 +50,46 @@ const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-stone-100 text-stone-600',
 };
 
-export default function AdminCompanyDetailPage() {
+const COMPANY_STATUS_COLORS: Record<string, string> = {
+  approved: 'bg-green-100 text-green-700',
+  pending: 'bg-amber-100 text-amber-700',
+  rejected: 'bg-red-100 text-red-700',
+};
+
+function parseJsonArray(val: string | null | undefined): string[] {
+  if (!val) return [];
+  try { return JSON.parse(val); } catch { return []; }
+}
+
+export default function AdminRegisteredCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [company, setCompany] = useState<CompanyDetail | null>(null);
+  const { hasPermission } = useAdmin();
+  const canApprove = hasPermission('can_approve');
+
+  const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeStyle, setActiveStyle] = useState<string>('all');
+  const [actionError, setActionError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
-  useEffect(() => {
+  const loadDetail = () => {
     if (!id) return;
     setLoading(true);
-    adminApi.getCompanyFullDetail(Number(id))
+    adminApi.getCompanyProfileDetail(Number(id))
       .then((data: any) => {
         setCompany(data.company);
         setProjects(data.projects || []);
       })
       .catch((err: any) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  };
+
+  useEffect(() => { loadDetail(); }, [id]);
 
   const styles = useMemo(() => {
     const all = projects.flatMap((p) => p.style ? [p.style] : []);
@@ -86,6 +100,37 @@ export default function AdminCompanyDetailPage() {
     if (activeStyle === 'all') return projects;
     return projects.filter((p) => p.style === activeStyle);
   }, [projects, activeStyle]);
+
+  const handleApprove = async () => {
+    setIsSubmitting(true);
+    setActionError('');
+    try {
+      await adminApi.approveCompanyProfile(Number(id));
+      loadDetail();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to approve.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) return;
+    setIsSubmitting(true);
+    setActionError('');
+    try {
+      await adminApi.rejectCompanyProfile(Number(id), rejectReason);
+      setShowRejectModal(false);
+      setRejectReason('');
+      loadDetail();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to reject.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const backTab = 'companies';
 
   if (loading) return <PageSpinner />;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
@@ -98,50 +143,87 @@ export default function AdminCompanyDetailPage() {
     <div className="space-y-4">
       {/* Back button */}
       <button
-        onClick={() => navigate('/admin/companies?tab=directory')}
+        onClick={() => navigate(`/admin/companies?tab=${backTab}`)}
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
         Back to Companies
       </button>
 
+      {actionError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{actionError}</div>
+      )}
+
       <div className="flex gap-6 items-start">
-        {/* ===== LEFT: Company Info ===== */}
+        {/* LEFT: Company Info */}
         <div className="w-80 flex-shrink-0 space-y-4">
           {/* Header card */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
             {company.logo_url && (
               <img
                 src={resolveImageUrl(company.logo_url)}
-                alt={company.name_en}
+                alt={company.company_name}
                 className="w-16 h-16 rounded-xl object-contain bg-stone-50 border border-stone-100"
               />
             )}
             <div>
-              <h1 className="text-lg font-bold text-stone-800">{company.name_en}</h1>
-              {company.name_ar && <p className="text-sm text-stone-500 mt-0.5" dir="rtl">{company.name_ar}</p>}
-              <p className="text-xs text-stone-400 mt-1">/{company.slug}</p>
+              <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
+                  {company.company_type === 'design_studio' ? 'Design Studio' : 'Renovation Company'}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>
+                  {company.status}
+                </span>
+              </div>
             </div>
             {company.description && (
               <p className="text-sm text-stone-600 leading-relaxed">{company.description}</p>
+            )}
+            {/* Admin actions */}
+            {canApprove && company.status === 'pending' && (
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleApprove}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
+            {company.admin_notes && (
+              <div className="mt-2 text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
+                <span className="font-medium">Admin notes:</span> {company.admin_notes}
+              </div>
             )}
           </div>
 
           {/* Details card */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-2.5 text-sm">
             <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Details</h2>
-            {company.city && <InfoRow label="City" value={company.city} />}
-            {company.area && <InfoRow label="Area" value={company.area} />}
-            {company.address && <InfoRow label="Address" value={company.address} />}
-            {company.year_established && <InfoRow label="Est." value={String(company.year_established)} />}
-            {company.license_number && <InfoRow label="License" value={company.license_number} />}
+            {company.contact_person && <InfoRow label="Contact" value={company.contact_person} />}
             {company.phone && <InfoRow label="Phone" value={company.phone} />}
-            {company.whatsapp && <InfoRow label="WhatsApp" value={company.whatsapp} />}
-            {company.email && <InfoRow label="Email" value={company.email} />}
-            {company.website && <InfoRow label="Website" value={company.website} isLink />}
-            {company.instagram && <InfoRow label="Instagram" value={company.instagram} isLink />}
-            {company.facebook && <InfoRow label="Facebook" value={company.facebook} isLink />}
-            {company.linkedin && <InfoRow label="LinkedIn" value={company.linkedin} isLink />}
+            {company.city && <InfoRow label="City" value={company.city} />}
+            {company.address && <InfoRow label="Address" value={company.address} />}
+            {company.establishment_year && <InfoRow label="Est." value={String(company.establishment_year)} />}
+            {company.trade_license_number && <InfoRow label="License" value={company.trade_license_number} />}
+            {company.website && (
+              <div className="flex gap-2">
+                <span className="text-stone-400 w-20 flex-shrink-0">Website</span>
+                <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
+              </div>
+            )}
+            <div className="pt-1 border-t border-stone-100">
+              <InfoRow label="Joined" value={new Date(company.created_at).toLocaleDateString()} />
+            </div>
           </div>
 
           {/* Services / Specialties */}
@@ -170,30 +252,26 @@ export default function AdminCompanyDetailPage() {
             </div>
           )}
 
-          {/* Owner */}
+          {/* Owner account */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
             <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Owner Account</h2>
-            {company.owner_user_id ? (
-              <div className="space-y-1">
-                <div className="font-medium text-stone-800">{company.owner_name}</div>
-                <div className="text-stone-500">{company.owner_email}</div>
-                <button
-                  onClick={() => navigate(`/admin/users/${company.owner_id}`)}
-                  className="mt-2 text-xs text-[#b8864a] hover:underline"
-                >
-                  View user profile →
-                </button>
-              </div>
-            ) : (
-              <p className="text-stone-400 text-xs">Not claimed</p>
-            )}
+            <div className="font-medium text-stone-800">{company.user_name}</div>
+            <div className="text-stone-500">{company.user_email}</div>
+            <button
+              onClick={() => navigate(`/admin/users/${company.user_id}`)}
+              className="mt-2 text-xs text-[#b8864a] hover:underline"
+            >
+              View user profile →
+            </button>
           </div>
         </div>
 
-        {/* ===== RIGHT: Portfolio ===== */}
+        {/* RIGHT: Portfolio */}
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-stone-800">Portfolio <span className="text-stone-400 font-normal text-sm">({projects.length} projects)</span></h2>
+            <h2 className="text-lg font-bold text-stone-800">
+              Portfolio <span className="text-stone-400 font-normal text-sm">({projects.length} projects)</span>
+            </h2>
           </div>
 
           {/* Style tabs */}
@@ -224,7 +302,6 @@ export default function AdminCompanyDetailPage() {
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
               {visibleProjects.map((project) => (
                 <div key={project.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group">
-                  {/* Cover image */}
                   <div className="aspect-video bg-stone-100 overflow-hidden">
                     {project.images[0] ? (
                       <img
@@ -250,6 +327,9 @@ export default function AdminCompanyDetailPage() {
                       {project.location && <span>· {project.location}</span>}
                       {project.year && <span>· {project.year}</span>}
                     </div>
+                    {project.rejection_reason && (
+                      <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1">{project.rejection_reason}</p>
+                    )}
                     {project.images.length > 1 && (
                       <p className="text-xs text-stone-400">{project.images.length} photos</p>
                     )}
@@ -260,26 +340,42 @@ export default function AdminCompanyDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Reject modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h2 className="text-lg font-semibold">Reject Company</h2>
+            <p className="text-sm text-stone-500">{company.company_name}</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Reason for rejection..."
+              rows={4}
+              className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30 focus:border-[#b8864a]"
+            />
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => { setShowRejectModal(false); setRejectReason(''); }} className="px-4 py-2 text-sm text-stone-600">Cancel</button>
+              <button
+                onClick={handleReject}
+                disabled={isSubmitting || !rejectReason.trim()}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Rejecting...' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function InfoRow({ label, value, isLink = false }: { label: string; value: string; isLink?: boolean }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-2">
       <span className="text-stone-400 w-20 flex-shrink-0">{label}</span>
-      {isLink ? (
-        <a
-          href={value}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#b8864a] hover:underline break-all"
-        >
-          {value}
-        </a>
-      ) : (
-        <span className="text-stone-700 break-words">{value}</span>
-      )}
+      <span className="text-stone-700">{value}</span>
     </div>
   );
 }

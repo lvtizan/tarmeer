@@ -100,11 +100,9 @@ export default function HomeDesignSection() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const sortedCompanies = [...companies].sort((a, b) => b.projectCount - a.projectCount);
-  const primaryCompanies = sortedCompanies.filter((company) => company.projectCount >= 30);
-  const fallbackCompanies = sortedCompanies.filter((company) => company.projectCount < 30);
-  const featured = [...primaryCompanies, ...fallbackCompanies].slice(0, 6);
-  const hasMoreCompanies = sortedCompanies.length > 6;
+  // Keep backend-provided order (operations-managed display order), do not re-sort on frontend.
+  const featured = companies.slice(0, 6);
+  const hasMoreCompanies = companies.length > 6;
 
   return (
     <section className="bg-white py-10 sm:py-12">

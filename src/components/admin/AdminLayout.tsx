@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp } from 'lucide-react';
+import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
+import { LayoutDashboard, Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
+import SidebarNavLink from '../ui/SidebarNavLink';
 
 const PRIMARY = '#b8864a';
 
@@ -15,6 +16,7 @@ const navItems = [
   { to: '/admin/complaints', label: 'Complaints', icon: ShieldAlert },
   { to: '/admin/company-import', label: 'Import Company', icon: FileUp },
   { to: '/admin/notification-emails', label: 'Notify Emails', icon: Mail },
+  { to: '/admin/help', label: 'Help', icon: CircleHelp },
   { to: '/admin/analytics', label: 'Analytics', icon: Activity, permission: 'can_view_stats' as const },
 ];
 
@@ -79,7 +81,7 @@ export default function AdminLayout() {
       {/* Sidebar - match DesignerLayout style */}
       <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-y-auto">
         {/* Logo - match designer: icon in rounded box + title */}
-        <div className="h-16 flex items-center px-6 border-b border-stone-200">
+        <Link to="/" className="h-16 flex items-center px-6 border-b border-stone-200 hover:bg-stone-50 transition-colors">
           <div
             className="size-8 rounded flex items-center justify-center shrink-0"
             style={{ backgroundColor: `${PRIMARY}20` }}
@@ -87,7 +89,7 @@ export default function AdminLayout() {
             <img src="/images/tarmeer_logo.svg" alt="" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           </div>
           <span className="ml-3 text-lg font-bold text-[#2c2c2c] flex-1">TARMEER</span>
-        </div>
+        </Link>
 
         {/* Navigation - active: left border + light bg like designer */}
         <nav className="flex-1 p-4 space-y-1">
@@ -96,24 +98,18 @@ export default function AdminLayout() {
             const notifKey = NOTIFICATION_MAP[item.to];
             const hasNotif = notifKey && (notifCounts[notifKey] ?? 0) > 0;
             return (
-              <NavLink
+              <SidebarNavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                className={({ isActive }) =>
-                  `relative flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-[#b8864a]/10 text-[#2c2c2c] border-l-4 border-[#b8864a]'
-                      : 'text-stone-600 hover:bg-stone-50'
-                  }`
-                }
+                className="relative"
               >
                 <Icon className="w-5 h-5 shrink-0" />
                 {item.label}
                 {hasNotif && (
                   <span className="absolute top-2 left-7 w-2 h-2 bg-red-500 rounded-full" />
                 )}
-              </NavLink>
+              </SidebarNavLink>
             );
           })}
 
@@ -127,20 +123,13 @@ export default function AdminLayout() {
               {filteredAdminItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <NavLink
+                  <SidebarNavLink
                     key={item.to}
                     to={item.to}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-[#b8864a]/10 text-[#2c2c2c] border-l-4 border-[#b8864a]'
-                          : 'text-stone-600 hover:bg-stone-50'
-                      }`
-                    }
                   >
                     <Icon className="w-5 h-5 shrink-0" />
                     {item.label}
-                  </NavLink>
+                  </SidebarNavLink>
                 );
               })}
             </>

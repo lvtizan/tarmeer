@@ -56,6 +56,21 @@ test('skips rate limiting for admin install check routes', () => {
   }), true);
 });
 
+test('skips rate limiting for admin authenticated endpoints', () => {
+  assert.equal(shouldSkipApiRateLimit({
+    nodeEnv: 'production',
+    method: 'GET',
+    path: '/api/admin/notifications/counts',
+    ip: '203.0.113.10',
+  }), true);
+  assert.equal(shouldSkipApiRateLimit({
+    nodeEnv: 'production',
+    method: 'GET',
+    path: '/admin/users',
+    ip: '203.0.113.10',
+  }), true);
+});
+
 test('skips local development traffic outside production', () => {
   assert.equal(shouldSkipApiRateLimit({
     nodeEnv: 'development',

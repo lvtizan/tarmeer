@@ -1,10 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
 // Helper to read source files
-const SRC = resolve(__dirname, '..');
+const SRC = (() => {
+  const tsSrc = resolve(__dirname, '..', '..', 'src');
+  return existsSync(tsSrc) ? tsSrc : resolve(__dirname, '..');
+})();
 const ROOT_SRC = resolve(__dirname, '..', '..', '..', 'src');
 function readSrc(path: string) { return readFileSync(resolve(SRC, path), 'utf-8'); }
 function readFrontend(path: string) { return readFileSync(resolve(ROOT_SRC, path), 'utf-8'); }
@@ -111,10 +114,10 @@ describe('M4: Company profile - notifications on registration', () => {
   });
 
   it('calls notifyCompanyRegistration in INSERT branch', () => {
-    // After the INSERT INTO company_profiles, there should be notifyCompanyRegistration
+    // After the INSERT branch, registration should trigger async notification.
     const insertIdx = companyCtrl.indexOf('INSERT INTO company_profiles');
-    const afterInsert = companyCtrl.slice(insertIdx, insertIdx + 800);
-    assert.match(afterInsert, /notifyCompanyRegistration/);
+    const afterInsert = companyCtrl.slice(insertIdx, insertIdx + 2400);
+    assert.match(afterInsert, /setImmediate\s*\(\s*\(\)\s*=>\s*{\s*notifyCompanyRegistration/s);
   });
 
   it('does NOT call notification in UPDATE branch', () => {
@@ -202,7 +205,7 @@ describe('M7: Admin routes completeness', () => {
 
   it('has notification email CRUD routes', () => {
     assert.match(adminRoutes, /notification-emails/);
-    assert.match(adminRoutes, /DELETE.*notification-emails/s);
+    assert.match(adminRoutes, /router\.delete\('\/notification-emails\/:id'/);
   });
 });
 
@@ -289,9 +292,9 @@ describe('M11: NotificationBell component', () => {
     assert.doesNotMatch(layout, /NotificationBell/);
   });
 
-  it('is temporarily disabled in Navbar', () => {
+  it('is enabled in Navbar for user-facing notifications', () => {
     const navbar = readFrontend('components/Navbar.tsx');
-    assert.doesNotMatch(navbar, /NotificationBell/);
+    assert.match(navbar, /NotificationBell/);
   });
 });
 

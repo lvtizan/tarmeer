@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { resolveImageUrl } from '../../lib/imageUrl';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 type RoleTab = 'homeowners' | 'companies';
@@ -190,7 +191,7 @@ const MergeModal: React.FC<MergeModalProps> = ({
             <h4 className="font-semibold text-slate-900 mb-3">Registered Company</h4>
             {company.logo && (
               <img
-                src={company.logo}
+                src={resolveImageUrl(company.logo)}
                 alt={company.name}
                 className="w-16 h-16 object-contain mb-3"
               />
@@ -242,7 +243,7 @@ const MergeModal: React.FC<MergeModalProps> = ({
                   >
                     {candidate.logo && (
                       <img
-                        src={candidate.logo}
+                        src={resolveImageUrl(candidate.logo)}
                         alt={candidate.name}
                         className="w-8 h-8 object-contain mb-1"
                       />
@@ -840,7 +841,7 @@ const CompaniesTab: React.FC<{
                     <div className="flex items-center">
                       {company.logo && (
                         <img
-                          src={company.logo}
+                          src={resolveImageUrl(company.logo)}
                           alt={company.name}
                           className="w-8 h-8 mr-3 object-contain"
                         />

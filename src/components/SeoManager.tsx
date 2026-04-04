@@ -82,6 +82,30 @@ function getSeoForPath(pathname: string): SeoMeta {
     };
   }
 
+  if (pathname === '/services/new-home-design') {
+    return {
+      title: 'New Home Full Case Design | Tarmeer',
+      description: 'Explore Tarmeer new home full case design packages with floor plans, visuals, and construction drawings.',
+      canonicalPath: '/services/new-home-design',
+    };
+  }
+
+  if (pathname === '/services/soft-decoration') {
+    return {
+      title: 'Soft Decoration Design | Tarmeer',
+      description: 'Explore soft decoration and interior styling packages for villas, apartments, and family homes.',
+      canonicalPath: '/services/soft-decoration',
+    };
+  }
+
+  if (pathname === '/services/house-exterior') {
+    return {
+      title: 'House Exterior Design | Tarmeer',
+      description: 'Explore exterior design packages for villas and standalone homes with facade direction and construction-ready documentation.',
+      canonicalPath: '/services/house-exterior',
+    };
+  }
+
   return {
     title: 'Tarmeer | Interior Design & Renovation Platform UAE',
     description: 'Tarmeer connects homeowners with renovation companies, design studios, and trusted renovation services in the UAE.',

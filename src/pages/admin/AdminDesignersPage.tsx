@@ -100,7 +100,14 @@ export default function AdminDesignersPage() {
   }, [deletedFilter, viewMode]);
 
   useEffect(() => {
-    const next = new URLSearchParams();
+    // Preserve params this component doesn't own (e.g. "tab" set by parent page)
+    const next = new URLSearchParams(searchParams);
+    // Clear own params before re-setting
+    next.delete('status');
+    next.delete('search');
+    next.delete('deleted');
+    next.delete('page');
+    next.delete('view');
     if (statusFilter !== 'all') next.set('status', statusFilter);
     if (search) next.set('search', search);
     if (deletedFilter !== 'active') next.set('deleted', deletedFilter);

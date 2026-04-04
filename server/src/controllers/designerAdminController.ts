@@ -133,10 +133,25 @@ export async function getDesignerDetails(req: any, res: Response) {
 }
 
 function normalizeProject(project: any) {
+  const parsedImages = parseJsonField(project.images);
+  const parsedTags = parseJsonField(project.tags);
+
   return {
     ...project,
-    images: parseJsonField(project.images) || [],
-    tags: parseJsonField(project.tags) || [],
+    images: Array.isArray(parsedImages)
+      ? parsedImages
+        .map((item: any) => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object') {
+            if (typeof item.url === 'string') return item.url;
+            if (typeof item.src === 'string') return item.src;
+            if (typeof item.imageUrl === 'string') return item.imageUrl;
+          }
+          return '';
+        })
+        .filter(Boolean)
+      : [],
+    tags: Array.isArray(parsedTags) ? parsedTags.filter((tag: any) => typeof tag === 'string') : [],
   };
 }
 

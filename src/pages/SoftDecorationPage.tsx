@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, X, MapPin, CircleDollarSign } from 'lucide-reac
 import ProjectGallery from '../components/project/ProjectGallery';
 import { dedupeProjectCards } from '../lib/imageCleanup';
 import { sanitizePersonName, sanitizePhoneDigits } from '../lib/formInputRules';
+import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
 
 const SERVICES = [
   'Floor plan functional layout drawing',
@@ -156,8 +157,8 @@ export default function SoftDecorationPage() {
       </section>
 
       {/* Main Content */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
-        <div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
           <div>
             <div className="flex items-center gap-3 mb-6">
               <Link to="/#pricing" className="inline-flex items-center gap-1.5 text-sm text-[#6b6b6b] hover:text-[#b8864a] transition shrink-0">
@@ -177,9 +178,14 @@ export default function SoftDecorationPage() {
                 ))}
               </ul>
             </div>
-
           </div>
 
+          <aside className="lg:sticky lg:top-6">
+            <ServiceInquiryCard
+              title="Get in touch with Tarmeer"
+              subtitle="Tell us about your project and we'll connect you."
+            />
+          </aside>
         </div>
       </div>
 

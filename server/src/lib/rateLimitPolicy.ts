@@ -35,6 +35,9 @@ function isExemptPath(path?: string | null) {
   ]);
 
   for (const candidate of candidates) {
+    if (candidate.startsWith('/admin/')) {
+      return true;
+    }
     if (exactExemptPaths.has(candidate)) {
       return true;
     }

@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { normalizeHomeownerRecentProjects } from '../lib/homeownerProjectSerialization';
 
 /**
  * POST /api/homeowner/profile
@@ -98,7 +99,7 @@ export async function getAssignedDesigner(req: any, res: any) {
     );
 
     const designer = (designerRows as any[])[0];
-    designer.recent_projects = projectRows;
+    designer.recent_projects = normalizeHomeownerRecentProjects(projectRows as any[]);
 
     res.json({ designer, assigned_at: assignedAt });
   } catch (error) {

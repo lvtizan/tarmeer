@@ -26,7 +26,7 @@ const PACKAGES = [
     description:
       'Exterior design service for villas and standalone homes, including facade direction, material language, layout drawings, visualizations and construction-ready documentation.',
     cta: 'Get Started',
-    link: '/services/new-home-design',
+    link: '/services/house-exterior',
     features: ['Facade concept & layout drawing', '720° visuals & static renders', 'Construction drawing set'],
     icon: Building2,
   },

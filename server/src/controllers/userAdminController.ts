@@ -77,7 +77,20 @@ export async function getUserDetail(req: any, res: any) {
         if (typeof parsedImages === 'string') {
           try { parsedImages = JSON.parse(parsedImages); } catch { parsedImages = []; }
         }
-        return { ...p, images: Array.isArray(parsedImages) ? parsedImages : [] };
+        const normalizedImages = Array.isArray(parsedImages)
+          ? parsedImages
+            .map((item: any) => {
+              if (typeof item === 'string') return item;
+              if (item && typeof item === 'object') {
+                if (typeof item.url === 'string') return item.url;
+                if (typeof item.src === 'string') return item.src;
+                if (typeof item.imageUrl === 'string') return item.imageUrl;
+              }
+              return '';
+            })
+            .filter(Boolean)
+          : [];
+        return { ...p, images: normalizedImages };
       });
     }
 

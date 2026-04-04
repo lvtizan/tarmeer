@@ -8,13 +8,21 @@ function toPublicString(value: unknown) {
 function sanitizeCompanyImage(value: unknown) {
   const url = toPublicString(value).trim();
   if (!url) return '';
-  return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/') ? url : '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  if (url.startsWith('//')) return `https:${url}`;
+  if (url.startsWith('/')) return url;
+  if (url.startsWith('./')) return `/${url.replace(/^\.\/+/, '')}`;
+  if (url.startsWith('www.')) return `https://${url}`;
+  if (url.startsWith('public/images/')) return `/${url.replace(/^public\//, '')}`;
+  if (url.startsWith('public/uploads/')) return `/${url.replace(/^public\//, '')}`;
+  if (url.startsWith('images/') || url.startsWith('uploads/')) return `/${url}`;
+  return '';
 }
 
 type PortfolioCategoryItem = { url: string; title: string };
 type PortfolioCategories = Record<string, PortfolioCategoryItem[]>;
 
-function buildPortfolioData(rawField: unknown): {
+export function extractPortfolioData(rawField: unknown): {
   portfolio_images: string[];
   portfolio_categories: PortfolioCategories;
 } {
@@ -54,7 +62,7 @@ function buildPortfolioData(rawField: unknown): {
 }
 
 export function sanitizePublicCompany(company: any) {
-  const { portfolio_images, portfolio_categories } = buildPortfolioData(company.portfolio_images);
+  const { portfolio_images, portfolio_categories } = extractPortfolioData(company.portfolio_images);
 
   return {
     id: company.id,

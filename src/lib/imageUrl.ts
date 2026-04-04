@@ -1,9 +1,9 @@
 /**
- * Resolve image URLs for /uploads/ paths.
+ * Resolve image URLs for root-relative static paths.
  *
- * On admin.tarmeer.com, nginx has no /uploads/ proxy rule — only www.tarmeer.com does.
- * We detect the admin subdomain at runtime and rewrite /uploads/... to an absolute URL
- * on the main domain so images load correctly from both subdomains.
+ * On admin.tarmeer.com, nginx static mappings may differ from www.tarmeer.com.
+ * We detect admin subdomain at runtime and rewrite "/..." assets to the main domain
+ * so /images, /uploads and other root static paths load reliably.
  */
 function getUploadsBase(): string {
   if (typeof window === 'undefined') return '';
@@ -19,9 +19,25 @@ const UPLOADS_BASE = getUploadsBase();
 
 export function resolveImageUrl(url: string | null | undefined): string {
   if (!url) return '';
-  if (url.startsWith('data:')) return url; // base64 — pass through
-  if (url.startsWith('/uploads/') && UPLOADS_BASE) {
-    return `${UPLOADS_BASE}${url}`;
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:')) return trimmed; // base64 — pass through
+
+  let normalized = trimmed;
+  if (normalized.startsWith('//')) {
+    normalized = `https:${normalized}`;
+  } else if (normalized.startsWith('./')) {
+    normalized = `/${normalized.replace(/^\.\/+/, '')}`;
+  } else if (normalized.startsWith('public/images/')) {
+    normalized = `/${normalized.replace(/^public\//, '')}`;
+  } else if (normalized.startsWith('public/uploads/')) {
+    normalized = `/${normalized.replace(/^public\//, '')}`;
+  } else if (normalized.startsWith('images/') || normalized.startsWith('uploads/')) {
+    normalized = `/${normalized}`;
   }
-  return url;
+
+  if (normalized.startsWith('/') && UPLOADS_BASE) {
+    return `${UPLOADS_BASE}${normalized}`;
+  }
+  return normalized;
 }

@@ -27,8 +27,21 @@ function imageDedupKey(url: string): string {
   }
 }
 
-function isAllowedImageUrl(url: string): boolean {
-  return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/');
+function normalizeImageUrl(value: string): string {
+  const url = value.trim();
+  if (!url) return '';
+
+  if (url.startsWith('data:')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('//')) return `https:${url}`;
+  if (url.startsWith('/')) return url;
+  if (url.startsWith('./')) return `/${url.replace(/^\.\/+/, '')}`;
+  if (url.startsWith('www.')) return `https://${url}`;
+  if (url.startsWith('public/images/')) return `/${url.replace(/^public\//, '')}`;
+  if (url.startsWith('public/uploads/')) return `/${url.replace(/^public\//, '')}`;
+  if (url.startsWith('images/') || url.startsWith('uploads/')) return `/${url}`;
+
+  return '';
 }
 
 export function sanitizeImageUrls(values: unknown): string[] {
@@ -40,8 +53,8 @@ export function sanitizeImageUrls(values: unknown): string[] {
   const seen = new Set<string>();
 
   for (const value of values) {
-    const url = toTrimmedString(value);
-    if (!url || !isAllowedImageUrl(url)) continue;
+    const url = normalizeImageUrl(toTrimmedString(value));
+    if (!url) continue;
 
     const key = imageDedupKey(url);
     if (!key || seen.has(key)) continue;
@@ -54,10 +67,13 @@ export function sanitizeImageUrls(values: unknown): string[] {
 }
 
 export function sanitizeAvatarUrl(value: unknown): string {
-  const url = toTrimmedString(value);
-  if (!url || !isAllowedImageUrl(url)) return '';
+  const url = normalizeImageUrl(toTrimmedString(value));
+  if (!url) return '';
 
   const key = imageDedupKey(url);
+  if (/\/images\/showcase\/avatar-\d+\.(png|jpe?g|webp)$/i.test(key)) {
+    return '';
+  }
   for (const avatarId of SEED_AVATAR_IDS) {
     if (key.includes(avatarId)) {
       return '';

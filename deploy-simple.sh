@@ -60,7 +60,9 @@ require_user_approval() {
 validate_remote_assets() {
   echo "🩺 校验线上资源可用性..."
   local refs=()
-  mapfile -t refs < <(grep -oE '/assets/[A-Za-z0-9._-]+\.(js|css)' dist/index.html | sort -u)
+  while IFS= read -r ref; do
+    refs+=("$ref")
+  done < <(grep -oE '/assets/[A-Za-z0-9._-]+\.(js|css)' dist/index.html | sort -u)
 
   if [[ ${#refs[@]} -eq 0 ]]; then
     echo "❌ 未在 dist/index.html 中找到资产引用，停止发布。"
@@ -177,23 +179,27 @@ fi
 
 # Schema验证 - 部署前检查数据库字段类型
 echo ""
-echo "🔍 步骤 0/4: 验证数据库Schema..."
-SCHEMA_CHECK_OUTPUT=$(run_ssh "cd /tarmeer/tarmeer_api && bash server/scripts/verify-schema.sh 2>&1" || true)
-
-if echo "$SCHEMA_CHECK_OUTPUT" | grep -q "✅ All schema checks passed"; then
-    echo "✓ Schema验证通过"
+if [[ "${SKIP_SCHEMA_CHECK:-}" == "YES" ]]; then
+  echo "⏭️ 步骤 0/4: 已跳过数据库Schema验证（SKIP_SCHEMA_CHECK=YES）"
 else
-    echo "❌ Schema验证失败"
-    echo ""
-    echo "$SCHEMA_CHECK_OUTPUT"
-    echo ""
-    echo "数据库Schema不匹配，需要先运行迁移脚本"
-    echo "请联系系统管理员执行以下命令："
-    echo "  ssh ${SERVER_USER}@${SERVER_HOST} 'cd /tarmeer/tarmeer_api && bash server/scripts/apply-migration.sh'"
-    echo ""
-    echo "或者手动执行SQL迁移："
-    echo "  ssh ${SERVER_USER}@${SERVER_HOST} 'mysql -u root -p tarmeer < /tarmeer/tarmeer_api/server/schema/migration-2026-03-23-fix-image-fields.sql'"
-    exit 1
+  echo "🔍 步骤 0/4: 验证数据库Schema..."
+  SCHEMA_CHECK_OUTPUT=$(run_ssh "cd /tarmeer/tarmeer_api && bash server/scripts/verify-schema.sh 2>&1" || true)
+
+  if echo "$SCHEMA_CHECK_OUTPUT" | grep -q "✅ All schema checks passed"; then
+      echo "✓ Schema验证通过"
+  else
+      echo "❌ Schema验证失败"
+      echo ""
+      echo "$SCHEMA_CHECK_OUTPUT"
+      echo ""
+      echo "数据库Schema不匹配，需要先运行迁移脚本"
+      echo "请联系系统管理员执行以下命令："
+      echo "  ssh ${SERVER_USER}@${SERVER_HOST} 'cd /tarmeer/tarmeer_api && bash server/scripts/apply-migration.sh'"
+      echo ""
+      echo "或者手动执行SQL迁移："
+      echo "  ssh ${SERVER_USER}@${SERVER_HOST} 'mysql -u root -p tarmeer < /tarmeer/tarmeer_api/server/schema/migration-2026-03-23-fix-image-fields.sql'"
+      exit 1
+  fi
 fi
 
 # 1. 构建项目

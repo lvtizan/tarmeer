@@ -106,3 +106,36 @@ test('sanitizePublicCompany still handles legacy flat portfolio_images array', (
   });
   assert.equal(company.project_count, 2);
 });
+
+test('sanitizePublicCompany normalizes relative logo and portfolio paths for stable rendering', () => {
+  const company = sanitizePublicCompany({
+    id: 3,
+    slug: 'relative-co',
+    name_en: 'Relative Co',
+    description: '',
+    city: 'Dubai',
+    address: '',
+    year_established: '2018',
+    website: '',
+    instagram: '',
+    phone: '',
+    email: '',
+    services: '[]',
+    specialties: '[]',
+    logo_url: 'images/uae-companies/logos/relative.png',
+    portfolio_images: JSON.stringify({
+      Projects: [
+        { url: 'images/uae-companies/portfolio/relative/1.jpg', title: 'One' },
+        { url: './uploads/projects/relative/2.jpg', title: 'Two' },
+      ],
+    }),
+    google_reviews_count: 0,
+  });
+
+  assert.equal(company.logo_url, '/images/uae-companies/logos/relative.png');
+  assert.deepEqual(company.portfolio_images, [
+    '/images/uae-companies/portfolio/relative/1.jpg',
+    '/uploads/projects/relative/2.jpg',
+  ]);
+  assert.equal(company.project_count, 2);
+});

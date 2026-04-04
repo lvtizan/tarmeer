@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, CheckCircle, Users, Globe } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
+import { resolveImageUrl } from '../../lib/imageUrl';
 import { useAdmin } from '../../contexts/AdminContext';
 import { formatCount, toNumber } from '../../lib/formatNumber';
 
@@ -236,7 +237,7 @@ export default function AdminDashboardPage() {
                     <td className="py-3 px-4">
                       <Link to={`/admin/designers/${designer.id}`} className="flex items-center gap-3 hover:opacity-80 transition">
                         {designer.avatar_url ? (
-                          <img src={designer.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          <img src={resolveImageUrl(designer.avatar_url)} alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center">
                             <span className="text-stone-500 text-sm">{designer.full_name.charAt(0)}</span>

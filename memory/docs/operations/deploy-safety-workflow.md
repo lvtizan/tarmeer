@@ -1,6 +1,6 @@
 # Tarmeer 部署前必读与执行流程
 
-最后更新：2026-03-20
+最后更新：2026-04-04
 
 ## 用途
 
@@ -24,7 +24,7 @@ cat docs/operations/deploy-safety-workflow.md
 阅读后再执行：
 
 ```bash
-DEPLOY_RULES_ACK=YES bash deploy-simple.sh
+DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh
 ```
 
 ## 强制规则
@@ -44,7 +44,8 @@ DEPLOY_RULES_ACK=YES bash deploy-simple.sh
    - `npm run qa:smoke`
    - `npm run build`
 2. 执行部署脚本（含增量同步、权限修复、Nginx reload、健康检查）：
-   - `DEPLOY_RULES_ACK=YES bash deploy-simple.sh`
+   - `DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh`
+   - 若服务器缺少 `verify-schema.sh`：`DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES SKIP_SCHEMA_CHECK=YES bash deploy-simple.sh`
 3. 人工打开线上页面做一次强刷确认（`Cmd+Shift+R`）。
 
 ## 脚本当前行为（deploy-simple.sh）
@@ -55,6 +56,12 @@ DEPLOY_RULES_ACK=YES bash deploy-simple.sh
 4. 基础健康检查：
    - `https://www.tarmeer.com`
    - `https://www.tarmeer.com/images/designers/avatars/omar-farouk.jpg`
+
+## 2026-04-04 新增踩坑结论
+
+1. 服务器不存在 `/tarmeer/tarmeer_api/server/scripts/verify-schema.sh` 时，Schema 预检查会直接失败。
+2. 该场景下允许临时使用 `SKIP_SCHEMA_CHECK=YES` 完成前端增量部署，但后续需补齐服务器脚本。
+3. 部署脚本需兼容 macOS bash 3.x，避免使用 `mapfile` 这类新版本特性。
 
 ## 部署前检查清单
 

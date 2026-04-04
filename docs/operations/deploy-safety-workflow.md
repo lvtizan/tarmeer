@@ -1,6 +1,6 @@
 # Deployment Safety Workflow
 
-Last updated: 2026-03-26
+Last updated: 2026-04-04
 
 ## Mandatory Rules
 
@@ -18,6 +18,15 @@ DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh
 
 - `DEPLOY_RULES_ACK=YES`: confirms rules were read.
 - `DEPLOY_USER_APPROVED=YES`: confirms user approved this release.
+- If remote schema verify script is missing, use:
+  `DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES SKIP_SCHEMA_CHECK=YES bash deploy-simple.sh`
+
+## 2026-04-04 Pitfalls (Must Follow)
+
+1. `deploy-simple.sh` schema precheck depends on `/tarmeer/tarmeer_api/server/scripts/verify-schema.sh` on server.
+2. If that script does not exist, deploy will fail before rsync; use `SKIP_SCHEMA_CHECK=YES` temporarily and fix server script later.
+3. Keep deploy script portable for macOS bash 3.x; do not use `mapfile` in release-critical paths.
+4. After any deploy-script change, rerun full deploy checks: homepage 200, avatar 200, and all `dist/index.html` asset refs 200.
 
 ## Incremental Deploy Rules
 

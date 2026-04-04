@@ -30,9 +30,15 @@ export function imageDedupKey(url: string): string {
 export function sanitizeImageUrl(value: unknown): string {
   const url = toTrimmedString(value);
   if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
-    return url;
-  }
+  if (url.startsWith('data:')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('//')) return `https:${url}`;
+  if (url.startsWith('/')) return url;
+  if (url.startsWith('./')) return `/${url.replace(/^\.\/+/, '')}`;
+  if (url.startsWith('www.')) return `https://${url}`;
+  if (url.startsWith('public/images/')) return `/${url.replace(/^public\//, '')}`;
+  if (url.startsWith('public/uploads/')) return `/${url.replace(/^public\//, '')}`;
+  if (url.startsWith('images/') || url.startsWith('uploads/')) return `/${url}`;
   return '';
 }
 
@@ -59,6 +65,9 @@ export function sanitizeAvatarUrl(value: unknown): string {
   if (!url) return '';
 
   const key = imageDedupKey(url);
+  if (/\/images\/showcase\/avatar-\d+\.(png|jpe?g|webp)$/i.test(key)) {
+    return '';
+  }
   for (const avatarId of SEED_AVATAR_IDS) {
     if (key.includes(avatarId)) {
       return '';

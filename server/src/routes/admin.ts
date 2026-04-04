@@ -33,7 +33,7 @@ import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminCon
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts } from '../controllers/complaintController';
-import { listCompanies, listCompanyApplications, reviewCompanyApplication, bindUserToCompany, unbindCompany, getScrapedCompany, editScrapedCompany, getCompanyProfile, editCompanyProfile, getCompanyFullDetail } from '../controllers/companyAdminController';
+import { listCompanies, listCompanyApplications, reviewCompanyApplication, bindUserToCompany, unbindCompany, getScrapedCompany, editScrapedCompany, getCompanyProfile, editCompanyProfile, getCompanyFullDetail, getCompanyProfileFullDetail, updateCompanyDisplayOrder } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -109,6 +109,7 @@ router.get('/notifications/counts', getNewCounts);
 
 // Company management
 router.get('/companies', listCompanies);
+router.put('/companies/:companyId/display-order', requirePermission('can_sort'), updateCompanyDisplayOrder);
 router.get('/company-applications', listCompanyApplications);
 router.put('/company-applications/:id/review', requirePermission('can_approve'), reviewCompanyApplication);
 router.post('/companies/:companyId/bind', requireSuperAdmin, bindUserToCompany);
@@ -135,6 +136,7 @@ router.post('/roles/companies/:id/approve', requirePermission('can_approve'), ro
 router.post('/roles/companies/:id/reject', requirePermission('can_approve'), roleAdmin.rejectCompany);
 router.put('/roles/companies/:id/display-order', requirePermission('can_sort'), roleAdmin.updateCompanyDisplayOrder);
 router.get('/roles/companies/:id/detail', getCompanyProfile);
+router.get('/roles/companies/:id/full-detail', getCompanyProfileFullDetail);
 router.put('/roles/companies/:id/edit', editCompanyProfile);
 
 // Company merge/claim

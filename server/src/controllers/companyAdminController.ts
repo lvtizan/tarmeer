@@ -1,4 +1,76 @@
 import pool from '../config/database';
+import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
+
+function normalizeLegacyImageUrl(url: string): string {
+  const value = url.trim();
+  const legacyMatch = value.match(/^https?:\/\/(?:www\.)?tarmeer\.com\/images\/showcase\/cover-(\d+)\.(?:png|jpg|jpeg|webp)$/i);
+  if (legacyMatch) {
+    const coverId = String(Number(legacyMatch[1])).padStart(3, '0');
+    return `/images/designers/projects/covers/cover-${coverId}.jpg`;
+  }
+  const legacyProjectMatch = value.match(/^https?:\/\/(?:www\.)?tarmeer\.com\/images\/showcase\/project-(\d+)\.(?:png|jpg|jpeg|webp)$/i);
+  if (legacyProjectMatch) {
+    const coverId = String(Number(legacyProjectMatch[1])).padStart(3, '0');
+    return `/images/designers/projects/covers/cover-${coverId}.jpg`;
+  }
+  return value;
+}
+
+function parseJsonField(value: any) {
+  if (value == null) return null;
+  if (Array.isArray(value) || typeof value === 'object') return value;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function toStringArray(value: any): string[] {
+  const parsed = parseJsonField(value);
+
+  const collect = (node: any): string[] => {
+    if (node == null) return [];
+    if (typeof node === 'string') return node ? [normalizeLegacyImageUrl(node)] : [];
+    if (Array.isArray(node)) return node.flatMap((item) => collect(item));
+    if (typeof node === 'object') {
+      const direct = [node.url, node.src, node.imageUrl]
+        .filter((v) => typeof v === 'string')
+        .map((v) => normalizeLegacyImageUrl(String(v)));
+      const nested = Object.values(node).flatMap((item) => collect(item));
+      return [...direct, ...nested];
+    }
+    return [];
+  };
+
+  return Array.from(new Set(collect(parsed)));
+}
+
+function toCategorizedPortfolioItems(value: any): Array<{ url: string; category: string | null }> {
+  const parsed = parseJsonField(value);
+  if (!parsed) return [];
+
+  const items: Array<{ url: string; category: string | null }> = [];
+
+  if (Array.isArray(parsed)) {
+    const urls = toStringArray(parsed);
+    urls.forEach((url) => items.push({ url, category: null }));
+    return items;
+  }
+
+  if (typeof parsed === 'object') {
+    for (const [key, node] of Object.entries(parsed)) {
+      const category = typeof key === 'string' && key.trim() ? key.trim() : null;
+      const urls = toStringArray(node);
+      urls.forEach((url) => items.push({ url, category }));
+    }
+  }
+
+  return items;
+}
 
 // List companies with pagination and claimed/unclaimed filter
 export async function listCompanies(req: any, res: any) {
@@ -24,19 +96,27 @@ export async function listCompanies(req: any, res: any) {
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.execute(
-      `SELECT c.id, c.name_en, c.slug, c.city, c.logo_url, c.owner_user_id,
+      `SELECT c.id, c.name_en, c.slug, c.city, c.logo_url, c.owner_user_id, COALESCE(c.display_order, 0) as display_order,
         u.full_name as owner_name, u.email as owner_email,
-        COALESCE(p.project_count, 0) as project_count
+        CASE
+          WHEN COALESCE(p.project_count, 0) > 0 THEN p.project_count
+          ELSE COALESCE(JSON_LENGTH(c.portfolio_images), 0)
+        END as project_count
        FROM uae_companies c
        LEFT JOIN users u ON c.owner_user_id = u.id
        LEFT JOIN (
-         SELECT d.user_id, COUNT(p.id) as project_count
-         FROM designers d
-         JOIN projects p ON p.designer_id = d.id AND p.status = 'published'
-         GROUP BY d.user_id
-       ) p ON p.user_id = c.owner_user_id
+         SELECT
+           uc.id AS uae_company_id,
+           COUNT(DISTINCT p.id) AS project_count
+         FROM uae_companies uc
+         LEFT JOIN company_profiles cp
+           ON cp.linked_uae_company_id = uc.id
+           OR (uc.owner_user_id IS NOT NULL AND cp.user_id = uc.owner_user_id)
+         LEFT JOIN projects p ON p.company_profile_id = cp.id
+         GROUP BY uc.id
+       ) p ON p.uae_company_id = c.id
        ${where}
-       ORDER BY c.id ASC
+       ORDER BY COALESCE(c.display_order, 0) DESC, c.id ASC
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
       params
     );
@@ -48,6 +128,40 @@ export async function listCompanies(req: any, res: any) {
   } catch (error) {
     console.error('List companies error:', error);
     res.status(500).json({ error: 'Failed to list companies.' });
+  }
+}
+
+export async function updateCompanyDisplayOrder(req: any, res: any) {
+  try {
+    const { companyId } = req.params;
+    const raw = req.body?.display_order;
+    const displayOrder = Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : 0;
+
+    if (displayOrder > 0) {
+      const [conflicts] = await pool.execute(
+        `SELECT id, 'uae_companies' as source
+         FROM uae_companies
+         WHERE COALESCE(display_order, 0) = ? AND id <> ?
+         UNION ALL
+         SELECT id, 'company_profiles' as source
+         FROM company_profiles
+         WHERE display_order = ?
+         LIMIT 1`,
+        [displayOrder, companyId, displayOrder]
+      );
+
+      if ((conflicts as any[]).length > 0) {
+        return res.status(409).json({
+          error: `Display order ${displayOrder} is already in use. Please choose another number.`,
+        });
+      }
+    }
+
+    await pool.execute('UPDATE uae_companies SET display_order = ? WHERE id = ?', [displayOrder, companyId]);
+    res.json({ message: 'Display order updated.' });
+  } catch (error) {
+    console.error('Update scraped company display order error:', error);
+    res.status(500).json({ error: 'Failed to update display order.' });
   }
 }
 
@@ -284,6 +398,41 @@ export async function unbindCompany(req: any, res: any) {
   }
 }
 
+// Get full company_profiles detail (info + portfolio) for admin detail page
+export async function getCompanyProfileFullDetail(req: any, res: any) {
+  try {
+    const { id } = req.params;
+
+    const [companyRows] = await pool.execute(
+      `SELECT cp.*, u.email as user_email, u.full_name as user_name
+       FROM company_profiles cp
+       JOIN users u ON u.id = cp.user_id
+       WHERE cp.id = ?`,
+      [id]
+    );
+    if ((companyRows as any[]).length === 0) {
+      return res.status(404).json({ error: 'Company not found.' });
+    }
+    const company = (companyRows as any[])[0];
+
+    const [projectRows] = await pool.execute(
+      `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
+       FROM projects WHERE company_profile_id = ? ORDER BY created_at DESC`,
+      [id]
+    );
+    const projects = (projectRows as any[]).map((p: any) => ({
+      ...p,
+      images: toStringArray(p.images),
+      tags: toStringArray(p.tags),
+    }));
+
+    res.json({ company, projects });
+  } catch (error) {
+    console.error('Get company profile full detail error:', error);
+    res.status(500).json({ error: 'Failed to get company profile detail.' });
+  }
+}
+
 // Get full company detail (info + portfolio) for admin detail page
 export async function getCompanyFullDetail(req: any, res: any) {
   try {
@@ -302,26 +451,75 @@ export async function getCompanyFullDetail(req: any, res: any) {
     }
     const company = (companyRows as any[])[0];
 
-    // Get portfolio projects via owner → designer
+    // Get portfolio projects with v3 company_profile relationship first, and
+    // keep legacy designer fallback for older rows.
     let projects: any[] = [];
-    if (company.owner_user_id) {
+    const [profileRows] = await pool.execute(
+      `SELECT id
+       FROM company_profiles
+       WHERE linked_uae_company_id = ?
+          OR (? IS NOT NULL AND user_id = ?)`,
+      [companyId, company.owner_user_id, company.owner_user_id]
+    );
+    const profileIds = (profileRows as any[]).map((row: any) => Number(row.id)).filter(Boolean);
+
+    if (profileIds.length > 0) {
+      const placeholders = profileIds.map(() => '?').join(',');
+      const [projectRows] = await pool.execute(
+        `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
+         FROM projects
+         WHERE company_profile_id IN (${placeholders})
+         ORDER BY created_at DESC`,
+        profileIds
+      );
+      projects = (projectRows as any[]).map((p: any) => ({
+        ...p,
+        images: toStringArray(p.images),
+        tags: toStringArray(p.tags),
+      }));
+    } else if (company.owner_user_id) {
       const [designerRows] = await pool.execute(
-        'SELECT id FROM designers WHERE user_id = ? AND deleted_at IS NULL',
+        'SELECT id FROM designers WHERE user_id = ?',
         [company.owner_user_id]
       );
       if ((designerRows as any[]).length > 0) {
         const designerId = (designerRows as any[])[0].id;
         const [projectRows] = await pool.execute(
-          `SELECT id, title, description, style, location, year, images, tags, status, created_at
+          `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
            FROM projects WHERE designer_id = ? ORDER BY created_at DESC`,
           [designerId]
         );
         projects = (projectRows as any[]).map((p: any) => ({
           ...p,
-          images: (() => { try { return JSON.parse(p.images || '[]'); } catch { return []; } })(),
-          tags: (() => { try { return JSON.parse(p.tags || '[]'); } catch { return []; } })(),
+          images: toStringArray(p.images),
+          tags: toStringArray(p.tags),
         }));
       }
+    }
+
+    // Fallback: scraped companies may only have portfolio_images, not rows in projects table.
+    if (projects.length === 0) {
+      const { portfolio_categories } = extractPortfolioData(company.portfolio_images);
+      const portfolioItems = Object.entries(portfolio_categories).flatMap(([category, items]) =>
+        (items || []).map((item: any) => ({
+          url: normalizeLegacyImageUrl(String(item?.url || '')),
+          category: category || null,
+        }))
+      ).filter((item) => !!item.url);
+
+      projects = portfolioItems.map((item, index) => ({
+        id: -(index + 1),
+        title: `${company.name_en} Portfolio ${index + 1}`,
+        description: null,
+        style: item.category,
+        location: company.city || null,
+        year: company.year_established || null,
+        images: [item.url],
+        tags: [],
+        status: 'published',
+        rejection_reason: null,
+        created_at: company.created_at || new Date().toISOString(),
+      }));
     }
 
     res.json({ company, projects });

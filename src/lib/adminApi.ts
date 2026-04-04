@@ -504,6 +504,35 @@ class AdminApiClient {
     return this.request(`/companies?${query.toString()}`);
   }
 
+  async getRegisteredCompanies(params?: { page?: number; limit?: number; status?: string; company_type?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.status) query.set('status', params.status);
+    if (params?.company_type) query.set('company_type', params.company_type);
+    if (params?.search) query.set('search', params.search);
+    return this.request(`/roles/companies?${query.toString()}`);
+  }
+
+  async getCompanyProfileDetail(id: number) {
+    return this.request(`/roles/companies/${id}/full-detail`);
+  }
+
+  async approveCompanyProfile(id: number) {
+    return this.request(`/roles/companies/${id}/approve`, { method: 'POST' });
+  }
+
+  async rejectCompanyProfile(id: number, reason: string) {
+    return this.request(`/roles/companies/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
+  }
+
+  async updateCompanyProfileDisplayOrder(id: number, displayOrder: number) {
+    return this.request(`/roles/companies/${id}/display-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ display_order: displayOrder }),
+    });
+  }
+
   async getCompanyApplications(params?: { page?: number; limit?: number; status?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));

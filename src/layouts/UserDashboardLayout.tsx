@@ -1,9 +1,10 @@
-import { Outlet, NavLink, Navigate } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import {
   Home, User, FolderOpen, Settings,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
+import SidebarNavLink from '../components/ui/SidebarNavLink';
 
 export default function UserDashboardLayout() {
   // Redirect company users to /company, unset users to /onboarding
@@ -24,11 +25,6 @@ export default function UserDashboardLayout() {
     return <Navigate to="/onboarding" replace />;
   }
 
-  const navClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg transition cursor-pointer ${
-      isActive ? 'bg-[#b8864a]/10 text-[#2c2c2c] border-l-4 border-[#b8864a]' : 'text-stone-600 hover:bg-stone-50'
-    }`;
-
   return (
     <div className="min-h-screen flex flex-col bg-[#faf9f7]">
       {/* Top navbar — same as homepage */}
@@ -39,22 +35,22 @@ export default function UserDashboardLayout() {
         <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-[57px] bottom-0 left-0 z-10 overflow-y-auto">
           <div className="flex-1 p-6">
             <nav className="flex flex-col gap-1">
-              <NavLink to="/dashboard" end className={navClass}>
+              <SidebarNavLink to="/dashboard" end>
                 <Home className="w-5 h-5" />
                 <span className="text-sm font-medium">Dashboard</span>
-              </NavLink>
-              <NavLink to="/dashboard/projects" className={navClass}>
+              </SidebarNavLink>
+              <SidebarNavLink to="/dashboard/projects">
                 <FolderOpen className="w-5 h-5" />
                 <span className="text-sm font-medium">Projects</span>
-              </NavLink>
-              <NavLink to="/dashboard/profile" className={navClass}>
+              </SidebarNavLink>
+              <SidebarNavLink to="/dashboard/profile">
                 <User className="w-5 h-5" />
                 <span className="text-sm font-medium">Profile</span>
-              </NavLink>
-              <NavLink to="/dashboard/settings" className={navClass}>
+              </SidebarNavLink>
+              <SidebarNavLink to="/dashboard/settings">
                 <Settings className="w-5 h-5" />
                 <span className="text-sm font-medium">Settings</span>
-              </NavLink>
+              </SidebarNavLink>
             </nav>
           </div>
         </aside>

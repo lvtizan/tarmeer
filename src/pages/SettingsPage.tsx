@@ -114,6 +114,14 @@ export default function SettingsPage() {
     }
   };
 
+  const activeRole = localStorage.getItem('active_role');
+  const activeRoleLabel =
+    activeRole === 'company'
+      ? 'Company'
+      : activeRole === 'homeowner'
+        ? 'Homeowner'
+        : 'Not selected';
+
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div>
@@ -239,7 +247,7 @@ export default function SettingsPage() {
         </p>
 
         <div className="mb-4 text-sm text-stone-600">
-          Current role: <span className="font-medium text-[#2c2c2c] capitalize">{localStorage.getItem('active_role') || '—'}</span>
+          Current role: <span className="font-medium text-[#2c2c2c]">{activeRoleLabel}</span>
         </div>
 
         <button

@@ -23,6 +23,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const DmcaPage = lazy(() => import('./pages/DmcaPage'));
 const NewHomeDesignPage = lazy(() => import('./pages/NewHomeDesignPage'));
 const SoftDecorationPage = lazy(() => import('./pages/SoftDecorationPage'));
+const HouseExteriorDesignPage = lazy(() => import('./pages/HouseExteriorDesignPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const CompaniesPage = lazy(() => import('./pages/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
@@ -61,6 +62,8 @@ const AdminRoleManagementPage = lazy(() => import('./pages/admin/AdminRoleManage
 const AdminNotificationEmailsPage = lazy(() => import('./pages/admin/AdminNotificationEmailsPage'));
 const AdminCompanyImportPage = lazy(() => import('./pages/admin/AdminCompanyImportPage'));
 const AdminCompanyDetailPage = lazy(() => import('./pages/admin/AdminCompanyDetailPage'));
+const AdminRegisteredCompanyDetailPage = lazy(() => import('./pages/admin/AdminRegisteredCompanyDetailPage'));
+const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'));
 
 function PageLoader() {
   return (
@@ -100,12 +103,14 @@ function App() {
             <Route path="users/:id" element={<AdminUserDetailPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />
             <Route path="companies/:id" element={<AdminCompanyDetailPage />} />
+            <Route path="profile-companies/:id" element={<AdminRegisteredCompanyDetailPage />} />
             <Route path="inquiries" element={<AdminInquiriesPage />} />
             <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
             <Route path="roles" element={<AdminRoleManagementPage />} />
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />
             <Route path="company-import" element={<AdminCompanyImportPage />} />
+            <Route path="help" element={<AdminHelpPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/forgot-password" element={<Layout navbarVariant="admin-auth"><AdminForgotPasswordPage /></Layout>} />
@@ -157,6 +162,7 @@ function App() {
                 <Route path="/materials/:category" element={<MaterialCategoryPage />} />
                 <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
+                <Route path="/services/house-exterior" element={<HouseExteriorDesignPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/dmca" element={<DmcaPage />} />

@@ -11,7 +11,7 @@ import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompani
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
 import MasonryGallery from '../components/MasonryGallery';
 import Lightbox from '../components/Lightbox';
-import SelectField from '../components/form/SelectField';
+import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
 
 export default function CompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -297,42 +297,7 @@ export default function CompanyDetailPage() {
           {/* Right: Sticky Inquiry Sidebar */}
           <div ref={sidebarRef} className="hidden lg:block w-[320px] flex-shrink-0">
             <div className="sticky top-4 space-y-4">
-              {/* Inquiry Card */}
-              <div className="border border-stone-200 rounded-xl p-5">
-                <p className="text-sm font-semibold text-[#1c1917] mb-1">
-                  Get in touch with {company.name}
-                </p>
-                <p className="text-xs text-stone-500 mb-4">Tell us about your project and we'll connect you.</p>
-                <div className="space-y-3">
-                  <input type="text" placeholder="Your name"
-                    className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
-                  <input type="tel" placeholder="Phone number"
-                    className="h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
-                  <SelectField>
-                    <option value="">Select city</option>
-                    <option>Dubai</option>
-                    <option>Abu Dhabi</option>
-                    <option>Sharjah</option>
-                    <option>Ajman</option>
-                    <option>Ras Al Khaimah</option>
-                    <option>Fujairah</option>
-                    <option>Umm Al Quwain</option>
-                  </SelectField>
-                  <SelectField>
-                    <option value="">Select area size</option>
-                    <option>&lt; 50 m²</option>
-                    <option>50 - 100 m²</option>
-                    <option>100 - 200 m²</option>
-                    <option>200 - 500 m²</option>
-                    <option>500 m²+</option>
-                  </SelectField>
-                  <textarea placeholder="Message (optional)" rows={3}
-                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
-                  <button className="w-full h-12 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-semibold rounded-lg transition">
-                    Send Message
-                  </button>
-                </div>
-              </div>
+              <ServiceInquiryCard title={`Get in touch with ${company.name}`} />
 
               {/* Contact Info Card */}
               <div className="border border-stone-200 rounded-xl p-5">
@@ -440,9 +405,9 @@ export default function CompanyDetailPage() {
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed bottom-0 right-0 z-40 w-full sm:w-[380px] sm:bottom-4 sm:right-4"
           >
-            <div className="bg-white border border-stone-200 sm:rounded-xl shadow-2xl shadow-stone-300/50 p-5">
+            <div className="bg-white border border-stone-200 sm:rounded-xl shadow-2xl shadow-stone-300/50 p-5 overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-sm text-[#1c1917]">{company.name}</p>
                   <p className="text-xs text-[#b8864a]">{company.projectCount}+ projects</p>
@@ -452,36 +417,11 @@ export default function CompanyDetailPage() {
                   <X className="w-4 h-4 text-stone-400" />
                 </button>
               </div>
-              {/* Form */}
-              <div className="space-y-2.5">
-                <input type="text" placeholder="Your name"
-                  className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
-                <input type="tel" placeholder="Phone number"
-                  className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
-                <div className="flex gap-2">
-                  <SelectField className="h-11 text-xs" wrapperClassName="flex-1">
-                    <option value="">City</option>
-                    <option>Dubai</option>
-                    <option>Abu Dhabi</option>
-                    <option>Sharjah</option>
-                    <option>Ajman</option>
-                    <option>RAK</option>
-                  </SelectField>
-                  <SelectField className="h-11 text-xs" wrapperClassName="flex-1">
-                    <option value="">Area</option>
-                    <option>&lt; 50m²</option>
-                    <option>50-100m²</option>
-                    <option>100-200m²</option>
-                    <option>200-500m²</option>
-                    <option>500m²+</option>
-                  </SelectField>
-                </div>
-                <textarea placeholder="Message (optional)" rows={2}
-                  className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors" />
-                <button className="w-full h-11 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-semibold rounded-lg transition">
-                  Send Message
-                </button>
-              </div>
+              <ServiceInquiryCard
+                title={`Get in touch with ${company.name}`}
+                inline
+                className="mt-4"
+              />
             </div>
           </motion.div>
         )}

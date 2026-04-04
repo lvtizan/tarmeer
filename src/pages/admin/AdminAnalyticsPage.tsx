@@ -14,6 +14,8 @@ const INITIAL_OVERVIEW: AnalyticsOverview = {
   contact_submits: 0,
 };
 
+const GOOGLE_ANALYTICS_URL = 'https://analytics.google.com/analytics/web/#/p488498498/reports/intelligenthome';
+
 // Page name mapping configuration
 const PAGE_NAME_MAP: Record<string, string> = {
   '/': 'Home',
@@ -28,6 +30,7 @@ const PAGE_NAME_MAP: Record<string, string> = {
   '/materials': 'Materials',
   '/services/new-home-design': 'New Home Design Service',
   '/services/soft-decoration': 'Soft Decoration Service',
+  '/services/house-exterior': 'House Exterior Design Service',
   '/contact': 'Contact',
   '/privacy': 'Privacy Policy',
   '/designer/dashboard': 'Designer Dashboard',
@@ -126,7 +129,18 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">Traffic Analytics</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-3xl font-bold text-[#2c2c2c]">Traffic Analytics</h1>
+        <a
+          href={GOOGLE_ANALYTICS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-stone-200 text-sm font-medium text-stone-700 hover:border-[#b8864a] hover:text-[#b8864a] transition"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M22.84 2.998v17.958c0 1.68-1.356 3.044-3.03 3.044h-.06c-1.674 0-3.03-1.364-3.03-3.044V2.998c0-1.68 1.356-3.044 3.03-3.044h.06c1.674 0 3.03 1.364 3.03 3.044zm-7.26 8.967v9.013c0 1.674-1.356 3.03-3.03 3.03h-.06c-1.674 0-3.03-1.356-3.03-3.03v-9.013c0-1.674 1.356-3.03 3.03-3.03h.06c1.674 0 3.03 1.356 3.03 3.03zM8.34 20.97a3.03 3.03 0 11-6.06 0 3.03 3.03 0 016.06 0z"/></svg>
+          Google Analytics
+        </a>
+      </div>
       <p className="text-stone-500 text-sm mb-8">Google-compatible event tracking plus first-party detailed event logs.</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-8">

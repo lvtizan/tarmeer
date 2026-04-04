@@ -1,5 +1,15 @@
 import pool from '../config/database';
 
+async function hasColumn(table: string, column: string) {
+  const [rows] = await pool.execute(
+    `SELECT COUNT(*) as count
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [table, column]
+  );
+  return Number((rows as any[])[0]?.count || 0) > 0;
+}
+
 /**
  * GET /api/admin/roles/homeowners
  * List homeowner users (no approval needed, just listing)
@@ -20,7 +30,7 @@ export async function listHomeowners(req: any, res: any) {
               d.full_name as assigned_designer_name
        FROM homeowner_profiles hp
        JOIN users u ON u.id = hp.user_id
-       LEFT JOIN designers d ON d.id = hp.assigned_designer_id AND d.deleted_at IS NULL
+       LEFT JOIN designers d ON d.id = hp.assigned_designer_id
        ORDER BY hp.created_at DESC
        LIMIT ? OFFSET ?`,
       [limit, offset]
@@ -48,7 +58,7 @@ export async function assignDesigner(req: any, res: any) {
 
     // Verify designer exists
     const [designerRows] = await pool.execute(
-      'SELECT id, full_name FROM designers WHERE id = ? AND deleted_at IS NULL AND is_approved = 1',
+      'SELECT id, full_name FROM designers WHERE id = ? AND (status = \'approved\' OR is_approved = 1)',
       [designer_id]
     );
     if ((designerRows as any[]).length === 0) {
@@ -90,22 +100,41 @@ export async function listCompanies(req: any, res: any) {
       params.push(status);
     }
 
+    const companyType = req.query.company_type;
+    const companyTypeColumnExists = await hasColumn('company_profiles', 'company_type');
+    if (companyType && companyType !== 'all' && companyTypeColumnExists) {
+      whereClause += ' AND cp.company_type = ?';
+      params.push(companyType);
+    }
+
+    const search = req.query.search;
+    if (search) {
+      whereClause += ' AND (cp.company_name LIKE ? OR u.email LIKE ? OR u.full_name LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
     const [countRows] = await pool.execute(
-      `SELECT COUNT(*) as total FROM company_profiles cp ${whereClause}`,
+      `SELECT COUNT(*) as total FROM company_profiles cp JOIN users u ON u.id = cp.user_id ${whereClause}`,
       params
     );
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.execute(
-      `SELECT cp.*, u.email as user_email, u.full_name as user_name, cp.company_type,
-              uc.name_en as linked_company_name, uc.slug as linked_company_slug
+      `SELECT cp.*, u.email as user_email, u.full_name as user_name,
+              uc.name_en as linked_company_name, uc.slug as linked_company_slug,
+              COALESCE(pc.project_count, 0) as project_count
        FROM company_profiles cp
        JOIN users u ON u.id = cp.user_id
        LEFT JOIN uae_companies uc ON uc.id = cp.linked_uae_company_id
+       LEFT JOIN (
+         SELECT company_profile_id, COUNT(*) as project_count
+         FROM projects
+         GROUP BY company_profile_id
+       ) pc ON pc.company_profile_id = cp.id
        ${whereClause}
        ORDER BY cp.display_order DESC, cp.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+       LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
+      params
     );
 
     res.json({ companies: rows, total, page, limit });
@@ -163,9 +192,31 @@ export async function rejectCompany(req: any, res: any) {
 export async function updateCompanyDisplayOrder(req: any, res: any) {
   try {
     const { id } = req.params;
-    const { display_order } = req.body;
+    const displayOrder = Number.isFinite(Number(req.body?.display_order))
+      ? Math.max(0, Number(req.body.display_order))
+      : 0;
 
-    await pool.execute('UPDATE company_profiles SET display_order = ? WHERE id = ?', [display_order || 0, id]);
+    if (displayOrder > 0) {
+      const [conflicts] = await pool.execute(
+        `SELECT id, 'company_profiles' as source
+         FROM company_profiles
+         WHERE display_order = ? AND id <> ?
+         UNION ALL
+         SELECT id, 'uae_companies' as source
+         FROM uae_companies
+         WHERE COALESCE(display_order, 0) = ?
+         LIMIT 1`,
+        [displayOrder, id, displayOrder]
+      );
+
+      if ((conflicts as any[]).length > 0) {
+        return res.status(409).json({
+          error: `Display order ${displayOrder} is already in use. Please choose another number.`,
+        });
+      }
+    }
+
+    await pool.execute('UPDATE company_profiles SET display_order = ? WHERE id = ?', [displayOrder, id]);
     res.json({ message: 'Display order updated.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update display order.' });

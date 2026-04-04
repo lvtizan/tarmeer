@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, X, MapPin, CircleDollarSign } from 'lucide-react';
 import ProjectGallery from '../components/project/ProjectGallery';
 import { dedupeProjectCards } from '../lib/imageCleanup';
+import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
 
 const SERVICES = [
   {
@@ -229,8 +230,8 @@ export default function NewHomeDesignPage() {
       </section>
 
       {/* Main Content */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
-        <div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
           <div>
             <div className="flex items-center gap-3 mb-6">
               <Link to="/#pricing" className="inline-flex items-center gap-1.5 text-sm text-[#6b6b6b] hover:text-[#b8864a] transition shrink-0">
@@ -262,9 +263,14 @@ export default function NewHomeDesignPage() {
             <div className="mt-4 p-4 bg-[#b8864a]/10 border border-[#b8864a]/30 rounded-lg">
               <p className="text-sm text-[#2c2c2c] text-center"><span className="font-semibold">Included:</span> PDF + CAD source files</p>
             </div>
-
           </div>
 
+          <aside className="lg:sticky lg:top-6">
+            <ServiceInquiryCard
+              title="Get in touch with Tarmeer"
+              subtitle="Tell us about your project and we'll connect you."
+            />
+          </aside>
         </div>
       </div>
 
