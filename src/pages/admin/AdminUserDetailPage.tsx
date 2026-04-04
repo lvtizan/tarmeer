@@ -256,7 +256,6 @@ export default function AdminUserDetailPage() {
                 const cover = Array.isArray(p.images) && p.images.length > 0
                   ? (typeof p.images[0] === 'string' ? p.images[0] : '')
                   : '';
-                const isBase64 = cover.startsWith('data:');
                 return (
                   <div key={p.id} className="rounded-xl border border-stone-200 overflow-hidden">
                     <div className="aspect-[4/3] bg-stone-100 overflow-hidden">

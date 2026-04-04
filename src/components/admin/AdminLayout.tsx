@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart2, UserCog, LogOut, Globe, Activity, Building2, MessageSquare, Palette, ShieldAlert, Mail, FileUp, CheckCircle } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
-import NotificationBell from '../NotificationBell';
 
 const PRIMARY = '#b8864a';
 

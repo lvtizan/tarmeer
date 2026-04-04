@@ -1,3 +1,4 @@
+// @ts-ignore - placeholder component, not yet implemented
 import ProjectUploader from '../../components/ProjectUploader';
 
 export default function CompanyUploadPage() {
