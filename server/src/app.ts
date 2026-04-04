@@ -156,8 +156,18 @@ app.get('/api/health', (req, res) => {
 });
 
 import path from 'path';
-app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
-app.use('/api/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
+import fs from 'fs';
+
+const PRIMARY_UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
+const SHARED_UPLOADS_DIR = '/tarmeer/tarmeer_web_crm/server/uploads';
+
+// Keep primary uploads first, then fallback to shared CRM uploads path.
+app.use('/uploads', express.static(PRIMARY_UPLOADS_DIR));
+app.use('/api/uploads', express.static(PRIMARY_UPLOADS_DIR));
+if (fs.existsSync(SHARED_UPLOADS_DIR)) {
+  app.use('/uploads', express.static(SHARED_UPLOADS_DIR));
+  app.use('/api/uploads', express.static(SHARED_UPLOADS_DIR));
+}
 
 import { antiScraping } from './middleware/antiScraping';
 
