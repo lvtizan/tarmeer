@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { logActivity } from './adminController';
 
 async function hasColumn(table: string, column: string) {
   const [rows] = await pool.execute(
@@ -92,7 +93,7 @@ export async function listCompanies(req: any, res: any) {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    let whereClause = 'WHERE 1=1';
+    let whereClause = 'WHERE cp.deleted_at IS NULL';
     const params: any[] = [];
 
     if (status !== 'all') {
@@ -209,7 +210,11 @@ export async function updateCompanyDisplayOrder(req: any, res: any) {
       const [conflicts] = await pool.execute(
         `SELECT 'company_profiles' AS source, id
          FROM company_profiles
-         WHERE COALESCE(display_order, 0) = ? AND id <> ?
+         WHERE (
+           COALESCE(display_order, 0) = ?
+           OR COALESCE(home_display_order, 0) = ?
+           OR COALESCE(list_display_order, 0) = ?
+         ) AND id <> ?
          UNION ALL
          SELECT 'uae_companies' AS source, id
          FROM uae_companies
@@ -217,7 +222,7 @@ export async function updateCompanyDisplayOrder(req: any, res: any) {
             OR COALESCE(home_display_order, 0) = ?
             OR COALESCE(list_display_order, 0) = ?
          LIMIT 1`,
-        [displayOrder, profileId, displayOrder, displayOrder, displayOrder]
+        [displayOrder, displayOrder, displayOrder, profileId, displayOrder, displayOrder, displayOrder]
       );
 
       if ((conflicts as any[]).length > 0) {
@@ -231,5 +236,172 @@ export async function updateCompanyDisplayOrder(req: any, res: any) {
     res.json({ message: 'Display order updated.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update display order.' });
+  }
+}
+
+async function updateCompanySingleOrderField(
+  profileId: number,
+  orderValue: number,
+  field: 'home_display_order' | 'list_display_order'
+) {
+  const [currentRows] = await pool.execute(
+    `SELECT COALESCE(${field}, 0) AS current_value FROM company_profiles WHERE id = ? LIMIT 1`,
+    [profileId]
+  );
+  const current = (currentRows as any[])[0];
+  if (!current) throw new Error(`${field}#NOT_FOUND#${profileId}`);
+
+  if (orderValue !== Number(current.current_value || 0) && orderValue > 0) {
+    const [conflicts] = await pool.execute(
+      `SELECT 'company_profiles' AS source, id
+       FROM company_profiles
+       WHERE (
+         COALESCE(display_order, 0) = ?
+         OR COALESCE(home_display_order, 0) = ?
+         OR COALESCE(list_display_order, 0) = ?
+       ) AND id <> ?
+       UNION ALL
+       SELECT 'uae_companies' AS source, id
+       FROM uae_companies
+       WHERE (
+         COALESCE(display_order, 0) = ?
+         OR COALESCE(home_display_order, 0) = ?
+         OR COALESCE(list_display_order, 0) = ?
+       )
+       LIMIT 1`,
+      [orderValue, orderValue, orderValue, profileId, orderValue, orderValue, orderValue]
+    );
+    if ((conflicts as any[]).length > 0) {
+      throw new Error(`${field}#CONFLICT#${orderValue}`);
+    }
+  }
+
+  await pool.execute(`UPDATE company_profiles SET ${field} = ? WHERE id = ?`, [orderValue, profileId]);
+}
+
+export async function updateCompanyHomeDisplayOrder(req: any, res: any) {
+  try {
+    const profileId = Number(req.params.id);
+    const raw = req.body?.home_display_order;
+    const orderValue = Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : 0;
+    await updateCompanySingleOrderField(profileId, orderValue, 'home_display_order');
+    res.json({ message: 'Home display order updated.' });
+  } catch (error: any) {
+    if (error instanceof Error && error.message.includes('home_display_order#NOT_FOUND#')) {
+      return res.status(404).json({ error: 'Company profile not found.' });
+    }
+    if (error instanceof Error && error.message.includes('home_display_order#CONFLICT#')) {
+      const orderValue = error.message.split('#').pop() || '0';
+      return res.status(409).json({
+        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+      });
+    }
+    console.error('Update company home display order error:', error);
+    res.status(500).json({ error: 'Failed to update home display order.' });
+  }
+}
+
+export async function updateCompanyListDisplayOrder(req: any, res: any) {
+  try {
+    const profileId = Number(req.params.id);
+    const raw = req.body?.list_display_order;
+    const orderValue = Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : 0;
+    await updateCompanySingleOrderField(profileId, orderValue, 'list_display_order');
+    res.json({ message: 'List display order updated.' });
+  } catch (error: any) {
+    if (error instanceof Error && error.message.includes('list_display_order#NOT_FOUND#')) {
+      return res.status(404).json({ error: 'Company profile not found.' });
+    }
+    if (error instanceof Error && error.message.includes('list_display_order#CONFLICT#')) {
+      const orderValue = error.message.split('#').pop() || '0';
+      return res.status(409).json({
+        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+      });
+    }
+    console.error('Update company list display order error:', error);
+    res.status(500).json({ error: 'Failed to update list display order.' });
+  }
+}
+
+function normalizeDeleteReason(rawReason: unknown): string | null {
+  if (typeof rawReason !== 'string') return null;
+  const trimmed = rawReason.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 500) return trimmed.slice(0, 500);
+  return trimmed;
+}
+
+/**
+ * PUT /api/admin/roles/companies/:id/delete
+ */
+export async function deleteCompanyProfile(req: any, res: any) {
+  try {
+    const id = Number(req.params.id);
+    const adminId = req.admin?.id;
+    const reason = normalizeDeleteReason(req.body?.reason);
+    if (!reason) return res.status(400).json({ error: 'Delete reason is required.' });
+    if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'Invalid company profile id.' });
+
+    const [rows] = await pool.execute(
+      'SELECT id, company_name, user_id, deleted_at FROM company_profiles WHERE id = ? LIMIT 1',
+      [id]
+    );
+    const profile = (rows as any[])[0];
+    if (!profile) return res.status(404).json({ error: 'Company profile not found.' });
+    if (profile.deleted_at) return res.status(400).json({ error: 'Company profile is already deleted.' });
+
+    await pool.execute(
+      `UPDATE company_profiles
+       SET deleted_at = NOW(), deleted_by_admin_id = ?, delete_reason = ?, status = 'rejected'
+       WHERE id = ?`,
+      [adminId, reason, id]
+    );
+
+    await logActivity(adminId, 'delete_company_profile', 'company_profile', id, {
+      company_name: profile.company_name,
+      user_id: profile.user_id,
+      reason,
+    });
+
+    res.json({ message: 'Company profile deleted successfully.' });
+  } catch (error) {
+    console.error('Delete company profile error:', error);
+    res.status(500).json({ error: 'Failed to delete company profile.' });
+  }
+}
+
+/**
+ * POST /api/admin/roles/companies/:id/restore
+ */
+export async function restoreCompanyProfile(req: any, res: any) {
+  try {
+    const id = Number(req.params.id);
+    const adminId = req.admin?.id;
+    if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'Invalid company profile id.' });
+
+    const [rows] = await pool.execute(
+      'SELECT id, company_name, user_id, deleted_at FROM company_profiles WHERE id = ? LIMIT 1',
+      [id]
+    );
+    const profile = (rows as any[])[0];
+    if (!profile) return res.status(404).json({ error: 'Company profile not found.' });
+    if (!profile.deleted_at) return res.status(400).json({ error: 'Company profile is not deleted.' });
+
+    await pool.execute(
+      `UPDATE company_profiles
+       SET deleted_at = NULL, deleted_by_admin_id = NULL, delete_reason = NULL
+       WHERE id = ?`,
+      [id]
+    );
+
+    await logActivity(adminId, 'restore_company_profile', 'company_profile', id, {
+      company_name: profile.company_name,
+      user_id: profile.user_id,
+    });
+
+    res.json({ message: 'Company profile restored successfully.' });
+  } catch (error) {
+    console.error('Restore company profile error:', error);
+    res.status(500).json({ error: 'Failed to restore company profile.' });
   }
 }

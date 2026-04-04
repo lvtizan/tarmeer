@@ -30,7 +30,7 @@ import {
   getActivityLogs
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
-import { listUsers, getUserDetail, updateUserStatus, updateUserRole } from '../controllers/userAdminController';
+import { listUsers, getUserDetail, updateUserStatus, updateUserRole, deleteUser, restoreUser } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts } from '../controllers/complaintController';
 import {
@@ -140,6 +140,8 @@ router.get('/users', listUsers);
 router.get('/users/:id', getUserDetail);
 router.put('/users/:id/status', requireSuperAdmin, updateUserStatus);
 router.put('/users/:id/role', requireSuperAdmin, updateUserRole);
+router.put('/users/:id/delete', requireSuperAdmin, deleteUser);
+router.post('/users/:id/restore', requireSuperAdmin, restoreUser);
 
 // ====== Dual-Role Management (V3 User System) ======
 
@@ -152,6 +154,10 @@ router.get('/roles/companies', roleAdmin.listCompanies);
 router.post('/roles/companies/:id/approve', requirePermission('can_approve'), roleAdmin.approveCompany);
 router.post('/roles/companies/:id/reject', requirePermission('can_approve'), roleAdmin.rejectCompany);
 router.put('/roles/companies/:id/display-order', requirePermission('can_sort'), roleAdmin.updateCompanyDisplayOrder);
+router.put('/roles/companies/:id/home-display-order', requirePermission('can_sort'), roleAdmin.updateCompanyHomeDisplayOrder);
+router.put('/roles/companies/:id/list-display-order', requirePermission('can_sort'), roleAdmin.updateCompanyListDisplayOrder);
+router.put('/roles/companies/:id/delete', requirePermission('can_approve'), roleAdmin.deleteCompanyProfile);
+router.post('/roles/companies/:id/restore', requirePermission('can_approve'), roleAdmin.restoreCompanyProfile);
 router.get('/roles/companies/:id/detail', getCompanyProfile);
 router.get('/roles/companies/:id/full-detail', getCompanyProfileFullDetail);
 router.put('/roles/companies/:id/edit', editCompanyProfile);

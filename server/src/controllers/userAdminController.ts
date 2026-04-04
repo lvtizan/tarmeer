@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { logActivity } from './adminController';
 
 // List users with pagination, filters, search
 export async function listUsers(req: any, res: any) {
@@ -8,7 +9,7 @@ export async function listUsers(req: any, res: any) {
     const offset = (page - 1) * limit;
     const { role, status, search } = req.query;
 
-    let where = 'WHERE 1=1';
+    let where = 'WHERE deleted_at IS NULL';
     const params: any[] = [];
 
     if (role) { where += ' AND role = ?'; params.push(role); }
@@ -152,5 +153,96 @@ export async function updateUserRole(req: any, res: any) {
   } catch (error) {
     console.error('Update user role error:', error);
     res.status(500).json({ error: 'Failed to update role.' });
+  }
+}
+
+function normalizeDeleteReason(rawReason: unknown): string | null {
+  if (typeof rawReason !== 'string') return null;
+  const trimmed = rawReason.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 500) return trimmed.slice(0, 500);
+  return trimmed;
+}
+
+// Soft delete user
+export async function deleteUser(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const adminId = req.admin?.id;
+    const reason = normalizeDeleteReason(req.body?.reason);
+    if (!reason) {
+      return res.status(400).json({ error: 'Delete reason is required.' });
+    }
+
+    const userId = Number(id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user id.' });
+    }
+    if (adminId === userId) {
+      return res.status(400).json({ error: 'You cannot delete your own account.' });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT id, email, full_name, deleted_at FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+    const user = (rows as any[])[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.deleted_at) return res.status(400).json({ error: 'User is already deleted.' });
+
+    await pool.execute(
+      `UPDATE users
+       SET deleted_at = NOW(), deleted_by_admin_id = ?, delete_reason = ?, status = 'suspended'
+       WHERE id = ?`,
+      [adminId, reason, userId]
+    );
+
+    await logActivity(adminId, 'delete_user', 'user', userId, {
+      email: user.email,
+      full_name: user.full_name,
+      reason,
+    });
+
+    res.json({ message: 'User deleted successfully.' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user.' });
+  }
+}
+
+// Restore soft deleted user
+export async function restoreUser(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const adminId = req.admin?.id;
+    const userId = Number(id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user id.' });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT id, email, full_name, deleted_at FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+    const user = (rows as any[])[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (!user.deleted_at) return res.status(400).json({ error: 'User is not deleted.' });
+
+    await pool.execute(
+      `UPDATE users
+       SET deleted_at = NULL, deleted_by_admin_id = NULL, delete_reason = NULL
+       WHERE id = ?`,
+      [userId]
+    );
+
+    await logActivity(adminId, 'restore_user', 'user', userId, {
+      email: user.email,
+      full_name: user.full_name,
+    });
+
+    res.json({ message: 'User restored successfully.' });
+  } catch (error) {
+    console.error('Restore user error:', error);
+    res.status(500).json({ error: 'Failed to restore user.' });
   }
 }

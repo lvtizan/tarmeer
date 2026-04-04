@@ -37,6 +37,14 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'uae_companies', column: 'display_order', type: 'INT NOT NULL DEFAULT 0' },
   { table: 'uae_companies', column: 'home_display_order', type: 'INT NOT NULL DEFAULT 0' },
   { table: 'uae_companies', column: 'list_display_order', type: 'INT NOT NULL DEFAULT 0' },
+  { table: 'users', column: 'deleted_at', type: 'DATETIME NULL' },
+  { table: 'users', column: 'deleted_by_admin_id', type: 'BIGINT NULL' },
+  { table: 'users', column: 'delete_reason', type: 'VARCHAR(500) NULL' },
+  { table: 'company_profiles', column: 'deleted_at', type: 'DATETIME NULL' },
+  { table: 'company_profiles', column: 'deleted_by_admin_id', type: 'BIGINT NULL' },
+  { table: 'company_profiles', column: 'delete_reason', type: 'VARCHAR(500) NULL' },
+  { table: 'company_profiles', column: 'home_display_order', type: 'INT NOT NULL DEFAULT 0' },
+  { table: 'company_profiles', column: 'list_display_order', type: 'INT NOT NULL DEFAULT 0' },
 
   // 以后新增字段在这里追加即可，例如：
   // { table: 'designers', column: 'wechat_id', type: 'VARCHAR(255) NULL' },

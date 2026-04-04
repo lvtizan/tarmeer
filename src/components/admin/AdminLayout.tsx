@@ -7,21 +7,63 @@ import Avatar from '../ui/Avatar';
 import SidebarNavLink from '../ui/SidebarNavLink';
 
 const PRIMARY = '#b8864a';
+const ADMIN_LANG_KEY = 'admin_lang';
+type AdminLang = 'en' | 'zh';
 
 const navItems = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true, info: 'View platform overview, key KPIs, and quick status summary.' },
-  { to: '/admin/users', label: 'Users', icon: Users, info: 'Manage user accounts, status, and role-related records.' },
-  { to: '/admin/companies', label: 'Companies', icon: Building2, info: 'Manage Companies / Directory / Applications, including review and sorting.' },
-  { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare, info: 'Review customer inquiry leads and update follow-up status/notes.' },
-  { to: '/admin/complaints', label: 'Complaints', icon: ShieldAlert, info: 'Process abuse/report tickets and resolve complaint workflows.' },
-  { to: '/admin/company-import', label: 'Import Company', icon: FileUp, info: 'Bulk import company data from template files.' },
-  { to: '/admin/notification-emails', label: 'Notify Emails', icon: Mail, info: 'Configure notification recipients for system events.' },
-  { to: '/admin/help', label: 'Help', icon: CircleHelp, info: 'Open operation guides, troubleshooting steps, and usage docs.' },
-  { to: '/admin/analytics', label: 'Analytics', icon: Activity, permission: 'can_view_stats' as const, info: 'View traffic/events analytics and trend reports.' },
+  {
+    to: '/admin', labelEn: 'Dashboard', labelZh: '仪表盘', icon: LayoutDashboard, end: true,
+    infoEn: 'View platform overview, key KPIs, latest alerts, and quick operational status in one place.',
+    infoZh: '查看平台总览、关键指标、最新告警与运营状态总表。',
+  },
+  {
+    to: '/admin/users', labelEn: 'Users', labelZh: '用户', icon: Users,
+    infoEn: 'Manage user accounts, role/status changes, and trace account-level operations.',
+    infoZh: '管理用户账号、角色与状态变更，并追踪账号操作记录。',
+  },
+  {
+    to: '/admin/companies', labelEn: 'Companies', labelZh: '公司', icon: Building2,
+    infoEn: 'Manage Companies / Directory / Applications, including approval, sorting, and profile maintenance.',
+    infoZh: '管理 Companies / Directory / Applications，包含审批、排序与资料维护。',
+  },
+  {
+    to: '/admin/inquiries', labelEn: 'Inquiries', labelZh: '询盘', icon: MessageSquare,
+    infoEn: 'Review customer leads, update follow-up status, and keep conversion notes synchronized.',
+    infoZh: '查看客户询盘、更新跟进状态，并同步转化备注。',
+  },
+  {
+    to: '/admin/complaints', labelEn: 'Complaints', labelZh: '投诉', icon: ShieldAlert,
+    infoEn: 'Handle abuse/report tickets, complete investigation notes, and close complaint workflows.',
+    infoZh: '处理举报/投诉工单，补全调查记录并完成闭环。',
+  },
+  {
+    to: '/admin/company-import', labelEn: 'Import Company', labelZh: '导入公司', icon: FileUp,
+    infoEn: 'Bulk import company records from templates and validate key fields before publishing.',
+    infoZh: '通过模板批量导入公司信息，发布前校验关键字段。',
+  },
+  {
+    to: '/admin/notification-emails', labelEn: 'Notify Emails', labelZh: '通知邮箱', icon: Mail,
+    infoEn: 'Configure recipients for system notifications to ensure operational events are delivered.',
+    infoZh: '配置系统通知接收邮箱，确保运营事件及时送达。',
+  },
+  {
+    to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
+    infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
+    infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
+  },
+  {
+    to: '/admin/analytics', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, permission: 'can_view_stats' as const,
+    infoEn: 'Analyze traffic/events, compare trends, and jump to external analytics platforms.',
+    infoZh: '分析流量与事件趋势，并可跳转外部分析平台。',
+  },
 ];
 
 const adminItems = [
-  { to: '/admin/admins', label: 'Admin Users', icon: UserCog, superAdminOnly: true, info: 'Manage administrator accounts, permissions, and access control.' },
+  {
+    to: '/admin/admins', labelEn: 'Admin Users', labelZh: '管理员', icon: UserCog, superAdminOnly: true,
+    infoEn: 'Manage administrator accounts, permissions, and privileged access boundaries.',
+    infoZh: '管理管理员账号、权限与高权限访问边界。',
+  },
 ];
 
 // Map nav paths to notification keys
@@ -34,6 +76,10 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
+  const [lang, setLang] = useState<AdminLang>(() => {
+    const saved = typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_LANG_KEY) : null;
+    return saved === 'zh' ? 'zh' : 'en';
+  });
 
   const fetchNotificationCounts = useCallback(async () => {
     try {
@@ -76,10 +122,19 @@ export default function AdminLayout() {
     !item.superAdminOnly || isSuperAdmin
   );
 
+  const t = (en: string, zh: string) => (lang === 'zh' ? zh : en);
+  const toggleLang = () => {
+    setLang((prev) => {
+      const next = prev === 'en' ? 'zh' : 'en';
+      if (typeof window !== 'undefined') window.localStorage.setItem(ADMIN_LANG_KEY, next);
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#faf9f7] flex">
       {/* Sidebar - match DesignerLayout style */}
-      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-y-auto">
+      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-y-auto overflow-x-visible">
         {/* Logo - match designer: icon in rounded box + title */}
         <Link to="/" className="h-16 flex items-center px-6 border-b border-stone-200 hover:bg-stone-50 transition-colors">
           <div
@@ -106,11 +161,11 @@ export default function AdminLayout() {
               >
                 <Icon className="w-5 h-5 shrink-0" />
                 <span className="flex items-center gap-1.5">
-                  <span>{item.label}</span>
+                  <span>{t(item.labelEn, item.labelZh)}</span>
                   <span className="relative inline-flex items-center">
                     <Info className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-500" />
-                    <span className="pointer-events-none absolute left-5 top-1/2 z-20 hidden w-64 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-2 text-xs leading-relaxed text-stone-600 shadow-lg group-hover:block">
-                      {item.info}
+                    <span className="pointer-events-none absolute left-5 top-1/2 z-[120] hidden w-80 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-3 text-sm leading-relaxed text-stone-700 shadow-xl group-hover:block">
+                      {t(item.infoEn, item.infoZh)}
                     </span>
                   </span>
                 </span>
@@ -125,7 +180,7 @@ export default function AdminLayout() {
             <>
               <div className="pt-4 pb-2">
                 <span className="px-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">
-                  Administration
+                  {t('Administration', '系统管理')}
                 </span>
               </div>
               {filteredAdminItems.map((item) => {
@@ -138,11 +193,11 @@ export default function AdminLayout() {
                   >
                     <Icon className="w-5 h-5 shrink-0" />
                     <span className="flex items-center gap-1.5">
-                      <span>{item.label}</span>
+                        <span>{t(item.labelEn, item.labelZh)}</span>
                       <span className="relative inline-flex items-center">
                         <Info className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-500" />
-                        <span className="pointer-events-none absolute left-5 top-1/2 z-20 hidden w-64 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-2 text-xs leading-relaxed text-stone-600 shadow-lg group-hover:block">
-                          {item.info}
+                        <span className="pointer-events-none absolute left-5 top-1/2 z-[120] hidden w-80 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-3 text-sm leading-relaxed text-stone-700 shadow-xl group-hover:block">
+                          {t(item.infoEn, item.infoZh)}
                         </span>
                       </span>
                     </span>
@@ -160,17 +215,25 @@ export default function AdminLayout() {
             <div>
               <p className="text-sm font-medium text-[#2c2c2c]">{admin.fullName}</p>
               <p className="text-xs text-stone-500">
-                {admin.role === 'super_admin' ? 'Super Admin' : 'Sub Admin'}
+                {admin.role === 'super_admin' ? t('Super Admin', '超级管理员') : t('Sub Admin', '子管理员')}
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="mb-2 flex items-center justify-between w-full px-3 py-2 rounded-lg border border-stone-200 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+          >
+            <span>{t('Language', '语言')}</span>
+            <span>{lang === 'en' ? 'EN / 中文' : '中文 / EN'}</span>
+          </button>
           <button
             type="button"
             onClick={logout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a]/40"
           >
             <LogOut className="w-5 h-5 shrink-0" />
-            Sign out
+            {t('Sign out', '退出登录')}
           </button>
         </div>
       </aside>

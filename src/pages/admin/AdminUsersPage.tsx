@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 
@@ -47,6 +48,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -91,6 +93,20 @@ export default function AdminUsersPage() {
       alert(err.message || 'Failed to update status');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleDeleteUser = async (user: UserRecord) => {
+    const reason = window.prompt(`Delete user "${user.full_name}"\nPlease enter delete reason / 请输入删除原因：`, '');
+    if (!reason || !reason.trim()) return;
+    setDeleteLoadingId(user.id);
+    try {
+      await adminApi.deleteUser(user.id, reason.trim());
+      await loadUsers();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete user.');
+    } finally {
+      setDeleteLoadingId(null);
     }
   };
 
@@ -164,12 +180,20 @@ export default function AdminUsersPage() {
               ) : users.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition"
+                  className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition"
                   onClick={() => navigate(`/admin/users/${user.id}`)}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 relative">
                     <div className="font-medium text-stone-800">{user.full_name}</div>
                     {user.city && <div className="text-xs text-stone-400">{user.city}</div>}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
+                      disabled={deleteLoadingId === user.id}
+                      title="Delete user"
+                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-200 bg-white text-red-500 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      {deleteLoadingId === user.id ? '...' : <Trash2 className="h-3.5 w-3.5" />}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-stone-600">{user.email}</td>
                   <td className="px-4 py-3">

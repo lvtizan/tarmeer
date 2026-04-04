@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { TableSpinner } from '../../components/ui/Spinner';
@@ -30,6 +31,8 @@ interface CompanyProfileRecord {
   company_type: string;
   status: 'pending' | 'approved' | 'rejected';
   display_order: number;
+  home_display_order: number;
+  list_display_order: number;
   city: string | null;
   logo_url: string | null;
   user_name: string;
@@ -67,6 +70,7 @@ export default function AdminCompaniesPage() {
   const [profileSearch, setProfileSearch] = useState('');
   const [profileLoading, setProfileLoading] = useState(false);
   const [orderSavingId, setOrderSavingId] = useState<number | null>(null);
+  const [profileDeleteLoadingId, setProfileDeleteLoadingId] = useState<number | null>(null);
   const [directoryOrderSavingKey, setDirectoryOrderSavingKey] = useState<string | null>(null);
   const [profileSortDir, setProfileSortDir] = useState<SortDir>('desc');
   const [profileSortActive, setProfileSortActive] = useState(false);
@@ -202,15 +206,42 @@ export default function AdminCompaniesPage() {
     finally { setActionLoading(null); }
   };
 
-  const handleSetDisplayOrder = async (id: number, value: number) => {
+  const handleSetProfileHomeOrder = async (id: number, value: number) => {
     setOrderSavingId(id);
     try {
-      await adminApi.updateCompanyProfileDisplayOrder(id, Number.isFinite(value) ? value : 0);
-      setProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, display_order: value } : p)));
+      await adminApi.updateCompanyProfileHomeDisplayOrder(id, Number.isFinite(value) ? value : 0);
+      setProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, home_display_order: value } : p)));
     } catch (err: any) {
-      alert(err.message || 'Failed to update display order.');
+      alert(err.message || 'Failed to update home display order.');
     } finally {
       setOrderSavingId(null);
+    }
+  };
+
+  const handleSetProfileListOrder = async (id: number, value: number) => {
+    setOrderSavingId(id);
+    try {
+      await adminApi.updateCompanyProfileListDisplayOrder(id, Number.isFinite(value) ? value : 0);
+      setProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, list_display_order: value } : p)));
+    } catch (err: any) {
+      alert(err.message || 'Failed to update list display order.');
+    } finally {
+      setOrderSavingId(null);
+    }
+  };
+
+  const handleDeleteProfile = async (profile: CompanyProfileRecord) => {
+    const reason = window.prompt(`Delete company "${profile.company_name}"\nPlease enter delete reason / 请输入删除原因：`, '');
+    if (!reason || !reason.trim()) return;
+    setProfileDeleteLoadingId(profile.id);
+    try {
+      await adminApi.deleteCompanyProfile(profile.id, reason.trim());
+      await loadProfiles();
+      await loadTabBadges();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete company profile.');
+    } finally {
+      setProfileDeleteLoadingId(null);
     }
   };
 
@@ -332,22 +363,23 @@ export default function AdminCompaniesPage() {
                     Projects <SortIcon active={profileSortActive} dir={profileSortDir} />
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-stone-600">Order</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-600">Joined</th>
                 </tr>
               </thead>
               <tbody>
                 {profileLoading ? (
-                  <TableSpinner colSpan={8} />
+                  <TableSpinner colSpan={9} />
                 ) : sortedProfiles.length === 0 ? (
-                  <tr><td colSpan={8} className="text-center py-12 text-stone-400">No records</td></tr>
+                  <tr><td colSpan={9} className="text-center py-12 text-stone-400">No records</td></tr>
                 ) : sortedProfiles.map((c) => (
                   <tr
                     key={c.id}
-                    className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
+                    className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
                     onClick={() => navigate(`/admin/profile-companies/${c.id}`)}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 relative">
                       <div className="flex items-center gap-3">
                         {c.logo_url ? (
                           <SmartImage src={c.logo_url} alt="" className="w-8 h-8 rounded-lg object-contain bg-stone-100" />
@@ -358,6 +390,14 @@ export default function AdminCompaniesPage() {
                         )}
                         <span className="font-medium text-stone-800">{c.company_name}</span>
                       </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteProfile(c); }}
+                        disabled={profileDeleteLoadingId === c.id}
+                        title="Delete company"
+                        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-200 bg-white text-red-500 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {profileDeleteLoadingId === c.id ? '...' : <Trash2 className="h-3.5 w-3.5" />}
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -384,13 +424,25 @@ export default function AdminCompaniesPage() {
                       <input
                         type="number"
                         min={0}
-                        defaultValue={Number(c.display_order || 0)}
-                        onBlur={(e) => handleSetDisplayOrder(c.id, Math.max(0, parseInt(e.target.value || '0', 10) || 0))}
+                        defaultValue={Number(c.home_display_order || 0)}
+                        onBlur={(e) => handleSetProfileHomeOrder(c.id, Math.max(0, parseInt(e.target.value || '0', 10) || 0))}
                         className="w-16 h-8 px-2 border border-stone-200 rounded-md text-sm bg-white"
                       />
                       {orderSavingId === c.id && (
                         <span className="ml-2 text-xs text-stone-400">Saving...</span>
                       )}
+                    </td>
+                    <td
+                      className="px-4 py-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="number"
+                        min={0}
+                        defaultValue={Number(c.list_display_order || 0)}
+                        onBlur={(e) => handleSetProfileListOrder(c.id, Math.max(0, parseInt(e.target.value || '0', 10) || 0))}
+                        className="w-16 h-8 px-2 border border-stone-200 rounded-md text-sm bg-white"
+                      />
                     </td>
                     <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
                   </tr>

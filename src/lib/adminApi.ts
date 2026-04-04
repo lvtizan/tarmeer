@@ -472,6 +472,19 @@ class AdminApiClient {
     return this.request(`/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
   }
 
+  async deleteUser(id: number, reason: string) {
+    return this.request(`/users/${id}/delete`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async restoreUser(id: number) {
+    return this.request(`/users/${id}/restore`, {
+      method: 'POST',
+    });
+  }
+
   // Inquiry management
   async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string }) {
     const query = new URLSearchParams();
@@ -547,6 +560,33 @@ class AdminApiClient {
     return this.request(`/roles/companies/${id}/display-order`, {
       method: 'PUT',
       body: JSON.stringify({ display_order: displayOrder }),
+    });
+  }
+
+  async updateCompanyProfileHomeDisplayOrder(id: number, displayOrder: number) {
+    return this.request(`/roles/companies/${id}/home-display-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ home_display_order: displayOrder }),
+    });
+  }
+
+  async updateCompanyProfileListDisplayOrder(id: number, displayOrder: number) {
+    return this.request(`/roles/companies/${id}/list-display-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ list_display_order: displayOrder }),
+    });
+  }
+
+  async deleteCompanyProfile(id: number, reason: string) {
+    return this.request(`/roles/companies/${id}/delete`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async restoreCompanyProfile(id: number) {
+    return this.request(`/roles/companies/${id}/restore`, {
+      method: 'POST',
     });
   }
 
