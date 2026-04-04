@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { PageSpinner, TableSpinner } from '../../components/ui/Spinner';
@@ -9,6 +9,8 @@ const AdminDesignersPage = lazy(() => import('./AdminDesignersPage'));
 type Tab = 'companies' | 'applications' | 'approvals';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
 type AppStatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
+type SortField = 'default' | 'project_count';
+type SortDir = 'asc' | 'desc';
 
 interface CompanyRecord {
   id: number;
@@ -19,6 +21,7 @@ interface CompanyRecord {
   owner_user_id: number | null;
   owner_name: string | null;
   owner_email: string | null;
+  project_count: number;
 }
 
 interface ApplicationRecord {
@@ -39,6 +42,7 @@ interface ApplicationRecord {
 
 export default function AdminCompaniesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>(() => {
     const t = searchParams.get('tab');
     if (t === 'applications') return 'applications';
@@ -53,6 +57,8 @@ export default function AdminCompaniesPage() {
   const [claimedFilter, setClaimedFilter] = useState<ClaimedFilter>('all');
   const [companySearch, setCompanySearch] = useState('');
   const [companyLoading, setCompanyLoading] = useState(true);
+  const [sortField, setSortField] = useState<SortField>('default');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   // Applications state
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
@@ -208,14 +214,34 @@ export default function AdminCompaniesPage() {
                   <th className="text-left px-4 py-3 font-medium text-stone-600">Company</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-600">Owner</th>
+                  <th
+                    className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
+                    onClick={() => {
+                      if (sortField === 'project_count') {
+                        setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+                      } else {
+                        setSortField('project_count');
+                        setSortDir('desc');
+                      }
+                    }}
+                  >
+                    Projects {sortField === 'project_count' ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-stone-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {companyLoading ? (
-                  <TableSpinner colSpan={4} />
-                ) : companies.map((c) => (
-                  <tr key={c.id} className="border-b border-stone-100 hover:bg-stone-50">
+                  <TableSpinner colSpan={5} />
+                ) : (sortField === 'project_count'
+                    ? [...companies].sort((a, b) => sortDir === 'desc' ? b.project_count - a.project_count : a.project_count - b.project_count)
+                    : companies
+                  ).map((c) => (
+                  <tr
+                    key={c.id}
+                    className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
+                    onClick={() => navigate(`/admin/companies/${c.id}`)}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {c.logo_url && <img src={c.logo_url} alt="" className="w-8 h-8 rounded object-contain bg-stone-100" />}
@@ -236,7 +262,8 @@ export default function AdminCompaniesPage() {
                         <span className="text-stone-400 text-xs">Unclaimed</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 space-x-2">
+                    <td className="px-4 py-3 text-stone-700 font-medium">{c.project_count}</td>
+                    <td className="px-4 py-3 space-x-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setEditId({ type: 'scraped', id: c.id })}
                         className="text-xs px-3 py-1 rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200"

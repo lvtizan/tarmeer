@@ -524,6 +524,10 @@ class AdminApiClient {
     return this.request(`/companies/${companyId}/bind`, { method: 'DELETE' });
   }
 
+  async getCompanyFullDetail(companyId: number) {
+    return this.request(`/companies/${companyId}/full-detail`);
+  }
+
   // Complaint management
   async getComplaints(params?: { page?: number; limit?: number; status?: string; search?: string }) {
     const query = new URLSearchParams();

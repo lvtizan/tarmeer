@@ -33,7 +33,7 @@ import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminCon
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts } from '../controllers/complaintController';
-import { listCompanies, listCompanyApplications, reviewCompanyApplication, bindUserToCompany, unbindCompany, getScrapedCompany, editScrapedCompany, getCompanyProfile, editCompanyProfile } from '../controllers/companyAdminController';
+import { listCompanies, listCompanyApplications, reviewCompanyApplication, bindUserToCompany, unbindCompany, getScrapedCompany, editScrapedCompany, getCompanyProfile, editCompanyProfile, getCompanyFullDetail } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -114,6 +114,7 @@ router.put('/company-applications/:id/review', requirePermission('can_approve'),
 router.post('/companies/:companyId/bind', requireSuperAdmin, bindUserToCompany);
 router.delete('/companies/:companyId/bind', requireSuperAdmin, unbindCompany);
 router.get('/companies/:companyId/detail', getScrapedCompany);
+router.get('/companies/:companyId/full-detail', getCompanyFullDetail);
 router.put('/companies/:companyId/edit', editScrapedCompany);
 
 // User management

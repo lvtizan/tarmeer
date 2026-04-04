@@ -60,6 +60,7 @@ const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage
 const AdminRoleManagementPage = lazy(() => import('./pages/admin/AdminRoleManagementPage'));
 const AdminNotificationEmailsPage = lazy(() => import('./pages/admin/AdminNotificationEmailsPage'));
 const AdminCompanyImportPage = lazy(() => import('./pages/admin/AdminCompanyImportPage'));
+const AdminCompanyDetailPage = lazy(() => import('./pages/admin/AdminCompanyDetailPage'));
 
 function PageLoader() {
   return (
@@ -98,6 +99,7 @@ function App() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="users/:id" element={<AdminUserDetailPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />
+            <Route path="companies/:id" element={<AdminCompanyDetailPage />} />
             <Route path="inquiries" element={<AdminInquiriesPage />} />
             <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />

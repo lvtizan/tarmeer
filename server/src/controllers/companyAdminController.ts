@@ -25,9 +25,16 @@ export async function listCompanies(req: any, res: any) {
 
     const [rows] = await pool.execute(
       `SELECT c.id, c.name_en, c.slug, c.city, c.logo_url, c.owner_user_id,
-        u.full_name as owner_name, u.email as owner_email
+        u.full_name as owner_name, u.email as owner_email,
+        COALESCE(p.project_count, 0) as project_count
        FROM uae_companies c
        LEFT JOIN users u ON c.owner_user_id = u.id
+       LEFT JOIN (
+         SELECT d.user_id, COUNT(p.id) as project_count
+         FROM designers d
+         JOIN projects p ON p.designer_id = d.id AND p.status = 'published'
+         GROUP BY d.user_id
+       ) p ON p.user_id = c.owner_user_id
        ${where}
        ORDER BY c.id ASC
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
@@ -274,5 +281,52 @@ export async function unbindCompany(req: any, res: any) {
   } catch (error) {
     console.error('Unbind company error:', error);
     res.status(500).json({ error: 'Failed to unbind.' });
+  }
+}
+
+// Get full company detail (info + portfolio) for admin detail page
+export async function getCompanyFullDetail(req: any, res: any) {
+  try {
+    const { companyId } = req.params;
+
+    // Get company info
+    const [companyRows] = await pool.execute(
+      `SELECT c.*, u.full_name as owner_name, u.email as owner_email, u.id as owner_id
+       FROM uae_companies c
+       LEFT JOIN users u ON c.owner_user_id = u.id
+       WHERE c.id = ?`,
+      [companyId]
+    );
+    if ((companyRows as any[]).length === 0) {
+      return res.status(404).json({ error: 'Company not found.' });
+    }
+    const company = (companyRows as any[])[0];
+
+    // Get portfolio projects via owner → designer
+    let projects: any[] = [];
+    if (company.owner_user_id) {
+      const [designerRows] = await pool.execute(
+        'SELECT id FROM designers WHERE user_id = ? AND deleted_at IS NULL',
+        [company.owner_user_id]
+      );
+      if ((designerRows as any[]).length > 0) {
+        const designerId = (designerRows as any[])[0].id;
+        const [projectRows] = await pool.execute(
+          `SELECT id, title, description, style, location, year, images, tags, status, created_at
+           FROM projects WHERE designer_id = ? ORDER BY created_at DESC`,
+          [designerId]
+        );
+        projects = (projectRows as any[]).map((p: any) => ({
+          ...p,
+          images: (() => { try { return JSON.parse(p.images || '[]'); } catch { return []; } })(),
+          tags: (() => { try { return JSON.parse(p.tags || '[]'); } catch { return []; } })(),
+        }));
+      }
+    }
+
+    res.json({ company, projects });
+  } catch (error) {
+    console.error('Get company full detail error:', error);
+    res.status(500).json({ error: 'Failed to get company detail.' });
   }
 }
