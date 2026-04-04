@@ -94,3 +94,6 @@ Run this check order:
     - Homeowner project image serialization (`recent_projects`).
 15. Golden rule: no non-displayable image should reach UI rendering path; if an image fails, fallback should preserve layout and avoid repeated network 404 spam.
 16. Regression gate: for `www.tarmeer.com/companies`, `/companies/:slug`, and `/admin/companies` tabs, verify no persistent broken image icon remains after fallback attempts.
+17. Admin company detail and application detail must share the same project image sanitation path (reuse directory/company detail logic; no separate image resolver per tab).
+18. Backend must validate `/uploads/projects/...` file existence before returning `projects.images` for admin details; if file does not exist after path/extension normalization attempts, drop it from response.
+19. `SmartImage` must keep a global failed-src cache and stop retrying already known bad URLs in the same session, to avoid repeated 404 spam.

@@ -1,5 +1,9 @@
 import pool from '../config/database';
 import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
+import fs from 'fs';
+import path from 'path';
+
+const PUBLIC_UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
 
 function normalizeLegacyImageUrl(url: string): string {
   const value = url.trim();
@@ -47,6 +51,118 @@ function toStringArray(value: any): string[] {
   };
 
   return Array.from(new Set(collect(parsed)));
+}
+
+function normalizeUploadsPath(url: string): string {
+  let value = url.trim();
+  if (!value) return '';
+
+  try {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      const parsed = new URL(value);
+      value = parsed.pathname;
+    }
+  } catch {
+    // keep original value
+  }
+
+  if (value.startsWith('/api/uploads/')) {
+    return value.replace(/^\/api/, '');
+  }
+  if (value.startsWith('/uploads/')) {
+    return value;
+  }
+  if (value.startsWith('uploads/')) {
+    return `/${value}`;
+  }
+  if (value.startsWith('./uploads/')) {
+    return `/${value.replace(/^\.\/+/, '')}`;
+  }
+  return value;
+}
+
+function collapseLegacyProjectPath(uploadPath: string): string {
+  return uploadPath.replace(
+    /^\/uploads\/projects\/(\d+)\/\d+\/(\d{4})\/(\d{2})\/([^/?#]+)$/i,
+    '/uploads/projects/$1/$2/$3/$4'
+  );
+}
+
+function buildProjectImageCandidates(rawUrl: string): string[] {
+  const normalized = normalizeUploadsPath(rawUrl);
+  if (!normalized) return [];
+
+  if (!normalized.startsWith('/uploads/')) {
+    return [normalized];
+  }
+
+  const noQuery = normalized.split('?')[0].split('#')[0];
+  const collapsed = collapseLegacyProjectPath(noQuery);
+  const match = noQuery.match(/^(.*)\.(png|jpe?g|webp|avif)$/i);
+  const extensions = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+
+  const add = (value: string) => {
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    candidates.push(value);
+  };
+
+  add(noQuery);
+  add(collapsed);
+
+  if (match) {
+    const base = match[1];
+    const collapsedBase = collapsed.replace(/\.(png|jpe?g|webp|avif)$/i, '');
+    for (const ext of extensions) {
+      add(`${base}.${ext}`);
+      add(`${collapsedBase}.${ext}`);
+    }
+  }
+
+  return candidates;
+}
+
+function uploadPathExists(uploadPath: string): boolean {
+  if (!uploadPath.startsWith('/uploads/')) return false;
+  const localPath = path.join(PUBLIC_UPLOADS_DIR, uploadPath.replace(/^\/uploads\//, ''));
+  return fs.existsSync(localPath);
+}
+
+function resolveExistingProjectImage(url: string): string {
+  const normalized = normalizeLegacyImageUrl(url || '');
+  if (!normalized) return '';
+
+  const candidates = buildProjectImageCandidates(normalized);
+  if (candidates.length === 0) return '';
+
+  // Non-upload sources are left as-is (e.g., static /images/... or external URL).
+  if (!candidates[0].startsWith('/uploads/')) {
+    return candidates[0];
+  }
+
+  for (const candidate of candidates) {
+    if (uploadPathExists(candidate)) {
+      return candidate;
+    }
+  }
+  return '';
+}
+
+function sanitizeProjectImages(imagesField: any): string[] {
+  const rawImages = toStringArray(imagesField);
+  const out: string[] = [];
+  const seen = new Set<string>();
+
+  for (const rawImage of rawImages) {
+    const normalized = resolveExistingProjectImage(rawImage);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    out.push(normalized);
+  }
+
+  return out;
 }
 
 function toCategorizedPortfolioItems(value: any): Array<{ url: string; category: string | null }> {
@@ -523,7 +639,7 @@ export async function getCompanyProfileFullDetail(req: any, res: any) {
     );
     const projects = (projectRows as any[]).map((p: any) => ({
       ...p,
-      images: toStringArray(p.images),
+      images: sanitizeProjectImages(p.images),
       tags: toStringArray(p.tags),
     }));
 
@@ -575,7 +691,7 @@ export async function getCompanyFullDetail(req: any, res: any) {
       );
       projects = (projectRows as any[]).map((p: any) => ({
         ...p,
-        images: toStringArray(p.images),
+        images: sanitizeProjectImages(p.images),
         tags: toStringArray(p.tags),
       }));
     } else if (company.owner_user_id) {
@@ -592,7 +708,7 @@ export async function getCompanyFullDetail(req: any, res: any) {
         );
         projects = (projectRows as any[]).map((p: any) => ({
           ...p,
-          images: toStringArray(p.images),
+          images: sanitizeProjectImages(p.images),
           tags: toStringArray(p.tags),
         }));
       }

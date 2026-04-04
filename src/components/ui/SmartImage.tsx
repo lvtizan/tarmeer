@@ -7,26 +7,39 @@ type SmartImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
   src?: string | null;
 };
 
+const GLOBAL_FAILED_IMAGE_SRC = new Set<string>();
+const EMPTY_PIXEL =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
 export default function SmartImage({ src, onError, ...rest }: SmartImageProps) {
   const primary = resolveImageUrl(src || '');
-  const candidates = useMemo(() => getImageFallbackCandidates(primary), [primary]);
+  const candidates = useMemo(
+    () => getImageFallbackCandidates(primary).filter((candidate) => !GLOBAL_FAILED_IMAGE_SRC.has(candidate)),
+    [primary]
+  );
   const [idx, setIdx] = useState(0);
+  const [exhausted, setExhausted] = useState(false);
 
   useEffect(() => {
     setIdx(0);
+    setExhausted(false);
   }, [primary]);
 
-  const displaySrc = candidates[idx] || primary;
+  const displaySrc = exhausted ? EMPTY_PIXEL : candidates[idx] || primary || EMPTY_PIXEL;
 
   return (
     <img
       {...rest}
       src={displaySrc}
       onError={(e) => {
+        if (displaySrc) {
+          GLOBAL_FAILED_IMAGE_SRC.add(displaySrc);
+        }
         if (idx < candidates.length - 1) {
           setIdx((prev) => prev + 1);
           return;
         }
+        setExhausted(true);
         onError?.(e);
       }}
     />
