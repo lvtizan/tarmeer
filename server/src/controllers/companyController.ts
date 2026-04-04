@@ -12,13 +12,14 @@ export async function getCompanies(req: any, res: any) {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = Math.min(parseInt(req.query.limit, 10) || 26, 100);
     const offset = (page - 1) * limit;
+    const orderMode = req.query?.order === 'home' ? 'home' : 'list';
 
     const [countResult] = await pool.execute(
       `SELECT COUNT(*) as total FROM uae_companies ${PUBLIC_COMPANY_WHERE}`
     );
     const total = (countResult as any[])[0]?.total || 0;
 
-    const listQuery = buildPublicCompaniesListQuery({ limit, offset });
+    const listQuery = buildPublicCompaniesListQuery({ limit, offset, orderMode });
     const [companies] = await pool.execute(listQuery.sql, listQuery.params);
 
     res.json({

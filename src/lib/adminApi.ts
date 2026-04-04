@@ -217,6 +217,9 @@ class AdminApiClient {
       if (isPublicEndpoint && serverError) {
         throw new Error(serverError);
       }
+      if (response.status === 409 && serverError) {
+        throw new Error(serverError);
+      }
       const devMessage = `接口 /admin${endpoint} 请求失败：${errorMessage}`;
       throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));
     }
@@ -502,6 +505,20 @@ class AdminApiClient {
     if (params?.claimed) query.set('claimed', params.claimed);
     if (params?.search) query.set('search', params.search);
     return this.request(`/companies?${query.toString()}`);
+  }
+
+  async updateDirectoryHomeDisplayOrder(companyId: number, displayOrder: number) {
+    return this.request(`/companies/${companyId}/home-display-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ home_display_order: displayOrder }),
+    });
+  }
+
+  async updateDirectoryListDisplayOrder(companyId: number, displayOrder: number) {
+    return this.request(`/companies/${companyId}/list-display-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ list_display_order: displayOrder }),
+    });
   }
 
   async getRegisteredCompanies(params?: { page?: number; limit?: number; status?: string; company_type?: string; search?: string }) {

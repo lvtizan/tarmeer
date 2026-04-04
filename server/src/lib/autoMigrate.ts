@@ -35,6 +35,8 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'admin_users', column: 'reset_token', type: 'VARCHAR(255) NULL' },
   { table: 'admin_users', column: 'reset_token_expires', type: 'DATETIME NULL' },
   { table: 'uae_companies', column: 'display_order', type: 'INT NOT NULL DEFAULT 0' },
+  { table: 'uae_companies', column: 'home_display_order', type: 'INT NOT NULL DEFAULT 0' },
+  { table: 'uae_companies', column: 'list_display_order', type: 'INT NOT NULL DEFAULT 0' },
 
   // 以后新增字段在这里追加即可，例如：
   // { table: 'designers', column: 'wechat_id', type: 'VARCHAR(255) NULL' },

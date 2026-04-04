@@ -93,7 +93,7 @@ export default function HomeDesignSection() {
 
   useEffect(() => {
     let active = true;
-    fetchPublicCompanies(24)
+    fetchPublicCompanies(24, 'home')
       .then((items) => {
         if (!active) return;
         setCompanies(items);

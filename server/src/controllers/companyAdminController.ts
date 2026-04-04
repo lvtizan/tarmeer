@@ -96,7 +96,10 @@ export async function listCompanies(req: any, res: any) {
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.execute(
-      `SELECT c.id, c.name_en, c.slug, c.city, c.logo_url, c.owner_user_id, COALESCE(c.display_order, 0) as display_order,
+      `SELECT c.id, c.name_en, c.slug, c.city, c.logo_url, c.owner_user_id,
+              COALESCE(c.display_order, 0) as display_order,
+              COALESCE(c.home_display_order, 0) as home_display_order,
+              COALESCE(c.list_display_order, 0) as list_display_order,
         u.full_name as owner_name, u.email as owner_email,
         CASE
           WHEN COALESCE(p.project_count, 0) > 0 THEN p.project_count
@@ -137,31 +140,129 @@ export async function updateCompanyDisplayOrder(req: any, res: any) {
     const raw = req.body?.display_order;
     const displayOrder = Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : 0;
 
-    if (displayOrder > 0) {
+    const companyIdNum = Number(companyId);
+    const [currentRows] = await pool.execute(
+      'SELECT COALESCE(display_order, 0) AS display_order FROM uae_companies WHERE id = ? LIMIT 1',
+      [companyIdNum]
+    );
+    const current = (currentRows as any[])[0];
+    if (!current) return res.status(404).json({ error: 'Company not found.' });
+
+    // No-op update should always pass.
+    if (displayOrder !== Number(current.display_order || 0) && displayOrder > 0) {
       const [conflicts] = await pool.execute(
-        `SELECT id, 'uae_companies' as source
-         FROM uae_companies
-         WHERE COALESCE(display_order, 0) = ? AND id <> ?
-         UNION ALL
-         SELECT id, 'company_profiles' as source
+        `SELECT 'company_profiles' AS source, id
          FROM company_profiles
-         WHERE display_order = ?
+         WHERE COALESCE(display_order, 0) = ?
+         UNION ALL
+         SELECT 'uae_companies' AS source, id
+         FROM uae_companies
+         WHERE (
+           COALESCE(display_order, 0) = ?
+           OR COALESCE(home_display_order, 0) = ?
+           OR COALESCE(list_display_order, 0) = ?
+         )
+           AND id <> ?
          LIMIT 1`,
-        [displayOrder, companyId, displayOrder]
+        [displayOrder, displayOrder, displayOrder, displayOrder, companyIdNum]
       );
 
       if ((conflicts as any[]).length > 0) {
         return res.status(409).json({
-          error: `Display order ${displayOrder} is already in use. Please choose another number.`,
+          error: `序号 ${displayOrder} 已占用，请用新的序号 / Order ${displayOrder} is occupied, please use a new order number.`,
         });
       }
     }
 
-    await pool.execute('UPDATE uae_companies SET display_order = ? WHERE id = ?', [displayOrder, companyId]);
+    await pool.execute('UPDATE uae_companies SET display_order = ? WHERE id = ?', [displayOrder, companyIdNum]);
     res.json({ message: 'Display order updated.' });
   } catch (error) {
     console.error('Update scraped company display order error:', error);
     res.status(500).json({ error: 'Failed to update display order.' });
+  }
+}
+
+async function updateSingleOrderField(
+  companyId: number,
+  orderValue: number,
+  field: 'home_display_order' | 'list_display_order'
+) {
+  const [currentRows] = await pool.execute(
+    `SELECT COALESCE(${field}, 0) AS current_value FROM uae_companies WHERE id = ? LIMIT 1`,
+    [companyId]
+  );
+  const current = (currentRows as any[])[0];
+  if (!current) {
+    throw new Error(`${field}#NOT_FOUND#${companyId}`);
+  }
+
+  // No-op update should always pass.
+  if (orderValue !== Number(current.current_value || 0) && orderValue > 0) {
+    const [conflicts] = await pool.execute(
+      `SELECT 'company_profiles' AS source, id
+       FROM company_profiles
+       WHERE COALESCE(display_order, 0) = ?
+       UNION ALL
+       SELECT 'uae_companies' AS source, id
+       FROM uae_companies
+       WHERE (
+         COALESCE(display_order, 0) = ?
+         OR COALESCE(home_display_order, 0) = ?
+         OR COALESCE(list_display_order, 0) = ?
+       )
+         AND id <> ?
+       LIMIT 1`,
+      [orderValue, orderValue, orderValue, orderValue, companyId]
+    );
+    if ((conflicts as any[]).length > 0) {
+      throw new Error(`${field}#CONFLICT#${orderValue}`);
+    }
+  }
+
+  await pool.execute(`UPDATE uae_companies SET ${field} = ? WHERE id = ?`, [orderValue, companyId]);
+}
+
+export async function updateCompanyHomeDisplayOrder(req: any, res: any) {
+  try {
+    const companyId = Number(req.params.companyId);
+    const raw = req.body?.home_display_order;
+    const orderValue = Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : 0;
+    await updateSingleOrderField(companyId, orderValue, 'home_display_order');
+    res.json({ message: 'Home display order updated.' });
+  } catch (error: any) {
+    if (error instanceof Error && error.message.includes('home_display_order#NOT_FOUND#')) {
+      return res.status(404).json({ error: 'Company not found.' });
+    }
+    if (error instanceof Error && error.message.includes('home_display_order#CONFLICT#')) {
+      const orderValue = error.message.split('#').pop() || '0';
+      return res.status(409).json({
+        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+      });
+    }
+    console.error('Update home display order error:', error);
+    res.status(500).json({ error: 'Failed to update home display order.' });
+  }
+}
+
+export async function updateCompanyListDisplayOrder(req: any, res: any) {
+  try {
+    const companyId = Number(req.params.companyId);
+    const raw = req.body?.list_display_order;
+    const orderValue = Number.isFinite(Number(raw)) ? Math.max(0, Number(raw)) : 0;
+    await updateSingleOrderField(companyId, orderValue, 'list_display_order');
+    res.json({ message: 'List display order updated.' });
+  } catch (error: any) {
+    if (error instanceof Error && error.message.includes('list_display_order#NOT_FOUND#')) {
+      return res.status(404).json({ error: 'Company not found.' });
+    }
+    if (error instanceof Error && error.message.includes('list_display_order#CONFLICT#')) {
+      const orderValue = error.message.split('#').pop() || '0';
+      return res.status(409).json({
+        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+      });
+    }
+    console.error('Update list display order error:', error);
+    res.status(500).json({ error: 'Failed to update list display order.' });
   }
 }
 

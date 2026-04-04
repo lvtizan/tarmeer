@@ -196,22 +196,33 @@ export async function updateCompanyDisplayOrder(req: any, res: any) {
       ? Math.max(0, Number(req.body.display_order))
       : 0;
 
-    if (displayOrder > 0) {
+    const profileId = Number(id);
+    const [currentRows] = await pool.execute(
+      'SELECT COALESCE(display_order, 0) AS display_order FROM company_profiles WHERE id = ? LIMIT 1',
+      [profileId]
+    );
+    const current = (currentRows as any[])[0];
+    if (!current) return res.status(404).json({ error: 'Company profile not found.' });
+
+    // No-op update should always pass.
+    if (displayOrder !== Number(current.display_order || 0) && displayOrder > 0) {
       const [conflicts] = await pool.execute(
-        `SELECT id, 'company_profiles' as source
+        `SELECT 'company_profiles' AS source, id
          FROM company_profiles
-         WHERE display_order = ? AND id <> ?
+         WHERE COALESCE(display_order, 0) = ? AND id <> ?
          UNION ALL
-         SELECT id, 'uae_companies' as source
+         SELECT 'uae_companies' AS source, id
          FROM uae_companies
          WHERE COALESCE(display_order, 0) = ?
+            OR COALESCE(home_display_order, 0) = ?
+            OR COALESCE(list_display_order, 0) = ?
          LIMIT 1`,
-        [displayOrder, id, displayOrder]
+        [displayOrder, profileId, displayOrder, displayOrder, displayOrder]
       );
 
       if ((conflicts as any[]).length > 0) {
         return res.status(409).json({
-          error: `Display order ${displayOrder} is already in use. Please choose another number.`,
+          error: `序号 ${displayOrder} 已占用，请用新的序号 / Order ${displayOrder} is occupied, please use a new order number.`,
         });
       }
     }

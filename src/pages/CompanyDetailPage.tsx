@@ -12,7 +12,7 @@ import { normalizePortfolioCategories } from '../lib/categoryNormalize';
 import MasonryGallery from '../components/MasonryGallery';
 import Lightbox from '../components/Lightbox';
 import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
-import { resolveImageUrl } from '../lib/imageUrl';
+import SmartImage from '../components/ui/SmartImage';
 
 export default function CompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -146,8 +146,8 @@ export default function CompanyDetailPage() {
             <div className="relative rounded-lg overflow-hidden bg-stone-100 aspect-[16/10]">
               {heroImages.length > 0 ? (
                 <>
-                  <img
-                    src={resolveImageUrl(heroImages[heroIndex])}
+                  <SmartImage
+                    src={heroImages[heroIndex]}
                     alt={`${company.name} project ${heroIndex + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -181,7 +181,7 @@ export default function CompanyDetailPage() {
             {/* Company Header - Below carousel */}
             <div className="flex items-start gap-4 mt-5">
               {company.coverImage && company.coverImage.includes('/logos/') && (
-                <img src={resolveImageUrl(company.coverImage)} alt={`${company.name} logo`}
+                <SmartImage src={company.coverImage} alt={`${company.name} logo`}
                   className="w-16 h-16 rounded-lg object-contain bg-white border border-stone-100 p-1.5 flex-shrink-0"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
@@ -378,7 +378,7 @@ export default function CompanyDetailPage() {
                   className="group cursor-pointer rounded-lg overflow-hidden border border-stone-200 bg-white hover:shadow-md transition">
                   <div className="h-32 bg-stone-100 overflow-hidden">
                     {c.projectImages[0] ? (
-                      <img src={resolveImageUrl(c.projectImages[0])} alt={c.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      <SmartImage src={c.projectImages[0]} alt={c.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="font-serif text-3xl text-stone-200">{c.name.charAt(0)}</span>

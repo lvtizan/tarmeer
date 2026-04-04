@@ -31,12 +31,15 @@ npm run qa:smoke
 ## Image URL Workflow (Mandatory)
 1. All image rendering must use dynamic URL resolution; do not hardcode image domains.
 2. Frontend must use `resolveImageUrl()` from `src/lib/imageUrl.ts` for portfolio/cover/avatar URLs.
-3. Backend should return source URL/path from DB or normalized internal path; do not inject placeholder providers.
-4. Forbidden in production code:
+3. Key image rendering positions must use system component `SmartImage` (`src/components/ui/SmartImage.tsx`) to auto-fallback extensions in order: `png/jpg/jpeg/webp/avif`.
+4. `SmartImage` is mandatory for company list/detail/admin-detail thumbnails and covers; do not use raw `<img>` there unless there is a documented exception.
+5. `resolveImageUrl()` must rewrite admin absolute URLs (`https://admin.tarmeer.com/...`) and root-relative static paths to public host route when needed.
+6. Backend should return source URL/path from DB or normalized internal path; do not inject placeholder providers.
+7. Forbidden in production code:
    - `https://picsum.photos/...`
    - `https://placeholder.com/...`
    - Any hardcoded `https://www.tarmeer.com/...` fallback that ignores DB value.
-5. Legacy compatibility is done by deterministic mapping rules only (example: old `showcase/cover-x` -> internal cover path), not random placeholders.
+8. Legacy compatibility is done by deterministic mapping rules only (example: old `showcase/cover-x` -> internal cover path), not random placeholders.
 
 ## Local Run Workflow (Mandatory)
 1. Start backend first:
@@ -90,3 +93,4 @@ Run this check order:
     - Avatar sanitization (seed + legacy showcase cleanup).
     - Homeowner project image serialization (`recent_projects`).
 15. Golden rule: no non-displayable image should reach UI rendering path; if an image fails, fallback should preserve layout and avoid repeated network 404 spam.
+16. Regression gate: for `www.tarmeer.com/companies`, `/companies/:slug`, and `/admin/companies` tabs, verify no persistent broken image icon remains after fallback attempts.

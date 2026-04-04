@@ -31,11 +31,25 @@ function rewriteKnownBrokenPath(path: string): string {
   return HOTFIX_MAP[path] || path;
 }
 
+function rewriteAdminAbsoluteUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.startsWith('admin.')) return url;
+    parsed.hostname = `www.${parsed.hostname.replace(/^admin\./, '')}`;
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function resolveImageUrl(url: string | null | undefined): string {
   if (!url) return '';
   const trimmed = url.trim();
   if (!trimmed) return '';
   if (trimmed.startsWith('data:')) return trimmed; // base64 — pass through
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return rewriteAdminAbsoluteUrl(trimmed);
+  }
 
   let normalized = trimmed;
   if (normalized.startsWith('//')) {

@@ -36,14 +36,16 @@ DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh
 5. 上传后必须统一权限：
    - 目录：`755`
    - 文件：`644`
-6. 部署后必须做线上可用性检查，任一失败即视为部署失败并立刻修复。
+6. 默认禁止执行任何 Nginx 命令（`nginx -t` / `systemctl reload nginx` / `systemctl restart nginx`）。
+7. 仅当用户在当前会话明确授权时，才允许带 `ALLOW_NGINX_ACTIONS=YES` 执行 Nginx 相关命令。
+8. 部署后必须做线上可用性检查，任一失败即视为部署失败并立刻修复。
 
 ## 标准执行顺序
 
 1. 本地检查（建议至少做）：
    - `npm run qa:smoke`
    - `npm run build`
-2. 执行部署脚本（含增量同步、权限修复、Nginx reload、健康检查）：
+2. 执行部署脚本（含增量同步、权限修复、健康检查；默认不触发 Nginx）：
    - `DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh`
    - 若服务器缺少 `verify-schema.sh`：`DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES SKIP_SCHEMA_CHECK=YES bash deploy-simple.sh`
 3. 人工打开线上页面做一次强刷确认（`Cmd+Shift+R`）。
@@ -52,8 +54,9 @@ DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh
 
 1. 构建：`npm run build`
 2. 增量上传：`rsync -avz --delete dist/ -> /tarmeer/tarmeer_web_portal/`
-3. 服务器修复权限并重载 Nginx
-4. 基础健康检查：
+3. 服务器修复权限（默认）
+4. 仅在显式授权下执行 Nginx 检查/重载（`ALLOW_NGINX_ACTIONS=YES`）
+5. 基础健康检查：
    - `https://www.tarmeer.com`
    - `https://www.tarmeer.com/images/designers/avatars/omar-farouk.jpg`
 

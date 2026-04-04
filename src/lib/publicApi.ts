@@ -58,6 +58,8 @@ interface PublicCompanyRecord {
   portfolio_images?: string[] | string;
   project_count?: number;
   display_order?: number;
+  home_display_order?: number;
+  list_display_order?: number;
   projects?: any[];
   portfolio_categories?: Record<string, { url: string; title: string }[]>;
   is_claimed?: boolean;
@@ -291,9 +293,9 @@ function toCompany(company: PublicCompanyRecord): Company {
   };
 }
 
-export async function fetchPublicCompanies(limit = 50): Promise<Company[]> {
+export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {
   try {
-    const directoryResult = await request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}`);
+    const directoryResult = await request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}&order=${orderMode}`);
     const companies = (directoryResult.companies || []).map(toCompany);
     if (companies.length > 0) return companies;
     throw new Error('No company source available');

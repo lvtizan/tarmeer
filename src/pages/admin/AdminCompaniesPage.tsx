@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
-import { resolveImageUrl } from '../../lib/imageUrl';
 import { TableSpinner } from '../../components/ui/Spinner';
+import SmartImage from '../../components/ui/SmartImage';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -16,6 +16,8 @@ interface CompanyRecord {
   slug: string;
   city: string;
   logo_url: string | null;
+  home_display_order: number;
+  list_display_order: number;
   owner_user_id: number | null;
   owner_name: string | null;
   owner_email: string | null;
@@ -65,6 +67,7 @@ export default function AdminCompaniesPage() {
   const [profileSearch, setProfileSearch] = useState('');
   const [profileLoading, setProfileLoading] = useState(false);
   const [orderSavingId, setOrderSavingId] = useState<number | null>(null);
+  const [directoryOrderSavingKey, setDirectoryOrderSavingKey] = useState<string | null>(null);
   const [profileSortDir, setProfileSortDir] = useState<SortDir>('desc');
   const [profileSortActive, setProfileSortActive] = useState(false);
   const [profileBadgeTotal, setProfileBadgeTotal] = useState(0);
@@ -211,6 +214,32 @@ export default function AdminCompaniesPage() {
     }
   };
 
+  const handleSetDirectoryHomeOrder = async (id: number, value: number) => {
+    const key = `home-${id}`;
+    setDirectoryOrderSavingKey(key);
+    try {
+      await adminApi.updateDirectoryHomeDisplayOrder(id, Number.isFinite(value) ? value : 0);
+      setCompanies((prev) => prev.map((c) => (c.id === id ? { ...c, home_display_order: value } : c)));
+    } catch (err: any) {
+      alert(err.message || 'Failed to update home display order.');
+    } finally {
+      setDirectoryOrderSavingKey(null);
+    }
+  };
+
+  const handleSetDirectoryListOrder = async (id: number, value: number) => {
+    const key = `list-${id}`;
+    setDirectoryOrderSavingKey(key);
+    try {
+      await adminApi.updateDirectoryListDisplayOrder(id, Number.isFinite(value) ? value : 0);
+      setCompanies((prev) => prev.map((c) => (c.id === id ? { ...c, list_display_order: value } : c)));
+    } catch (err: any) {
+      alert(err.message || 'Failed to update list display order.');
+    } finally {
+      setDirectoryOrderSavingKey(null);
+    }
+  };
+
   const sortedProfiles = profileSortActive
     ? [...profiles].sort((a, b) => profileSortDir === 'desc' ? b.project_count - a.project_count : a.project_count - b.project_count)
     : profiles;
@@ -321,7 +350,7 @@ export default function AdminCompaniesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {c.logo_url ? (
-                          <img src={resolveImageUrl(c.logo_url)} alt="" className="w-8 h-8 rounded-lg object-contain bg-stone-100" />
+                          <SmartImage src={c.logo_url} alt="" className="w-8 h-8 rounded-lg object-contain bg-stone-100" />
                         ) : (
                           <div className="w-8 h-8 rounded-lg bg-stone-200 flex items-center justify-center text-sm font-semibold text-stone-500">
                             {c.company_name.charAt(0).toUpperCase()}
@@ -428,16 +457,18 @@ export default function AdminCompaniesPage() {
                   >
                     Projects <SortIcon active={directorySortActive} dir={directorySortDir} />
                   </th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
+                  <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
                   <th className="text-left px-4 py-3 font-medium text-stone-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {companyLoading ? (
-                  <TableSpinner colSpan={5} />
+                  <TableSpinner colSpan={7} />
                 ) : !directoryLoaded.current ? (
-                  <TableSpinner colSpan={5} />
+                  <TableSpinner colSpan={7} />
                 ) : sortedDirectory.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-12 text-stone-400">No records</td></tr>
+                  <tr><td colSpan={7} className="text-center py-12 text-stone-400">No records</td></tr>
                 ) : sortedDirectory.map((c) => (
                   <tr
                     key={c.id}
@@ -446,7 +477,7 @@ export default function AdminCompaniesPage() {
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        {c.logo_url && <img src={resolveImageUrl(c.logo_url)} alt="" className="w-8 h-8 rounded object-contain bg-stone-100" />}
+                        {c.logo_url && <SmartImage src={c.logo_url} alt="" className="w-8 h-8 rounded object-contain bg-stone-100" />}
                         <div>
                           <div className="font-medium text-stone-800">{c.name_en}</div>
                           <div className="text-xs text-stone-400">{c.slug}</div>
@@ -465,6 +496,30 @@ export default function AdminCompaniesPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-stone-700 font-medium">{c.project_count}</td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="number"
+                        min={0}
+                        defaultValue={Number(c.home_display_order || 0)}
+                        onBlur={(e) => handleSetDirectoryHomeOrder(c.id, Math.max(0, parseInt(e.target.value || '0', 10) || 0))}
+                        className="w-16 h-8 px-2 border border-stone-200 rounded-md text-sm bg-white"
+                      />
+                      {directoryOrderSavingKey === `home-${c.id}` && (
+                        <span className="ml-2 text-xs text-stone-400">Saving...</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="number"
+                        min={0}
+                        defaultValue={Number(c.list_display_order || 0)}
+                        onBlur={(e) => handleSetDirectoryListOrder(c.id, Math.max(0, parseInt(e.target.value || '0', 10) || 0))}
+                        className="w-16 h-8 px-2 border border-stone-200 rounded-md text-sm bg-white"
+                      />
+                      {directoryOrderSavingKey === `list-${c.id}` && (
+                        <span className="ml-2 text-xs text-stone-400">Saving...</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 space-x-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setEditId({ type: 'scraped', id: c.id })}
@@ -516,14 +571,15 @@ export default function AdminCompaniesPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Type</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Owner</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Projects</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Joined</th>
               </tr>
             </thead>
             <tbody>
               {pendingLoading ? (
-                <TableSpinner colSpan={5} />
+                <TableSpinner colSpan={6} />
               ) : pendingProfiles.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-stone-400">No pending applications</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-stone-400">No pending applications</td></tr>
               ) : pendingProfiles.map((c) => (
                 <tr
                   key={c.id}
@@ -533,7 +589,7 @@ export default function AdminCompaniesPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {c.logo_url ? (
-                        <img src={resolveImageUrl(c.logo_url)} alt="" className="w-8 h-8 rounded-lg object-contain bg-stone-100" />
+                        <SmartImage src={c.logo_url} alt="" className="w-8 h-8 rounded-lg object-contain bg-stone-100" />
                       ) : (
                         <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-sm font-semibold text-amber-600">
                           {c.company_name.charAt(0).toUpperCase()}
@@ -554,6 +610,7 @@ export default function AdminCompaniesPage() {
                     <div className="font-medium text-stone-800 text-xs">{c.user_name}</div>
                     <div className="text-xs text-stone-400">{c.user_email}</div>
                   </td>
+                  <td className="px-4 py-3 text-stone-700 font-medium">{c.project_count}</td>
                   <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}

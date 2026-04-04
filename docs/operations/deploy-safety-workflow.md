@@ -6,9 +6,11 @@ Last updated: 2026-04-04
 
 1. Always ask the user for explicit publish approval before any deploy.
 2. Read this document before deploying and confirm with `DEPLOY_RULES_ACK=YES`.
-3. Never upload hashed assets (`/assets/*.js`, `/assets/*.css`) to the web root.
-4. Keep remote structure identical to local `dist/` structure.
-5. After deploy, verify every asset referenced by `dist/index.html` returns HTTP 200.
+3. **Never run any Nginx command in normal deploy flow** (`nginx -t`, `systemctl reload nginx`, `systemctl restart nginx` are forbidden by default).
+4. Nginx commands are only allowed when user explicitly approves in current conversation and deploy command includes `ALLOW_NGINX_ACTIONS=YES`.
+5. Never upload hashed assets (`/assets/*.js`, `/assets/*.css`) to the web root.
+6. Keep remote structure identical to local `dist/` structure.
+7. After deploy, verify every asset referenced by `dist/index.html` returns HTTP 200.
 
 ## Required Command
 
@@ -18,6 +20,7 @@ DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh
 
 - `DEPLOY_RULES_ACK=YES`: confirms rules were read.
 - `DEPLOY_USER_APPROVED=YES`: confirms user approved this release.
+- `ALLOW_NGINX_ACTIONS=YES`: optional and **disabled by default**; only set when user explicitly asks to run Nginx commands.
 - If remote schema verify script is missing, use:
   `DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES SKIP_SCHEMA_CHECK=YES bash deploy-simple.sh`
 

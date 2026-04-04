@@ -9,6 +9,7 @@ test('buildPublicCompaniesListQuery embeds limit and offset and returns active c
   const result = buildPublicCompaniesListQuery({
     limit: 12,
     offset: 24,
+    orderMode: 'list',
   });
 
   assert.match(result.sql, /is_active = 1/);

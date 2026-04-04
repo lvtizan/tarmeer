@@ -33,7 +33,22 @@ import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminCon
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts } from '../controllers/complaintController';
-import { listCompanies, listCompanyApplications, reviewCompanyApplication, bindUserToCompany, unbindCompany, getScrapedCompany, editScrapedCompany, getCompanyProfile, editCompanyProfile, getCompanyFullDetail, getCompanyProfileFullDetail, updateCompanyDisplayOrder } from '../controllers/companyAdminController';
+import {
+  listCompanies,
+  listCompanyApplications,
+  reviewCompanyApplication,
+  bindUserToCompany,
+  unbindCompany,
+  getScrapedCompany,
+  editScrapedCompany,
+  getCompanyProfile,
+  editCompanyProfile,
+  getCompanyFullDetail,
+  getCompanyProfileFullDetail,
+  updateCompanyDisplayOrder,
+  updateCompanyHomeDisplayOrder,
+  updateCompanyListDisplayOrder,
+} from '../controllers/companyAdminController';
 import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -110,6 +125,8 @@ router.get('/notifications/counts', getNewCounts);
 // Company management
 router.get('/companies', listCompanies);
 router.put('/companies/:companyId/display-order', requirePermission('can_sort'), updateCompanyDisplayOrder);
+router.put('/companies/:companyId/home-display-order', requirePermission('can_sort'), updateCompanyHomeDisplayOrder);
+router.put('/companies/:companyId/list-display-order', requirePermission('can_sort'), updateCompanyListDisplayOrder);
 router.get('/company-applications', listCompanyApplications);
 router.put('/company-applications/:id/review', requirePermission('can_approve'), reviewCompanyApplication);
 router.post('/companies/:companyId/bind', requireSuperAdmin, bindUserToCompany);

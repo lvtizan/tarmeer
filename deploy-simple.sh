@@ -210,9 +210,15 @@ npm run build
 echo "📤 步骤 2/3: 增量同步文件到服务器..."
 run_rsync_to_remote "dist/" "${DEPLOY_PATH}/"
 
-# 3. 统一权限并重载 Nginx
-echo "🔐 步骤 3/3: 统一权限并重载 Nginx..."
-run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} + && find ${DEPLOY_PATH} -type f -exec chmod 644 {} + && nginx -t && systemctl reload nginx"
+# 3. 统一权限（默认禁止任何 Nginx 操作）
+echo "🔐 步骤 3/3: 统一权限..."
+if [[ "${ALLOW_NGINX_ACTIONS:-NO}" == "YES" ]]; then
+  echo "⚠️ 已显式开启 Nginx 操作：执行 nginx -t 与 reload"
+  run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} + && find ${DEPLOY_PATH} -type f -exec chmod 644 {} + && nginx -t && systemctl reload nginx"
+else
+  echo "🛡️ 按规则跳过 Nginx 命令（未设置 ALLOW_NGINX_ACTIONS=YES）"
+  run_ssh "find ${DEPLOY_PATH} -type d -exec chmod 755 {} + && find ${DEPLOY_PATH} -type f -exec chmod 644 {} +"
+fi
 
 # 4. 基础可用性检查
 echo "🩺 校验线上页面可用性..."

@@ -37,6 +37,17 @@ function rewriteKnownBrokenPortfolioPath(path: string): string {
   return HOTFIX_MAP[path] || path;
 }
 
+function rewriteAdminAbsoluteUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.startsWith('admin.')) return url;
+    parsed.hostname = `www.${parsed.hostname.replace(/^admin\./, '')}`;
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function imageDedupKey(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return '';
@@ -57,7 +68,7 @@ export function sanitizeImageUrl(value: unknown): string {
   const url = toTrimmedString(value);
   if (!url) return '';
   if (url.startsWith('data:')) return url;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return rewriteAdminAbsoluteUrl(url);
   if (url.startsWith('//')) return `https:${url}`;
   if (url.startsWith('/')) {
     const [path, query = ''] = url.split('?');

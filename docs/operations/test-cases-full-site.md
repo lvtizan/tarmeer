@@ -244,3 +244,13 @@
 ### TC-X.4: Logout clears state
 - Clears token, user, active_role, designer from localStorage
 - Redirects to /auth
+
+### TC-X.5: SmartImage extension fallback
+- Company list / detail / admin detail images must render via `SmartImage`
+- When a source uses wrong extension (e.g. `.png` missing but `.jpg` exists), image still shows after fallback
+- No persistent broken-image placeholder in UI after fallback attempts
+
+### TC-X.6: Admin subdomain image host rewrite
+- Open page under `https://admin.tarmeer.com/companies`
+- Static image URLs should resolve to public host route (not keep broken admin static path)
+- Expected: key logos/covers render; no continuous same-URL 404 spam

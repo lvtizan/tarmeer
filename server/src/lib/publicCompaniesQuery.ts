@@ -1,4 +1,7 @@
-export function buildPublicCompaniesListQuery(input: { limit: number; offset: number }) {
+export function buildPublicCompaniesListQuery(input: { limit: number; offset: number; orderMode: 'home' | 'list' }) {
+  const orderBy = input.orderMode === 'home'
+    ? 'COALESCE(home_display_order, 0) DESC, COALESCE(list_display_order, 0) DESC, google_rating DESC, google_reviews_count DESC, name_en ASC'
+    : 'COALESCE(list_display_order, 0) DESC, COALESCE(home_display_order, 0) DESC, google_rating DESC, google_reviews_count DESC, name_en ASC';
   return {
     sql: `SELECT
          id,
@@ -17,11 +20,13 @@ export function buildPublicCompaniesListQuery(input: { limit: number; offset: nu
          logo_url,
          portfolio_images,
          portfolio_images AS portfolio_categories,
+         home_display_order,
+         list_display_order,
          google_reviews_count,
          owner_user_id
        FROM uae_companies
        WHERE is_active = 1
-       ORDER BY google_rating DESC, google_reviews_count DESC, name_en ASC
+       ORDER BY ${orderBy}
        LIMIT ${input.limit} OFFSET ${input.offset}`,
     params: [],
   };

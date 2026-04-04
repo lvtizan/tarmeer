@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
-import { resolveImageUrl } from '../../lib/imageUrl';
 import { PageSpinner } from '../../components/ui/Spinner';
+import SmartImage from '../../components/ui/SmartImage';
 
 interface CompanyProfile {
   id: number;
@@ -160,8 +160,8 @@ export default function AdminRegisteredCompanyDetailPage() {
           {/* Header card */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
             {company.logo_url && (
-              <img
-                src={resolveImageUrl(company.logo_url)}
+              <SmartImage
+                src={company.logo_url}
                 alt={company.company_name}
                 className="w-16 h-16 rounded-xl object-contain bg-stone-50 border border-stone-100"
               />
@@ -304,8 +304,8 @@ export default function AdminRegisteredCompanyDetailPage() {
                 <div key={project.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group">
                   <div className="aspect-video bg-stone-100 overflow-hidden">
                     {project.images[0] ? (
-                      <img
-                        src={resolveImageUrl(project.images[0])}
+                      <SmartImage
+                        src={project.images[0]}
                         alt={project.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
