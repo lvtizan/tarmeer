@@ -66,7 +66,7 @@ function imageSet(startIndex: number, count = 3): string[] {
 
 const HBA_PORTFOLIO_IMAGES = Array.from(
   { length: 20 },
-  (_, index) => `/images/uae-companies/portfolio/hba-hirsch-bedner/general/${index + 1}${index === 0 ? '.png' : '.jpg'}`
+  (_, index) => `/images/uae-companies/portfolio/hba-hirsch-bedner/general/${index + 1}.jpg`
 );
 
 const BISHOP_DESIGN_IMAGES = Array.from(
@@ -83,10 +83,10 @@ const AL_HABTOOR_DESIGN_IMAGES = [
 ];
 
 const LW_DESIGN_IMAGES = [
-  '/images/uae-companies/portfolio/accouter-design/interior/11.jpg',
+  '/images/uae-companies/portfolio/accouter-design/interior/10.png',
   '/images/uae-companies/portfolio/accouter-design/interior/13.jpg',
-  '/images/uae-companies/portfolio/accouter-design/interior/15.jpg',
-  '/images/uae-companies/portfolio/accouter-design/interior/17.jpg',
+  '/images/uae-companies/portfolio/accouter-design/interior/15.png',
+  '/images/uae-companies/portfolio/accouter-design/interior/17.png',
   '/images/uae-companies/portfolio/accouter-design/interior/19.jpg',
 ];
 

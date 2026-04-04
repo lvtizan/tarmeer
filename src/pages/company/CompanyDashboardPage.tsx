@@ -15,6 +15,15 @@ const EMPTY:Profile = { company_name:'',description:'',contact_person:'',phone:'
 function pj(v:any):string[]{ if(Array.isArray(v))return v; if(typeof v==='string')try{return JSON.parse(v)}catch{return[]}; return[]; }
 function pp(r:any):Profile{ return{company_name:r.company_name||'',description:r.description||'',contact_person:r.contact_person||'',phone:r.phone||'',website:r.website||'',city:r.city||'Dubai',address:r.address||'',company_type:r.company_type||'renovation_company',trade_license_number:r.trade_license_number||'',establishment_year:r.establishment_year||null,services:pj(r.services),specialties:pj(r.specialties),status:r.status||'pending',admin_notes:r.admin_notes}; }
 
+function getPublicSiteBase(): string {
+  if (typeof window === 'undefined') return '';
+  const { hostname, protocol } = window.location;
+  if (hostname.startsWith('admin.')) {
+    return `${protocol}//www.${hostname.replace(/^admin\./, '')}`;
+  }
+  return '';
+}
+
 export default function CompanyDashboardPage() {
   const [profile, setProfile] = useState<Profile>(EMPTY);
   const [profileId, setProfileId] = useState<number | null>(null);
@@ -22,6 +31,7 @@ export default function CompanyDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveText, setSaveText] = useState('');
+  const publicSiteBase = getPublicSiteBase();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTextTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileRef = useRef(profile);
@@ -191,7 +201,10 @@ export default function CompanyDashboardPage() {
                 Save
               </button>
               {profileId && (
-                <a href={`/companies/${profileId}?preview=1&from=company-dashboard`} target="_blank" rel="noopener noreferrer"
+                <a
+                  href={`${publicSiteBase || ''}/companies/${profileId}?preview=1&from=company-dashboard`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition">
                   <Eye className="w-4 h-4" />Preview
                 </a>

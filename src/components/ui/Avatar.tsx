@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Camera } from 'lucide-react';
+import { resolveImageUrl } from '../../lib/imageUrl';
 
 interface AvatarProps {
   name: string;
@@ -70,9 +71,10 @@ export default function Avatar({ name, avatarUrl, size = 'md', className = '', o
   const wrapperClass = editable ? 'cursor-pointer' : '';
 
   const [imgFailed, setImgFailed] = useState(false);
+  const resolvedAvatarUrl = resolveImageUrl(avatarUrl || '');
 
   // 如果有头像URL且未加载失败，显示图片（使用 img 标签以便检测加载失败）
-  if (avatarUrl && !imgFailed) {
+  if (resolvedAvatarUrl && !imgFailed) {
     return (
       <div
         className={`relative inline-flex ${wrapperClass} ${className}`}
@@ -82,7 +84,7 @@ export default function Avatar({ name, avatarUrl, size = 'md', className = '', o
           className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm bg-stone-200`}
         >
           <img
-            src={avatarUrl}
+            src={resolvedAvatarUrl}
             alt={`${name} avatar`}
             className="w-full h-full object-cover"
             onError={() => setImgFailed(true)}

@@ -3,7 +3,8 @@ import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail }
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
-import { getNextRenderableImageIndex } from '../lib/imageCleanup';
+import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../lib/imageCleanup';
+import { resolveImageUrl } from '../lib/imageUrl';
 
 function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -49,10 +50,17 @@ function FilterOption({
 // List Card - Project First
 function CompanyCard({ company, onClick }: { company: Company; onClick: () => void }) {
   const [imgIndex, setImgIndex] = useState(0);
+  const [imgRetryIndex, setImgRetryIndex] = useState(0);
   const [failedIndices, setFailedIndices] = useState<number[]>([]);
   const images = company.projectImages;
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
-  const currentSrc = activeIndex === -1 ? '' : images[activeIndex];
+  const currentSrc = activeIndex === -1 ? '' : resolveImageUrl(images[activeIndex]);
+  const currentCandidates = getImageFallbackCandidates(currentSrc);
+  const displaySrc = currentCandidates[imgRetryIndex] || currentSrc;
+
+  useEffect(() => {
+    setImgRetryIndex(0);
+  }, [activeIndex]);
 
   const skipToNext = () => {
     if (activeIndex === -1) return;
@@ -62,7 +70,13 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
     if (nextIndex !== -1) setImgIndex(nextIndex);
   };
 
-  const handleImageError = () => skipToNext();
+  const handleImageError = () => {
+    if (imgRetryIndex < currentCandidates.length - 1) {
+      setImgRetryIndex((prev) => prev + 1);
+      return;
+    }
+    skipToNext();
+  };
 
   // Skip small/low-quality/banner images after they load
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -84,7 +98,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
       <div className="w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100">
         {currentSrc ? (
           <img
-            src={currentSrc}
+            src={displaySrc}
             alt={`${company.name} project`}
             className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
             onError={handleImageError}
@@ -102,7 +116,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
         <div>
           <div className="flex items-center gap-2.5 mb-1">
             {company.coverImage && company.coverImage.includes('/logos/') && (
-              <img src={company.coverImage} alt="" className="w-6 h-6 rounded object-contain bg-white flex-shrink-0"
+              <img src={resolveImageUrl(company.coverImage)} alt="" className="w-6 h-6 rounded object-contain bg-white flex-shrink-0"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             )}
             <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">

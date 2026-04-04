@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="py-3 px-4">
                       <Link to={`/admin/designers/${designer.id}`} className="flex items-center gap-3 hover:opacity-80 transition">
-                        {designer.avatar_url ? (
+                        {resolveImageUrl(designer.avatar_url) ? (
                           <img src={resolveImageUrl(designer.avatar_url)} alt="" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center">

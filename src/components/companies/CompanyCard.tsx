@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MapPin, Calendar, Instagram, Globe, Briefcase, Mail } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
-import { getNextRenderableImageIndex } from '../../lib/imageCleanup';
+import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
+import { resolveImageUrl } from '../../lib/imageUrl';
 
 interface CompanyCardProps {
   company: Company;
@@ -10,14 +11,25 @@ interface CompanyCardProps {
 
 export default function CompanyCard({ company }: CompanyCardProps) {
   const [imgIndex, setImgIndex] = useState(0);
+  const [imgRetryIndex, setImgRetryIndex] = useState(0);
   const [failedIndices, setFailedIndices] = useState<number[]>([]);
   const images = company.projectImages;
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
-  const currentSrc = activeIndex === -1 ? '' : images[activeIndex];
+  const currentSrc = activeIndex === -1 ? '' : resolveImageUrl(images[activeIndex]);
+  const currentCandidates = getImageFallbackCandidates(currentSrc);
+  const displaySrc = currentCandidates[imgRetryIndex] || currentSrc;
   const hasMultiple = images.length > 1;
   const hasImage = Boolean(currentSrc);
 
+  useEffect(() => {
+    setImgRetryIndex(0);
+  }, [activeIndex]);
+
   const handleImageError = () => {
+    if (imgRetryIndex < currentCandidates.length - 1) {
+      setImgRetryIndex((prev) => prev + 1);
+      return;
+    }
     if (activeIndex === -1) return;
     const nextFailed = failedIndices.includes(activeIndex)
       ? failedIndices
@@ -41,7 +53,7 @@ export default function CompanyCard({ company }: CompanyCardProps) {
       >
         {hasImage ? (
           <img
-            src={currentSrc}
+            src={displaySrc}
             alt={`Project by ${company.name}`}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-500"
             onError={handleImageError}
@@ -74,7 +86,7 @@ export default function CompanyCard({ company }: CompanyCardProps) {
                 idx === activeIndex ? 'border-[#c6a065]' : 'border-transparent hover:border-stone-300'
               }`}
             >
-              <img src={img} alt={`${company.name} project ${idx + 1}`} className="w-full h-full object-cover" />
+              <img src={resolveImageUrl(img)} alt={`${company.name} project ${idx + 1}`} className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

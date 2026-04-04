@@ -7,8 +7,34 @@ const SEED_AVATAR_IDS = new Set([
   'photo-1573496359142-b8d87734a5a2',
 ]);
 
+function getRootStaticBase(): string {
+  if (typeof window === 'undefined') return '';
+  const { hostname, protocol } = window.location;
+  if (hostname.startsWith('admin.')) {
+    return `${protocol}//www.${hostname.replace(/^admin\./, '')}`;
+  }
+  return '';
+}
+
+const ROOT_STATIC_BASE = getRootStaticBase();
+
 function toTrimmedString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function rewriteKnownBrokenPortfolioPath(path: string): string {
+  const HOTFIX_MAP: Record<string, string> = {
+    '/images/uae-companies/portfolio/hba-hirsch-bedner/general/1.png':
+      '/images/uae-companies/portfolio/hba-hirsch-bedner/general/1.jpg',
+    '/images/uae-companies/portfolio/appello-interiors/interior/1.png':
+      '/images/uae-companies/portfolio/appello-interiors/interior/1.jpg',
+    '/images/uae-companies/portfolio/appello-interiors/cafe/1.png':
+      '/images/uae-companies/portfolio/appello-interiors/cafe/1.jpg',
+    '/images/uae-companies/portfolio/eminent-interio/office/1.png':
+      '/images/uae-companies/portfolio/eminent-interio/office/1.jpg',
+  };
+
+  return HOTFIX_MAP[path] || path;
 }
 
 export function imageDedupKey(url: string): string {
@@ -33,7 +59,12 @@ export function sanitizeImageUrl(value: unknown): string {
   if (url.startsWith('data:')) return url;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('//')) return `https:${url}`;
-  if (url.startsWith('/')) return url;
+  if (url.startsWith('/')) {
+    const [path, query = ''] = url.split('?');
+    const rewritten = rewriteKnownBrokenPortfolioPath(path);
+    const normalized = query ? `${rewritten}?${query}` : rewritten;
+    return ROOT_STATIC_BASE ? `${ROOT_STATIC_BASE}${normalized}` : normalized;
+  }
   if (url.startsWith('./')) return `/${url.replace(/^\.\/+/, '')}`;
   if (url.startsWith('www.')) return `https://${url}`;
   if (url.startsWith('public/images/')) return `/${url.replace(/^public\//, '')}`;
@@ -112,6 +143,25 @@ export function getNextRenderableImageIndex(
   }
 
   return -1;
+}
+
+export function getImageFallbackCandidates(url: string): string[] {
+  const trimmed = url.trim();
+  if (!trimmed) return [];
+
+  const EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
+  const match = trimmed.match(/\.(png|jpe?g|webp|avif)(\?.*)?$/i);
+  if (!match) return [trimmed];
+
+  const originalExt = match[1].toLowerCase();
+  const query = match[2] || '';
+  const base = trimmed.slice(0, trimmed.length - match[0].length);
+  const candidates = [trimmed];
+  for (const ext of EXTENSIONS) {
+    if (ext === originalExt) continue;
+    candidates.push(`${base}.${ext}${query}`);
+  }
+  return candidates;
 }
 
 function moveImageToFront(images: string[], targetIndex: number): string[] {

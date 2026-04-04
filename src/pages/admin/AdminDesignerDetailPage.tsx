@@ -146,7 +146,7 @@ export default function AdminDesignerDetailPage() {
       <div className="bg-white rounded-lg border border-stone-200 p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <div className="flex items-start gap-4">
-            {designer.avatar_url ? (
+            {resolveImageUrl(designer.avatar_url) ? (
               <img src={resolveImageUrl(designer.avatar_url)} alt="" className="w-16 h-16 rounded-full object-cover" />
             ) : (
               <div className="w-16 h-16 rounded-full bg-stone-200 flex items-center justify-center text-xl font-semibold text-stone-500">

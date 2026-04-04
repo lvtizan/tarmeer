@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
 import { fetchPublicCompanies } from '../../lib/publicApi';
-import { getNextRenderableImageIndex } from '../../lib/imageCleanup';
+import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
+import { resolveImageUrl } from '../../lib/imageUrl';
 
 const HERO_IMAGES = [
   '/images/uae-companies/portfolio/hba-hirsch-bedner/general/6.jpg',
@@ -14,19 +15,30 @@ const HERO_IMAGES = [
 
 function StudioImage({ company, className }: { company: Company; className: string }) {
   const [imgIndex, setImgIndex] = useState(0);
+  const [imgRetryIndex, setImgRetryIndex] = useState(0);
   const [failedIndices, setFailedIndices] = useState<number[]>([]);
   const images = company.projectImages;
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
-  const currentSrc = activeIndex === -1 ? '' : images[activeIndex];
+  const currentSrc = activeIndex === -1 ? '' : resolveImageUrl(images[activeIndex]);
+  const currentCandidates = getImageFallbackCandidates(currentSrc);
+  const displaySrc = currentCandidates[imgRetryIndex] || currentSrc;
+
+  useEffect(() => {
+    setImgRetryIndex(0);
+  }, [activeIndex]);
 
   return (
     <div className={`relative overflow-hidden bg-stone-100 ${className}`}>
       {currentSrc ? (
         <img
-          src={currentSrc}
+          src={displaySrc}
           alt={company.name}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           onError={() => {
+            if (imgRetryIndex < currentCandidates.length - 1) {
+              setImgRetryIndex((prev) => prev + 1);
+              return;
+            }
             if (activeIndex !== -1) {
               setFailedIndices((prev) => [...prev, activeIndex]);
               const next = getNextRenderableImageIndex(images, activeIndex + 1, [...failedIndices, activeIndex]);
@@ -109,7 +121,7 @@ export default function HomeDesignSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="relative mb-7 overflow-hidden rounded-[28px] border border-stone-200 bg-[#0f0f0d] min-h-[210px] sm:mb-8 sm:min-h-[240px]">
           <img
-            src={HERO_IMAGES[heroImageIndex]}
+            src={resolveImageUrl(HERO_IMAGES[heroImageIndex])}
             alt="Premium design and build spaces across the Middle East"
             className="absolute inset-0 h-full w-full object-cover"
           />

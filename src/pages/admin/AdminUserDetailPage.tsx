@@ -80,7 +80,7 @@ export default function AdminUserDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          {user.avatar_url ? (
+          {resolveImageUrl(user.avatar_url) ? (
             <img src={resolveImageUrl(user.avatar_url)} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-stone-200" />
           ) : (
             <div className="w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 text-xl font-bold">

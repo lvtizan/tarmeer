@@ -10,7 +10,22 @@ function sanitizeCompanyImage(value: unknown) {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
   if (url.startsWith('//')) return `https:${url}`;
-  if (url.startsWith('/')) return url;
+  if (url.startsWith('/')) {
+    // Hotfix known historical wrong extensions in scraped dataset
+    if (url === '/images/uae-companies/portfolio/hba-hirsch-bedner/general/1.png') {
+      return '/images/uae-companies/portfolio/hba-hirsch-bedner/general/1.jpg';
+    }
+    if (url === '/images/uae-companies/portfolio/appello-interiors/interior/1.png') {
+      return '/images/uae-companies/portfolio/appello-interiors/interior/1.jpg';
+    }
+    if (url === '/images/uae-companies/portfolio/appello-interiors/cafe/1.png') {
+      return '/images/uae-companies/portfolio/appello-interiors/cafe/1.jpg';
+    }
+    if (url === '/images/uae-companies/portfolio/eminent-interio/office/1.png') {
+      return '/images/uae-companies/portfolio/eminent-interio/office/1.jpg';
+    }
+    return url;
+  }
   if (url.startsWith('./')) return `/${url.replace(/^\.\/+/, '')}`;
   if (url.startsWith('www.')) return `https://${url}`;
   if (url.startsWith('public/images/')) return `/${url.replace(/^public\//, '')}`;

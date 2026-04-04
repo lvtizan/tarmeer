@@ -4,6 +4,7 @@ import { companies as localCompanies } from '../data/companies';
 import { api } from './api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const ALLOW_LOCAL_FALLBACK = import.meta.env.DEV;
 
 export interface PublicDesignerCardData {
   id: string;
@@ -60,6 +61,30 @@ interface PublicCompanyRecord {
   projects?: any[];
   portfolio_categories?: Record<string, { url: string; title: string }[]>;
   is_claimed?: boolean;
+}
+
+function sanitizePortfolioCategories(
+  categories: unknown
+): Record<string, { url: string; title: string }[]> {
+  if (!categories || typeof categories !== 'object' || Array.isArray(categories)) return {};
+  const output: Record<string, { url: string; title: string }[]> = {};
+  for (const [key, rawItems] of Object.entries(categories as Record<string, unknown>)) {
+    if (!Array.isArray(rawItems)) continue;
+    const items = rawItems
+      .map((item) => {
+        if (!item || typeof item !== 'object') return null;
+        const rawUrl = (item as any).url;
+        const [safeUrl] = sanitizeImageUrls([rawUrl]);
+        if (!safeUrl) return null;
+        return {
+          url: safeUrl,
+          title: typeof (item as any).title === 'string' ? (item as any).title : '',
+        };
+      })
+      .filter(Boolean) as { url: string; title: string }[];
+    if (items.length) output[key] = items;
+  }
+  return output;
 }
 
 function parseJsonArray(value: unknown): string[] {
@@ -188,7 +213,7 @@ function toCompany(company: PublicCompanyRecord): Company {
   let projectImages: string[] = [];
 
   if (company.portfolio_categories && typeof company.portfolio_categories === 'object' && !Array.isArray(company.portfolio_categories)) {
-    portfolioCategories = company.portfolio_categories;
+    portfolioCategories = sanitizePortfolioCategories(company.portfolio_categories);
     // Extract flat image list from categories for listing pages, filtering low-quality
     projectImages = Object.values(portfolioCategories)
       .flatMap(items => items.map(item => item.url))
@@ -259,7 +284,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     projectCount: company.project_count || (Array.isArray(company.projects) ? company.projects.length : projectImages.length),
     services: parseUnknownStringArray(company.services),
     featured: false,
-    coverImage: company.logo_url || '', // logo for small badge
+    coverImage: sanitizeImageUrls([company.logo_url])[0] || '', // logo for small badge
     projectImages, // flat list from all categories for listing/card display
     portfolioCategories,
     isClaimed: !!company.is_claimed,
@@ -268,48 +293,35 @@ function toCompany(company: PublicCompanyRecord): Company {
 
 export async function fetchPublicCompanies(limit = 50): Promise<Company[]> {
   try {
-    const [approvedRes, directoryRes] = await Promise.allSettled([
-      request<{ companies: PublicCompanyRecord[] }>(`/public/companies?limit=${limit}`),
-      request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}`),
-    ]);
-
-    const approvedCompanies = approvedRes.status === 'fulfilled'
-      ? (approvedRes.value.companies || []).map(toCompany)
-      : [];
-    const directoryCompanies = directoryRes.status === 'fulfilled'
-      ? (directoryRes.value.companies || []).map(toCompany)
-      : [];
-
-    // Put approved companies first (sorted by display_order on backend), then append non-duplicate directory entries.
-    const seenByName = new Set(approvedCompanies.map((c) => c.name.trim().toLowerCase()));
-    const merged = [
-      ...approvedCompanies,
-      ...directoryCompanies.filter((c) => !seenByName.has(c.name.trim().toLowerCase())),
-    ];
-
-    if (merged.length > 0) return merged;
+    const directoryResult = await request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}`);
+    const companies = (directoryResult.companies || []).map(toCompany);
+    if (companies.length > 0) return companies;
     throw new Error('No company source available');
   } catch (error) {
-    console.warn('[publicApi] API unavailable, using local data:', error instanceof Error ? error.message : error);
-    // Fallback to local static data
-    return localCompanies.slice(0, limit);
+    if (ALLOW_LOCAL_FALLBACK) {
+      console.warn('[publicApi] API unavailable in DEV, using local data:', error instanceof Error ? error.message : error);
+      return localCompanies.slice(0, limit);
+    }
+    throw error instanceof Error ? error : new Error('Failed to load companies.');
   }
 }
 
 export async function fetchPublicCompanyDetail(slug: string): Promise<Company> {
   try {
-    const approvedResult = await request<{ company: PublicCompanyRecord }>(`/public/companies/${slug}`);
-    return toCompany(approvedResult.company);
+    const directoryResult = await request<{ company: PublicCompanyRecord }>(`/companies/${slug}`);
+    return toCompany(directoryResult.company);
   } catch (error) {
     try {
-      const directoryResult = await request<{ company: PublicCompanyRecord }>(`/companies/${slug}`);
-      return toCompany(directoryResult.company);
+      const approvedResult = await request<{ company: PublicCompanyRecord }>(`/public/companies/${slug}`);
+      return toCompany(approvedResult.company);
     } catch {
-      const normalizedSlug = String(slug || '').trim().toLowerCase();
-      const fallback = localCompanies.find((company) => company.id.toLowerCase() === normalizedSlug);
-      if (fallback) {
-        console.warn('[publicApi] Company detail API unavailable, using local data:', normalizedSlug);
-        return fallback;
+      if (ALLOW_LOCAL_FALLBACK) {
+        const normalizedSlug = String(slug || '').trim().toLowerCase();
+        const fallback = localCompanies.find((company) => company.id.toLowerCase() === normalizedSlug);
+        if (fallback) {
+          console.warn('[publicApi] Company detail API unavailable in DEV, using local data:', normalizedSlug);
+          return fallback;
+        }
       }
       throw error;
     }

@@ -17,6 +17,20 @@ function getUploadsBase(): string {
 
 const UPLOADS_BASE = getUploadsBase();
 
+function rewriteKnownBrokenPath(path: string): string {
+  const HOTFIX_MAP: Record<string, string> = {
+    '/images/uae-companies/portfolio/hba-hirsch-bedner/general/1.png':
+      '/images/uae-companies/portfolio/hba-hirsch-bedner/general/1.jpg',
+    '/images/uae-companies/portfolio/appello-interiors/interior/1.png':
+      '/images/uae-companies/portfolio/appello-interiors/interior/1.jpg',
+    '/images/uae-companies/portfolio/appello-interiors/cafe/1.png':
+      '/images/uae-companies/portfolio/appello-interiors/cafe/1.jpg',
+    '/images/uae-companies/portfolio/eminent-interio/office/1.png':
+      '/images/uae-companies/portfolio/eminent-interio/office/1.jpg',
+  };
+  return HOTFIX_MAP[path] || path;
+}
+
 export function resolveImageUrl(url: string | null | undefined): string {
   if (!url) return '';
   const trimmed = url.trim();
@@ -34,6 +48,17 @@ export function resolveImageUrl(url: string | null | undefined): string {
     normalized = `/${normalized.replace(/^public\//, '')}`;
   } else if (normalized.startsWith('images/') || normalized.startsWith('uploads/')) {
     normalized = `/${normalized}`;
+  }
+
+  // Ignore legacy seeded avatars that no longer exist in production static files.
+  if (/^\/images\/showcase\/avatar-\d+\.(png|jpe?g|webp)$/i.test(normalized)) {
+    return '';
+  }
+
+  if (normalized.startsWith('/')) {
+    const [path, query = ''] = normalized.split('?');
+    const rewritten = rewriteKnownBrokenPath(path);
+    normalized = query ? `${rewritten}?${query}` : rewritten;
   }
 
   if (normalized.startsWith('/') && UPLOADS_BASE) {

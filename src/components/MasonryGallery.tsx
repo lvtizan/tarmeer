@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PortfolioCategories, PortfolioItem } from '../lib/companyData';
+import { resolveImageUrl } from '../lib/imageUrl';
+import { getImageFallbackCandidates } from '../lib/imageCleanup';
 
 const ITEMS_PER_PAGE = 12;
 const THUMB_SIZE = 16; // canvas thumbnail size for fingerprinting
@@ -171,6 +173,8 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
           >
             {visibleItems.map((item, i) => {
               const delay = Math.min(i * 0.04, 0.5);
+              const primarySrc = resolveImageUrl(item.url);
+              const fallbackCandidates = getImageFallbackCandidates(primarySrc);
               return (
                 <motion.div
                   key={`${item.categoryName}-${item.indexInCategory}`}
@@ -187,7 +191,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                   }}
                 >
                   <img
-                    src={item.url}
+                    src={primarySrc}
                     alt={item.title || `${item.categoryName} project`}
                     loading="lazy"
                     className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
@@ -225,7 +229,15 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                       }
                     }}
                     onError={(e) => {
-                      (e.currentTarget.closest('.break-inside-avoid') as HTMLElement | null)?.classList.add('hidden');
+                      const current = e.currentTarget;
+                      const retryIndex = Number(current.dataset.retryIndex || '0');
+                      if (retryIndex < fallbackCandidates.length - 1) {
+                        const nextRetry = retryIndex + 1;
+                        current.dataset.retryIndex = String(nextRetry);
+                        current.src = fallbackCandidates[nextRetry];
+                        return;
+                      }
+                      (current.closest('.break-inside-avoid') as HTMLElement | null)?.classList.add('hidden');
                     }}
                   />
                   {/* Hover overlay */}

@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PortfolioItem } from '../lib/companyData';
+import { resolveImageUrl } from '../lib/imageUrl';
+import { getImageFallbackCandidates } from '../lib/imageCleanup';
 
 interface LightboxProps {
   open: boolean;
@@ -64,6 +66,7 @@ export default function Lightbox({
   if (!open || images.length === 0) return null;
 
   const currentImage = images[currentIndex];
+  const currentImageCandidates = getImageFallbackCandidates(resolveImageUrl(currentImage.url));
 
   return (
     <AnimatePresence>
@@ -124,9 +127,17 @@ export default function Lightbox({
                 onClick={(e) => e.stopPropagation()}
               >
                 <img
-                  src={currentImage.url}
+                  src={currentImageCandidates[0] || ''}
                   alt={currentImage.title || `Image ${currentIndex + 1}`}
                   className="max-w-[92vw] max-h-[82vh] object-contain rounded-lg"
+                  onError={(e) => {
+                    const retryIndex = Number(e.currentTarget.dataset.retryIndex || '0');
+                    if (retryIndex < currentImageCandidates.length - 1) {
+                      const next = retryIndex + 1;
+                      e.currentTarget.dataset.retryIndex = String(next);
+                      e.currentTarget.src = currentImageCandidates[next];
+                    }
+                  }}
                 />
                 {currentImage.title && (
                   <p className="text-sm text-white/80 text-center max-w-md">
@@ -159,6 +170,9 @@ export default function Lightbox({
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {images.map((image, index) => (
+                (() => {
+                  const thumbCandidates = getImageFallbackCandidates(resolveImageUrl(image.url));
+                  return (
                 <button
                   key={index}
                   data-active={index === currentIndex ? 'true' : 'false'}
@@ -171,11 +185,21 @@ export default function Lightbox({
                   aria-label={`Go to image ${index + 1}`}
                 >
                   <img
-                    src={image.url}
+                    src={thumbCandidates[0] || ''}
                     alt={image.title || `Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const retryIndex = Number(e.currentTarget.dataset.retryIndex || '0');
+                      if (retryIndex < thumbCandidates.length - 1) {
+                        const next = retryIndex + 1;
+                        e.currentTarget.dataset.retryIndex = String(next);
+                        e.currentTarget.src = thumbCandidates[next];
+                      }
+                    }}
                   />
                 </button>
+                  );
+                })()
               ))}
             </div>
           </div>

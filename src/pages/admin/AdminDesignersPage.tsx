@@ -536,7 +536,7 @@ export default function AdminDesignersPage() {
                   )}
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      {designer.avatar_url ? (
+                      {resolveImageUrl(designer.avatar_url) ? (
                         <img
                           src={resolveImageUrl(designer.avatar_url)}
                           alt=""
@@ -672,7 +672,7 @@ export default function AdminDesignersPage() {
                   className="w-full h-8 rounded border border-stone-200 px-2 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/35 focus:border-[#b8864a]"
                 />
               </div>
-              {designer.avatar_url ? (
+              {resolveImageUrl(designer.avatar_url) ? (
                 <img src={resolveImageUrl(designer.avatar_url)} alt="" className="w-10 h-10 rounded-full object-cover" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center">
