@@ -134,7 +134,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-[#faf9f7] flex">
       {/* Sidebar - match DesignerLayout style */}
-      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-y-auto overflow-x-visible">
+      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-visible">
         {/* Logo - match designer: icon in rounded box + title */}
         <Link to="/" className="h-16 flex items-center px-6 border-b border-stone-200 hover:bg-stone-50 transition-colors">
           <div
@@ -147,7 +147,7 @@ export default function AdminLayout() {
         </Link>
 
         {/* Navigation - active: left border + light bg like designer */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto overflow-x-visible">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const notifKey = NOTIFICATION_MAP[item.to];
