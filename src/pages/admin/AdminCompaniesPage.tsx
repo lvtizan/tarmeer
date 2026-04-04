@@ -377,7 +377,7 @@ export default function AdminCompaniesPage() {
                   <tr
                     key={c.id}
                     className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
-                    onClick={() => navigate(`/admin/profile-companies/${c.id}`)}
+                    onClick={() => navigate(`/admin/profile-companies/${c.id}?tab=companies`)}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -636,7 +636,7 @@ export default function AdminCompaniesPage() {
                 <tr
                   key={c.id}
                   className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
-                  onClick={() => navigate(`/admin/profile-companies/${c.id}`)}
+                  onClick={() => navigate(`/admin/profile-companies/${c.id}?tab=applications`)}
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -64,6 +64,7 @@ function parseJsonArray(val: string | null | undefined): string[] {
 export default function AdminRegisteredCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { hasPermission } = useAdmin();
   const canApprove = hasPermission('can_approve');
 
@@ -130,7 +131,7 @@ export default function AdminRegisteredCompanyDetailPage() {
     }
   };
 
-  const backTab = 'companies';
+  const backTab = searchParams.get('tab') === 'applications' ? 'applications' : 'applications';
 
   if (loading) return <PageSpinner />;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
