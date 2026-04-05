@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -131,7 +132,11 @@ export default function AdminRegisteredCompanyDetailPage() {
     }
   };
 
-  const backTab = searchParams.get('tab') === 'applications' ? 'applications' : 'applications';
+  const backTab = (() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'applications' || tab === 'directory') return tab;
+    return 'companies';
+  })();
 
   if (loading) return <PageSpinner />;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
@@ -168,7 +173,19 @@ export default function AdminRegisteredCompanyDetailPage() {
               />
             )}
             <div>
-              <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+                <a
+                  href={`/companies/${company.id}?admin_preview=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
+                  title="Preview company page"
+                >
+                  <ExternalLink size={14} />
+                  Preview
+                </a>
+              </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
                   {company.company_type === 'design_studio' ? 'Design Studio' : 'Renovation Company'}
@@ -258,12 +275,6 @@ export default function AdminRegisteredCompanyDetailPage() {
             <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Owner Account</h2>
             <div className="font-medium text-stone-800">{company.user_name}</div>
             <div className="text-stone-500">{company.user_email}</div>
-            <button
-              onClick={() => navigate(`/admin/users/${company.user_id}`)}
-              className="mt-2 text-xs text-[#b8864a] hover:underline"
-            >
-              View user profile →
-            </button>
           </div>
         </div>
 

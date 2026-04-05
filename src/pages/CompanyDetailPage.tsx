@@ -7,7 +7,7 @@ import {
   Share2, ExternalLink, X,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
-import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies } from '../lib/publicApi';
+import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies, fetchAdminCompanyPreview } from '../lib/publicApi';
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
 import MasonryGallery from '../components/MasonryGallery';
 import Lightbox from '../components/Lightbox';
@@ -19,9 +19,14 @@ export default function CompanyDetailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const previewMode = searchParams.get('preview') === '1';
+  const adminPreview = searchParams.get('admin_preview') === '1';
   const from = searchParams.get('from');
-  const backTo = previewMode || from === 'company-dashboard' ? '/company/dashboard' : '/companies';
-  const backLabel = previewMode || from === 'company-dashboard' ? 'Back to Company Dashboard' : 'Back to Companies';
+  const backTo = adminPreview
+    ? `/admin/profile-companies/${id}?tab=companies`
+    : previewMode || from === 'company-dashboard' ? '/company/dashboard' : '/companies';
+  const backLabel = adminPreview
+    ? 'Back to Admin'
+    : previewMode || from === 'company-dashboard' ? 'Back to Company Dashboard' : 'Back to Companies';
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -60,16 +65,18 @@ export default function CompanyDetailPage() {
     setAboutExpanded(false);
     window.scrollTo(0, 0);
 
-    const detailRequest = previewMode
-      ? fetchCompanyPreviewDetail(id)
-      : fetchPublicCompanyDetail(id);
+    const detailRequest = adminPreview
+      ? fetchAdminCompanyPreview(id)
+      : previewMode
+        ? fetchCompanyPreviewDetail(id)
+        : fetchPublicCompanyDetail(id);
 
     detailRequest
       .then((item) => { if (active) setCompany(item); })
       .catch((error) => { if (active) setLoadError(error instanceof Error ? error.message : 'Failed to load'); })
       .finally(() => { if (active) setLoading(false); });
 
-    if (!previewMode) {
+    if (!previewMode && !adminPreview) {
       fetchPublicCompanies(100)
         .then((all) => { if (active) setSimilarCompanies(all); })
         .catch(() => {});

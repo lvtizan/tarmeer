@@ -122,6 +122,8 @@ export async function getNewCounts(req: any, res: any) {
     let newComplaints = 0;
     let newDesignerApps = 0;
     let newCompanyApps = 0;
+    let newInquiries = 0;
+    let newUsers = 0;
 
     try {
       newComplaints = await countBySql(`SELECT COUNT(*) as count FROM complaints WHERE status = 'pending'`);
@@ -140,12 +142,24 @@ export async function getNewCounts(req: any, res: any) {
     }
 
     try {
-      newCompanyApps = await countBySql(`SELECT COUNT(*) as count FROM company_profiles WHERE status = 'pending'`);
+      newCompanyApps = await countBySql(`SELECT COUNT(*) as count FROM company_profiles WHERE status = 'pending' AND deleted_at IS NULL`);
     } catch (error: any) {
       if (!isRecoverableSchemaError(error)) throw error;
     }
 
-    res.json({ newComplaints, newDesignerApps, newCompanyApps });
+    try {
+      newInquiries = await countBySql(`SELECT COUNT(*) as count FROM inquiries WHERE status = 'new'`);
+    } catch (error: any) {
+      if (!isRecoverableSchemaError(error)) throw error;
+    }
+
+    try {
+      newUsers = await countBySql(`SELECT COUNT(*) as count FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`);
+    } catch (error: any) {
+      if (!isRecoverableSchemaError(error)) throw error;
+    }
+
+    res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers });
   } catch (error) {
     console.error('Get new counts error:', error);
     res.status(500).json({ error: 'Failed to get notification counts.' });

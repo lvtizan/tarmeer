@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
@@ -59,6 +59,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AdminCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [company, setCompany] = useState<CompanyDetail | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,12 +94,13 @@ export default function AdminCompanyDetailPage() {
 
   const services = parseJsonArray(company.services);
   const specialties = parseJsonArray(company.specialties);
+  const backTab = searchParams.get('tab') || 'directory';
 
   return (
     <div className="space-y-4">
       {/* Back button */}
       <button
-        onClick={() => navigate('/admin/companies?tab=directory')}
+        onClick={() => navigate(`/admin/companies?tab=${backTab}`)}
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -177,12 +179,6 @@ export default function AdminCompanyDetailPage() {
               <div className="space-y-1">
                 <div className="font-medium text-stone-800">{company.owner_name}</div>
                 <div className="text-stone-500">{company.owner_email}</div>
-                <button
-                  onClick={() => navigate(`/admin/users/${company.owner_id}`)}
-                  className="mt-2 text-xs text-[#b8864a] hover:underline"
-                >
-                  View user profile →
-                </button>
               </div>
             ) : (
               <p className="text-stone-400 text-xs">Not claimed</p>

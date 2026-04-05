@@ -32,7 +32,8 @@ cp -r server/schema "$TMP_DEPLOY/"
 cp server/.env.example "$TMP_DEPLOY/.env.example" 2>/dev/null || true
 
 echo "Deploying backend to ${DEPLOY_USER}@${DEPLOY_HOST}:${BACKEND_PATH}..."
-ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${BACKEND_PATH} && rm -rf ${BACKEND_PATH}/*"
+# 只清理代码目录，保留 public/uploads（用户上传的文件）和 .env（环境配置）
+ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${BACKEND_PATH} && cd ${BACKEND_PATH} && rm -rf dist schema node_modules package.json package-lock.json .env.example"
 (cd "$TMP_DEPLOY" && tar czf - .) | ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "cd ${BACKEND_PATH} && tar xzf -"
 rm -rf "$TMP_DEPLOY"
 

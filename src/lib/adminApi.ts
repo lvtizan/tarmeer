@@ -511,12 +511,14 @@ class AdminApiClient {
   }
 
   // Company management
-  async getCompanies(params?: { page?: number; limit?: number; claimed?: string; search?: string }) {
+  async getCompanies(params?: { page?: number; limit?: number; claimed?: string; search?: string; sort_by?: string; sort_dir?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.claimed) query.set('claimed', params.claimed);
     if (params?.search) query.set('search', params.search);
+    if (params?.sort_by) query.set('sort_by', params.sort_by);
+    if (params?.sort_dir) query.set('sort_dir', params.sort_dir);
     return this.request(`/companies?${query.toString()}`);
   }
 
@@ -534,13 +536,15 @@ class AdminApiClient {
     });
   }
 
-  async getRegisteredCompanies(params?: { page?: number; limit?: number; status?: string; company_type?: string; search?: string }) {
+  async getRegisteredCompanies(params?: { page?: number; limit?: number; status?: string; company_type?: string; search?: string; sort_by?: string; sort_dir?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.status) query.set('status', params.status);
     if (params?.company_type) query.set('company_type', params.company_type);
     if (params?.search) query.set('search', params.search);
+    if (params?.sort_by) query.set('sort_by', params.sort_by);
+    if (params?.sort_dir) query.set('sort_dir', params.sort_dir);
     return this.request(`/roles/companies?${query.toString()}`);
   }
 

@@ -402,3 +402,61 @@ export async function fetchCompanyPreviewDetail(profileId: string): Promise<Comp
     isClaimed: true,
   };
 }
+
+export async function fetchAdminCompanyPreview(profileId: string): Promise<Company> {
+  const adminToken = localStorage.getItem('admin_token');
+  if (!adminToken) {
+    throw new Error('Admin login required for preview.');
+  }
+
+  const res = await fetch(`${API_BASE}/admin/roles/companies/${profileId}/full-detail`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to load company preview.');
+  }
+
+  const { company: profile, projects } = await res.json();
+
+  const categories: PortfolioCategories = {};
+  const allImages: string[] = [];
+
+  (projects || []).forEach((project: any) => {
+    const projectImages = sanitizeImageUrls(parseJsonArray(project.images));
+    if (!projectImages.length) return;
+    const category = String(project.style || 'Projects');
+    const titleBase = String(project.title || 'Project');
+    const items = projectImages.map((url: string, idx: number) => ({
+      url,
+      title: projectImages.length > 1 ? `${titleBase} ${idx + 1}` : titleBase,
+    }));
+    categories[category] = [...(categories[category] || []), ...items];
+    allImages.push(...projectImages);
+  });
+
+  const services = parseJsonArray(profile.services);
+  const specialties = parseJsonArray(profile.specialties);
+
+  return {
+    id: String(profile.id),
+    name: String(profile.company_name || 'Company'),
+    description: String(profile.description || ''),
+    shortDescription: summarizeCompanyDescription(String(profile.description || '')),
+    city: String(profile.city || 'UAE'),
+    address: String(profile.address || 'UAE'),
+    foundedYear: normalizeFoundedYear(profile.establishment_year),
+    website: String(profile.website || ''),
+    instagram: '',
+    phone: String(profile.phone || ''),
+    email: '',
+    styles: specialties,
+    projectCount: projects?.length || allImages.length,
+    services,
+    featured: false,
+    coverImage: String(profile.logo_url || ''),
+    projectImages: allImages,
+    portfolioCategories: categories,
+    isClaimed: true,
+  };
+}

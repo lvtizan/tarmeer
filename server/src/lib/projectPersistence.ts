@@ -25,6 +25,29 @@ type ProjectPersistenceValues = {
 };
 
 export const PROJECT_IMAGES_REQUIRED_ERROR = 'PROJECT_IMAGES_REQUIRED';
+export const BASE64_IMAGES_NOT_ALLOWED_ERROR = 'BASE64_IMAGES_NOT_ALLOWED';
+
+/**
+ * CRITICAL: Validate that images are NOT stored as base64 in the database.
+ * All base64 images MUST be converted to file URLs via persistProjectImages() BEFORE this point.
+ *
+ * Background: Base64 images cause:
+ * - 10-17MB per project in database (comparison: file URLs are <1KB)
+ * - MySQL sort_buffer_size overflow errors
+ * - API response timeouts
+ * - Network bandwidth waste
+ */
+function validateNoBase64Images(images: unknown): void {
+  if (!Array.isArray(images)) {
+    return;
+  }
+
+  for (const image of images) {
+    if (typeof image === 'string' && image.startsWith('data:')) {
+      throw new Error(BASE64_IMAGES_NOT_ALLOWED_ERROR);
+    }
+  }
+}
 
 function toNullableString(value: unknown) {
   if (value === undefined || value === null) {
@@ -67,6 +90,9 @@ export function assertProjectHasImages(value: unknown): string[] {
 
 export function buildProjectPersistenceValues(input: ProjectPersistenceInput): ProjectPersistenceValues {
   const normalizedImages = assertProjectHasImages(input.images);
+
+  // CRITICAL: Prevent base64 images from entering the database
+  validateNoBase64Images(normalizedImages);
 
   return {
     title: input.title,

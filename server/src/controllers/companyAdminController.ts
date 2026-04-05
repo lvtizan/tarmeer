@@ -239,7 +239,7 @@ export async function listCompanies(req: any, res: any) {
          GROUP BY uc.id
        ) p ON p.uae_company_id = c.id
        ${where}
-       ORDER BY COALESCE(c.display_order, 0) DESC, c.id ASC
+       ORDER BY ${req.query.sort_by === 'project_count' ? `project_count ${req.query.sort_dir === 'asc' ? 'ASC' : 'DESC'}, c.id DESC` : 'COALESCE(c.display_order, 0) DESC, c.id ASC'}
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
       params
     );

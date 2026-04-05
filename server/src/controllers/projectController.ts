@@ -7,6 +7,7 @@ import { sanitizePublicProject } from '../lib/publicDesignerSerialization';
 import {
   buildProjectPersistenceValues,
   PROJECT_IMAGES_REQUIRED_ERROR,
+  BASE64_IMAGES_NOT_ALLOWED_ERROR,
   assertProjectHasImages,
 } from '../lib/projectPersistence';
 import { persistProjectImages } from '../lib/projectImageStorage';
@@ -110,6 +111,9 @@ export async function createProject(req: any, res: any) {
   } catch (error) {
     if (error instanceof Error && error.message === PROJECT_IMAGES_REQUIRED_ERROR) {
       return res.status(400).json({ error: 'At least one project image is required.' });
+    }
+    if (error instanceof Error && error.message === BASE64_IMAGES_NOT_ALLOWED_ERROR) {
+      return res.status(400).json({ error: 'Image upload must be processed before submission. Please try uploading again.' });
     }
     console.error('Create project error:', error);
     res.status(500).json({ error: 'Failed to submit project. Please try again.' });
@@ -297,6 +301,9 @@ export async function updateProject(req: any, res: any) {
   } catch (error) {
     if (error instanceof Error && error.message === PROJECT_IMAGES_REQUIRED_ERROR) {
       return res.status(400).json({ error: 'At least one project image is required.' });
+    }
+    if (error instanceof Error && error.message === BASE64_IMAGES_NOT_ALLOWED_ERROR) {
+      return res.status(400).json({ error: 'Image upload must be processed before submission. Please try uploading again.' });
     }
     console.error('Update project error:', error);
     res.status(500).json({ error: 'Failed to update project.' });

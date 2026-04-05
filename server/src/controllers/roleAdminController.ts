@@ -120,6 +120,12 @@ export async function listCompanies(req: any, res: any) {
     );
     const total = (countRows as any[])[0].total;
 
+    const sortBy = req.query.sort_by;
+    const sortDir = req.query.sort_dir === 'asc' ? 'ASC' : 'DESC';
+    const orderClause = sortBy === 'project_count'
+      ? `ORDER BY project_count ${sortDir}, cp.id DESC`
+      : 'ORDER BY cp.display_order DESC, cp.created_at DESC';
+
     const [rows] = await pool.execute(
       `SELECT cp.*, u.email as user_email, u.full_name as user_name,
               uc.name_en as linked_company_name, uc.slug as linked_company_slug,
@@ -130,10 +136,11 @@ export async function listCompanies(req: any, res: any) {
        LEFT JOIN (
          SELECT company_profile_id, COUNT(*) as project_count
          FROM projects
+         WHERE company_profile_id IS NOT NULL
          GROUP BY company_profile_id
        ) pc ON pc.company_profile_id = cp.id
        ${whereClause}
-       ORDER BY cp.display_order DESC, cp.created_at DESC
+       ${orderClause}
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
       params
     );
@@ -156,6 +163,12 @@ export async function approveCompany(req: any, res: any) {
     await pool.execute(
       `UPDATE company_profiles SET status = 'approved', reviewed_by = ?, reviewed_at = NOW() WHERE id = ?`,
       [adminId, id]
+    );
+
+    // 公司审核通过后，自动发布所有 pending 项目
+    await pool.execute(
+      `UPDATE projects SET status = 'published' WHERE company_profile_id = ? AND status = 'pending'`,
+      [id]
     );
 
     res.json({ message: 'Company approved.' });

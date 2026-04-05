@@ -69,6 +69,9 @@ const adminItems = [
 // Map nav paths to notification keys
 const NOTIFICATION_MAP: Record<string, string> = {
   '/admin/complaints': 'newComplaints',
+  '/admin/inquiries': 'newInquiries',
+  '/admin/companies': 'newCompanyApps',
+  '/admin/users': 'newUsers',
 };
 
 export default function AdminLayout() {
