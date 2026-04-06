@@ -165,9 +165,9 @@ export async function approveCompany(req: any, res: any) {
       [adminId, id]
     );
 
-    // 公司审核通过后，自动发布所有 pending 项目
+    // 公司审核通过后，自动发布所有项目（审批在公司层面，不需逐个审批项目）
     await pool.execute(
-      `UPDATE projects SET status = 'published' WHERE company_profile_id = ? AND status = 'pending'`,
+      `UPDATE projects SET status = 'published' WHERE company_profile_id = ? AND status IN ('pending', 'draft')`,
       [id]
     );
 

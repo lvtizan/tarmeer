@@ -70,10 +70,14 @@ export async function createProject(req: any, res: any) {
     
     // Auto-link project to company profile if the designer has one
     const [cpRows] = await pool.execute(
-      'SELECT id FROM company_profiles WHERE user_id = (SELECT user_id FROM designers WHERE id = ?) LIMIT 1',
+      'SELECT id, status FROM company_profiles WHERE user_id = (SELECT user_id FROM designers WHERE id = ?) LIMIT 1',
       [designer_id]
     );
-    const companyProfileId = (cpRows as any[])[0]?.id || null;
+    const companyProfile = (cpRows as any[])[0] || null;
+    const companyProfileId = companyProfile?.id || null;
+
+    // If the company is already approved, auto-publish the project
+    const finalStatus = companyProfile?.status === 'approved' ? 'published' : values.status;
 
     const [result] = await pool.execute(
       `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason)
@@ -90,7 +94,7 @@ export async function createProject(req: any, res: any) {
         values.cost,
         values.images,
         values.tags,
-        values.status,
+        finalStatus,
       ]
     );
     
