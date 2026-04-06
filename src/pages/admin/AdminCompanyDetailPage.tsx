@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Pencil } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
+import CompanyEditModal from '../../components/admin/CompanyEditModal';
 
 interface CompanyDetail {
   id: number;
@@ -65,8 +67,9 @@ export default function AdminCompanyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeStyle, setActiveStyle] = useState<string>('all');
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  useEffect(() => {
+  const loadDetail = () => {
     if (!id) return;
     setLoading(true);
     adminApi.getCompanyFullDetail(Number(id))
@@ -76,7 +79,9 @@ export default function AdminCompanyDetailPage() {
       })
       .catch((err: any) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  };
+
+  useEffect(() => { loadDetail(); }, [id]);
 
   const styles = useMemo(() => {
     const all = projects.flatMap((p) => p.style ? [p.style] : []);
@@ -120,7 +125,17 @@ export default function AdminCompanyDetailPage() {
               />
             )}
             <div>
-              <h1 className="text-lg font-bold text-stone-800">{company.name_en}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-stone-800">{company.name_en}</h1>
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
+                  title="Edit company"
+                >
+                  <Pencil size={14} />
+                  Edit
+                </button>
+              </div>
               {company.name_ar && <p className="text-sm text-stone-500 mt-0.5" dir="rtl">{company.name_ar}</p>}
               <p className="text-xs text-stone-400 mt-1">/{company.slug}</p>
             </div>
@@ -256,6 +271,15 @@ export default function AdminCompanyDetailPage() {
           )}
         </div>
       </div>
+
+      {showEditModal && (
+        <CompanyEditModal
+          type="scraped"
+          id={Number(id)}
+          onClose={() => setShowEditModal(false)}
+          onSaved={() => loadDetail()}
+        />
+      )}
     </div>
   );
 }

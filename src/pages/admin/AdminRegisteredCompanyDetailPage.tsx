@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Pencil } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
+import CompanyEditModal from '../../components/admin/CompanyEditModal';
 
 interface CompanyProfile {
   id: number;
@@ -78,6 +79,7 @@ export default function AdminRegisteredCompanyDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const loadDetail = () => {
     if (!id) return;
@@ -175,6 +177,14 @@ export default function AdminRegisteredCompanyDetailPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
+                  title="Edit company"
+                >
+                  <Pencil size={14} />
+                  Edit
+                </button>
                 <a
                   href={`/companies/${company.id}?admin_preview=1`}
                   target="_blank"
@@ -378,6 +388,15 @@ export default function AdminRegisteredCompanyDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showEditModal && (
+        <CompanyEditModal
+          type="profile"
+          id={Number(id)}
+          onClose={() => setShowEditModal(false)}
+          onSaved={() => loadDetail()}
+        />
       )}
     </div>
   );
