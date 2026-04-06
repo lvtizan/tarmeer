@@ -215,11 +215,11 @@ export default function AdminCompaniesPage() {
     finally { setOrderSavingId(null); }
   };
 
-  const handleDeleteProfile = async (profile: CompanyProfileRecord) => {
-    const reason = window.prompt(`Delete company "${profile.company_name}"\nPlease enter delete reason / 请输入删除原因：`, '');
-    if (!reason || !reason.trim()) return;
+  const handleDeleteProfile = async (profile: CompanyProfileRecord, reason?: string) => {
+    const finalReason = reason?.trim() || window.prompt(`Delete company "${profile.company_name}"\nPlease enter delete reason / 请输入删除原因：`, '')?.trim();
+    if (!finalReason) return;
     try {
-      await adminApi.deleteCompanyProfile(profile.id, reason.trim());
+      await adminApi.deleteCompanyProfile(profile.id, finalReason);
       await loadProfiles();
       await loadTabBadges();
     } catch (err: any) { alert(err.message || 'Failed to delete.'); }
@@ -403,11 +403,11 @@ export default function AdminCompaniesPage() {
             total={pendingTotal}
             page={pendingPage}
             onPageChange={setPendingPage}
-            onDelete={async (profile) => {
-              const reason = window.prompt(`Delete "${profile.company_name}"\nPlease enter delete reason / 请输入删除原因：`, '');
-              if (!reason || !reason.trim()) return;
+            onDelete={async (profile, reason?) => {
+              const finalReason = reason?.trim() || window.prompt(`Delete "${profile.company_name}"\nPlease enter delete reason / 请输入删除原因：`, '')?.trim();
+              if (!finalReason) return;
               try {
-                await adminApi.deleteCompanyProfile(profile.id, reason.trim());
+                await adminApi.deleteCompanyProfile(profile.id, finalReason);
                 await loadPending();
                 await loadTabBadges();
               } catch (err: any) { alert(err.message || 'Failed to delete.'); }

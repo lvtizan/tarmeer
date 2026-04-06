@@ -25,7 +25,7 @@ interface AdminApplicationsTableProps {
   total: number;
   page: number;
   onPageChange: (page: number) => void;
-  onDelete: (profile: CompanyProfileRecord) => void;
+  onDelete: (profile: CompanyProfileRecord, reason?: string) => void;
   sortDir: SortDir;
   sortActive: boolean;
   onSortToggle: () => void;
@@ -59,12 +59,11 @@ export default function AdminApplicationsTable({
 
   const handleBatchDelete = async () => {
     if (selected.size === 0) return;
-    if (!confirm(`Delete ${selected.size} applications? This cannot be undone.`)) return;
-    const reason = window.prompt('Please enter delete reason:');
+    const reason = window.prompt(`Delete ${selected.size} applications? This cannot be undone.\nPlease enter delete reason / 请输入删除原因：`);
     if (!reason?.trim()) return;
     for (const id of selected) {
       const profile = profiles.find(p => p.id === id);
-      if (profile) onDelete(profile);
+      if (profile) onDelete(profile, reason.trim());
     }
     setSelected(new Set());
   };

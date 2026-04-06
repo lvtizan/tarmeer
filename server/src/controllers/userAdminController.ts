@@ -156,6 +156,60 @@ export async function updateUserRole(req: any, res: any) {
   }
 }
 
+// Edit user profile fields
+export async function editUser(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const { full_name, phone, city, email } = req.body;
+
+    const userId = Number(id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user id.' });
+    }
+
+    const [rows] = await pool.execute('SELECT id FROM users WHERE id = ?', [userId]);
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Build dynamic update
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (full_name !== undefined) { updates.push('full_name = ?'); params.push(String(full_name).trim()); }
+    if (phone !== undefined) { updates.push('phone = ?'); params.push(String(phone).trim() || null); }
+    if (city !== undefined) { updates.push('city = ?'); params.push(String(city).trim() || null); }
+    if (email !== undefined) {
+      const trimmedEmail = String(email).trim().toLowerCase();
+      if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        return res.status(400).json({ error: 'Invalid email format.' });
+      }
+      // Check uniqueness
+      const [existing] = await pool.execute('SELECT id FROM users WHERE email = ? AND id != ?', [trimmedEmail, userId]);
+      if ((existing as any[]).length > 0) {
+        return res.status(400).json({ error: 'Email already in use by another user.' });
+      }
+      updates.push('email = ?');
+      params.push(trimmedEmail);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update.' });
+    }
+
+    params.push(userId);
+    await pool.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    const adminId = req.admin?.id;
+    await logActivity(adminId, 'edit_user', 'user', userId, { updated_fields: updates.map(u => u.split(' = ')[0]) });
+
+    res.json({ message: 'User updated successfully.' });
+  } catch (error) {
+    console.error('Edit user error:', error);
+    res.status(500).json({ error: 'Failed to update user.' });
+  }
+}
+
 function normalizeDeleteReason(rawReason: unknown): string | null {
   if (typeof rawReason !== 'string') return null;
   const trimmed = rawReason.trim();

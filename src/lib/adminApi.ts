@@ -472,6 +472,14 @@ class AdminApiClient {
     return this.request(`/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
   }
 
+  async editUser(id: number, data: Record<string, any>) {
+    return this.request(`/users/${id}/edit`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
   async deleteUser(id: number, reason: string) {
     return this.request(`/users/${id}/delete`, {
       method: 'PUT',

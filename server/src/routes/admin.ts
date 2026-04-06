@@ -30,7 +30,7 @@ import {
   getActivityLogs
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
-import { listUsers, getUserDetail, updateUserStatus, updateUserRole, deleteUser, restoreUser } from '../controllers/userAdminController';
+import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts } from '../controllers/complaintController';
 import {
@@ -140,6 +140,7 @@ router.get('/users', listUsers);
 router.get('/users/:id', getUserDetail);
 router.put('/users/:id/status', requireSuperAdmin, updateUserStatus);
 router.put('/users/:id/role', requireSuperAdmin, updateUserRole);
+router.put('/users/:id/edit', requireSuperAdmin, editUser);
 router.put('/users/:id/delete', requireSuperAdmin, deleteUser);
 router.post('/users/:id/restore', requireSuperAdmin, restoreUser);
 

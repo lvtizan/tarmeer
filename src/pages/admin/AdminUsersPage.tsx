@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Pencil } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
+import UserEditModal from '../../components/admin/UserEditModal';
 
 type RoleFilter = 'all' | 'user' | 'designer' | 'company';
 type StatusFilter = 'all' | 'active' | 'suspended';
@@ -49,6 +51,7 @@ export default function AdminUsersPage() {
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
+  const [editUserId, setEditUserId] = useState<number | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -207,7 +210,13 @@ export default function AdminUsersPage() {
                       onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditUserId(user.id); }}
+                      className="text-xs px-3 py-1 rounded-lg font-medium transition bg-stone-50 text-stone-600 hover:bg-stone-100 flex items-center gap-1"
+                    >
+                      <Pencil size={12} /> Edit
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleStatusToggle(user); }}
                       disabled={actionLoading === user.id}
@@ -250,6 +259,13 @@ export default function AdminUsersPage() {
         )}
       </div>
 
+      {editUserId && (
+        <UserEditModal
+          id={editUserId}
+          onClose={() => setEditUserId(null)}
+          onSaved={() => loadUsers()}
+        />
+      )}
     </div>
   );
 }

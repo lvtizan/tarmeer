@@ -34,7 +34,7 @@ interface AdminCompaniesTableTabProps {
   total: number;
   page: number;
   onPageChange: (page: number) => void;
-  onDelete: (profile: CompanyProfileRecord) => void;
+  onDelete: (profile: CompanyProfileRecord, reason?: string) => void;
   onSetHomeOrder: (id: number, value: number) => void;
   onSetListOrder: (id: number, value: number) => void;
   orderSavingId: number | null;
@@ -74,12 +74,11 @@ export default function AdminCompaniesTableTab({
 
   const handleBatchDelete = async () => {
     if (selected.size === 0) return;
-    if (!confirm(`Delete ${selected.size} companies? This cannot be undone.`)) return;
-    const reason = window.prompt('Please enter delete reason:');
+    const reason = window.prompt(`Delete ${selected.size} companies? This cannot be undone.\nPlease enter delete reason / 请输入删除原因：`);
     if (!reason?.trim()) return;
     for (const id of selected) {
       const profile = profiles.find(p => p.id === id);
-      if (profile) onDelete(profile);
+      if (profile) onDelete(profile, reason.trim());
     }
     setSelected(new Set());
   };

@@ -45,6 +45,15 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 4. All focus states use `ring-[#B8864A]/15` — no blue outlines
 5. Labels always use `text-sm font-medium text-stone-500`
 
+## Image Storage Rules (MUST FOLLOW)
+
+1. **NEVER** store images as base64 data URLs in the database. All image data must be saved to the filesystem under `/uploads/` and only the relative URL path stored in the DB.
+2. Avatar uploads go to `/uploads/avatars/{id}-{uuid}.{ext}`
+3. Project images go to `/uploads/projects/{designerId}/{projectId}/{year}/{month}/{uuid}.{ext}`
+4. Use `projectImageStorage.ts` utilities (`persistProjectImages`, `isImageDataUrl`) for project images.
+5. If you encounter existing base64 data in the DB, run `node scripts/migrate-base64-avatars.mjs --apply` to convert it.
+6. Any API endpoint that accepts image data must validate and convert base64 to file before saving.
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill

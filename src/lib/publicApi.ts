@@ -295,9 +295,22 @@ function toCompany(company: PublicCompanyRecord): Company {
 
 export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {
   try {
-    const directoryResult = await request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}&order=${orderMode}`);
-    const companies = (directoryResult.companies || []).map(toCompany);
-    if (companies.length > 0) return companies;
+    const [directoryResult, approvedResult] = await Promise.all([
+      request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}&order=${orderMode}`).catch(() => ({ companies: [] as PublicCompanyRecord[] })),
+      request<{ companies: PublicCompanyRecord[] }>(`/public/companies?limit=${limit}`).catch(() => ({ companies: [] as PublicCompanyRecord[] })),
+    ]);
+
+    const directoryCompanies = (directoryResult.companies || []).map(toCompany);
+    const approvedCompanies = (approvedResult.companies || []).map(toCompany);
+
+    // Merge: approved profiles first, then directory entries not already covered by name
+    const seenNames = new Set(approvedCompanies.map(c => c.name.toLowerCase()));
+    const merged = [
+      ...approvedCompanies,
+      ...directoryCompanies.filter(c => !seenNames.has(c.name.toLowerCase())),
+    ];
+
+    if (merged.length > 0) return merged.slice(0, limit);
     throw new Error('No company source available');
   } catch (error) {
     if (ALLOW_LOCAL_FALLBACK) {
