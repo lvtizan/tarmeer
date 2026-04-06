@@ -68,11 +68,19 @@ export async function createProject(req: any, res: any) {
       status: projectStatus,
     });
     
+    // Auto-link project to company profile if the designer has one
+    const [cpRows] = await pool.execute(
+      'SELECT id FROM company_profiles WHERE user_id = (SELECT user_id FROM designers WHERE id = ?) LIMIT 1',
+      [designer_id]
+    );
+    const companyProfileId = (cpRows as any[])[0]?.id || null;
+
     const [result] = await pool.execute(
-      `INSERT INTO projects (designer_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+      `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
       [
         designer_id,
+        companyProfileId,
         values.title,
         values.description,
         values.style,
