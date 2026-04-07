@@ -89,8 +89,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         cp.home_display_order,
         cp.list_display_order,
         u.email,
-        (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count,
-        (SELECT GROUP_CONCAT(p2.images SEPARATOR '|||') FROM (SELECT images FROM projects p2 WHERE p2.company_profile_id = cp.id AND p2.images IS NOT NULL AND p2.images != '[]' AND p2.images != '' ORDER BY p2.created_at DESC LIMIT 5) p2) as project_images_raw
+        (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count
       FROM company_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE ${whereClause}
@@ -100,23 +99,34 @@ export async function listApprovedCompanies(req: any, res: any) {
 
     const [companies] = await pool.execute(listQuery, params);
 
+    // Batch-fetch project images for all companies (avoids GROUP_CONCAT truncation)
+    const companyIds = (companies as any[]).map((c: any) => c.id);
+    const imageMap: Record<number, string[]> = {};
+    if (companyIds.length > 0) {
+      const placeholders = companyIds.map(() => '?').join(',');
+      const [imgRows] = await pool.execute(
+        `SELECT company_profile_id, images FROM projects
+         WHERE company_profile_id IN (${placeholders})
+         AND images IS NOT NULL AND images != '[]' AND images != ''
+         ORDER BY created_at DESC`,
+        companyIds
+      );
+      for (const row of imgRows as any[]) {
+        try {
+          const imgs = typeof row.images === 'string' ? JSON.parse(row.images) : row.images;
+          if (Array.isArray(imgs)) {
+            if (!imageMap[row.company_profile_id]) imageMap[row.company_profile_id] = [];
+            imageMap[row.company_profile_id].push(...imgs);
+          }
+        } catch { /* skip malformed JSON */ }
+      }
+    }
+
     // Format response
     const formattedCompanies = (companies as any[]).map((company) => {
       const services = typeof company.services === 'string'
         ? JSON.parse(company.services)
         : company.services;
-
-      // Extract portfolio images from projects
-      let portfolioImages: string[] = [];
-      if (company.project_images_raw) {
-        try {
-          const parts = company.project_images_raw.split('|||');
-          for (const part of parts) {
-            const imgs = JSON.parse(part);
-            if (Array.isArray(imgs)) portfolioImages.push(...imgs);
-          }
-        } catch { /* ignore parse errors */ }
-      }
 
       return {
         id: company.id,
@@ -133,7 +143,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         home_display_order: company.home_display_order || 0,
         list_display_order: company.list_display_order || 0,
         project_count: company.project_count || 0,
-        portfolio_images: portfolioImages,
+        portfolio_images: imageMap[company.id] || [],
       };
     });
 
