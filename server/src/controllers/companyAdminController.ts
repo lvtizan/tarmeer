@@ -1,5 +1,6 @@
 import pool from '../config/database';
 import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
+import { persistProjectImages, isImageDataUrl } from '../lib/projectImageStorage';
 import fs from 'fs';
 import path from 'path';
 
@@ -239,7 +240,7 @@ export async function listCompanies(req: any, res: any) {
          GROUP BY uc.id
        ) p ON p.uae_company_id = c.id
        ${where}
-       ORDER BY ${req.query.sort_by === 'project_count' ? `project_count ${req.query.sort_dir === 'asc' ? 'ASC' : 'DESC'}, c.id DESC` : 'COALESCE(c.display_order, 0) DESC, c.id ASC'}
+       ORDER BY ${req.query.sort_by === 'project_count' ? `project_count ${req.query.sort_dir === 'asc' ? 'ASC' : 'DESC'}, c.id DESC` : 'CASE WHEN GREATEST(COALESCE(c.home_display_order, 0), COALESCE(c.list_display_order, 0)) > 0 THEN 0 ELSE 1 END, LEAST(CASE WHEN c.home_display_order > 0 THEN c.home_display_order ELSE 999999 END, CASE WHEN c.list_display_order > 0 THEN c.list_display_order ELSE 999999 END) ASC, c.id ASC'}
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
       params
     );
@@ -318,24 +319,37 @@ async function updateSingleOrderField(
 
   // No-op update should always pass.
   if (orderValue !== Number(current.current_value || 0) && orderValue > 0) {
+    // Max 6 home companies check
+    if (field === 'home_display_order') {
+      const [countRows] = await pool.execute(
+        `SELECT
+          (SELECT COUNT(*) FROM company_profiles WHERE home_display_order > 0 AND deleted_at IS NULL) +
+          (SELECT COUNT(*) FROM uae_companies WHERE home_display_order > 0)
+        AS total`
+      );
+      let total = Number((countRows as any[])[0]?.total || 0);
+      // If this record already has a home_display_order > 0, it's being updated not added
+      if (Number(current.current_value || 0) > 0) total -= 1;
+      if (total >= 6) {
+        throw new Error(`${field}#MAX_REACHED#6`);
+      }
+    }
+
+    // Check cross-table conflict: same field, same value
     const [conflicts] = await pool.execute(
-      `SELECT 'company_profiles' AS source, id
+      `SELECT 'company_profiles' AS source, id, company_name AS name
        FROM company_profiles
-       WHERE COALESCE(display_order, 0) = ?
+       WHERE COALESCE(${field}, 0) = ? AND deleted_at IS NULL
        UNION ALL
-       SELECT 'uae_companies' AS source, id
+       SELECT 'uae_companies' AS source, id, name_en AS name
        FROM uae_companies
-       WHERE (
-         COALESCE(display_order, 0) = ?
-         OR COALESCE(home_display_order, 0) = ?
-         OR COALESCE(list_display_order, 0) = ?
-       )
-         AND id <> ?
+       WHERE COALESCE(${field}, 0) = ? AND id <> ?
        LIMIT 1`,
-      [orderValue, orderValue, orderValue, orderValue, companyId]
+      [orderValue, orderValue, companyId]
     );
     if ((conflicts as any[]).length > 0) {
-      throw new Error(`${field}#CONFLICT#${orderValue}`);
+      const conflict = (conflicts as any[])[0];
+      throw new Error(`${field}#CONFLICT#${orderValue}#${conflict.name}`);
     }
   }
 
@@ -353,10 +367,15 @@ export async function updateCompanyHomeDisplayOrder(req: any, res: any) {
     if (error instanceof Error && error.message.includes('home_display_order#NOT_FOUND#')) {
       return res.status(404).json({ error: 'Company not found.' });
     }
+    if (error instanceof Error && error.message.includes('home_display_order#MAX_REACHED#')) {
+      return res.status(400).json({ error: '首页最多展示 6 家公司，请先移除一家' });
+    }
     if (error instanceof Error && error.message.includes('home_display_order#CONFLICT#')) {
-      const orderValue = error.message.split('#').pop() || '0';
+      const parts = error.message.split('#');
+      const orderValue = parts[2] || '0';
+      const conflictName = parts[3] || '';
       return res.status(409).json({
-        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+        error: `Home order ${orderValue} already used by "${conflictName}"`,
       });
     }
     console.error('Update home display order error:', error);
@@ -376,13 +395,32 @@ export async function updateCompanyListDisplayOrder(req: any, res: any) {
       return res.status(404).json({ error: 'Company not found.' });
     }
     if (error instanceof Error && error.message.includes('list_display_order#CONFLICT#')) {
-      const orderValue = error.message.split('#').pop() || '0';
+      const parts = error.message.split('#');
+      const orderValue = parts[2] || '0';
+      const conflictName = parts[3] || '';
       return res.status(409).json({
-        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+        error: `List order ${orderValue} already used by "${conflictName}"`,
       });
     }
     console.error('Update list display order error:', error);
     res.status(500).json({ error: 'Failed to update list display order.' });
+  }
+}
+
+// Get current home order count (across both tables)
+export async function getHomeOrderCount(_req: any, res: any) {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT
+        (SELECT COUNT(*) FROM company_profiles WHERE home_display_order > 0 AND deleted_at IS NULL) +
+        (SELECT COUNT(*) FROM uae_companies WHERE home_display_order > 0)
+      AS count`
+    );
+    const count = Number((rows as any[])[0]?.count || 0);
+    res.json({ count, max: 6 });
+  } catch (error) {
+    console.error('Get home order count error:', error);
+    res.status(500).json({ error: 'Failed to get home order count.' });
   }
 }
 
@@ -638,7 +676,7 @@ export async function getCompanyProfileFullDetail(req: any, res: any) {
 
     const [projectRows] = await pool.execute(
       `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
-       FROM projects WHERE company_profile_id = ? ORDER BY created_at DESC`,
+       FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`,
       [id]
     );
     const projects = (projectRows as any[]).map((p: any) => ({
@@ -689,7 +727,7 @@ export async function getCompanyFullDetail(req: any, res: any) {
       const [projectRows] = await pool.execute(
         `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
          FROM projects
-         WHERE company_profile_id IN (${placeholders})
+         WHERE company_profile_id IN (${placeholders}) AND deleted_at IS NULL
          ORDER BY created_at DESC`,
         profileIds
       );
@@ -707,7 +745,7 @@ export async function getCompanyFullDetail(req: any, res: any) {
         const designerId = (designerRows as any[])[0].id;
         const [projectRows] = await pool.execute(
           `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
-           FROM projects WHERE designer_id = ? ORDER BY created_at DESC`,
+           FROM projects WHERE designer_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`,
           [designerId]
         );
         projects = (projectRows as any[]).map((p: any) => ({
@@ -747,5 +785,202 @@ export async function getCompanyFullDetail(req: any, res: any) {
   } catch (error) {
     console.error('Get company full detail error:', error);
     res.status(500).json({ error: 'Failed to get company detail.' });
+  }
+}
+
+// ====== Project CRUD for admin ======
+
+// Helper: resolve designerId from company_profile for image storage paths
+async function resolveDesignerIdForProfile(companyProfileId: number): Promise<number> {
+  const [rows] = await pool.execute(
+    'SELECT user_id FROM company_profiles WHERE id = ? LIMIT 1',
+    [companyProfileId]
+  );
+  const profile = (rows as any[])[0];
+  return profile ? Number(profile.user_id) : 0;
+}
+
+// GET single project
+export async function getAdminProject(req: any, res: any) {
+  try {
+    const { companyId, projectId } = req.params;
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM projects WHERE id = ? AND company_profile_id = ? AND deleted_at IS NULL',
+      [projectId, companyId]
+    );
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    const project = (rows as any[])[0];
+    project.images = sanitizeProjectImages(project.images);
+    project.tags = toStringArray(project.tags);
+
+    res.json({ project });
+  } catch (error) {
+    console.error('Get admin project error:', error);
+    res.status(500).json({ error: 'Failed to get project.' });
+  }
+}
+
+// PUT update project
+export async function updateAdminProject(req: any, res: any) {
+  try {
+    const { companyId, projectId } = req.params;
+    const { title, description, style, location, year, images, tags } = req.body;
+
+    // Verify project exists
+    const [existing] = await pool.execute(
+      'SELECT id FROM projects WHERE id = ? AND company_profile_id = ? AND deleted_at IS NULL',
+      [projectId, companyId]
+    );
+    if ((existing as any[]).length === 0) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    // Handle base64 images
+    let persistedImages: string[] | undefined;
+    if (Array.isArray(images)) {
+      const designerId = await resolveDesignerIdForProfile(Number(companyId));
+      persistedImages = await persistProjectImages(images, {
+        designerId,
+        projectId: Number(projectId),
+      });
+    }
+
+    await pool.execute(
+      `UPDATE projects
+       SET title = ?, description = ?, style = ?, location = ?, year = ?,
+           images = ?, tags = ?, updated_at = NOW()
+       WHERE id = ? AND company_profile_id = ?`,
+      [
+        title ?? null,
+        description ?? null,
+        style ?? null,
+        location ?? null,
+        year ?? null,
+        JSON.stringify(persistedImages ?? []),
+        JSON.stringify(tags ?? []),
+        projectId,
+        companyId,
+      ]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Update admin project error:', error);
+    res.status(500).json({ error: 'Failed to update project.' });
+  }
+}
+
+// POST create project
+export async function createAdminProject(req: any, res: any) {
+  try {
+    const { companyId } = req.params;
+    const { title, description, style, location, year, images, tags } = req.body;
+
+    // Check company status to determine project status
+    const [companyRows] = await pool.execute(
+      'SELECT id, status FROM company_profiles WHERE id = ?',
+      [companyId]
+    );
+    if ((companyRows as any[]).length === 0) {
+      return res.status(404).json({ error: 'Company profile not found.' });
+    }
+    const company = (companyRows as any[])[0];
+    const projectStatus = company.status === 'approved' ? 'published' : 'pending';
+
+    // Handle base64 images
+    let persistedImages: string[] = [];
+    if (Array.isArray(images)) {
+      const designerId = await resolveDesignerIdForProfile(Number(companyId));
+      persistedImages = await persistProjectImages(images, { designerId });
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO projects (company_profile_id, title, description, style, location, year, images, tags, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [
+        companyId,
+        title ?? null,
+        description ?? null,
+        style ?? null,
+        location ?? null,
+        year ?? null,
+        JSON.stringify(persistedImages),
+        JSON.stringify(tags ?? []),
+        projectStatus,
+      ]
+    );
+
+    res.json({ id: (result as any).insertId });
+  } catch (error) {
+    console.error('Create admin project error:', error);
+    res.status(500).json({ error: 'Failed to create project.' });
+  }
+}
+
+// DELETE soft-delete project
+export async function deleteAdminProject(req: any, res: any) {
+  try {
+    const { companyId, projectId } = req.params;
+
+    const [existing] = await pool.execute(
+      'SELECT id FROM projects WHERE id = ? AND company_profile_id = ? AND deleted_at IS NULL',
+      [projectId, companyId]
+    );
+    if ((existing as any[]).length === 0) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    await pool.execute(
+      'UPDATE projects SET deleted_at = NOW() WHERE id = ? AND company_profile_id = ?',
+      [projectId, companyId]
+    );
+
+    // Write audit log
+    const adminId = req.admin?.id || 0;
+    const adminName = req.admin?.username || req.admin?.full_name || 'unknown';
+    await pool.execute(
+      `INSERT INTO admin_audit_log (admin_id, admin_name, action, target_type, target_ids, metadata)
+       VALUES (?, ?, 'delete_project', 'project', ?, ?)`,
+      [
+        adminId,
+        adminName,
+        JSON.stringify([Number(projectId)]),
+        JSON.stringify({ company_profile_id: Number(companyId) }),
+      ]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Delete admin project error:', error);
+    res.status(500).json({ error: 'Failed to delete project.' });
+  }
+}
+
+// PUT restore soft-deleted project
+export async function restoreAdminProject(req: any, res: any) {
+  try {
+    const { companyId, projectId } = req.params;
+
+    const [existing] = await pool.execute(
+      'SELECT id FROM projects WHERE id = ? AND company_profile_id = ?',
+      [projectId, companyId]
+    );
+    if ((existing as any[]).length === 0) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    await pool.execute(
+      'UPDATE projects SET deleted_at = NULL WHERE id = ? AND company_profile_id = ?',
+      [projectId, companyId]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Restore admin project error:', error);
+    res.status(500).json({ error: 'Failed to restore project.' });
   }
 }

@@ -7,15 +7,17 @@ type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
 
 interface InquiryRecord {
   id: number;
-  name: string;
+  name: string | null;
   phone: string;
-  city: string;
+  city: string | null;
   area_range: string;
   message: string | null;
   designer_id: number | null;
   company_id: number | null;
   designer_name: string | null;
   company_name: string | null;
+  source_company_name: string | null;
+  source_company_slug: string | null;
   status: 'new' | 'contacted' | 'resolved' | 'archived';
   admin_notes: string | null;
   created_at: string;
@@ -47,6 +49,12 @@ export default function AdminInquiriesPage() {
   const [editStatus, setEditStatus] = useState('');
   const [updating, setUpdating] = useState(false);
 
+  // Batch delete / recycle bin
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [viewMode, setViewMode] = useState<'active' | 'deleted'>('active');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+
   const loadInquiries = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -55,6 +63,7 @@ export default function AdminInquiriesPage() {
         page, limit: 20,
         status: statusFilter === 'all' ? undefined : statusFilter,
         search: search || undefined,
+        deleted: viewMode === 'deleted',
       });
       setInquiries(result.inquiries);
       setTotal(result.pagination.total);
@@ -63,7 +72,13 @@ export default function AdminInquiriesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, search, viewMode]);
+
+  // Clear selection when viewMode changes
+  useEffect(() => {
+    setSelected(new Set());
+    setPage(1);
+  }, [viewMode]);
 
   useEffect(() => { loadInquiries(); }, [loadInquiries]);
 
@@ -107,6 +122,43 @@ export default function AdminInquiriesPage() {
     window.open(url, '_blank');
   };
 
+  const toggleSelect = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = inquiries.length > 0 && inquiries.every((inq) => selected.has(inq.id));
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(inquiries.map((inq) => inq.id)));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    try {
+      await adminApi.batchDeleteInquiries([...selected], deleteReason.trim());
+      setSelected(new Set());
+      setDeleteModalOpen(false);
+      setDeleteReason('');
+      loadInquiries();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete inquiries.');
+    }
+  };
+
+  const handleBatchRestore = async () => {
+    await adminApi.batchRestoreInquiries([...selected]);
+    setSelected(new Set());
+    loadInquiries();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -116,6 +168,18 @@ export default function AdminInquiriesPage() {
           className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
         >
           Export Excel
+        </button>
+      </div>
+
+      {/* View mode tabs */}
+      <div className="flex gap-2">
+        <button onClick={() => setViewMode('active')}
+          className={viewMode === 'active' ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm' : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm'}>
+          Active
+        </button>
+        <button onClick={() => setViewMode('deleted')}
+          className={viewMode === 'deleted' ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm' : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm'}>
+          Deleted
         </button>
       </div>
 
@@ -148,26 +212,70 @@ export default function AdminInquiriesPage() {
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
+      {/* Batch action bar */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2">
+          <span className="text-sm text-stone-600">{selected.size} selected</span>
+          {viewMode === 'active' ? (
+            <button
+              onClick={() => setDeleteModalOpen(true)}
+              className="px-4 py-1.5 text-sm text-white bg-[#8b2525] rounded-2xl hover:bg-[#6b1d1d] transition"
+            >
+              Delete Selected ({selected.size})
+            </button>
+          ) : (
+            <button
+              onClick={handleBatchRestore}
+              className="px-4 py-1.5 text-sm text-white bg-[#b8864a] rounded-2xl hover:bg-[#a07840] transition"
+            >
+              Restore Selected ({selected.size})
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-[400px]">
+            <h3 className="font-serif text-lg mb-4">Delete {selected.size} inquiry(s)</h3>
+            <textarea
+              className="w-full h-24 px-4 py-3 rounded-2xl border border-stone-200 text-[15px] mb-4"
+              placeholder="Enter deletion reason (required)"
+              value={deleteReason}
+              onChange={e => setDeleteReason(e.target.value)}
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => { setDeleteModalOpen(false); setDeleteReason(''); }}
+                className="px-4 py-2 text-sm text-stone-600 border border-stone-200 rounded-2xl">Cancel</button>
+              <button onClick={handleBatchDelete} disabled={!deleteReason.trim()}
+                className="px-4 py-2 text-sm text-white bg-[#8b2525] hover:bg-[#6b1d1d] rounded-2xl disabled:opacity-50 transition">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
+                <th className="px-4 py-3 w-10"><input type="checkbox" checked={allSelected} onChange={toggleAll} /></th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Phone</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Area</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">For</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Source</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Date</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <TableSpinner colSpan={7} />
+                <TableSpinner colSpan={8} />
               ) : inquiries.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
+                <tr><td colSpan={8} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
               ) : inquiries.map((inq) => (
                 <>
                   <tr
@@ -175,12 +283,29 @@ export default function AdminInquiriesPage() {
                     className={`border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition ${expandedId === inq.id ? 'bg-stone-50' : ''}`}
                     onClick={() => handleExpand(inq)}
                   >
-                    <td className="px-4 py-3 font-medium text-stone-800">{inq.name}</td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={selected.has(inq.id)} onChange={() => toggleSelect(inq.id)} />
+                    </td>
+                    <td className="px-4 py-3 font-medium text-stone-800">{inq.name || <span className="text-stone-400">—</span>}</td>
                     <td className="px-4 py-3 text-stone-600">{inq.phone}</td>
-                    <td className="px-4 py-3 text-stone-600">{inq.city}</td>
+                    <td className="px-4 py-3 text-stone-600">{inq.city || <span className="text-stone-400">—</span>}</td>
                     <td className="px-4 py-3 text-stone-600">{inq.area_range}</td>
-                    <td className="px-4 py-3 text-stone-500 text-xs">
-                      {inq.designer_name || inq.company_name || '—'}
+                    <td className="px-4 py-3 text-xs">
+                      {inq.source_company_name ? (
+                        inq.source_company_slug ? (
+                          <a
+                            href={`/companies/${inq.source_company_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[#b8864a] font-medium hover:underline"
+                          >{inq.source_company_name}</a>
+                        ) : (
+                          <span className="text-[#b8864a] font-medium">{inq.source_company_name}</span>
+                        )
+                      ) : (
+                        <span className="text-stone-400">Homepage</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[inq.status]}`}>
@@ -193,7 +318,7 @@ export default function AdminInquiriesPage() {
                   </tr>
                   {expandedId === inq.id && (
                     <tr key={`${inq.id}-detail`} className="bg-stone-50">
-                      <td colSpan={7} className="px-4 py-4">
+                      <td colSpan={8} className="px-4 py-4">
                         <div className="space-y-3 max-w-2xl">
                           {inq.message && (
                             <div>

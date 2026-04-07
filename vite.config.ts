@@ -10,12 +10,16 @@ export default defineConfig({
     port: 5180,
     headers: { 'Cache-Control': 'no-cache' },
     proxy: {
+      '/api/uploads': {
+        target: 'https://www.tarmeer.com',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://127.0.0.1:3002',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://127.0.0.1:3002',
+        target: 'https://www.tarmeer.com',
         changeOrigin: true,
       },
     },

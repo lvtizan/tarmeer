@@ -59,6 +59,30 @@ export default function AdminCompaniesTableTab({
 }: AdminCompaniesTableTabProps) {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<{ msg: string; key: string } | null>(null);
+
+  const showToast = (msg: string, key: string) => {
+    setToast({ msg, key });
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const getEditKey = (id: number, type: string) => `${type}-${id}`;
+
+  const handleOrderBlur = (id: number, type: 'home' | 'list', original: number) => {
+    const key = getEditKey(id, type);
+    const raw = editingOrder[key];
+    if (raw === undefined) return;
+    const value = parseInt(raw) || 0;
+    if (value === original) {
+      setEditingOrder((prev) => { const next = { ...prev }; delete next[key]; return next; });
+      return;
+    }
+    const handler = type === 'home' ? onSetHomeOrder : onSetListOrder;
+    handler(id, value);
+    setEditingOrder((prev) => { const next = { ...prev }; delete next[key]; return next; });
+    showToast(`${type === 'home' ? 'Home' : 'List'} order set to ${value}`, key);
+  };
 
   const pages = Math.ceil(total / 20);
 
@@ -110,7 +134,6 @@ export default function AdminCompaniesTableTab({
                 />
               </th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Company</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">Type</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Owner</th>
               <th
@@ -127,9 +150,9 @@ export default function AdminCompaniesTableTab({
           </thead>
           <tbody>
             {loading ? (
-              <TableSpinner colSpan={10} />
+              <TableSpinner colSpan={9} />
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={10} className="text-center py-12 text-stone-400">No records</td></tr>
+              <tr><td colSpan={9} className="text-center py-12 text-stone-400">No records</td></tr>
             ) : profiles.map((c) => (
               <tr
                 key={c.id}
@@ -156,13 +179,6 @@ export default function AdminCompaniesTableTab({
                     <span className="font-medium text-stone-800">{c.company_name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                    c.company_type === 'renovation_company' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
-                  }`}>
-                    {c.company_type === 'renovation_company' ? 'Company' : 'Studio'}
-                  </span>
-                </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>
                 <td className="px-4 py-3">
                   <div className="font-medium text-stone-800 text-xs">{c.user_name}</div>
@@ -175,22 +191,36 @@ export default function AdminCompaniesTableTab({
                   </span>
                 </td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="number"
-                    value={c.home_display_order}
-                    onChange={(e) => onSetHomeOrder(c.id, parseInt(e.target.value) || 0)}
-                    disabled={orderSavingId === c.id}
-                    className="w-16 px-2 py-1 text-xs border rounded disabled:opacity-50"
-                  />
+                  <div className="relative">
+                    {toast?.key === getEditKey(c.id, 'home') && (
+                      <div className="absolute -top-8 left-0 bg-white border border-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">{toast.msg}</div>
+                    )}
+                    <input
+                      type="number"
+                      value={editingOrder[getEditKey(c.id, 'home')] ?? c.home_display_order}
+                      onChange={(e) => setEditingOrder((prev) => ({ ...prev, [getEditKey(c.id, 'home')]: e.target.value }))}
+                      onBlur={() => handleOrderBlur(c.id, 'home', c.home_display_order)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      disabled={orderSavingId === c.id}
+                      className="w-16 px-2 py-1 text-xs border rounded disabled:opacity-50"
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="number"
-                    value={c.list_display_order}
-                    onChange={(e) => onSetListOrder(c.id, parseInt(e.target.value) || 0)}
-                    disabled={orderSavingId === c.id}
-                    className="w-16 px-2 py-1 text-xs border rounded disabled:opacity-50"
-                  />
+                  <div className="relative">
+                    {toast?.key === getEditKey(c.id, 'list') && (
+                      <div className="absolute -top-8 left-0 bg-white border border-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">{toast.msg}</div>
+                    )}
+                    <input
+                      type="number"
+                      value={editingOrder[getEditKey(c.id, 'list')] ?? c.list_display_order}
+                      onChange={(e) => setEditingOrder((prev) => ({ ...prev, [getEditKey(c.id, 'list')]: e.target.value }))}
+                      onBlur={() => handleOrderBlur(c.id, 'list', c.list_display_order)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      disabled={orderSavingId === c.id}
+                      className="w-16 px-2 py-1 text-xs border rounded disabled:opacity-50"
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
               </tr>

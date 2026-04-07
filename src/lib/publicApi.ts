@@ -300,17 +300,33 @@ export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list
       request<{ companies: PublicCompanyRecord[] }>(`/public/companies?limit=${limit}`).catch(() => ({ companies: [] as PublicCompanyRecord[] })),
     ]);
 
-    const directoryCompanies = (directoryResult.companies || []).map(toCompany);
-    const approvedCompanies = (approvedResult.companies || []).map(toCompany);
+    const directoryRaw = directoryResult.companies || [];
+    const approvedRaw = approvedResult.companies || [];
 
-    // Merge: directory entries first (have portfolio images), then approved profiles not already covered
-    const seenNames = new Set(directoryCompanies.map(c => c.name.toLowerCase()));
+    const directoryCompanies = directoryRaw.map((r, i) => ({ company: toCompany(r), homeOrder: r.home_display_order || 0, listOrder: r.list_display_order || 0, apiIndex: i }));
+    const approvedCompanies = approvedRaw.map((r, i) => ({ company: toCompany(r), homeOrder: r.home_display_order || 0, listOrder: r.list_display_order || 0, apiIndex: i }));
+
+    // Merge: deduplicate by name, then sort by display order
+    const seenNames = new Set(directoryCompanies.map(c => c.company.name.toLowerCase()));
     const merged = [
       ...directoryCompanies,
-      ...approvedCompanies.filter(c => !seenNames.has(c.name.toLowerCase())),
+      ...approvedCompanies.filter(c => !seenNames.has(c.company.name.toLowerCase())),
     ];
 
-    if (merged.length > 0) return merged.slice(0, limit);
+    // Sort: companies with display order > 0 go first (1=first, 2=second...), then the rest keep original order
+    const orderKey = orderMode === 'home' ? 'homeOrder' : 'listOrder';
+    merged.sort((a, b) => {
+      const oa = a[orderKey], ob = b[orderKey];
+      // Both have order > 0: smaller number first (1=first)
+      if (oa > 0 && ob > 0) return oa - ob;
+      // Only one has order: it goes first
+      if (oa > 0) return -1;
+      if (ob > 0) return 1;
+      // Neither has order: keep original position
+      return 0;
+    });
+
+    if (merged.length > 0) return merged.slice(0, limit).map(m => m.company);
     throw new Error('No company source available');
   } catch (error) {
     if (ALLOW_LOCAL_FALLBACK) {

@@ -86,11 +86,15 @@ export async function listApprovedCompanies(req: any, res: any) {
         cp.services,
         cp.logo_url,
         cp.display_order,
-        u.email
+        cp.home_display_order,
+        cp.list_display_order,
+        u.email,
+        (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count,
+        (SELECT GROUP_CONCAT(p2.images SEPARATOR '|||') FROM (SELECT images FROM projects p2 WHERE p2.company_profile_id = cp.id AND p2.images IS NOT NULL AND p2.images != '[]' AND p2.images != '' ORDER BY p2.created_at DESC LIMIT 5) p2) as project_images_raw
       FROM company_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE ${whereClause}
-      ORDER BY cp.display_order DESC, cp.created_at DESC
+      ORDER BY CASE WHEN cp.home_display_order > 0 THEN 0 ELSE 1 END, cp.home_display_order ASC, cp.display_order DESC, cp.created_at DESC
       LIMIT ${Number(limitNum)} OFFSET ${Number(offset)}
     `;
 
@@ -101,6 +105,18 @@ export async function listApprovedCompanies(req: any, res: any) {
       const services = typeof company.services === 'string'
         ? JSON.parse(company.services)
         : company.services;
+
+      // Extract portfolio images from projects
+      let portfolioImages: string[] = [];
+      if (company.project_images_raw) {
+        try {
+          const parts = company.project_images_raw.split('|||');
+          for (const part of parts) {
+            const imgs = JSON.parse(part);
+            if (Array.isArray(imgs)) portfolioImages.push(...imgs);
+          }
+        } catch { /* ignore parse errors */ }
+      }
 
       return {
         id: company.id,
@@ -114,6 +130,10 @@ export async function listApprovedCompanies(req: any, res: any) {
         services: services,
         logo_url: company.logo_url,
         display_order: company.display_order,
+        home_display_order: company.home_display_order || 0,
+        list_display_order: company.list_display_order || 0,
+        project_count: company.project_count || 0,
+        portfolio_images: portfolioImages,
       };
     });
 

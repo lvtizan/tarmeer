@@ -8,13 +8,13 @@ const VALID_AREA_RANGES = ['< 50m²', '50-100m²', '100-200m²', '200-500m²', '
 // Submit inquiry (public, no auth required)
 export async function submitInquiry(req: any, res: any) {
   try {
-    const { name, phone, city, area_range, message, company_id } = req.body;
+    const { name, phone, city, area_range, message, company_id, source_company_name, source_company_slug } = req.body;
 
-    if (!name || !phone || !city || !area_range) {
-      return res.status(400).json({ error: 'Name, phone, city, and area range are required.' });
+    if (!phone || !area_range) {
+      return res.status(400).json({ error: 'Phone and area range are required.' });
     }
 
-    if (!VALID_CITIES.includes(city)) {
+    if (city && !VALID_CITIES.includes(city)) {
       return res.status(400).json({ error: 'Invalid city.' });
     }
 
@@ -23,21 +23,17 @@ export async function submitInquiry(req: any, res: any) {
     }
 
     const [result] = await pool.execute(
-      `INSERT INTO design_inquiries (name, phone, city, area_range, message, company_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, phone, city, area_range, message || null, company_id || null]
+      `INSERT INTO design_inquiries (name, phone, city, area_range, message, company_id, source_company_name, source_company_slug)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name || null, phone, city || null, area_range, message || null, company_id || null, source_company_name || null, source_company_slug || null]
     );
 
     const inquiryId = (result as any).insertId;
 
     // Async notification (don't block response)
-    let companyName: string | undefined;
-    if (company_id) {
-      const [cRows] = await pool.execute('SELECT company_name FROM company_profiles WHERE id = ?', [company_id]);
-      companyName = (cRows as any[])[0]?.company_name;
-    }
+    const companyName = source_company_name || undefined;
     setImmediate(() => {
-      notifyNewInquiry({ id: inquiryId, name, phone, city, area_range, message, companyName }).catch(() => {});
+      notifyNewInquiry({ id: inquiryId, name: name || 'Anonymous', phone, city, area_range, message, companyName }).catch(() => {});
     });
 
     res.status(201).json({
@@ -58,8 +54,16 @@ export async function getInquiries(req: any, res: any) {
     const offset = (page - 1) * limit;
     const { status, designer_id, company_id, search } = req.query;
 
+    const showDeleted = req.query.deleted === 'true';
+
     let where = 'WHERE 1=1';
     const params: any[] = [];
+
+    if (showDeleted) {
+      where += ' AND di.deleted_at IS NOT NULL';
+    } else {
+      where += ' AND di.deleted_at IS NULL';
+    }
 
     if (status) {
       where += ' AND di.status = ?';
@@ -70,8 +74,8 @@ export async function getInquiries(req: any, res: any) {
       params.push(company_id);
     }
     if (search) {
-      where += ' AND (di.name LIKE ? OR di.phone LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      where += ' AND (di.name LIKE ? OR di.phone LIKE ? OR di.source_company_name LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     const [countRows] = await pool.execute(
@@ -160,7 +164,7 @@ export async function exportInquiries(req: any, res: any) {
       'City': row.city,
       'Area Range': row.area_range,
       'Message': row.message || '',
-      'Company': row.company_name || '',
+      'Source Company': row.source_company_name || row.company_name || '',
       'Status': row.status,
       'Admin Notes': row.admin_notes || '',
       'Created At': row.created_at,
@@ -178,6 +182,96 @@ export async function exportInquiries(req: any, res: any) {
   } catch (error) {
     console.error('Export inquiries error:', error);
     res.status(500).json({ error: 'Failed to export inquiries.' });
+  }
+}
+
+// Batch soft-delete inquiries (admin only)
+export async function batchDeleteInquiries(req: any, res: any) {
+  try {
+    const { ids, reason } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array.' });
+    }
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+      return res.status(400).json({ error: 'reason is required.' });
+    }
+
+    const adminId = (req as any).adminId;
+
+    // Get admin name
+    const [adminRows] = await pool.execute('SELECT full_name FROM admin_users WHERE id = ?', [adminId]);
+    const adminName = (adminRows as any[])[0]?.full_name || 'Unknown';
+
+    // Snapshot rows before deletion
+    const placeholders = ids.map(() => '?').join(',');
+    const [snapshot] = await pool.execute(
+      `SELECT * FROM design_inquiries WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
+      ids
+    );
+    const snapshotRows = snapshot as any[];
+
+    if (snapshotRows.length === 0) {
+      return res.status(404).json({ error: 'No matching active inquiries found.' });
+    }
+
+    const activeIds = snapshotRows.map((r: any) => r.id);
+    const activePlaceholders = activeIds.map(() => '?').join(',');
+
+    // Soft delete
+    const [result] = await pool.execute(
+      `UPDATE design_inquiries SET deleted_at = NOW(), deleted_by = ? WHERE id IN (${activePlaceholders})`,
+      [adminId, ...activeIds]
+    );
+
+    // Audit log
+    await pool.execute(
+      `INSERT INTO admin_audit_log (admin_id, admin_name, action, target_type, target_ids, reason, metadata)
+       VALUES (?, ?, 'delete_inquiry', 'inquiry', ?, ?, ?)`,
+      [adminId, adminName, JSON.stringify(activeIds), reason.trim(), JSON.stringify({ snapshot: snapshotRows })]
+    );
+
+    res.json({ deleted: (result as any).affectedRows });
+  } catch (error) {
+    console.error('Batch delete inquiries error:', error);
+    res.status(500).json({ error: 'Failed to delete inquiries.' });
+  }
+}
+
+// Batch restore soft-deleted inquiries (admin only)
+export async function batchRestoreInquiries(req: any, res: any) {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array.' });
+    }
+
+    const adminId = (req as any).adminId;
+
+    // Get admin name
+    const [adminRows] = await pool.execute('SELECT full_name FROM admin_users WHERE id = ?', [adminId]);
+    const adminName = (adminRows as any[])[0]?.full_name || 'Unknown';
+
+    const placeholders = ids.map(() => '?').join(',');
+
+    // Restore
+    const [result] = await pool.execute(
+      `UPDATE design_inquiries SET deleted_at = NULL, deleted_by = NULL WHERE id IN (${placeholders}) AND deleted_at IS NOT NULL`,
+      ids
+    );
+
+    // Audit log
+    await pool.execute(
+      `INSERT INTO admin_audit_log (admin_id, admin_name, action, target_type, target_ids, reason, metadata)
+       VALUES (?, ?, 'restore_inquiry', 'inquiry', ?, NULL, NULL)`,
+      [adminId, adminName, JSON.stringify(ids)]
+    );
+
+    res.json({ restored: (result as any).affectedRows });
+  } catch (error) {
+    console.error('Batch restore inquiries error:', error);
+    res.status(500).json({ error: 'Failed to restore inquiries.' });
   }
 }
 

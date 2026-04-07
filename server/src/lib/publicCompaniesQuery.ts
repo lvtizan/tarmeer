@@ -1,7 +1,6 @@
 export function buildPublicCompaniesListQuery(input: { limit: number; offset: number; orderMode: 'home' | 'list' }) {
-  const orderBy = input.orderMode === 'home'
-    ? 'COALESCE(home_display_order, 0) DESC, COALESCE(list_display_order, 0) DESC, google_rating DESC, google_reviews_count DESC, name_en ASC'
-    : 'COALESCE(list_display_order, 0) DESC, COALESCE(home_display_order, 0) DESC, google_rating DESC, google_reviews_count DESC, name_en ASC';
+  const primary = input.orderMode === 'home' ? 'home_display_order' : 'list_display_order';
+  const orderBy = `CASE WHEN COALESCE(${primary}, 0) > 0 THEN 0 ELSE 1 END, ${primary} ASC, google_rating DESC, google_reviews_count DESC, name_en ASC`;
   return {
     sql: `SELECT
          id,

@@ -96,7 +96,10 @@ export async function listCompanies(req: any, res: any) {
     let whereClause = 'WHERE cp.deleted_at IS NULL';
     const params: any[] = [];
 
-    if (status !== 'all') {
+    if (status === 'all') {
+      // "all" in this context means approved + rejected, not pending (pending belongs in Applications)
+      whereClause += " AND cp.status IN ('approved', 'rejected')";
+    } else {
       whereClause += ' AND cp.status = ?';
       params.push(status);
     }
@@ -124,7 +127,7 @@ export async function listCompanies(req: any, res: any) {
     const sortDir = req.query.sort_dir === 'asc' ? 'ASC' : 'DESC';
     const orderClause = sortBy === 'project_count'
       ? `ORDER BY project_count ${sortDir}, cp.id DESC`
-      : 'ORDER BY cp.display_order DESC, cp.created_at DESC';
+      : 'ORDER BY CASE WHEN GREATEST(COALESCE(cp.home_display_order, 0), COALESCE(cp.list_display_order, 0)) > 0 THEN 0 ELSE 1 END, LEAST(CASE WHEN cp.home_display_order > 0 THEN cp.home_display_order ELSE 999999 END, CASE WHEN cp.list_display_order > 0 THEN cp.list_display_order ELSE 999999 END) ASC, cp.display_order DESC, cp.created_at DESC';
 
     const [rows] = await pool.execute(
       `SELECT cp.*, u.email as user_email, u.full_name as user_name,
@@ -265,27 +268,37 @@ async function updateCompanySingleOrderField(
   if (!current) throw new Error(`${field}#NOT_FOUND#${profileId}`);
 
   if (orderValue !== Number(current.current_value || 0) && orderValue > 0) {
+    // Max 6 home companies check
+    if (field === 'home_display_order') {
+      const [countRows] = await pool.execute(
+        `SELECT
+          (SELECT COUNT(*) FROM company_profiles WHERE home_display_order > 0 AND deleted_at IS NULL) +
+          (SELECT COUNT(*) FROM uae_companies WHERE home_display_order > 0)
+        AS total`
+      );
+      let total = Number((countRows as any[])[0]?.total || 0);
+      // If this record already has a home_display_order > 0, it's being updated not added
+      if (Number(current.current_value || 0) > 0) total -= 1;
+      if (total >= 6) {
+        throw new Error(`${field}#MAX_REACHED#6`);
+      }
+    }
+
+    // Check cross-table conflict: same field, same value
     const [conflicts] = await pool.execute(
-      `SELECT 'company_profiles' AS source, id
+      `SELECT 'company_profiles' AS source, id, company_name AS name
        FROM company_profiles
-       WHERE (
-         COALESCE(display_order, 0) = ?
-         OR COALESCE(home_display_order, 0) = ?
-         OR COALESCE(list_display_order, 0) = ?
-       ) AND id <> ?
+       WHERE COALESCE(${field}, 0) = ? AND id <> ? AND deleted_at IS NULL
        UNION ALL
-       SELECT 'uae_companies' AS source, id
+       SELECT 'uae_companies' AS source, id, name_en AS name
        FROM uae_companies
-       WHERE (
-         COALESCE(display_order, 0) = ?
-         OR COALESCE(home_display_order, 0) = ?
-         OR COALESCE(list_display_order, 0) = ?
-       )
+       WHERE COALESCE(${field}, 0) = ?
        LIMIT 1`,
-      [orderValue, orderValue, orderValue, profileId, orderValue, orderValue, orderValue]
+      [orderValue, profileId, orderValue]
     );
     if ((conflicts as any[]).length > 0) {
-      throw new Error(`${field}#CONFLICT#${orderValue}`);
+      const conflict = (conflicts as any[])[0];
+      throw new Error(`${field}#CONFLICT#${orderValue}#${conflict.name}`);
     }
   }
 
@@ -303,10 +316,15 @@ export async function updateCompanyHomeDisplayOrder(req: any, res: any) {
     if (error instanceof Error && error.message.includes('home_display_order#NOT_FOUND#')) {
       return res.status(404).json({ error: 'Company profile not found.' });
     }
+    if (error instanceof Error && error.message.includes('home_display_order#MAX_REACHED#')) {
+      return res.status(400).json({ error: '首页最多展示 6 家公司，请先移除一家' });
+    }
     if (error instanceof Error && error.message.includes('home_display_order#CONFLICT#')) {
-      const orderValue = error.message.split('#').pop() || '0';
+      const parts = error.message.split('#');
+      const orderValue = parts[2] || '0';
+      const conflictName = parts[3] || '';
       return res.status(409).json({
-        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+        error: `Home order ${orderValue} already used by "${conflictName}"`,
       });
     }
     console.error('Update company home display order error:', error);
@@ -326,9 +344,11 @@ export async function updateCompanyListDisplayOrder(req: any, res: any) {
       return res.status(404).json({ error: 'Company profile not found.' });
     }
     if (error instanceof Error && error.message.includes('list_display_order#CONFLICT#')) {
-      const orderValue = error.message.split('#').pop() || '0';
+      const parts = error.message.split('#');
+      const orderValue = parts[2] || '0';
+      const conflictName = parts[3] || '';
       return res.status(409).json({
-        error: `序号 ${orderValue} 已占用，请用新的序号 / Order ${orderValue} is occupied, please use a new order number.`,
+        error: `List order ${orderValue} already used by "${conflictName}"`,
       });
     }
     console.error('Update company list display order error:', error);

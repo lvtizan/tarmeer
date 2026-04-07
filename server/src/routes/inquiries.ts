@@ -26,9 +26,7 @@ const inquiryLimiter = rateLimit({
 router.post('/',
   inquiryLimiter,
   [
-    body('name').notEmpty().withMessage('Name is required'),
     body('phone').notEmpty().withMessage('Phone is required'),
-    body('city').notEmpty().withMessage('City is required'),
     body('area_range').notEmpty().withMessage('Area range is required'),
   ],
   handleValidation,
