@@ -35,8 +35,8 @@ const CORS_CONFIG: CorsConfig = {
     // 主域名
     'https://www.tarmeer.com',
     'https://tarmeer.com',
-    // 设计师后台
-    'https://designer.tarmeer.com',
+    // 管理后台
+    'https://admin.tarmeer.com',
     // 如果有其他域名，请在这里添加
     // 'https://your-domain.com',
   ],

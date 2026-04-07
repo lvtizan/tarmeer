@@ -114,7 +114,44 @@ export async function register(req: any, res: any) {
   }
 }
 
-// Login against users table
+// Try admin_users table login, return response or null
+async function tryAdminLogin(email: string, password: string): Promise<{
+  token: string;
+  isAdmin: true;
+  admin: { id: number; email: string; fullName: string; role: string; permissions: any };
+} | null> {
+  const [adminRows] = await pool.execute(
+    'SELECT id, email, password, full_name, role, permissions, is_active FROM admin_users WHERE email = ?',
+    [email.toLowerCase().trim()]
+  );
+  const admins = adminRows as any[];
+  if (admins.length === 0) return null;
+
+  const admin = admins[0];
+  if (!admin.is_active) return null;
+
+  const isValid = await bcrypt.compare(password, admin.password);
+  if (!isValid) return null;
+
+  const adminToken = jwt.sign(
+    { adminId: admin.id, type: 'admin' },
+    config.jwt.secret,
+    { expiresIn: '7d' }
+  );
+  return {
+    token: adminToken,
+    isAdmin: true,
+    admin: {
+      id: admin.id,
+      email: admin.email,
+      fullName: admin.full_name,
+      role: admin.role,
+      permissions: admin.permissions,
+    },
+  };
+}
+
+// Login against users table (falls back to admin_users)
 export async function login(req: any, res: any) {
   try {
     const { email, password } = req.body;
@@ -123,6 +160,12 @@ export async function login(req: any, res: any) {
     const users = rows as any[];
 
     if (users.length === 0) {
+      // No user found — try admin_users
+      const adminResult = await tryAdminLogin(email, password);
+      if (adminResult) {
+        recordAuthSuccess(req, res, () => {});
+        return res.json(adminResult);
+      }
       recordAuthFailure(req, res, () => {});
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
@@ -148,6 +191,12 @@ export async function login(req: any, res: any) {
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
+      // Password wrong for users table — try admin_users as fallback
+      const adminResult = await tryAdminLogin(email, password);
+      if (adminResult) {
+        recordAuthSuccess(req, res, () => {});
+        return res.json(adminResult);
+      }
       recordAuthFailure(req, res, () => {});
       return res.status(401).json({ error: 'Invalid email or password.' });
     }

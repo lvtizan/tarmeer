@@ -12,7 +12,12 @@
     "audit:images": "node scripts/audit-images.mjs",
     "qa:smoke": "bash scripts/qa-smoke.sh",
     "backend:up": "bash scripts/backend-up.sh",
-    "backend:health": "bash scripts/backend-health-check.sh"
+    "backend:health": "bash scripts/backend-health-check.sh",
+    "lint:reliability": "node scripts/harness/lint-reliability.mjs",
+    "lint:cors": "node scripts/harness/lint-cors-nginx.mjs",
+    "lint:docs": "node scripts/harness/lint-docs-freshness.mjs",
+    "smoke:prod": "node scripts/harness/smoke-production.mjs",
+    "predeploy:gate": "bash scripts/harness/pre-deploy-gate.sh"
   },
   "dependencies": {
     "framer-motion": "^12.0.6",

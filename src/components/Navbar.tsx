@@ -180,7 +180,7 @@ export default function Navbar({
 
           {showUserEntry ? (
             <div className="flex items-center gap-3">
-              <NotificationBell />
+              {activeRole === 'admin' && <NotificationBell />}
               <UserMenu
                 userName={userName}
                 userAvatar={userAvatar}

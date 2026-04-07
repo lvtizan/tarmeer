@@ -303,11 +303,11 @@ export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list
     const directoryCompanies = (directoryResult.companies || []).map(toCompany);
     const approvedCompanies = (approvedResult.companies || []).map(toCompany);
 
-    // Merge: approved profiles first, then directory entries not already covered by name
-    const seenNames = new Set(approvedCompanies.map(c => c.name.toLowerCase()));
+    // Merge: directory entries first (have portfolio images), then approved profiles not already covered
+    const seenNames = new Set(directoryCompanies.map(c => c.name.toLowerCase()));
     const merged = [
-      ...approvedCompanies,
-      ...directoryCompanies.filter(c => !seenNames.has(c.name.toLowerCase())),
+      ...directoryCompanies,
+      ...approvedCompanies.filter(c => !seenNames.has(c.name.toLowerCase())),
     ];
 
     if (merged.length > 0) return merged.slice(0, limit);

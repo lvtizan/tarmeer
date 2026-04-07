@@ -1,0 +1,55 @@
+name: Harness Engineering Checks
+
+on:
+  push:
+    branches: [main, harness-engineering]
+  pull_request:
+    branches: [main]
+
+jobs:
+  reliability-check:
+    name: Reliability Invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check reliability invariants
+        run: node scripts/harness/lint-reliability.mjs
+      - name: Check CORS/Nginx consistency
+        run: node scripts/harness/lint-cors-nginx.mjs
+
+  build-check:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install frontend deps
+        run: npm ci
+      - name: TypeScript check
+        run: npx tsc --noEmit --skipLibCheck
+      - name: Vite build
+        run: npx vite build
+      - name: Install backend deps
+        run: cd server && npm ci
+      - name: Backend build
+        run: cd server && npx tsc
+
+  docs-freshness:
+    name: Documentation Freshness
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check docs freshness
+        run: node scripts/harness/lint-docs-freshness.mjs

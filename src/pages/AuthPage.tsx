@@ -115,6 +115,15 @@ export default function AuthPage() {
     try {
       const response = await api.post('/auth/login', { email, password });
       api.setToken(response.token);
+
+      // Admin login — store admin info and redirect to admin panel
+      if (response.isAdmin) {
+        localStorage.setItem('admin_token', response.token);
+        localStorage.setItem('admin', JSON.stringify(response.admin));
+        navigate('/admin');
+        return;
+      }
+
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user));
         localStorage.setItem('active_role', response.user.active_role || '');
