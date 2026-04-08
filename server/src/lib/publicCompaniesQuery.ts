@@ -1,6 +1,6 @@
 export function buildPublicCompaniesListQuery(input: { limit: number; offset: number; orderMode: 'home' | 'list' }) {
   const primary = input.orderMode === 'home' ? 'home_display_order' : 'list_display_order';
-  const orderBy = `CASE WHEN COALESCE(${primary}, 0) > 0 THEN 0 ELSE 1 END, ${primary} ASC, google_rating DESC, google_reviews_count DESC, name_en ASC`;
+  const orderBy = `weight_score DESC, CASE WHEN COALESCE(${primary}, 0) > 0 THEN 0 ELSE 1 END, ${primary} ASC, google_rating DESC, google_reviews_count DESC, name_en ASC`;
   return {
     sql: `SELECT
          id,
@@ -22,7 +22,8 @@ export function buildPublicCompaniesListQuery(input: { limit: number; offset: nu
          home_display_order,
          list_display_order,
          google_reviews_count,
-         owner_user_id
+         owner_user_id,
+         is_signed
        FROM uae_companies
        WHERE is_active = 1
        ORDER BY ${orderBy}
@@ -51,7 +52,8 @@ export function buildPublicCompanyDetailQuery(slug: string) {
          portfolio_images,
          portfolio_images AS portfolio_categories,
          google_reviews_count,
-         owner_user_id
+         owner_user_id,
+         is_signed
        FROM uae_companies
        WHERE slug = ?
          AND is_active = 1

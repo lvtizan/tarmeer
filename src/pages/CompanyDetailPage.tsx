@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Instagram, MapPin, Briefcase,
   Calendar, FolderOpen, Phone, Mail, ChevronLeft, ChevronRight,
-  Share2, ExternalLink, X,
+  Share2, ExternalLink, X, BadgeCheck,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
 import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies, fetchAdminCompanyPreview } from '../lib/publicApi';
@@ -217,7 +217,10 @@ export default function CompanyDetailPage() {
                 />
               )}
               <div className="flex-1 min-w-0">
-                <h1 className="font-serif text-2xl font-semibold text-[#1c1917]">{company.name}</h1>
+                <h1 className="font-serif text-2xl font-semibold text-[#1c1917]">
+                  {company.name}
+                  {company.isSigned && <BadgeCheck className="inline w-6 h-6 ml-1.5 text-[#b8864a] shrink-0" />}
+                </h1>
                 <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-sm">
                   <span className="text-[#b8864a] font-medium">{company.projectCount}+ projects</span>
                   <span className="text-stone-300">&middot;</span>

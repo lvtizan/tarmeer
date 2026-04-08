@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail } from 'lucide-react';
+import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
@@ -121,6 +121,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
             )}
             <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
               {company.name}
+              {company.isSigned && <BadgeCheck className="inline w-5 h-5 ml-1 text-[#b8864a] shrink-0" />}
             </h3>
           </div>
 

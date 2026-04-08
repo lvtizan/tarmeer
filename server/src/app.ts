@@ -26,6 +26,7 @@ import { getCorsConfig, logCorsViolation } from './lib/corsOrigins';
 import { shouldSkipApiRateLimit } from './lib/rateLimitPolicy';
 import { validateJWTConfig } from './lib/jwtManager';
 import { runAutoMigrate } from './lib/autoMigrate';
+import { calculateAllWeights } from './lib/weightCalculator';
 import passport from './middleware/passport';
 
 dotenv.config();
@@ -210,6 +211,27 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
+// Schedule weight calculation at 01:00 UTC (09:00 China time) daily
+function scheduleWeightCalculation() {
+  function getNextRun(): number {
+    const now = new Date();
+    const next = new Date(now);
+    next.setUTCHours(1, 0, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    return next.getTime() - now.getTime();
+  }
+
+  function run() {
+    calculateAllWeights().catch(err => console.error('[Weight] Calculation error:', err));
+    setTimeout(run, 24 * 60 * 60 * 1000);
+  }
+
+  // Run once on startup
+  calculateAllWeights().catch(err => console.error('[Weight] Initial calculation error:', err));
+  // Schedule next run
+  setTimeout(run, getNextRun());
+}
+
 app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${config.nodeEnv}`);
@@ -217,6 +239,9 @@ app.listen(PORT, async () => {
 
   // 启动后自动检查并补齐数据库结构
   await runAutoMigrate();
+
+  // Weight calculation scheduler
+  scheduleWeightCalculation();
 });
 
 export default app;

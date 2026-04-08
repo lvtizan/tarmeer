@@ -88,12 +88,13 @@ export async function listApprovedCompanies(req: any, res: any) {
         cp.display_order,
         cp.home_display_order,
         cp.list_display_order,
+        cp.is_signed,
         u.email,
         (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count
       FROM company_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE ${whereClause}
-      ORDER BY CASE WHEN cp.home_display_order > 0 THEN 0 ELSE 1 END, cp.home_display_order ASC, cp.display_order DESC, cp.created_at DESC
+      ORDER BY cp.weight_score DESC, CASE WHEN cp.home_display_order > 0 THEN 0 ELSE 1 END, cp.home_display_order ASC, cp.display_order DESC, cp.created_at DESC
       LIMIT ${Number(limitNum)} OFFSET ${Number(offset)}
     `;
 
@@ -144,6 +145,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         list_display_order: company.list_display_order || 0,
         project_count: company.project_count || 0,
         portfolio_images: imageMap[company.id] || [],
+        is_signed: !!(company.is_signed),
       };
     });
 
@@ -209,6 +211,7 @@ export async function getCompanyDetail(req: any, res: any) {
       created_at: company.created_at,
       projects: projects,
       is_claimed: true, // 注册公司永远是 claimed（用户自己创建的）
+      is_signed: !!(company.is_signed),
     };
 
     res.json({ company: formattedCompany });

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Globe } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Globe, RefreshCw, Save } from 'lucide-react';
 import { adminApi, AnalyticsOverview, VisitorRecord } from '../../lib/adminApi';
 import { formatCount } from '../../lib/formatNumber';
 import { useAdmin } from '../../contexts/AdminContext';
@@ -199,6 +199,127 @@ export default function AdminAnalyticsPage() {
           </button>
         </div>
       </div>
+
+      {/* Weight Configuration */}
+      <WeightConfigCard />
+    </div>
+  );
+}
+
+const WEIGHT_CONFIG_LABELS: Record<string, string> = {
+  base_profile_score: 'Base Profile Score',
+  per_project_score: 'Per Project Score',
+  signed_score: 'Signed Bonus',
+};
+
+interface WeightConfigEntry {
+  key: string;
+  value: number;
+  updated_at: string;
+}
+
+function WeightConfigCard() {
+  const [configs, setConfigs] = useState<WeightConfigEntry[]>([]);
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const loadConfig = useCallback(async () => {
+    try {
+      const result = await adminApi.getWeightConfig();
+      setConfigs(result.configs || []);
+    } catch {
+      // silently fail - endpoint may not exist yet
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadConfig(); }, [loadConfig]);
+
+  const handleSave = async (key: string) => {
+    const raw = editValues[key];
+    if (raw === undefined) return;
+    const value = parseInt(raw) || 0;
+    setSaving(key);
+    try {
+      await adminApi.updateWeightConfig(key, value);
+      setConfigs((prev) => prev.map((c) => c.key === key ? { ...c, value, updated_at: new Date().toISOString() } : c));
+      setEditValues((prev) => { const next = { ...prev }; delete next[key]; return next; });
+      showToast(`${WEIGHT_CONFIG_LABELS[key] || key} updated to ${value}`);
+    } catch {
+      showToast('Failed to save');
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleRecalculate = async () => {
+    setRecalculating(true);
+    try {
+      const result = await adminApi.triggerWeightRecalculation();
+      showToast(`Recalculated: ${result.updated} companies updated`);
+    } catch {
+      showToast('Recalculation failed');
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="rounded-lg border border-stone-200 bg-white p-5 mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold text-[#2c2c2c]">Weight Configuration</h2>
+          <p className="text-xs text-stone-500">Configure how company sort weight is calculated.</p>
+        </div>
+        <button
+          onClick={handleRecalculate}
+          disabled={recalculating}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-stone-200 text-sm font-medium text-stone-700 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} />
+          {recalculating ? 'Recalculating...' : 'Recalculate Now'}
+        </button>
+      </div>
+
+      {toast && (
+        <div className="mb-4 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">{toast}</div>
+      )}
+
+      {configs.length === 0 ? (
+        <p className="text-sm text-stone-500">No weight config found. Backend may not have this feature enabled yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {configs.map((cfg) => (
+            <div key={cfg.key} className="border border-stone-200 rounded-lg p-4">
+              <label className="block text-sm font-medium text-stone-600 mb-1">{WEIGHT_CONFIG_LABELS[cfg.key] || cfg.key}</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={editValues[cfg.key] ?? cfg.value}
+                  onChange={(e) => setEditValues((prev) => ({ ...prev, [cfg.key]: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a]"
+                />
+                <button
+                  onClick={() => handleSave(cfg.key)}
+                  disabled={saving === cfg.key || editValues[cfg.key] === undefined}
+                  className="px-3 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a67c47] transition disabled:opacity-40"
+                >
+                  <Save className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-stone-400 mt-1">Last updated: {cfg.updated_at ? new Date(cfg.updated_at).toLocaleString() : 'N/A'}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -725,6 +725,39 @@ class AdminApiClient {
   async markNotificationSeen(page: string) {
     return this.request(`/notifications/mark-seen?page=${page}`, { method: 'PUT' });
   }
+
+  // Weight system
+  async toggleCompanySigned(id: number, isSigned: boolean) {
+    return this.request(`/roles/companies/${id}/toggle-signed`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_signed: isSigned }),
+    });
+  }
+
+  async toggleDirectorySigned(id: number, isSigned: boolean) {
+    return this.request(`/companies/${id}/toggle-signed`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_signed: isSigned }),
+    });
+  }
+
+  async getWeightConfig(): Promise<{ configs: Array<{ key: string; value: number; updated_at: string }> }> {
+    return this.request('/weight-config');
+  }
+
+  async updateWeightConfig(key: string, value: number) {
+    return this.request(`/weight-config/${key}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    });
+  }
+
+  async triggerWeightRecalculation(): Promise<{ message: string; updated: number }> {
+    return this.request('/weight-config/recalculate', { method: 'POST' });
+  }
 }
 
 export const adminApi = new AdminApiClient();

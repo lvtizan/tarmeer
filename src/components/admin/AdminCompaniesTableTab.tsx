@@ -18,6 +18,8 @@ interface CompanyProfileRecord {
   user_email: string;
   project_count: number;
   created_at: string;
+  is_signed?: boolean;
+  weight_score?: number;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -42,6 +44,7 @@ interface AdminCompaniesTableTabProps {
   sortActive: boolean;
   onSortToggle: () => void;
   onBulkUnapprove?: (ids: number[]) => void;
+  onToggleSigned?: (id: number, isSigned: boolean) => void;
 }
 
 export default function AdminCompaniesTableTab({
@@ -58,6 +61,7 @@ export default function AdminCompaniesTableTab({
   sortActive,
   onSortToggle,
   onBulkUnapprove,
+  onToggleSigned,
 }: AdminCompaniesTableTabProps) {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -155,14 +159,16 @@ export default function AdminCompaniesTableTab({
               <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">Signed</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">Weight</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Joined</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <TableSpinner colSpan={9} />
+              <TableSpinner colSpan={11} />
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={9} className="text-center py-12 text-stone-400">No records</td></tr>
+              <tr><td colSpan={11} className="text-center py-12 text-stone-400">No records</td></tr>
             ) : profiles.map((c) => (
               <tr
                 key={c.id}
@@ -232,6 +238,15 @@ export default function AdminCompaniesTableTab({
                     />
                   </div>
                 </td>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => onToggleSigned?.(c.id, !c.is_signed)}
+                    className={`w-9 h-5 rounded-full relative transition-colors ${c.is_signed ? 'bg-[#b8864a]' : 'bg-stone-300'}`}
+                  >
+                    <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-transform ${c.is_signed ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-stone-600 text-xs font-mono">{c.weight_score ?? '—'}</td>
                 <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
               </tr>
             ))}

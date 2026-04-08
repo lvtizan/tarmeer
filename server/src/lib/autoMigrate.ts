@@ -53,6 +53,16 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       PRIMARY KEY (admin_id, page_key)
     )`,
   },
+  {
+    name: 'weight_config',
+    sql: `CREATE TABLE IF NOT EXISTS weight_config (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      config_key VARCHAR(50) NOT NULL UNIQUE,
+      config_value INT NOT NULL,
+      description VARCHAR(200),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
@@ -82,6 +92,12 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
 
   // projects soft-delete
   { table: 'projects', column: 'deleted_at', type: 'DATETIME NULL' },
+
+  // Weight system
+  { table: 'company_profiles', column: 'is_signed', type: 'TINYINT(1) DEFAULT 0' },
+  { table: 'company_profiles', column: 'weight_score', type: 'INT DEFAULT 0' },
+  { table: 'uae_companies', column: 'is_signed', type: 'TINYINT(1) DEFAULT 0' },
+  { table: 'uae_companies', column: 'weight_score', type: 'INT DEFAULT 0' },
 
   // 以后新增字段在这里追加即可，例如：
   // { table: 'designers', column: 'wechat_id', type: 'VARCHAR(255) NULL' },
@@ -178,6 +194,16 @@ export async function runAutoMigrate(): Promise<void> {
         }
       }
     }
+
+    // 4. Seed weight_config defaults
+    try {
+      await pool.execute(
+        `INSERT IGNORE INTO weight_config (config_key, config_value, description) VALUES
+          ('base_profile_score', 50, '基础资料填完得分'),
+          ('per_project_score', 10, '每个项目得分'),
+          ('signed_score', 500, '签约公司加分')`
+      );
+    } catch { /* table may not exist yet */ }
 
     if (changes === 0) {
       console.log(`${TAG} Schema is up to date`);

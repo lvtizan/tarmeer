@@ -1,6 +1,7 @@
 import pool from '../config/database';
 import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
 import { persistProjectImages, isImageDataUrl } from '../lib/projectImageStorage';
+import { calculateAllWeights } from '../lib/weightCalculator';
 import fs from 'fs';
 import path from 'path';
 
@@ -982,5 +983,68 @@ export async function restoreAdminProject(req: any, res: any) {
   } catch (error) {
     console.error('Restore admin project error:', error);
     res.status(500).json({ error: 'Failed to restore project.' });
+  }
+}
+
+// ====== Weight System ======
+
+// PUT /admin/roles/companies/:id/toggle-signed
+export async function toggleCompanyProfileSigned(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const { is_signed } = req.body;
+    await pool.execute('UPDATE company_profiles SET is_signed = ? WHERE id = ?', [is_signed ? 1 : 0, id]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Toggle company profile signed error:', error);
+    res.status(500).json({ error: 'Failed to update signed status.' });
+  }
+}
+
+// PUT /admin/companies/:id/toggle-signed (for directory companies)
+export async function toggleDirectorySigned(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const { is_signed } = req.body;
+    await pool.execute('UPDATE uae_companies SET is_signed = ? WHERE id = ?', [is_signed ? 1 : 0, id]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Toggle directory signed error:', error);
+    res.status(500).json({ error: 'Failed to update signed status.' });
+  }
+}
+
+// GET /admin/weight-config
+export async function getWeightConfigList(req: any, res: any) {
+  try {
+    const [rows] = await pool.execute('SELECT * FROM weight_config ORDER BY id');
+    res.json({ configs: rows });
+  } catch (error) {
+    console.error('Get weight config error:', error);
+    res.status(500).json({ error: 'Failed to load weight config.' });
+  }
+}
+
+// PUT /admin/weight-config/:key
+export async function updateWeightConfig(req: any, res: any) {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+    await pool.execute('UPDATE weight_config SET config_value = ? WHERE config_key = ?', [Number(value), key]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Update weight config error:', error);
+    res.status(500).json({ error: 'Failed to update weight config.' });
+  }
+}
+
+// POST /admin/weight-config/recalculate (manual trigger)
+export async function triggerWeightRecalculation(req: any, res: any) {
+  try {
+    const result = await calculateAllWeights();
+    res.json(result);
+  } catch (error) {
+    console.error('Weight recalculation error:', error);
+    res.status(500).json({ error: 'Failed to recalculate weights.' });
   }
 }

@@ -28,6 +28,10 @@ export interface Company {
   portfolioCategoriesByProject?: PortfolioCategories;
   /** true if a real user has claimed and manages this company */
   isClaimed: boolean;
+  /** true if the company has signed a contract with Tarmeer */
+  isSigned?: boolean;
+  /** computed weight score for sorting */
+  weightScore?: number;
 }
 
 export function summarizeCompanyDescription(description: string): string {

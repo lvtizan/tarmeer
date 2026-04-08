@@ -54,6 +54,11 @@ import {
   createAdminProject,
   deleteAdminProject,
   restoreAdminProject,
+  toggleCompanyProfileSigned,
+  toggleDirectorySigned,
+  getWeightConfigList,
+  updateWeightConfig,
+  triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import * as roleAdmin from '../controllers/roleAdminController';
@@ -181,6 +186,15 @@ router.put('/roles/companies/:companyId/projects/:projectId', updateAdminProject
 router.post('/roles/companies/:companyId/projects', createAdminProject);
 router.delete('/roles/companies/:companyId/projects/:projectId', deleteAdminProject);
 router.put('/roles/companies/:companyId/projects/:projectId/restore', restoreAdminProject);
+
+// Weight system: toggle signed status
+router.put('/roles/companies/:id/toggle-signed', requireSuperAdmin, toggleCompanyProfileSigned);
+router.put('/companies/:companyId/toggle-signed', requireSuperAdmin, toggleDirectorySigned);
+
+// Weight config management
+router.get('/weight-config', requireSuperAdmin, getWeightConfigList);
+router.put('/weight-config/:key', requireSuperAdmin, updateWeightConfig);
+router.post('/weight-config/recalculate', requireSuperAdmin, triggerWeightRecalculation);
 
 // Company merge/claim
 router.get('/companies/merge-candidates', listMergeCandidates);

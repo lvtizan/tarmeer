@@ -63,6 +63,8 @@ interface PublicCompanyRecord {
   projects?: any[];
   portfolio_categories?: Record<string, { url: string; title: string }[]>;
   is_claimed?: boolean;
+  is_signed?: boolean;
+  weight_score?: number;
 }
 
 function sanitizePortfolioCategories(
@@ -295,6 +297,8 @@ function toCompany(company: PublicCompanyRecord): Company {
     portfolioCategories,
     portfolioCategoriesByProject: Object.keys(portfolioCategoriesByProject).length > 0 ? portfolioCategoriesByProject : undefined,
     isClaimed: !!company.is_claimed,
+    isSigned: !!company.is_signed,
+    weightScore: company.weight_score ?? undefined,
   };
 }
 
