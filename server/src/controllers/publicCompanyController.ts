@@ -76,6 +76,7 @@ export async function listApprovedCompanies(req: any, res: any) {
     const listQuery = `
       SELECT
         cp.id,
+        cp.slug,
         cp.company_name,
         cp.company_type,
         cp.description,
@@ -131,6 +132,7 @@ export async function listApprovedCompanies(req: any, res: any) {
 
       return {
         id: company.id,
+        slug: company.slug || '',
         company_name: company.company_name,
         company_type: company.company_type,
         description: company.description,
@@ -172,10 +174,10 @@ export async function getCompanyDetail(req: any, res: any) {
   try {
     const { id } = req.params;
 
-    // Fetch company profile
+    // Fetch company profile - try by slug first, then by ID
     const [companyRows] = await pool.execute(
-      `SELECT cp.* FROM company_profiles cp WHERE cp.id = ? AND cp.status = ?`,
-      [id, 'approved']
+      `SELECT cp.* FROM company_profiles cp WHERE (cp.slug = ? OR cp.id = ?) AND cp.status = ?`,
+      [id, isNaN(Number(id)) ? 0 : Number(id), 'approved']
     );
 
     if ((companyRows as any[]).length === 0) {
@@ -197,6 +199,7 @@ export async function getCompanyDetail(req: any, res: any) {
 
     const formattedCompany = {
       id: company.id,
+      slug: company.slug || '',
       company_name: company.company_name,
       company_type: company.company_type,
       description: company.description,

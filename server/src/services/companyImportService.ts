@@ -4,6 +4,7 @@ import {
 } from 'docx';
 import mammoth from 'mammoth';
 import pool from '../config/database';
+import { slugify } from '../lib/slugify';
 
 // ============================================================
 // Template field definitions
@@ -187,13 +188,7 @@ export async function parseTemplate(buffer: Buffer): Promise<Record<string, stri
 // Import parsed data into database
 // ============================================================
 
-function slugify(name: string): string {
-  return name.toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-}
+// slugify is now imported from '../lib/slugify'
 
 export async function importCompany(data: Record<string, string>, adminId: number): Promise<{ id: number; name: string }> {
   const name = data.company_name;
@@ -215,8 +210,8 @@ export async function importCompany(data: Record<string, string>, adminId: numbe
     `INSERT INTO company_profiles (
       user_id, company_name, company_type, description, contact_person,
       phone, website, city, address, services, specialties,
-      trade_license_number, establishment_year, status, reviewed_by, reviewed_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, NOW())`,
+      trade_license_number, establishment_year, slug, status, reviewed_by, reviewed_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, NOW())`,
     [
       0, // placeholder user_id — will be linked when company claims
       name,
@@ -231,6 +226,7 @@ export async function importCompany(data: Record<string, string>, adminId: numbe
       specialties,
       data.license_number || null,
       data.year_established ? parseInt(data.year_established) : null,
+      slug,
       adminId,
     ]
   );

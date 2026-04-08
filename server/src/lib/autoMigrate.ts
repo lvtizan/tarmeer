@@ -93,6 +93,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // projects soft-delete
   { table: 'projects', column: 'deleted_at', type: 'DATETIME NULL' },
 
+  // Slug for SEO-friendly URLs
+  { table: 'company_profiles', column: 'slug', type: 'VARCHAR(200) NULL' },
+
   // Weight system
   { table: 'company_profiles', column: 'is_signed', type: 'TINYINT(1) DEFAULT 0' },
   { table: 'company_profiles', column: 'weight_score', type: 'INT DEFAULT 0' },
@@ -195,7 +198,14 @@ export async function runAutoMigrate(): Promise<void> {
       }
     }
 
-    // 4. Seed weight_config defaults
+    // 4. Populate slugs for existing company_profiles that don't have one
+    try {
+      await pool.execute(
+        `UPDATE company_profiles SET slug = LOWER(REPLACE(REPLACE(REPLACE(TRIM(company_name), ' ', '-'), '.', ''), ',', '')) WHERE slug IS NULL OR slug = ''`
+      );
+    } catch { /* ignore if column doesn't exist yet */ }
+
+    // 5. Seed weight_config defaults
     try {
       await pool.execute(
         `INSERT IGNORE INTO weight_config (config_key, config_value, description) VALUES

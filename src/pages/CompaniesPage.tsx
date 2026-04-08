@@ -121,7 +121,11 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
             )}
             <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
               {company.name}
-              {company.isSigned && <BadgeCheck className="inline w-5 h-5 ml-1 text-[#b8864a] shrink-0" />}
+              {company.isSigned ? (
+                <span className="inline-flex items-center ml-1.5 px-1.5 py-0.5 rounded bg-[#b8864a]/10 text-[#b8864a] text-[10px] font-bold tracking-wider shrink-0">VIP</span>
+              ) : company.isClaimed ? (
+                <BadgeCheck className="inline w-4 h-4 ml-1 text-[#b8864a]/70 shrink-0" />
+              ) : null}
             </h3>
           </div>
 

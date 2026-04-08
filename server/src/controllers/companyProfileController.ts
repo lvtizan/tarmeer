@@ -4,6 +4,7 @@ import {
   normalizeCompanyProfilePayload,
   validateCompanyProfilePayload,
 } from '../lib/companyProfileDraft';
+import { slugify } from '../lib/slugify';
 
 /**
  * POST /api/company/profile
@@ -20,13 +21,14 @@ export async function upsertProfile(req: any, res: any) {
 
     const servicesJson = JSON.stringify(payload.services);
     const specialtiesJson = JSON.stringify(payload.specialties);
+    const slug = slugify(payload.company_name);
 
     // Check if profile exists
     const [existing] = await pool.execute('SELECT id FROM company_profiles WHERE user_id = ?', [userId]);
 
     if ((existing as any[]).length > 0) {
       await pool.execute(
-        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ? WHERE user_id = ?`,
+        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, slug = ? WHERE user_id = ?`,
         [
           payload.company_name,
           payload.description,
@@ -41,13 +43,14 @@ export async function upsertProfile(req: any, res: any) {
           payload.trade_license_number,
           payload.establishment_year,
           specialtiesJson,
+          slug,
           userId,
         ]
       );
     } else {
       await pool.execute(
-        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, slug, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
         [
           userId,
           payload.company_name,
@@ -63,6 +66,7 @@ export async function upsertProfile(req: any, res: any) {
           payload.trade_license_number,
           payload.establishment_year,
           specialtiesJson,
+          slug,
         ]
       );
 
