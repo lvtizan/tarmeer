@@ -24,6 +24,8 @@ export interface Company {
   coverImage: string;
   projectImages: string[];
   portfolioCategories: PortfolioCategories;
+  /** Same images grouped by project title instead of style */
+  portfolioCategoriesByProject?: PortfolioCategories;
   /** true if a real user has claimed and manages this company */
   isClaimed: boolean;
 }

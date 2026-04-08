@@ -37,6 +37,7 @@ export default function CompanyDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxCategory, setLightboxCategory] = useState('');
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [portfolioMode, setPortfolioMode] = useState<'project' | 'style'>('project');
   const [showFloatingForm, setShowFloatingForm] = useState(false);
   const [floatingFormDismissed, setFloatingFormDismissed] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -87,10 +88,21 @@ export default function CompanyDetailPage() {
     return () => { active = false; };
   }, [id, searchParams]);
 
-  const normalizedCategories = useMemo(() => {
+  const normalizedStyleCategories = useMemo(() => {
     if (!company?.portfolioCategories) return {};
     return normalizePortfolioCategories(company.portfolioCategories);
   }, [company]);
+
+  const normalizedProjectCategories = useMemo(() => {
+    if (!company?.portfolioCategoriesByProject) return {};
+    // By-project categories don't need normalization (already clean titles)
+    return company.portfolioCategoriesByProject;
+  }, [company]);
+
+  const hasProjectCategories = Object.keys(normalizedProjectCategories).length > 1;
+  const activeCategories = portfolioMode === 'project' && hasProjectCategories
+    ? normalizedProjectCategories
+    : normalizedStyleCategories;
 
   const handleImageClick = useCallback(
     (_url: string, categoryName: string, indexInCategory: number) => {
@@ -124,7 +136,7 @@ export default function CompanyDetailPage() {
     ? company.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '')
     : '';
   const yearsExp = 2026 - company.foundedYear;
-  const lightboxImages: PortfolioItem[] = normalizedCategories[lightboxCategory] ?? [];
+  const lightboxImages: PortfolioItem[] = activeCategories[lightboxCategory] ?? [];
   const description = company.description || '';
   const shouldTruncate = description.length > 300;
 
@@ -365,8 +377,32 @@ export default function CompanyDetailPage() {
 
       {/* ===== Projects Section - Full Width ===== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-2">
+        {hasProjectCategories && (
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setPortfolioMode('project')}
+              className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
+                portfolioMode === 'project'
+                  ? 'bg-[#b8864a] text-white'
+                  : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+              }`}
+            >
+              By Project ({Object.keys(normalizedProjectCategories).length})
+            </button>
+            <button
+              onClick={() => setPortfolioMode('style')}
+              className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
+                portfolioMode === 'style'
+                  ? 'bg-[#b8864a] text-white'
+                  : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+              }`}
+            >
+              By Style ({Object.keys(normalizedStyleCategories).length})
+            </button>
+          </div>
+        )}
         <MasonryGallery
-          categories={normalizedCategories}
+          categories={activeCategories}
           onImageClick={handleImageClick}
           externalWebsite={company.isClaimed ? undefined : (company.website || undefined)}
         />

@@ -107,7 +107,7 @@ export default function Lightbox({
             {/* Prev button */}
             {currentIndex > 0 && (
               <button
-                onClick={() => onNavigate(currentIndex - 1)}
+                onClick={(e) => { e.stopPropagation(); onNavigate(currentIndex - 1); }}
                 className="absolute left-3 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
                 aria-label="Previous image"
               >
@@ -150,7 +150,7 @@ export default function Lightbox({
             {/* Next button */}
             {currentIndex < images.length - 1 && (
               <button
-                onClick={() => onNavigate(currentIndex + 1)}
+                onClick={(e) => { e.stopPropagation(); onNavigate(currentIndex + 1); }}
                 className="absolute right-3 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
                 aria-label="Next image"
               >

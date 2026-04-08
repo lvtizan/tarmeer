@@ -234,23 +234,27 @@ function toCompany(company: PublicCompanyRecord): Company {
   }
 
   // Fallback: profile detail returns projects[]; extract categorized images from projects
+  let portfolioCategoriesByProject: PortfolioCategories = {};
   if (projectImages.length === 0 && Array.isArray(company.projects) && company.projects.length > 0) {
-    const fromProjects: PortfolioCategories = {};
+    const byStyle: PortfolioCategories = {};
+    const byProject: PortfolioCategories = {};
     company.projects.forEach((project: any) => {
       const imgs = sanitizeImageUrls(parseJsonArray(project?.images));
       if (!imgs.length) return;
-      const category = String(project?.style || 'Projects');
+      const style = String(project?.style || 'Projects');
       const title = String(project?.title || 'Project');
       const items = imgs.map((url: string, idx: number) => ({
         url,
         title: imgs.length > 1 ? `${title} ${idx + 1}` : title,
       }));
-      fromProjects[category] = [...(fromProjects[category] || []), ...items];
+      byStyle[style] = [...(byStyle[style] || []), ...items];
+      byProject[title] = [...(byProject[title] || []), ...items];
     });
 
-    if (Object.keys(fromProjects).length > 0) {
-      portfolioCategories = fromProjects;
-      projectImages = Object.values(fromProjects).flatMap((items) => items.map((item) => item.url));
+    if (Object.keys(byStyle).length > 0) {
+      portfolioCategories = byStyle;
+      portfolioCategoriesByProject = byProject;
+      projectImages = Object.values(byStyle).flatMap((items) => items.map((item) => item.url));
     }
   }
 
@@ -289,6 +293,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     coverImage: sanitizeImageUrls([company.logo_url])[0] || '', // logo for small badge
     projectImages, // flat list from all categories for listing/card display
     portfolioCategories,
+    portfolioCategoriesByProject: Object.keys(portfolioCategoriesByProject).length > 0 ? portfolioCategoriesByProject : undefined,
     isClaimed: !!company.is_claimed,
   };
 }
