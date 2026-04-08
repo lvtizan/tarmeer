@@ -401,6 +401,8 @@ class AdminApiClient {
   async getCompanyVisitors(params: { startDate?: string; endDate?: string } = {}): Promise<{
     companies: Array<{
       page_path: string;
+      company_name: string;
+      slug: string;
       unique_visitors: number;
       total_views: number;
       cities: Array<{ city: string; visitors: number }>;

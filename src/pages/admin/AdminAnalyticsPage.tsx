@@ -22,6 +22,8 @@ const VISITOR_PAGE_SIZE = 50;
 
 interface CompanyVisitorRow {
   page_path: string;
+  company_name: string;
+  slug: string;
   unique_visitors: number;
   total_views: number;
   cities: Array<{ city: string; visitors: number }>;
@@ -226,8 +228,8 @@ function CompanyVisitorsChart({ rows }: { rows: CompanyVisitorRow[] }) {
             const visitors = Number(row.unique_visitors) || 0;
             const views = Number(row.total_views) || 0;
             const widthPct = maxVisitors > 0 ? Math.max(6, Math.round((visitors / maxVisitors) * 100)) : 6;
-            const slug = extractCompanySlug(row.page_path);
-            const name = slugToName(slug);
+            const slug = row.slug || extractCompanySlug(row.page_path);
+            const name = row.company_name || slugToName(slug);
 
             return (
               <div key={row.page_path}>

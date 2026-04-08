@@ -122,7 +122,42 @@ export async function getCompanyVisitors(req: Request, res: Response): Promise<v
       [start, end]
     );
 
-    const companies = companyRows as Array<{ page_path: string; unique_visitors: number; total_views: number }>;
+    const rawCompanies = companyRows as Array<{ page_path: string; unique_visitors: number; total_views: number }>;
+
+    // Resolve company names from slugs/IDs
+    const companies: Array<{ page_path: string; company_name: string; slug: string; unique_visitors: number; total_views: number }> = [];
+    for (const c of rawCompanies) {
+      // Extract slug from path: /companies/antonovich-design or /companies/15
+      const slug = c.page_path.replace('/companies/', '').split('?')[0].trim();
+      if (!slug || slug === 'Preview' || slug.includes('admin_preview')) continue;
+
+      let companyName = slug;
+      // Try uae_companies first (slug-based)
+      const [uaeRows] = await pool.execute(
+        'SELECT name_en FROM uae_companies WHERE slug = ? OR id = ? LIMIT 1',
+        [slug, isNaN(Number(slug)) ? 0 : Number(slug)]
+      );
+      if ((uaeRows as any[]).length > 0) {
+        companyName = (uaeRows as any[])[0].name_en;
+      } else {
+        // Try company_profiles (ID-based)
+        const [cpRows] = await pool.execute(
+          'SELECT company_name FROM company_profiles WHERE id = ? LIMIT 1',
+          [isNaN(Number(slug)) ? 0 : Number(slug)]
+        );
+        if ((cpRows as any[]).length > 0) {
+          companyName = (cpRows as any[])[0].company_name;
+        }
+      }
+      companies.push({
+        page_path: c.page_path,
+        company_name: companyName,
+        slug,
+        unique_visitors: Number(c.unique_visitors),
+        total_views: Number(c.total_views),
+      });
+    }
+
     const pagePaths = companies.map(c => c.page_path);
 
     let cityBreakdown: Array<{ page_path: string; city: string; visitors: number }> = [];
@@ -161,8 +196,10 @@ export async function getCompanyVisitors(req: Request, res: Response): Promise<v
 
     const result = companies.map(c => ({
       page_path: c.page_path,
-      unique_visitors: Number(c.unique_visitors),
-      total_views: Number(c.total_views),
+      company_name: c.company_name,
+      slug: c.slug,
+      unique_visitors: c.unique_visitors,
+      total_views: c.total_views,
       cities: (cityMap[c.page_path] || []).slice(0, 5),
     }));
 
