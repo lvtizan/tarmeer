@@ -186,10 +186,10 @@ export async function getCompanyDetail(req: any, res: any) {
 
     const company = (companyRows as any[])[0];
 
-    // Fetch projects
+    // Fetch projects (use company.id, not URL param which may be a slug)
     const [projects] = await pool.execute(
-      `SELECT * FROM projects WHERE company_profile_id = ? ORDER BY created_at DESC`,
-      [id]
+      `SELECT * FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`,
+      [company.id]
     );
 
     // Parse JSON fields
