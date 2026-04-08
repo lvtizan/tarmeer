@@ -26,6 +26,35 @@ interface IndexDef {
   columns: string;     // e.g. "google_id"
 }
 
+// 需要确保存在的表（CREATE TABLE IF NOT EXISTS）
+const REQUIRED_TABLES: { name: string; sql: string }[] = [
+  {
+    name: 'admin_audit_log',
+    sql: `CREATE TABLE IF NOT EXISTS admin_audit_log (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      admin_id INT NOT NULL,
+      admin_name VARCHAR(100),
+      action VARCHAR(50) NOT NULL,
+      target_type VARCHAR(50) NOT NULL,
+      target_ids JSON NOT NULL,
+      reason TEXT,
+      metadata JSON,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_action (action),
+      INDEX idx_created_at (created_at)
+    )`,
+  },
+  {
+    name: 'admin_last_seen',
+    sql: `CREATE TABLE IF NOT EXISTS admin_last_seen (
+      admin_id INT NOT NULL,
+      page_key VARCHAR(50) NOT NULL,
+      last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (admin_id, page_key)
+    )`,
+  },
+];
+
 // 需要确保存在的字段
 const REQUIRED_COLUMNS: ColumnDef[] = [
   // OAuth 相关
@@ -45,6 +74,14 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'company_profiles', column: 'delete_reason', type: 'VARCHAR(500) NULL' },
   { table: 'company_profiles', column: 'home_display_order', type: 'INT NOT NULL DEFAULT 0' },
   { table: 'company_profiles', column: 'list_display_order', type: 'INT NOT NULL DEFAULT 0' },
+
+  // design_inquiries soft-delete + CRM sync
+  { table: 'design_inquiries', column: 'deleted_at', type: 'DATETIME NULL' },
+  { table: 'design_inquiries', column: 'deleted_by', type: 'INT NULL' },
+  { table: 'design_inquiries', column: 'crm_synced_at', type: 'DATETIME NULL' },
+
+  // projects soft-delete
+  { table: 'projects', column: 'deleted_at', type: 'DATETIME NULL' },
 
   // 以后新增字段在这里追加即可，例如：
   // { table: 'designers', column: 'wechat_id', type: 'VARCHAR(255) NULL' },
@@ -95,6 +132,12 @@ export async function runAutoMigrate(): Promise<void> {
   let changes = 0;
 
   try {
+    // 0. 创建缺失的表
+    for (const tbl of REQUIRED_TABLES) {
+      await pool.execute(tbl.sql);
+      console.log(`${TAG} Ensured table exists: ${tbl.name}`);
+    }
+
     // 1. 添加缺失的字段
     for (const col of REQUIRED_COLUMNS) {
       const exists = await columnExists(col.table, col.column);

@@ -34,12 +34,27 @@ function isExemptPath(path?: string | null) {
     '/admin/reset-password',
   ]);
 
+  // Public read-only API paths — exempt from strict global rate limit
+  // These are called on every page load by all visitors
+  const publicReadPrefixes = [
+    '/companies',
+    '/public/companies',
+    '/designers',
+    '/stats',
+    '/uploads',
+  ];
+
   for (const candidate of candidates) {
     if (candidate.startsWith('/admin/')) {
       return true;
     }
     if (exactExemptPaths.has(candidate)) {
       return true;
+    }
+    for (const prefix of publicReadPrefixes) {
+      if (candidate.startsWith(prefix)) {
+        return true;
+      }
     }
   }
 

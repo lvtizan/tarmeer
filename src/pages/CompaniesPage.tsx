@@ -250,7 +250,11 @@ export default function CompaniesPage() {
     return companies.filter((company) => {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        if (!company.name.toLowerCase().includes(q) && !company.description.toLowerCase().includes(q)) return false;
+        if (
+          !company.name.toLowerCase().includes(q) &&
+          !company.description.toLowerCase().includes(q) &&
+          !company.city.toLowerCase().includes(q)
+        ) return false;
       }
       if (selectedCity && company.city !== selectedCity) return false;
       if (selectedStyles.length > 0 && !selectedStyles.some((s) => company.styles.includes(s))) return false;

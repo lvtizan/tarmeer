@@ -100,9 +100,26 @@ export default function AdminLayout() {
     return () => clearInterval(interval);
   }, [fetchNotificationCounts]);
 
-  // Refresh counts on navigation
+  // Mark notifications seen when visiting a page, then refresh counts
   useEffect(() => {
-    fetchNotificationCounts();
+    const notifKey = NOTIFICATION_MAP[location.pathname] ||
+      Object.entries(NOTIFICATION_MAP).find(([p]) => location.pathname.startsWith(p))?.[1];
+    if (notifKey) {
+      const pageKeyMap: Record<string, string> = {
+        newComplaints: 'complaints',
+        newInquiries: 'inquiries',
+        newCompanyApps: 'companies',
+        newUsers: 'users',
+      };
+      const pageKey = pageKeyMap[notifKey];
+      if (pageKey) {
+        adminApi.markNotificationSeen(pageKey).then(() => fetchNotificationCounts()).catch(() => {});
+      } else {
+        fetchNotificationCounts();
+      }
+    } else {
+      fetchNotificationCounts();
+    }
   }, [location.pathname, fetchNotificationCounts]);
 
   if (isLoading) {

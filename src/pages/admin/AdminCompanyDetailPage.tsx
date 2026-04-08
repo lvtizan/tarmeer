@@ -51,13 +51,6 @@ function parseJsonArray(val: string | null | undefined): string[] {
   try { return JSON.parse(val); } catch { return []; }
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  published: 'bg-green-100 text-green-700',
-  pending: 'bg-amber-100 text-amber-700',
-  rejected: 'bg-red-100 text-red-700',
-  draft: 'bg-stone-100 text-stone-600',
-};
-
 export default function AdminCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -252,9 +245,6 @@ export default function AdminCompanyDetailPage() {
                   <div className="p-3 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="text-sm font-medium text-stone-800 leading-snug line-clamp-1">{project.title}</h3>
-                      <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[project.status] || 'bg-stone-100 text-stone-600'}`}>
-                        {project.status}
-                      </span>
                     </div>
                     <div className="flex flex-wrap gap-1 text-xs text-stone-400">
                       {project.style && <span>{project.style}</span>}

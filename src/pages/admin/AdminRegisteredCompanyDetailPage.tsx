@@ -45,13 +45,6 @@ interface Project {
   created_at: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  published: 'bg-green-100 text-green-700',
-  pending: 'bg-amber-100 text-amber-700',
-  rejected: 'bg-red-100 text-red-700',
-  draft: 'bg-stone-100 text-stone-600',
-};
-
 const COMPANY_STATUS_COLORS: Record<string, string> = {
   approved: 'bg-green-100 text-green-700',
   pending: 'bg-amber-100 text-amber-700',
@@ -294,6 +287,12 @@ export default function AdminRegisteredCompanyDetailPage() {
             <h2 className="text-lg font-bold text-stone-800">
               Portfolio <span className="text-stone-400 font-normal text-sm">({projects.length} projects)</span>
             </h2>
+            <button
+              onClick={() => navigate(`/admin/profile-companies/${id}/projects/new`)}
+              className="btn-primary px-4 py-2 text-sm"
+            >
+              + Add Project
+            </button>
           </div>
 
           {/* Style tabs */}
@@ -323,7 +322,11 @@ export default function AdminRegisteredCompanyDetailPage() {
           ) : (
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
               {visibleProjects.map((project) => (
-                <div key={project.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group">
+                <div
+                  key={project.id}
+                  className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}
+                >
                   <div className="aspect-video bg-stone-100 overflow-hidden">
                     {project.images[0] ? (
                       <SmartImage
@@ -340,9 +343,6 @@ export default function AdminRegisteredCompanyDetailPage() {
                   <div className="p-3 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="text-sm font-medium text-stone-800 leading-snug line-clamp-1">{project.title}</h3>
-                      <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[project.status] || 'bg-stone-100 text-stone-600'}`}>
-                        {project.status}
-                      </span>
                     </div>
                     <div className="flex flex-wrap gap-1 text-xs text-stone-400">
                       {project.style && <span>{project.style}</span>}

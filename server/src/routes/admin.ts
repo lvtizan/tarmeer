@@ -31,8 +31,8 @@ import {
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser } from '../controllers/userAdminController';
-import { getInquiries, updateInquiryStatus, exportInquiries } from '../controllers/inquiryController';
-import { getComplaints, updateComplaintStatus, getNewCounts } from '../controllers/complaintController';
+import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries } from '../controllers/inquiryController';
+import { getComplaints, updateComplaintStatus, getNewCounts, markNotificationSeen } from '../controllers/complaintController';
 import {
   listCompanies,
   listCompanyApplications,
@@ -48,6 +48,12 @@ import {
   updateCompanyDisplayOrder,
   updateCompanyHomeDisplayOrder,
   updateCompanyListDisplayOrder,
+  getHomeOrderCount,
+  getAdminProject,
+  updateAdminProject,
+  createAdminProject,
+  deleteAdminProject,
+  restoreAdminProject,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import * as roleAdmin from '../controllers/roleAdminController';
@@ -114,6 +120,8 @@ router.put('/projects/:projectId/reject', requirePermission('can_approve'), reje
 router.get('/inquiries', getInquiries);
 router.get('/inquiries/export', exportInquiries);
 router.put('/inquiries/:id/status', updateInquiryStatus);
+router.put('/inquiries/batch-delete', batchDeleteInquiries);
+router.put('/inquiries/batch-restore', batchRestoreInquiries);
 
 // Complaint management (admin)
 router.get('/complaints', getComplaints);
@@ -121,8 +129,10 @@ router.put('/complaints/:id/status', updateComplaintStatus);
 
 // Notification counts (admin)
 router.get('/notifications/counts', getNewCounts);
+router.put('/notifications/mark-seen', markNotificationSeen);
 
 // Company management
+router.get('/home-order-count', getHomeOrderCount);
 router.get('/companies', listCompanies);
 router.put('/companies/:companyId/display-order', requirePermission('can_sort'), updateCompanyDisplayOrder);
 router.put('/companies/:companyId/home-display-order', requirePermission('can_sort'), updateCompanyHomeDisplayOrder);
@@ -162,6 +172,13 @@ router.post('/roles/companies/:id/restore', requirePermission('can_approve'), ro
 router.get('/roles/companies/:id/detail', getCompanyProfile);
 router.get('/roles/companies/:id/full-detail', getCompanyProfileFullDetail);
 router.put('/roles/companies/:id/edit', editCompanyProfile);
+
+// Company project CRUD (admin)
+router.get('/roles/companies/:companyId/projects/:projectId', getAdminProject);
+router.put('/roles/companies/:companyId/projects/:projectId', updateAdminProject);
+router.post('/roles/companies/:companyId/projects', createAdminProject);
+router.delete('/roles/companies/:companyId/projects/:projectId', deleteAdminProject);
+router.put('/roles/companies/:companyId/projects/:projectId/restore', restoreAdminProject);
 
 // Company merge/claim
 router.get('/companies/merge-candidates', listMergeCandidates);

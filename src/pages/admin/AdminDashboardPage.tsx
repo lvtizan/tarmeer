@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, CheckCircle, Users, Globe } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
-import { resolveImageUrl } from '../../lib/imageUrl';
 import { useAdmin } from '../../contexts/AdminContext';
-import { formatCount, toNumber } from '../../lib/formatNumber';
+import { formatCount } from '../../lib/formatNumber';
 
 const PRIMARY = '#b8864a';
 
@@ -18,27 +17,25 @@ interface OverviewStats {
 interface DailyStat {
   stat_date: string;
   profile_views: number;
-  project_views: number;
-  contact_clicks: number;
-  phone_clicks: number;
-  whatsapp_clicks: number;
 }
 
-interface TopDesigner {
-  id: number;
-  full_name: string;
-  avatar_url: string | null;
-  city: string | null;
-  display_order: number;
+interface TopCompany {
+  company_slug: string;
+  views: number;
+}
+
+interface TopPage {
+  page_path: string;
   total_views: number;
-  total_clicks: number;
+  unique_visitors: number;
 }
 
 export default function AdminDashboardPage() {
   const { hasPermission } = useAdmin();
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
-  const [topDesigners, setTopDesigners] = useState<TopDesigner[]>([]);
+  const [topCompanies, setTopCompanies] = useState<TopCompany[]>([]);
+  const [topPages, setTopPages] = useState<TopPage[]>([]);
   const [visitorUniqueIpCount, setVisitorUniqueIpCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,8 +55,9 @@ export default function AdminDashboardPage() {
       ]);
       setOverview(result.overview);
       setDailyStats(result.dailyStats);
-      setTopDesigners(result.topDesigners);
-      setVisitorUniqueIpCount(visitorOverview.uniqueIpCount);
+      setTopCompanies(result.topCompanies || []);
+      setTopPages(result.topPages || []);
+      setVisitorUniqueIpCount(result.overview?.unique_visitors || visitorOverview.uniqueIpCount);
     } catch (error) {
       console.error('Error loading stats:', error);
     } finally {
@@ -70,10 +68,6 @@ export default function AdminDashboardPage() {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const sumMetric = (key: keyof DailyStat) => {
-    return dailyStats.reduce((sum, stat) => sum + toNumber(stat[key]), 0);
   };
 
   if (isLoading) {
@@ -176,25 +170,24 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Contact Interactions (Last 30 Days)</h2>
-          {dailyStats.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg border border-stone-200">
-                <p className="text-sm text-stone-500">Phone Clicks</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('phone_clicks'))}</p>
-              </div>
-              <div className="p-4 rounded-lg border border-stone-200">
-                <p className="text-sm text-stone-500">WhatsApp Clicks</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('whatsapp_clicks'))}</p>
-              </div>
-              <div className="p-4 rounded-lg border border-stone-200">
-                <p className="text-sm text-stone-500">Contact Form</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('contact_clicks'))}</p>
-              </div>
-              <div className="p-4 rounded-lg border border-stone-200">
-                <p className="text-sm text-stone-500">Project Views</p>
-                <p className="text-2xl font-bold text-[#2c2c2c]">{formatCount(sumMetric('project_views'))}</p>
-              </div>
+          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Top Companies by Views</h2>
+          {topCompanies.length > 0 ? (
+            <div className="space-y-2">
+              {(() => {
+                const maxViews = Math.max(...topCompanies.map(c => c.views), 1);
+                return topCompanies.map((co) => (
+                  <div key={co.company_slug} className="flex items-center gap-4">
+                    <span className="text-sm text-stone-500 w-32 truncate" title={co.company_slug.replace(/-/g, ' ')}>{co.company_slug.replace(/-/g, ' ')}</span>
+                    <div className="flex-1 h-6 bg-stone-100 rounded overflow-hidden">
+                      <div
+                        className="h-full rounded"
+                        style={{ width: `${Math.min(100, (co.views / maxViews) * 100)}%`, backgroundColor: PRIMARY }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-[#2c2c2c] w-10 text-right">{formatCount(co.views)}</span>
+                  </div>
+                ));
+              })()}
             </div>
           ) : (
             <p className="text-stone-500 text-center py-8">No data yet</p>
@@ -202,31 +195,28 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Top Designers */}
+      {/* Top Pages */}
       <div className="bg-white rounded-lg border border-stone-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#2c2c2c]">Top Designers by Views</h2>
-          {hasPermission('can_sort') && (
-            <Link to="/admin/designers?view=sort" className="text-sm font-semibold" style={{ color: PRIMARY }}>
-              Manage order →
-            </Link>
-          )}
+          <h2 className="text-lg font-bold text-[#2c2c2c]">Top Pages by Views</h2>
+          <Link to="/admin/analytics" className="text-sm font-semibold" style={{ color: PRIMARY }}>
+            Full analytics →
+          </Link>
         </div>
-        {topDesigners.length > 0 ? (
+        {topPages.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-stone-200">
                   <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Rank</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Designer</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">City</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Page</th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Views</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Clicks</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Visitors</th>
                 </tr>
               </thead>
               <tbody>
-                {topDesigners.map((designer, index) => (
-                  <tr key={designer.id} className="border-b border-stone-100 hover:bg-stone-50">
+                {topPages.map((page, index) => (
+                  <tr key={page.page_path} className="border-b border-stone-100 hover:bg-stone-50">
                     <td className="py-3 px-4">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
                         index < 3 ? 'text-white' : 'bg-stone-100 text-stone-600'
@@ -235,27 +225,17 @@ export default function AdminDashboardPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <Link to={`/admin/designers/${designer.id}`} className="flex items-center gap-3 hover:opacity-80 transition">
-                        {resolveImageUrl(designer.avatar_url) ? (
-                          <img src={resolveImageUrl(designer.avatar_url)} alt="" className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center">
-                            <span className="text-stone-500 text-sm">{designer.full_name.charAt(0)}</span>
-                          </div>
-                        )}
-                        <span className="font-medium text-[#2c2c2c]">{designer.full_name}</span>
-                      </Link>
+                      <span className="font-medium text-[#2c2c2c] text-sm truncate block max-w-[300px]">{page.page_path}</span>
                     </td>
-                    <td className="py-3 px-4 text-stone-500">{designer.city || '-'}</td>
-                    <td className="py-3 px-4 text-right font-medium text-[#2c2c2c]">{formatCount(designer.total_views)}</td>
-                    <td className="py-3 px-4 text-right text-stone-500">{formatCount(designer.total_clicks)}</td>
+                    <td className="py-3 px-4 text-right font-medium text-[#2c2c2c]">{formatCount(page.total_views)}</td>
+                    <td className="py-3 px-4 text-right text-stone-500">{formatCount(page.unique_visitors)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="text-stone-500 text-center py-8">No approved designers yet</p>
+          <p className="text-stone-500 text-center py-8">No page view data yet</p>
         )}
       </div>
     </div>

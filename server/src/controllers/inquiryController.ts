@@ -1,6 +1,7 @@
 import pool from '../config/database';
 import * as XLSX from 'xlsx';
 import { notifyNewInquiry } from '../services/notificationService';
+import { pushLeadToCRM } from '../lib/crmPush';
 
 const VALID_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const VALID_AREA_RANGES = ['< 50m²', '50-100m²', '100-200m²', '200-500m²', '500m²+'];
@@ -35,6 +36,17 @@ export async function submitInquiry(req: any, res: any) {
     setImmediate(() => {
       notifyNewInquiry({ id: inquiryId, name: name || 'Anonymous', phone, city, area_range, message, companyName }).catch(() => {});
     });
+
+    // Push to CRM (fire-and-forget)
+    pushLeadToCRM({
+      inquiryId,
+      externalId: `inquiry-${inquiryId}`,
+      name: name || 'Anonymous',
+      phone,
+      city: city || undefined,
+      area: area_range || undefined,
+      notes: [companyName ? `Company: ${companyName}` : '', message || ''].filter(Boolean).join(' | ') || undefined,
+    }).catch(() => {});
 
     res.status(201).json({
       message: 'Inquiry submitted successfully. We will contact you soon.',

@@ -644,44 +644,88 @@ export async function getStatsOverview(req: any, res: Response) {
        FROM designers`
     );
     
-    // Daily stats for chart
+    // Daily page views from analytics_events (real data)
     const [dailyStatsRows] = await pool.execute(
-      `SELECT 
-        stat_date,
-        SUM(profile_views) as profile_views,
-        SUM(project_views) as project_views,
-        SUM(contact_clicks) as contact_clicks,
-        SUM(phone_clicks) as phone_clicks,
-        SUM(whatsapp_clicks) as whatsapp_clicks
-       FROM designer_stats
-       WHERE stat_date BETWEEN ? AND ?
-       GROUP BY stat_date
+      `SELECT
+        DATE(created_at) as stat_date,
+        COUNT(*) as profile_views
+       FROM analytics_events
+       WHERE DATE(created_at) BETWEEN ? AND ?
+         AND event_name = 'page_view'
+       GROUP BY DATE(created_at)
        ORDER BY stat_date ASC`,
       [start, end]
     );
-    
-    // Top designers by views
-    const [topDesignersRows] = await pool.execute(
-      `SELECT 
-        d.id,
-        d.full_name,
-        d.avatar_url,
-        d.city,
-        d.display_order,
-        COALESCE(SUM(ds.profile_views), 0) as total_views,
-        COALESCE(SUM(ds.contact_clicks), 0) as total_clicks
-       FROM designers d
-       LEFT JOIN designer_stats ds ON d.id = ds.designer_id
-       WHERE d.status = 'approved'
-       GROUP BY d.id
-       ORDER BY total_views DESC
-       LIMIT 10`
+
+    // Contact interactions from analytics_events (real data)
+    const [contactRows] = await pool.execute(
+      `SELECT
+        COALESCE(SUM(CASE WHEN event_name = 'click_whatsapp' THEN 1 ELSE 0 END), 0) as whatsapp_clicks,
+        COALESCE(SUM(CASE WHEN event_name = 'apply_click' THEN 1 ELSE 0 END), 0) as contact_clicks,
+        COALESCE(SUM(CASE WHEN event_name = 'view_designer_profile' THEN 1 ELSE 0 END), 0) as profile_views,
+        COALESCE(SUM(CASE WHEN event_name = 'page_view' THEN 1 ELSE 0 END), 0) as page_views
+       FROM analytics_events
+       WHERE DATE(created_at) BETWEEN ? AND ?`,
+      [start, end]
     );
-    
+
+    // Visitor count
+    const [visitorRows] = await pool.execute(
+      `SELECT COUNT(DISTINCT viewer_ip) as unique_visitors
+       FROM analytics_events
+       WHERE DATE(created_at) BETWEEN ? AND ?`,
+      [start, end]
+    );
+
+    // Top pages by views
+    const [topPagesRows] = await pool.execute(
+      `SELECT
+        page_path,
+        COUNT(*) as total_views,
+        COUNT(DISTINCT viewer_ip) as unique_visitors
+       FROM analytics_events
+       WHERE event_name = 'page_view'
+         AND DATE(created_at) BETWEEN ? AND ?
+         AND page_path IS NOT NULL
+       GROUP BY page_path
+       ORDER BY total_views DESC
+       LIMIT 10`,
+      [start, end]
+    );
+
+    const contact = (contactRows as any[])[0] || {};
+
+    // Top companies by page views (company detail pages)
+    const [topCompanyRows] = await pool.execute(
+      `SELECT
+        REPLACE(REPLACE(page_path, '/companies/', ''), '?preview=1', '') as company_slug,
+        COUNT(*) as views
+       FROM analytics_events
+       WHERE event_name = 'page_view'
+         AND page_path LIKE '/companies/%'
+         AND page_path NOT LIKE '/companies?%'
+         AND DATE(created_at) BETWEEN ? AND ?
+       GROUP BY company_slug
+       ORDER BY views DESC
+       LIMIT 7`,
+      [start, end]
+    );
+
     res.json({
-      overview: (overviewRows as any[])[0],
+      overview: {
+        ...(overviewRows as any[])[0],
+        unique_visitors: (visitorRows as any[])[0]?.unique_visitors || 0,
+      },
       dailyStats: dailyStatsRows,
-      topDesigners: topDesignersRows,
+      contactStats: {
+        whatsapp_clicks: Number(contact.whatsapp_clicks) || 0,
+        contact_clicks: Number(contact.contact_clicks) || 0,
+        profile_views: Number(contact.profile_views) || 0,
+        page_views: Number(contact.page_views) || 0,
+      },
+      topDesigners: [],
+      topPages: topPagesRows,
+      topCompanies: topCompanyRows,
       dateRange: { start, end }
     });
   } catch (error) {

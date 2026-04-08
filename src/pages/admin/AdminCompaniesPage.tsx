@@ -87,6 +87,8 @@ export default function AdminCompaniesPage() {
   const [directorySortDir, setDirectorySortDir] = useState<SortDir>('desc');
   const [directorySortActive, setDirectorySortActive] = useState(false);
 
+  const [homeOrderCount, setHomeOrderCount] = useState(0);
+
   const [bindCompanyId, setBindCompanyId] = useState<number | null>(null);
   const [bindUserId, setBindUserId] = useState('');
   const [bindSubmitting, setBindSubmitting] = useState(false);
@@ -165,6 +167,15 @@ export default function AdminCompaniesPage() {
     if (directoryRes.status === 'fulfilled') setDirectoryBadgeTotal(directoryRes.value.pagination?.total || 0);
   }, []);
 
+  const fetchHomeOrderCount = useCallback(async () => {
+    try {
+      const result = await adminApi.getHomeOrderCount();
+      setHomeOrderCount(result.count);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchHomeOrderCount(); }, [fetchHomeOrderCount]);
+
   useEffect(() => { if (tab === 'companies') loadProfiles(); }, [tab, loadProfiles]);
   useEffect(() => { if (tab === 'applications') loadPending(); }, [tab, loadPending]);
   useEffect(() => { if (tab === 'directory') loadCompanies(); }, [tab, loadCompanies]);
@@ -198,10 +209,15 @@ export default function AdminCompaniesPage() {
   };
 
   const handleSetProfileHomeOrder = async (id: number, value: number) => {
+    if (value > 0 && homeOrderCount >= 6) {
+      alert('首页最多展示 6 家公司，请先移除一家');
+      return;
+    }
     setOrderSavingId(id);
     try {
       await adminApi.updateCompanyProfileHomeDisplayOrder(id, Number.isFinite(value) ? value : 0);
       setProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, home_display_order: value } : p)));
+      await fetchHomeOrderCount();
     } catch (err: any) { alert(err.message || 'Failed to update.'); }
     finally { setOrderSavingId(null); }
   };
@@ -226,10 +242,15 @@ export default function AdminCompaniesPage() {
   };
 
   const handleSetDirectoryHomeOrder = async (id: number, value: number) => {
+    if (value > 0 && homeOrderCount >= 6) {
+      alert('首页最多展示 6 家公司，请先移除一家');
+      return;
+    }
     setDirectoryOrderSavingKey(`home-${id}`);
     try {
       await adminApi.updateDirectoryHomeDisplayOrder(id, Number.isFinite(value) ? value : 0);
       setCompanies((prev) => prev.map((c) => (c.id === id ? { ...c, home_display_order: value } : c)));
+      await fetchHomeOrderCount();
     } catch (err: any) { alert(err.message || 'Failed to update.'); }
     finally { setDirectoryOrderSavingKey(null); }
   };
@@ -290,6 +311,10 @@ export default function AdminCompaniesPage() {
           </button>
         ))}
       </div>
+
+      <span className="text-sm text-stone-500">
+        Home Display: <span className={homeOrderCount >= 6 ? 'text-red-500 font-medium' : 'text-[#b8864a] font-medium'}>{homeOrderCount}/6</span>
+      </span>
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 

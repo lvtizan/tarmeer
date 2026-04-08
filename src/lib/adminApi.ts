@@ -494,13 +494,30 @@ class AdminApiClient {
   }
 
   // Inquiry management
-  async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+  async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string; deleted?: boolean }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.status) query.set('status', params.status);
     if (params?.search) query.set('search', params.search);
+    if (params?.deleted) query.set('deleted', 'true');
     return this.request(`/inquiries?${query.toString()}`);
+  }
+
+  async batchDeleteInquiries(ids: number[], reason: string) {
+    return this.request('/inquiries/batch-delete', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, reason }),
+    });
+  }
+
+  async batchRestoreInquiries(ids: number[]) {
+    return this.request('/inquiries/batch-restore', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
   }
 
   async updateInquiryStatus(id: number, status: string, adminNotes?: string) {
@@ -602,6 +619,10 @@ class AdminApiClient {
     });
   }
 
+  async getHomeOrderCount(): Promise<{ count: number; max: number }> {
+    return this.request('/home-order-count');
+  }
+
   async getCompanyApplications(params?: { page?: number; limit?: number; status?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
@@ -626,6 +647,35 @@ class AdminApiClient {
     return this.request(`/companies/${companyId}/full-detail`);
   }
 
+  // Project management (registered companies)
+  async getAdminProject(companyId: string, projectId: string) {
+    return this.request(`/roles/companies/${companyId}/projects/${projectId}`);
+  }
+
+  async updateAdminProject(companyId: string, projectId: string, data: any) {
+    return this.request(`/roles/companies/${companyId}/projects/${projectId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createAdminProject(companyId: string, data: any) {
+    return this.request(`/roles/companies/${companyId}/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAdminProject(companyId: string, projectId: string) {
+    return this.request(`/roles/companies/${companyId}/projects/${projectId}`, { method: 'DELETE' });
+  }
+
+  async restoreAdminProject(companyId: string, projectId: string) {
+    return this.request(`/roles/companies/${companyId}/projects/${projectId}/restore`, { method: 'PUT' });
+  }
+
   // Complaint management
   async getComplaints(params?: { page?: number; limit?: number; status?: string; search?: string }) {
     const query = new URLSearchParams();
@@ -646,6 +696,10 @@ class AdminApiClient {
   // Notification counts
   async getNotificationCounts() {
     return this.request('/notifications/counts');
+  }
+
+  async markNotificationSeen(page: string) {
+    return this.request(`/notifications/mark-seen?page=${page}`, { method: 'PUT' });
   }
 }
 

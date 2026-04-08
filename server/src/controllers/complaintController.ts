@@ -116,47 +116,145 @@ export async function updateComplaintStatus(req: any, res: any) {
   }
 }
 
+// Mark notification page as seen (admin only)
+export async function markNotificationSeen(req: any, res: any) {
+  try {
+    const page = req.query.page as string;
+    const validPages = ['inquiries', 'companies', 'complaints', 'users'];
+    if (!page || !validPages.includes(page)) {
+      return res.status(400).json({ error: 'Invalid page. Must be one of: ' + validPages.join(', ') });
+    }
+
+    const adminId = (req as any).adminId;
+    if (!adminId) {
+      return res.status(401).json({ error: 'Admin ID not found.' });
+    }
+
+    await pool.execute(
+      `INSERT INTO admin_last_seen (admin_id, page_key, last_seen_at) VALUES (?, ?, NOW())
+       ON DUPLICATE KEY UPDATE last_seen_at = NOW()`,
+      [adminId, page]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Mark notification seen error:', error);
+    res.status(500).json({ error: 'Failed to mark notification as seen.' });
+  }
+}
+
+async function getLastSeenAt(adminId: number, pageKey: string): Promise<string> {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT last_seen_at FROM admin_last_seen WHERE admin_id = ? AND page_key = ?`,
+      [adminId, pageKey]
+    );
+    const row = (rows as any[])[0];
+    return row ? row.last_seen_at : '1970-01-01';
+  } catch (error: any) {
+    if (isRecoverableSchemaError(error)) return '1970-01-01';
+    throw error;
+  }
+}
+
 // Get new notification counts (admin only)
 export async function getNewCounts(req: any, res: any) {
   try {
+    const adminId = (req as any).adminId;
     let newComplaints = 0;
     let newDesignerApps = 0;
     let newCompanyApps = 0;
     let newInquiries = 0;
     let newUsers = 0;
 
-    try {
-      newComplaints = await countBySql(`SELECT COUNT(*) as count FROM complaints WHERE status = 'pending'`);
-    } catch (error: any) {
-      if (!isRecoverableSchemaError(error)) throw error;
-    }
+    if (adminId) {
+      const [seenInquiries, seenCompanies, seenComplaints, seenUsers] = await Promise.all([
+        getLastSeenAt(adminId, 'inquiries'),
+        getLastSeenAt(adminId, 'companies'),
+        getLastSeenAt(adminId, 'complaints'),
+        getLastSeenAt(adminId, 'users'),
+      ]);
 
-    try {
-      newDesignerApps = await countBySql(`SELECT COUNT(*) as count FROM designers WHERE status = 'pending'`);
-    } catch (error: any) {
-      if (error?.code === 'ER_BAD_FIELD_ERROR') {
-        newDesignerApps = await countBySql(`SELECT COUNT(*) as count FROM designers WHERE COALESCE(is_approved, 0) = 0`);
-      } else if (!isRecoverableSchemaError(error)) {
-        throw error;
+      try {
+        newComplaints = await countBySql(
+          `SELECT COUNT(*) as count FROM complaints WHERE status = 'pending' AND created_at > ?`,
+          [seenComplaints]
+        );
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
       }
-    }
 
-    try {
-      newCompanyApps = await countBySql(`SELECT COUNT(*) as count FROM company_profiles WHERE status = 'pending' AND deleted_at IS NULL`);
-    } catch (error: any) {
-      if (!isRecoverableSchemaError(error)) throw error;
-    }
+      try {
+        newDesignerApps = await countBySql(`SELECT COUNT(*) as count FROM designers WHERE status = 'pending'`);
+      } catch (error: any) {
+        if (error?.code === 'ER_BAD_FIELD_ERROR') {
+          newDesignerApps = await countBySql(`SELECT COUNT(*) as count FROM designers WHERE COALESCE(is_approved, 0) = 0`);
+        } else if (!isRecoverableSchemaError(error)) {
+          throw error;
+        }
+      }
 
-    try {
-      newInquiries = await countBySql(`SELECT COUNT(*) as count FROM inquiries WHERE status = 'new'`);
-    } catch (error: any) {
-      if (!isRecoverableSchemaError(error)) throw error;
-    }
+      try {
+        newCompanyApps = await countBySql(
+          `SELECT COUNT(*) as count FROM company_profiles WHERE status = 'pending' AND created_at > ? AND deleted_at IS NULL`,
+          [seenCompanies]
+        );
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
+      }
 
-    try {
-      newUsers = await countBySql(`SELECT COUNT(*) as count FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`);
-    } catch (error: any) {
-      if (!isRecoverableSchemaError(error)) throw error;
+      try {
+        newInquiries = await countBySql(
+          `SELECT COUNT(*) as count FROM inquiries WHERE status = 'new' AND created_at > ? AND deleted_at IS NULL`,
+          [seenInquiries]
+        );
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
+      }
+
+      try {
+        newUsers = await countBySql(
+          `SELECT COUNT(*) as count FROM users WHERE created_at > GREATEST(?, DATE_SUB(NOW(), INTERVAL 24 HOUR))`,
+          [seenUsers]
+        );
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
+      }
+    } else {
+      // Fallback: no adminId (shouldn't happen behind adminAuth)
+      try {
+        newComplaints = await countBySql(`SELECT COUNT(*) as count FROM complaints WHERE status = 'pending'`);
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
+      }
+
+      try {
+        newDesignerApps = await countBySql(`SELECT COUNT(*) as count FROM designers WHERE status = 'pending'`);
+      } catch (error: any) {
+        if (error?.code === 'ER_BAD_FIELD_ERROR') {
+          newDesignerApps = await countBySql(`SELECT COUNT(*) as count FROM designers WHERE COALESCE(is_approved, 0) = 0`);
+        } else if (!isRecoverableSchemaError(error)) {
+          throw error;
+        }
+      }
+
+      try {
+        newCompanyApps = await countBySql(`SELECT COUNT(*) as count FROM company_profiles WHERE status = 'pending' AND deleted_at IS NULL`);
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
+      }
+
+      try {
+        newInquiries = await countBySql(`SELECT COUNT(*) as count FROM inquiries WHERE status = 'new'`);
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
+      }
+
+      try {
+        newUsers = await countBySql(`SELECT COUNT(*) as count FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`);
+      } catch (error: any) {
+        if (!isRecoverableSchemaError(error)) throw error;
+      }
     }
 
     res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers });

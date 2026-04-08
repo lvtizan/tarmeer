@@ -21,6 +21,7 @@ interface InquiryRecord {
   status: 'new' | 'contacted' | 'resolved' | 'archived';
   admin_notes: string | null;
   created_at: string;
+  crm_synced_at: string | null;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -268,14 +269,15 @@ export default function AdminInquiriesPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Area</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Source</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">CRM</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Date</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <TableSpinner colSpan={8} />
+                <TableSpinner colSpan={9} />
               ) : inquiries.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
               ) : inquiries.map((inq) => (
                 <>
                   <tr
@@ -312,13 +314,20 @@ export default function AdminInquiriesPage() {
                         {inq.status}
                       </span>
                     </td>
+                    <td className="px-4 py-3">
+                      {inq.crm_synced_at ? (
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">Synced</span>
+                      ) : (
+                        <span className="text-stone-300 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-stone-500 text-xs">
                       {new Date(inq.created_at).toLocaleDateString()}
                     </td>
                   </tr>
                   {expandedId === inq.id && (
                     <tr key={`${inq.id}-detail`} className="bg-stone-50">
-                      <td colSpan={8} className="px-4 py-4">
+                      <td colSpan={9} className="px-4 py-4">
                         <div className="space-y-3 max-w-2xl">
                           {inq.message && (
                             <div>
