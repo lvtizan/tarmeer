@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { SCROLL_TIMEOUT_MS } from '../lib/constants';
 import Banner from '../components/home/Banner';
 import PricingSection from '../components/home/PricingSection';
@@ -22,6 +23,16 @@ export default function HomePage() {
 
   return (
     <>
+      <Helmet>
+        <title>Tarmeer - Find Interior Design & Renovation Companies in UAE</title>
+        <meta name="description" content="Connect with top interior designers, renovation companies, and fit-out professionals across Dubai, Abu Dhabi, and UAE. Browse portfolios, compare services, get free quotes." />
+        <meta property="og:title" content="Tarmeer - Find Interior Design & Renovation Companies in UAE" />
+        <meta property="og:description" content="Connect with top interior designers and renovation companies in UAE." />
+        <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta property="og:url" content="https://www.tarmeer.com/" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://www.tarmeer.com/" />
+      </Helmet>
       <Banner />
       <PricingSection />
       <HomeDesignSection />

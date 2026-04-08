@@ -27,6 +27,7 @@ const HouseExteriorDesignPage = lazy(() => import('./pages/HouseExteriorDesignPa
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const CompaniesPage = lazy(() => import('./pages/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 
 // Onboarding
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
@@ -166,6 +167,7 @@ function App() {
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/dmca" element={<DmcaPage />} />
+                <Route path="/portfolio" element={<PortfolioPage />} />
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />
               </Routes>

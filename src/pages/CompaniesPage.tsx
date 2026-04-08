@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import type { Company } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../lib/imageCleanup';
@@ -297,6 +298,16 @@ export default function CompaniesPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>Interior Design Companies in UAE - Tarmeer</title>
+        <meta name="description" content="Browse and compare interior design companies, renovation firms, and fit-out contractors in Dubai, Abu Dhabi, Sharjah. View portfolios and request quotes." />
+        <meta property="og:title" content="Interior Design Companies in UAE - Tarmeer" />
+        <meta property="og:description" content="Browse and compare interior design companies, renovation firms, and fit-out contractors in UAE." />
+        <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta property="og:url" content="https://www.tarmeer.com/companies" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://www.tarmeer.com/companies" />
+      </Helmet>
       {/* Hero - Match with Professionals */}
       <section className="relative bg-[#2c2620] overflow-hidden">
         {/* Subtle pattern overlay */}

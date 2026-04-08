@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ChevronRight, Briefcase, Users } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
@@ -186,6 +187,11 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
+      <Helmet>
+        <title>Sign In / Register - Tarmeer</title>
+        <meta name="description" content="Sign in or create your Tarmeer account to connect with interior design and renovation professionals in UAE." />
+        <link rel="canonical" href="https://www.tarmeer.com/auth" />
+      </Helmet>
       <Navbar forceShowOnAuth />
 
       <div className="flex min-h-[calc(100vh-4rem)] justify-center overflow-hidden px-4 pb-16 pt-[clamp(28px,10vh,96px)] sm:px-6 sm:pt-[clamp(40px,12vh,120px)]">

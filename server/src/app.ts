@@ -149,11 +149,71 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv
   });
+});
+
+// Dynamic sitemap endpoint
+app.get('/api/sitemap.xml', async (req, res) => {
+  try {
+    const pool = (await import('./config/database')).default;
+
+    // Get all directory companies
+    const [uaeCompanies] = await pool.execute(
+      'SELECT slug FROM uae_companies WHERE slug IS NOT NULL ORDER BY weight_score DESC'
+    );
+    // Get all approved registered companies
+    const [profiles] = await pool.execute(
+      'SELECT slug FROM company_profiles WHERE status = ? AND slug IS NOT NULL AND deleted_at IS NULL ORDER BY weight_score DESC',
+      ['approved']
+    );
+
+    const baseUrl = 'https://www.tarmeer.com';
+    const today = new Date().toISOString().slice(0, 10);
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    // Static pages
+    const staticPages = [
+      { path: '', changefreq: 'daily', priority: '1.0' },
+      { path: '/companies', changefreq: 'daily', priority: '0.9' },
+      { path: '/contact', changefreq: 'weekly', priority: '0.7' },
+      { path: '/materials', changefreq: 'weekly', priority: '0.8' },
+      { path: '/new-home-design', changefreq: 'weekly', priority: '0.8' },
+      { path: '/soft-decoration', changefreq: 'weekly', priority: '0.8' },
+      { path: '/privacy', changefreq: 'monthly', priority: '0.4' },
+    ];
+    for (const page of staticPages) {
+      xml += `  <url><loc>${baseUrl}${page.path}</loc><changefreq>${page.changefreq}</changefreq><priority>${page.priority}</priority><lastmod>${today}</lastmod></url>\n`;
+    }
+
+    // Company pages
+    const allCompanies = [...(uaeCompanies as any[]), ...(profiles as any[])];
+    for (const company of allCompanies) {
+      if (company.slug) {
+        xml += `  <url><loc>${baseUrl}/companies/${company.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${today}</lastmod></url>\n`;
+      }
+    }
+
+    xml += '</urlset>';
+
+    res.set('Content-Type', 'application/xml');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (error) {
+    console.error('Sitemap error:', error);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+// Robots.txt endpoint
+app.get('/api/robots.txt', (req, res) => {
+  res.set('Content-Type', 'text/plain');
+  res.send(`User-agent: Googlebot\nAllow: /\nCrawl-delay: 2\n\nUser-agent: Bingbot\nAllow: /\nCrawl-delay: 5\n\nUser-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nCrawl-delay: 10\n\nSitemap: https://www.tarmeer.com/api/sitemap.xml\n`);
 });
 
 import path from 'path';

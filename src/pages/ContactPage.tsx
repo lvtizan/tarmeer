@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Building2, Megaphone, MessageCircle, Store, MapPin, ArrowRight } from 'lucide-react';
 import PageContainer from '../components/PageContainer';
 import { WHATSAPP_LINK, ADDRESS, GOOGLE_MAPS_URL } from '../lib/constants';
@@ -34,6 +35,15 @@ const APPLICATION_GUIDE = [
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>Contact Us - Tarmeer</title>
+        <meta name="description" content="Get in touch with Tarmeer. Partner with us for interior design, renovation, and fit-out services in the UAE." />
+        <meta property="og:title" content="Contact Us - Tarmeer" />
+        <meta property="og:description" content="Get in touch with Tarmeer for design and renovation partnerships in UAE." />
+        <meta property="og:url" content="https://www.tarmeer.com/contact" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://www.tarmeer.com/contact" />
+      </Helmet>
       <PageContainer className="py-12 sm:py-16">
         <Link to="/" className="mb-8 inline-block text-sm text-[#c6a065] hover:underline">
           ← Back to Home

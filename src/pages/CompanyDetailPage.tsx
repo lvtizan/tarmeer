@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft, Globe, Instagram, MapPin, Briefcase,
   Calendar, FolderOpen, Phone, Mail, ChevronLeft, ChevronRight,
@@ -165,8 +166,36 @@ export default function CompanyDetailPage() {
   const heroPrev = () => setHeroIndex(i => (i > 0 ? i - 1 : heroImages.length - 1));
   const heroNext = () => setHeroIndex(i => (i < heroImages.length - 1 ? i + 1 : 0));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": company.name,
+    "description": description || company.shortDescription,
+    "address": { "@type": "PostalAddress", "addressLocality": company.city, "addressCountry": "AE" },
+    ...(company.phone ? { "telephone": company.phone } : {}),
+    "url": company.website || `https://www.tarmeer.com/companies/${company.id}`,
+    ...(heroImages[0] ? { "image": `https://www.tarmeer.com${heroImages[0]}` } : {}),
+    "priceRange": "$$",
+    "areaServed": "UAE",
+  };
+
+  const ogImage = heroImages[0]
+    ? `https://www.tarmeer.com${heroImages[0]}`
+    : 'https://www.tarmeer.com/images/tarmeer_logo.svg';
+
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>{company.name} - Interior Design in {company.city} - Tarmeer</title>
+        <meta name="description" content={`${company.name} provides ${company.services.slice(0, 3).join(', ')} services in ${company.city}, UAE. ${company.shortDescription}`} />
+        <meta property="og:title" content={`${company.name} - ${company.city} - Tarmeer`} />
+        <meta property="og:description" content={company.shortDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:url" content={`https://www.tarmeer.com/companies/${company.id}`} />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href={`https://www.tarmeer.com/companies/${company.id}`} />
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      </Helmet>
       {/* Back nav */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
         <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition">

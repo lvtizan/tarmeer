@@ -302,6 +302,29 @@ function toCompany(company: PublicCompanyRecord): Company {
   };
 }
 
+export interface PortfolioProject {
+  id: number;
+  title: string;
+  description: string;
+  style: string;
+  location: string;
+  year: number | null;
+  images: string[];
+  companyId: number;
+  companyName: string;
+  companySlug: string;
+  companyLogo: string;
+  companyCity: string;
+  source: 'registered' | 'directory';
+}
+
+export async function fetchPortfolioFeed(page = 1, limit = 30): Promise<{
+  projects: PortfolioProject[];
+  pagination: { page: number; limit: number; total: number };
+}> {
+  return request(`/companies/portfolio?page=${page}&limit=${limit}`);
+}
+
 export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {
   try {
     const [directoryResult, approvedResult] = await Promise.all([

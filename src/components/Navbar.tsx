@@ -176,6 +176,7 @@ export default function Navbar({
             </AnimatePresence>
           </div>
 
+          {renderNavLink('/portfolio', 'Portfolio')}
           {renderNavLink('/materials', 'Showrooms')}
 
           {showUserEntry ? (
@@ -287,6 +288,7 @@ export default function Navbar({
               </AnimatePresence>
             </div>
 
+            {renderNavLink('/portfolio', 'Portfolio', 'py-2')}
             {renderNavLink('/materials', 'Showrooms', 'py-2')}
 
             {isLoggedIn ? (
