@@ -284,7 +284,11 @@ export default function AdminCompaniesPage() {
     setPage(1);
   };
 
-  const hasNewApplications = pendingBadgeTotal > 0;
+  const [newAppCount, setNewAppCount] = useState(0);
+  useEffect(() => {
+    adminApi.getNotificationCounts().then(d => setNewAppCount(d.newCompanyApps || 0)).catch(() => {});
+  }, [tab]);
+  const hasNewApplications = newAppCount > 0;
 
   return (
     <div className="space-y-6">
@@ -299,7 +303,12 @@ export default function AdminCompaniesPage() {
         ] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => {
+              setTab(t);
+              if (t === 'applications') {
+                adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
+              }
+            }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === t ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
           >
             <span className="relative inline-flex items-start">
@@ -355,6 +364,15 @@ export default function AdminCompaniesPage() {
             sortDir={profileSortDir}
             sortActive={profileSortActive}
             onSortToggle={() => toggleSort(profileSortActive, setProfileSortActive, profileSortDir, setProfileSortDir, setProfilePage)}
+            onBulkUnapprove={async (ids) => {
+              try {
+                await adminApi.bulkUnapproveCompanies(ids);
+                await loadProfiles();
+                await loadTabBadges();
+              } catch (err: any) {
+                alert(err.message || 'Failed to unapprove.');
+              }
+            }}
           />
         </>
       )}

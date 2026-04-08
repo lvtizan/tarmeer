@@ -577,6 +577,13 @@ class AdminApiClient {
     return this.request(`/roles/companies/${id}/full-detail`);
   }
 
+  async bulkUnapproveCompanies(ids: number[]) {
+    return this.request('/roles/companies/bulk-unapprove', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
   async approveCompanyProfile(id: number) {
     return this.request(`/roles/companies/${id}/approve`, { method: 'POST' });
   }

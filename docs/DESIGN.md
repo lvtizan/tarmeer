@@ -161,6 +161,11 @@ All interactive elements use `rounded-2xl` (16px) to match global `--radius-2xl`
 
 ## Spacing & Layout
 
+### Admin Layout (MUST FOLLOW)
+- 后台所有页面右侧内容区域必须**水平居中**，使用 `max-w-5xl mx-auto` 或等效方式
+- 内容区不能贴左对齐或撑满全宽，保持阅读舒适度
+- 表格类页面可用 `max-w-7xl mx-auto`（需要更多宽度）
+
 ### Page Container
 
 Use `<PageContainer>` from `src/components/PageContainer.tsx`:

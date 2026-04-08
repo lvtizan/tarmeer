@@ -162,6 +162,7 @@ router.post('/homeowners/:id/assign', requirePermission('can_approve'), roleAdmi
 
 // Companies (with approval)
 router.get('/roles/companies', roleAdmin.listCompanies);
+router.post('/roles/companies/bulk-unapprove', requirePermission('can_approve'), roleAdmin.bulkUnapproveCompanies);
 router.post('/roles/companies/:id/approve', requirePermission('can_approve'), roleAdmin.approveCompany);
 router.post('/roles/companies/:id/reject', requirePermission('can_approve'), roleAdmin.rejectCompany);
 router.put('/roles/companies/:id/display-order', requirePermission('can_sort'), roleAdmin.updateCompanyDisplayOrder);

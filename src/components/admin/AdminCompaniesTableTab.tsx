@@ -41,6 +41,7 @@ interface AdminCompaniesTableTabProps {
   sortDir: SortDir;
   sortActive: boolean;
   onSortToggle: () => void;
+  onBulkUnapprove?: (ids: number[]) => void;
 }
 
 export default function AdminCompaniesTableTab({
@@ -56,6 +57,7 @@ export default function AdminCompaniesTableTab({
   sortDir,
   sortActive,
   onSortToggle,
+  onBulkUnapprove,
 }: AdminCompaniesTableTabProps) {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -110,7 +112,15 @@ export default function AdminCompaniesTableTab({
   return (
     <div>
       {selected.size > 0 && (
-        <div className="mb-3">
+        <div className="mb-3 flex gap-3">
+          {onBulkUnapprove && (
+            <button
+              onClick={() => { onBulkUnapprove([...selected]); setSelected(new Set()); }}
+              className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors text-sm font-medium"
+            >
+              Unapprove {selected.size}
+            </button>
+          )}
           <button
             onClick={handleBatchDelete}
             className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 text-sm font-medium"

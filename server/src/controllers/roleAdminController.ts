@@ -203,6 +203,36 @@ export async function rejectCompany(req: any, res: any) {
 }
 
 /**
+ * POST /api/admin/roles/companies/bulk-unapprove
+ * Revert approved companies back to pending (for testing)
+ */
+export async function bulkUnapproveCompanies(req: any, res: any) {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array.' });
+    }
+
+    const placeholders = ids.map(() => '?').join(',');
+    await pool.execute(
+      `UPDATE company_profiles SET status = 'pending', home_display_order = 0, list_display_order = 0 WHERE id IN (${placeholders}) AND status = 'approved'`,
+      ids
+    );
+
+    // Unpublish their projects too
+    await pool.execute(
+      `UPDATE projects SET status = 'draft' WHERE company_profile_id IN (${placeholders}) AND status = 'published'`,
+      ids
+    );
+
+    res.json({ message: `${ids.length} company(s) reverted to pending.` });
+  } catch (error) {
+    console.error('Bulk unapprove error:', error);
+    res.status(500).json({ error: 'Failed to unapprove companies.' });
+  }
+}
+
+/**
  * PUT /api/admin/roles/companies/:id/display-order
  * Set display weight
  */
