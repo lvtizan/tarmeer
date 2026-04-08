@@ -2,6 +2,7 @@ import pool from '../config/database';
 import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
 import { persistProjectImages, isImageDataUrl } from '../lib/projectImageStorage';
 import { calculateAllWeights } from '../lib/weightCalculator';
+import { slugify } from '../lib/slugify';
 import fs from 'fs';
 import path from 'path';
 
@@ -915,7 +916,15 @@ export async function createAdminProject(req: any, res: any) {
       ]
     );
 
-    res.json({ id: (result as any).insertId });
+    const newProjectId = (result as any).insertId;
+
+    // Generate and save slug
+    if (title) {
+      const slug = slugify(title);
+      await pool.execute('UPDATE projects SET slug = ? WHERE id = ?', [slug, newProjectId]);
+    }
+
+    res.json({ id: newProjectId });
   } catch (error) {
     console.error('Create admin project error:', error);
     res.status(500).json({ error: 'Failed to create project.' });

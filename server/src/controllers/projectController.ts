@@ -11,6 +11,7 @@ import {
   assertProjectHasImages,
 } from '../lib/projectPersistence';
 import { persistProjectImages } from '../lib/projectImageStorage';
+import { slugify } from '../lib/slugify';
 
 function normalizeProject(project: any) {
   return {
@@ -99,7 +100,13 @@ export async function createProject(req: any, res: any) {
     );
     
     const projectId = (result as any).insertId;
-    
+
+    // Generate and save slug
+    if (title) {
+      const slug = slugify(title);
+      await pool.execute('UPDATE projects SET slug = ? WHERE id = ?', [slug, projectId]);
+    }
+
     const [project] = await pool.execute(
       'SELECT * FROM projects WHERE id = ?',
       [projectId]

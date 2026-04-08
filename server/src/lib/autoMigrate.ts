@@ -93,6 +93,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // projects soft-delete
   { table: 'projects', column: 'deleted_at', type: 'DATETIME NULL' },
 
+  // Project slug for SEO-friendly URLs
+  { table: 'projects', column: 'slug', type: 'VARCHAR(200) NULL' },
+
   // Slug for SEO-friendly URLs
   { table: 'company_profiles', column: 'slug', type: 'VARCHAR(200) NULL' },
 
@@ -202,6 +205,13 @@ export async function runAutoMigrate(): Promise<void> {
     try {
       await pool.execute(
         `UPDATE company_profiles SET slug = LOWER(REPLACE(REPLACE(REPLACE(TRIM(company_name), ' ', '-'), '.', ''), ',', '')) WHERE slug IS NULL OR slug = ''`
+      );
+    } catch { /* ignore if column doesn't exist yet */ }
+
+    // 4b. Populate slugs for existing projects that don't have one
+    try {
+      await pool.execute(
+        `UPDATE projects SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(title), ' ', '-'), '.', ''), ',', ''), '\'', '')) WHERE (slug IS NULL OR slug = '') AND title IS NOT NULL`
       );
     } catch { /* ignore if column doesn't exist yet */ }
 

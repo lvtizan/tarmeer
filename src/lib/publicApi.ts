@@ -299,12 +299,22 @@ function toCompany(company: PublicCompanyRecord): Company {
     isClaimed: !!company.is_claimed,
     isSigned: !!company.is_signed,
     weightScore: company.weight_score ?? undefined,
+    projects: Array.isArray(company.projects)
+      ? company.projects
+          .map((p: any) => ({
+            title: String(p.title || ''),
+            slug: String(p.slug || ''),
+            images: sanitizeImageUrls(parseJsonArray(p.images)),
+          }))
+          .filter((p: { title: string; slug: string; images: string[] }) => p.slug && p.images.length > 0)
+      : undefined,
   };
 }
 
 export interface PortfolioProject {
   id: number;
   title: string;
+  slug?: string;
   description: string;
   style: string;
   location: string;
@@ -318,11 +328,38 @@ export interface PortfolioProject {
   source: 'registered' | 'directory';
 }
 
-export async function fetchPortfolioFeed(page = 1, limit = 30): Promise<{
+export interface PublicProjectDetailData {
+  project: {
+    id: number;
+    title: string;
+    slug: string;
+    description: string;
+    style: string;
+    location: string;
+    year: number;
+    images: string[];
+    tags: string[];
+  };
+  company: {
+    id: number;
+    name: string;
+    slug: string;
+    logo: string;
+    city: string;
+  };
+  siblings: Array<{ id: number; title: string; slug: string }>;
+}
+
+export async function fetchPublicProjectDetail(companySlug: string, projectSlug: string): Promise<PublicProjectDetailData> {
+  return request(`/companies/${companySlug}/projects/${projectSlug}`);
+}
+
+export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number): Promise<{
   projects: PortfolioProject[];
   pagination: { page: number; limit: number; total: number };
 }> {
-  return request(`/companies/portfolio?page=${page}&limit=${limit}`);
+  const seedParam = seed ? `&seed=${seed}` : '';
+  return request(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}`);
 }
 
 export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {

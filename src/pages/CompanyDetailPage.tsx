@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
 import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies, fetchAdminCompanyPreview } from '../lib/publicApi';
+import { resolveImageUrl } from '../lib/imageUrl';
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
 import MasonryGallery from '../components/MasonryGallery';
 import Lightbox from '../components/Lightbox';
@@ -115,9 +116,34 @@ export default function CompanyDetailPage() {
     return Object.values(activeCategories).flat();
   }, [activeCategories]);
 
+  // Build image-to-project lookup for claimed companies
+  const imageToProjectSlug = useMemo(() => {
+    if (!company?.isClaimed || !company.projects?.length) return {};
+    const map: Record<string, string> = {};
+    for (const proj of company.projects) {
+      for (const img of proj.images) {
+        // Normalize URL for matching
+        const resolved = resolveImageUrl(img);
+        map[resolved] = proj.slug;
+        map[img] = proj.slug;
+      }
+    }
+    return map;
+  }, [company]);
+
   const handleImageClick = useCallback(
-    (_url: string, categoryName: string, indexInCategory: number) => {
-      // Convert category-relative index to global index
+    (url: string, categoryName: string, indexInCategory: number) => {
+      // For claimed companies with projects, navigate to project detail page
+      if (company?.isClaimed && company.projects?.length) {
+        const resolved = resolveImageUrl(url);
+        const projectSlug = imageToProjectSlug[resolved] || imageToProjectSlug[url];
+        if (projectSlug) {
+          navigate(`/companies/${company.id}/${projectSlug}`);
+          return;
+        }
+      }
+
+      // Fallback: open Lightbox
       const categories = Object.entries(activeCategories);
       let globalIndex = 0;
       for (const [catName, items] of categories) {
@@ -129,7 +155,7 @@ export default function CompanyDetailPage() {
       }
       setLightboxIndex(globalIndex);
       setLightboxOpen(true);
-    }, [activeCategories]
+    }, [activeCategories, company, imageToProjectSlug, navigate]
   );
 
   if (loading) {

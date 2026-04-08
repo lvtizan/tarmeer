@@ -47,17 +47,19 @@ export async function getPortfolioFeed(req: any, res: any) {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 30), 60);
     const offset = (page - 1) * limit;
+    // Random seed: same seed = same order within one session, different seed on refresh
+    const seed = parseInt(req.query.seed, 10) || Math.floor(Math.random() * 1000000);
 
     // 1. Registered company projects (from company_profiles + projects tables)
     const [rows] = await pool.execute(`
       SELECT
-        p.id, p.title, p.description, p.style, p.location, p.year, p.images,
+        p.id, p.title, p.slug as project_slug, p.description, p.style, p.location, p.year, p.images,
         cp.id as company_id, cp.company_name, cp.slug as company_slug, cp.logo_url, cp.city
       FROM projects p
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
         AND p.images IS NOT NULL AND p.images != '[]'
-      ORDER BY cp.weight_score DESC, p.created_at DESC
+      ORDER BY RAND(${Number(seed)})
       LIMIT ${Number(limit)} OFFSET ${Number(offset)}
     `);
 
@@ -71,6 +73,7 @@ export async function getPortfolioFeed(req: any, res: any) {
       return {
         id: row.id,
         title: row.title || '',
+        slug: row.project_slug || '',
         description: row.description || '',
         style: row.style || '',
         location: row.location || '',
@@ -158,6 +161,111 @@ export async function getPortfolioFeed(req: any, res: any) {
   } catch (error) {
     console.error('Get portfolio feed error:', error);
     res.status(500).json({ error: 'Failed to load portfolio.' });
+  }
+}
+
+/**
+ * GET /api/companies/:companySlug/projects/:projectSlug
+ * Public project detail page
+ */
+export async function getPublicProjectDetail(req: any, res: any) {
+  try {
+    const { companySlug, projectSlug } = req.params;
+
+    // Find company (try both tables)
+    let company: any = null;
+    let companySource = '';
+
+    // Try uae_companies
+    const [uaeRows] = await pool.execute(
+      'SELECT id, name_en as company_name, slug, logo_url, city, website FROM uae_companies WHERE slug = ?',
+      [companySlug]
+    );
+    if ((uaeRows as any[]).length > 0) {
+      company = (uaeRows as any[])[0];
+      companySource = 'directory';
+    }
+
+    // Try company_profiles
+    if (!company) {
+      const [cpRows] = await pool.execute(
+        'SELECT id, company_name, slug, logo_url, city, website FROM company_profiles WHERE slug = ? AND status = ? AND deleted_at IS NULL',
+        [companySlug, 'approved']
+      );
+      if ((cpRows as any[]).length > 0) {
+        company = (cpRows as any[])[0];
+        companySource = 'registered';
+      }
+    }
+
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    // Find project by slug
+    let project: any = null;
+
+    if (companySource === 'registered') {
+      const [projRows] = await pool.execute(
+        'SELECT * FROM projects WHERE company_profile_id = ? AND (slug = ? OR id = ?) AND deleted_at IS NULL',
+        [company.id, projectSlug, isNaN(Number(projectSlug)) ? 0 : Number(projectSlug)]
+      );
+      if ((projRows as any[]).length > 0) {
+        project = (projRows as any[])[0];
+        // Parse images/tags - handle both string and already-parsed array
+        if (typeof project.images === 'string') {
+          try { project.images = JSON.parse(project.images); } catch { project.images = []; }
+        }
+        if (!Array.isArray(project.images)) project.images = [];
+        if (typeof project.tags === 'string') {
+          try { project.tags = JSON.parse(project.tags); } catch { project.tags = []; }
+        }
+        if (!Array.isArray(project.tags)) project.tags = [];
+      }
+    }
+
+    // For directory companies, projects come from portfolio_categories
+    // We can match by slug against category names
+    if (!project && companySource === 'directory') {
+      // Directory companies don't have individual project records in the projects table
+      // Return 404 for now — directory company images use Lightbox, not project pages
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Get sibling projects for prev/next navigation
+    const [siblings] = await pool.execute(
+      'SELECT id, title, slug FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC',
+      [company.id]
+    );
+
+    res.json({
+      project: {
+        id: project.id,
+        title: project.title,
+        slug: project.slug,
+        description: project.description,
+        style: project.style,
+        location: project.location,
+        year: project.year,
+        images: project.images,
+        tags: project.tags,
+      },
+      company: {
+        id: company.id,
+        name: company.company_name,
+        slug: company.slug,
+        logo: company.logo_url,
+        city: company.city,
+      },
+      siblings: (siblings as any[]).map((s: any) => ({ id: s.id, title: s.title, slug: s.slug })),
+    });
+  } catch (error) {
+    console.error('Get public project detail error:', error);
+    res.status(500).json({ error: 'Failed to load project.' });
   }
 }
 
