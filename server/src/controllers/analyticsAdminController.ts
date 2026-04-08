@@ -91,6 +91,88 @@ export async function getAnalyticsOverview(req: Request<{}, {}, {}, AnalyticsQue
   }
 }
 
+export async function getCompanyVisitors(req: Request, res: Response): Promise<void> {
+  const end = toDateString(req.query.endDate as string) || new Date().toISOString().slice(0, 10);
+  const start = toDateString(req.query.startDate as string) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  try {
+    await ensureAnalyticsEventsTable();
+
+    // Top 10 companies by unique visitors
+    const [companyRows] = await pool.execute(
+      `SELECT
+        page_path,
+        COUNT(DISTINCT CASE
+          WHEN viewer_ip IS NOT NULL
+           AND viewer_ip <> ''
+           AND viewer_ip <> 'unknown'
+           AND viewer_ip <> '127.0.0.1'
+           AND viewer_ip <> '::1'
+           AND viewer_ip <> '::ffff:127.0.0.1'
+          THEN viewer_ip
+        END) AS unique_visitors,
+        COUNT(*) AS total_views
+       FROM analytics_events
+       WHERE DATE(created_at) BETWEEN ? AND ?
+         AND event_name = 'page_view'
+         AND page_path LIKE '/companies/%'
+       GROUP BY page_path
+       ORDER BY unique_visitors DESC, total_views DESC
+       LIMIT 10`,
+      [start, end]
+    );
+
+    const companies = companyRows as Array<{ page_path: string; unique_visitors: number; total_views: number }>;
+    const pagePaths = companies.map(c => c.page_path);
+
+    let cityBreakdown: Array<{ page_path: string; city: string; visitors: number }> = [];
+    if (pagePaths.length > 0) {
+      const placeholders = pagePaths.map(() => '?').join(',');
+      const [cityRows] = await pool.execute(
+        `SELECT
+          page_path,
+          COALESCE(location_label, 'Unknown') AS city,
+          COUNT(DISTINCT CASE
+            WHEN viewer_ip IS NOT NULL
+             AND viewer_ip <> ''
+             AND viewer_ip <> 'unknown'
+             AND viewer_ip <> '127.0.0.1'
+             AND viewer_ip <> '::1'
+             AND viewer_ip <> '::ffff:127.0.0.1'
+            THEN viewer_ip
+          END) AS visitors
+         FROM analytics_events
+         WHERE DATE(created_at) BETWEEN ? AND ?
+           AND event_name = 'page_view'
+           AND page_path IN (${placeholders})
+         GROUP BY page_path, location_label
+         ORDER BY visitors DESC`,
+        [start, end, ...pagePaths]
+      );
+      cityBreakdown = cityRows as Array<{ page_path: string; city: string; visitors: number }>;
+    }
+
+    // Group city breakdown by page_path
+    const cityMap: Record<string, Array<{ city: string; visitors: number }>> = {};
+    for (const row of cityBreakdown) {
+      if (!cityMap[row.page_path]) cityMap[row.page_path] = [];
+      cityMap[row.page_path].push({ city: row.city, visitors: Number(row.visitors) });
+    }
+
+    const result = companies.map(c => ({
+      page_path: c.page_path,
+      unique_visitors: Number(c.unique_visitors),
+      total_views: Number(c.total_views),
+      cities: (cityMap[c.page_path] || []).slice(0, 5),
+    }));
+
+    res.json({ companies: result, dateRange: { start, end } });
+  } catch (error) {
+    console.error('Error getting company visitors:', error);
+    res.status(500).json({ error: 'Failed to get company visitor stats.' });
+  }
+}
+
 export async function listAnalyticsEvents(req: Request<{}, {}, {}, AnalyticsEventsQueryParams>, res: Response): Promise<void> {
   const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
   const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '50'), 10) || 50));

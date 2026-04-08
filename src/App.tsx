@@ -47,7 +47,6 @@ const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminForgotPasswordPage = lazy(() => import('./pages/admin/AdminForgotPasswordPage'));
 const AdminResetPasswordPage = lazy(() => import('./pages/admin/AdminResetPasswordPage'));
 const AdminInstallPage = lazy(() => import('./pages/admin/AdminInstallPage'));
-const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminDesignersPage = lazy(() => import('./pages/admin/AdminDesignersPage'));
 const AdminAdminsPage = lazy(() => import('./pages/admin/AdminAdminsPage'));
 const AdminDesignerDetailPage = lazy(() => import('./pages/admin/AdminDesignerDetailPage'));
@@ -94,12 +93,11 @@ function App() {
         <Routes>
           {/* ====== Admin ====== */}
           <Route path="/admin" element={<AdminProvider><AdminLayout /></AdminProvider>}>
-            <Route index element={<AdminDashboardPage />} />
+            <Route index element={<AdminAnalyticsPage />} />
             <Route path="designers" element={<AdminDesignersPage />} />
             <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
             <Route path="visitors" element={<AdminVisitorsPage />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
-            <Route path="stats" element={<AdminDashboardPage />} />
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="users/:id" element={<AdminUserDetailPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />

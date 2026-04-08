@@ -35,7 +35,6 @@ export default function CompanyDetailPage() {
   const [aboutExpanded, setAboutExpanded] = useState(false);
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxCategory, setLightboxCategory] = useState('');
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [portfolioMode, setPortfolioMode] = useState<'project' | 'style'>('project');
   const [showFloatingForm, setShowFloatingForm] = useState(false);
@@ -104,12 +103,25 @@ export default function CompanyDetailPage() {
     ? normalizedProjectCategories
     : normalizedStyleCategories;
 
+  const allLightboxImages: PortfolioItem[] = useMemo(() => {
+    return Object.values(activeCategories).flat();
+  }, [activeCategories]);
+
   const handleImageClick = useCallback(
     (_url: string, categoryName: string, indexInCategory: number) => {
-      setLightboxCategory(categoryName);
-      setLightboxIndex(indexInCategory);
+      // Convert category-relative index to global index
+      const categories = Object.entries(activeCategories);
+      let globalIndex = 0;
+      for (const [catName, items] of categories) {
+        if (catName === categoryName) {
+          globalIndex += indexInCategory;
+          break;
+        }
+        globalIndex += items.length;
+      }
+      setLightboxIndex(globalIndex);
       setLightboxOpen(true);
-    }, []
+    }, [activeCategories]
   );
 
   if (loading) {
@@ -136,7 +148,6 @@ export default function CompanyDetailPage() {
     ? company.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '')
     : '';
   const yearsExp = 2026 - company.foundedYear;
-  const lightboxImages: PortfolioItem[] = activeCategories[lightboxCategory] ?? [];
   const description = company.description || '';
   const shouldTruncate = description.length > 300;
 
@@ -476,9 +487,9 @@ export default function CompanyDetailPage() {
       {/* Lightbox */}
       <Lightbox
         open={lightboxOpen}
-        images={lightboxImages}
+        images={allLightboxImages}
         currentIndex={lightboxIndex}
-        categoryName={lightboxCategory}
+        categoryName="Portfolio"
         onClose={() => setLightboxOpen(false)}
         onNavigate={(i) => setLightboxIndex(i)}
       />

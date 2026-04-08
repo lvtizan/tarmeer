@@ -398,6 +398,21 @@ class AdminApiClient {
     return this.request(`/visitors?${query.toString()}`);
   }
 
+  async getCompanyVisitors(params: { startDate?: string; endDate?: string } = {}): Promise<{
+    companies: Array<{
+      page_path: string;
+      unique_visitors: number;
+      total_views: number;
+      cities: Array<{ city: string; visitors: number }>;
+    }>;
+    dateRange: { start: string; end: string };
+  }> {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    return this.request(`/analytics/company-visitors?${query.toString()}`);
+  }
+
   async getAnalyticsOverview(params: { startDate?: string; endDate?: string } = {}): Promise<{
     overview: AnalyticsOverview;
     topPages: Array<{ page_path: string; page_views: number; visitors: number }>;

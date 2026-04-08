@@ -55,7 +55,7 @@ import {
   deleteAdminProject,
   restoreAdminProject,
 } from '../controllers/companyAdminController';
-import { getAnalyticsOverview, listAnalyticsEvents } from '../controllers/analyticsAdminController';
+import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents } from '../controllers/analyticsAdminController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
@@ -101,6 +101,7 @@ router.get('/activity-logs', getActivityLogs);
 router.get('/visitors/overview', requirePermission('can_view_stats'), getVisitorOverview);
 router.get('/visitors', requirePermission('can_view_stats'), listVisitors);
 router.get('/analytics/overview', requirePermission('can_view_stats'), getAnalyticsOverview);
+router.get('/analytics/company-visitors', requirePermission('can_view_stats'), getCompanyVisitors);
 router.get('/analytics/events', requirePermission('can_view_stats'), listAnalyticsEvents);
 
 // Designer management

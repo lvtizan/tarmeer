@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -12,9 +12,9 @@ type AdminLang = 'en' | 'zh';
 
 const navItems = [
   {
-    to: '/admin', labelEn: 'Dashboard', labelZh: '仪表盘', icon: LayoutDashboard, end: true,
-    infoEn: 'View platform overview, key KPIs, latest alerts, and quick operational status in one place.',
-    infoZh: '查看平台总览、关键指标、最新告警与运营状态总表。',
+    to: '/admin', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, end: true, permission: 'can_view_stats' as const,
+    infoEn: 'Analyze traffic/events, company visitors, compare trends, and jump to external analytics platforms.',
+    infoZh: '分析流量与事件趋势、公司访客，并可跳转外部分析平台。',
   },
   {
     to: '/admin/users', labelEn: 'Users', labelZh: '用户', icon: Users,
@@ -50,11 +50,6 @@ const navItems = [
     to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
     infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
     infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
-  },
-  {
-    to: '/admin/analytics', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, permission: 'can_view_stats' as const,
-    infoEn: 'Analyze traffic/events, compare trends, and jump to external analytics platforms.',
-    infoZh: '分析流量与事件趋势，并可跳转外部分析平台。',
   },
 ];
 
