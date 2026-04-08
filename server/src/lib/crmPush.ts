@@ -23,6 +23,7 @@ interface LeadPayload {
   city?: string;
   area?: string;
   notes?: string;
+  page?: string;
 }
 
 /**
@@ -51,6 +52,7 @@ export async function pushLeadToCRM(lead: LeadPayload): Promise<any> {
         city: lead.city || undefined,
         area: lead.area || undefined,
         notes: lead.notes || undefined,
+        page: lead.page || undefined,
         trafficChannelId: CRM_TRAFFIC_CHANNEL_ID || undefined,
       }),
       signal: AbortSignal.timeout(5000),

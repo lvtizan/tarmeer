@@ -9,7 +9,7 @@ const VALID_AREA_RANGES = ['< 50m²', '50-100m²', '100-200m²', '200-500m²', '
 // Submit inquiry (public, no auth required)
 export async function submitInquiry(req: any, res: any) {
   try {
-    const { name, phone, city, area_range, message, company_id, source_company_name, source_company_slug } = req.body;
+    const { name, phone, city, area_range, message, company_id, source_company_name, source_company_slug, source_page } = req.body;
 
     if (!phone || !area_range) {
       return res.status(400).json({ error: 'Phone and area range are required.' });
@@ -46,6 +46,7 @@ export async function submitInquiry(req: any, res: any) {
       city: city || undefined,
       area: area_range || undefined,
       notes: [companyName ? `Company: ${companyName}` : '', message || ''].filter(Boolean).join(' | ') || undefined,
+      page: source_page || undefined,
     }).catch(() => {});
 
     res.status(201).json({

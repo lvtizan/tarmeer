@@ -73,6 +73,7 @@ export default function ServiceInquiryCard({
         company_id: companyId || undefined,
         source_company_name: companyName || undefined,
         source_company_slug: companySlug || undefined,
+        source_page: window.location.pathname,
       });
       setSubmitted(true);
     } catch (err: any) {
