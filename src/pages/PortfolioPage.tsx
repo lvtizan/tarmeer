@@ -4,214 +4,288 @@ import { useNavigate } from 'react-router-dom';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 
+/* ================================================================== */
+/*  Pure masonry layout engine (no React, no side effects)             */
+/*  Algorithm: greedy shortest-column — same as Pinterest & Masonry.js */
+/* ================================================================== */
+
 const GAP = 10;
-const COLS_MOBILE = 2;
-const COLS_DESKTOP = 4;
+const DEFAULT_RATIO = 1.33; // 4:3 — stable default, minimal reflow
 const MAX_IMAGES_PER_GROUP = 10;
 
-interface ImageSlot {
-  src: string;
-  ratio: number;
-  loaded: boolean;
-  hidden: boolean;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
+interface Pos { x: number; y: number; w: number; h: number }
+
+function computeMasonry(
+  ratios: number[],       // width/height per item (0 = hidden)
+  containerWidth: number,
+  cols: number,
+): { positions: Pos[]; height: number } {
+  if (containerWidth <= 0 || cols <= 0) return { positions: ratios.map(() => ({ x: 0, y: 0, w: 0, h: 0 })), height: 0 };
+
+  const colW = (containerWidth - GAP * (cols - 1)) / cols;
+  const colH = new Float64Array(cols); // typed array for perf
+  const positions: Pos[] = [];
+
+  for (let i = 0; i < ratios.length; i++) {
+    const ratio = ratios[i];
+    if (ratio <= 0) { positions.push({ x: 0, y: 0, w: 0, h: 0 }); continue; }
+
+    const h = colW / ratio;
+
+    // Find shortest column
+    let minIdx = 0;
+    for (let c = 1; c < cols; c++) {
+      if (colH[c] < colH[minIdx]) minIdx = c;
+    }
+
+    positions.push({
+      x: minIdx * (colW + GAP),
+      y: colH[minIdx],
+      w: colW,
+      h,
+    });
+    colH[minIdx] += h + GAP;
+  }
+
+  let maxH = 0;
+  for (let c = 0; c < cols; c++) { if (colH[c] > maxH) maxH = colH[c]; }
+
+  return { positions, height: maxH > 0 ? maxH - GAP : 0 };
 }
 
-/* ------------------------------------------------------------------ */
-/*  MasonryGroup — one project's images in shortest-column masonry     */
-/* ------------------------------------------------------------------ */
+function getColCount(width: number): number {
+  if (width >= 1024) return 4;
+  if (width >= 768) return 3;
+  return 2;
+}
 
-function MasonryGroup({
-  project,
-  images,
-  totalCount,
+/* ================================================================== */
+/*  Masonry component — shared by groups and singles                   */
+/* ================================================================== */
+
+interface MasonryItem {
+  src: string;
+  ratio: number;    // 0 = hidden
+  loaded: boolean;
+}
+
+function Masonry({
+  items,
+  onItemClick,
+  renderOverlay,
+  remainingCount,
 }: {
-  project: PortfolioProject;
-  images: string[];
-  totalCount: number;
+  items: MasonryItem[];
+  onItemClick: (index: number) => void;
+  renderOverlay?: (index: number) => React.ReactNode;
+  remainingCount?: number;
 }) {
-  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [slots, setSlots] = useState<ImageSlot[]>([]);
-  const [height, setHeight] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  // Measure container + compute layout
-  const layout = useCallback(() => {
+  // Measure container via ResizeObserver
+  useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const cw = el.clientWidth;
-    if (cw <= 0) return;
+    const measure = () => setContainerWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-    const cols = cw >= 768 ? COLS_DESKTOP : COLS_MOBILE;
-    const colW = (cw - GAP * (cols - 1)) / cols;
-    const colH = new Array(cols).fill(0);
+  // Pure layout computation
+  const { positions, height } = useMemo(() => {
+    const cols = getColCount(containerWidth);
+    const ratios = items.map(it => it.ratio);
+    return computeMasonry(ratios, containerWidth, cols);
+  }, [items, containerWidth]);
 
-    setSlots(prev => {
-      const next = prev.length === images.length ? [...prev] : images.map((src, i) =>
-        prev[i] || { src, ratio: 0.75 + Math.random() * 0.5, loaded: false, hidden: false, x: 0, y: 0, w: 0, h: 0 }
-      );
+  return (
+    <div ref={containerRef} className="relative w-full" style={{ height }}>
+      {items.map((item, i) => {
+        if (item.ratio <= 0) return null;
+        const pos = positions[i];
+        if (!pos || pos.w === 0) return null;
 
-      for (let i = 0; i < next.length; i++) {
-        if (next[i].hidden) continue;
-        const ratio = next[i].ratio;
-        const h = colW / ratio;
-        const minIdx = colH.indexOf(Math.min(...colH));
-        next[i] = {
-          ...next[i],
-          x: minIdx * (colW + GAP),
-          y: colH[minIdx],
-          w: colW,
-          h,
-        };
-        colH[minIdx] += h + GAP;
+        const isLastWithMore = remainingCount && remainingCount > 0 && i === items.length - 1;
+
+        return (
+          <div
+            key={i}
+            className="absolute rounded-xl overflow-hidden cursor-pointer group"
+            style={{
+              transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+              width: pos.w,
+              height: pos.h,
+              willChange: 'transform',
+              transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1), width 0.35s, height 0.35s',
+            }}
+            onClick={() => onItemClick(i)}
+          >
+            {/* Shimmer placeholder */}
+            <div
+              className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.loaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+              style={{
+                backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 1.5s infinite',
+              }}
+            />
+
+            {/* Image — always in DOM for faster paint, opacity controls visibility */}
+            <img
+              src={resolveImageUrl(item.src)}
+              alt=""
+              loading="lazy"
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
+            />
+
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {renderOverlay?.(i)}
+
+            {/* +N more badge */}
+            {isLastWithMore && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
+                <span className="text-white text-lg font-semibold">+{remainingCount} more</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  Image preloader — batches updates via requestAnimationFrame        */
+/* ================================================================== */
+
+function useImagePreloader(urls: string[]): MasonryItem[] {
+  const [items, setItems] = useState<MasonryItem[]>(() =>
+    urls.map(src => ({ src, ratio: DEFAULT_RATIO, loaded: false }))
+  );
+  const pendingRef = useRef<Map<number, { ratio: number; hidden: boolean }>>(new Map());
+  const rafRef = useRef(0);
+
+  // Flush batched updates
+  const flush = useCallback(() => {
+    const pending = pendingRef.current;
+    if (pending.size === 0) return;
+    const batch = new Map(pending);
+    pending.clear();
+
+    setItems(prev => {
+      const next = [...prev];
+      for (const [idx, update] of batch) {
+        if (next[idx]) {
+          next[idx] = {
+            src: next[idx].src,
+            ratio: update.hidden ? 0 : update.ratio,
+            loaded: true,
+          };
+        }
       }
-
-      setHeight(Math.max(...colH));
       return next;
     });
-  }, [images]);
+  }, []);
 
-  // Initial layout
   useEffect(() => {
-    // Initialize slots with varied default ratios for visual interest
-    const initial: ImageSlot[] = images.map(src => ({
-      src,
-      ratio: 0.75 + Math.random() * 0.5, // random between 0.75 and 1.25
-      loaded: false,
-      hidden: false,
-      x: 0, y: 0, w: 0, h: 0,
-    }));
-    setSlots(initial);
-  }, [images]);
+    // Reset when URLs change
+    setItems(urls.map(src => ({ src, ratio: DEFAULT_RATIO, loaded: false })));
+    pendingRef.current.clear();
 
-  // Layout when slots change or container resizes
-  useEffect(() => {
-    layout();
-    const ro = new ResizeObserver(() => layout());
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, [layout, slots.length]);
-
-  // Preload images and update with real ratios
-  useEffect(() => {
-    images.forEach((src, i) => {
+    urls.forEach((src, i) => {
       const img = new Image();
       img.onload = () => {
         const w = img.naturalWidth;
         const h = img.naturalHeight;
         const ratio = w / h;
         const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
-        setSlots(prev => {
-          const next = [...prev];
-          if (next[i]) next[i] = { ...next[i], ratio: hidden ? 1 : ratio, loaded: true, hidden };
-          return next;
-        });
+        pendingRef.current.set(i, { ratio, hidden });
+
+        // Batch with RAF — one flush per frame
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(flush);
       };
       img.onerror = () => {
-        setSlots(prev => {
-          const next = [...prev];
-          if (next[i]) next[i] = { ...next[i], loaded: true, hidden: true };
-          return next;
-        });
+        pendingRef.current.set(i, { ratio: 0, hidden: true });
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(flush);
       };
       img.src = resolveImageUrl(src);
     });
-  }, [images]);
 
-  // Re-layout when a slot's ratio changes
-  useEffect(() => { layout(); }, [slots.map(s => `${s.ratio}:${s.hidden}`).join(',')]);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [urls.join('|'), flush]);
+
+  return items;
+}
+
+/* ================================================================== */
+/*  ProjectMasonry — one project group                                 */
+/* ================================================================== */
+
+function ProjectMasonry({
+  project,
+  maxImages,
+}: {
+  project: PortfolioProject;
+  maxImages: number;
+}) {
+  const navigate = useNavigate();
+  const visibleImages = useMemo(() => project.images.slice(0, maxImages), [project.images, maxImages]);
+  const items = useImagePreloader(visibleImages);
+  const remaining = project.images.length - visibleImages.length;
 
   const projectUrl = project.slug
     ? `/companies/${project.companySlug}/${project.slug}`
     : `/companies/${project.companySlug}`;
 
-  const shownCount = slots.filter(s => !s.hidden).length;
-  const remaining = totalCount - shownCount;
+  const handleClick = useCallback(() => navigate(projectUrl), [navigate, projectUrl]);
+
+  const renderOverlay = useCallback(
+    () => (
+      <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <p className="text-white text-sm font-medium line-clamp-1">{project.title || 'Project'}</p>
+        <p className="text-[#c6a065] text-xs mt-0.5">
+          {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
+        </p>
+      </div>
+    ),
+    [project],
+  );
 
   return (
     <section className="mb-10">
       {/* Project header */}
       <div
         className="flex items-baseline gap-3 mb-3 cursor-pointer group/header"
-        onClick={() => navigate(projectUrl)}
+        onClick={handleClick}
       >
         <h3 className="text-[15px] font-medium text-[#1c1917] group-hover/header:text-[var(--color-tarmeer-primary)] transition">
           {project.title || 'Project'}
         </h3>
         <span className="text-sm text-stone-400">
-          {project.companyName}
-          {project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
+          {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
         </span>
-        <span className="text-xs text-stone-300">{totalCount} photos</span>
+        <span className="text-xs text-stone-300">{project.images.length} photos</span>
       </div>
 
-      {/* Masonry container */}
-      <div ref={containerRef} className="relative" style={{ height }}>
-        {slots.map((slot, i) => {
-          if (slot.hidden) return null;
-          const isLast = i === slots.length - 1 && remaining > 0;
-          return (
-            <div
-              key={i}
-              className="absolute rounded-xl overflow-hidden cursor-pointer group"
-              style={{
-                left: slot.x,
-                top: slot.y,
-                width: slot.w,
-                height: slot.h,
-                transition: 'top 0.3s ease, height 0.3s ease, left 0.3s ease',
-              }}
-              onClick={() => navigate(projectUrl)}
-            >
-              {/* Shimmer placeholder */}
-              <div
-                className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${slot.loaded ? 'opacity-0' : 'opacity-100'}`}
-                style={{
-                  backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                  backgroundSize: '200% 100%',
-                  animation: 'shimmer 1.5s infinite',
-                }}
-              />
-
-              {/* Real image */}
-              {slot.loaded && (
-                <img
-                  src={resolveImageUrl(slot.src)}
-                  alt={`${project.title || 'Interior Design'} by ${project.companyName}${project.companyCity ? ` in ${project.companyCity}` : ''}`}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  style={{ animation: 'fadeIn 0.3s ease-out' }}
-                />
-              )}
-
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
-              <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <p className="text-white text-sm font-medium line-clamp-1">{project.title || 'Project'}</p>
-                <p className="text-[#c6a065] text-xs mt-0.5">
-                  {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
-                </p>
-              </div>
-
-              {/* +N more badge */}
-              {isLast && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="text-white text-lg font-semibold">+{remaining} more</span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <Masonry
+        items={items}
+        onItemClick={handleClick}
+        renderOverlay={renderOverlay}
+        remainingCount={remaining}
+      />
     </section>
   );
 }
 
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
 /*  Main page                                                          */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
 
 export default function PortfolioPage() {
   const [projects, setProjects] = useState<PortfolioProject[]>([]);
@@ -222,6 +296,7 @@ export default function PortfolioPage() {
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   const seedRef = useRef(Math.floor(Math.random() * 1000000));
+  const navigate = useNavigate();
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -264,24 +339,27 @@ export default function PortfolioPage() {
     return { grouped: g, singles: s };
   }, [projects]);
 
-  // Merge singles into a fake "project" for masonry rendering
-  const singlesAsProject: PortfolioProject | null = useMemo(() => {
-    if (singles.length === 0) return null;
-    return {
-      id: -1,
-      title: '',
-      description: '',
-      style: '',
-      location: '',
-      year: null,
-      images: singles.map(s => s.images[0]),
-      companyId: 0,
-      companyName: '',
-      companySlug: '',
-      companyLogo: '',
-      companyCity: '',
-      source: 'registered' as const,
-    };
+  // Singles masonry items
+  const singlesUrls = useMemo(() => singles.map(s => s.images[0]), [singles]);
+  const singlesItems = useImagePreloader(singlesUrls);
+
+  const handleSingleClick = useCallback((idx: number) => {
+    const proj = singles[idx];
+    if (!proj) return;
+    navigate(proj.slug ? `/companies/${proj.companySlug}/${proj.slug}` : `/companies/${proj.companySlug}`);
+  }, [singles, navigate]);
+
+  const renderSingleOverlay = useCallback((idx: number) => {
+    const proj = singles[idx];
+    if (!proj) return null;
+    return (
+      <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <p className="text-white text-sm font-medium line-clamp-1">{proj.title || 'Project'}</p>
+        <p className="text-[#c6a065] text-xs mt-0.5">
+          {proj.companyName}{proj.companyCity ? ` \u00b7 ${proj.companyCity}` : ''}
+        </p>
+      </div>
+    );
   }, [singles]);
 
   return (
@@ -332,26 +410,28 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {/* Grouped projects — masonry per project */}
+        {/* Grouped projects */}
         {grouped.map(project => (
-          <MasonryGroup
+          <ProjectMasonry
             key={`g-${project.id}`}
             project={project}
-            images={project.images.slice(0, MAX_IMAGES_PER_GROUP)}
-            totalCount={project.images.length}
+            maxImages={MAX_IMAGES_PER_GROUP}
           />
         ))}
 
-        {/* Single-image projects — mixed masonry */}
-        {singles.length > 0 && singlesAsProject && (
+        {/* Single-image projects */}
+        {singles.length > 0 && (
           <section className="mb-10" style={{ marginTop: grouped.length > 0 ? 32 : 0 }}>
             {grouped.length > 0 && (
               <div className="flex items-baseline gap-3 mb-3">
                 <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
               </div>
             )}
-            {/* Render singles individually with hover info */}
-            <SinglesMasonry singles={singles} />
+            <Masonry
+              items={singlesItems}
+              onItemClick={handleSingleClick}
+              renderOverlay={renderSingleOverlay}
+            />
           </section>
         )}
 
@@ -363,115 +443,8 @@ export default function PortfolioPage() {
       </div>
 
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
       `}</style>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  SinglesMasonry — individual project cards in masonry                */
-/* ------------------------------------------------------------------ */
-
-function SinglesMasonry({ singles }: { singles: PortfolioProject[] }) {
-  const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [slots, setSlots] = useState<(ImageSlot & { projectIdx: number })[]>([]);
-  const [height, setHeight] = useState(0);
-
-  const images = useMemo(() => singles.map(s => s.images[0]), [singles]);
-
-  const layout = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const cw = el.clientWidth;
-    if (cw <= 0) return;
-    const cols = cw >= 768 ? COLS_DESKTOP : COLS_MOBILE;
-    const colW = (cw - GAP * (cols - 1)) / cols;
-    const colH = new Array(cols).fill(0);
-
-    setSlots(prev => {
-      const next = prev.length === images.length ? [...prev] : images.map((src, i) =>
-        prev[i] || { src, ratio: 0.75 + Math.random() * 0.5, loaded: false, hidden: false, x: 0, y: 0, w: 0, h: 0, projectIdx: i }
-      );
-      for (let i = 0; i < next.length; i++) {
-        if (next[i].hidden) continue;
-        const h = colW / next[i].ratio;
-        const minIdx = colH.indexOf(Math.min(...colH));
-        next[i] = { ...next[i], x: minIdx * (colW + GAP), y: colH[minIdx], w: colW, h };
-        colH[minIdx] += h + GAP;
-      }
-      setHeight(Math.max(...colH));
-      return next;
-    });
-  }, [images]);
-
-  useEffect(() => {
-    setSlots(images.map((src, i) => ({
-      src, ratio: 0.75 + Math.random() * 0.5, loaded: false, hidden: false, x: 0, y: 0, w: 0, h: 0, projectIdx: i,
-    })));
-  }, [images]);
-
-  useEffect(() => {
-    layout();
-    const ro = new ResizeObserver(() => layout());
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, [layout, slots.length]);
-
-  useEffect(() => {
-    images.forEach((src, i) => {
-      const img = new Image();
-      img.onload = () => {
-        const w = img.naturalWidth, h = img.naturalHeight, ratio = w / h;
-        const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
-        setSlots(prev => {
-          const next = [...prev];
-          if (next[i]) next[i] = { ...next[i], ratio: hidden ? 1 : ratio, loaded: true, hidden };
-          return next;
-        });
-      };
-      img.onerror = () => {
-        setSlots(prev => { const next = [...prev]; if (next[i]) next[i] = { ...next[i], loaded: true, hidden: true }; return next; });
-      };
-      img.src = resolveImageUrl(src);
-    });
-  }, [images]);
-
-  useEffect(() => { layout(); }, [slots.map(s => `${s.ratio}:${s.hidden}`).join(',')]);
-
-  return (
-    <div ref={containerRef} className="relative" style={{ height }}>
-      {slots.map((slot) => {
-        if (slot.hidden) return null;
-        const proj = singles[slot.projectIdx];
-        if (!proj) return null;
-        const url = proj.slug ? `/companies/${proj.companySlug}/${proj.slug}` : `/companies/${proj.companySlug}`;
-        return (
-          <div
-            key={`s-${proj.id}`}
-            className="absolute rounded-xl overflow-hidden cursor-pointer group"
-            style={{ left: slot.x, top: slot.y, width: slot.w, height: slot.h, transition: 'top 0.3s ease, height 0.3s ease, left 0.3s ease' }}
-            onClick={() => navigate(url)}
-          >
-            <div
-              className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${slot.loaded ? 'opacity-0' : 'opacity-100'}`}
-              style={{ backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }}
-            />
-            {slot.loaded && (
-              <img src={resolveImageUrl(slot.src)} alt={`${proj.title || 'Project'} by ${proj.companyName}`}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                style={{ animation: 'fadeIn 0.3s ease-out' }} />
-            )}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
-            <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <p className="text-white text-sm font-medium line-clamp-1">{proj.title || 'Project'}</p>
-              <p className="text-[#c6a065] text-xs mt-0.5">{proj.companyName}{proj.companyCity ? ` \u00b7 ${proj.companyCity}` : ''}</p>
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
