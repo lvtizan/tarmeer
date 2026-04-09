@@ -340,21 +340,84 @@ function ProjectGroup({ project, maxImages }: { project: PortfolioProject; maxIm
 const ROOM_FILTERS = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dining Room', 'Home Office', 'Majlis', 'Hallway', 'Nursery', 'Patio'];
 const STYLE_FILTERS = ['Modern', 'Luxury', 'Minimalist', 'Classical', 'Arabic', 'Industrial', 'Scandinavian', 'Coastal', 'Art Deco', 'Bohemian'];
 
+// ── Portfolio state cache (survives back navigation) ──
+const CACHE_KEY = 'portfolio-state';
+interface CachedState {
+  projects: PortfolioProject[];
+  page: number;
+  hasMore: boolean;
+  activeTag: string;
+  seed: number;
+  scrollY: number;
+  savedAt: number;
+}
+
+function readCache(): CachedState | null {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedState;
+    // Expire cache after 30 min
+    if (Date.now() - parsed.savedAt > 30 * 60 * 1000) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+function writeCache(state: Omit<CachedState, 'savedAt'>) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ...state, savedAt: Date.now() }));
+  } catch { /* sessionStorage may be full */ }
+}
+
+function clearCache() {
+  try { sessionStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+}
+
 export default function PortfolioPage() {
-  const [projects, setProjects] = useState<PortfolioProject[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const urlTag = searchParams.get('tag') || '';
+
+  // Restore cache ONLY if URL tag matches cached tag (otherwise filter changed)
+  const cached = useMemo(() => {
+    const c = readCache();
+    return c && c.activeTag === urlTag ? c : null;
+  }, []); // Only read once on mount
+
+  const [projects, setProjects] = useState<PortfolioProject[]>(cached?.projects || []);
+  const [page, setPage] = useState(cached?.page || 1);
+  const [hasMore, setHasMore] = useState(cached?.hasMore ?? true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(!cached);
   const [activeTag, setActiveTag] = useState(urlTag);
   const [scrolledPastHeader, setScrolledPastHeader] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
-  const loadedRef = useRef(false);
-  const seedRef = useRef(Math.floor(Math.random() * 1000000));
+  const loadedRef = useRef(!!cached); // skip initial load if we have cache
+  const seedRef = useRef(cached?.seed || Math.floor(Math.random() * 1000000));
   const navigate = useNavigate();
+
+  // Restore scroll position after mount
+  useEffect(() => {
+    if (cached) {
+      // Wait for layout to settle then scroll
+      const t = setTimeout(() => window.scrollTo(0, cached.scrollY), 50);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  // Save state to cache when leaving the page
+  useEffect(() => {
+    return () => {
+      writeCache({
+        projects,
+        page,
+        hasMore,
+        activeTag,
+        seed: seedRef.current,
+        scrollY: window.scrollY,
+      });
+    };
+  }, [projects, page, hasMore, activeTag]);
 
   // Sync tag from URL
   useEffect(() => { if (urlTag !== activeTag) setActiveTag(urlTag); }, [urlTag]);
@@ -376,12 +439,16 @@ export default function PortfolioPage() {
     setActiveTag(newTag);
     // Update URL without full reload
     navigate(newTag ? `/portfolio?tag=${encodeURIComponent(newTag)}` : '/portfolio', { replace: true });
+    // Clear cache — user wants a fresh filtered view
+    clearCache();
     setProjects([]);
     setPage(1);
     setHasMore(true);
     setLoading(false);
+    setInitialLoading(true);
     loadedRef.current = false;
     seedRef.current = Math.floor(Math.random() * 1000000);
+    window.scrollTo(0, 0);
   }, [activeTag, navigate]);
 
   const loadMore = useCallback(async () => {
