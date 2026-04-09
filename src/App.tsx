@@ -69,11 +69,10 @@ const AdminProjectDetailPage = lazy(() => import('./pages/admin/AdminProjectDeta
 
 function PageLoader() {
   return (
-    <div className="min-h-[40vh] flex items-center justify-center">
-      <span className="inline-flex items-center gap-2.5 text-stone-400">
-        <svg className="w-6 h-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
-        <span className="text-sm">Loading...</span>
-      </span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
+      </div>
     </div>
   );
 }
