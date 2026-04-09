@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
@@ -346,24 +346,43 @@ export default function PortfolioPage() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [activeTag, setActiveTag] = useState('');
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const urlTag = searchParams.get('tag') || '';
+  const [activeTag, setActiveTag] = useState(urlTag);
+  const [scrolledPastHeader, setScrolledPastHeader] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   const seedRef = useRef(Math.floor(Math.random() * 1000000));
   const navigate = useNavigate();
 
-  // Reset and reload when tag changes
+  // Sync tag from URL
+  useEffect(() => { if (urlTag !== activeTag) setActiveTag(urlTag); }, [urlTag]);
+
+  // Track scroll past header for sticky bar
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setScrolledPastHeader(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   const selectTag = useCallback((tag: string) => {
     const newTag = tag === activeTag ? '' : tag;
     setActiveTag(newTag);
+    // Update URL without full reload
+    navigate(newTag ? `/portfolio?tag=${encodeURIComponent(newTag)}` : '/portfolio', { replace: true });
     setProjects([]);
     setPage(1);
     setHasMore(true);
     setLoading(false);
     loadedRef.current = false;
     seedRef.current = Math.floor(Math.random() * 1000000);
-  }, [activeTag]);
+  }, [activeTag, navigate]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -458,93 +477,60 @@ export default function PortfolioPage() {
         </script>
       </Helmet>
 
-      <div className="max-w-[1400px] mx-auto px-4 py-8">
-        <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
-        <div className="flex items-center gap-3 mb-8">
-          <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
-          {activeTag && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-tarmeer-primary)] text-white text-sm">
-              {activeTag}
-              <button onClick={() => selectTag(activeTag)} className="hover:opacity-70"><X className="w-3.5 h-3.5" /></button>
-            </span>
-          )}
-        </div>
-
-        {/* ── Floating filter toggle button (bottom-right, near content) ── */}
-        <button
-          onClick={() => setFilterOpen(!filterOpen)}
-          className={`fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors ${
-            filterOpen || activeTag
-              ? 'bg-[var(--color-tarmeer-primary)] text-white'
-              : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-400 hover:shadow-xl'
-          }`}
-        >
-          <SlidersHorizontal className="w-5 h-5" />
-        </button>
-
-        {/* ── Floating filter panel (right side) ── */}
-        <div className={`fixed right-0 top-0 h-full z-30 transition-transform duration-300 ${filterOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div className="h-full w-64 bg-white/95 backdrop-blur-sm border-l border-stone-200 shadow-2xl overflow-y-auto pt-20 pb-8 px-5">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-sm font-semibold text-[var(--color-tarmeer-text)]">Filters</h2>
-              <button onClick={() => setFilterOpen(false)} className="w-7 h-7 rounded-full hover:bg-stone-100 flex items-center justify-center">
-                <X className="w-4 h-4 text-stone-400" />
-              </button>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">By Room</h3>
-              <div className="flex flex-col gap-1.5">
-                {ROOM_FILTERS.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => { selectTag(tag); }}
-                    className={`text-left px-3 py-1.5 rounded-lg text-sm transition ${
-                      activeTag === tag
-                        ? 'bg-[var(--color-tarmeer-primary)] text-white font-medium'
-                        : 'text-stone-600 hover:bg-stone-100'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">By Style</h3>
-              <div className="flex flex-col gap-1.5">
-                {STYLE_FILTERS.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => { selectTag(tag); }}
-                    className={`text-left px-3 py-1.5 rounded-lg text-sm transition ${
-                      activeTag === tag
-                        ? 'bg-[var(--color-tarmeer-primary)] text-white font-medium'
-                        : 'text-stone-600 hover:bg-stone-100'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {activeTag && (
+      {/* ── Sticky filter bar (appears when scrolled past header) ── */}
+      {scrolledPastHeader && (
+        <div className="fixed top-[64px] left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
+          <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <span className="text-xs text-stone-400 font-medium shrink-0 mr-1">Filter:</span>
+            {[...ROOM_FILTERS, ...STYLE_FILTERS].map(tag => (
               <button
-                onClick={() => selectTag(activeTag)}
-                className="mt-6 w-full py-2 text-sm text-stone-500 border border-stone-200 rounded-lg hover:bg-stone-50 transition"
+                key={tag}
+                onClick={() => selectTag(tag)}
+                className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition ${
+                  activeTag === tag
+                    ? 'bg-[var(--color-tarmeer-primary)] text-white'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
               >
-                Clear filter
+                {tag}
+              </button>
+            ))}
+            {activeTag && (
+              <button onClick={() => selectTag(activeTag)} className="shrink-0 ml-1 text-xs text-stone-400 hover:text-stone-600">
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         </div>
+      )}
 
-        {/* Backdrop */}
-        {filterOpen && (
-          <div className="fixed inset-0 z-20 bg-black/20" onClick={() => setFilterOpen(false)} />
-        )}
+      <div className="max-w-[1400px] mx-auto px-4 py-8">
+        <div ref={headerRef} className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
+            <div className="flex items-center gap-3">
+              <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
+              {activeTag && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-tarmeer-primary)] text-white text-sm">
+                  {activeTag}
+                  <button onClick={() => selectTag(activeTag)} className="hover:opacity-70"><X className="w-3.5 h-3.5" /></button>
+                </span>
+              )}
+            </div>
+          </div>
+          {/* Filter icon button (top-right) */}
+          <button
+            onClick={() => {
+              const el = document.querySelector('.sticky-filter-scroll');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              else window.scrollBy({ top: 100, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-sm text-stone-600 hover:border-stone-400 hover:text-[var(--color-tarmeer-text)] transition mt-1"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+          </button>
+        </div>
 
         {initialLoading && (
           <div className="flex items-center justify-center py-20">
