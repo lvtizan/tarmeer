@@ -74,12 +74,16 @@ function justifyRows(
     // Clamp row height
     rowH = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, rowH));
 
-    // Last row: if only 1-2 images and would be very tall, cap at targetH
-    if (bestEnd >= ratios.length && count <= 2) {
+    // Last row: don't stretch to fill width — left-align at target height
+    // This prevents 1-2 images from being cropped beyond recognition
+    const isLastRow = bestEnd >= ratios.length;
+    const rowFillsWidth = !isLastRow || count >= 3;
+
+    if (isLastRow && !rowFillsWidth) {
       rowH = Math.min(rowH, targetH);
     }
 
-    // Compute widths
+    // Compute widths based on ratio × height
     const widths: number[] = [];
     let usedWidth = 0;
     for (let i = cursor; i < bestEnd; i++) {
@@ -89,12 +93,14 @@ function justifyRows(
       usedWidth += w;
     }
 
-    // Distribute rounding error across widths to exactly fill container
-    const totalGaps = gaps;
-    const remainder = containerWidth - usedWidth - totalGaps;
-    if (widths.length > 0 && Math.abs(remainder) > 0.5) {
-      const adj = remainder / widths.length;
-      for (let i = 0; i < widths.length; i++) widths[i] += adj;
+    // Only distribute rounding error if the row should fill the container
+    if (rowFillsWidth) {
+      const totalGaps = gaps;
+      const remainder = containerWidth - usedWidth - totalGaps;
+      if (widths.length > 0 && Math.abs(remainder) > 0.5) {
+        const adj = remainder / widths.length;
+        for (let i = 0; i < widths.length; i++) widths[i] += adj;
+      }
     }
 
     rows.push({ startIdx: cursor, count, height: rowH, widths });
