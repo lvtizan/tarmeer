@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
+import { SlidersHorizontal, X } from 'lucide-react';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 
@@ -346,6 +347,7 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [activeTag, setActiveTag] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   const seedRef = useRef(Math.floor(Math.random() * 1000000));
@@ -458,47 +460,91 @@ export default function PortfolioPage() {
 
       <div className="max-w-[1400px] mx-auto px-4 py-8">
         <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
-        <p className="text-[var(--color-tarmeer-muted)] mb-6">Explore interior design projects from UAE&apos;s top professionals</p>
+        <div className="flex items-center gap-3 mb-8">
+          <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
+          {activeTag && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-tarmeer-primary)] text-white text-sm">
+              {activeTag}
+              <button onClick={() => selectTag(activeTag)} className="hover:opacity-70"><X className="w-3.5 h-3.5" /></button>
+            </span>
+          )}
+        </div>
 
-        {/* ── Tag filter bar ── */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4 sm:gap-8">
-          <div>
-            <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">By Room</h3>
-            <div className="flex flex-wrap gap-2">
-              {ROOM_FILTERS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => selectTag(tag)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition ${
-                    activeTag === tag
-                      ? 'bg-[var(--color-tarmeer-primary)] text-white'
-                      : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+        {/* ── Floating filter toggle button ── */}
+        <button
+          onClick={() => setFilterOpen(!filterOpen)}
+          className={`fixed right-4 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+            filterOpen || activeTag
+              ? 'bg-[var(--color-tarmeer-primary)] text-white'
+              : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-400'
+          }`}
+        >
+          <SlidersHorizontal className="w-4.5 h-4.5" />
+        </button>
+
+        {/* ── Floating filter panel (right side) ── */}
+        <div className={`fixed right-0 top-0 h-full z-30 transition-transform duration-300 ${filterOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="h-full w-64 bg-white/95 backdrop-blur-sm border-l border-stone-200 shadow-2xl overflow-y-auto pt-20 pb-8 px-5">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-sm font-semibold text-[var(--color-tarmeer-text)]">Filters</h2>
+              <button onClick={() => setFilterOpen(false)} className="w-7 h-7 rounded-full hover:bg-stone-100 flex items-center justify-center">
+                <X className="w-4 h-4 text-stone-400" />
+              </button>
             </div>
-          </div>
-          <div>
-            <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">By Style</h3>
-            <div className="flex flex-wrap gap-2">
-              {STYLE_FILTERS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => selectTag(tag)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition ${
-                    activeTag === tag
-                      ? 'bg-[var(--color-tarmeer-primary)] text-white'
-                      : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+
+            <div className="mb-6">
+              <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">By Room</h3>
+              <div className="flex flex-col gap-1.5">
+                {ROOM_FILTERS.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => { selectTag(tag); }}
+                    className={`text-left px-3 py-1.5 rounded-lg text-sm transition ${
+                      activeTag === tag
+                        ? 'bg-[var(--color-tarmeer-primary)] text-white font-medium'
+                        : 'text-stone-600 hover:bg-stone-100'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            <div>
+              <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">By Style</h3>
+              <div className="flex flex-col gap-1.5">
+                {STYLE_FILTERS.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => { selectTag(tag); }}
+                    className={`text-left px-3 py-1.5 rounded-lg text-sm transition ${
+                      activeTag === tag
+                        ? 'bg-[var(--color-tarmeer-primary)] text-white font-medium'
+                        : 'text-stone-600 hover:bg-stone-100'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {activeTag && (
+              <button
+                onClick={() => selectTag(activeTag)}
+                className="mt-6 w-full py-2 text-sm text-stone-500 border border-stone-200 rounded-lg hover:bg-stone-50 transition"
+              >
+                Clear filter
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Backdrop */}
+        {filterOpen && (
+          <div className="fixed inset-0 z-20 bg-black/20" onClick={() => setFilterOpen(false)} />
+        )}
 
         {initialLoading && (
           <div className="flex items-center justify-center py-20">
