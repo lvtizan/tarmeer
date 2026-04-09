@@ -91,19 +91,19 @@ export default function AdminNotificationEmailsPage() {
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
           placeholder="email@example.com"
-          className="flex-1 px-4 py-2.5 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+          className="flex-1 px-4 py-2.5 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
         />
         <input
           type="text"
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
           placeholder="Label (optional)"
-          className="w-40 px-4 py-2.5 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+          className="w-40 px-4 py-2.5 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
         />
         <button
           onClick={handleAdd}
           disabled={!newEmail}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition"
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-[#b8864a] text-white rounded-lg text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition"
         >
           <Plus className="w-4 h-4" />
           Add

@@ -51,7 +51,7 @@ export default function UserEditModal({ id, onClose, onSaved }: Props) {
 
   const set = (key: string, val: any) => setData(prev => ({ ...prev, [key]: val }));
 
-  const inputCls = "w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500";
+  const inputCls = "w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]";
   const labelCls = "block text-xs font-medium text-stone-500 mb-1";
 
   if (loading) {
@@ -100,7 +100,7 @@ export default function UserEditModal({ id, onClose, onSaved }: Props) {
         <div className="sticky bottom-0 bg-white border-t border-stone-200 px-6 py-4 flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 hover:text-stone-800">Cancel</button>
           <button onClick={handleSave} disabled={saving}
-            className="px-5 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium"
+            className="px-5 py-2 text-sm bg-[#b8864a] text-white rounded-lg hover:bg-[#a07540] disabled:opacity-50 font-medium"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

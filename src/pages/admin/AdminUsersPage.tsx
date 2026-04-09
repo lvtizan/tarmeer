@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Pencil } from 'lucide-react';
+import { Pencil, Shield, Home, Building2, X } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
@@ -21,16 +21,141 @@ interface UserRecord {
   created_at: string;
 }
 
-const ROLE_BADGE: Record<string, string> = {
-  user: 'bg-stone-100 text-stone-700',
-  designer: 'bg-amber-100 text-amber-800',
-  company: 'bg-blue-100 text-blue-800',
-};
-
 const STATUS_BADGE: Record<string, string> = {
   active: 'bg-green-100 text-green-700',
   suspended: 'bg-red-100 text-red-700',
 };
+
+const AVAILABLE_PERMISSIONS = [
+  { key: 'manage_projects', label: 'Manage Projects', desc: 'Can create, edit and delete projects' },
+  { key: 'manage_company', label: 'Manage Company', desc: 'Can edit company profile' },
+  { key: 'view_analytics', label: 'View Analytics', desc: 'Can view analytics data' },
+  { key: 'manage_inquiries', label: 'Manage Inquiries', desc: 'Can view and respond to inquiries' },
+  { key: 'manage_users', label: 'Manage Users', desc: 'Can manage other users (admin only)' },
+  { key: 'import_companies', label: 'Import Companies', desc: 'Can import companies' },
+  { key: 'manage_complaints', label: 'Manage Complaints', desc: 'Can handle complaints' },
+  { key: 'export_data', label: 'Export Data', desc: 'Can export data' },
+];
+
+// ── Permission Modal ────────────────────────────────────────────────────────
+
+interface PermissionModalProps {
+  user: UserRecord;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    adminApi.getUserPermissions(user.id)
+      .then(({ permissions }) => setChecked(new Set(permissions)))
+      .catch((e) => setError(e.message || 'Failed to load permissions'))
+      .finally(() => setLoading(false));
+  }, [user.id]);
+
+  const toggle = (key: string) => {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await adminApi.updateUserPermissions(user.id, Array.from(checked));
+      onSaved();
+      onClose();
+    } catch (e: any) {
+      setError(e.message || 'Failed to save permissions');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const roleLabel = user.role === 'company' ? '公司' : user.role === 'user' ? '业主' : user.role;
+  const RoleIcon = user.role === 'company' ? Building2 : user.role === 'user' ? Home : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-stone-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Shield size={18} className="text-[#b8864a]" />
+              <h2 className="text-xl font-bold text-stone-800">Permissions</h2>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-stone-500">
+              <span className="font-medium text-stone-700">{user.full_name}</span>
+              {RoleIcon && <RoleIcon size={13} className="text-stone-400" />}
+              <span>{roleLabel}</span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-600 transition mt-0.5"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-4 space-y-3 max-h-[55vh] overflow-y-auto">
+          {loading ? (
+            <div className="text-center py-8 text-stone-400 text-sm">Loading…</div>
+          ) : (
+            AVAILABLE_PERMISSIONS.map(({ key, label, desc }) => (
+              <label
+                key={key}
+                className="flex items-start gap-3 cursor-pointer group"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked.has(key)}
+                  onChange={() => toggle(key)}
+                  className="mt-0.5 h-4 w-4 rounded border-stone-300 accent-[#b8864a] cursor-pointer"
+                />
+                <span className="flex-1">
+                  <span className="block text-[15px] font-medium text-stone-800 group-hover:text-[#b8864a] transition">
+                    {label}
+                  </span>
+                  <span className="block text-xs text-stone-400">{desc}</span>
+                </span>
+              </label>
+            ))
+          )}
+          {error && <div className="text-red-600 bg-red-50 px-3 py-2 rounded-lg text-sm">{error}</div>}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 pb-6 pt-4 border-t border-stone-100">
+          <button
+            onClick={onClose}
+            className="flex-1 h-10 rounded-2xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="flex-1 h-10 rounded-2xl bg-[#b8864a] hover:bg-[#a07540] text-white text-sm font-medium transition disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminUsersPage() {
   const navigate = useNavigate();
@@ -52,6 +177,7 @@ export default function AdminUsersPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
   const [editUserId, setEditUserId] = useState<number | null>(null);
+  const [permissionUser, setPermissionUser] = useState<UserRecord | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -192,9 +318,19 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 text-stone-600">{user.email}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[user.role]}`}>
-                      {user.role}
-                    </span>
+                    {user.role === 'user' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700">
+                        <Home size={11} /> 业主
+                      </span>
+                    ) : user.role === 'company' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <Building2 size={11} /> 公司
+                      </span>
+                    ) : (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-[#b8864a]/10 text-[#b8864a]">
+                        {user.role}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[user.status]}`}>
@@ -216,6 +352,13 @@ export default function AdminUsersPage() {
                       className="text-xs px-3 py-1 rounded-lg font-medium transition bg-stone-50 text-stone-600 hover:bg-stone-100 flex items-center gap-1"
                     >
                       <Pencil size={12} /> Edit
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setPermissionUser(user); }}
+                      className="text-xs px-3 py-1 rounded-lg font-medium transition bg-stone-50 text-stone-600 hover:bg-stone-100 flex items-center gap-1"
+                      title="Manage permissions"
+                    >
+                      <Shield size={12} /> Permissions
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleStatusToggle(user); }}
@@ -263,6 +406,14 @@ export default function AdminUsersPage() {
         <UserEditModal
           id={editUserId}
           onClose={() => setEditUserId(null)}
+          onSaved={() => loadUsers()}
+        />
+      )}
+
+      {permissionUser && (
+        <PermissionModal
+          user={permissionUser}
+          onClose={() => setPermissionUser(null)}
           onSaved={() => loadUsers()}
         />
       )}

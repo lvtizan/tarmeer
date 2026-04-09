@@ -133,7 +133,7 @@ export default function AdminCompanyImportPage() {
             </p>
             <button
               onClick={handleDownloadTemplate}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#b8864a] text-white rounded-lg text-sm font-medium hover:bg-[#a07540] transition"
             >
               <Download className="w-4 h-4" />
               Download Template (.docx)
@@ -197,14 +197,14 @@ export default function AdminCompanyImportPage() {
                       value={parsed[key] || ''}
                       onChange={e => handleFieldChange(key, e.target.value)}
                       rows={3}
-                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none"
+                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a] resize-none"
                     />
                   ) : (
                     <input
                       type="text"
                       value={parsed[key] || ''}
                       onChange={e => handleFieldChange(key, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
                     />
                   )}
                 </div>
@@ -250,7 +250,7 @@ export default function AdminCompanyImportPage() {
           <p className="text-sm text-stone-500 mb-6">{importedName}</p>
           <button
             onClick={() => { setStep('upload'); setParsed({}); setImportedName(''); }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#b8864a] text-white rounded-lg text-sm font-medium hover:bg-[#a07540] transition"
           >
             <FileText className="w-4 h-4" />
             Import Another

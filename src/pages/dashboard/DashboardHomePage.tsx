@@ -153,7 +153,7 @@ export default function DashboardHomePage() {
                 <span className={`shrink-0 self-center px-2.5 py-1 rounded-full text-[11px] font-medium ${
                   item.done
                     ? 'bg-green-100 text-green-700'
-                    : 'bg-orange-100 text-orange-700'
+                    : 'bg-[#b8864a]/10 text-[#b8864a]'
                 }`}>
                   {item.done ? 'Done' : 'Pending'}
                 </span>

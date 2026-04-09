@@ -272,7 +272,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
         onDrop={handleDrop}
         className={`relative rounded-lg transition-all duration-200 ${
           dragActive
-            ? 'border-2 border-dashed border-amber-600 bg-amber-50'
+            ? 'border-2 border-dashed border-[#b8864a] bg-[#b8864a]/5'
             : 'border-0'
         } ${images.length > 0 ? 'py-8' : 'py-16'}`}
       >
@@ -339,7 +339,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
 
                   {/* Cover badge */}
                   {image.isCover && (
-                    <div className="absolute top-2 right-2 bg-amber-600 text-white text-xs font-medium px-2 py-1 rounded">
+                    <div className="absolute top-2 right-2 bg-[#b8864a] text-white text-xs font-medium px-2 py-1 rounded">
                       Cover
                     </div>
                   )}
@@ -351,7 +351,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                       <button
                         type="button"
                         onClick={() => setCoverImage(index)}
-                        className="p-2 bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors"
+                        className="p-2 bg-[#b8864a] text-white rounded-full hover:bg-[#a07540] transition-colors"
                         title="Set as cover"
                       >
                         <Image className="w-4 h-4" />
@@ -425,7 +425,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add a description for this project..."
-              className="w-full px-4 py-3 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a] resize-none"
               rows={4}
             />
           </div>
@@ -440,7 +440,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
               placeholder="Project name (optional, auto-generated if empty)"
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
             />
           </div>
 
@@ -452,7 +452,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
             <select
               value={style}
               onChange={(e) => setStyle(e.target.value)}
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
             >
               <option value="">Select a style...</option>
               {styleOptions.map((opt) => (
@@ -473,7 +473,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g., Dubai Marina"
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
             />
           </div>
 
@@ -487,7 +487,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               value={area}
               onChange={(e) => setArea(e.target.value)}
               placeholder="e.g., 150 m²"
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
             />
           </div>
 
@@ -504,7 +504,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               <button
                 onClick={() => handleSubmit(true)}
                 disabled={isLoading}
-                className="flex-1 py-3 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 py-3 bg-[#b8864a] text-white font-medium rounded-lg hover:bg-[#a07540] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading ? 'Publishing...' : 'Quick Publish'}
               </button>
@@ -512,7 +512,7 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               <button
                 onClick={() => handleSubmit(false)}
                 disabled={isLoading || images.length === 0}
-                className="flex-1 py-3 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 py-3 bg-[#b8864a] text-white font-medium rounded-lg hover:bg-[#a07540] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading ? 'Publishing...' : 'Publish Project'}
               </button>

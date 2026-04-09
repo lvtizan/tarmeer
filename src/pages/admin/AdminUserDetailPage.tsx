@@ -7,7 +7,7 @@ import { PageSpinner } from '../../components/ui/Spinner';
 
 const ROLE_BADGE: Record<string, string> = {
   user: 'bg-stone-100 text-stone-700',
-  designer: 'bg-amber-100 text-amber-800',
+  designer: 'bg-[#b8864a]/10 text-[#b8864a]',
   company: 'bg-blue-100 text-blue-800',
 };
 
