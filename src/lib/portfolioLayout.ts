@@ -15,7 +15,6 @@ import {
   justifyRows,
   GAP,
   TARGET_ROW_HEIGHT,
-  MAX_ROW_HEIGHT,
   MAX_HERO_HEIGHT,
   MIN_ROW_HEIGHT,
   DEFAULT_RATIO,
@@ -187,13 +186,6 @@ function hash(vals: number[]): number {
   return Math.abs(h);
 }
 
-/** Sum aspect ratios, guarding against undefined. */
-function sumRatios(ratios: number[], lo: number, hi: number): number {
-  let s = 0;
-  for (let i = lo; i < hi; i++) s += ratios[i] || DEFAULT_RATIO;
-  return s;
-}
-
 /**
  * Pick the best template for the given ratios (ratio-aware).
  * Currently uses hash for deterministic variety; future: score by distortion.
@@ -253,112 +245,31 @@ export function blocksLayout(ratios: number[], containerWidth: number): Layout {
 }
 
 /* ================================================================== */
-/*  Algorithm B: Hero column + justified-row grid (O(N) per candidate)  */
+/*  Algorithm B: Hero-TOP (wide top image + justified rows below)      */
 /*                                                                      */
-/*  For each candidate hero size k (1 or 2 images stacked on the left), */
-/*  compute the optimal container height H so that:                     */
-/*    • hero column width × k images (stacked) = container height H    */
-/*    • remaining (N-k) images form justified rows in (W - heroW, H)   */
-/*    • sum of justified-row heights ≈ H                               */
-/*                                                                      */
-/*  We search H in a range and pick the (k, H) minimizing total         */
-/*  distortion + height-mismatch penalty. This is O(N × H_STEPS).       */
+/*  Visually distinct from A (which is hero-LEFT):                      */
+/*    • The first image is a wide top hero banner (full container      */
+/*      width, natural aspect ratio clamped).                           */
+/*    • Remaining images flow below as justified rows (using the        */
+/*      existing DP justifier).                                         */
+/*    • Hero height adapts to the first image's natural ratio.          */
+/*    • For N=2 or 3 we use a top-hero + single-row-below pattern so    */
+/*      even small groups get the characteristic top-banner feel.       */
 /* ================================================================== */
 
-/** Sum of inverse ratios — used to compute column height from width. */
-function sumInverseRatios(ratios: number[], lo: number, hi: number): number {
-  let s = 0;
-  for (let i = lo; i < hi; i++) s += 1 / (ratios[i] || DEFAULT_RATIO);
-  return s;
-}
-
-/** Build a single justified row of images into cells at given (x, y), returns cells + row height. */
-function buildJustifiedRow(
-  ratios: number[],
-  lo: number,
-  hi: number,
-  rowW: number,
-  xOffset: number,
-  yOffset: number,
-): { cells: LayoutCell[]; height: number } {
-  const count = hi - lo;
-  const sumR = sumRatios(ratios, lo, hi);
-  const gaps = (count - 1) * GAP;
-  const rowH = (rowW - gaps) / sumR;
-  if (rowH <= 0) return { cells: [], height: 0 };
-
-  const cells: LayoutCell[] = [];
-  let x = xOffset;
-  for (let i = lo; i < hi; i++) {
-    const r = ratios[i] || DEFAULT_RATIO;
-    const w = r * rowH;
-    cells.push({ idx: i, x, y: yOffset, w, h: rowH });
-    x += w + GAP;
-  }
-  return { cells, height: rowH };
-}
-
-/** Partition remaining images into justified rows that fit inside (W, H). */
-function buildGridInBox(
-  ratios: number[],
-  lo: number,
-  hi: number,
-  W: number,
-  H: number,
-): { cells: LayoutCell[]; usedHeight: number; cost: number } {
-  const N = hi - lo;
-  if (N === 0) return { cells: [], usedHeight: 0, cost: 0 };
-
-  // Use the DP justifier on the subrange, scaled as if it had its own width.
-  // We build our own simpler version here: pick row counts to make total
-  // height fit H as closely as possible.
-  // Strategy: greedy rows of ~sqrt(N) items each, adjust to minimize |total - H|.
-
-  // Candidate numbers of rows: 1..N (but cap at 4 for grids)
-  const maxRows = Math.min(4, N);
-  let best: { cells: LayoutCell[]; usedHeight: number; cost: number } | null = null;
-
-  for (let numRows = 1; numRows <= maxRows; numRows++) {
-    // Try to distribute N items evenly across numRows
-    const perRow = Math.ceil(N / numRows);
-    const rowSplits: Array<[number, number]> = [];
-    for (let r = 0; r < numRows; r++) {
-      const start = lo + r * perRow;
-      const end = Math.min(hi, start + perRow);
-      if (start >= end) break;
-      rowSplits.push([start, end]);
-    }
-    if (rowSplits.length === 0) continue;
-
-    // Build rows and compute total height
-    const cells: LayoutCell[] = [];
-    let y = 0;
-    for (const [s, e] of rowSplits) {
-      const row = buildJustifiedRow(ratios, s, e, W, 0, y);
-      if (row.height <= 0) { y = -1; break; }
-      cells.push(...row.cells);
-      y += row.height + GAP;
-    }
-    if (y < 0) continue;
-    const usedHeight = y - GAP;
-
-    // Cost: how far is usedHeight from target H? (squared)
-    const mismatch = Math.abs(usedHeight - H);
-    const cost = mismatch * mismatch;
-
-    if (!best || cost < best.cost) {
-      best = { cells, usedHeight, cost };
-    }
-  }
-
-  return best || { cells: [], usedHeight: 0, cost: Infinity };
+/** Hero height choice: clamp natural height to a band that keeps layout balanced. */
+function chooseHeroHeight(ratio: number, width: number): number {
+  const natural = width / ratio;
+  // Target band: 280..460 px (slightly shorter than a pure hero so below
+  // content feels connected). Clamp to that range.
+  return Math.max(260, Math.min(460, natural));
 }
 
 export function mosaicLayout(ratios: number[], containerWidth: number): Layout {
   if (containerWidth <= 0 || ratios.length === 0) return { cells: [], height: 0 };
   const N = ratios.length;
 
-  // N=1 — full-width hero
+  // N=1 — full-width hero (same as other modes)
   if (N === 1) {
     const r = ratios[0] || DEFAULT_RATIO;
     const natural = containerWidth / r;
@@ -369,76 +280,74 @@ export function mosaicLayout(ratios: number[], containerWidth: number): Layout {
     };
   }
 
-  // N=2,3 → use blocks templates for consistency
-  if (N <= 3) {
-    return blocksLayout(ratios, containerWidth);
+  // N=2 — top hero + single image below (full width)
+  if (N === 2) {
+    const heroH = chooseHeroHeight(ratios[0] || DEFAULT_RATIO, containerWidth);
+    const secondR = ratios[1] || DEFAULT_RATIO;
+    const secondH = Math.max(180, Math.min(340, containerWidth / secondR));
+    return {
+      cells: [
+        { idx: 0, x: 0, y: 0, w: containerWidth, h: heroH },
+        { idx: 1, x: 0, y: heroH + GAP, w: containerWidth, h: secondH },
+      ],
+      height: heroH + GAP + secondH,
+    };
   }
 
-  // N ≥ 4: hero-column + right-grid
-  // Try hero sizes 1 and 2 (single big image OR two stacked)
-  let best: { cells: LayoutCell[]; height: number; cost: number } | null = null;
+  // N=3 — top hero + 2 images in a single row below
+  if (N === 3) {
+    const heroH = chooseHeroHeight(ratios[0] || DEFAULT_RATIO, containerWidth);
+    const r1 = ratios[1] || DEFAULT_RATIO;
+    const r2 = ratios[2] || DEFAULT_RATIO;
+    const rowH = (containerWidth - GAP) / (r1 + r2);
+    const w1 = r1 * rowH;
+    const w2 = containerWidth - GAP - w1;
+    return {
+      cells: [
+        { idx: 0, x: 0, y: 0, w: containerWidth, h: heroH },
+        { idx: 1, x: 0, y: heroH + GAP, w: w1, h: rowH },
+        { idx: 2, x: w1 + GAP, y: heroH + GAP, w: w2, h: rowH },
+      ],
+      height: heroH + GAP + rowH,
+    };
+  }
 
-  for (let heroCount = 1; heroCount <= 2; heroCount++) {
-    if (heroCount >= N) break;
+  // N ≥ 4 — top hero + justified-row grid below
+  const heroH = chooseHeroHeight(ratios[0] || DEFAULT_RATIO, containerWidth);
+  const belowRatios = ratios.slice(1);
 
-    // Search for optimal hero width (fraction of container)
-    for (let heroFrac = 0.45; heroFrac <= 0.7; heroFrac += 0.05) {
-      const heroW = (containerWidth - GAP) * heroFrac;
-      const gridW = containerWidth - GAP - heroW;
-      if (heroW <= 0 || gridW <= 0) continue;
+  // Reuse the DP justifier for the "below" area. Use a slightly shorter
+  // target row height than the page default so rows below feel proportionate.
+  const belowRows = justifyRows(belowRatios, containerWidth, 240);
+  if (belowRows.length === 0) {
+    // Empty grid below — shouldn't happen with N≥4, but guard
+    return {
+      cells: [{ idx: 0, x: 0, y: 0, w: containerWidth, h: heroH }],
+      height: heroH,
+    };
+  }
 
-      // Hero column height: determined by stacking hero images at this width
-      // Each hero image has height = heroW / ratio[i], plus gaps between.
-      const heroSumInv = sumInverseRatios(ratios, 0, heroCount);
-      const heroGaps = (heroCount - 1) * GAP;
-      const heroHeight = heroW * heroSumInv + heroGaps;
+  const cells: LayoutCell[] = [
+    { idx: 0, x: 0, y: 0, w: containerWidth, h: heroH },
+  ];
 
-      if (heroHeight < MIN_ROW_HEIGHT || heroHeight > MAX_ROW_HEIGHT * 2.2) continue;
-
-      // Fit remaining images into (gridW × heroHeight)
-      const grid = buildGridInBox(ratios, heroCount, N, gridW, heroHeight);
-      if (grid.cost === Infinity || grid.cells.length === 0) continue;
-
-      // Build hero cells
-      const heroCells: LayoutCell[] = [];
-      let hy = 0;
-      for (let i = 0; i < heroCount; i++) {
-        const r = ratios[i] || DEFAULT_RATIO;
-        const cellH = heroW / r;
-        heroCells.push({ idx: i, x: 0, y: hy, w: heroW, h: cellH });
-        hy += cellH + GAP;
-      }
-
-      // Offset grid cells by (heroW + GAP, 0)
-      const gridCellsShifted = grid.cells.map(c => ({
-        ...c,
-        x: c.x + heroW + GAP,
-      }));
-
-      // Cost: grid height mismatch + aesthetic count/frac penalty
-      // Prefer heroCount=1 (more impactful) and heroFrac around 0.55
-      const heroBias = heroCount === 1 ? 0 : 500;
-      const fracBias = (heroFrac - 0.55) ** 2 * 2000;
-      const totalCost = grid.cost + heroBias + fracBias;
-
-      const allCells = [...heroCells, ...gridCellsShifted];
-      const totalHeight = Math.max(heroHeight, grid.usedHeight);
-
-      if (!best || totalCost < best.cost) {
-        best = { cells: allCells, height: totalHeight, cost: totalCost };
-      }
+  let y = heroH + GAP;
+  for (const row of belowRows) {
+    let x = 0;
+    for (let i = 0; i < row.count; i++) {
+      cells.push({
+        idx: row.startIdx + i + 1, // +1 accounts for hero at idx 0
+        x,
+        y,
+        w: row.widths[i],
+        h: row.height,
+      });
+      x += row.widths[i] + GAP;
     }
+    y += row.height + GAP;
   }
 
-  if (!best || best.cells.length !== N) {
-    // Couldn't build a valid hero+grid → fall back to DP
-    return dpLayout(ratios, containerWidth);
-  }
-
-  return {
-    cells: best.cells,
-    height: Math.max(MIN_ROW_HEIGHT, Math.min(best.height, MAX_ROW_HEIGHT * 2.5)),
-  };
+  return { cells, height: y - GAP };
 }
 
 /* ================================================================== */
