@@ -510,6 +510,17 @@ class AdminApiClient {
     });
   }
 
+  async getUserPermissions(id: number): Promise<{ permissions: string[]; available: string[] }> {
+    return this.request(`/users/${id}/permissions`);
+  }
+
+  async updateUserPermissions(id: number, permissions: string[]): Promise<{ message: string; permissions: string[] }> {
+    return this.request(`/users/${id}/permissions`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    });
+  }
+
   // Inquiry management
   async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string; deleted?: boolean }) {
     const query = new URLSearchParams();

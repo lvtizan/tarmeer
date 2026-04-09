@@ -210,6 +210,90 @@ export async function editUser(req: any, res: any) {
   }
 }
 
+const AVAILABLE_PERMISSIONS = [
+  'manage_projects',
+  'manage_company',
+  'view_analytics',
+  'manage_inquiries',
+  'manage_users',
+  'import_companies',
+  'manage_complaints',
+  'export_data',
+] as const;
+
+// Get user permissions
+export async function getUserPermissions(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const userId = Number(id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user id.' });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT id, permissions FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1',
+      [userId]
+    );
+
+    const user = (rows as any[])[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    let permissions: string[] = [];
+    if (user.permissions) {
+      try {
+        permissions = typeof user.permissions === 'string'
+          ? JSON.parse(user.permissions)
+          : user.permissions;
+        if (!Array.isArray(permissions)) permissions = [];
+      } catch { permissions = []; }
+    }
+
+    res.json({ permissions, available: AVAILABLE_PERMISSIONS });
+  } catch (error) {
+    console.error('Get user permissions error:', error);
+    res.status(500).json({ error: 'Failed to get permissions.' });
+  }
+}
+
+// Update user permissions
+export async function updateUserPermissions(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const userId = Number(id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user id.' });
+    }
+
+    const { permissions } = req.body;
+    if (!Array.isArray(permissions)) {
+      return res.status(400).json({ error: 'permissions must be an array.' });
+    }
+
+    // Filter to only known permissions
+    const filtered = permissions.filter((p: any) =>
+      typeof p === 'string' && (AVAILABLE_PERMISSIONS as readonly string[]).includes(p)
+    );
+
+    const [rows] = await pool.execute(
+      'SELECT id FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1',
+      [userId]
+    );
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'User not found.' });
+
+    await pool.execute(
+      'UPDATE users SET permissions = ? WHERE id = ?',
+      [JSON.stringify(filtered), userId]
+    );
+
+    await logActivity(req.admin?.id, 'update_user_permissions', 'user', userId, { permissions: filtered });
+
+    res.json({ message: 'Permissions updated.', permissions: filtered });
+  } catch (error) {
+    console.error('Update user permissions error:', error);
+    res.status(500).json({ error: 'Failed to update permissions.' });
+  }
+}
+
 function normalizeDeleteReason(rawReason: unknown): string | null {
   if (typeof rawReason !== 'string') return null;
   const trimmed = rawReason.trim();

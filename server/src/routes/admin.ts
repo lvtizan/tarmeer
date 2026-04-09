@@ -30,7 +30,7 @@ import {
   getActivityLogs
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
-import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser } from '../controllers/userAdminController';
+import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts, markNotificationSeen } from '../controllers/complaintController';
 import {
@@ -159,6 +159,8 @@ router.put('/users/:id/role', requireSuperAdmin, updateUserRole);
 router.put('/users/:id/edit', requireSuperAdmin, editUser);
 router.put('/users/:id/delete', requireSuperAdmin, deleteUser);
 router.post('/users/:id/restore', requireSuperAdmin, restoreUser);
+router.get('/users/:id/permissions', requireSuperAdmin, getUserPermissions);
+router.put('/users/:id/permissions', requireSuperAdmin, updateUserPermissions);
 
 // ====== Dual-Role Management (V3 User System) ======
 

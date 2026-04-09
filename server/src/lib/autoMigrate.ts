@@ -108,6 +108,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'uae_companies', column: 'is_signed', type: 'TINYINT(1) DEFAULT 0' },
   { table: 'uae_companies', column: 'weight_score', type: 'INT DEFAULT 0' },
 
+  // User permissions (JSON array of permission strings)
+  { table: 'users', column: 'permissions', type: 'JSON NULL' },
+
   // 以后新增字段在这里追加即可，例如：
   // { table: 'designers', column: 'wechat_id', type: 'VARCHAR(255) NULL' },
 ];
