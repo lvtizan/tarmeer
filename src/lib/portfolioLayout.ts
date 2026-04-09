@@ -80,20 +80,37 @@ interface BlockTemplate {
 }
 
 /**
+ * Mirror a template horizontally (flip x). Hero-left becomes hero-right.
+ * Cell order (→ image order) is preserved so image[0] is still the hero.
+ */
+function mirrorTemplate(tmpl: BlockTemplate): BlockTemplate {
+  return {
+    aspect: tmpl.aspect,
+    cells: tmpl.cells.map(c => ({ ...c, x: 1 - c.x - c.w })),
+  };
+}
+
+/**
  * Block template library. Keyed by image count.
  * Each template fully tiles [0,1]×[0,1]. Order of cells matches image order.
+ *
+ * Aspect ratios are deliberately high (2.2-2.8) so containers are flat
+ * rather than tall. Higher = wider/shorter. For 1400px width:
+ *   aspect 2.2 → 636 px tall
+ *   aspect 2.5 → 560 px tall
+ *   aspect 2.8 → 500 px tall
  */
-const BLOCK_TEMPLATES: Record<number, BlockTemplate[]> = {
+const BLOCK_TEMPLATES_BASE: Record<number, BlockTemplate[]> = {
   2: [
     // side by side
-    { aspect: 2.2, cells: [
+    { aspect: 2.8, cells: [
       { x: 0,   y: 0, w: 0.5, h: 1 },
       { x: 0.5, y: 0, w: 0.5, h: 1 },
     ]},
   ],
   3: [
     // hero left + 2 stacked right
-    { aspect: 1.9, cells: [
+    { aspect: 2.7, cells: [
       { x: 0,    y: 0,   w: 0.58, h: 1    },
       { x: 0.58, y: 0,   w: 0.42, h: 0.5  },
       { x: 0.58, y: 0.5, w: 0.42, h: 0.5  },
@@ -101,16 +118,16 @@ const BLOCK_TEMPLATES: Record<number, BlockTemplate[]> = {
   ],
   4: [
     // hero left + 3 stacked right
-    { aspect: 1.75, cells: [
-      { x: 0,    y: 0,       w: 0.56, h: 1       },
-      { x: 0.56, y: 0,       w: 0.44, h: 1/3     },
-      { x: 0.56, y: 1/3,     w: 0.44, h: 1/3     },
-      { x: 0.56, y: 2/3,     w: 0.44, h: 1/3     },
+    { aspect: 2.5, cells: [
+      { x: 0,    y: 0,     w: 0.56, h: 1     },
+      { x: 0.56, y: 0,     w: 0.44, h: 1/3   },
+      { x: 0.56, y: 1/3,   w: 0.44, h: 1/3   },
+      { x: 0.56, y: 2/3,   w: 0.44, h: 1/3   },
     ]},
   ],
   5: [
     // hero left + 2x2 grid right
-    { aspect: 1.85, cells: [
+    { aspect: 2.4, cells: [
       { x: 0,    y: 0,   w: 0.56, h: 1   },
       { x: 0.56, y: 0,   w: 0.22, h: 0.5 },
       { x: 0.78, y: 0,   w: 0.22, h: 0.5 },
@@ -119,51 +136,31 @@ const BLOCK_TEMPLATES: Record<number, BlockTemplate[]> = {
     ]},
   ],
   6: [
-    // 2 big top row + 2x2 grid below
-    { aspect: 1.6, cells: [
-      { x: 0,   y: 0,   w: 0.5,  h: 0.55 },
-      { x: 0.5, y: 0,   w: 0.5,  h: 0.55 },
-      { x: 0,   y: 0.55, w: 0.25, h: 0.45 },
-      { x: 0.25,y: 0.55, w: 0.25, h: 0.45 },
-      { x: 0.5, y: 0.55, w: 0.25, h: 0.45 },
-      { x: 0.75,y: 0.55, w: 0.25, h: 0.45 },
-    ]},
-    // hero left + 5 right grid (2 cols, with top-right spanning width 2)
-    { aspect: 1.7, cells: [
-      { x: 0,    y: 0,       w: 0.56, h: 1     },
-      { x: 0.56, y: 0,       w: 0.22, h: 0.5   },
-      { x: 0.78, y: 0,       w: 0.22, h: 0.5   },
-      { x: 0.56, y: 0.5,     w: 0.22, h: 0.25  },
-      { x: 0.78, y: 0.5,     w: 0.22, h: 0.25  },
-      { x: 0.56, y: 0.75,    w: 0.44, h: 0.25  },
+    // hero left + 5 right (2x2 + 1 wide bottom)
+    { aspect: 2.3, cells: [
+      { x: 0,    y: 0,    w: 0.56, h: 1     },
+      { x: 0.56, y: 0,    w: 0.22, h: 0.5   },
+      { x: 0.78, y: 0,    w: 0.22, h: 0.5   },
+      { x: 0.56, y: 0.5,  w: 0.22, h: 0.25  },
+      { x: 0.78, y: 0.5,  w: 0.22, h: 0.25  },
+      { x: 0.56, y: 0.75, w: 0.44, h: 0.25  },
     ]},
   ],
   7: [
     // hero left + 6 right (2x3 grid)
-    { aspect: 1.7, cells: [
-      { x: 0,    y: 0,       w: 0.56, h: 1       },
-      { x: 0.56, y: 0,       w: 0.22, h: 1/3     },
-      { x: 0.78, y: 0,       w: 0.22, h: 1/3     },
-      { x: 0.56, y: 1/3,     w: 0.22, h: 1/3     },
-      { x: 0.78, y: 1/3,     w: 0.22, h: 1/3     },
-      { x: 0.56, y: 2/3,     w: 0.22, h: 1/3     },
-      { x: 0.78, y: 2/3,     w: 0.22, h: 1/3     },
+    { aspect: 2.2, cells: [
+      { x: 0,    y: 0,     w: 0.56, h: 1     },
+      { x: 0.56, y: 0,     w: 0.22, h: 1/3   },
+      { x: 0.78, y: 0,     w: 0.22, h: 1/3   },
+      { x: 0.56, y: 1/3,   w: 0.22, h: 1/3   },
+      { x: 0.78, y: 1/3,   w: 0.22, h: 1/3   },
+      { x: 0.56, y: 2/3,   w: 0.22, h: 1/3   },
+      { x: 0.78, y: 2/3,   w: 0.22, h: 1/3   },
     ]},
   ],
   8: [
-    // 4 top + 4 bottom
-    { aspect: 1.75, cells: [
-      { x: 0,    y: 0,   w: 0.25, h: 0.5 },
-      { x: 0.25, y: 0,   w: 0.25, h: 0.5 },
-      { x: 0.5,  y: 0,   w: 0.25, h: 0.5 },
-      { x: 0.75, y: 0,   w: 0.25, h: 0.5 },
-      { x: 0,    y: 0.5, w: 0.25, h: 0.5 },
-      { x: 0.25, y: 0.5, w: 0.25, h: 0.5 },
-      { x: 0.5,  y: 0.5, w: 0.25, h: 0.5 },
-      { x: 0.75, y: 0.5, w: 0.25, h: 0.5 },
-    ]},
     // hero left + (wide top + 2x3 grid) right = 1 + 1 + 6 = 8
-    { aspect: 1.6, cells: [
+    { aspect: 2.15, cells: [
       { x: 0,    y: 0,   w: 0.56, h: 1    },
       { x: 0.56, y: 0,   w: 0.44, h: 0.4  },
       { x: 0.56, y: 0.4, w: 0.22, h: 0.2  },
@@ -175,6 +172,25 @@ const BLOCK_TEMPLATES: Record<number, BlockTemplate[]> = {
     ]},
   ],
 };
+
+/**
+ * Expanded template library: each base template PLUS its horizontal mirror
+ * (hero-right). For N=2 the mirror is visually identical so we skip it.
+ * Selection picks deterministically by hash for stable layouts across renders.
+ */
+const BLOCK_TEMPLATES: Record<number, BlockTemplate[]> = Object.fromEntries(
+  Object.entries(BLOCK_TEMPLATES_BASE).map(([k, arr]) => {
+    const n = Number(k);
+    // For N=2, left/right mirror looks the same; don't bother
+    if (n === 2) return [k, arr];
+    const expanded: BlockTemplate[] = [];
+    for (const t of arr) {
+      expanded.push(t);
+      expanded.push(mirrorTemplate(t));
+    }
+    return [k, expanded];
+  })
+);
 
 /** Hash a number list into an int to deterministically pick between templates. */
 function hash(vals: number[]): number {
@@ -260,9 +276,9 @@ export function blocksLayout(ratios: number[], containerWidth: number): Layout {
 /** Hero height choice: clamp natural height to a band that keeps layout balanced. */
 function chooseHeroHeight(ratio: number, width: number): number {
   const natural = width / ratio;
-  // Target band: 280..460 px (slightly shorter than a pure hero so below
-  // content feels connected). Clamp to that range.
-  return Math.max(260, Math.min(460, natural));
+  // Target band: 220..360 px. Flatter than a pure hero so the overall
+  // project block doesn't dominate vertical space.
+  return Math.max(220, Math.min(360, natural));
 }
 
 export function mosaicLayout(ratios: number[], containerWidth: number): Layout {
@@ -312,13 +328,15 @@ export function mosaicLayout(ratios: number[], containerWidth: number): Layout {
     };
   }
 
-  // N ≥ 4 — top hero + justified-row grid below
+  // N ≥ 4 — top hero + justified-row grid below (cap to 1 row so total stays short)
   const heroH = chooseHeroHeight(ratios[0] || DEFAULT_RATIO, containerWidth);
   const belowRatios = ratios.slice(1);
 
-  // Reuse the DP justifier for the "below" area. Use a slightly shorter
-  // target row height than the page default so rows below feel proportionate.
-  const belowRows = justifyRows(belowRatios, containerWidth, 240);
+  // Reuse the DP justifier for the "below" area with a shorter target
+  // row height so everything stays flat. Cap at 1 row — extra images
+  // become "+N more" via the gallery's truncation logic.
+  const allBelowRows = justifyRows(belowRatios, containerWidth, 200);
+  const belowRows = allBelowRows.slice(0, 1);
   if (belowRows.length === 0) {
     // Empty grid below — shouldn't happen with N≥4, but guard
     return {
