@@ -253,176 +253,112 @@ export function blocksLayout(ratios: number[], containerWidth: number): Layout {
 }
 
 /* ================================================================== */
-/*  Algorithm B: Recursive binary partition (mosaic)                    */
+/*  Algorithm B: Hero column + justified-row grid (O(N) per candidate)  */
 /*                                                                      */
-/*  layout(lo, hi, W, H):                                               */
-/*    • base: 1 image → single cell (W,H)                               */
-/*    • else: try all split points k and both orientations              */
-/*        - vertical (left/right): split W by ratio weight              */
-/*        - horizontal (top/bottom): try several H-split fractions      */
-/*    • cost = Σ (log(displayRatio / naturalRatio))² over all leaves    */
-/*    • pick the minimum                                                */
+/*  For each candidate hero size k (1 or 2 images stacked on the left), */
+/*  compute the optimal container height H so that:                     */
+/*    • hero column width × k images (stacked) = container height H    */
+/*    • remaining (N-k) images form justified rows in (W - heroW, H)   */
+/*    • sum of justified-row heights ≈ H                               */
+/*                                                                      */
+/*  We search H in a range and pick the (k, H) minimizing total         */
+/*  distortion + height-mismatch penalty. This is O(N × H_STEPS).       */
 /* ================================================================== */
 
-interface SubLayout {
-  cells: LayoutCell[];   // coords relative to sub-rect origin
-  cost: number;
+/** Sum of inverse ratios — used to compute column height from width. */
+function sumInverseRatios(ratios: number[], lo: number, hi: number): number {
+  let s = 0;
+  for (let i = lo; i < hi; i++) s += 1 / (ratios[i] || DEFAULT_RATIO);
+  return s;
 }
 
-const H_SPLIT_FRACS = [0.35, 0.45, 0.5, 0.55, 0.65];
-
-function mosaicSplit(
+/** Build a single justified row of images into cells at given (x, y), returns cells + row height. */
+function buildJustifiedRow(
   ratios: number[],
   lo: number,
   hi: number,
-  w: number,
-  h: number,
-): SubLayout {
-  const N = hi - lo;
+  rowW: number,
+  xOffset: number,
+  yOffset: number,
+): { cells: LayoutCell[]; height: number } {
+  const count = hi - lo;
+  const sumR = sumRatios(ratios, lo, hi);
+  const gaps = (count - 1) * GAP;
+  const rowH = (rowW - gaps) / sumR;
+  if (rowH <= 0) return { cells: [], height: 0 };
 
-  // Base case: single image fills the sub-rect.
-  if (N === 1) {
-    const r = ratios[lo] || DEFAULT_RATIO;
-    const displayR = h > 0 ? w / h : r;
-    const lg = Math.log(displayR / r);
-    return {
-      cells: [{ idx: lo, x: 0, y: 0, w, h }],
-      cost: lg * lg,
-    };
+  const cells: LayoutCell[] = [];
+  let x = xOffset;
+  for (let i = lo; i < hi; i++) {
+    const r = ratios[i] || DEFAULT_RATIO;
+    const w = r * rowH;
+    cells.push({ idx: i, x, y: yOffset, w, h: rowH });
+    x += w + GAP;
   }
-
-  if (w <= 0 || h <= 0) {
-    return { cells: [], cost: Infinity };
-  }
-
-  let best: SubLayout = { cells: [], cost: Infinity };
-
-  // Also consider: lay out as a single row (all N in this sub-rect as one DP row)
-  // This gives an "escape hatch" when recursive slicing would be worse.
-  {
-    const sumR = sumRatios(ratios, lo, hi);
-    const gaps = (N - 1) * GAP;
-    const rowH = (w - gaps) / sumR;
-    if (rowH > 0) {
-      const cells: LayoutCell[] = [];
-      let x = 0;
-      let cost = 0;
-      for (let i = lo; i < hi; i++) {
-        const r = ratios[i] || DEFAULT_RATIO;
-        const cellW = r * rowH;
-        cells.push({ idx: i, x, y: 0, w: cellW, h: rowH });
-        // Cost is distortion of each cell (vs natural) + distortion of rowH vs target h
-        const displayR = cellW / rowH;
-        const lg = Math.log(displayR / r);
-        cost += lg * lg;
-        x += cellW + GAP;
-      }
-      // Penalty if rowH doesn't match the sub-rect's available h
-      if (h > 0) {
-        const rowCentreY = (h - rowH) / 2;
-        // Only a valid "row layout" if rowH ≤ h (row fits)
-        if (rowH <= h + 1) {
-          const vertWaste = Math.max(0, h - rowH);
-          const wastePenalty = (vertWaste / h) ** 2 * 4; // prefer full fill
-          // Centre the row vertically in the sub-rect
-          const centred = cells.map(c => ({ ...c, y: c.y + rowCentreY }));
-          if (cost + wastePenalty < best.cost) {
-            best = { cells: centred, cost: cost + wastePenalty };
-          }
-        }
-      }
-    }
-  }
-  // Also "single column" (stack vertically)
-  {
-    const sumInvR = (() => {
-      let s = 0;
-      for (let i = lo; i < hi; i++) s += 1 / (ratios[i] || DEFAULT_RATIO);
-      return s;
-    })();
-    const gaps = (N - 1) * GAP;
-    const colW = w;
-    // If each item is at height h_i, width w = ratio_i * h_i, so h_i = w / ratio_i.
-    // Total height: sum(w/ratio_i) + gaps = w * sumInvR + gaps
-    const totalH = colW * sumInvR + gaps;
-    if (totalH <= h + 1 && totalH > 0) {
-      const cells: LayoutCell[] = [];
-      let y = 0;
-      let cost = 0;
-      for (let i = lo; i < hi; i++) {
-        const r = ratios[i] || DEFAULT_RATIO;
-        const cellH = colW / r;
-        cells.push({ idx: i, x: 0, y, w: colW, h: cellH });
-        // No distortion (by construction)
-        y += cellH + GAP;
-      }
-      const vertWaste = Math.max(0, h - totalH);
-      const wastePenalty = (vertWaste / h) ** 2 * 4;
-      const centred = cells.map(c => ({ ...c, y: c.y + (h - totalH) / 2 }));
-      if (cost + wastePenalty < best.cost) {
-        best = { cells: centred, cost: cost + wastePenalty };
-      }
-    }
-  }
-
-  // Recursive splits
-  for (let k = lo + 1; k < hi; k++) {
-    // ── Vertical split: left | right ──
-    {
-      const leftSum = sumRatios(ratios, lo, k);
-      const rightSum = sumRatios(ratios, k, hi);
-      const total = leftSum + rightSum;
-      if (total > 0) {
-        const avail = w - GAP;
-        const leftW = avail * (leftSum / total);
-        const rightW = avail - leftW;
-        if (leftW > 0 && rightW > 0) {
-          const leftR = mosaicSplit(ratios, lo, k, leftW, h);
-          const rightR = mosaicSplit(ratios, k, hi, rightW, h);
-          const cost = leftR.cost + rightR.cost;
-          if (cost < best.cost) {
-            const cells = [
-              ...leftR.cells,
-              ...rightR.cells.map(c => ({ ...c, x: c.x + leftW + GAP })),
-            ];
-            best = { cells, cost };
-          }
-        }
-      }
-    }
-
-    // ── Horizontal split: top | bottom ──
-    for (const frac of H_SPLIT_FRACS) {
-      const avail = h - GAP;
-      const topH = avail * frac;
-      const botH = avail - topH;
-      if (topH > 20 && botH > 20) {
-        const topR = mosaicSplit(ratios, lo, k, w, topH);
-        const botR = mosaicSplit(ratios, k, hi, w, botH);
-        const cost = topR.cost + botR.cost;
-        if (cost < best.cost) {
-          const cells = [
-            ...topR.cells,
-            ...botR.cells.map(c => ({ ...c, y: c.y + topH + GAP })),
-          ];
-          best = { cells, cost };
-        }
-      }
-    }
-  }
-
-  return best;
+  return { cells, height: rowH };
 }
 
-/**
- * Mosaic layout: recursive binary rectangle partition.
- * Container height is chosen based on image count (target ~ TARGET_ROW_HEIGHT × expected rows).
- */
+/** Partition remaining images into justified rows that fit inside (W, H). */
+function buildGridInBox(
+  ratios: number[],
+  lo: number,
+  hi: number,
+  W: number,
+  H: number,
+): { cells: LayoutCell[]; usedHeight: number; cost: number } {
+  const N = hi - lo;
+  if (N === 0) return { cells: [], usedHeight: 0, cost: 0 };
+
+  // Use the DP justifier on the subrange, scaled as if it had its own width.
+  // We build our own simpler version here: pick row counts to make total
+  // height fit H as closely as possible.
+  // Strategy: greedy rows of ~sqrt(N) items each, adjust to minimize |total - H|.
+
+  // Candidate numbers of rows: 1..N (but cap at 4 for grids)
+  const maxRows = Math.min(4, N);
+  let best: { cells: LayoutCell[]; usedHeight: number; cost: number } | null = null;
+
+  for (let numRows = 1; numRows <= maxRows; numRows++) {
+    // Try to distribute N items evenly across numRows
+    const perRow = Math.ceil(N / numRows);
+    const rowSplits: Array<[number, number]> = [];
+    for (let r = 0; r < numRows; r++) {
+      const start = lo + r * perRow;
+      const end = Math.min(hi, start + perRow);
+      if (start >= end) break;
+      rowSplits.push([start, end]);
+    }
+    if (rowSplits.length === 0) continue;
+
+    // Build rows and compute total height
+    const cells: LayoutCell[] = [];
+    let y = 0;
+    for (const [s, e] of rowSplits) {
+      const row = buildJustifiedRow(ratios, s, e, W, 0, y);
+      if (row.height <= 0) { y = -1; break; }
+      cells.push(...row.cells);
+      y += row.height + GAP;
+    }
+    if (y < 0) continue;
+    const usedHeight = y - GAP;
+
+    // Cost: how far is usedHeight from target H? (squared)
+    const mismatch = Math.abs(usedHeight - H);
+    const cost = mismatch * mismatch;
+
+    if (!best || cost < best.cost) {
+      best = { cells, usedHeight, cost };
+    }
+  }
+
+  return best || { cells: [], usedHeight: 0, cost: Infinity };
+}
+
 export function mosaicLayout(ratios: number[], containerWidth: number): Layout {
   if (containerWidth <= 0 || ratios.length === 0) return { cells: [], height: 0 };
   const N = ratios.length;
 
-  // Special-case 1 — hero
+  // N=1 — full-width hero
   if (N === 1) {
     const r = ratios[0] || DEFAULT_RATIO;
     const natural = containerWidth / r;
@@ -433,28 +369,75 @@ export function mosaicLayout(ratios: number[], containerWidth: number): Layout {
     };
   }
 
-  // Target container aspect ratio — chosen so ~2 rows worth of images fits
-  // Wider for fewer images (single row), taller for many
-  let targetAspect: number;
-  if (N <= 3)      targetAspect = 2.2;
-  else if (N <= 5) targetAspect = 1.9;
-  else if (N <= 8) targetAspect = 1.7;
-  else             targetAspect = 1.5;
+  // N=2,3 → use blocks templates for consistency
+  if (N <= 3) {
+    return blocksLayout(ratios, containerWidth);
+  }
 
-  const containerHeight = containerWidth / targetAspect;
+  // N ≥ 4: hero-column + right-grid
+  // Try hero sizes 1 and 2 (single big image OR two stacked)
+  let best: { cells: LayoutCell[]; height: number; cost: number } | null = null;
 
-  const result = mosaicSplit(ratios, 0, N, containerWidth, containerHeight);
-  if (result.cost === Infinity || result.cells.length === 0) {
-    // Mosaic failed to find any layout (shouldn't happen) → DP fallback
+  for (let heroCount = 1; heroCount <= 2; heroCount++) {
+    if (heroCount >= N) break;
+
+    // Search for optimal hero width (fraction of container)
+    for (let heroFrac = 0.45; heroFrac <= 0.7; heroFrac += 0.05) {
+      const heroW = (containerWidth - GAP) * heroFrac;
+      const gridW = containerWidth - GAP - heroW;
+      if (heroW <= 0 || gridW <= 0) continue;
+
+      // Hero column height: determined by stacking hero images at this width
+      // Each hero image has height = heroW / ratio[i], plus gaps between.
+      const heroSumInv = sumInverseRatios(ratios, 0, heroCount);
+      const heroGaps = (heroCount - 1) * GAP;
+      const heroHeight = heroW * heroSumInv + heroGaps;
+
+      if (heroHeight < MIN_ROW_HEIGHT || heroHeight > MAX_ROW_HEIGHT * 2.2) continue;
+
+      // Fit remaining images into (gridW × heroHeight)
+      const grid = buildGridInBox(ratios, heroCount, N, gridW, heroHeight);
+      if (grid.cost === Infinity || grid.cells.length === 0) continue;
+
+      // Build hero cells
+      const heroCells: LayoutCell[] = [];
+      let hy = 0;
+      for (let i = 0; i < heroCount; i++) {
+        const r = ratios[i] || DEFAULT_RATIO;
+        const cellH = heroW / r;
+        heroCells.push({ idx: i, x: 0, y: hy, w: heroW, h: cellH });
+        hy += cellH + GAP;
+      }
+
+      // Offset grid cells by (heroW + GAP, 0)
+      const gridCellsShifted = grid.cells.map(c => ({
+        ...c,
+        x: c.x + heroW + GAP,
+      }));
+
+      // Cost: grid height mismatch + aesthetic count/frac penalty
+      // Prefer heroCount=1 (more impactful) and heroFrac around 0.55
+      const heroBias = heroCount === 1 ? 0 : 500;
+      const fracBias = (heroFrac - 0.55) ** 2 * 2000;
+      const totalCost = grid.cost + heroBias + fracBias;
+
+      const allCells = [...heroCells, ...gridCellsShifted];
+      const totalHeight = Math.max(heroHeight, grid.usedHeight);
+
+      if (!best || totalCost < best.cost) {
+        best = { cells: allCells, height: totalHeight, cost: totalCost };
+      }
+    }
+  }
+
+  if (!best || best.cells.length !== N) {
+    // Couldn't build a valid hero+grid → fall back to DP
     return dpLayout(ratios, containerWidth);
   }
 
-  // Clamp total height and drop any cells sticking below the container
-  const actualHeight = result.cells.reduce((max, c) => Math.max(max, c.y + c.h), 0);
-
   return {
-    cells: result.cells,
-    height: Math.max(MIN_ROW_HEIGHT, Math.min(actualHeight, MAX_ROW_HEIGHT * 2.2)),
+    cells: best.cells,
+    height: Math.max(MIN_ROW_HEIGHT, Math.min(best.height, MAX_ROW_HEIGHT * 2.5)),
   };
 }
 
