@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchPublicProjectDetail, type PublicProjectDetailData } from '../lib/publicApi';
@@ -10,6 +10,16 @@ import type { PortfolioItem } from '../lib/companyData';
 export default function ProjectDetailPage() {
   const { companySlug, projectSlug } = useParams<{ companySlug: string; projectSlug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromPortfolio = searchParams.get('from') === 'portfolio';
+  // Back behavior: if there's history, go back; otherwise fallback to portfolio
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/portfolio');
+    }
+  };
   const [data, setData] = useState<PublicProjectDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -117,12 +127,12 @@ export default function ProjectDetailPage() {
 
       {/* Back nav */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-        <Link
-          to={`/companies/${companySlug}`}
+        <button
+          onClick={handleBack}
           className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to {company.name}
-        </Link>
+          <ArrowLeft className="w-4 h-4" /> {fromPortfolio ? 'Back to Portfolio' : 'Back'}
+        </button>
       </div>
 
       {/* Hero Image */}

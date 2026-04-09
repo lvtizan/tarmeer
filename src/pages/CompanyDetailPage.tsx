@@ -392,6 +392,88 @@ export default function CompanyDetailPage() {
                 )}
               </div>
             </section>
+
+            {/* ===== Projects Section (inside left column so sidebar stays sticky alongside) ===== */}
+            <div className="mt-2">
+              {company.isClaimed && company.projects && company.projects.length > 0 ? (
+                <section className="py-10 lg:py-14">
+                  <div className="flex items-end justify-between mb-8">
+                    <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Projects</h2>
+                    <span className="text-sm text-[#6b6b6b] tabular-nums">
+                      {company.projects.length} {company.projects.length === 1 ? 'project' : 'projects'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {company.projects.map((proj) => (
+                      <div
+                        key={proj.slug}
+                        className="group cursor-pointer"
+                        onClick={() => navigate(`/companies/${company.id}/${proj.slug}`)}
+                      >
+                        <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100">
+                          <SmartImage
+                            src={proj.images[0]}
+                            alt={`${proj.title} by ${company.name}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          {proj.images.length > 1 && (
+                            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-medium backdrop-blur-sm">
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              {proj.images.length}
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3">
+                          <h3 className="text-[15px] font-medium text-[#1c1917] group-hover:text-[#b8864a] transition line-clamp-1">
+                            {proj.title}
+                          </h3>
+                          {proj.location && (
+                            <p className="flex items-center gap-1 text-sm text-stone-500 mt-1">
+                              <MapPin className="w-3.5 h-3.5" /> {proj.location}
+                            </p>
+                          )}
+                          {!proj.location && proj.description && (
+                            <p className="text-sm text-stone-500 mt-1 line-clamp-1">{proj.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : (
+                <>
+                  {hasProjectCategories && (
+                    <div className="flex gap-2 mb-4 mt-6">
+                      <button
+                        onClick={() => setPortfolioMode('project')}
+                        className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
+                          portfolioMode === 'project'
+                            ? 'bg-[#b8864a] text-white'
+                            : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        By Project ({Object.keys(normalizedProjectCategories).length})
+                      </button>
+                      <button
+                        onClick={() => setPortfolioMode('style')}
+                        className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
+                          portfolioMode === 'style'
+                            ? 'bg-[#b8864a] text-white'
+                            : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        By Style ({Object.keys(normalizedStyleCategories).length})
+                      </button>
+                    </div>
+                  )}
+                  <MasonryGallery
+                    categories={activeCategories}
+                    onImageClick={handleImageClick}
+                    externalWebsite={company.isClaimed ? undefined : (company.website || undefined)}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
           {/* Right: Sticky Inquiry Sidebar */}
@@ -455,90 +537,6 @@ export default function CompanyDetailPage() {
         </div>
       </div>
 
-      {/* ===== Projects Section - Full Width ===== */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-2">
-        {company.isClaimed && company.projects && company.projects.length > 0 ? (
-          <section className="py-10 lg:py-14">
-            <div className="flex items-end justify-between mb-8">
-              <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Projects</h2>
-              <span className="text-sm text-[#6b6b6b] tabular-nums">
-                {company.projects.length} {company.projects.length === 1 ? 'project' : 'projects'}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {company.projects.map((proj) => (
-                <div
-                  key={proj.slug}
-                  className="group cursor-pointer"
-                  onClick={() => navigate(`/companies/${company.id}/${proj.slug}`)}
-                >
-                  {/* 16:9 Cover Image */}
-                  <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100">
-                    <SmartImage
-                      src={proj.images[0]}
-                      alt={`${proj.title} by ${company.name}`}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    {/* Image count badge */}
-                    {proj.images.length > 1 && (
-                      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-medium backdrop-blur-sm">
-                        <ImageIcon className="w-3.5 h-3.5" />
-                        {proj.images.length}
-                      </div>
-                    )}
-                  </div>
-                  {/* Project info */}
-                  <div className="mt-3">
-                    <h3 className="text-[15px] font-medium text-[#1c1917] group-hover:text-[#b8864a] transition line-clamp-1">
-                      {proj.title}
-                    </h3>
-                    {proj.location && (
-                      <p className="flex items-center gap-1 text-sm text-stone-500 mt-1">
-                        <MapPin className="w-3.5 h-3.5" /> {proj.location}
-                      </p>
-                    )}
-                    {!proj.location && proj.description && (
-                      <p className="text-sm text-stone-500 mt-1 line-clamp-1">{proj.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : (
-          <>
-            {hasProjectCategories && (
-              <div className="flex gap-2 mb-4">
-                <button
-                  onClick={() => setPortfolioMode('project')}
-                  className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
-                    portfolioMode === 'project'
-                      ? 'bg-[#b8864a] text-white'
-                      : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}
-                >
-                  By Project ({Object.keys(normalizedProjectCategories).length})
-                </button>
-                <button
-                  onClick={() => setPortfolioMode('style')}
-                  className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
-                    portfolioMode === 'style'
-                      ? 'bg-[#b8864a] text-white'
-                      : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}
-                >
-                  By Style ({Object.keys(normalizedStyleCategories).length})
-                </button>
-              </div>
-            )}
-            <MasonryGallery
-              categories={activeCategories}
-              onImageClick={handleImageClick}
-              externalWebsite={company.isClaimed ? undefined : (company.website || undefined)}
-            />
-          </>
-        )}
-      </div>
 
       {/* ===== Similar Companies ===== */}
       {similar.length > 0 && (

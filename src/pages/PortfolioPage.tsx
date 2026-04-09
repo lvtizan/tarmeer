@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 
@@ -302,7 +302,7 @@ function ProjectGroup({ project, maxImages }: { project: PortfolioProject; maxIm
   const remaining = project.images.length - visibleImages.length;
 
   const projectUrl = project.slug
-    ? `/companies/${project.companySlug}/${project.slug}`
+    ? `/companies/${project.companySlug}/${project.slug}?from=portfolio`
     : `/companies/${project.companySlug}`;
 
   const handleClick = useCallback(() => navigate(projectUrl), [navigate, projectUrl]);
@@ -525,31 +525,50 @@ export default function PortfolioPage() {
       )}
 
       <div className="max-w-[1400px] mx-auto px-4 py-8">
-        <div ref={headerRef} className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
-            <div className="flex items-center gap-3">
-              <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
-              {activeTag && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-tarmeer-primary)] text-white text-sm">
-                  {activeTag}
-                  <button onClick={() => selectTag(activeTag)} className="hover:opacity-70"><X className="w-3.5 h-3.5" /></button>
-                </span>
-              )}
-            </div>
+        <div ref={headerRef} className="mb-6">
+          <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
+          <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
+        </div>
+
+        {/* Persistent filter bar at top of page */}
+        <div className="mb-8 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
+            {ROOM_FILTERS.map(tag => (
+              <button
+                key={tag}
+                onClick={() => selectTag(tag)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                  activeTag === tag
+                    ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                    : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
-          {/* Filter icon button (top-right) */}
-          <button
-            onClick={() => {
-              const el = document.querySelector('.sticky-filter-scroll');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-              else window.scrollBy({ top: 100, behavior: 'smooth' });
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-sm text-stone-600 hover:border-stone-400 hover:text-[var(--color-tarmeer-text)] transition mt-1"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
+            {STYLE_FILTERS.map(tag => (
+              <button
+                key={tag}
+                onClick={() => selectTag(tag)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                  activeTag === tag
+                    ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                    : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+            {activeTag && (
+              <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
+                <X className="w-3.5 h-3.5" /> Clear
+              </button>
+            )}
+          </div>
         </div>
 
         {initialLoading && (
