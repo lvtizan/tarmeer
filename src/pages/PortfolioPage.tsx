@@ -4,40 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 
-const GAP = 12;
-const COLS_MOBILE = 2;
-const COLS_DESKTOP = 4;
-const DEFAULT_RATIO = 0.75; // 3:4 portrait default for interior photos
-
-interface FlatItem extends PortfolioProject {
-  image: string;
-  imageIndex: number;
-}
-
-interface PlacedItem {
-  item: FlatItem;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  imageLoaded: boolean;
-  hidden: boolean;
-}
-
 export default function PortfolioPage() {
   const [projects, setProjects] = useState<PortfolioProject[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [placed, setPlaced] = useState<PlacedItem[]>([]);
-  const [containerHeight, setContainerHeight] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   const seedRef = useRef(Math.floor(Math.random() * 1000000));
-  const placedCountRef = useRef(0);
-  const colHeightsRef = useRef<number[]>([]);
   const navigate = useNavigate();
 
   const loadMore = useCallback(async () => {
@@ -71,121 +46,38 @@ export default function PortfolioPage() {
     return () => observer.disconnect();
   }, [hasMore, loading, loadMore]);
 
-  const items: FlatItem[] = useMemo(() =>
-    projects.flatMap(project =>
-      project.images.map((img, idx) => ({ ...project, image: img, imageIndex: idx }))
-    ), [projects]);
+  // Separate multi-image projects (grouped) from single-image (mixed)
+  const { grouped, singles } = useMemo(() => {
+    const g: PortfolioProject[] = [];
+    const s: PortfolioProject[] = [];
+    for (const p of projects) {
+      if (p.images.length > 1) g.push(p);
+      else if (p.images.length === 1) s.push(p);
+    }
+    return { grouped: g, singles: s };
+  }, [projects]);
 
-  const getCols = useCallback(() => {
-    const w = containerRef.current?.offsetWidth || 800;
-    return w >= 768 ? COLS_DESKTOP : COLS_MOBILE;
+  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const ratio = w / h;
+    const container = img.closest('.portfolio-card') as HTMLElement | null;
+    if (!container) return;
+    // Hide bad images: too small or extreme aspect ratio
+    if (w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25) {
+      container.classList.add('hidden');
+      return;
+    }
+    // Show image, hide shimmer
+    img.classList.remove('opacity-0');
+    const shimmer = container.querySelector('.shimmer-bg') as HTMLElement | null;
+    if (shimmer) shimmer.classList.add('opacity-0');
   }, []);
 
-  const getColWidth = useCallback(() => {
-    const w = containerRef.current?.offsetWidth || 800;
-    const cols = getCols();
-    return (w - GAP * (cols - 1)) / cols;
-  }, [getCols]);
-
-  // Place new items as placeholders (default ratio), then update when image loads
-  useEffect(() => {
-    const startIdx = placedCountRef.current;
-    const newItems = items.slice(startIdx);
-    if (newItems.length === 0) return;
-
-    const cols = getCols();
-    const colWidth = getColWidth();
-    if (colHeightsRef.current.length !== cols) {
-      colHeightsRef.current = new Array(cols).fill(0);
-    }
-
-    const newPlaced: PlacedItem[] = [];
-    for (const item of newItems) {
-      const defaultHeight = colWidth / DEFAULT_RATIO;
-      const minH = Math.min(...colHeightsRef.current);
-      const colIdx = colHeightsRef.current.indexOf(minH);
-      const x = colIdx * (colWidth + GAP);
-      const y = minH;
-
-      colHeightsRef.current[colIdx] = y + defaultHeight + GAP;
-
-      newPlaced.push({
-        item,
-        x, y,
-        width: colWidth,
-        height: defaultHeight,
-        imageLoaded: false,
-        hidden: false,
-      });
-    }
-
-    placedCountRef.current = items.length;
-    setContainerHeight(Math.max(...colHeightsRef.current));
-    setPlaced(prev => [...prev, ...newPlaced]);
-
-    // Now pre-load images in background and update real dimensions
-    newPlaced.forEach((p, offset) => {
-      const img = new Image();
-      const globalIdx = startIdx + offset;
-      img.onload = () => {
-        const ratio = img.naturalWidth / img.naturalHeight;
-        // Filter bad images
-        if (img.naturalWidth < 200 || img.naturalHeight < 150 || ratio > 3.5 || ratio < 0.25) {
-          setPlaced(prev => prev.map((it, i) =>
-            i === globalIdx ? { ...it, hidden: true } : it
-          ));
-          return;
-        }
-        const realHeight = colWidth / ratio;
-        const heightDiff = realHeight - p.height;
-
-        setPlaced(prev => {
-          const updated = [...prev];
-          updated[globalIdx] = { ...updated[globalIdx], height: realHeight, imageLoaded: true };
-          // Shift items below in the same column down/up by the height difference
-          if (Math.abs(heightDiff) > 1) {
-            for (let j = globalIdx + 1; j < updated.length; j++) {
-              if (Math.abs(updated[j].x - p.x) < 2) {
-                updated[j] = { ...updated[j], y: updated[j].y + heightDiff };
-              }
-            }
-          }
-          return updated;
-        });
-
-        // Update column height
-        if (Math.abs(heightDiff) > 1) {
-          const colIdx = Math.round(p.x / (colWidth + GAP));
-          if (colIdx < colHeightsRef.current.length) {
-            colHeightsRef.current[colIdx] += heightDiff;
-            setContainerHeight(Math.max(...colHeightsRef.current));
-          }
-        }
-      };
-      img.onerror = () => {
-        setPlaced(prev => prev.map((it, i) =>
-          i === globalIdx ? { ...it, hidden: true } : it
-        ));
-      };
-      img.src = resolveImageUrl(p.item.image);
-    });
-  }, [items, getCols, getColWidth]);
-
-  // Re-layout on resize
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    const handleResize = () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        colHeightsRef.current = [];
-        placedCountRef.current = 0;
-        setPlaced([]);
-        setContainerHeight(0);
-        setProjects(prev => [...prev]);
-      }, 200);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => { window.removeEventListener('resize', handleResize); clearTimeout(timeout); };
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const container = e.currentTarget.closest('.portfolio-card') as HTMLElement | null;
+    if (container) container.classList.add('hidden');
   }, []);
 
   return (
@@ -228,73 +120,120 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {!initialLoading && items.length === 0 && (
+        {!initialLoading && projects.length === 0 && (
           <div className="text-center py-20">
             <p className="text-[var(--color-tarmeer-muted)]">No portfolio projects available yet.</p>
           </div>
         )}
 
-        <div ref={containerRef} className="relative" style={{ height: containerHeight }}>
-          {placed.map((p, i) => {
-            if (p.hidden) return null;
-            return (
+        {/* Grouped projects — each project in its own masonry band */}
+        {grouped.map(project => {
+          const projectUrl = project.slug
+            ? `/companies/${project.companySlug}/${project.slug}`
+            : `/companies/${project.companySlug}`;
+          return (
+            <section key={`g-${project.id}`} className="mb-10">
+              {/* Project group header */}
               <div
-                key={`${p.item.id}-${p.item.imageIndex}-${i}`}
-                className="absolute rounded-xl overflow-hidden cursor-pointer group"
-                style={{
-                  left: p.x,
-                  top: p.y,
-                  width: p.width,
-                  height: p.height + (p.imageLoaded ? 0 : 0),
-                  transition: 'top 0.3s ease, height 0.3s ease',
-                }}
-                onClick={() => navigate(p.item.slug ? `/companies/${p.item.companySlug}/${p.item.slug}` : `/companies/${p.item.companySlug}`)}
+                className="flex items-baseline gap-3 mb-4 cursor-pointer group/header"
+                onClick={() => navigate(projectUrl)}
               >
-                {/* Gray placeholder (always rendered, image covers it) */}
-                <div
-                  className="absolute inset-0 bg-stone-200 rounded-xl"
-                  style={{
-                    animation: 'shimmer 1.5s infinite',
-                    backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                    backgroundSize: '200% 100%',
-                  }}
-                />
-
-                {/* Real image (fade in when loaded) */}
-                {p.imageLoaded && (
-                  <img
-                    src={resolveImageUrl(p.item.image)}
-                    alt={`${p.item.title || 'Interior Design Project'} by ${p.item.companyName}${p.item.companyCity ? ` in ${p.item.companyCity}` : ''}${p.item.style ? ` - ${p.item.style}` : ''}`}
-                    title={p.item.title || undefined}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    style={{ animation: 'fadeIn 0.3s ease-out' }}
-                  />
-                )}
-
-                {/* Desktop hover overlay */}
-                {p.imageLoaded && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex flex-col justify-end p-4">
-                    <h3 className="text-white font-medium text-sm">{p.item.title || 'Project'}</h3>
-                    <p className="text-white/80 text-xs mt-1">
-                      {p.item.companyName}{p.item.companyCity ? ` · ${p.item.companyCity}` : ''}
-                    </p>
-                    {p.item.style && <p className="text-white/60 text-xs mt-0.5">{p.item.style}</p>}
-                  </div>
-                )}
-
-                {/* Mobile text */}
-                {p.imageLoaded && (
-                  <div className="sm:hidden absolute bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-sm">
-                    <h3 className="text-sm font-medium text-[var(--color-tarmeer-text)] truncate">{p.item.title || 'Project'}</h3>
-                    <p className="text-xs text-[var(--color-tarmeer-muted)] mt-0.5">
-                      {p.item.companyName}{p.item.companyCity ? ` · ${p.item.companyCity}` : ''}
-                    </p>
-                  </div>
-                )}
+                <h3 className="text-[15px] font-medium text-[#1c1917] group-hover/header:text-[#b8864a] transition">
+                  {project.title || 'Project'}
+                </h3>
+                <span className="text-sm text-stone-400">
+                  {project.companyName}{project.companyCity ? ` · ${project.companyCity}` : ''}
+                </span>
+                <span className="text-xs text-stone-300">{project.images.length} photos</span>
               </div>
-            );
-          })}
-        </div>
+              {/* Masonry within group */}
+              <div className="columns-2 sm:columns-3 lg:columns-4 gap-3">
+                {project.images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="portfolio-card break-inside-avoid mb-3 rounded-xl overflow-hidden cursor-pointer group relative"
+                    onClick={() => navigate(projectUrl)}
+                  >
+                    {/* Shimmer placeholder */}
+                    <div className="shimmer-bg absolute inset-0 rounded-xl transition-opacity duration-300" style={{
+                      backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.5s infinite',
+                    }} />
+                    <img
+                      src={resolveImageUrl(img)}
+                      alt={`${project.title || 'Interior Design Project'} by ${project.companyName}${project.companyCity ? ` in ${project.companyCity}` : ''}${project.style ? ` - ${project.style}` : ''}`}
+                      title={project.title || undefined}
+                      loading="lazy"
+                      className="relative w-full h-auto object-cover opacity-0 transition-all duration-300 group-hover:scale-105"
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 rounded-xl" />
+                    <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <p className="text-white text-sm font-medium leading-snug line-clamp-2">
+                        {project.title || 'Project'}
+                      </p>
+                      <p className="text-[#c6a065] text-xs mt-0.5">
+                        {project.companyName}{project.companyCity ? ` · ${project.companyCity}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+
+        {/* Single-image projects — mixed together */}
+        {singles.length > 0 && (
+          <section className="mb-10">
+            {grouped.length > 0 && (
+              <div className="flex items-baseline gap-3 mb-4">
+                <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
+              </div>
+            )}
+            <div className="columns-2 sm:columns-3 lg:columns-4 gap-3">
+              {singles.map(project => {
+                const projectUrl = project.slug
+                  ? `/companies/${project.companySlug}/${project.slug}`
+                  : `/companies/${project.companySlug}`;
+                return (
+                  <div
+                    key={`s-${project.id}`}
+                    className="portfolio-card break-inside-avoid mb-3 rounded-xl overflow-hidden cursor-pointer group relative"
+                    onClick={() => navigate(projectUrl)}
+                  >
+                    <div className="shimmer-bg absolute inset-0 rounded-xl transition-opacity duration-300" style={{
+                      backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.5s infinite',
+                    }} />
+                    <img
+                      src={resolveImageUrl(project.images[0])}
+                      alt={`${project.title || 'Interior Design Project'} by ${project.companyName}${project.companyCity ? ` in ${project.companyCity}` : ''}${project.style ? ` - ${project.style}` : ''}`}
+                      title={project.title || undefined}
+                      loading="lazy"
+                      className="relative w-full h-auto object-cover opacity-0 transition-all duration-300 group-hover:scale-105"
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 rounded-xl" />
+                    <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <p className="text-white text-sm font-medium leading-snug line-clamp-2">
+                        {project.title || 'Project'}
+                      </p>
+                      <p className="text-[#c6a065] text-xs mt-0.5">
+                        {project.companyName}{project.companyCity ? ` · ${project.companyCity}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <div ref={observerRef} className="h-20 flex items-center justify-center">
           {loading && !initialLoading && (
@@ -304,10 +243,6 @@ export default function PortfolioPage() {
       </div>
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
         @keyframes shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
