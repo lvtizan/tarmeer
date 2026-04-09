@@ -9,9 +9,9 @@ import { computeLayout, type LayoutMode } from '../lib/portfolioLayout';
 
 const MAX_IMAGES_PER_GROUP = 12;
 // Max height for grouped projects (used to truncate DP mode with "+N more").
-// Blocks / mosaic modes produce a fixed-aspect container and ignore this cap.
+// Blocks mode produces a fixed-aspect container and ignores this cap.
 const MAX_GROUP_HEIGHT_DP = 640;
-const VALID_LAYOUT_MODES: LayoutMode[] = ['dp', 'blocks', 'mosaic'];
+const VALID_LAYOUT_MODES: LayoutMode[] = ['dp', 'blocks'];
 
 /* ================================================================== */
 /*  Image preloader with RAF batching                                  */
@@ -271,19 +271,23 @@ function ProjectGroup({
   const items = useImagePreloader(visibleImages, initialRatios, onRatios);
   const remaining = project.images.length - visibleImages.length;
 
-  const projectUrl = project.slug
-    ? `/companies/${project.companySlug}/${project.slug}?from=portfolio`
+  const baseUrl = project.slug
+    ? `/companies/${project.companySlug}/${project.slug}`
     : `/companies/${project.companySlug}`;
 
   const handleClick = useCallback((imageIdx: number) => {
     onBeforeNavigate?.(String(project.id), imageIdx);
-    navigate(projectUrl);
-  }, [navigate, projectUrl, project.id, onBeforeNavigate]);
+    const url = project.slug
+      ? `${baseUrl}?from=portfolio&img=${imageIdx}`
+      : baseUrl;
+    navigate(url);
+  }, [navigate, baseUrl, project.id, project.slug, onBeforeNavigate]);
 
   const handleHeaderClick = useCallback(() => {
     onBeforeNavigate?.(String(project.id), -1);
-    navigate(projectUrl);
-  }, [navigate, projectUrl, project.id, onBeforeNavigate]);
+    const url = project.slug ? `${baseUrl}?from=portfolio` : baseUrl;
+    navigate(url);
+  }, [navigate, baseUrl, project.id, project.slug, onBeforeNavigate]);
 
   const renderOverlay = useCallback(() => (
     <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
@@ -574,7 +578,9 @@ export default function PortfolioPage() {
     const proj = singles[idx];
     if (!proj) return;
     saveCacheNow(String(proj.id), idx);
-    navigate(proj.slug ? `/companies/${proj.companySlug}/${proj.slug}` : `/companies/${proj.companySlug}`);
+    navigate(proj.slug
+      ? `/companies/${proj.companySlug}/${proj.slug}?from=portfolio&img=0`
+      : `/companies/${proj.companySlug}`);
   }, [singles, navigate, saveCacheNow]);
 
   const renderSingleOverlay = useCallback((idx: number) => {
@@ -694,7 +700,7 @@ export default function PortfolioPage() {
                   : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
               }`}
             >
-              {mode === 'dp' ? 'Justified (DP)' : mode === 'blocks' ? 'Blocks (A)' : 'Mosaic (B)'}
+              {mode === 'dp' ? 'Justified' : 'Blocks'}
             </button>
           ))}
         </div>

@@ -22,7 +22,7 @@ import {
 
 export { GAP, TARGET_ROW_HEIGHT, DEFAULT_RATIO };
 
-export type LayoutMode = 'dp' | 'blocks' | 'mosaic';
+export type LayoutMode = 'dp' | 'blocks';
 
 export interface LayoutCell {
   idx: number;   // original image index
@@ -79,119 +79,6 @@ interface BlockTemplate {
   cells: RelCell[];
 }
 
-/**
- * Mirror a template horizontally (flip x). Hero-left becomes hero-right.
- * Cell order (→ image order) is preserved so image[0] is still the hero.
- */
-function mirrorTemplate(tmpl: BlockTemplate): BlockTemplate {
-  return {
-    aspect: tmpl.aspect,
-    cells: tmpl.cells.map(c => ({ ...c, x: 1 - c.x - c.w })),
-  };
-}
-
-/**
- * Block template library. Keyed by image count.
- * Each template fully tiles [0,1]×[0,1]. Order of cells matches image order.
- *
- * Aspect ratios are deliberately high (2.2-2.8) so containers are flat
- * rather than tall. Higher = wider/shorter. For 1400px width:
- *   aspect 2.2 → 636 px tall
- *   aspect 2.5 → 560 px tall
- *   aspect 2.8 → 500 px tall
- */
-const BLOCK_TEMPLATES_BASE: Record<number, BlockTemplate[]> = {
-  2: [
-    // side by side
-    { aspect: 2.8, cells: [
-      { x: 0,   y: 0, w: 0.5, h: 1 },
-      { x: 0.5, y: 0, w: 0.5, h: 1 },
-    ]},
-  ],
-  3: [
-    // hero left + 2 stacked right
-    { aspect: 2.7, cells: [
-      { x: 0,    y: 0,   w: 0.58, h: 1    },
-      { x: 0.58, y: 0,   w: 0.42, h: 0.5  },
-      { x: 0.58, y: 0.5, w: 0.42, h: 0.5  },
-    ]},
-  ],
-  4: [
-    // hero left + 3 stacked right
-    { aspect: 2.5, cells: [
-      { x: 0,    y: 0,     w: 0.56, h: 1     },
-      { x: 0.56, y: 0,     w: 0.44, h: 1/3   },
-      { x: 0.56, y: 1/3,   w: 0.44, h: 1/3   },
-      { x: 0.56, y: 2/3,   w: 0.44, h: 1/3   },
-    ]},
-  ],
-  5: [
-    // hero left + 2x2 grid right
-    { aspect: 2.4, cells: [
-      { x: 0,    y: 0,   w: 0.56, h: 1   },
-      { x: 0.56, y: 0,   w: 0.22, h: 0.5 },
-      { x: 0.78, y: 0,   w: 0.22, h: 0.5 },
-      { x: 0.56, y: 0.5, w: 0.22, h: 0.5 },
-      { x: 0.78, y: 0.5, w: 0.22, h: 0.5 },
-    ]},
-  ],
-  6: [
-    // hero left + 5 right (2x2 + 1 wide bottom)
-    { aspect: 2.3, cells: [
-      { x: 0,    y: 0,    w: 0.56, h: 1     },
-      { x: 0.56, y: 0,    w: 0.22, h: 0.5   },
-      { x: 0.78, y: 0,    w: 0.22, h: 0.5   },
-      { x: 0.56, y: 0.5,  w: 0.22, h: 0.25  },
-      { x: 0.78, y: 0.5,  w: 0.22, h: 0.25  },
-      { x: 0.56, y: 0.75, w: 0.44, h: 0.25  },
-    ]},
-  ],
-  7: [
-    // hero left + 6 right (2x3 grid)
-    { aspect: 2.2, cells: [
-      { x: 0,    y: 0,     w: 0.56, h: 1     },
-      { x: 0.56, y: 0,     w: 0.22, h: 1/3   },
-      { x: 0.78, y: 0,     w: 0.22, h: 1/3   },
-      { x: 0.56, y: 1/3,   w: 0.22, h: 1/3   },
-      { x: 0.78, y: 1/3,   w: 0.22, h: 1/3   },
-      { x: 0.56, y: 2/3,   w: 0.22, h: 1/3   },
-      { x: 0.78, y: 2/3,   w: 0.22, h: 1/3   },
-    ]},
-  ],
-  8: [
-    // hero left + (wide top + 2x3 grid) right = 1 + 1 + 6 = 8
-    { aspect: 2.15, cells: [
-      { x: 0,    y: 0,   w: 0.56, h: 1    },
-      { x: 0.56, y: 0,   w: 0.44, h: 0.4  },
-      { x: 0.56, y: 0.4, w: 0.22, h: 0.2  },
-      { x: 0.78, y: 0.4, w: 0.22, h: 0.2  },
-      { x: 0.56, y: 0.6, w: 0.22, h: 0.2  },
-      { x: 0.78, y: 0.6, w: 0.22, h: 0.2  },
-      { x: 0.56, y: 0.8, w: 0.22, h: 0.2  },
-      { x: 0.78, y: 0.8, w: 0.22, h: 0.2  },
-    ]},
-  ],
-};
-
-/**
- * Expanded template library: each base template PLUS its horizontal mirror
- * (hero-right). For N=2 the mirror is visually identical so we skip it.
- * Selection picks deterministically by hash for stable layouts across renders.
- */
-const BLOCK_TEMPLATES: Record<number, BlockTemplate[]> = Object.fromEntries(
-  Object.entries(BLOCK_TEMPLATES_BASE).map(([k, arr]) => {
-    const n = Number(k);
-    // For N=2, left/right mirror looks the same; don't bother
-    if (n === 2) return [k, arr];
-    const expanded: BlockTemplate[] = [];
-    for (const t of arr) {
-      expanded.push(t);
-      expanded.push(mirrorTemplate(t));
-    }
-    return [k, expanded];
-  })
-);
-
 /** Hash a number list into an int to deterministically pick between templates. */
 function hash(vals: number[]): number {
   let h = 2166136261;
@@ -202,18 +89,185 @@ function hash(vals: number[]): number {
   return Math.abs(h);
 }
 
+/* ------------------------------------------------------------------ */
+/*  Procedural template generator                                      */
+/*                                                                      */
+/*  Instead of hand-curating a few templates per N, generate many       */
+/*  variants by combining four orthogonal parameters:                   */
+/*                                                                      */
+/*    • hero position: left / right / top / bottom                      */
+/*    • hero fraction of container: 0.5 / 0.55 / 0.6 / 0.65             */
+/*    • grid shape for non-hero cells: all (rows × cols) that can       */
+/*      hold exactly (N-1) images                                       */
+/*                                                                      */
+/*  Each template gets a flat container aspect ratio. Candidates with   */
+/*  too-small cells are discarded. The final pick is deterministic via  */
+/*  hash(ratios) so the same project always picks the same layout.      */
+/* ------------------------------------------------------------------ */
+
+type HeroPosition = 'left' | 'right' | 'top' | 'bottom';
+
+/** Possible (rows, cols) shapes that fit exactly `count` items (up to 4x4). */
+function gridShapes(count: number): Array<[number, number]> {
+  const shapes: Array<[number, number]> = [];
+  for (let rows = 1; rows <= Math.min(4, count); rows++) {
+    for (let cols = 1; cols <= Math.min(4, count); cols++) {
+      if (rows * cols === count) shapes.push([rows, cols]);
+    }
+  }
+  // If no perfect shape (e.g. count=5, 7), allow one empty slot in last row
+  if (shapes.length === 0) {
+    for (let rows = 1; rows <= 4; rows++) {
+      for (let cols = 1; cols <= 4; cols++) {
+        if (rows * cols >= count && rows * cols - count <= 1 && rows * cols <= 12) {
+          shapes.push([rows, cols]);
+        }
+      }
+    }
+  }
+  return shapes;
+}
+
 /**
- * Pick the best template for the given ratios (ratio-aware).
- * Currently uses hash for deterministic variety; future: score by distortion.
+ * Build one candidate template given hero position, hero fraction, and grid shape.
+ * Returns null if cells would be too small / degenerate.
+ */
+function buildTemplate(
+  N: number,
+  heroPos: HeroPosition,
+  heroFrac: number,
+  gridRows: number,
+  gridCols: number,
+  aspect: number,
+): BlockTemplate | null {
+  const restCount = N - 1;
+
+  // Hero cell + remaining grid area
+  let hero: RelCell;
+  let gridArea: RelCell;
+  switch (heroPos) {
+    case 'left':
+      hero = { x: 0, y: 0, w: heroFrac, h: 1 };
+      gridArea = { x: heroFrac, y: 0, w: 1 - heroFrac, h: 1 };
+      break;
+    case 'right':
+      hero = { x: 1 - heroFrac, y: 0, w: heroFrac, h: 1 };
+      gridArea = { x: 0, y: 0, w: 1 - heroFrac, h: 1 };
+      break;
+    case 'top':
+      hero = { x: 0, y: 0, w: 1, h: heroFrac };
+      gridArea = { x: 0, y: heroFrac, w: 1, h: 1 - heroFrac };
+      break;
+    case 'bottom':
+      hero = { x: 0, y: 1 - heroFrac, w: 1, h: heroFrac };
+      gridArea = { x: 0, y: 0, w: 1, h: 1 - heroFrac };
+      break;
+  }
+
+  const cellW = gridArea.w / gridCols;
+  const cellH = gridArea.h / gridRows;
+
+  // Reject if grid cells would be too thin
+  if (cellW < 0.08 || cellH < 0.15) return null;
+  if (hero.w < 0.3 || hero.h < 0.3) return null;
+
+  const cells: RelCell[] = [hero];
+
+  // Row-major fill; grow the last row's cells if we'd leave an empty slot
+  let placed = 0;
+  for (let r = 0; r < gridRows && placed < restCount; r++) {
+    const isLastRow = r === gridRows - 1;
+    const remaining = restCount - placed;
+    const colsThisRow = isLastRow && remaining < gridCols ? remaining : gridCols;
+    const rowCellW = gridArea.w / colsThisRow;
+    for (let c = 0; c < colsThisRow && placed < restCount; c++) {
+      cells.push({
+        x: gridArea.x + c * rowCellW,
+        y: gridArea.y + r * cellH,
+        w: rowCellW,
+        h: cellH,
+      });
+      placed++;
+    }
+  }
+
+  if (cells.length !== N) return null;
+  return { aspect, cells };
+}
+
+/** Generate all valid candidate templates for image count N. */
+function generateTemplates(N: number): BlockTemplate[] {
+  if (N < 2) return [];
+
+  // N=2: canonical side-by-side
+  if (N === 2) {
+    return [{
+      aspect: 2.8,
+      cells: [
+        { x: 0,   y: 0, w: 0.5, h: 1 },
+        { x: 0.5, y: 0, w: 0.5, h: 1 },
+      ],
+    }];
+  }
+
+  // Container aspect (flatter for smaller N; taller slightly for bigger N
+  // so grid cells don't get too cramped)
+  let aspect: number;
+  if (N <= 3)      aspect = 2.7;
+  else if (N <= 4) aspect = 2.55;
+  else if (N <= 5) aspect = 2.45;
+  else if (N <= 6) aspect = 2.35;
+  else if (N <= 7) aspect = 2.25;
+  else             aspect = 2.15;
+
+  const templates: BlockTemplate[] = [];
+  const heroPositions: HeroPosition[] = ['left', 'right', 'top', 'bottom'];
+  const heroFracs = [0.5, 0.55, 0.6, 0.65];
+  const shapes = gridShapes(N - 1);
+
+  for (const pos of heroPositions) {
+    // top/bottom hero: cap hero vertical fraction so it doesn't dominate
+    const fracs = (pos === 'top' || pos === 'bottom')
+      ? heroFracs.filter(f => f <= 0.55)
+      : heroFracs;
+
+    for (const frac of fracs) {
+      for (const [rows, cols] of shapes) {
+        // Orientation-aware shape filter:
+        // vertical hero (left/right) pairs best with tall grids (rows ≥ cols)
+        // horizontal hero (top/bottom) pairs best with wide grids (cols ≥ rows)
+        if ((pos === 'left' || pos === 'right') && cols > rows + 1) continue;
+        if ((pos === 'top' || pos === 'bottom') && rows > cols + 1) continue;
+
+        const t = buildTemplate(N, pos, frac, rows, cols, aspect);
+        if (t) templates.push(t);
+      }
+    }
+  }
+
+  return templates;
+}
+
+/** Cache templates per N (pure function of N). */
+const TEMPLATE_CACHE: Map<number, BlockTemplate[]> = new Map();
+function getTemplates(N: number): BlockTemplate[] {
+  let t = TEMPLATE_CACHE.get(N);
+  if (!t) {
+    t = generateTemplates(N);
+    TEMPLATE_CACHE.set(N, t);
+  }
+  return t;
+}
+
+/**
+ * Deterministic template selection by hash of image ratios.
+ * Same project → same template across re-renders and page revisits.
  */
 function pickTemplate(ratios: number[], N: number): BlockTemplate | null {
-  const tmpls = BLOCK_TEMPLATES[N];
-  if (!tmpls || tmpls.length === 0) return null;
-  // Filter out any buggy template with zero-sized cells
-  const valid = tmpls.filter(t => t.cells.every(c => c.w > 0 && c.h > 0));
-  if (valid.length === 0) return null;
-  if (valid.length === 1) return valid[0];
-  return valid[hash(ratios) % valid.length];
+  const templates = getTemplates(N);
+  if (templates.length === 0) return null;
+  if (templates.length === 1) return templates[0];
+  return templates[hash(ratios) % templates.length];
 }
 
 /** Shrink a cell by half a gap on any side that's adjacent to another cell (not container edge). */
@@ -261,114 +315,6 @@ export function blocksLayout(ratios: number[], containerWidth: number): Layout {
 }
 
 /* ================================================================== */
-/*  Algorithm B: Hero-TOP (wide top image + justified rows below)      */
-/*                                                                      */
-/*  Visually distinct from A (which is hero-LEFT):                      */
-/*    • The first image is a wide top hero banner (full container      */
-/*      width, natural aspect ratio clamped).                           */
-/*    • Remaining images flow below as justified rows (using the        */
-/*      existing DP justifier).                                         */
-/*    • Hero height adapts to the first image's natural ratio.          */
-/*    • For N=2 or 3 we use a top-hero + single-row-below pattern so    */
-/*      even small groups get the characteristic top-banner feel.       */
-/* ================================================================== */
-
-/** Hero height choice: clamp natural height to a band that keeps layout balanced. */
-function chooseHeroHeight(ratio: number, width: number): number {
-  const natural = width / ratio;
-  // Target band: 220..360 px. Flatter than a pure hero so the overall
-  // project block doesn't dominate vertical space.
-  return Math.max(220, Math.min(360, natural));
-}
-
-export function mosaicLayout(ratios: number[], containerWidth: number): Layout {
-  if (containerWidth <= 0 || ratios.length === 0) return { cells: [], height: 0 };
-  const N = ratios.length;
-
-  // N=1 — full-width hero (same as other modes)
-  if (N === 1) {
-    const r = ratios[0] || DEFAULT_RATIO;
-    const natural = containerWidth / r;
-    const height = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_HERO_HEIGHT, natural));
-    return {
-      cells: [{ idx: 0, x: 0, y: 0, w: containerWidth, h: height }],
-      height,
-    };
-  }
-
-  // N=2 — top hero + single image below (full width)
-  if (N === 2) {
-    const heroH = chooseHeroHeight(ratios[0] || DEFAULT_RATIO, containerWidth);
-    const secondR = ratios[1] || DEFAULT_RATIO;
-    const secondH = Math.max(180, Math.min(340, containerWidth / secondR));
-    return {
-      cells: [
-        { idx: 0, x: 0, y: 0, w: containerWidth, h: heroH },
-        { idx: 1, x: 0, y: heroH + GAP, w: containerWidth, h: secondH },
-      ],
-      height: heroH + GAP + secondH,
-    };
-  }
-
-  // N=3 — top hero + 2 images in a single row below
-  if (N === 3) {
-    const heroH = chooseHeroHeight(ratios[0] || DEFAULT_RATIO, containerWidth);
-    const r1 = ratios[1] || DEFAULT_RATIO;
-    const r2 = ratios[2] || DEFAULT_RATIO;
-    const rowH = (containerWidth - GAP) / (r1 + r2);
-    const w1 = r1 * rowH;
-    const w2 = containerWidth - GAP - w1;
-    return {
-      cells: [
-        { idx: 0, x: 0, y: 0, w: containerWidth, h: heroH },
-        { idx: 1, x: 0, y: heroH + GAP, w: w1, h: rowH },
-        { idx: 2, x: w1 + GAP, y: heroH + GAP, w: w2, h: rowH },
-      ],
-      height: heroH + GAP + rowH,
-    };
-  }
-
-  // N ≥ 4 — top hero + justified-row grid below (cap to 1 row so total stays short)
-  const heroH = chooseHeroHeight(ratios[0] || DEFAULT_RATIO, containerWidth);
-  const belowRatios = ratios.slice(1);
-
-  // Reuse the DP justifier for the "below" area with a shorter target
-  // row height so everything stays flat. Cap at 1 row — extra images
-  // become "+N more" via the gallery's truncation logic.
-  const allBelowRows = justifyRows(belowRatios, containerWidth, 200);
-  const belowRows = allBelowRows.slice(0, 1);
-  if (belowRows.length === 0) {
-    // Empty grid below — shouldn't happen with N≥4, but guard
-    return {
-      cells: [{ idx: 0, x: 0, y: 0, w: containerWidth, h: heroH }],
-      height: heroH,
-    };
-  }
-
-  const cells: LayoutCell[] = [
-    { idx: 0, x: 0, y: 0, w: containerWidth, h: heroH },
-  ];
-
-  let y = heroH + GAP;
-  for (const row of belowRows) {
-    let x = 0;
-    for (let i = 0; i < row.count; i++) {
-      cells.push({
-        idx: row.startIdx + i + 1, // +1 accounts for hero at idx 0
-        x,
-        y,
-        w: row.widths[i],
-        h: row.height,
-      });
-      x += row.widths[i] + GAP;
-    }
-    y += row.height + GAP;
-  }
-
-  return { cells, height: y - GAP };
-}
-
-/* ================================================================== */
 /*  Unified dispatcher                                                  */
 /* ================================================================== */
 
@@ -379,8 +325,7 @@ export function computeLayout(
 ): Layout {
   switch (mode) {
     case 'blocks': return blocksLayout(ratios, containerWidth);
-    case 'mosaic': return mosaicLayout(ratios, containerWidth);
     case 'dp':
-    default:        return dpLayout(ratios, containerWidth);
+    default:       return dpLayout(ratios, containerWidth);
   }
 }
