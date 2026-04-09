@@ -4,15 +4,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
-import {
-  justifyRows,
-  GAP,
-  TARGET_ROW_HEIGHT,
-  DEFAULT_RATIO,
-} from '../lib/justifyRows';
+import { DEFAULT_RATIO } from '../lib/justifyRows';
+import { computeLayout, type LayoutMode } from '../lib/portfolioLayout';
 
 const MAX_IMAGES_PER_GROUP = 12;
-const MAX_ROWS_PER_GROUP = 2;
+// Max height for grouped projects (used to truncate DP mode with "+N more").
+// Blocks / mosaic modes produce a fixed-aspect container and ignore this cap.
+const MAX_GROUP_HEIGHT_DP = 640;
+const VALID_LAYOUT_MODES: LayoutMode[] = ['dp', 'blocks', 'mosaic'];
 
 /* ================================================================== */
 /*  Image preloader with RAF batching                                  */
@@ -120,13 +119,16 @@ function JustifiedGallery({
   onItemClick,
   renderOverlay,
   remainingCount,
-  maxRows,
+  maxHeight,
+  mode,
 }: {
   items: ImgMeta[];
   onItemClick: (index: number) => void;
   renderOverlay?: (index: number) => React.ReactNode;
   remainingCount?: number;
-  maxRows?: number;
+  /** Optional pixel cap — cells with (y + h) above this are shown; others cut. Only applies to DP mode. */
+  maxHeight?: number;
+  mode: LayoutMode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -155,79 +157,92 @@ function JustifiedGallery({
     [items, visibleIndices]
   );
 
-  const allRows = useMemo(
-    () => justifyRows(ratios, containerWidth, TARGET_ROW_HEIGHT),
-    [ratios, containerWidth]
+  const fullLayout = useMemo(
+    () => computeLayout(mode, ratios, containerWidth),
+    [mode, ratios, containerWidth]
   );
-  const rows = maxRows ? allRows.slice(0, maxRows) : allRows;
 
-  // Count images truncated by row limit for "+N more"
-  const shownInRows = rows.reduce((sum, r) => sum + r.count, 0);
-  const truncatedCount = visibleIndices.length - shownInRows;
+  // Apply max height cap (DP mode only — blocks/mosaic are already sized)
+  const { cells, totalHeight, truncatedCount } = useMemo(() => {
+    if (mode !== 'dp' || !maxHeight || fullLayout.height <= maxHeight) {
+      return { cells: fullLayout.cells, totalHeight: fullLayout.height, truncatedCount: 0 };
+    }
+    // Keep cells whose top is within maxHeight; drop the rest
+    const kept = fullLayout.cells.filter(c => c.y + c.h <= maxHeight + 1);
+    const dropped = fullLayout.cells.length - kept.length;
+    const h = kept.reduce((m, c) => Math.max(m, c.y + c.h), 0);
+    return { cells: kept, totalHeight: h, truncatedCount: dropped };
+  }, [fullLayout, mode, maxHeight]);
+
   const effectiveRemaining = (remainingCount || 0) + truncatedCount;
 
-  // Total height
-  const totalHeight = useMemo(() => {
-    let h = 0;
-    for (const row of rows) h += row.height + GAP;
-    return h > 0 ? h - GAP : 0;
-  }, [rows]);
-
-  // Find the very last image shown across all rows
-  const lastRow = rows[rows.length - 1];
-  const lastShownVisIdx = lastRow ? lastRow.startIdx + lastRow.count - 1 : -1;
+  // Find the last rendered cell (bottom-right-most) for "+N more" overlay
+  const lastCellKey = useMemo(() => {
+    if (cells.length === 0 || effectiveRemaining <= 0) return -1;
+    let bestI = 0;
+    let bestScore = -Infinity;
+    for (let i = 0; i < cells.length; i++) {
+      const c = cells[i];
+      // Bottom-right priority: weigh y more than x
+      const score = c.y * 2 + c.x;
+      if (score > bestScore) { bestScore = score; bestI = i; }
+    }
+    return cells[bestI].idx;
+  }, [cells, effectiveRemaining]);
 
   return (
-    <div ref={containerRef} className="w-full" style={{ minHeight: containerWidth > 0 ? totalHeight : TARGET_ROW_HEIGHT }}>
-      {rows.map((row, ri) => (
-        <div key={ri} className="flex" style={{ gap: GAP, marginBottom: ri < rows.length - 1 ? GAP : 0 }}>
-          {row.widths.map((w, ci) => {
-            const visIdx = row.startIdx + ci;
-            const origIdx = visibleIndices[visIdx];
-            if (origIdx === undefined) return null;
-            const item = items[origIdx];
-            const isLastWithMore = effectiveRemaining > 0 && visIdx === lastShownVisIdx;
+    <div
+      ref={containerRef}
+      className="w-full relative"
+      style={{
+        height: containerWidth > 0 ? totalHeight : 280,
+      }}
+    >
+      {cells.map(cell => {
+        const visIdx = cell.idx;
+        const origIdx = visibleIndices[visIdx];
+        if (origIdx === undefined) return null;
+        const item = items[origIdx];
+        const isLastWithMore = cell.idx === lastCellKey;
 
-            return (
-              <div
-                key={origIdx}
-                className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
-                style={{ width: w, height: row.height }}
-                onClick={() => onItemClick(origIdx)}
-              >
-                {/* Shimmer */}
-                <div
-                  className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.loaded ? 'opacity-0 pointer-events-none' : ''}`}
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 1.5s infinite',
-                  }}
-                />
+        return (
+          <div
+            key={origIdx}
+            className="absolute rounded-xl overflow-hidden cursor-pointer group"
+            style={{ left: cell.x, top: cell.y, width: cell.w, height: cell.h }}
+            onClick={() => onItemClick(origIdx)}
+          >
+            {/* Shimmer */}
+            <div
+              className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.loaded ? 'opacity-0 pointer-events-none' : ''}`}
+              style={{
+                backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 1.5s infinite',
+              }}
+            />
 
-                {/* Image */}
-                <img
-                  src={resolveImageUrl(item.src)}
-                  alt=""
-                  loading="lazy"
-                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
-                />
+            {/* Image */}
+            <img
+              src={resolveImageUrl(item.src)}
+              alt=""
+              loading="lazy"
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
+            />
 
-                {/* Hover gradient + overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                {renderOverlay?.(origIdx)}
+            {/* Hover gradient + overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {renderOverlay?.(origIdx)}
 
-                {/* +N more */}
-                {isLastWithMore && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                    <span className="text-white text-lg font-semibold">+{effectiveRemaining} more</span>
-                  </div>
-                )}
+            {/* +N more */}
+            {isLastWithMore && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
+                <span className="text-white text-lg font-semibold">+{effectiveRemaining} more</span>
               </div>
-            );
-          })}
-        </div>
-      ))}
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -242,12 +257,14 @@ function ProjectGroup({
   initialRatios,
   onRatios,
   onBeforeNavigate,
+  layoutMode,
 }: {
   project: PortfolioProject;
   maxImages: number;
   initialRatios?: number[];
   onRatios?: (ratios: number[]) => void;
   onBeforeNavigate?: (projectId: string, imageIdx: number) => void;
+  layoutMode: LayoutMode;
 }) {
   const navigate = useNavigate();
   const visibleImages = useMemo(() => project.images.slice(0, maxImages), [project.images, maxImages]);
@@ -288,7 +305,14 @@ function ProjectGroup({
         </span>
         <span className="text-xs text-stone-300">{project.images.length} photos</span>
       </div>
-      <JustifiedGallery items={items} onItemClick={handleClick} renderOverlay={renderOverlay} remainingCount={remaining} maxRows={MAX_ROWS_PER_GROUP} />
+      <JustifiedGallery
+        items={items}
+        onItemClick={handleClick}
+        renderOverlay={renderOverlay}
+        remainingCount={remaining}
+        maxHeight={MAX_GROUP_HEIGHT_DP}
+        mode={layoutMode}
+      />
     </section>
   );
 }
@@ -347,6 +371,13 @@ export default function PortfolioPage() {
     const c = readCache();
     return c && c.activeTag === urlTag ? c : null;
   }, []); // Only read once on mount
+
+  // Layout mode (URL ?layout=dp|blocks|mosaic, default dp)
+  const urlLayoutRaw = searchParams.get('layout') || 'dp';
+  const initialLayoutMode: LayoutMode = (VALID_LAYOUT_MODES as string[]).includes(urlLayoutRaw)
+    ? (urlLayoutRaw as LayoutMode)
+    : 'dp';
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(initialLayoutMode);
 
   const [projects, setProjects] = useState<PortfolioProject[]>(cached?.projects || []);
   const [page, setPage] = useState(cached?.page || 1);
@@ -644,6 +675,30 @@ export default function PortfolioPage() {
           <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
         </div>
 
+        {/* Layout mode switcher (dev / comparison) */}
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">Layout</span>
+          {VALID_LAYOUT_MODES.map(mode => (
+            <button
+              key={mode}
+              onClick={() => {
+                setLayoutMode(mode);
+                const params = new URLSearchParams(searchParams);
+                if (mode === 'dp') params.delete('layout');
+                else params.set('layout', mode);
+                navigate(`/portfolio${params.toString() ? '?' + params.toString() : ''}`, { replace: true });
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                layoutMode === mode
+                  ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                  : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
+              }`}
+            >
+              {mode === 'dp' ? 'Justified (DP)' : mode === 'blocks' ? 'Blocks (A)' : 'Mosaic (B)'}
+            </button>
+          ))}
+        </div>
+
         {/* Persistent filter bar at top of page */}
         <div className="mb-8 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -705,6 +760,7 @@ export default function PortfolioPage() {
             initialRatios={ratiosCacheRef.current.get(String(project.id))}
             onRatios={rs => handleRatiosUpdate(String(project.id), rs)}
             onBeforeNavigate={handleBeforeNavigate}
+            layoutMode={layoutMode}
           />
         ))}
 
@@ -715,7 +771,12 @@ export default function PortfolioPage() {
                 <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
               </div>
             )}
-            <JustifiedGallery items={singlesItems} onItemClick={handleSingleClick} renderOverlay={renderSingleOverlay} />
+            <JustifiedGallery
+              items={singlesItems}
+              onItemClick={handleSingleClick}
+              renderOverlay={renderSingleOverlay}
+              mode="dp"
+            />
           </section>
         )}
 
