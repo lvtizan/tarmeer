@@ -34,8 +34,6 @@ const serviceCategories = {
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/portfolio', label: 'Portfolio' },
-  { to: '/companies', label: 'Companies' },
 ];
 
 type NavbarVariant = 'default' | 'admin-auth';
@@ -118,6 +116,8 @@ export default function Navbar({
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
 
+          {renderNavLink('/portfolio', 'Portfolio')}
+
           {/* Find Company Dropdown */}
           <div
             className="relative"
@@ -178,7 +178,6 @@ export default function Navbar({
             </AnimatePresence>
           </div>
 
-          {renderNavLink('/portfolio', 'Portfolio')}
           {renderNavLink('/materials', 'Showrooms')}
 
           {showUserEntry ? (
@@ -238,6 +237,8 @@ export default function Navbar({
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
 
+            {renderNavLink('/portfolio', 'Portfolio', 'py-2')}
+
             {/* Mobile Find Company Section */}
             <div className="py-2">
               <button
@@ -290,7 +291,6 @@ export default function Navbar({
               </AnimatePresence>
             </div>
 
-            {renderNavLink('/portfolio', 'Portfolio', 'py-2')}
             {renderNavLink('/materials', 'Showrooms', 'py-2')}
 
             {isLoggedIn ? (
