@@ -16,7 +16,8 @@ const GAP = 6;
 const TARGET_ROW_HEIGHT = 280;     // ideal row height (will flex ±30%)
 const MAX_ROW_HEIGHT = 380;        // prevent oversized rows for few images
 const MIN_ROW_HEIGHT = 180;        // prevent crushed rows
-const MAX_IMAGES_PER_GROUP = 10;
+const MAX_IMAGES_PER_GROUP = 12;
+const MAX_ROWS_PER_GROUP = 3;
 const DEFAULT_RATIO = 1.33;        // 4:3
 
 interface RowLayout {
@@ -177,11 +178,13 @@ function JustifiedGallery({
   onItemClick,
   renderOverlay,
   remainingCount,
+  maxRows,
 }: {
   items: ImgMeta[];
   onItemClick: (index: number) => void;
   renderOverlay?: (index: number) => React.ReactNode;
   remainingCount?: number;
+  maxRows?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -210,10 +213,16 @@ function JustifiedGallery({
     [items, visibleIndices]
   );
 
-  const rows = useMemo(
+  const allRows = useMemo(
     () => justifyRows(ratios, containerWidth, TARGET_ROW_HEIGHT),
     [ratios, containerWidth]
   );
+  const rows = maxRows ? allRows.slice(0, maxRows) : allRows;
+
+  // Count images truncated by row limit for "+N more"
+  const shownInRows = rows.reduce((sum, r) => sum + r.count, 0);
+  const truncatedCount = visibleIndices.length - shownInRows;
+  const effectiveRemaining = (remainingCount || 0) + truncatedCount;
 
   // Total height
   const totalHeight = useMemo(() => {
@@ -222,7 +231,9 @@ function JustifiedGallery({
     return h > 0 ? h - GAP : 0;
   }, [rows]);
 
-  const lastVisibleIdx = visibleIndices.length - 1;
+  // Find the very last image shown across all rows
+  const lastRow = rows[rows.length - 1];
+  const lastShownVisIdx = lastRow ? lastRow.startIdx + lastRow.count - 1 : -1;
 
   return (
     <div ref={containerRef} className="w-full" style={{ minHeight: containerWidth > 0 ? totalHeight : TARGET_ROW_HEIGHT }}>
@@ -233,7 +244,7 @@ function JustifiedGallery({
             const origIdx = visibleIndices[visIdx];
             if (origIdx === undefined) return null;
             const item = items[origIdx];
-            const isLastWithMore = remainingCount && remainingCount > 0 && visIdx === lastVisibleIdx;
+            const isLastWithMore = effectiveRemaining > 0 && visIdx === lastShownVisIdx;
 
             return (
               <div
@@ -267,7 +278,7 @@ function JustifiedGallery({
                 {/* +N more */}
                 {isLastWithMore && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                    <span className="text-white text-lg font-semibold">+{remainingCount} more</span>
+                    <span className="text-white text-lg font-semibold">+{effectiveRemaining} more</span>
                   </div>
                 )}
               </div>
@@ -315,7 +326,7 @@ function ProjectGroup({ project, maxImages }: { project: PortfolioProject; maxIm
         </span>
         <span className="text-xs text-stone-300">{project.images.length} photos</span>
       </div>
-      <JustifiedGallery items={items} onItemClick={handleClick} renderOverlay={renderOverlay} remainingCount={remaining} />
+      <JustifiedGallery items={items} onItemClick={handleClick} renderOverlay={renderOverlay} remainingCount={remaining} maxRows={MAX_ROWS_PER_GROUP} />
     </section>
   );
 }
