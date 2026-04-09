@@ -5,207 +5,146 @@ import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 
 /* ================================================================== */
-/*  Pure masonry layout engine (no React, no side effects)             */
-/*  Algorithm: greedy shortest-column — same as Pinterest & Masonry.js */
+/*  Justified-row layout engine (Google Photos / 500px algorithm)      */
+/*                                                                      */
+/*  Each row fills full container width. Images in a row share the same */
+/*  height but different widths based on their aspect ratios.           */
+/*  Rows have DIFFERENT heights → visual variety, zero gaps.            */
 /* ================================================================== */
 
-const GAP = 10;
-const DEFAULT_RATIO = 1.33; // 4:3 — stable default, minimal reflow
+const GAP = 6;
+const TARGET_ROW_HEIGHT = 280;     // ideal row height (will flex ±30%)
+const MAX_ROW_HEIGHT = 380;        // prevent oversized rows for few images
+const MIN_ROW_HEIGHT = 180;        // prevent crushed rows
 const MAX_IMAGES_PER_GROUP = 10;
+const DEFAULT_RATIO = 1.33;        // 4:3
 
-interface Pos { x: number; y: number; w: number; h: number }
+interface RowLayout {
+  startIdx: number;
+  count: number;
+  height: number;
+  widths: number[];  // per-image width in this row
+}
 
-function computeMasonry(
-  ratios: number[],       // width/height per item (0 = hidden)
+/**
+ * Partition images into justified rows.
+ * Each row's images are scaled to the same height so total width = containerWidth.
+ */
+function justifyRows(
+  ratios: number[],
   containerWidth: number,
-  cols: number,
-): { positions: Pos[]; height: number } {
-  if (containerWidth <= 0 || cols <= 0) return { positions: ratios.map(() => ({ x: 0, y: 0, w: 0, h: 0 })), height: 0 };
+  targetH: number,
+): RowLayout[] {
+  if (containerWidth <= 0 || ratios.length === 0) return [];
 
-  const colW = (containerWidth - GAP * (cols - 1)) / cols;
-  const colH = new Float64Array(cols); // typed array for perf
-  const positions: Pos[] = [];
+  const rows: RowLayout[] = [];
+  let cursor = 0;
 
-  for (let i = 0; i < ratios.length; i++) {
-    const ratio = ratios[i];
-    if (ratio <= 0) { positions.push({ x: 0, y: 0, w: 0, h: 0 }); continue; }
+  while (cursor < ratios.length) {
+    let bestEnd = cursor + 1;
+    let bestDiff = Infinity;
 
-    const h = colW / ratio;
+    // Try adding images until row is full or overshooting
+    let sumRatio = 0;
+    for (let end = cursor; end < ratios.length; end++) {
+      sumRatio += ratios[end] || DEFAULT_RATIO;
+      const gaps = (end - cursor) * GAP;
+      const rowH = (containerWidth - gaps) / sumRatio;
 
-    // Find shortest column
-    let minIdx = 0;
-    for (let c = 1; c < cols; c++) {
-      if (colH[c] < colH[minIdx]) minIdx = c;
+      // How far is this row height from our target?
+      const diff = Math.abs(rowH - targetH);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestEnd = end + 1;
+      }
+
+      // Once we've passed the target height going down, stop searching
+      if (rowH < targetH * 0.7) break;
     }
 
-    positions.push({
-      x: minIdx * (colW + GAP),
-      y: colH[minIdx],
-      w: colW,
-      h,
-    });
-    colH[minIdx] += h + GAP;
+    // Compute final row height
+    const count = bestEnd - cursor;
+    let rowRatioSum = 0;
+    for (let i = cursor; i < bestEnd; i++) {
+      rowRatioSum += ratios[i] || DEFAULT_RATIO;
+    }
+    const gaps = (count - 1) * GAP;
+    let rowH = (containerWidth - gaps) / rowRatioSum;
+
+    // Clamp row height
+    rowH = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, rowH));
+
+    // Last row: if only 1-2 images and would be very tall, cap at targetH
+    if (bestEnd >= ratios.length && count <= 2) {
+      rowH = Math.min(rowH, targetH);
+    }
+
+    // Compute widths
+    const widths: number[] = [];
+    let usedWidth = 0;
+    for (let i = cursor; i < bestEnd; i++) {
+      const r = ratios[i] || DEFAULT_RATIO;
+      const w = r * rowH;
+      widths.push(w);
+      usedWidth += w;
+    }
+
+    // Distribute rounding error across widths to exactly fill container
+    const totalGaps = gaps;
+    const remainder = containerWidth - usedWidth - totalGaps;
+    if (widths.length > 0 && Math.abs(remainder) > 0.5) {
+      const adj = remainder / widths.length;
+      for (let i = 0; i < widths.length; i++) widths[i] += adj;
+    }
+
+    rows.push({ startIdx: cursor, count, height: rowH, widths });
+    cursor = bestEnd;
   }
 
-  let maxH = 0;
-  for (let c = 0; c < cols; c++) { if (colH[c] > maxH) maxH = colH[c]; }
-
-  return { positions, height: maxH > 0 ? maxH - GAP : 0 };
-}
-
-function getColCount(width: number): number {
-  if (width >= 1024) return 4;
-  if (width >= 768) return 3;
-  return 2;
+  return rows;
 }
 
 /* ================================================================== */
-/*  Masonry component — shared by groups and singles                   */
+/*  Image preloader with RAF batching                                  */
 /* ================================================================== */
 
-interface MasonryItem {
+interface ImgMeta {
   src: string;
-  ratio: number;    // 0 = hidden
+  ratio: number;    // 0 = hidden/error
   loaded: boolean;
 }
 
-function Masonry({
-  items,
-  onItemClick,
-  renderOverlay,
-  remainingCount,
-}: {
-  items: MasonryItem[];
-  onItemClick: (index: number) => void;
-  renderOverlay?: (index: number) => React.ReactNode;
-  remainingCount?: number;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  // Measure container via ResizeObserver
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const measure = () => setContainerWidth(el.clientWidth);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // Pure layout computation
-  const { positions, height } = useMemo(() => {
-    const cols = getColCount(containerWidth);
-    const ratios = items.map(it => it.ratio);
-    return computeMasonry(ratios, containerWidth, cols);
-  }, [items, containerWidth]);
-
-  return (
-    <div ref={containerRef} className="relative w-full" style={{ height }}>
-      {items.map((item, i) => {
-        if (item.ratio <= 0) return null;
-        const pos = positions[i];
-        if (!pos || pos.w === 0) return null;
-
-        const isLastWithMore = remainingCount && remainingCount > 0 && i === items.length - 1;
-
-        return (
-          <div
-            key={i}
-            className="absolute rounded-xl overflow-hidden cursor-pointer group"
-            style={{
-              transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
-              width: pos.w,
-              height: pos.h,
-              willChange: 'transform',
-              transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1), width 0.35s, height 0.35s',
-            }}
-            onClick={() => onItemClick(i)}
-          >
-            {/* Shimmer placeholder */}
-            <div
-              className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.loaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-              style={{
-                backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 1.5s infinite',
-              }}
-            />
-
-            {/* Image — always in DOM for faster paint, opacity controls visibility */}
-            <img
-              src={resolveImageUrl(item.src)}
-              alt=""
-              loading="lazy"
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
-            />
-
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            {renderOverlay?.(i)}
-
-            {/* +N more badge */}
-            {isLastWithMore && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                <span className="text-white text-lg font-semibold">+{remainingCount} more</span>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ================================================================== */
-/*  Image preloader — batches updates via requestAnimationFrame        */
-/* ================================================================== */
-
-function useImagePreloader(urls: string[]): MasonryItem[] {
-  const [items, setItems] = useState<MasonryItem[]>(() =>
+function useImagePreloader(urls: string[]): ImgMeta[] {
+  const [items, setItems] = useState<ImgMeta[]>(() =>
     urls.map(src => ({ src, ratio: DEFAULT_RATIO, loaded: false }))
   );
   const pendingRef = useRef<Map<number, { ratio: number; hidden: boolean }>>(new Map());
   const rafRef = useRef(0);
 
-  // Flush batched updates
   const flush = useCallback(() => {
-    const pending = pendingRef.current;
-    if (pending.size === 0) return;
-    const batch = new Map(pending);
-    pending.clear();
+    const batch = new Map(pendingRef.current);
+    pendingRef.current.clear();
+    if (batch.size === 0) return;
 
     setItems(prev => {
       const next = [...prev];
-      for (const [idx, update] of batch) {
-        if (next[idx]) {
-          next[idx] = {
-            src: next[idx].src,
-            ratio: update.hidden ? 0 : update.ratio,
-            loaded: true,
-          };
-        }
+      for (const [idx, u] of batch) {
+        if (next[idx]) next[idx] = { src: next[idx].src, ratio: u.hidden ? 0 : u.ratio, loaded: true };
       }
       return next;
     });
   }, []);
 
   useEffect(() => {
-    // Reset when URLs change
     setItems(urls.map(src => ({ src, ratio: DEFAULT_RATIO, loaded: false })));
     pendingRef.current.clear();
 
     urls.forEach((src, i) => {
       const img = new Image();
       img.onload = () => {
-        const w = img.naturalWidth;
-        const h = img.naturalHeight;
-        const ratio = w / h;
+        const w = img.naturalWidth, h = img.naturalHeight, ratio = w / h;
         const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
         pendingRef.current.set(i, { ratio, hidden });
-
-        // Batch with RAF — one flush per frame
         cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(flush);
       };
@@ -224,16 +163,121 @@ function useImagePreloader(urls: string[]): MasonryItem[] {
 }
 
 /* ================================================================== */
-/*  ProjectMasonry — one project group                                 */
+/*  JustifiedGallery component                                         */
 /* ================================================================== */
 
-function ProjectMasonry({
-  project,
-  maxImages,
+function JustifiedGallery({
+  items,
+  onItemClick,
+  renderOverlay,
+  remainingCount,
 }: {
-  project: PortfolioProject;
-  maxImages: number;
+  items: ImgMeta[];
+  onItemClick: (index: number) => void;
+  renderOverlay?: (index: number) => React.ReactNode;
+  remainingCount?: number;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setContainerWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Filter visible items, build ratios array
+  const visibleIndices = useMemo(() => {
+    const indices: number[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].ratio > 0) indices.push(i);
+    }
+    return indices;
+  }, [items]);
+
+  const ratios = useMemo(
+    () => visibleIndices.map(i => items[i].loaded ? items[i].ratio : DEFAULT_RATIO),
+    [items, visibleIndices]
+  );
+
+  const rows = useMemo(
+    () => justifyRows(ratios, containerWidth, TARGET_ROW_HEIGHT),
+    [ratios, containerWidth]
+  );
+
+  // Total height
+  const totalHeight = useMemo(() => {
+    let h = 0;
+    for (const row of rows) h += row.height + GAP;
+    return h > 0 ? h - GAP : 0;
+  }, [rows]);
+
+  const lastVisibleIdx = visibleIndices.length - 1;
+
+  return (
+    <div ref={containerRef} className="w-full" style={{ minHeight: containerWidth > 0 ? totalHeight : TARGET_ROW_HEIGHT }}>
+      {rows.map((row, ri) => (
+        <div key={ri} className="flex" style={{ gap: GAP, marginBottom: ri < rows.length - 1 ? GAP : 0 }}>
+          {row.widths.map((w, ci) => {
+            const visIdx = row.startIdx + ci;
+            const origIdx = visibleIndices[visIdx];
+            if (origIdx === undefined) return null;
+            const item = items[origIdx];
+            const isLastWithMore = remainingCount && remainingCount > 0 && visIdx === lastVisibleIdx;
+
+            return (
+              <div
+                key={origIdx}
+                className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
+                style={{ width: w, height: row.height }}
+                onClick={() => onItemClick(origIdx)}
+              >
+                {/* Shimmer */}
+                <div
+                  className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.loaded ? 'opacity-0 pointer-events-none' : ''}`}
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 1.5s infinite',
+                  }}
+                />
+
+                {/* Image */}
+                <img
+                  src={resolveImageUrl(item.src)}
+                  alt=""
+                  loading="lazy"
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
+                />
+
+                {/* Hover gradient + overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {renderOverlay?.(origIdx)}
+
+                {/* +N more */}
+                {isLastWithMore && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
+                    <span className="text-white text-lg font-semibold">+{remainingCount} more</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  ProjectGroup                                                        */
+/* ================================================================== */
+
+function ProjectGroup({ project, maxImages }: { project: PortfolioProject; maxImages: number }) {
   const navigate = useNavigate();
   const visibleImages = useMemo(() => project.images.slice(0, maxImages), [project.images, maxImages]);
   const items = useImagePreloader(visibleImages);
@@ -245,26 +289,19 @@ function ProjectMasonry({
 
   const handleClick = useCallback(() => navigate(projectUrl), [navigate, projectUrl]);
 
-  const renderOverlay = useCallback(
-    () => (
-      <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <p className="text-white text-sm font-medium line-clamp-1">{project.title || 'Project'}</p>
-        <p className="text-[#c6a065] text-xs mt-0.5">
-          {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
-        </p>
-      </div>
-    ),
-    [project],
-  );
+  const renderOverlay = useCallback(() => (
+    <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+      <p className="text-white text-sm font-medium line-clamp-1">{project.title || 'Project'}</p>
+      <p className="text-[#c6a065] text-xs mt-0.5">
+        {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
+      </p>
+    </div>
+  ), [project]);
 
   return (
     <section className="mb-10">
-      {/* Project header */}
-      <div
-        className="flex items-baseline gap-3 mb-3 cursor-pointer group/header"
-        onClick={handleClick}
-      >
-        <h3 className="text-[15px] font-medium text-[#1c1917] group-hover/header:text-[var(--color-tarmeer-primary)] transition">
+      <div className="flex items-baseline gap-3 mb-3 cursor-pointer group/hdr" onClick={handleClick}>
+        <h3 className="text-[15px] font-medium text-[#1c1917] group-hover/hdr:text-[var(--color-tarmeer-primary)] transition">
           {project.title || 'Project'}
         </h3>
         <span className="text-sm text-stone-400">
@@ -272,13 +309,7 @@ function ProjectMasonry({
         </span>
         <span className="text-xs text-stone-300">{project.images.length} photos</span>
       </div>
-
-      <Masonry
-        items={items}
-        onItemClick={handleClick}
-        renderOverlay={renderOverlay}
-        remainingCount={remaining}
-      />
+      <JustifiedGallery items={items} onItemClick={handleClick} renderOverlay={renderOverlay} remainingCount={remaining} />
     </section>
   );
 }
@@ -314,9 +345,7 @@ export default function PortfolioPage() {
     }
   }, [page, loading, hasMore]);
 
-  useEffect(() => {
-    if (!loadedRef.current) { loadedRef.current = true; loadMore(); }
-  }, []);
+  useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadMore(); } }, []);
 
   useEffect(() => {
     if (!observerRef.current) return;
@@ -339,7 +368,6 @@ export default function PortfolioPage() {
     return { grouped: g, singles: s };
   }, [projects]);
 
-  // Singles masonry items
   const singlesUrls = useMemo(() => singles.map(s => s.images[0]), [singles]);
   const singlesItems = useImagePreloader(singlesUrls);
 
@@ -410,16 +438,10 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {/* Grouped projects */}
         {grouped.map(project => (
-          <ProjectMasonry
-            key={`g-${project.id}`}
-            project={project}
-            maxImages={MAX_IMAGES_PER_GROUP}
-          />
+          <ProjectGroup key={`g-${project.id}`} project={project} maxImages={MAX_IMAGES_PER_GROUP} />
         ))}
 
-        {/* Single-image projects */}
         {singles.length > 0 && (
           <section className="mb-10" style={{ marginTop: grouped.length > 0 ? 32 : 0 }}>
             {grouped.length > 0 && (
@@ -427,11 +449,7 @@ export default function PortfolioPage() {
                 <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
               </div>
             )}
-            <Masonry
-              items={singlesItems}
-              onItemClick={handleSingleClick}
-              renderOverlay={renderSingleOverlay}
-            />
+            <JustifiedGallery items={singlesItems} onItemClick={handleSingleClick} renderOverlay={renderSingleOverlay} />
           </section>
         )}
 
