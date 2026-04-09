@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import PageContainer from '../components/PageContainer';
 import { getBrandBySlug } from '../data/brands';
 import { dedupeImageEntries } from '../lib/imageCleanup';
@@ -6,6 +6,11 @@ import { WHATSAPP_LINK } from '../lib/constants';
 
 export default function BrandPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/materials');
+  };
   const brand = slug ? getBrandBySlug(slug) : undefined;
   const works = brand ? dedupeImageEntries(brand.works) : [];
 
@@ -14,7 +19,7 @@ export default function BrandPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-[#2c2c2c] mb-4">Brand not found</h1>
-          <Link to="/materials" className="text-[#b8864a] hover:underline">Back to Materials</Link>
+          <button onClick={handleBack} className="text-[#b8864a] hover:underline">Back</button>
         </div>
       </div>
     );
@@ -42,9 +47,9 @@ export default function BrandPage() {
       </section>
 
       <PageContainer className="py-10 sm:py-16">
-        <Link to="/materials" className="text-[#c6a065] hover:underline text-sm mb-8 inline-block">
-          ← Back to Materials
-        </Link>
+        <button onClick={handleBack} className="text-[#c6a065] hover:underline text-sm mb-8 inline-block">
+          ← Back
+        </button>
 
         {/* Intro */}
         <section className="mb-14">

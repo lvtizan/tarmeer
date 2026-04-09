@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -23,12 +23,25 @@ export default function CompanyDetailPage() {
   const previewMode = searchParams.get('preview') === '1';
   const adminPreview = searchParams.get('admin_preview') === '1';
   const from = searchParams.get('from');
+  // Special contexts have explicit back destinations (admin panel, company dashboard)
+  const isSpecialContext = adminPreview || previewMode || from === 'company-dashboard';
   const backTo = adminPreview
     ? `/admin/profile-companies/${id}?tab=companies`
     : previewMode || from === 'company-dashboard' ? '/company/dashboard' : '/companies';
   const backLabel = adminPreview
     ? 'Back to Admin'
-    : previewMode || from === 'company-dashboard' ? 'Back to Company Dashboard' : 'Back to Companies';
+    : previewMode || from === 'company-dashboard' ? 'Back to Company Dashboard' : 'Back';
+  // Dynamic back: special contexts use their explicit destination; otherwise use
+  // browser history (return to wherever the user came from), falling back to /companies.
+  const handleBack = () => {
+    if (isSpecialContext) {
+      navigate(backTo);
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/companies');
+    }
+  };
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -171,7 +184,7 @@ export default function CompanyDetailPage() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-serif text-2xl text-[#2c2c2c] mb-4">{loadError || 'Company not found'}</h1>
-          <Link to={backTo} className="text-[#c6a065] hover:underline">{backLabel}</Link>
+          <button onClick={handleBack} className="text-[#c6a065] hover:underline">{backLabel}</button>
         </div>
       </div>
     );
@@ -224,9 +237,9 @@ export default function CompanyDetailPage() {
       </Helmet>
       {/* Back nav */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-        <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition">
+        <button onClick={handleBack} className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition">
           <ArrowLeft className="w-4 h-4" /> {backLabel}
-        </Link>
+        </button>
       </div>
 
       {/* ===== Top Section: Hero + Inquiry Form ===== */}
@@ -615,9 +628,9 @@ export default function CompanyDetailPage() {
 
       {/* Footer */}
       <div className="border-t border-stone-200 py-6 text-center">
-        <Link to={backTo} className="text-sm text-stone-500 hover:text-[#b8864a] transition">
+        <button onClick={handleBack} className="text-sm text-stone-500 hover:text-[#b8864a] transition">
           <ArrowLeft className="w-4 h-4 inline mr-1" /> {backLabel}
-        </Link>
+        </button>
       </div>
     </div>
   );

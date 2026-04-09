@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, UserPlus } from 'lucide-react';
 import PageContainer from '../components/PageContainer';
 import DesignerCard from '../components/designers/DesignerCard';
@@ -11,6 +11,11 @@ import Avatar from '../components/ui/Avatar';
 
 export default function DesignersPage() {
   const [designers, setDesigners] = useState<Designer[]>(designersList);
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  };
 
   const isDesignerLoggedIn = Boolean(api.getToken());
   const designer = safeGetJSON<Record<string, unknown>>('designer');
@@ -30,9 +35,9 @@ export default function DesignersPage() {
 
   return (
     <PageContainer className="py-8 sm:py-12">
-        <a href="/" className="text-[#c6a065] hover:underline text-sm mb-8 inline-block">
-          ← Back to Home
-        </a>
+        <button onClick={handleBack} className="text-[#c6a065] hover:underline text-sm mb-8 inline-block">
+          ← Back
+        </button>
 
         <div className="flex items-center justify-between mb-2">
           <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-[#2c2c2c]">

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Building2, Megaphone, MessageCircle, Store, MapPin, ArrowRight } from 'lucide-react';
 import PageContainer from '../components/PageContainer';
@@ -33,6 +33,12 @@ const APPLICATION_GUIDE = [
 ];
 
 export default function ContactPage() {
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <Helmet>
@@ -45,9 +51,9 @@ export default function ContactPage() {
         <link rel="canonical" href="https://www.tarmeer.com/contact" />
       </Helmet>
       <PageContainer className="py-12 sm:py-16">
-        <Link to="/" className="mb-8 inline-block text-sm text-[#c6a065] hover:underline">
-          ← Back to Home
-        </Link>
+        <button onClick={handleBack} className="mb-8 inline-block text-sm text-[#c6a065] hover:underline">
+          ← Back
+        </button>
 
         <section className="rounded-[22px] border border-stone-200 bg-white p-6 shadow-[0_14px_40px_rgba(28,18,8,0.05)] sm:p-8 lg:p-10">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PageContainer from '../components/PageContainer';
 import { brandsList } from '../data/brands';
 import { WHATSAPP_LINK, GOOGLE_MAPS_URL } from '../lib/constants';
@@ -43,6 +43,11 @@ const ALLIANCE_ITEMS = [
 ];
 
 export default function MaterialsPage() {
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  };
   const scrollToLocations = () => {
     document.getElementById('locations')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -90,9 +95,9 @@ export default function MaterialsPage() {
       </section>
 
       <PageContainer className="py-12 sm:py-16">
-        <Link to="/" className="text-[#c6a065] hover:underline text-sm mb-8 inline-block">
-          ← Back to Home
-        </Link>
+        <button onClick={handleBack} className="text-[#c6a065] hover:underline text-sm mb-8 inline-block">
+          ← Back
+        </button>
 
         <div className="space-y-12 sm:space-y-16">
           <section id="locations">

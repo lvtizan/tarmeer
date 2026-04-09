@@ -1,4 +1,4 @@
-import { Link, useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import PageContainer from '../components/PageContainer';
 import { getCategoryBySlug, getCaseStudiesForCategory } from '../data/materials';
@@ -7,6 +7,11 @@ import { WHATSAPP_LINK } from '../lib/constants';
 
 export default function MaterialCategoryPage() {
   const { category } = useParams<{ category: string }>();
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/materials');
+  };
   if (category === 'brands') return <Navigate to="/materials" replace />;
   const cat = category ? getCategoryBySlug(category) : undefined;
   const caseStudies = category ? dedupeImageEntries(getCaseStudiesForCategory(category)) : [];
@@ -15,9 +20,9 @@ export default function MaterialCategoryPage() {
     return (
       <PageContainer className="py-12 text-center">
         <p className="text-[#6b6b6b]">Category not found.</p>
-        <Link to="/materials" className="text-[#c6a065] hover:underline mt-4 inline-block">
-          ← Materials
-        </Link>
+        <button onClick={handleBack} className="text-[#c6a065] hover:underline mt-4 inline-block">
+          ← Back
+        </button>
       </PageContainer>
     );
   }
@@ -35,14 +40,14 @@ export default function MaterialCategoryPage() {
       {/* Hero – Havenly-style */}
       <section className="bg-white border-b border-stone-200 py-12 sm:py-16">
         <PageContainer>
-          <Link
-            to="/materials"
+          <button
+            onClick={handleBack}
             className="inline-flex items-center gap-2 text-[#c6a065] hover:underline text-sm mb-8"
-            aria-label="Back to Materials"
+            aria-label="Back"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Materials
-          </Link>
+            Back
+          </button>
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#2c2c2c] mb-4">
             {cat.titleEn}
           </h1>
