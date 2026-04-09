@@ -11,7 +11,6 @@ const MAX_IMAGES_PER_GROUP = 12;
 // Max height for grouped projects (used to truncate DP mode with "+N more").
 // Blocks mode produces a fixed-aspect container and ignores this cap.
 const MAX_GROUP_HEIGHT_DP = 640;
-const VALID_LAYOUT_MODES: LayoutMode[] = ['dp', 'blocks'];
 
 /* ================================================================== */
 /*  Image preloader with RAF batching                                  */
@@ -83,27 +82,47 @@ function useImagePreloader(
       return;
     }
 
+    // Per-image 10s safety timeout — if the browser never fires onload/onerror
+    // (stalled connection, CORS hang, etc.), we mark the image as hidden so the
+    // group can finish loading and decide whether to render.
+    const timeouts: number[] = [];
+
     urls.forEach((src, i) => {
       // Skip items that already have a cached ratio
       if (typeof cached?.[i] === 'number') return;
 
       const img = new Image();
-      img.onload = () => {
-        const w = img.naturalWidth, h = img.naturalHeight, ratio = w / h;
-        const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
+      let settled = false;
+      const settle = (ratio: number, hidden: boolean) => {
+        if (settled) return;
+        settled = true;
         pendingRef.current.set(i, { ratio, hidden });
         cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(flush);
       };
-      img.onerror = () => {
-        pendingRef.current.set(i, { ratio: 0, hidden: true });
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(flush);
+      img.onload = () => {
+        const w = img.naturalWidth, h = img.naturalHeight, ratio = w / h;
+        const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
+        settle(ratio, hidden);
       };
+      img.onerror = () => settle(0, true);
       img.src = resolveImageUrl(src);
+
+      // Safety timeout (10s). Marks the image as hidden so the group resolves.
+      const t = window.setTimeout(() => {
+        if (!settled) {
+          img.onload = null;
+          img.onerror = null;
+          settle(0, true);
+        }
+      }, 10000);
+      timeouts.push(t);
     });
 
-    return () => cancelAnimationFrame(rafRef.current);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      timeouts.forEach(t => clearTimeout(t));
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urls.join('|')]);
 
@@ -269,7 +288,18 @@ function ProjectGroup({
   const navigate = useNavigate();
   const visibleImages = useMemo(() => project.images.slice(0, maxImages), [project.images, maxImages]);
   const items = useImagePreloader(visibleImages, initialRatios, onRatios);
-  const remaining = project.images.length - visibleImages.length;
+
+  // Compute load state. If every image has finished loading and none are
+  // visible (all failed / filtered), hide the whole group — otherwise we'd
+  // render an empty gap under the header.
+  const allLoaded = items.length > 0 && items.every(it => it.loaded);
+  const visibleCount = items.filter(it => it.ratio > 0).length;
+  const shouldHide = allLoaded && visibleCount === 0;
+
+  // Photo count in the header: once loading is done, show the real visible
+  // count; while loading, optimistically show the project's total.
+  const displayCount = allLoaded ? visibleCount : project.images.length;
+  const remaining = Math.max(0, project.images.length - visibleImages.length - (items.length - visibleCount));
 
   const baseUrl = project.slug
     ? `/companies/${project.companySlug}/${project.slug}`
@@ -298,6 +328,8 @@ function ProjectGroup({
     </div>
   ), [project]);
 
+  if (shouldHide) return null;
+
   return (
     <section className="mb-10" data-project-id={project.id}>
       <div className="flex items-baseline gap-3 mb-3 cursor-pointer group/hdr" onClick={handleHeaderClick}>
@@ -307,7 +339,7 @@ function ProjectGroup({
         <span className="text-sm text-stone-400">
           {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
         </span>
-        <span className="text-xs text-stone-300">{project.images.length} photos</span>
+        <span className="text-xs text-stone-300">{displayCount} photos</span>
       </div>
       <JustifiedGallery
         items={items}
@@ -376,12 +408,8 @@ export default function PortfolioPage() {
     return c && c.activeTag === urlTag ? c : null;
   }, []); // Only read once on mount
 
-  // Layout mode (URL ?layout=dp|blocks|mosaic, default dp)
-  const urlLayoutRaw = searchParams.get('layout') || 'dp';
-  const initialLayoutMode: LayoutMode = (VALID_LAYOUT_MODES as string[]).includes(urlLayoutRaw)
-    ? (urlLayoutRaw as LayoutMode)
-    : 'dp';
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(initialLayoutMode);
+  // Layout mode is fixed to 'blocks' — the justified/dp mode is hidden.
+  const layoutMode: LayoutMode = 'blocks';
 
   const [projects, setProjects] = useState<PortfolioProject[]>(cached?.projects || []);
   const [page, setPage] = useState(cached?.page || 1);
@@ -679,30 +707,6 @@ export default function PortfolioPage() {
         <div ref={headerRef} className="mb-6">
           <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
           <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
-        </div>
-
-        {/* Layout mode switcher (dev / comparison) */}
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">Layout</span>
-          {VALID_LAYOUT_MODES.map(mode => (
-            <button
-              key={mode}
-              onClick={() => {
-                setLayoutMode(mode);
-                const params = new URLSearchParams(searchParams);
-                if (mode === 'dp') params.delete('layout');
-                else params.set('layout', mode);
-                navigate(`/portfolio${params.toString() ? '?' + params.toString() : ''}`, { replace: true });
-              }}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
-                layoutMode === mode
-                  ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
-                  : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
-              }`}
-            >
-              {mode === 'dp' ? 'Justified' : 'Blocks'}
-            </button>
-          ))}
         </div>
 
         {/* Persistent filter bar at top of page */}

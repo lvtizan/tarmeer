@@ -340,7 +340,9 @@ export interface PublicProjectDetailData {
     description: string;
     style: string;
     location: string;
+    area?: string | null;
     year: number;
+    cost?: string | null;
     images: string[];
     tags: string[];
   };
@@ -350,6 +352,13 @@ export interface PublicProjectDetailData {
     slug: string;
     logo: string;
     city: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+    instagram?: string | null;
+    yearEstablished?: string | null;
+    projectCount?: number;
   };
   siblings: Array<{ id: number; title: string; slug: string }>;
 }

@@ -4,6 +4,7 @@ import {
   buildPublicCompaniesListQuery,
   buildPublicCompanyDetailQuery,
 } from '../lib/publicCompaniesQuery';
+import { slugify } from '../lib/slugify';
 
 const PUBLIC_COMPANY_WHERE = `WHERE is_active = 1`;
 
@@ -128,6 +129,7 @@ export async function getPortfolioFeed(req: any, res: any) {
         return {
           id: row.company_id * 10000 + idx,
           title: catName,
+          slug: slugify(catName),
           description: '',
           style: catName,
           location: '',
@@ -189,7 +191,9 @@ export async function getPublicProjectDetail(req: any, res: any) {
 
     // Try uae_companies
     const [uaeRows] = await pool.execute(
-      'SELECT id, name_en as company_name, slug, logo_url, city, website FROM uae_companies WHERE slug = ?',
+      `SELECT id, name_en as company_name, slug, logo_url, city, address,
+              phone, email, website, instagram, year_established
+         FROM uae_companies WHERE slug = ?`,
       [companySlug]
     );
     if ((uaeRows as any[]).length > 0) {
@@ -200,7 +204,10 @@ export async function getPublicProjectDetail(req: any, res: any) {
     // Try company_profiles
     if (!company) {
       const [cpRows] = await pool.execute(
-        'SELECT id, company_name, slug, logo_url, city, website FROM company_profiles WHERE slug = ? AND status = ? AND deleted_at IS NULL',
+        `SELECT id, company_name, slug, logo_url, city, address,
+                phone, website
+           FROM company_profiles
+          WHERE slug = ? AND status = ? AND deleted_at IS NULL`,
         [companySlug, 'approved']
       );
       if ((cpRows as any[]).length > 0) {
@@ -247,11 +254,12 @@ export async function getPublicProjectDetail(req: any, res: any) {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Get sibling projects for prev/next navigation
+    // Get sibling projects for prev/next navigation + total count
     const [siblings] = await pool.execute(
       'SELECT id, title, slug FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC',
       [company.id]
     );
+    const projectCount = (siblings as any[]).length;
 
     res.json({
       project: {
@@ -261,7 +269,9 @@ export async function getPublicProjectDetail(req: any, res: any) {
         description: project.description,
         style: project.style,
         location: project.location,
+        area: project.area,
         year: project.year,
+        cost: project.cost,
         images: project.images,
         tags: project.tags,
       },
@@ -271,6 +281,13 @@ export async function getPublicProjectDetail(req: any, res: any) {
         slug: company.slug,
         logo: company.logo_url,
         city: company.city,
+        address: company.address || null,
+        phone: company.phone || null,
+        email: company.email || null,
+        website: company.website || null,
+        instagram: company.instagram || null,
+        yearEstablished: company.year_established || null,
+        projectCount,
       },
       siblings: (siblings as any[]).map((s: any) => ({ id: s.id, title: s.title, slug: s.slug })),
     });
