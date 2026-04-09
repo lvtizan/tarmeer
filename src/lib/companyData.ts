@@ -32,8 +32,8 @@ export interface Company {
   isSigned?: boolean;
   /** computed weight score for sorting */
   weightScore?: number;
-  /** Simplified project list for navigation (claimed companies only) */
-  projects?: Array<{ title: string; slug: string; images: string[] }>;
+  /** Project list for project cards (claimed companies only) */
+  projects?: Array<{ title: string; slug: string; description: string; style: string; location: string; images: string[] }>;
 }
 
 export function summarizeCompanyDescription(description: string): string {

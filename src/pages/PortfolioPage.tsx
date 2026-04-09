@@ -194,6 +194,28 @@ export default function PortfolioPage() {
         <title>Interior Design Portfolio & Inspiration - Tarmeer UAE</title>
         <meta name="description" content="Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more." />
         <link rel="canonical" href="https://www.tarmeer.com/portfolio" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Interior Design Portfolio - Tarmeer UAE",
+          "description": "Browse stunning interior design projects from top UAE designers.",
+          "url": "https://www.tarmeer.com/portfolio",
+          "mainEntity": {
+            "@type": "ItemList",
+            "itemListElement": projects.slice(0, 20).map((p, i) => ({
+              "@type": "ListItem",
+              "position": i + 1,
+              "item": {
+                "@type": "CreativeWork",
+                "name": p.title || 'Interior Design Project',
+                "description": p.description || `${p.style || 'Interior design'} project by ${p.companyName}`,
+                "creator": { "@type": "Organization", "name": p.companyName },
+                ...(p.images[0] ? { "image": `https://www.tarmeer.com${p.images[0]}` } : {}),
+                ...(p.companySlug && p.slug ? { "url": `https://www.tarmeer.com/companies/${p.companySlug}/${p.slug}` } : {}),
+              },
+            })),
+          },
+        })}</script>
       </Helmet>
 
       <div className="max-w-[1400px] mx-auto px-4 py-8">
@@ -242,7 +264,8 @@ export default function PortfolioPage() {
                 {p.imageLoaded && (
                   <img
                     src={resolveImageUrl(p.item.image)}
-                    alt={`${p.item.title || 'Project'} by ${p.item.companyName}`}
+                    alt={`${p.item.title || 'Interior Design Project'} by ${p.item.companyName}${p.item.companyCity ? ` in ${p.item.companyCity}` : ''}${p.item.style ? ` - ${p.item.style}` : ''}`}
+                    title={p.item.title || undefined}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     style={{ animation: 'fadeIn 0.3s ease-out' }}
                   />

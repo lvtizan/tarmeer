@@ -304,6 +304,9 @@ function toCompany(company: PublicCompanyRecord): Company {
           .map((p: any) => ({
             title: String(p.title || ''),
             slug: String(p.slug || ''),
+            description: String(p.description || ''),
+            style: String(p.style || ''),
+            location: String(p.location || ''),
             images: sanitizeImageUrls(parseJsonArray(p.images)),
           }))
           .filter((p: { title: string; slug: string; images: string[] }) => p.slug && p.images.length > 0)
