@@ -96,6 +96,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // Project slug for SEO-friendly URLs
   { table: 'projects', column: 'slug', type: 'VARCHAR(200) NULL' },
 
+  // Project tags for filtering (JSON array: ["Living Room", "Modern", ...])
+  { table: 'projects', column: 'tags', type: 'JSON NULL' },
+
   // Slug for SEO-friendly URLs
   { table: 'company_profiles', column: 'slug', type: 'VARCHAR(200) NULL' },
 

@@ -335,22 +335,39 @@ function ProjectGroup({ project, maxImages }: { project: PortfolioProject; maxIm
 /*  Main page                                                          */
 /* ================================================================== */
 
+// ── Tag taxonomy for filter UI ──
+const ROOM_FILTERS = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dining Room', 'Home Office', 'Majlis', 'Hallway', 'Nursery', 'Patio'];
+const STYLE_FILTERS = ['Modern', 'Luxury', 'Minimalist', 'Classical', 'Arabic', 'Industrial', 'Scandinavian', 'Coastal', 'Art Deco', 'Bohemian'];
+
 export default function PortfolioPage() {
   const [projects, setProjects] = useState<PortfolioProject[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [activeTag, setActiveTag] = useState('');
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   const seedRef = useRef(Math.floor(Math.random() * 1000000));
   const navigate = useNavigate();
 
+  // Reset and reload when tag changes
+  const selectTag = useCallback((tag: string) => {
+    const newTag = tag === activeTag ? '' : tag;
+    setActiveTag(newTag);
+    setProjects([]);
+    setPage(1);
+    setHasMore(true);
+    setLoading(false);
+    loadedRef.current = false;
+    seedRef.current = Math.floor(Math.random() * 1000000);
+  }, [activeTag]);
+
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      const result = await fetchPortfolioFeed(page, 12, seedRef.current);
+      const result = await fetchPortfolioFeed(page, 12, seedRef.current, activeTag || undefined);
       setProjects(prev => [...prev, ...result.projects]);
       setHasMore(result.projects.length === 12);
       setPage(prev => prev + 1);
@@ -360,9 +377,9 @@ export default function PortfolioPage() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [page, loading, hasMore]);
+  }, [page, loading, hasMore, activeTag]);
 
-  useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadMore(); } }, []);
+  useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadMore(); } }, [activeTag]);
 
   useEffect(() => {
     if (!observerRef.current) return;
@@ -441,7 +458,47 @@ export default function PortfolioPage() {
 
       <div className="max-w-[1400px] mx-auto px-4 py-8">
         <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
-        <p className="text-[var(--color-tarmeer-muted)] mb-8">Explore interior design projects from UAE&apos;s top professionals</p>
+        <p className="text-[var(--color-tarmeer-muted)] mb-6">Explore interior design projects from UAE&apos;s top professionals</p>
+
+        {/* ── Tag filter bar ── */}
+        <div className="mb-8 flex flex-col sm:flex-row gap-4 sm:gap-8">
+          <div>
+            <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">By Room</h3>
+            <div className="flex flex-wrap gap-2">
+              {ROOM_FILTERS.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => selectTag(tag)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition ${
+                    activeTag === tag
+                      ? 'bg-[var(--color-tarmeer-primary)] text-white'
+                      : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">By Style</h3>
+            <div className="flex flex-wrap gap-2">
+              {STYLE_FILTERS.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => selectTag(tag)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition ${
+                    activeTag === tag
+                      ? 'bg-[var(--color-tarmeer-primary)] text-white'
+                      : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {initialLoading && (
           <div className="flex items-center justify-center py-20">

@@ -47,18 +47,22 @@ export async function getPortfolioFeed(req: any, res: any) {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 30), 60);
     const offset = (page - 1) * limit;
-    // Random seed: same seed = same order within one session, different seed on refresh
     const seed = parseInt(req.query.seed, 10) || Math.floor(Math.random() * 1000000);
+    const tagFilter = typeof req.query.tag === 'string' ? req.query.tag.trim() : '';
+
+    // Build tag filter clause
+    const tagClause = tagFilter ? `AND JSON_CONTAINS(p.tags, '"${tagFilter.replace(/['"\\]/g, '')}"')` : '';
 
     // 1. Registered company projects (from company_profiles + projects tables)
     const [rows] = await pool.execute(`
       SELECT
-        p.id, p.title, p.slug as project_slug, p.description, p.style, p.location, p.year, p.images,
+        p.id, p.title, p.slug as project_slug, p.description, p.style, p.location, p.year, p.images, p.tags,
         cp.id as company_id, cp.company_name, cp.slug as company_slug, cp.logo_url, cp.city
       FROM projects p
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
         AND p.images IS NOT NULL AND p.images != '[]'
+        ${tagClause}
       ORDER BY RAND(${Number(seed)})
       LIMIT ${Number(limit)} OFFSET ${Number(offset)}
     `);
@@ -70,6 +74,11 @@ export async function getPortfolioFeed(req: any, res: any) {
         const parsed = typeof row.images === 'string' ? JSON.parse(row.images) : row.images;
         if (Array.isArray(parsed)) images = parsed.filter(Boolean);
       } catch { /* skip malformed JSON */ }
+      let tags: string[] = [];
+      try {
+        const parsed = typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags;
+        if (Array.isArray(parsed)) tags = parsed;
+      } catch { /* skip */ }
       return {
         id: row.id,
         title: row.title || '',
@@ -79,6 +88,7 @@ export async function getPortfolioFeed(req: any, res: any) {
         location: row.location || '',
         year: row.year || null,
         images,
+        tags,
         companyId: row.company_id,
         companyName: row.company_name || '',
         companySlug: row.company_slug || '',
@@ -147,6 +157,7 @@ export async function getPortfolioFeed(req: any, res: any) {
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
         AND p.images IS NOT NULL AND p.images != '[]'
+        ${tagClause}
     `);
     const registeredTotal = (countResult as any[])[0]?.total || 0;
 

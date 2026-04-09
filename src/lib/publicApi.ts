@@ -323,6 +323,7 @@ export interface PortfolioProject {
   location: string;
   year: number | null;
   images: string[];
+  tags?: string[];
   companyId: number;
   companyName: string;
   companySlug: string;
@@ -357,12 +358,13 @@ export async function fetchPublicProjectDetail(companySlug: string, projectSlug:
   return request(`/companies/${companySlug}/projects/${projectSlug}`);
 }
 
-export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number): Promise<{
+export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, tag?: string): Promise<{
   projects: PortfolioProject[];
   pagination: { page: number; limit: number; total: number };
 }> {
   const seedParam = seed ? `&seed=${seed}` : '';
-  return request(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}`);
+  const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
+  return request(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}${tagParam}`);
 }
 
 export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {
