@@ -470,16 +470,16 @@ export default function PortfolioPage() {
           )}
         </div>
 
-        {/* ── Floating filter toggle button ── */}
+        {/* ── Floating filter toggle button (bottom-right, near content) ── */}
         <button
           onClick={() => setFilterOpen(!filterOpen)}
-          className={`fixed right-4 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+          className={`fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors ${
             filterOpen || activeTag
               ? 'bg-[var(--color-tarmeer-primary)] text-white'
-              : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-400'
+              : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-400 hover:shadow-xl'
           }`}
         >
-          <SlidersHorizontal className="w-4.5 h-4.5" />
+          <SlidersHorizontal className="w-5 h-5" />
         </button>
 
         {/* ── Floating filter panel (right side) ── */}
