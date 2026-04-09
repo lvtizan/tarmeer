@@ -480,25 +480,46 @@ export default function PortfolioPage() {
       {/* ── Sticky filter bar (appears when scrolled past header) ── */}
       {scrolledPastHeader && (
         <div className="fixed top-[64px] left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
-          <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-wrap items-center gap-2">
-            {[...ROOM_FILTERS, ...STYLE_FILTERS].map(tag => (
-              <button
-                key={tag}
-                onClick={() => selectTag(tag)}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
-                  activeTag === tag
-                    ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
-                    : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-            {activeTag && (
-              <button onClick={() => selectTag(activeTag)} className="ml-1 text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+          <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
+            {/* By Room row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
+              {ROOM_FILTERS.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => selectTag(tag)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                    activeTag === tag
+                      ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                      : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+            {/* By Style row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
+              {STYLE_FILTERS.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => selectTag(tag)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                    activeTag === tag
+                      ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                      : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+              {activeTag && (
+                <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
+                  <X className="w-3.5 h-3.5" /> Clear
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
