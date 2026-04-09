@@ -480,23 +480,22 @@ export default function PortfolioPage() {
       {/* ── Sticky filter bar (appears when scrolled past header) ── */}
       {scrolledPastHeader && (
         <div className="fixed top-[64px] left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
-          <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <span className="text-xs text-stone-400 font-medium shrink-0 mr-1">Filter:</span>
+          <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-wrap items-center gap-2">
             {[...ROOM_FILTERS, ...STYLE_FILTERS].map(tag => (
               <button
                 key={tag}
                 onClick={() => selectTag(tag)}
-                className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition ${
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
                   activeTag === tag
-                    ? 'bg-[var(--color-tarmeer-primary)] text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                    : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
                 }`}
               >
                 {tag}
               </button>
             ))}
             {activeTag && (
-              <button onClick={() => selectTag(activeTag)} className="shrink-0 ml-1 text-xs text-stone-400 hover:text-stone-600">
+              <button onClick={() => selectTag(activeTag)} className="ml-1 text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
