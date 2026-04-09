@@ -17,7 +17,7 @@ const TARGET_ROW_HEIGHT = 280;     // ideal row height (will flex ±30%)
 const MAX_ROW_HEIGHT = 380;        // prevent oversized rows for few images
 const MIN_ROW_HEIGHT = 180;        // prevent crushed rows
 const MAX_IMAGES_PER_GROUP = 12;
-const MAX_ROWS_PER_GROUP = 3;
+const MAX_ROWS_PER_GROUP = 2;
 const DEFAULT_RATIO = 1.33;        // 4:3
 
 interface RowLayout {
