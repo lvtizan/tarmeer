@@ -4,190 +4,27 @@ import { useNavigate } from 'react-router-dom';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
+const GAP = 10;
+const COLS_MOBILE = 2;
+const COLS_DESKTOP = 4;
+const MAX_IMAGES_PER_GROUP = 10;
 
-interface ImageMeta {
+interface ImageSlot {
   src: string;
-  ratio: number;        // width / height
+  ratio: number;
   loaded: boolean;
-  hidden: boolean;       // filtered out (too small / extreme ratio)
-}
-
-interface RowItem {
-  meta: ImageMeta;
-  width: number;         // computed px width in justified row
-  height: number;        // computed px height in justified row
-  index: number;         // original index within the image list
-}
-
-interface JustifiedRow {
-  items: RowItem[];
-  height: number;
+  hidden: boolean;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Constants                                                          */
+/*  MasonryGroup — one project's images in shortest-column masonry     */
 /* ------------------------------------------------------------------ */
 
-const GAP = 8;
-const DEFAULT_RATIO = 4 / 3;
-const TARGET_HEIGHT_DESKTOP = 250;
-const TARGET_HEIGHT_MOBILE = 180;
-const MAX_ROWS = 2;
-const MAX_IMAGES_PER_GROUP = 8;
-
-/* ------------------------------------------------------------------ */
-/*  Justified-row algorithm                                            */
-/* ------------------------------------------------------------------ */
-
-function computeJustifiedRows(
-  metas: ImageMeta[],
-  containerWidth: number,
-  targetHeight: number,
-  maxRows: number,
-): JustifiedRow[] {
-  // Filter to only visible (non-hidden) images
-  const visible = metas
-    .map((m, i) => ({ meta: m, index: i }))
-    .filter(({ meta }) => !meta.hidden);
-
-  if (visible.length === 0 || containerWidth <= 0) return [];
-
-  const rows: JustifiedRow[] = [];
-  let cursor = 0;
-
-  while (cursor < visible.length && rows.length < maxRows) {
-    // Accumulate items until row width (at targetHeight) >= containerWidth
-    const rowStart = cursor;
-    let totalRatioSum = 0;
-
-    while (cursor < visible.length) {
-      const ratio = visible[cursor].meta.loaded
-        ? visible[cursor].meta.ratio
-        : DEFAULT_RATIO;
-      totalRatioSum += ratio;
-      cursor++;
-
-      // Available width after subtracting gaps
-      const gaps = (cursor - rowStart - 1) * GAP;
-      const naturalWidth = totalRatioSum * targetHeight + gaps;
-      if (naturalWidth >= containerWidth) break;
-    }
-
-    // Now compute actual height so all items fit exactly in containerWidth
-    const count = cursor - rowStart;
-    const gaps = (count - 1) * GAP;
-    const availableWidth = containerWidth - gaps;
-
-    let ratioSum = 0;
-    for (let i = rowStart; i < cursor; i++) {
-      const r = visible[i].meta.loaded ? visible[i].meta.ratio : DEFAULT_RATIO;
-      ratioSum += r;
-    }
-
-    // rowHeight = availableWidth / ratioSum
-    const rowHeight = Math.min(availableWidth / ratioSum, targetHeight * 1.8);
-
-    const items: RowItem[] = [];
-    for (let i = rowStart; i < cursor; i++) {
-      const ratio = visible[i].meta.loaded ? visible[i].meta.ratio : DEFAULT_RATIO;
-      items.push({
-        meta: visible[i].meta,
-        width: ratio * rowHeight,
-        height: rowHeight,
-        index: visible[i].index,
-      });
-    }
-
-    rows.push({ items, height: rowHeight });
-  }
-
-  return rows;
-}
-
-/* ------------------------------------------------------------------ */
-/*  useContainerWidth hook                                             */
-/* ------------------------------------------------------------------ */
-
-function useContainerWidth(ref: React.RefObject<HTMLDivElement | null>): number {
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const measure = () => setWidth(el.clientWidth);
-    measure();
-
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [ref]);
-
-  return width;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Image preloader hook                                               */
-/* ------------------------------------------------------------------ */
-
-function useImageMetas(urls: string[]): ImageMeta[] {
-  const [metas, setMetas] = useState<ImageMeta[]>(() =>
-    urls.map(src => ({ src, ratio: DEFAULT_RATIO, loaded: false, hidden: false })),
-  );
-  const prevUrlsRef = useRef<string>('');
-
-  useEffect(() => {
-    const key = urls.join('|');
-    if (key === prevUrlsRef.current) return;
-    prevUrlsRef.current = key;
-
-    const initial: ImageMeta[] = urls.map(src => ({
-      src,
-      ratio: DEFAULT_RATIO,
-      loaded: false,
-      hidden: false,
-    }));
-    setMetas(initial);
-
-    urls.forEach((src, i) => {
-      const img = new Image();
-      img.onload = () => {
-        const w = img.naturalWidth;
-        const h = img.naturalHeight;
-        const ratio = w / h;
-        const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
-        setMetas(prev => {
-          const next = [...prev];
-          if (next[i]) {
-            next[i] = { src, ratio: hidden ? DEFAULT_RATIO : ratio, loaded: true, hidden };
-          }
-          return next;
-        });
-      };
-      img.onerror = () => {
-        setMetas(prev => {
-          const next = [...prev];
-          if (next[i]) {
-            next[i] = { ...next[i], loaded: true, hidden: true };
-          }
-          return next;
-        });
-      };
-      img.src = resolveImageUrl(src);
-    });
-  }, [urls]);
-
-  return metas;
-}
-
-/* ------------------------------------------------------------------ */
-/*  JustifiedGroup component                                           */
-/* ------------------------------------------------------------------ */
-
-function JustifiedGroup({
+function MasonryGroup({
   project,
   images,
   totalCount,
@@ -197,30 +34,105 @@ function JustifiedGroup({
   totalCount: number;
 }) {
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const containerWidth = useContainerWidth(containerRef);
-  const metas = useImageMetas(images);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [slots, setSlots] = useState<ImageSlot[]>([]);
+  const [height, setHeight] = useState(0);
 
-  const isMobile = containerWidth > 0 && containerWidth < 640;
-  const targetHeight = isMobile ? TARGET_HEIGHT_MOBILE : TARGET_HEIGHT_DESKTOP;
+  // Measure container + compute layout
+  const layout = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const cw = el.clientWidth;
+    if (cw <= 0) return;
 
-  const rows = useMemo(
-    () => computeJustifiedRows(metas, containerWidth, targetHeight, MAX_ROWS),
-    [metas, containerWidth, targetHeight],
-  );
+    const cols = cw >= 768 ? COLS_DESKTOP : COLS_MOBILE;
+    const colW = (cw - GAP * (cols - 1)) / cols;
+    const colH = new Array(cols).fill(0);
+
+    setSlots(prev => {
+      const next = prev.length === images.length ? [...prev] : images.map((src, i) =>
+        prev[i] || { src, ratio: 0.75 + Math.random() * 0.5, loaded: false, hidden: false, x: 0, y: 0, w: 0, h: 0 }
+      );
+
+      for (let i = 0; i < next.length; i++) {
+        if (next[i].hidden) continue;
+        const ratio = next[i].ratio;
+        const h = colW / ratio;
+        const minIdx = colH.indexOf(Math.min(...colH));
+        next[i] = {
+          ...next[i],
+          x: minIdx * (colW + GAP),
+          y: colH[minIdx],
+          w: colW,
+          h,
+        };
+        colH[minIdx] += h + GAP;
+      }
+
+      setHeight(Math.max(...colH));
+      return next;
+    });
+  }, [images]);
+
+  // Initial layout
+  useEffect(() => {
+    // Initialize slots with varied default ratios for visual interest
+    const initial: ImageSlot[] = images.map(src => ({
+      src,
+      ratio: 0.75 + Math.random() * 0.5, // random between 0.75 and 1.25
+      loaded: false,
+      hidden: false,
+      x: 0, y: 0, w: 0, h: 0,
+    }));
+    setSlots(initial);
+  }, [images]);
+
+  // Layout when slots change or container resizes
+  useEffect(() => {
+    layout();
+    const ro = new ResizeObserver(() => layout());
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [layout, slots.length]);
+
+  // Preload images and update with real ratios
+  useEffect(() => {
+    images.forEach((src, i) => {
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const ratio = w / h;
+        const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
+        setSlots(prev => {
+          const next = [...prev];
+          if (next[i]) next[i] = { ...next[i], ratio: hidden ? 1 : ratio, loaded: true, hidden };
+          return next;
+        });
+      };
+      img.onerror = () => {
+        setSlots(prev => {
+          const next = [...prev];
+          if (next[i]) next[i] = { ...next[i], loaded: true, hidden: true };
+          return next;
+        });
+      };
+      img.src = resolveImageUrl(src);
+    });
+  }, [images]);
+
+  // Re-layout when a slot's ratio changes
+  useEffect(() => { layout(); }, [slots.map(s => `${s.ratio}:${s.hidden}`).join(',')]);
 
   const projectUrl = project.slug
     ? `/companies/${project.companySlug}/${project.slug}`
     : `/companies/${project.companySlug}`;
 
-  const shownCount = rows.reduce(
-    (acc, row) => acc + row.items.filter(it => !it.meta.hidden).length,
-    0,
-  );
+  const shownCount = slots.filter(s => !s.hidden).length;
   const remaining = totalCount - shownCount;
 
   return (
-    <section className="mb-8">
+    <section className="mb-10">
       {/* Project header */}
       <div
         className="flex items-baseline gap-3 mb-3 cursor-pointer group/header"
@@ -233,192 +145,67 @@ function JustifiedGroup({
           {project.companyName}
           {project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
         </span>
+        <span className="text-xs text-stone-300">{totalCount} photos</span>
       </div>
 
-      {/* Justified rows */}
-      <div ref={containerRef} className="w-full">
-        {rows.map((row, ri) => (
-          <div
-            key={ri}
-            className="flex"
-            style={{ gap: GAP, marginBottom: ri < rows.length - 1 ? GAP : 0 }}
-          >
-            {row.items.map((item, ci) => {
-              const isLast = ri === rows.length - 1 && ci === row.items.length - 1 && remaining > 0;
-              return (
-                <div
-                  key={item.index}
-                  className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
-                  style={{ width: item.width, height: item.height }}
-                  onClick={() => navigate(projectUrl)}
-                >
-                  {/* Shimmer placeholder */}
-                  <div
-                    className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.meta.loaded && !item.meta.hidden ? 'opacity-0' : 'opacity-100'}`}
-                    style={{
-                      backgroundImage:
-                        'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                      backgroundSize: '200% 100%',
-                      animation: 'shimmer 1.5s infinite',
-                    }}
-                  />
-
-                  {/* Actual image */}
-                  {!item.meta.hidden && (
-                    <img
-                      src={resolveImageUrl(item.meta.src)}
-                      alt={`${project.title || 'Interior Design Project'} by ${project.companyName}${project.companyCity ? ` in ${project.companyCity}` : ''}${project.style ? ` - ${project.style}` : ''}`}
-                      title={project.title || undefined}
-                      loading="lazy"
-                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.meta.loaded ? 'opacity-100' : 'opacity-0'}`}
-                    />
-                  )}
-
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 rounded-xl" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <p className="text-white text-sm font-medium leading-snug line-clamp-2">
-                      {project.title || 'Project'}
-                    </p>
-                    <p className="text-[#c6a065] text-xs mt-0.5">
-                      {project.companyName}
-                      {project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
-                    </p>
-                  </div>
-
-                  {/* "+N more" indicator */}
-                  {isLast && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                      <span className="text-white text-lg font-semibold">+{remaining} more</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-
-        {/* Fallback when container hasn't measured yet */}
-        {containerWidth === 0 && (
-          <div className="flex gap-2">
-            {images.slice(0, 4).map((_, i) => (
+      {/* Masonry container */}
+      <div ref={containerRef} className="relative" style={{ height }}>
+        {slots.map((slot, i) => {
+          if (slot.hidden) return null;
+          const isLast = i === slots.length - 1 && remaining > 0;
+          return (
+            <div
+              key={i}
+              className="absolute rounded-xl overflow-hidden cursor-pointer group"
+              style={{
+                left: slot.x,
+                top: slot.y,
+                width: slot.w,
+                height: slot.h,
+                transition: 'top 0.3s ease, height 0.3s ease, left 0.3s ease',
+              }}
+              onClick={() => navigate(projectUrl)}
+            >
+              {/* Shimmer placeholder */}
               <div
-                key={i}
-                className="rounded-xl flex-1"
+                className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${slot.loaded ? 'opacity-0' : 'opacity-100'}`}
                 style={{
-                  height: TARGET_HEIGHT_DESKTOP,
-                  backgroundImage:
-                    'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                  backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'shimmer 1.5s infinite',
                 }}
               />
-            ))}
-          </div>
-        )}
+
+              {/* Real image */}
+              {slot.loaded && (
+                <img
+                  src={resolveImageUrl(slot.src)}
+                  alt={`${project.title || 'Interior Design'} by ${project.companyName}${project.companyCity ? ` in ${project.companyCity}` : ''}`}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  style={{ animation: 'fadeIn 0.3s ease-out' }}
+                />
+              )}
+
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
+              <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <p className="text-white text-sm font-medium line-clamp-1">{project.title || 'Project'}</p>
+                <p className="text-[#c6a065] text-xs mt-0.5">
+                  {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
+                </p>
+              </div>
+
+              {/* +N more badge */}
+              {isLast && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="text-white text-lg font-semibold">+{remaining} more</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  JustifiedSingles — mixed single-image projects in justified rows   */
-/* ------------------------------------------------------------------ */
-
-function JustifiedSingles({ projects }: { projects: PortfolioProject[] }) {
-  const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const containerWidth = useContainerWidth(containerRef);
-
-  const urls = useMemo(() => projects.map(p => p.images[0]), [projects]);
-  const metas = useImageMetas(urls);
-
-  const isMobile = containerWidth > 0 && containerWidth < 640;
-  const targetHeight = isMobile ? TARGET_HEIGHT_MOBILE : TARGET_HEIGHT_DESKTOP;
-
-  // No max-rows limit for singles — show all
-  const rows = useMemo(
-    () => computeJustifiedRows(metas, containerWidth, targetHeight, 999),
-    [metas, containerWidth, targetHeight],
-  );
-
-  return (
-    <div ref={containerRef} className="w-full">
-      {rows.map((row, ri) => (
-        <div
-          key={ri}
-          className="flex"
-          style={{ gap: GAP, marginBottom: ri < rows.length - 1 ? GAP : 0 }}
-        >
-          {row.items.map(item => {
-            const project = projects[item.index];
-            if (!project) return null;
-            const projectUrl = project.slug
-              ? `/companies/${project.companySlug}/${project.slug}`
-              : `/companies/${project.companySlug}`;
-
-            return (
-              <div
-                key={`s-${project.id}`}
-                className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
-                style={{ width: item.width, height: item.height }}
-                onClick={() => navigate(projectUrl)}
-              >
-                {/* Shimmer */}
-                <div
-                  className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.meta.loaded && !item.meta.hidden ? 'opacity-0' : 'opacity-100'}`}
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 1.5s infinite',
-                  }}
-                />
-
-                {!item.meta.hidden && (
-                  <img
-                    src={resolveImageUrl(item.meta.src)}
-                    alt={`${project.title || 'Interior Design Project'} by ${project.companyName}${project.companyCity ? ` in ${project.companyCity}` : ''}${project.style ? ` - ${project.style}` : ''}`}
-                    title={project.title || undefined}
-                    loading="lazy"
-                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.meta.loaded ? 'opacity-100' : 'opacity-0'}`}
-                  />
-                )}
-
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 rounded-xl" />
-                <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <p className="text-white text-sm font-medium leading-snug line-clamp-2">
-                    {project.title || 'Project'}
-                  </p>
-                  <p className="text-[#c6a065] text-xs mt-0.5">
-                    {project.companyName}
-                    {project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
-
-      {containerWidth === 0 && (
-        <div className="flex gap-2">
-          {projects.slice(0, 4).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-xl flex-1"
-              style={{
-                height: TARGET_HEIGHT_DESKTOP,
-                backgroundImage:
-                  'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 1.5s infinite',
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -435,6 +222,7 @@ export default function PortfolioPage() {
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   const seedRef = useRef(Math.floor(Math.random() * 1000000));
+
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
@@ -452,27 +240,20 @@ export default function PortfolioPage() {
   }, [page, loading, hasMore]);
 
   useEffect(() => {
-    if (!loadedRef.current) {
-      loadedRef.current = true;
-      loadMore();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!loadedRef.current) { loadedRef.current = true; loadMore(); }
   }, []);
 
   useEffect(() => {
     if (!observerRef.current) return;
     const target = observerRef.current;
     const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && hasMore && !loading) loadMore();
-      },
+      entries => { if (entries[0].isIntersecting && hasMore && !loading) loadMore(); },
       { threshold: 0.1, rootMargin: '0px 0px 800px 0px' },
     );
     observer.observe(target);
     return () => observer.disconnect();
   }, [hasMore, loading, loadMore]);
 
-  // Separate multi-image projects (grouped) from single-image (mixed)
   const { grouped, singles } = useMemo(() => {
     const g: PortfolioProject[] = [];
     const s: PortfolioProject[] = [];
@@ -483,22 +264,38 @@ export default function PortfolioPage() {
     return { grouped: g, singles: s };
   }, [projects]);
 
+  // Merge singles into a fake "project" for masonry rendering
+  const singlesAsProject: PortfolioProject | null = useMemo(() => {
+    if (singles.length === 0) return null;
+    return {
+      id: -1,
+      title: '',
+      description: '',
+      style: '',
+      location: '',
+      year: null,
+      images: singles.map(s => s.images[0]),
+      companyId: 0,
+      companyName: '',
+      companySlug: '',
+      companyLogo: '',
+      companyCity: '',
+      source: 'registered' as const,
+    };
+  }, [singles]);
+
   return (
     <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
       <Helmet>
         <title>Interior Design Portfolio & Inspiration - Tarmeer UAE</title>
-        <meta
-          name="description"
-          content="Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more."
-        />
+        <meta name="description" content="Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more." />
         <link rel="canonical" href="https://www.tarmeer.com/portfolio" />
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'CollectionPage',
             name: 'Interior Design Portfolio - Tarmeer UAE',
-            description:
-              'Browse stunning interior design projects from top UAE designers.',
+            description: 'Browse stunning interior design projects from top UAE designers.',
             url: 'https://www.tarmeer.com/portfolio',
             mainEntity: {
               '@type': 'ItemList',
@@ -508,18 +305,10 @@ export default function PortfolioPage() {
                 item: {
                   '@type': 'CreativeWork',
                   name: p.title || 'Interior Design Project',
-                  description:
-                    p.description ||
-                    `${p.style || 'Interior design'} project by ${p.companyName}`,
+                  description: p.description || `${p.style || 'Interior design'} project by ${p.companyName}`,
                   creator: { '@type': 'Organization', name: p.companyName },
-                  ...(p.images[0]
-                    ? { image: `https://www.tarmeer.com${p.images[0]}` }
-                    : {}),
-                  ...(p.companySlug && p.slug
-                    ? {
-                        url: `https://www.tarmeer.com/companies/${p.companySlug}/${p.slug}`,
-                      }
-                    : {}),
+                  ...(p.images[0] ? { image: `https://www.tarmeer.com${p.images[0]}` } : {}),
+                  ...(p.companySlug && p.slug ? { url: `https://www.tarmeer.com/companies/${p.companySlug}/${p.slug}` } : {}),
                 },
               })),
             },
@@ -528,32 +317,24 @@ export default function PortfolioPage() {
       </Helmet>
 
       <div className="max-w-[1400px] mx-auto px-4 py-8">
-        <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">
-          Portfolio
-        </h1>
-        <p className="text-[var(--color-tarmeer-muted)] mb-8">
-          Explore interior design projects from UAE&apos;s top professionals
-        </p>
+        <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
+        <p className="text-[var(--color-tarmeer-muted)] mb-8">Explore interior design projects from UAE&apos;s top professionals</p>
 
-        {/* Initial loading spinner */}
         {initialLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="w-10 h-10 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
           </div>
         )}
 
-        {/* Empty state */}
         {!initialLoading && projects.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-[var(--color-tarmeer-muted)]">
-              No portfolio projects available yet.
-            </p>
+            <p className="text-[var(--color-tarmeer-muted)]">No portfolio projects available yet.</p>
           </div>
         )}
 
-        {/* Grouped projects — justified rows per project */}
+        {/* Grouped projects — masonry per project */}
         {grouped.map(project => (
-          <JustifiedGroup
+          <MasonryGroup
             key={`g-${project.id}`}
             project={project}
             images={project.images.slice(0, MAX_IMAGES_PER_GROUP)}
@@ -561,19 +342,19 @@ export default function PortfolioPage() {
           />
         ))}
 
-        {/* Single-image projects — mixed together in justified rows */}
-        {singles.length > 0 && (
-          <section className="mb-8" style={{ marginTop: grouped.length > 0 ? 32 : 0 }}>
+        {/* Single-image projects — mixed masonry */}
+        {singles.length > 0 && singlesAsProject && (
+          <section className="mb-10" style={{ marginTop: grouped.length > 0 ? 32 : 0 }}>
             {grouped.length > 0 && (
               <div className="flex items-baseline gap-3 mb-3">
                 <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
               </div>
             )}
-            <JustifiedSingles projects={singles} />
+            {/* Render singles individually with hover info */}
+            <SinglesMasonry singles={singles} />
           </section>
         )}
 
-        {/* Infinite scroll sentinel */}
         <div ref={observerRef} className="h-20 flex items-center justify-center">
           {loading && !initialLoading && (
             <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
@@ -582,11 +363,115 @@ export default function PortfolioPage() {
       </div>
 
       <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
       `}</style>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  SinglesMasonry — individual project cards in masonry                */
+/* ------------------------------------------------------------------ */
+
+function SinglesMasonry({ singles }: { singles: PortfolioProject[] }) {
+  const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [slots, setSlots] = useState<(ImageSlot & { projectIdx: number })[]>([]);
+  const [height, setHeight] = useState(0);
+
+  const images = useMemo(() => singles.map(s => s.images[0]), [singles]);
+
+  const layout = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const cw = el.clientWidth;
+    if (cw <= 0) return;
+    const cols = cw >= 768 ? COLS_DESKTOP : COLS_MOBILE;
+    const colW = (cw - GAP * (cols - 1)) / cols;
+    const colH = new Array(cols).fill(0);
+
+    setSlots(prev => {
+      const next = prev.length === images.length ? [...prev] : images.map((src, i) =>
+        prev[i] || { src, ratio: 0.75 + Math.random() * 0.5, loaded: false, hidden: false, x: 0, y: 0, w: 0, h: 0, projectIdx: i }
+      );
+      for (let i = 0; i < next.length; i++) {
+        if (next[i].hidden) continue;
+        const h = colW / next[i].ratio;
+        const minIdx = colH.indexOf(Math.min(...colH));
+        next[i] = { ...next[i], x: minIdx * (colW + GAP), y: colH[minIdx], w: colW, h };
+        colH[minIdx] += h + GAP;
+      }
+      setHeight(Math.max(...colH));
+      return next;
+    });
+  }, [images]);
+
+  useEffect(() => {
+    setSlots(images.map((src, i) => ({
+      src, ratio: 0.75 + Math.random() * 0.5, loaded: false, hidden: false, x: 0, y: 0, w: 0, h: 0, projectIdx: i,
+    })));
+  }, [images]);
+
+  useEffect(() => {
+    layout();
+    const ro = new ResizeObserver(() => layout());
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [layout, slots.length]);
+
+  useEffect(() => {
+    images.forEach((src, i) => {
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth, h = img.naturalHeight, ratio = w / h;
+        const hidden = w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25;
+        setSlots(prev => {
+          const next = [...prev];
+          if (next[i]) next[i] = { ...next[i], ratio: hidden ? 1 : ratio, loaded: true, hidden };
+          return next;
+        });
+      };
+      img.onerror = () => {
+        setSlots(prev => { const next = [...prev]; if (next[i]) next[i] = { ...next[i], loaded: true, hidden: true }; return next; });
+      };
+      img.src = resolveImageUrl(src);
+    });
+  }, [images]);
+
+  useEffect(() => { layout(); }, [slots.map(s => `${s.ratio}:${s.hidden}`).join(',')]);
+
+  return (
+    <div ref={containerRef} className="relative" style={{ height }}>
+      {slots.map((slot) => {
+        if (slot.hidden) return null;
+        const proj = singles[slot.projectIdx];
+        if (!proj) return null;
+        const url = proj.slug ? `/companies/${proj.companySlug}/${proj.slug}` : `/companies/${proj.companySlug}`;
+        return (
+          <div
+            key={`s-${proj.id}`}
+            className="absolute rounded-xl overflow-hidden cursor-pointer group"
+            style={{ left: slot.x, top: slot.y, width: slot.w, height: slot.h, transition: 'top 0.3s ease, height 0.3s ease, left 0.3s ease' }}
+            onClick={() => navigate(url)}
+          >
+            <div
+              className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${slot.loaded ? 'opacity-0' : 'opacity-100'}`}
+              style={{ backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }}
+            />
+            {slot.loaded && (
+              <img src={resolveImageUrl(slot.src)} alt={`${proj.title || 'Project'} by ${proj.companyName}`}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                style={{ animation: 'fadeIn 0.3s ease-out' }} />
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
+            <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <p className="text-white text-sm font-medium line-clamp-1">{proj.title || 'Project'}</p>
+              <p className="text-[#c6a065] text-xs mt-0.5">{proj.companyName}{proj.companyCity ? ` \u00b7 ${proj.companyCity}` : ''}</p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

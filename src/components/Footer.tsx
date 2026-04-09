@@ -5,6 +5,7 @@ import { trackAnalyticsEvent } from '../lib/analytics';
 
 const footerNavLinks = [
   { to: '/', label: 'Home' },
+  { to: '/portfolio', label: 'Portfolio' },
   { to: '/companies', label: 'Companies' },
   { to: '/#pricing', label: 'Pricing' },
   { to: '/materials', label: 'Showrooms' },
