@@ -198,6 +198,7 @@ app.get('/api/sitemap.xml', async (req, res) => {
       { path: '/services/new-home-design', changefreq: 'weekly', priority: '0.8' },
       { path: '/services/soft-decoration', changefreq: 'weekly', priority: '0.8' },
       { path: '/services/house-exterior', changefreq: 'weekly', priority: '0.8' },
+      { path: '/for-companies', changefreq: 'weekly', priority: '0.8' },
       { path: '/privacy', changefreq: 'monthly', priority: '0.4' },
     ];
     for (const page of staticPages) {
