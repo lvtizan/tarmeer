@@ -45,16 +45,6 @@ export async function submitInquiry(req: any, res: any) {
       return res.status(400).json({ error: 'Invalid area range.' });
     }
 
-    // Auto-dedup: soft-delete older active inquiries with the same phone
-    const normalizedPhone = phone.replace(/\D/g, '');
-    if (normalizedPhone.length >= 7) {
-      await pool.execute(
-        `UPDATE design_inquiries SET deleted_at = NOW(), admin_notes = CONCAT(IFNULL(admin_notes, ''), ' [auto-dedup: newer submission received]')
-         WHERE REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', '') LIKE ? AND deleted_at IS NULL`,
-        [`%${normalizedPhone.slice(-9)}`]
-      );
-    }
-
     const [result] = await pool.execute(
       `INSERT INTO design_inquiries (name, phone, city, area_range, message, company_id, source_company_name, source_company_slug)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
