@@ -107,6 +107,60 @@ test('sanitizePublicCompany still handles legacy flat portfolio_images array', (
   assert.equal(company.project_count, 2);
 });
 
+test('sanitizePublicCompany parses new portfolio_categories object form with metadata', () => {
+  const company = sanitizePublicCompany({
+    id: 9,
+    slug: 'meta-co',
+    name_en: 'Meta Co',
+    description: '',
+    city: 'Dubai',
+    address: '',
+    year_established: '2015',
+    website: '',
+    instagram: '',
+    phone: '',
+    email: '',
+    services: '[]',
+    specialties: '[]',
+    logo_url: '/images/logo.png',
+    portfolio_images: JSON.stringify({
+      "Coffee Shop Fitout": {
+        items: [
+          { url: '/images/portfolio/meta/coffee/1.jpg', title: 'Hero' },
+          { url: '/images/portfolio/meta/coffee/2.jpg', title: '' },
+        ],
+        description: 'Costa Coffee fitout at Al Wahda Mall, Abu Dhabi.',
+        year: 2024,
+        location: 'Abu Dhabi',
+        sourceUrl: 'https://example.com/projects/costa',
+      },
+      "Villa": [
+        // Legacy array form still supported
+        { url: '/images/portfolio/meta/villa/1.jpg', title: '' },
+      ],
+    }),
+    google_reviews_count: 0,
+  });
+
+  assert.equal(company.project_count, 3);
+  assert.deepEqual(company.portfolio_categories['Coffee Shop Fitout'], [
+    { url: '/images/portfolio/meta/coffee/1.jpg', title: 'Hero' },
+    { url: '/images/portfolio/meta/coffee/2.jpg', title: '' },
+  ]);
+  assert.deepEqual(company.portfolio_categories['Villa'], [
+    { url: '/images/portfolio/meta/villa/1.jpg', title: '' },
+  ]);
+  assert.ok(company.portfolio_metadata, 'metadata present');
+  assert.deepEqual(company.portfolio_metadata['Coffee Shop Fitout'], {
+    description: 'Costa Coffee fitout at Al Wahda Mall, Abu Dhabi.',
+    year: 2024,
+    location: 'Abu Dhabi',
+    sourceUrl: 'https://example.com/projects/costa',
+  });
+  // Legacy array category must NOT produce a metadata entry
+  assert.equal(company.portfolio_metadata['Villa'], undefined);
+});
+
 test('sanitizePublicCompany normalizes relative logo and portfolio paths for stable rendering', () => {
   const company = sanitizePublicCompany({
     id: 3,

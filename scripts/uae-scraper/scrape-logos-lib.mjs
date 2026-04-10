@@ -647,3 +647,195 @@ export function getExtension(url, contentType) {
   if (contentType?.includes('avif')) return '.avif';
   return '.jpg';
 }
+
+/* ------------------------------------------------------------------ */
+/*  Lightweight page metadata extraction                               */
+/*                                                                      */
+/*  Extracts title / description / year / location via regex + DOM     */
+/*  heuristics (no LLM, no paid APIs). Used by the portfolio scraper   */
+/*  to attach context to each crawled category / project page.        */
+/*                                                                      */
+/*  Each field is best-effort — any of them may be empty strings/null. */
+/*  Coverage is intentionally "good enough" rather than perfect.        */
+/* ------------------------------------------------------------------ */
+
+// UAE location keywords, ordered MOST-SPECIFIC first. Earlier = preferred.
+// So "Palm Jumeirah" wins over "Jumeirah", "Downtown Dubai" over "Dubai", etc.
+const UAE_LOCATIONS = [
+  // Most specific neighborhoods first
+  'Palm Jumeirah', 'Downtown Dubai', 'Dubai Marina', 'Dubai Hills',
+  'Arabian Ranches', 'Emirates Hills', 'Business Bay', 'Al Barsha', 'Al Wasl',
+  'Ras Al Khaimah', 'Ras al-Khaimah', 'Umm Al Quwain', 'Umm al-Quwain',
+  'JBR', 'JLT', 'DIFC',
+  // Neighborhood that's also a city name — keep after Palm Jumeirah
+  'Jumeirah',
+  // Emirates / cities
+  'Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman', 'Fujairah',
+  // Country fallbacks (weakest match)
+  'United Arab Emirates', 'UAE',
+];
+
+// Preferred location priorities — when multiple match, pick the most specific.
+const LOCATION_RANK = new Map(UAE_LOCATIONS.map((loc, i) => [loc.toLowerCase(), i]));
+
+function stripHtmlTags(s) {
+  return s
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function decodeHtmlEntities(s) {
+  if (!s) return '';
+  return s
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
+
+/**
+ * Extract the page title.
+ * Priority: og:title → twitter:title → first h1 → <title>
+ */
+function extractTitle(html) {
+  // og:title
+  const og = html.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["']/i)
+          || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+  if (og) {
+    const t = decodeHtmlEntities(og[1]).trim();
+    if (t && t.length >= 3) return t;
+  }
+
+  // twitter:title
+  const tw = html.match(/<meta[^>]+name=["']twitter:title["'][^>]*content=["']([^"']+)["']/i);
+  if (tw) {
+    const t = decodeHtmlEntities(tw[1]).trim();
+    if (t && t.length >= 3) return t;
+  }
+
+  // first h1
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  if (h1) {
+    const t = stripHtmlTags(h1[1]);
+    if (t && t.length >= 3) return t;
+  }
+
+  // <title>
+  const tt = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  if (tt) {
+    const t = stripHtmlTags(tt[1]);
+    if (t && t.length >= 3) return t;
+  }
+
+  return '';
+}
+
+/**
+ * Extract the page description.
+ * Priority: meta description → og:description → first substantial <p> (≥ 60 chars, ≤ 800 chars).
+ */
+function extractDescription(html) {
+  // <meta name="description" content="...">
+  const md = html.match(/<meta[^>]+name=["']description["'][^>]*content=["']([^"']+)["']/i)
+          || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*name=["']description["']/i);
+  if (md) {
+    const t = decodeHtmlEntities(md[1]).trim();
+    if (t && t.length >= 40) return t;
+  }
+
+  // og:description
+  const og = html.match(/<meta[^>]+property=["']og:description["'][^>]*content=["']([^"']+)["']/i)
+          || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
+  if (og) {
+    const t = decodeHtmlEntities(og[1]).trim();
+    if (t && t.length >= 40) return t;
+  }
+
+  // First substantial <p> tag. Skip tiny / nav / cookie banners.
+  const pPattern = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let m;
+  while ((m = pPattern.exec(html)) !== null) {
+    const text = stripHtmlTags(m[1]);
+    if (!text || text.length < 60 || text.length > 800) continue;
+    // Skip obvious boilerplate
+    if (/cookie|subscribe|newsletter|copyright|all rights reserved/i.test(text)) continue;
+    return text;
+  }
+
+  return '';
+}
+
+/**
+ * Extract a year from the page text.
+ * Looks for 2010-2099 in context like "Completed 2023", "in 2022", or a bare year.
+ * Returns the most recent plausible year found, or null.
+ */
+function extractYear(textOrHtml) {
+  const text = /<[a-z]/i.test(textOrHtml) ? stripHtmlTags(textOrHtml) : textOrHtml;
+  // Restrict to plausible project years
+  const pattern = /\b(20[0-3]\d)\b/g;
+  const years = new Set();
+  let m;
+  while ((m = pattern.exec(text)) !== null) {
+    const y = parseInt(m[1], 10);
+    if (y >= 2010 && y <= new Date().getFullYear() + 1) {
+      years.add(y);
+    }
+  }
+  if (years.size === 0) return null;
+  // Prefer the latest year present — usually the project's completion date
+  return Math.max(...years);
+}
+
+/**
+ * Extract a UAE location keyword from the text.
+ * Matches against UAE_LOCATIONS, returns the most specific match.
+ * Returns '' if nothing matches.
+ */
+function extractLocation(textOrHtml) {
+  const text = /<[a-z]/i.test(textOrHtml) ? stripHtmlTags(textOrHtml) : textOrHtml;
+  const lower = text.toLowerCase();
+
+  let best = null;
+  let bestRank = Infinity;
+  for (const loc of UAE_LOCATIONS) {
+    if (lower.includes(loc.toLowerCase())) {
+      const rank = LOCATION_RANK.get(loc.toLowerCase()) ?? Infinity;
+      if (rank < bestRank) {
+        best = loc;
+        bestRank = rank;
+      }
+    }
+  }
+  return best || '';
+}
+
+/**
+ * Extract all four metadata fields from a rendered HTML page.
+ * Returns { title, description, year, location, sourceUrl }.
+ * Any field may be an empty string or null — caller decides how strict to be.
+ */
+export function extractPageMetadata(html, sourceUrl = '') {
+  const title = extractTitle(html);
+  const description = extractDescription(html);
+  // Year and location: search the body text PLUS the title and description,
+  // because useful hints live in og:title / meta description which
+  // stripHtmlTags drops from the body when it removes meta tags.
+  const searchText = [title, description, stripHtmlTags(html)].filter(Boolean).join(' ');
+  const year = extractYear(searchText);
+  const location = extractLocation(searchText);
+
+  return { title, description, year, location, sourceUrl };
+}

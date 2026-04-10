@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { extractLogoUrl, extractPortfolioImages, extractCategoryLinks } from './scrape-logos-lib.mjs';
+import { extractLogoUrl, extractPortfolioImages, extractCategoryLinks, extractPageMetadata } from './scrape-logos-lib.mjs';
 
 test('extractLogoUrl prioritizes actual logo assets over social og:image links', () => {
   const html = `
@@ -77,4 +77,104 @@ test('extractCategoryLinks returns empty array when no categories found', () => 
   const html = `<nav><a href="/about">About</a><a href="/contact">Contact</a></nav>`;
   const result = extractCategoryLinks(html, 'https://example.com');
   assert.deepEqual(result, []);
+});
+
+test('extractPageMetadata prefers og:title over h1 and <title>', () => {
+  const html = `
+    <head>
+      <title>Some Company | Home</title>
+      <meta property="og:title" content="Luxury Villa in Palm Jumeirah" />
+    </head>
+    <body><h1>Our Projects</h1></body>
+  `;
+  const meta = extractPageMetadata(html);
+  assert.equal(meta.title, 'Luxury Villa in Palm Jumeirah');
+});
+
+test('extractPageMetadata falls back to h1 when no meta title', () => {
+  const html = `<body><h1>  Modern Office Design  </h1><p>Lorem ipsum.</p></body>`;
+  const meta = extractPageMetadata(html);
+  assert.equal(meta.title, 'Modern Office Design');
+});
+
+test('extractPageMetadata falls back to <title> when no h1', () => {
+  const html = `<head><title>Project XYZ — Studio</title></head><body></body>`;
+  const meta = extractPageMetadata(html);
+  assert.equal(meta.title, 'Project XYZ — Studio');
+});
+
+test('extractPageMetadata pulls description from meta tag', () => {
+  const html = `
+    <meta name="description" content="A modern 5-bedroom villa project in Dubai Hills completed in 2023, featuring custom millwork and natural stone finishes." />
+    <body><p>Short intro.</p></body>
+  `;
+  const meta = extractPageMetadata(html);
+  assert.match(meta.description, /5-bedroom villa project in Dubai Hills/);
+});
+
+test('extractPageMetadata falls back to first substantial <p> for description', () => {
+  const html = `
+    <body>
+      <p>Nav</p>
+      <p>This is a comprehensive interior design project for a family home in Abu Dhabi featuring contemporary finishes, open-plan living spaces, and custom joinery throughout every room.</p>
+      <p>Subscribe to our newsletter</p>
+    </body>
+  `;
+  const meta = extractPageMetadata(html);
+  assert.match(meta.description, /comprehensive interior design project/);
+  // Should NOT pick the "Nav" <p> (too short) or the "Subscribe" boilerplate
+  assert.doesNotMatch(meta.description, /Nav|newsletter/);
+});
+
+test('extractPageMetadata extracts the latest plausible year from page text', () => {
+  const html = `
+    <body>
+      <p>We founded the firm in 2012 and completed this villa in 2023.</p>
+    </body>
+  `;
+  const meta = extractPageMetadata(html);
+  assert.equal(meta.year, 2023);
+});
+
+test('extractPageMetadata returns null year when no valid year present', () => {
+  const html = `<body><p>No years here, just words.</p></body>`;
+  const meta = extractPageMetadata(html);
+  assert.equal(meta.year, null);
+});
+
+test('extractPageMetadata picks the most specific UAE location', () => {
+  const html = `
+    <body>
+      <p>Headquartered in the UAE, this project is located in Palm Jumeirah, Dubai.</p>
+    </body>
+  `;
+  const meta = extractPageMetadata(html);
+  // "Palm Jumeirah" should win over "Dubai" and "UAE"
+  assert.equal(meta.location, 'Palm Jumeirah');
+});
+
+test('extractPageMetadata returns empty location when no UAE keyword present', () => {
+  const html = `<body><p>A design studio in Karachi.</p></body>`;
+  const meta = extractPageMetadata(html);
+  assert.equal(meta.location, '');
+});
+
+test('extractPageMetadata returns all four fields for a realistic page', () => {
+  const html = `
+    <head>
+      <title>Coffee Shop Fitout</title>
+      <meta property="og:title" content="Costa Coffee Abu Dhabi Fitout 2024" />
+      <meta name="description" content="Full interior fitout for Costa Coffee at Al Wahda Mall, Abu Dhabi, delivered in 2024. Includes millwork, seating, lighting and finishes." />
+    </head>
+    <body>
+      <h1>Costa Coffee</h1>
+      <p>Short intro.</p>
+    </body>
+  `;
+  const meta = extractPageMetadata(html, 'https://example.com/projects/costa');
+  assert.equal(meta.title, 'Costa Coffee Abu Dhabi Fitout 2024');
+  assert.match(meta.description, /Al Wahda Mall/);
+  assert.equal(meta.year, 2024);
+  assert.equal(meta.location, 'Abu Dhabi');
+  assert.equal(meta.sourceUrl, 'https://example.com/projects/costa');
 });

@@ -31,6 +31,7 @@ import {
   extractPortfolioPageLinks,
   extractPortfolioImages,
   extractPortfolioImagesWithText,
+  extractPageMetadata,
   downloadFile,
   getExtension,
   fetchUrl,
@@ -251,8 +252,9 @@ function extractProjectPageLinks(html, baseUrl) {
 }
 
 /**
- * Scrape images for a single category page.
- * Returns array of { url, title } objects with associated text.
+ * Scrape images + page metadata for a single category / project page.
+ * Returns { images: [{url, title}], metadata: {title, description, year, location, sourceUrl} }.
+ * On failure returns { images: [], metadata: null }.
  */
 async function scrapeImagesFromPage(browser, pageUrl, baseUrl) {
   let html;
@@ -265,16 +267,22 @@ async function scrapeImagesFromPage(browser, pageUrl, baseUrl) {
       html = res.body.toString('utf-8');
     } catch (err2) {
       console.log(`    fetchUrl also failed: ${err2.message}`);
-      return [];
+      return { images: [], metadata: null };
     }
   }
 
+  // Extract metadata from the rendered page
+  const metadata = extractPageMetadata(html, pageUrl);
+
   // Try extracting with text first
   const withText = extractPortfolioImagesWithText(html, baseUrl);
-  if (withText.length > 0) return withText;
+  if (withText.length > 0) {
+    return { images: withText, metadata };
+  }
 
   // Fallback: extract URLs only, return with empty titles
-  return extractPortfolioImages(html, baseUrl).map(url => ({ url, title: '' }));
+  const urlOnly = extractPortfolioImages(html, baseUrl).map(url => ({ url, title: '' }));
+  return { images: urlOnly, metadata };
 }
 
 /**
@@ -394,8 +402,33 @@ async function processCompany(browser, company, idx, total, manifest) {
     console.log(`  Trimmed to ${categoryLinks.length} unique category link(s)`);
   }
 
+  // Each category value is an OBJECT: { items: [...], description, year, location, sourceUrl }.
+  // The server-side parser (publicCompaniesSerialization.ts) accepts both this
+  // new shape and the legacy array shape for backward compatibility.
   const portfolioCategories = {};
   let totalImagesForCompany = 0;
+
+  /** Merge scraped items + metadata into portfolioCategories[category]. */
+  function addToCategory(category, savedItems, metadata) {
+    if (!portfolioCategories[category]) {
+      portfolioCategories[category] = {
+        items: [],
+        description: '',
+        year: null,
+        location: '',
+        sourceUrl: '',
+      };
+    }
+    const entry = portfolioCategories[category];
+    entry.items.push(...savedItems);
+    // Fill metadata from the first page that yielded content; don't overwrite.
+    if (metadata && !entry.sourceUrl) {
+      entry.description = metadata.description || '';
+      entry.year = metadata.year ?? null;
+      entry.location = metadata.location || '';
+      entry.sourceUrl = metadata.sourceUrl || '';
+    }
+  }
 
   if (categoryLinks.length > 0) {
     // Process each category page
@@ -406,8 +439,11 @@ async function processCompany(browser, company, idx, total, manifest) {
       }
 
       console.log(`  Category "${category}": ${catUrl}`);
-      const imageUrls = await scrapeImagesFromPage(browser, catUrl, baseUrl);
+      const { images: imageUrls, metadata } = await scrapeImagesFromPage(browser, catUrl, baseUrl);
       console.log(`    Found ${imageUrls.length} image(s)`);
+      if (metadata) {
+        console.log(`    Meta: title="${metadata.title || ''}", year=${metadata.year || '-'}, loc="${metadata.location || '-'}"`);
+      }
 
       await sleep(REQUEST_DELAY_MS);
 
@@ -422,10 +458,7 @@ async function processCompany(browser, company, idx, total, manifest) {
       console.log(`    Saved ${saved.length} image(s)`);
 
       if (saved.length > 0) {
-        if (!portfolioCategories[category]) {
-          portfolioCategories[category] = [];
-        }
-        portfolioCategories[category].push(...saved);
+        addToCategory(category, saved, metadata);
         totalImagesForCompany += saved.length;
       }
     }
@@ -481,7 +514,7 @@ async function processCompany(browser, company, idx, total, manifest) {
               if (totalImagesForCompany >= MAX_IMAGES_PER_COMPANY) break;
 
               console.log(`    Category "${category}": ${catUrl}`);
-              const imageUrls = await scrapeImagesFromPage(browser, catUrl, baseUrl);
+              const { images: imageUrls, metadata } = await scrapeImagesFromPage(browser, catUrl, baseUrl);
               console.log(`      Found ${imageUrls.length} image(s)`);
               await sleep(REQUEST_DELAY_MS);
 
@@ -494,8 +527,7 @@ async function processCompany(browser, company, idx, total, manifest) {
               console.log(`      Saved ${saved.length} image(s)`);
 
               if (saved.length > 0) {
-                if (!portfolioCategories[category]) portfolioCategories[category] = [];
-                portfolioCategories[category].push(...saved);
+                addToCategory(category, saved, metadata);
                 totalImagesForCompany += saved.length;
               }
             }
@@ -506,13 +538,14 @@ async function processCompany(browser, company, idx, total, manifest) {
             const listingImages = extractPortfolioImages(listingHtml, baseUrl);
             if (listingImages.length > 0) {
               console.log(`    Found ${listingImages.length} images on listing page`);
+              const listingMetadata = extractPageMetadata(listingHtml, listingUrl);
               const categorySlug = 'projects';
               const destDir = path.join(PORTFOLIO_DIR, company.slug, categorySlug);
               const remaining = MAX_IMAGES_PER_COMPANY - totalImagesForCompany;
               const capped = listingImages.slice(0, Math.min(listingImages.length, remaining));
               const saved = await downloadCategoryImages(capped, destDir, categorySlug, company.slug);
               if (saved.length > 0) {
-                portfolioCategories['Projects'] = saved;
+                addToCategory('Projects', saved, listingMetadata);
                 totalImagesForCompany += saved.length;
               }
             }
@@ -534,15 +567,20 @@ async function processCompany(browser, company, idx, total, manifest) {
         if (totalImagesForCompany >= MAX_IMAGES_PER_COMPANY) break;
 
         console.log(`  Project page: ${pageUrl}`);
-        const imageUrls = await scrapeImagesFromPage(browser, pageUrl, baseUrl);
+        const { images: imageUrls, metadata } = await scrapeImagesFromPage(browser, pageUrl, baseUrl);
         console.log(`    Found ${imageUrls.length} image(s)`);
+        if (metadata) {
+          console.log(`    Meta: title="${metadata.title || ''}", year=${metadata.year || '-'}, loc="${metadata.location || '-'}"`);
+        }
 
         await sleep(REQUEST_DELAY_MS);
 
         if (imageUrls.length === 0) continue;
 
-        const category = 'Projects';
-        const categorySlug = 'projects';
+        // Each individual project page gets its own category keyed by the
+        // page title (slugified). Falls back to "Projects" if no title.
+        const category = (metadata?.title && metadata.title.trim()) || 'Projects';
+        const categorySlug = slugify(category);
         const destDir = path.join(PORTFOLIO_DIR, company.slug, categorySlug);
         const remaining = MAX_IMAGES_PER_COMPANY - totalImagesForCompany;
         const capped = imageUrls.slice(0, Math.min(imageUrls.length, remaining));
@@ -551,10 +589,7 @@ async function processCompany(browser, company, idx, total, manifest) {
         console.log(`    Saved ${saved.length} image(s)`);
 
         if (saved.length > 0) {
-          if (!portfolioCategories[category]) {
-            portfolioCategories[category] = [];
-          }
-          portfolioCategories[category].push(...saved);
+          addToCategory(category, saved, metadata);
           totalImagesForCompany += saved.length;
         }
       }
@@ -569,6 +604,7 @@ async function processCompany(browser, company, idx, total, manifest) {
     console.log(`  Found ${imageUrls.length} image(s) on homepage`);
 
     if (imageUrls.length > 0) {
+      const homepageMetadata = extractPageMetadata(homepageHtml, baseUrl);
       const category = 'General';
       const categorySlug = 'general';
       const destDir = path.join(PORTFOLIO_DIR, company.slug, categorySlug);
@@ -578,12 +614,13 @@ async function processCompany(browser, company, idx, total, manifest) {
       console.log(`  Saved ${saved.length} image(s) from homepage`);
 
       if (saved.length > 0) {
-        portfolioCategories[category] = saved;
+        addToCategory(category, saved, homepageMetadata);
       }
     }
   }
 
-  const totalSaved = Object.values(portfolioCategories).reduce((sum, imgs) => sum + imgs.length, 0);
+  const totalSaved = Object.values(portfolioCategories)
+    .reduce((sum, entry) => sum + (entry.items?.length || 0), 0);
   console.log(`  Done: ${Object.keys(portfolioCategories).length} categories, ${totalSaved} images`);
 
   return { categories: portfolioCategories, contentHash: pageHash };
@@ -661,9 +698,12 @@ async function runAll() {
           crawled++;
         }
 
-        // Update manifest
+        // Update manifest (handle both legacy array form and new object form)
         const imageCount = Object.values(company.portfolio_categories)
-          .reduce((sum, imgs) => sum + imgs.length, 0);
+          .reduce((sum, entry) => {
+            if (Array.isArray(entry)) return sum + entry.length;
+            return sum + (entry?.items?.length || 0);
+          }, 0);
         updateManifest(manifest, company.slug, {
           contentHash: result.contentHash,
           imageCount,

@@ -113,9 +113,12 @@ export async function getPortfolioFeed(req: any, res: any) {
       LIMIT 30
     `);
 
-    // Parse directory company portfolio images into project-like items
+    // Parse directory company portfolio images into project-like items.
+    // Each portfolio_category entry can be either the legacy array form
+    // (value is an array of {url, title}) or the new object form
+    // ({ items, description, year, location, sourceUrl }).
     const directoryProjects = (dirRows as any[]).flatMap(row => {
-      let categories: Record<string, { url: string; title: string }[]> = {};
+      let categories: Record<string, any> = {};
       try {
         const parsed = typeof row.portfolio_images === 'string' ? JSON.parse(row.portfolio_images) : row.portfolio_images;
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -123,17 +126,30 @@ export async function getPortfolioFeed(req: any, res: any) {
         }
       } catch { /* skip malformed JSON */ }
 
-      return Object.entries(categories).map(([catName, items], idx) => {
-        const imageUrls = Array.isArray(items) ? items.map((item: any) => item?.url || '').filter(Boolean) : [];
+      return Object.entries(categories).map(([catName, entry], idx) => {
+        // Unwrap either shape
+        let items: Array<{ url: string; title: string }> = [];
+        let description = '';
+        let year: number | null = null;
+        let location = '';
+        if (Array.isArray(entry)) {
+          items = entry;
+        } else if (entry && typeof entry === 'object' && Array.isArray((entry as any).items)) {
+          items = (entry as any).items;
+          description = typeof (entry as any).description === 'string' ? (entry as any).description : '';
+          year = typeof (entry as any).year === 'number' ? (entry as any).year : null;
+          location = typeof (entry as any).location === 'string' ? (entry as any).location : '';
+        }
+        const imageUrls = items.map((item: any) => item?.url || '').filter(Boolean);
         if (imageUrls.length === 0) return null;
         return {
           id: row.company_id * 10000 + idx,
           title: catName,
           slug: slugify(catName),
-          description: '',
+          description,
           style: catName,
-          location: '',
-          year: null,
+          location,
+          year,
           images: imageUrls,
           companyId: row.company_id,
           companyName: row.company_name || '',
@@ -245,6 +261,8 @@ export async function getPublicProjectDetail(req: any, res: any) {
     // For directory companies, "projects" live as portfolio_categories on the
     // uae_companies row (one entry per category name). Build a synthetic
     // project record by matching slugify(categoryName) against projectSlug.
+    // Entries can be either the legacy array form or the new object form
+    // ({ items, description, year, location, sourceUrl }).
     let directorySiblings: Array<{ id: string; title: string; slug: string }> = [];
     if (!project && companySource === 'directory') {
       const [ucRows] = await pool.execute(
@@ -253,7 +271,7 @@ export async function getPublicProjectDetail(req: any, res: any) {
       );
       const ucRow = (ucRows as any[])[0];
       if (ucRow?.portfolio_images) {
-        let categories: Record<string, Array<{ url: string; title: string }>> = {};
+        let categories: Record<string, any> = {};
         try {
           const parsed = typeof ucRow.portfolio_images === 'string'
             ? JSON.parse(ucRow.portfolio_images)
@@ -263,9 +281,12 @@ export async function getPublicProjectDetail(req: any, res: any) {
           }
         } catch { /* skip malformed JSON */ }
 
+        const getItems = (entry: any): Array<{ url: string; title: string }> =>
+          Array.isArray(entry) ? entry : (Array.isArray(entry?.items) ? entry.items : []);
+
         // Build sibling list for nav (all categories with non-empty image arrays)
         directorySiblings = Object.entries(categories)
-          .filter(([, items]) => Array.isArray(items) && items.length > 0)
+          .filter(([, entry]) => getItems(entry).length > 0)
           .map(([catName]) => ({
             id: `${company.id}-${slugify(catName)}`,
             title: catName,
@@ -273,24 +294,27 @@ export async function getPublicProjectDetail(req: any, res: any) {
           }));
 
         // Find the category matching projectSlug
-        for (const [catName, items] of Object.entries(categories)) {
-          if (slugify(catName) === projectSlug && Array.isArray(items) && items.length > 0) {
-            const imageUrls = items.map((it: any) => it?.url || '').filter(Boolean);
-            project = {
-              id: `${company.id}-${slugify(catName)}`,
-              title: catName,
-              slug: slugify(catName),
-              description: '',
-              style: catName,
-              location: '',
-              area: null,
-              year: null,
-              cost: null,
-              images: imageUrls,
-              tags: [],
-            };
-            break;
-          }
+        for (const [catName, entry] of Object.entries(categories)) {
+          if (slugify(catName) !== projectSlug) continue;
+          const items = getItems(entry);
+          if (items.length === 0) continue;
+
+          const imageUrls = items.map((it: any) => it?.url || '').filter(Boolean);
+          const meta = Array.isArray(entry) ? null : entry;
+          project = {
+            id: `${company.id}-${slugify(catName)}`,
+            title: catName,
+            slug: slugify(catName),
+            description: (meta && typeof meta.description === 'string') ? meta.description : '',
+            style: catName,
+            location: (meta && typeof meta.location === 'string') ? meta.location : '',
+            area: null,
+            year: (meta && typeof meta.year === 'number') ? meta.year : null,
+            cost: null,
+            images: imageUrls,
+            tags: [],
+          };
+          break;
         }
       }
     }

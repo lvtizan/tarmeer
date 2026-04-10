@@ -67,11 +67,15 @@ async function main() {
   let errors = 0;
   let inserted = 0;
 
+  // Helper: get the image array regardless of whether a category entry is
+  // the legacy array form or the new { items, description, year, location, sourceUrl } form.
+  const getItems = (entry) => Array.isArray(entry) ? entry : (entry?.items || []);
+
   for (const company of targets) {
     const slug = company.slug;
     const categories = company.portfolio_categories || {};
     const categoryCount = Object.keys(categories).length;
-    const imageCount = Object.values(categories).reduce((sum, imgs) => sum + imgs.length, 0);
+    const imageCount = Object.values(categories).reduce((sum, entry) => sum + getItems(entry).length, 0);
 
     if (imageCount === 0) {
       skipped++;
@@ -81,8 +85,13 @@ async function main() {
     console.log(`${slug}: ${categoryCount} categories, ${imageCount} images`);
 
     if (DRY_RUN) {
-      for (const [cat, imgs] of Object.entries(categories)) {
-        console.log(`  ${cat}: ${imgs.length} images`);
+      for (const [cat, entry] of Object.entries(categories)) {
+        const items = getItems(entry);
+        const meta = Array.isArray(entry) ? null : entry;
+        const metaStr = meta && (meta.description || meta.year || meta.location)
+          ? ` [${[meta.year, meta.location].filter(Boolean).join(', ')}]`
+          : '';
+        console.log(`  ${cat}: ${items.length} images${metaStr}`);
       }
       updated++;
       continue;
