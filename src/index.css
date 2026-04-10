@@ -25,8 +25,16 @@
   box-sizing: border-box;
 }
 
+/*
+ * NOTE: do NOT set `scroll-behavior: smooth` globally.
+ * It animates every programmatic scroll — including the browser's own
+ * history-back scroll restoration and our scroll-restore on /portfolio —
+ * which looks like the page is "scrolling down from the top" after a
+ * navigation. If a specific in-page anchor needs smooth scrolling, apply
+ * it per-container with CSS `scroll-behavior: smooth` on that element.
+ */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {

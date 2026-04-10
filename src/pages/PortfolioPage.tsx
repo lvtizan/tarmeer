@@ -479,18 +479,12 @@ export default function PortfolioPage() {
   // paints. Combined with the cached image ratios + initial container width
   // guess in JustifiedGallery, the document already has its full height on
   // first commit, so scrollTo(targetY) lands at the right spot — no flash, no
-  // animated scroll-down.
+  // animated scroll-down. Global scroll-behavior is `auto` (see index.css).
   useLayoutEffect(() => {
     if (!cached) return;
     const targetY = cached.scrollY;
     if (targetY <= 0) return;
-
-    // Force instant scroll regardless of any global CSS scroll-behavior:smooth
-    const html = document.documentElement;
-    const prevBehavior = html.style.scrollBehavior;
-    html.style.scrollBehavior = 'auto';
     window.scrollTo(0, targetY);
-    html.style.scrollBehavior = prevBehavior;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -506,11 +500,7 @@ export default function PortfolioPage() {
     const tryScroll = () => {
       if (stopped) return;
       if (Math.abs(window.scrollY - targetY) > 2) {
-        const html = document.documentElement;
-        const prev = html.style.scrollBehavior;
-        html.style.scrollBehavior = 'auto';
         window.scrollTo(0, targetY);
-        html.style.scrollBehavior = prev;
       }
     };
 
