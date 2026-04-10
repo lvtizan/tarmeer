@@ -318,23 +318,22 @@ function ProjectGroup({
   const displayCount = allLoaded ? visibleCount : project.images.length;
   const remaining = Math.max(0, project.images.length - visibleImages.length - (items.length - visibleCount));
 
-  const baseUrl = project.slug
-    ? `/companies/${project.companySlug}/${project.slug}`
-    : `/companies/${project.companySlug}`;
+  // Prefer the real slug; fall back to the numeric id so the project detail
+  // page still opens even when the DB slug column is empty. The backend
+  // getPublicProjectDetail query matches either `slug = ?` or `id = ?`, so
+  // both forms resolve to the same project.
+  const projectRouteKey = project.slug || String(project.id);
+  const baseUrl = `/companies/${project.companySlug}/${projectRouteKey}`;
 
   const handleClick = useCallback((imageIdx: number) => {
     onBeforeNavigate?.(String(project.id), imageIdx);
-    const url = project.slug
-      ? `${baseUrl}?from=portfolio&img=${imageIdx}`
-      : baseUrl;
-    navigate(url);
-  }, [navigate, baseUrl, project.id, project.slug, onBeforeNavigate]);
+    navigate(`${baseUrl}?from=portfolio&img=${imageIdx}`);
+  }, [navigate, baseUrl, project.id, onBeforeNavigate]);
 
   const handleHeaderClick = useCallback(() => {
     onBeforeNavigate?.(String(project.id), -1);
-    const url = project.slug ? `${baseUrl}?from=portfolio` : baseUrl;
-    navigate(url);
-  }, [navigate, baseUrl, project.id, project.slug, onBeforeNavigate]);
+    navigate(`${baseUrl}?from=portfolio`);
+  }, [navigate, baseUrl, project.id, onBeforeNavigate]);
 
   const renderOverlay = useCallback(() => (
     <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
@@ -630,9 +629,9 @@ export default function PortfolioPage() {
     const proj = singles[idx];
     if (!proj) return;
     saveCacheNow(String(proj.id), idx);
-    navigate(proj.slug
-      ? `/companies/${proj.companySlug}/${proj.slug}?from=portfolio&img=0`
-      : `/companies/${proj.companySlug}`);
+    // Fall back to numeric id when slug is missing (backend accepts either).
+    const routeKey = proj.slug || String(proj.id);
+    navigate(`/companies/${proj.companySlug}/${routeKey}?from=portfolio&img=0`);
   }, [singles, navigate, saveCacheNow]);
 
   const renderSingleOverlay = useCallback((idx: number) => {
