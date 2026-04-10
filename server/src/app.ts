@@ -164,12 +164,22 @@ app.get('/api/sitemap.xml', async (req, res) => {
 
     // Get all directory companies
     const [uaeCompanies] = await pool.execute(
-      'SELECT slug FROM uae_companies WHERE slug IS NOT NULL ORDER BY weight_score DESC'
+      'SELECT slug, updated_at FROM uae_companies WHERE slug IS NOT NULL ORDER BY weight_score DESC'
     );
     // Get all approved registered companies
     const [profiles] = await pool.execute(
-      'SELECT slug FROM company_profiles WHERE status = ? AND slug IS NOT NULL AND deleted_at IS NULL ORDER BY weight_score DESC',
+      'SELECT slug, updated_at FROM company_profiles WHERE status = ? AND slug IS NOT NULL AND deleted_at IS NULL ORDER BY weight_score DESC',
       ['approved']
+    );
+    // Get all published projects with their company slug
+    const [projects] = await pool.execute(
+      `SELECT p.slug AS project_slug, p.updated_at,
+              COALESCE(cp.slug, uc.slug) AS company_slug
+       FROM projects p
+       LEFT JOIN company_profiles cp ON p.company_id = cp.id AND cp.deleted_at IS NULL
+       LEFT JOIN uae_companies uc ON p.uae_company_id = uc.id
+       WHERE p.slug IS NOT NULL AND p.deleted_at IS NULL
+       ORDER BY p.updated_at DESC`
     );
 
     const baseUrl = 'https://www.tarmeer.com';
@@ -182,10 +192,13 @@ app.get('/api/sitemap.xml', async (req, res) => {
     const staticPages = [
       { path: '', changefreq: 'daily', priority: '1.0' },
       { path: '/companies', changefreq: 'daily', priority: '0.9' },
+      { path: '/portfolio', changefreq: 'daily', priority: '0.9' },
+      { path: '/faq', changefreq: 'weekly', priority: '0.7' },
       { path: '/contact', changefreq: 'weekly', priority: '0.7' },
       { path: '/materials', changefreq: 'weekly', priority: '0.8' },
-      { path: '/new-home-design', changefreq: 'weekly', priority: '0.8' },
-      { path: '/soft-decoration', changefreq: 'weekly', priority: '0.8' },
+      { path: '/services/new-home-design', changefreq: 'weekly', priority: '0.8' },
+      { path: '/services/soft-decoration', changefreq: 'weekly', priority: '0.8' },
+      { path: '/services/house-exterior', changefreq: 'weekly', priority: '0.8' },
       { path: '/privacy', changefreq: 'monthly', priority: '0.4' },
     ];
     for (const page of staticPages) {
@@ -196,7 +209,16 @@ app.get('/api/sitemap.xml', async (req, res) => {
     const allCompanies = [...(uaeCompanies as any[]), ...(profiles as any[])];
     for (const company of allCompanies) {
       if (company.slug) {
-        xml += `  <url><loc>${baseUrl}/companies/${company.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${today}</lastmod></url>\n`;
+        const lastmod = company.updated_at ? new Date(company.updated_at).toISOString().slice(0, 10) : today;
+        xml += `  <url><loc>${baseUrl}/companies/${company.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${lastmod}</lastmod></url>\n`;
+      }
+    }
+
+    // Project pages
+    for (const project of projects as any[]) {
+      if (project.company_slug && project.project_slug) {
+        const lastmod = project.updated_at ? new Date(project.updated_at).toISOString().slice(0, 10) : today;
+        xml += `  <url><loc>${baseUrl}/companies/${project.company_slug}/${project.project_slug}</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>${lastmod}</lastmod></url>\n`;
       }
     }
 
