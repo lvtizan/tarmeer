@@ -103,10 +103,12 @@ export default function ProjectDetailPage() {
   // Find prev/next siblings
   const siblingNav = useMemo(() => {
     if (!data?.siblings || data.siblings.length === 0) return { prev: null, next: null };
-    const currentIdx = data.siblings.findIndex(s => s.slug === projectSlug);
+    // Filter out siblings with no slug (would produce /companies/xxx/null URLs)
+    const valid = data.siblings.filter(s => s.slug);
+    const currentIdx = valid.findIndex(s => s.slug === projectSlug);
     return {
-      prev: currentIdx > 0 ? data.siblings[currentIdx - 1] : null,
-      next: currentIdx < data.siblings.length - 1 ? data.siblings[currentIdx + 1] : null,
+      prev: currentIdx > 0 ? valid[currentIdx - 1] : null,
+      next: currentIdx < valid.length - 1 ? valid[currentIdx + 1] : null,
     };
   }, [data, projectSlug]);
 
@@ -315,31 +317,15 @@ export default function ProjectDetailPage() {
       <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
         {portfolioHelmet}
 
-        {/* Top bar: Back (left) | View Project (center) | Close (right) */}
+        {/* Top bar */}
         <div className="sticky top-0 z-20 bg-white border-b border-stone-200">
-          <div className="relative px-4 sm:px-6 h-14 flex items-center justify-between">
+          <div className="px-4 sm:px-6 h-14 flex items-center justify-between">
             <button
               onClick={handleBack}
               className="inline-flex items-center gap-1.5 text-sm text-stone-600 hover:text-[#b8864a] transition"
             >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
-
-            {/* Center: link to the full project detail page (same URL minus
-                ?from=portfolio). Only shown when we actually have a project
-                record — synthetic directory entries without a slug would not
-                have a meaningful detail page to visit. */}
-            {project && projectSlug && (
-              <Link
-                to={`/companies/${companySlug}/${projectSlug}`}
-                className="absolute left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl border border-stone-200 text-sm font-medium text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition max-w-[50vw] truncate"
-                title={`View full project: ${project.title}`}
-              >
-                <FolderOpen className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">View Project</span>
-              </Link>
-            )}
-
             <button
               onClick={handleBack}
               aria-label="Close"
@@ -526,6 +512,15 @@ export default function ProjectDetailPage() {
                   >
                     View Profile
                   </Link>
+                  {projectSlug && (
+                    <Link
+                      to={`/companies/${companySlug}/${projectSlug}`}
+                      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 px-4 py-2 border border-stone-200 rounded-2xl text-sm font-medium text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition"
+                    >
+                      <FolderOpen className="w-4 h-4" />
+                      View Project
+                    </Link>
+                  )}
                 </div>
 
                 {/* Contact Info card */}
