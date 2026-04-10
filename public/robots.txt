@@ -6,9 +6,30 @@ User-agent: Bingbot
 Allow: /
 Crawl-delay: 5
 
+User-agent: GPTBot
+Allow: /
+Crawl-delay: 5
+
+User-agent: ChatGPT-User
+Allow: /
+Crawl-delay: 5
+
+User-agent: PerplexityBot
+Allow: /
+Crawl-delay: 5
+
+User-agent: ClaudeBot
+Allow: /
+Crawl-delay: 5
+
+User-agent: Applebot
+Allow: /
+Crawl-delay: 5
+
 User-agent: *
 Allow: /
 Disallow: /api/
+Allow: /api/sitemap.xml
 Disallow: /admin/
 Crawl-delay: 10
 
