@@ -30,7 +30,6 @@ const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
 const FaqPage = lazy(() => import('./pages/FaqPage'));
-const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
 
 // Onboarding
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
