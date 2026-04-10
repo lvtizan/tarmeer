@@ -1,7 +1,29 @@
 import pool from '../config/database';
 import * as XLSX from 'xlsx';
 import { notifyNewInquiry } from '../services/notificationService';
-import { pushLeadToCRM } from '../lib/crmPush';
+import { pushLeadToCRM, type LeadPayload } from '../lib/crmPush';
+
+// Build the LeadPayload from a design_inquiries DB row. Used by both initial
+// submit (fire-and-forget) and admin manual resend.
+function buildLeadFromRow(row: any): LeadPayload {
+  const companyName: string | undefined = row.source_company_name || undefined;
+  const notes = [
+    companyName ? `Company: ${companyName}` : '',
+    row.message || '',
+  ]
+    .filter(Boolean)
+    .join(' | ') || undefined;
+  return {
+    inquiryId: row.id,
+    externalId: `inquiry-${row.id}`,
+    name: row.name || 'Anonymous',
+    phone: row.phone,
+    city: row.city || undefined,
+    area: row.area_range || undefined,
+    notes,
+    page: undefined,
+  };
+}
 
 const VALID_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const VALID_AREA_RANGES = ['< 50m²', '50-100m²', '100-200m²', '200-500m²', '500m²+'];
@@ -329,5 +351,52 @@ export async function getMyInquiries(req: any, res: any) {
   } catch (error) {
     console.error('Get my inquiries error:', error);
     res.status(500).json({ error: 'Failed to load inquiries.' });
+  }
+}
+
+// Manually retry pushing an inquiry to CRM (admin only).
+// Used to recover from transient failures or to re-push after fixing an
+// upstream issue. Unlike submitInquiry, this one AWAITS the result so the
+// admin immediately sees whether it succeeded.
+export async function resendCrmSync(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.execute(
+      'SELECT * FROM design_inquiries WHERE id = ? AND deleted_at IS NULL',
+      [id],
+    );
+    const row = (rows as any[])[0];
+    if (!row) {
+      return res.status(404).json({ error: 'Inquiry not found.' });
+    }
+
+    const lead = buildLeadFromRow(row);
+    const result = await pushLeadToCRM(lead);
+
+    // Reload the row so the client sees the updated sync status / error
+    const [updatedRows] = await pool.execute(
+      'SELECT * FROM design_inquiries WHERE id = ?',
+      [id],
+    );
+    const updated = (updatedRows as any[])[0];
+
+    if (result) {
+      return res.json({
+        success: true,
+        leadId: result?.data?.leadId ?? null,
+        action: result?.data?.action ?? null,
+        inquiry: updated,
+      });
+    }
+    // pushLeadToCRM returned null → either config missing or failure
+    // (markFailed already wrote the error). Surface it.
+    return res.status(502).json({
+      success: false,
+      error: 'CRM push failed. See crm_last_error on the inquiry.',
+      inquiry: updated,
+    });
+  } catch (error) {
+    console.error('Resend CRM sync error:', error);
+    res.status(500).json({ error: 'Failed to resend CRM sync.' });
   }
 }

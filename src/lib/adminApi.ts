@@ -555,6 +555,12 @@ class AdminApiClient {
     });
   }
 
+  async resendInquiryCrm(id: number) {
+    return this.request(`/inquiries/${id}/resend-crm`, {
+      method: 'POST',
+    });
+  }
+
   getInquiriesExportUrl(params?: { status?: string }) {
     const query = new URLSearchParams();
     if (params?.status) query.set('status', params.status);

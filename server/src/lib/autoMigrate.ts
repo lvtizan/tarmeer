@@ -89,6 +89,17 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'design_inquiries', column: 'deleted_at', type: 'DATETIME NULL' },
   { table: 'design_inquiries', column: 'deleted_by', type: 'INT NULL' },
   { table: 'design_inquiries', column: 'crm_synced_at', type: 'DATETIME NULL' },
+  // CRM sync: richer status tracking so we can surface failures + retry manually.
+  // status: pending (not yet attempted) / synced / failed
+  // crm_lead_id: CRM's Lead UUID returned in data.leadId
+  // crm_action: created / linked / updated / duplicate — matches CRM inbound contract
+  // crm_last_error: JSON-serialized error payload (httpStatus, code, message) on failure
+  // crm_sync_attempts: incremented on every push attempt
+  { table: 'design_inquiries', column: 'crm_sync_status', type: "ENUM('pending','synced','failed') NOT NULL DEFAULT 'pending'" },
+  { table: 'design_inquiries', column: 'crm_lead_id', type: 'VARCHAR(64) NULL' },
+  { table: 'design_inquiries', column: 'crm_action', type: 'VARCHAR(32) NULL' },
+  { table: 'design_inquiries', column: 'crm_last_error', type: 'TEXT NULL' },
+  { table: 'design_inquiries', column: 'crm_sync_attempts', type: 'INT NOT NULL DEFAULT 0' },
 
   // projects soft-delete
   { table: 'projects', column: 'deleted_at', type: 'DATETIME NULL' },

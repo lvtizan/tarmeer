@@ -21,7 +21,13 @@ interface InquiryRecord {
   status: 'new' | 'contacted' | 'resolved' | 'archived';
   admin_notes: string | null;
   created_at: string;
+  // CRM sync state
   crm_synced_at: string | null;
+  crm_sync_status: 'pending' | 'synced' | 'failed' | null;
+  crm_lead_id: string | null;
+  crm_action: string | null;
+  crm_last_error: string | null;
+  crm_sync_attempts: number | null;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -158,6 +164,24 @@ export default function AdminInquiriesPage() {
     await adminApi.batchRestoreInquiries([...selected]);
     setSelected(new Set());
     loadInquiries();
+  };
+
+  const [resendingId, setResendingId] = useState<number | null>(null);
+  const handleResendCrm = async (id: number) => {
+    setResendingId(id);
+    try {
+      const result: any = await adminApi.resendInquiryCrm(id);
+      if (result?.success) {
+        alert(`CRM sync OK: action=${result.action}, leadId=${result.leadId}`);
+      } else {
+        alert(`CRM sync failed: ${result?.error || 'unknown error'}`);
+      }
+      loadInquiries();
+    } catch (err: any) {
+      alert(`CRM sync error: ${err.message || err}`);
+    } finally {
+      setResendingId(null);
+    }
   };
 
   return (
@@ -314,12 +338,71 @@ export default function AdminInquiriesPage() {
                         {inq.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      {inq.crm_synced_at ? (
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">Synced</span>
-                      ) : (
-                        <span className="text-stone-300 text-xs">—</span>
-                      )}
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const status = inq.crm_sync_status;
+                        const action = inq.crm_action;
+
+                        // Synced with action info. 'linked' is a yellow warning
+                        // since it means CRM merged into an existing lead
+                        // (which the CRM team may not notice — see incident log).
+                        if (status === 'synced') {
+                          const isLinked = action === 'linked';
+                          const badgeClass = isLinked
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-green-50 text-green-700';
+                          const label = action ? `${action}` : 'synced';
+                          return (
+                            <div className="flex flex-col items-start gap-1">
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}
+                                title={inq.crm_lead_id ? `CRM lead: ${inq.crm_lead_id}` : undefined}
+                              >
+                                {label}
+                              </span>
+                              {isLinked && (
+                                <span className="text-[10px] text-amber-600">merged → check lead</span>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        if (status === 'failed') {
+                          return (
+                            <div className="flex flex-col items-start gap-1">
+                              <span
+                                className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
+                                title={inq.crm_last_error || undefined}
+                              >
+                                failed
+                              </span>
+                              <button
+                                onClick={() => handleResendCrm(inq.id)}
+                                disabled={resendingId === inq.id}
+                                className="text-[10px] text-[#b8864a] hover:underline disabled:opacity-50"
+                              >
+                                {resendingId === inq.id ? 'Resending…' : 'Resend'}
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        // pending (not yet attempted) or legacy rows with no status
+                        return (
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
+                              pending
+                            </span>
+                            <button
+                              onClick={() => handleResendCrm(inq.id)}
+                              disabled={resendingId === inq.id}
+                              className="text-[10px] text-[#b8864a] hover:underline disabled:opacity-50"
+                            >
+                              {resendingId === inq.id ? 'Sending…' : 'Send now'}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-stone-500 text-xs">
                       {new Date(inq.created_at).toLocaleDateString()}

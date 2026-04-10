@@ -31,7 +31,7 @@ import {
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
-import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries } from '../controllers/inquiryController';
+import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries, resendCrmSync } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts, markNotificationSeen } from '../controllers/complaintController';
 import {
   listCompanies,
@@ -128,6 +128,7 @@ router.get('/inquiries/export', exportInquiries);
 router.put('/inquiries/:id/status', updateInquiryStatus);
 router.put('/inquiries/batch-delete', batchDeleteInquiries);
 router.put('/inquiries/batch-restore', batchRestoreInquiries);
+router.post('/inquiries/:id/resend-crm', resendCrmSync);
 
 // Complaint management (admin)
 router.get('/complaints', getComplaints);
