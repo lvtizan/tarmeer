@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, CheckCircle, CircleGauge, Layers3, Ruler, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
@@ -32,6 +33,27 @@ const DELIVERABLES = [
 export default function HouseExteriorDesignPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>House Exterior Design Service - Facade & Landscape | Tarmeer</title>
+        <meta name="description" content="Professional house exterior design service in the UAE. Facade concepts, material selection, layout drawings, and construction-ready documentation for villas and homes." />
+        <meta property="og:title" content="House Exterior Design Service | Tarmeer" />
+        <meta property="og:description" content="Facade design, material selection, and construction documentation for UAE homes." />
+        <meta property="og:image" content="https://www.tarmeer.com/og-default.jpg" />
+        <link rel="canonical" href="https://www.tarmeer.com/services/house-exterior" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="keywords" content="house exterior design UAE, facade design, villa exterior, landscape design, construction drawings, Tarmeer" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: 'House Exterior Design',
+          description: 'Exterior design service for villas and standalone homes including facade direction, material language, layout drawings, and construction-ready documentation.',
+          provider: { '@type': 'Organization', name: 'Tarmeer', url: 'https://www.tarmeer.com' },
+          areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+          serviceType: 'Exterior Design',
+          url: 'https://www.tarmeer.com/services/house-exterior',
+        })}</script>
+      </Helmet>
       <section className="relative h-[200px] sm:h-[280px] overflow-hidden bg-gradient-to-r from-[#2c2c2c] to-[#45413b]">
         <div className="absolute inset-0 opacity-35">
           <img

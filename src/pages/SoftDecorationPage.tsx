@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, X, MapPin, CircleDollarSign } from 'lucide-react';
 import ProjectGallery from '../components/project/ProjectGallery';
@@ -142,6 +143,27 @@ export default function SoftDecorationPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>Soft Decoration & Furniture Design Service | Tarmeer</title>
+        <meta name="description" content="Professional soft decoration service in the UAE. Furniture selection, color schemes, lighting plans, and complete styling for move-in ready spaces." />
+        <meta property="og:title" content="Soft Decoration & Furniture Design | Tarmeer" />
+        <meta property="og:description" content="Furniture, color schemes, lighting, and styling for your home in the UAE." />
+        <meta property="og:image" content="https://www.tarmeer.com/og-default.jpg" />
+        <link rel="canonical" href="https://www.tarmeer.com/services/soft-decoration" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="keywords" content="soft decoration UAE, furniture design, interior styling, color scheme, lighting plan, Tarmeer" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: 'Soft Decoration & Furniture Design',
+          description: 'Complete soft decoration service including furniture selection, color schemes, lighting plans, and styling for move-in ready spaces.',
+          provider: { '@type': 'Organization', name: 'Tarmeer', url: 'https://www.tarmeer.com' },
+          areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+          serviceType: 'Soft Decoration',
+          url: 'https://www.tarmeer.com/services/soft-decoration',
+        })}</script>
+      </Helmet>
       {/* Hero Section */}
       <section className="relative h-[200px] sm:h-[280px] overflow-hidden bg-gradient-to-r from-[#2c2c2c] to-[#3d3d3d]">
         <div className="absolute inset-0 opacity-30">

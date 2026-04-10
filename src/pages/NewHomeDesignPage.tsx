@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, X, MapPin, CircleDollarSign } from 'lucide-react';
 import ProjectGallery from '../components/project/ProjectGallery';
@@ -215,6 +216,27 @@ export default function NewHomeDesignPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>New Home Design Service - Floor Plans & 3D Renderings | Tarmeer</title>
+        <meta name="description" content="Professional new home interior design service in the UAE. Get floor plans, 3D renderings, construction drawings, and full material specifications. Starting from AED 2,999." />
+        <meta property="og:title" content="New Home Design Service | Tarmeer" />
+        <meta property="og:description" content="Floor plans, 3D renderings, and construction drawings for your new home in the UAE." />
+        <meta property="og:image" content="https://www.tarmeer.com/og-default.jpg" />
+        <link rel="canonical" href="https://www.tarmeer.com/services/new-home-design" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="keywords" content="new home design UAE, interior design service, floor plan, 3D rendering, construction drawings, Tarmeer" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: 'New Home Interior Design',
+          description: 'Complete interior design package for new homes including floor plans, 3D renderings, construction drawings, and material specifications.',
+          provider: { '@type': 'Organization', name: 'Tarmeer', url: 'https://www.tarmeer.com' },
+          areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+          serviceType: 'Interior Design',
+          url: 'https://www.tarmeer.com/services/new-home-design',
+        })}</script>
+      </Helmet>
       {/* Hero Section */}
       <section className="relative h-[200px] sm:h-[280px] overflow-hidden bg-gradient-to-r from-[#2c2c2c] to-[#3d3d3d]">
         <div className="absolute inset-0 opacity-30">
