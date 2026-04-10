@@ -313,6 +313,23 @@ export default function CompaniesPage() {
         <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta name="keywords" content="interior design companies UAE, renovation companies Dubai, fit-out companies Abu Dhabi, interior designers, Tarmeer, compare designers" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Interior Design Companies in UAE',
+          description: 'Verified interior design and renovation companies across the United Arab Emirates.',
+          numberOfItems: companies.length,
+          itemListElement: companies.slice(0, 30).map((c: any, i: number) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            item: {
+              '@type': 'LocalBusiness',
+              name: c.name,
+              url: `https://www.tarmeer.com/companies/${c.slug || c.id}`,
+              ...(c.city && { address: { '@type': 'PostalAddress', addressLocality: c.city, addressCountry: 'AE' } }),
+            },
+          })),
+        })}</script>
       </Helmet>
       {/* Hero - Match with Professionals */}
       <section className="relative bg-[#2c2620] overflow-hidden">

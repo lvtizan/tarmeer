@@ -38,6 +38,43 @@ export default function HomePage() {
         <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta name="keywords" content="interior design UAE, renovation companies Dubai, fit-out Abu Dhabi, interior designer, home renovation, Tarmeer, villa design, apartment renovation" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Tarmeer',
+          url: 'https://www.tarmeer.com',
+          description: 'Find and compare interior design and renovation companies across the UAE.',
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: 'https://www.tarmeer.com/companies?q={search_term_string}',
+            'query-input': 'required name=search_term_string',
+          },
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Tarmeer',
+          url: 'https://www.tarmeer.com',
+          logo: 'https://www.tarmeer.com/logo.png',
+          description: 'UAE interior design platform connecting homeowners with verified design companies. Serving 50+ companies across Dubai, Abu Dhabi, Sharjah, and other emirates.',
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: 'Industrial Area 2',
+            addressLocality: 'Sharjah',
+            addressCountry: 'AE',
+          },
+          contactPoint: {
+            '@type': 'ContactPoint',
+            telephone: '+971-58-838-8922',
+            contactType: 'customer service',
+            availableLanguage: ['English', 'Arabic'],
+          },
+          sameAs: ['https://www.instagram.com/tarmeer.ae/'],
+          areaServed: {
+            '@type': 'Country',
+            name: 'United Arab Emirates',
+          },
+        })}</script>
       </Helmet>
       <Banner />
       <PricingSection />

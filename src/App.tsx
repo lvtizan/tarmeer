@@ -29,6 +29,7 @@ const CompaniesPage = lazy(() => import('./pages/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
+const FaqPage = lazy(() => import('./pages/FaqPage'));
 
 // Onboarding
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
@@ -168,6 +169,7 @@ function App() {
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/dmca" element={<DmcaPage />} />
                 <Route path="/portfolio" element={<PortfolioPage />} />
+                <Route path="/faq" element={<FaqPage />} />
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:companySlug/:projectSlug" element={<ProjectDetailPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />

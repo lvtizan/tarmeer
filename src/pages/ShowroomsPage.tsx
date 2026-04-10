@@ -71,6 +71,28 @@ export default function MaterialsPage() {
         <meta name="keywords" content="showroom, building materials, marble, timber, UAE, Tarmeer, interior design, Sharjah, renovation materials" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.tarmeer.com/showrooms" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Showrooms & Building Materials in UAE',
+          description: 'Partner showrooms and building material brands available through Tarmeer in the UAE.',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              item: {
+                '@type': 'Store',
+                name: 'Tarmeer Showroom - Sharjah',
+                address: {
+                  '@type': 'PostalAddress',
+                  streetAddress: 'Industrial Area 2',
+                  addressLocality: 'Sharjah',
+                  addressCountry: 'AE',
+                },
+              },
+            },
+          ],
+        })}</script>
       </Helmet>
       <section className="relative h-[500px] sm:h-[600px] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">

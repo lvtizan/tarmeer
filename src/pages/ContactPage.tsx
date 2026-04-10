@@ -57,6 +57,30 @@ export default function ContactPage() {
         <meta name="keywords" content="contact tarmeer, interior design partnership, UAE showroom, renovation partner" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.tarmeer.com/contact" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          name: 'Contact Tarmeer',
+          url: 'https://www.tarmeer.com/contact',
+          mainEntity: {
+            '@type': 'Organization',
+            name: 'Tarmeer',
+            url: 'https://www.tarmeer.com',
+            telephone: '+971-58-838-8922',
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: 'Industrial Area 2',
+              addressLocality: 'Sharjah',
+              addressCountry: 'AE',
+            },
+            contactPoint: {
+              '@type': 'ContactPoint',
+              telephone: '+971-58-838-8922',
+              contactType: 'customer service',
+              availableLanguage: ['English', 'Arabic'],
+            },
+          },
+        })}</script>
       </Helmet>
       <PageContainer className="py-12 sm:py-16">
         <button onClick={handleBack} className="mb-8 inline-block text-sm text-[#c6a065] hover:underline">

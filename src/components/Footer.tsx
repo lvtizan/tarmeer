@@ -10,6 +10,7 @@ const footerNavLinks = [
   { to: '/#pricing', label: 'Pricing' },
   { to: '/materials', label: 'Showrooms' },
   { to: '/contact', label: 'Become a Partner' },
+  { to: '/faq', label: 'FAQ' },
 ];
 
 export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
