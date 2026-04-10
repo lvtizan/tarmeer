@@ -38,9 +38,11 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
+  const isSpamPhone = phoneDigits.length > 0 && /(.)\1{4,}/.test(phoneDigits);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phoneDigits || !city || !areaRange) return;
+    if (!name || !phoneDigits || !city || !areaRange || isSpamPhone) return;
 
     setSubmitting(true);
     setError('');
@@ -143,9 +145,12 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
               }}
               maxLength={phoneRegion.maxDigits}
               placeholder="50 123 4567"
-              className="flex-1 min-w-0 h-11 px-4 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition"
+              className={`flex-1 min-w-0 h-11 px-4 bg-stone-50 border rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 transition ${isSpamPhone ? 'border-red-300 focus:ring-red-200/50 focus:border-red-400' : 'border-stone-200 focus:ring-[#c6a065]/30 focus:border-[#c6a065]'}`}
             />
           </div>
+          {isSpamPhone && (
+            <p className="mt-1 text-xs text-red-500">Please enter a valid phone number</p>
+          )}
         </div>
 
         {/* City */}
@@ -210,7 +215,7 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
         {/* Submit */}
         <button
           type="submit"
-          disabled={submitting || !name || !phoneDigits || !city || !areaRange}
+          disabled={submitting || !name || !phoneDigits || !city || !areaRange || isSpamPhone}
           className="w-full h-12 rounded-xl bg-[#c6a065] text-white font-semibold text-sm hover:bg-[#b8860b] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
         >
           {submitting ? (
