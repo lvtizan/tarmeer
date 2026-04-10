@@ -64,9 +64,11 @@ export default function ServiceInquiryCard({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
+  const isSpamPhone = form.phoneDigits.length > 0 && /(.)\1{4,}/.test(form.phoneDigits);
+
   const canSubmit = minimal
-    ? Boolean(form.phoneDigits && form.areaSize)
-    : Boolean(form.name && form.phoneDigits && form.city && form.areaSize);
+    ? Boolean(form.phoneDigits && form.areaSize && !isSpamPhone)
+    : Boolean(form.name && form.phoneDigits && form.city && form.areaSize && !isSpamPhone);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,8 +147,11 @@ export default function ServiceInquiryCard({
             setForm((prev) => ({ ...prev, phoneDigits: digits }));
           }}
           maxLength={phoneRegion.maxDigits}
-          className={`${inputCls} flex-1 min-w-0`} />
+          className={`${inputCls} flex-1 min-w-0 ${isSpamPhone ? '!border-red-300 !ring-red-200/50' : ''}`} />
       </div>
+      {isSpamPhone && (
+        <p className="mt-1 text-xs text-red-500">Please enter a valid phone number</p>
+      )}
       {!minimal && (
         <SelectField value={form.city} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}>
           <option value="">Select city</option>
