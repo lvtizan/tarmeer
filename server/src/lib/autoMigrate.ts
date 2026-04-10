@@ -63,6 +63,24 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )`,
   },
+  {
+    name: 'company_leads',
+    sql: `CREATE TABLE IF NOT EXISTS company_leads (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      contact_name VARCHAR(100) NOT NULL,
+      phone VARCHAR(20) NOT NULL,
+      company_name VARCHAR(200) NOT NULL,
+      year_established VARCHAR(10),
+      scope_of_business VARCHAR(500),
+      lang VARCHAR(5) DEFAULT 'en',
+      source_page VARCHAR(200),
+      status ENUM('new','contacted','converted','rejected') DEFAULT 'new',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_status (status),
+      INDEX idx_created_at (created_at)
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
