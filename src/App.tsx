@@ -145,7 +145,6 @@ function App() {
           <Route path="/designers/:slug" element={<Navigate to="/companies" replace />} />
 
           {/* ====== Independent landing pages ====== */}
-          <Route path="/for-companies" element={<ForCompaniesPage />} />
 
           {/* ====== Auth ====== */}
           <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
