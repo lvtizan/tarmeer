@@ -25,6 +25,8 @@ const SLUG_FILTER = args.includes('--slug') ? args[args.indexOf('--slug') + 1] :
 const ARCHITECTURE_LABELS = [
   'architecture building exterior photo',
   'interior design room photo',
+  'restaurant cafe hotel bar lounge interior design',
+  'office workspace commercial interior design',
   'construction project photo',
   'landscape with buildings and structures',
 ];
@@ -32,7 +34,7 @@ const ARCHITECTURE_LABELS = [
 const NOT_ARCHITECTURE_LABELS = [
   'icon logo chart diagram graphic illustration',
   'flag emblem badge symbol',
-  'food drink meal restaurant table',
+  'close up photo of food drink meal on plate',
   'portrait selfie headshot person face',
   'animal pet wildlife nature',
   'text document certificate award',
