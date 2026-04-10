@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import { t, type Lang } from '../../i18n/forCompanies';
 
@@ -10,12 +11,6 @@ const GCC_PHONE_OPTIONS = [
   { label: 'Oman', code: '+968', maxDigits: 8 },
   { label: 'Bahrain', code: '+973', maxDigits: 8 },
 ];
-
-const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from(
-  { length: CURRENT_YEAR - 1970 + 1 },
-  (_, i) => CURRENT_YEAR - i,
-);
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -90,6 +85,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         <p className="text-[15px] text-[#2c2c2c] leading-relaxed max-w-xs">
           {t(lang, 'successMessage')}
         </p>
+        <Link
+          to="/auth"
+          className="mt-4 text-[14px] font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2 transition"
+        >
+          {t(lang, 'successLoginLink')}
+        </Link>
       </div>
     );
   }
@@ -122,23 +123,36 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           <div>
             <label className={labelClass}>{t(lang, 'phone')}</label>
             <div className="flex gap-2">
-              <select
-                value={phoneRegion.code}
-                onChange={(e) => {
-                  const next =
-                    GCC_PHONE_OPTIONS.find((o) => o.code === e.target.value) ||
-                    GCC_PHONE_OPTIONS[0];
-                  setPhoneRegion(next);
-                  setPhoneDigits((d) => d.slice(0, next.maxDigits));
-                }}
-                className="h-[50px] rounded-2xl border border-stone-200 bg-stone-50/80 px-3 text-[15px] font-medium text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition shrink-0"
-              >
-                {GCC_PHONE_OPTIONS.map((o) => (
-                  <option key={o.code} value={o.code}>
-                    {o.label} {o.code}
-                  </option>
-                ))}
-              </select>
+              <div className="relative shrink-0">
+                <select
+                  value={phoneRegion.code}
+                  onChange={(e) => {
+                    const next =
+                      GCC_PHONE_OPTIONS.find((o) => o.code === e.target.value) ||
+                      GCC_PHONE_OPTIONS[0];
+                    setPhoneRegion(next);
+                    setPhoneDigits((d) => d.slice(0, next.maxDigits));
+                  }}
+                  className="h-[50px] rounded-2xl border border-stone-200 bg-stone-50/80 pl-4 pr-9 text-[15px] font-medium text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition appearance-none"
+                >
+                  {GCC_PHONE_OPTIONS.map((o) => (
+                    <option key={o.code} value={o.code}>
+                      {o.label} {o.code}
+                    </option>
+                  ))}
+                </select>
+                <svg
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
               <input
                 type="tel"
                 inputMode="numeric"
@@ -170,34 +184,21 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             />
           </div>
 
-          {/* Year of Establishment */}
+          {/* Year of Establishment — simple 4-digit input */}
           <div>
             <label className={labelClass}>{t(lang, 'yearEstablished')}</label>
-            <div className="relative">
-              <select
-                value={yearEstablished}
-                onChange={(e) => setYearEstablished(e.target.value)}
-                className={`${inputClass} appearance-none pr-10`}
-              >
-                <option value="">{t(lang, 'yearPlaceholder')}</option>
-                {YEAR_OPTIONS.map((year) => (
-                  <option key={year} value={String(year)}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-              <svg
-                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={yearEstablished}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                setYearEstablished(digits);
+              }}
+              placeholder={t(lang, 'yearPlaceholder')}
+              className={inputClass}
+            />
           </div>
 
           {/* Scope of Business */}
