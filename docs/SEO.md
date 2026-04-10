@@ -39,6 +39,7 @@ Any page reachable by anonymous users (no auth). Currently:
 | Contact | `src/pages/ContactPage.tsx` |
 | Brand Detail | `src/pages/BrandPage.tsx` |
 | Material Category | `src/pages/MaterialCategoryPage.tsx` |
+| FAQ               | `FaqPage.tsx`            | `/faq`                        | No     | FAQPage                      |
 
 Admin, auth, dashboard, and designer pages are NOT checked.
 
@@ -157,3 +158,42 @@ Example: `Interior Design Portfolio & Inspiration - Tarmeer UAE`
 3. Run `node scripts/harness/lint-seo.mjs` — it must pass
 4. Register the page file in this document's "public-facing" table above
 5. Register it in `lint-seo.mjs`'s `PUBLIC_PAGES` array
+
+---
+
+## GEO (Generative Engine Optimization)
+
+### Prerender Service
+
+Tarmeer uses a Puppeteer-based prerender service to serve fully rendered HTML to AI crawlers.
+
+- **Service**: `server/prerender/index.js` — Express + Puppeteer on port 3003
+- **Config**: `server/prerender/ecosystem.config.js` — pm2 process config
+- **nginx**: `server/prerender/nginx-prerender.conf.example` — reference config (manual deploy only)
+- **Watchdog**: `server/prerender/ops/geo_watchdog.py` — auto-maintenance (health check, cache cleanup, Chromium update, UA sync, email alerts)
+
+### AI Crawler Support
+
+The following AI crawlers are explicitly allowed in `robots.txt`:
+- `GPTBot` (OpenAI)
+- `ChatGPT-User` (ChatGPT Search)
+- `PerplexityBot` (Perplexity)
+- `ClaudeBot` (Anthropic)
+- `Applebot` (Apple/Siri)
+
+### JSON-LD Schemas (Complete List)
+
+| Page | Schema Type | Purpose |
+|------|-------------|---------|
+| HomePage | `WebSite` + `Organization` | Site search action + company info for knowledge panels |
+| CompaniesPage | `ItemList` | Structured list of design companies |
+| CompanyDetailPage | `LocalBusiness` | Individual company info |
+| ProjectDetailPage | `ImageGallery` + `BreadcrumbList` | Project photos + navigation |
+| PortfolioPage | `CollectionPage` + `ItemList` | Portfolio feed |
+| ShowroomsPage | `ItemList` | Showroom locations |
+| ContactPage | `ContactPage` + `Organization` | Contact info |
+| BrandPage | `Brand` | Brand info |
+| FaqPage | `FAQPage` | Q&A content for AI extraction |
+| NewHomeDesignPage | `Service` | Design service |
+| SoftDecorationPage | `Service` | Decoration service |
+| HouseExteriorDesignPage | `Service` | Exterior design service |
