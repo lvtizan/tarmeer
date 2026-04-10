@@ -34,14 +34,8 @@ run_check "Reliability invariants" node "$SCRIPT_DIR/lint-reliability.mjs"
 # 2. CORS/Nginx consistency
 run_check "CORS/Nginx consistency" node "$SCRIPT_DIR/lint-cors-nginx.mjs"
 
-# 3. SEO compliance (public pages) — soft check (warn, don't block)
-echo "▶ SEO compliance (soft)"
-if node "$SCRIPT_DIR/lint-seo.mjs" > /dev/null 2>&1; then
-  echo "  ✅ PASSED"
-else
-  echo "  ⚠️  WARNINGS (non-blocking) — run 'node scripts/harness/lint-seo.mjs' for details"
-fi
-echo ""
+# 3. SEO compliance (public pages)
+run_check "SEO compliance" node "$SCRIPT_DIR/lint-seo.mjs"
 
 # 4. Frontend type check
 if [ "$TARGET" = "frontend" ] || [ "$TARGET" = "both" ]; then

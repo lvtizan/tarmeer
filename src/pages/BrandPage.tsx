@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
 import { getBrandBySlug } from '../data/brands';
 import { dedupeImageEntries } from '../lib/imageCleanup';
@@ -25,8 +26,40 @@ export default function BrandPage() {
     );
   }
 
+  const canonicalUrl = `https://www.tarmeer.com/materials/brands/${slug}`;
+  const ogImage = brand.bannerImage?.startsWith('http')
+    ? brand.bannerImage
+    : `https://www.tarmeer.com${brand.bannerImage}`;
+  const rawDescription = `${brand.tagline ?? ''} ${brand.intro ?? ''}`.trim();
+  const metaDescription = rawDescription.slice(0, 320);
+
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>{brand.nameEn} - Building Materials &amp; Products - Tarmeer UAE</title>
+        <meta name="description" content={metaDescription} />
+        <meta property="og:title" content={`${brand.nameEn} - Building Materials & Products - Tarmeer UAE`} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="product" />
+        <meta property="og:site_name" content="Tarmeer" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${brand.nameEn} - Building Materials & Products - Tarmeer UAE`} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        <meta name="keywords" content={`${brand.nameEn}, building materials, UAE, Tarmeer, interior design`} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={canonicalUrl} />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Brand",
+          "name": brand.nameEn,
+          "description": brand.tagline,
+          "url": canonicalUrl,
+          "image": ogImage,
+        })}</script>
+      </Helmet>
       {/* Banner */}
       <section className="relative h-[320px] sm:h-[400px] overflow-hidden">
         <img

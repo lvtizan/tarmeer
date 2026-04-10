@@ -234,6 +234,12 @@ export default function CompanyDetailPage() {
         <meta property="og:type" content="website" />
         <link rel="canonical" href={`https://www.tarmeer.com/companies/${company.id}`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${company.name} - ${company.city} - Tarmeer`} />
+        <meta name="twitter:description" content={company.shortDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        <meta name="keywords" content={`${company.name}, interior design ${company.city}, renovation ${company.city}, ${company.services.slice(0, 5).join(', ')}, UAE, Tarmeer`} />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
       {/* Back nav */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">

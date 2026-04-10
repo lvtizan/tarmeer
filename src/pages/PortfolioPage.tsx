@@ -667,6 +667,18 @@ export default function PortfolioPage() {
             },
           })}
         </script>
+        <meta property="og:title" content="Interior Design Portfolio & Inspiration - Tarmeer UAE" />
+        <meta property="og:description" content="Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more." />
+        <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta property="og:url" content="https://www.tarmeer.com/portfolio" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Tarmeer" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Interior Design Portfolio & Inspiration - Tarmeer UAE" />
+        <meta name="twitter:description" content="Browse stunning interior design projects from top UAE designers." />
+        <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta name="keywords" content="interior design portfolio, UAE interior design, luxury villas, modern apartments, renovation projects, Tarmeer, Dubai, Abu Dhabi, design inspiration" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
 
       {/* ── Sticky filter bar (appears when scrolled past header) ── */}

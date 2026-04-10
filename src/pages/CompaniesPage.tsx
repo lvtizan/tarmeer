@@ -307,6 +307,12 @@ export default function CompaniesPage() {
         <meta property="og:url" content="https://www.tarmeer.com/companies" />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.tarmeer.com/companies" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Interior Design Companies in UAE - Tarmeer" />
+        <meta name="twitter:description" content="Find and compare top interior design, renovation, and fit-out companies across UAE." />
+        <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta name="keywords" content="interior design companies UAE, renovation companies Dubai, fit-out companies Abu Dhabi, interior designers, Tarmeer, compare designers" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
       {/* Hero - Match with Professionals */}
       <section className="relative bg-[#2c2620] overflow-hidden">

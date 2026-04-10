@@ -1,4 +1,5 @@
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import PageContainer from '../components/PageContainer';
 import { getCategoryBySlug, getCaseStudiesForCategory } from '../data/materials';
@@ -27,8 +28,30 @@ export default function MaterialCategoryPage() {
     );
   }
 
+  const canonicalUrl = `https://www.tarmeer.com/materials/${category}`;
+  const ogImage = `https://www.tarmeer.com/images/materials-banner.png`;
+  const rawDescription = `${cat.heroSubtitle ?? ''} ${cat.description ?? ''}`.trim();
+  const metaDescription = rawDescription.slice(0, 300);
+
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>{cat.titleEn} - Building Materials - Tarmeer UAE</title>
+        <meta name="description" content={metaDescription} />
+        <meta property="og:title" content={`${cat.titleEn} - Building Materials - Tarmeer UAE`} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Tarmeer" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${cat.titleEn} - Building Materials - Tarmeer UAE`} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        <meta name="keywords" content={`${cat.titleEn}, building materials, UAE, Tarmeer, interior design, renovation`} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={canonicalUrl} />
+      </Helmet>
       {/* Materials banner */}
       <section className="w-full aspect-[21/9] sm:aspect-[3/1] max-h-[320px] bg-stone-200 overflow-hidden">
         <img

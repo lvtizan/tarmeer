@@ -48,6 +48,14 @@ export default function ContactPage() {
         <meta property="og:description" content="Get in touch with Tarmeer for design and renovation partnerships in UAE." />
         <meta property="og:url" content="https://www.tarmeer.com/contact" />
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Tarmeer" />
+        <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Contact Us - Tarmeer" />
+        <meta name="twitter:description" content="Get in touch with Tarmeer. Partner with us for interior design, renovation, and fit-out services in the UAE." />
+        <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta name="keywords" content="contact tarmeer, interior design partnership, UAE showroom, renovation partner" />
+        <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.tarmeer.com/contact" />
       </Helmet>
       <PageContainer className="py-12 sm:py-16">

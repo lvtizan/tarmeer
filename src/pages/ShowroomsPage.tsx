@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
 import { brandsList } from '../data/brands';
 import { WHATSAPP_LINK, GOOGLE_MAPS_URL } from '../lib/constants';
@@ -54,6 +55,23 @@ export default function MaterialsPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>Showrooms & Building Materials - Tarmeer UAE</title>
+        <meta name="description" content="Visit Tarmeer's showroom in Sharjah to explore premium building materials — marble, timber, and high-performance synthetics. Expert design consultations available." />
+        <meta property="og:title" content="Showrooms & Building Materials - Tarmeer UAE" />
+        <meta property="og:description" content="Explore Tarmeer's Sharjah showroom for premium interior materials, design consultation, and personalized sourcing from our supply chain." />
+        <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta property="og:url" content="https://www.tarmeer.com/showrooms" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Tarmeer" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Showrooms & Building Materials - Tarmeer UAE" />
+        <meta name="twitter:description" content="Explore Tarmeer's Sharjah showroom for premium interior materials, design consultation, and personalized sourcing from our supply chain." />
+        <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta name="keywords" content="showroom, building materials, marble, timber, UAE, Tarmeer, interior design, Sharjah, renovation materials" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://www.tarmeer.com/showrooms" />
+      </Helmet>
       <section className="relative h-[500px] sm:h-[600px] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10" />

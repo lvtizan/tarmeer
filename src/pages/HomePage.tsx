@@ -32,6 +32,12 @@ export default function HomePage() {
         <meta property="og:url" content="https://www.tarmeer.com/" />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.tarmeer.com/" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Tarmeer - Find Interior Design & Renovation Companies in UAE" />
+        <meta name="twitter:description" content="Find trusted interior design, renovation and fit-out companies in UAE." />
+        <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta name="keywords" content="interior design UAE, renovation companies Dubai, fit-out Abu Dhabi, interior designer, home renovation, Tarmeer, villa design, apartment renovation" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
       <Banner />
       <PricingSection />
