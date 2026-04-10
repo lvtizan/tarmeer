@@ -174,45 +174,88 @@ export default function ProjectDetailPage() {
   const goPrev = () => setCurrentIndex(i => (i > 0 ? i - 1 : project.images.length - 1));
   const goNext = () => setCurrentIndex(i => (i < project.images.length - 1 ? i + 1 : 0));
 
-  // Full SEO for portfolio-mode image viewer. Even though the URL has
-  // ?from=portfolio&img=N, the canonical is the clean /companies/.../...
-  // URL so all photo variants fold into the same SEO target.
+  // ── SEO: maximise crawlable info on the portfolio image viewer page ──
+  //
+  // Title + description weave in project tags (room types, style) so search
+  // queries like "modern living room design Dubai" can land directly on this
+  // page. Tags are also emitted as JSON-LD keywords and og:article:tag.
+  //
+  // Two JSON-LD blocks:
+  //   1. ImageGallery — the photo browser itself (images, count, author)
+  //   2. BreadcrumbList — Home > Portfolio > Company > Project
+  //
+  // Canonical strips ?from=portfolio&img=N so all photo variants fold
+  // into a single SEO target.
   const portfolioPageUrl = `https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`;
   const portfolioOgImage = project.images[currentIndex]
     ? `https://www.tarmeer.com${project.images[currentIndex]}`
     : heroImage
       ? `https://www.tarmeer.com${heroImage}`
       : 'https://www.tarmeer.com/images/tarmeer_logo.svg';
-  const portfolioTitle = `${project.title} by ${company.name} - ${project.style || 'Interior Design'} in ${project.location || company.city || 'UAE'} - Tarmeer`;
-  const portfolioDescription = `${project.title} - ${project.style || 'Interior Design'} project by ${company.name} in ${project.location || company.city || 'UAE'}. ${description ? description.slice(0, 140) : `Browse ${project.images.length} high-quality photos of this ${project.style || 'interior design'} project.`}`;
-  const portfolioKeywords = [
+
+  // Build a tag string like "Modern Living Room" from project.tags + style.
+  // Dedup + limit to 3 so the title stays readable.
+  const tagPool: string[] = [];
+  if (project.style) tagPool.push(project.style);
+  for (const t of (project.tags || [])) {
+    if (!tagPool.some(x => x.toLowerCase() === t.toLowerCase())) tagPool.push(t);
+    if (tagPool.length >= 3) break;
+  }
+  const tagLabel = tagPool.join(' ') || 'Interior Design';
+  const locationLabel = project.location || company.city || 'UAE';
+
+  // Title: "{Project} - Modern Living Room Design in Dubai by {Company} | Tarmeer"
+  const portfolioTitle = `${project.title} - ${tagLabel} Design in ${locationLabel} by ${company.name} | Tarmeer`;
+
+  // Description: natural sentence packing in company, location, tags, photo count, year
+  const yearSnippet = project.year ? ` (${project.year})` : '';
+  const costSnippet = project.cost ? ` Budget: ${project.cost}.` : '';
+  const descSnippet = description ? `${description.slice(0, 160)}` : '';
+  const portfolioDescription = [
+    `${project.title}${yearSnippet} — a ${tagLabel.toLowerCase()} project by ${company.name} in ${locationLabel}, UAE.`,
+    costSnippet,
+    descSnippet || `Browse ${project.images.length} high-quality photos.`,
+    project.tags?.length ? `Tags: ${project.tags.join(', ')}.` : '',
+  ].filter(Boolean).join(' ').slice(0, 320);
+
+  // Keywords: comprehensive, deduped
+  const portfolioKeywords = [...new Set([
     project.title,
-    project.style,
+    ...tagPool,
     project.location,
     company.city,
     company.name,
     'interior design',
-    'UAE',
-    'Tarmeer',
     'renovation',
+    'fit-out',
+    'UAE',
+    'Dubai',
+    'Abu Dhabi',
+    'Tarmeer',
     'project photos',
     ...(project.tags || []),
-  ].filter(Boolean).join(', ');
+  ].filter(Boolean).map(k => k.toLowerCase()))].join(', ');
 
   const portfolioHelmet = (
     <Helmet>
       <title>{portfolioTitle}</title>
       <meta name="description" content={portfolioDescription} />
       <meta name="keywords" content={portfolioKeywords} />
-      <meta name="robots" content="index, follow" />
+      <meta name="robots" content="index, follow, max-image-preview:large" />
       {/* Open Graph */}
       <meta property="og:type" content="article" />
       <meta property="og:title" content={portfolioTitle} />
       <meta property="og:description" content={portfolioDescription} />
       <meta property="og:url" content={portfolioPageUrl} />
       <meta property="og:image" content={portfolioOgImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:site_name" content="Tarmeer" />
       <meta property="og:locale" content="en_US" />
+      {/* og:article:tag — one per tag, helps Google discover topic clusters */}
+      {(project.tags || []).map((tag) => (
+        <meta key={tag} property="article:tag" content={tag} />
+      ))}
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={portfolioTitle} />
@@ -220,22 +263,46 @@ export default function ProjectDetailPage() {
       <meta name="twitter:image" content={portfolioOgImage} />
       {/* Canonical — same as default layout so photo variants fold in */}
       <link rel="canonical" href={portfolioPageUrl} />
-      {/* JSON-LD: ImageGallery schema since this is a photo browser */}
+      {/* JSON-LD #1: ImageGallery */}
       <script type="application/ld+json">{JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'ImageGallery',
         name: project.title,
-        description: description || `${project.style || 'Interior Design'} project by ${company.name}`,
+        description: portfolioDescription,
         url: portfolioPageUrl,
-        author: { '@type': 'Organization', name: company.name },
-        locationCreated: project.location || company.city,
+        author: {
+          '@type': 'Organization',
+          name: company.name,
+          url: `https://www.tarmeer.com/companies/${company.slug || company.id}`,
+          ...(company.logo ? { logo: `https://www.tarmeer.com${company.logo}` } : {}),
+        },
+        locationCreated: {
+          '@type': 'Place',
+          name: locationLabel,
+          address: { '@type': 'PostalAddress', addressCountry: 'AE', addressLocality: locationLabel },
+        },
         genre: project.style,
+        keywords: (project.tags || []).join(', '),
+        dateCreated: project.year ? `${project.year}` : undefined,
         numberOfItems: project.images.length,
-        image: project.images.slice(0, 10).map((img) => ({
+        image: project.images.slice(0, 20).map((img, i) => ({
           '@type': 'ImageObject',
           contentUrl: `https://www.tarmeer.com${img}`,
-          caption: project.title,
+          name: `${project.title} — photo ${i + 1}`,
+          caption: `${project.title} by ${company.name}`,
+          representativeOfPage: i === 0,
         })),
+      })}</script>
+      {/* JSON-LD #2: BreadcrumbList for site hierarchy */}
+      <script type="application/ld+json">{JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
+          { '@type': 'ListItem', position: 2, name: 'Portfolio', item: 'https://www.tarmeer.com/portfolio' },
+          { '@type': 'ListItem', position: 3, name: company.name, item: `https://www.tarmeer.com/companies/${company.slug || company.id}` },
+          { '@type': 'ListItem', position: 4, name: project.title, item: portfolioPageUrl },
+        ],
       })}</script>
     </Helmet>
   );
