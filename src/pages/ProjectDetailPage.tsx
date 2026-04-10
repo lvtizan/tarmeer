@@ -174,11 +174,69 @@ export default function ProjectDetailPage() {
   const goPrev = () => setCurrentIndex(i => (i > 0 ? i - 1 : project.images.length - 1));
   const goNext = () => setCurrentIndex(i => (i < project.images.length - 1 ? i + 1 : 0));
 
+  // Full SEO for portfolio-mode image viewer. Even though the URL has
+  // ?from=portfolio&img=N, the canonical is the clean /companies/.../...
+  // URL so all photo variants fold into the same SEO target.
+  const portfolioPageUrl = `https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`;
+  const portfolioOgImage = project.images[currentIndex]
+    ? `https://www.tarmeer.com${project.images[currentIndex]}`
+    : heroImage
+      ? `https://www.tarmeer.com${heroImage}`
+      : 'https://www.tarmeer.com/images/tarmeer_logo.svg';
+  const portfolioTitle = `${project.title} by ${company.name} - ${project.style || 'Interior Design'} in ${project.location || company.city || 'UAE'} - Tarmeer`;
+  const portfolioDescription = `${project.title} - ${project.style || 'Interior Design'} project by ${company.name} in ${project.location || company.city || 'UAE'}. ${description ? description.slice(0, 140) : `Browse ${project.images.length} high-quality photos of this ${project.style || 'interior design'} project.`}`;
+  const portfolioKeywords = [
+    project.title,
+    project.style,
+    project.location,
+    company.city,
+    company.name,
+    'interior design',
+    'UAE',
+    'Tarmeer',
+    'renovation',
+    'project photos',
+    ...(project.tags || []),
+  ].filter(Boolean).join(', ');
+
   const portfolioHelmet = (
     <Helmet>
-      <title>{project.title} by {company.name} - {project.style || 'Interior Design'} in {project.location || company.city || 'UAE'} - Tarmeer</title>
-      <meta name="description" content={`${project.title} - ${project.style || 'Interior Design'} project by ${company.name} in ${project.location || company.city || 'UAE'}. ${project.description ? project.description.slice(0, 120) : `Browse ${project.images.length} project photos.`}`} />
-      <link rel="canonical" href={`https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`} />
+      <title>{portfolioTitle}</title>
+      <meta name="description" content={portfolioDescription} />
+      <meta name="keywords" content={portfolioKeywords} />
+      <meta name="robots" content="index, follow" />
+      {/* Open Graph */}
+      <meta property="og:type" content="article" />
+      <meta property="og:title" content={portfolioTitle} />
+      <meta property="og:description" content={portfolioDescription} />
+      <meta property="og:url" content={portfolioPageUrl} />
+      <meta property="og:image" content={portfolioOgImage} />
+      <meta property="og:site_name" content="Tarmeer" />
+      <meta property="og:locale" content="en_US" />
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={portfolioTitle} />
+      <meta name="twitter:description" content={portfolioDescription} />
+      <meta name="twitter:image" content={portfolioOgImage} />
+      {/* Canonical — same as default layout so photo variants fold in */}
+      <link rel="canonical" href={portfolioPageUrl} />
+      {/* JSON-LD: ImageGallery schema since this is a photo browser */}
+      <script type="application/ld+json">{JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'ImageGallery',
+        name: project.title,
+        description: description || `${project.style || 'Interior Design'} project by ${company.name}`,
+        url: portfolioPageUrl,
+        author: { '@type': 'Organization', name: company.name },
+        locationCreated: project.location || company.city,
+        genre: project.style,
+        numberOfItems: project.images.length,
+        image: project.images.slice(0, 10).map((img) => ({
+          '@type': 'ImageObject',
+          contentUrl: `https://www.tarmeer.com${img}`,
+          caption: project.title,
+        })),
+      })}</script>
     </Helmet>
   );
 
@@ -190,15 +248,31 @@ export default function ProjectDetailPage() {
       <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
         {portfolioHelmet}
 
-        {/* Top bar */}
+        {/* Top bar: Back (left) | View Project (center) | Close (right) */}
         <div className="sticky top-0 z-20 bg-white border-b border-stone-200">
-          <div className="px-4 sm:px-6 h-14 flex items-center justify-between">
+          <div className="relative px-4 sm:px-6 h-14 flex items-center justify-between">
             <button
               onClick={handleBack}
               className="inline-flex items-center gap-1.5 text-sm text-stone-600 hover:text-[#b8864a] transition"
             >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
+
+            {/* Center: link to the full project detail page (same URL minus
+                ?from=portfolio). Only shown when we actually have a project
+                record — synthetic directory entries without a slug would not
+                have a meaningful detail page to visit. */}
+            {project && projectSlug && (
+              <Link
+                to={`/companies/${companySlug}/${projectSlug}`}
+                className="absolute left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-2xl border border-stone-200 text-sm font-medium text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition max-w-[50vw] truncate"
+                title={`View full project: ${project.title}`}
+              >
+                <FolderOpen className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">View Project</span>
+              </Link>
+            )}
+
             <button
               onClick={handleBack}
               aria-label="Close"
