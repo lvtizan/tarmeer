@@ -81,7 +81,7 @@ export default function HomePage() {
       <HomeDesignSection />
       <section className="bg-[var(--color-tarmeer-bg)] py-12 text-center">
         <p className="text-[#6b6b6b] text-[15px] mb-3">Are you a renovation company?</p>
-        <Link to="/for-companies" className="btn-primary inline-block">
+        <Link to="/contact" className="btn-primary inline-block">
           Join as Company
         </Link>
       </section>

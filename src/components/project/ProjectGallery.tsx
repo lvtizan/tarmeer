@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { resolveVariantUrl } from '../../lib/imageUrl';
 
 interface ProjectGalleryProps {
   images: string[];
@@ -19,23 +20,18 @@ function ProgressiveImg({ src, alt, className = '', loading = 'lazy' }: { src: s
     loadedImages.add(src);
   };
 
+  const blurSrc = resolveVariantUrl(src, 'blur');
+
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      {/* 模糊占位 - 使用极小尺寸图片作为模糊背景 */}
       {!isLoaded && (
-        <div 
-          className="absolute inset-0 bg-stone-200"
-          style={{
-            backgroundImage: `url(${src.split('?')[0]}?w=40&q=10&blur=20)`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(15px)',
-            transform: 'scale(1.2)',
-          }}
+        <img
+          src={blurSrc}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 w-full h-full object-cover scale-110 blur-lg"
         />
       )}
-      
-      {/* 实际图片 */}
       <img
         src={src}
         alt={alt}
@@ -64,6 +60,8 @@ export default function ProjectGallery({ images, title, disableLightbox }: Proje
 
   if (images.length === 0) return null;
 
+  const mainSrc = resolveVariantUrl(images[index], 'medium');
+
   const goPrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIndex((i) => (i - 1 + images.length) % images.length);
@@ -80,7 +78,7 @@ export default function ProjectGallery({ images, title, disableLightbox }: Proje
         <div className="relative w-full aspect-video sm:aspect-[16/10] rounded-lg overflow-hidden bg-stone-200">
           {disableLightbox ? (
             <ProgressiveImg
-              src={images[index]}
+              src={mainSrc}
               alt={title ? `${title} ${index + 1}` : ''}
               className="w-full h-full"
             />
@@ -91,7 +89,7 @@ export default function ProjectGallery({ images, title, disableLightbox }: Proje
               className="w-full h-full focus:outline-none focus:ring-2 focus:ring-[#c6a065]"
             >
               <ProgressiveImg
-                src={images[index]}
+                src={mainSrc}
                 alt={title ? `${title} ${index + 1}` : ''}
                 className="w-full h-full hover:scale-105 transition-transform duration-300"
               />
