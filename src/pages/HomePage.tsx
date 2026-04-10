@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { SCROLL_TIMEOUT_MS } from '../lib/constants';
 import Banner from '../components/home/Banner';
@@ -79,6 +79,12 @@ export default function HomePage() {
       <Banner />
       <PricingSection />
       <HomeDesignSection />
+      <section className="bg-[var(--color-tarmeer-bg)] py-12 text-center">
+        <p className="text-[#6b6b6b] text-[15px] mb-3">Are you a renovation company?</p>
+        <Link to="/for-companies" className="btn-primary inline-block">
+          Join as Company
+        </Link>
+      </section>
     </>
   );
 }

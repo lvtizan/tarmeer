@@ -30,6 +30,7 @@ const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
 const FaqPage = lazy(() => import('./pages/FaqPage'));
+const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
 
 // Onboarding
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
@@ -143,6 +144,9 @@ function App() {
           <Route path="/designers" element={<Navigate to="/companies" replace />} />
           <Route path="/designers/apply" element={<Navigate to="/onboarding" replace />} />
           <Route path="/designers/:slug" element={<Navigate to="/companies" replace />} />
+
+          {/* ====== Independent landing pages ====== */}
+          <Route path="/for-companies" element={<ForCompaniesPage />} />
 
           {/* ====== Auth ====== */}
           <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
