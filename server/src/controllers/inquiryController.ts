@@ -43,12 +43,6 @@ export async function submitInquiry(req: any, res: any) {
       return res.status(400).json({ error: 'Invalid phone number.' });
     }
 
-    // Reject spam: local part has 5+ consecutive same digit (e.g. 999999)
-    const localPart = phoneDigitsOnly.slice(-9);
-    if (/(.)\1{4,}/.test(localPart)) {
-      return res.status(400).json({ error: 'Invalid phone number.' });
-    }
-
     if (city && !VALID_CITIES.includes(city)) {
       return res.status(400).json({ error: 'Invalid city.' });
     }
