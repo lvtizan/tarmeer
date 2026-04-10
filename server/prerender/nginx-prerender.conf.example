@@ -1,0 +1,29 @@
+# GEO Prerender — add to server block in tarmeer.conf
+# MANUAL DEPLOY ONLY — never auto-applied
+
+# Bot detection
+set $prerender 0;
+if ($http_user_agent ~* "Googlebot|Google-InspectionTool|Storebot-Google|Bingbot|msnbot|PerplexityBot|ChatGPT-User|ClaudeBot|GPTBot|Applebot|anthropic-ai|cohere-ai|Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Screaming\ Frog|SemrushBot|AhrefsBot") {
+    set $prerender 1;
+}
+
+# Skip prerender for static assets
+if ($uri ~* "\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|mp4)$") {
+    set $prerender 0;
+}
+
+# Skip prerender for API calls
+if ($uri ~ ^/api/) {
+    set $prerender 0;
+}
+
+location / {
+    # Prerender proxy
+    if ($prerender = 1) {
+        rewrite (.*) /prerenderproxy$1 break;
+        proxy_pass http://127.0.0.1:3003;
+    }
+
+    # Normal SPA fallback
+    try_files $uri $uri/ /index.html;
+}
