@@ -14,7 +14,6 @@ import companyRoutes from './routes/companies';
 import publicCompaniesRouter from './routes/publicCompanies';
 import companyApplicationRoutes from './routes/companyApplications';
 import inquiryRoutes from './routes/inquiries';
-import companyLeadRoutes from './routes/companyLeads';
 import notificationRoutes from './routes/notifications';
 import complaintRoutes from './routes/complaints';
 import config from './config';
@@ -248,7 +247,6 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/public/companies', publicCompaniesRouter);
 app.use('/api/company-applications', companyApplicationRoutes);
 app.use('/api/inquiries', inquiryRoutes);
-app.use('/api/company-leads', companyLeadRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/complaints', complaintRoutes);
 
