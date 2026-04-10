@@ -36,6 +36,7 @@ const PUBLIC_PAGES = [
   { file: 'src/pages/ContactPage.tsx', label: 'Contact', detail: false },
   { file: 'src/pages/BrandPage.tsx', label: 'Brand Detail', detail: true },
   { file: 'src/pages/MaterialCategoryPage.tsx', label: 'Material Category', detail: false },
+  { file: 'src/pages/FaqPage.tsx', label: 'FAQ', detail: false },
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────
