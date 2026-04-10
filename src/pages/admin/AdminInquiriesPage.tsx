@@ -4,6 +4,7 @@ import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 
 type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
+type TypeFilter = 'all' | 'homeowner' | 'company';
 
 interface InquiryRecord {
   id: number;
@@ -48,6 +49,10 @@ export default function AdminInquiriesPage() {
     return s === 'new' || s === 'contacted' || s === 'resolved' || s === 'archived' ? s : 'all';
   });
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(() => {
+    const t = searchParams.get('type');
+    return t === 'homeowner' || t === 'company' ? t : 'all';
+  });
   const [error, setError] = useState('');
 
   // Expanded detail
@@ -66,20 +71,29 @@ export default function AdminInquiriesPage() {
     setLoading(true);
     setError('');
     try {
+      // Combine user search with type filter
+      let effectiveSearch = search || undefined;
+      if (typeFilter === 'company') {
+        effectiveSearch = effectiveSearch ? `[Company Inquiry] ${effectiveSearch}` : '[Company Inquiry]';
+      }
       const result = await adminApi.getInquiries({
         page, limit: 20,
         status: statusFilter === 'all' ? undefined : statusFilter,
-        search: search || undefined,
+        search: effectiveSearch,
         deleted: viewMode === 'deleted',
       });
-      setInquiries(result.inquiries);
-      setTotal(result.pagination.total);
+      let filtered = result.inquiries;
+      if (typeFilter === 'homeowner') {
+        filtered = filtered.filter((inq: InquiryRecord) => !inq.message?.startsWith('[Company Inquiry]'));
+      }
+      setInquiries(filtered);
+      setTotal(typeFilter === 'homeowner' ? filtered.length : result.pagination.total);
     } catch (err: any) {
       setError(err.message || 'Failed to load inquiries.');
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search, viewMode]);
+  }, [page, statusFilter, search, viewMode, typeFilter]);
 
   // Clear selection when viewMode changes
   useEffect(() => {
@@ -93,9 +107,10 @@ export default function AdminInquiriesPage() {
     const params: Record<string, string> = {};
     if (page > 1) params.page = String(page);
     if (statusFilter !== 'all') params.status = statusFilter;
+    if (typeFilter !== 'all') params.type = typeFilter;
     if (search) params.search = search;
     setSearchParams(params, { replace: true });
-  }, [page, statusFilter, search, setSearchParams]);
+  }, [page, statusFilter, typeFilter, search, setSearchParams]);
 
   const totalPages = Math.ceil(total / 20);
 
@@ -211,6 +226,18 @@ export default function AdminInquiriesPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div>
+          <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
+          <select
+            value={typeFilter}
+            onChange={(e) => { setTypeFilter(e.target.value as TypeFilter); setPage(1); }}
+            className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
+          >
+            <option value="all">All Types</option>
+            <option value="homeowner">Homeowner</option>
+            <option value="company">Company Lead</option>
+          </select>
+        </div>
+        <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
           <select
             value={statusFilter}
@@ -312,7 +339,14 @@ export default function AdminInquiriesPage() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(inq.id)} onChange={() => toggleSelect(inq.id)} />
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-800">{inq.name || <span className="text-stone-400">—</span>}</td>
+                    <td className="px-4 py-3 font-medium text-stone-800">
+                      <div className="flex items-center gap-2">
+                        {inq.name || <span className="text-stone-400">—</span>}
+                        {inq.message?.startsWith('[Company Inquiry]') && (
+                          <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#b8864a]/10 text-[#b8864a]">Company</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-stone-600">{inq.phone}</td>
                     <td className="px-4 py-3 text-stone-600">{inq.city || <span className="text-stone-400">—</span>}</td>
                     <td className="px-4 py-3 text-stone-600">{inq.area_range}</td>
