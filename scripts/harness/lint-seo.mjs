@@ -37,6 +37,7 @@ const PUBLIC_PAGES = [
   { file: 'src/pages/BrandPage.tsx', label: 'Brand Detail', detail: true },
   { file: 'src/pages/MaterialCategoryPage.tsx', label: 'Material Category', detail: false },
   { file: 'src/pages/FaqPage.tsx', label: 'FAQ', detail: false },
+  { file: 'src/pages/ForCompaniesPage.tsx', label: 'For Companies', detail: false },
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────
