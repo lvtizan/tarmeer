@@ -7,7 +7,7 @@ const translations = {
     // Hero
     tagline: "UAE's First AI-Powered Platform for Renovation",
     headline: 'Grow Your Business with AI-Driven Leads',
-    subtitle: 'GEO optimization, auto SEO, smart tagging — all included free.',
+    subtitle: 'GEO optimization, auto SEO, smart tagging — all included.',
     // Form
     formTitle: 'We will contact you via WhatsApp/Phone Call',
     contactName: 'Contact Name',
@@ -20,7 +20,7 @@ const translations = {
     yearPlaceholder: 'e.g. 2015',
     scopeOfBusiness: 'Scope of Business',
     scopePlaceholder: 'e.g. Interior Design, Fit-out',
-    submit: 'Get Started Free',
+    submit: 'Get Started',
     submitting: 'Submitting...',
     successMessage: 'Our team will contact you as soon as possible. You can also log in to our website to complete your profile.',
     successLoginLink: 'Log in to Tarmeer',
@@ -57,11 +57,11 @@ const translations = {
     grid3Desc: 'Receive inquiries directly. Track, respond, and convert — all from your dashboard.',
     // CTA
     ctaTitle: 'Ready to grow your business?',
-    ctaButton: 'Join as Company \u2014 It\u2019s Free',
+    ctaButton: 'Join as Company',
     // Footer form
     footerTitle: 'Start Your Journey Today',
     footerSubtitle: 'Join 100+ companies already on the platform',
-    footerCheck1: 'Free forever',
+    footerCheck1: 'No commitment',
     footerCheck2: 'Set up in 5 minutes',
     footerCheck3: 'AI tools included',
     // Mini footer

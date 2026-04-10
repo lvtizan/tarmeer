@@ -124,7 +124,7 @@ export default function ForCompaniesPage() {
         <title>Join Tarmeer — AI-Powered Platform for Renovation Companies in UAE</title>
         <meta
           name="description"
-          content="Grow your renovation business with AI-driven leads, GEO+SEO optimization, smart photo tagging, and content generation. Join 100+ UAE companies on Tarmeer — free forever."
+          content="Grow your renovation business with AI-driven leads, GEO+SEO optimization, smart photo tagging, and content generation. Join 100+ UAE companies on Tarmeer ."
         />
         <meta
           property="og:title"
@@ -132,7 +132,7 @@ export default function ForCompaniesPage() {
         />
         <meta
           property="og:description"
-          content="GEO+SEO engine, AI photo tagging, content generation — all free for renovation companies in UAE."
+          content="GEO+SEO engine, AI photo tagging, content generation for renovation companies in UAE."
         />
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta property="og:url" content="https://www.tarmeer.com/for-companies" />
