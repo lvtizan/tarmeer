@@ -102,44 +102,6 @@ async function getFingerprint(filePath) {
       return { skip: true, reason: 'text/banner overlay' };
     }
 
-    // Layer 6: Non-photo heuristic checks
-    // Color poverty check (icons, flags, charts have few unique colors)
-    {
-      const size = 64;
-      const { data } = await sharp(filePath)
-        .resize(size, size, { fit: 'fill' })
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-
-      const colors = new Set();
-      for (let i = 0; i < data.length; i += 3) {
-        // Quantize to reduce noise: group into 8-level buckets
-        const r = Math.floor(data[i] / 32);
-        const g = Math.floor(data[i + 1] / 32);
-        const b = Math.floor(data[i + 2] / 32);
-        colors.add(`${r},${g},${b}`);
-      }
-
-      if (colors.size < 20) {
-        return { skip: true, reason: `color poverty (${colors.size} unique colors)` };
-      }
-
-      // Low saturation check (grayscale charts, wireframes)
-      let totalSat = 0;
-      const pixelCount = size * size;
-      for (let i = 0; i < data.length; i += 3) {
-        const r = data[i], g = data[i + 1], b = data[i + 2];
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        totalSat += max === 0 ? 0 : (max - min) / max;
-      }
-      const avgSat = totalSat / pixelCount;
-
-      if (avgSat < 0.08) {
-        return { skip: true, reason: `low saturation (${(avgSat * 100).toFixed(1)}%)` };
-      }
-    }
-
     // Generate 16x16 grayscale thumbnail
     const { data } = await sharp(filePath)
       .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'fill' })

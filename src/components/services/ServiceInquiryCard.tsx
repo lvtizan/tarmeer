@@ -2,15 +2,6 @@ import { useState } from 'react';
 import { api } from '../../lib/api';
 import SelectField from '../form/SelectField';
 
-const GCC_PHONE_OPTIONS = [
-  { label: 'UAE', code: '+971', maxDigits: 9 },
-  { label: 'KSA', code: '+966', maxDigits: 9 },
-  { label: 'Qatar', code: '+974', maxDigits: 8 },
-  { label: 'Kuwait', code: '+965', maxDigits: 8 },
-  { label: 'Oman', code: '+968', maxDigits: 8 },
-  { label: 'Bahrain', code: '+973', maxDigits: 8 },
-];
-
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const AREA_SIZES = ['< 50 m²', '50 - 100 m²', '100 - 200 m²', '200 - 500 m²', '500 m²+'];
 
@@ -52,10 +43,9 @@ export default function ServiceInquiryCard({
   companySlug,
   minimal = false,
 }: ServiceInquiryCardProps) {
-  const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [form, setForm] = useState({
     name: '',
-    phoneDigits: '',
+    phone: '',
     city: '',
     areaSize: '',
     message: '',
@@ -64,11 +54,9 @@ export default function ServiceInquiryCard({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  const isSpamPhone = form.phoneDigits.length > 0 && /(.)\1{4,}/.test(form.phoneDigits);
-
   const canSubmit = minimal
-    ? Boolean(form.phoneDigits && form.areaSize && !isSpamPhone)
-    : Boolean(form.name && form.phoneDigits && form.city && form.areaSize && !isSpamPhone);
+    ? Boolean(form.phone && form.areaSize)
+    : Boolean(form.name && form.phone && form.city && form.areaSize);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +66,7 @@ export default function ServiceInquiryCard({
     try {
       await api.post('/inquiries', {
         name: form.name || undefined,
-        phone: `${phoneRegion.code}${form.phoneDigits}`,
+        phone: form.phone,
         city: form.city || undefined,
         area_range: AREA_SIZE_MAP[form.areaSize] || form.areaSize,
         message: form.message || undefined,
@@ -126,32 +114,9 @@ export default function ServiceInquiryCard({
           onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
           className={inputCls} />
       )}
-      <div className="flex gap-2">
-        <select
-          value={phoneRegion.code}
-          onChange={(e) => {
-            const next = GCC_PHONE_OPTIONS.find((o) => o.code === e.target.value) || GCC_PHONE_OPTIONS[0];
-            setPhoneRegion(next);
-            setForm((prev) => ({ ...prev, phoneDigits: prev.phoneDigits.slice(0, next.maxDigits) }));
-          }}
-          className="h-12 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors shrink-0"
-        >
-          {GCC_PHONE_OPTIONS.map((o) => (
-            <option key={o.code} value={o.code}>{o.label} {o.code}</option>
-          ))}
-        </select>
-        <input type="tel" inputMode="numeric" placeholder="50 123 4567"
-          value={form.phoneDigits}
-          onChange={(e) => {
-            const digits = e.target.value.replace(/\D/g, '').slice(0, phoneRegion.maxDigits);
-            setForm((prev) => ({ ...prev, phoneDigits: digits }));
-          }}
-          maxLength={phoneRegion.maxDigits}
-          className={`${inputCls} flex-1 min-w-0 ${isSpamPhone ? '!border-red-300 !ring-red-200/50' : ''}`} />
-      </div>
-      {isSpamPhone && (
-        <p className="mt-1 text-xs text-red-500">Please enter a valid phone number</p>
-      )}
+      <input type="tel" placeholder="Phone number" value={form.phone}
+        onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+        className={inputCls} />
       {!minimal && (
         <SelectField value={form.city} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}>
           <option value="">Select city</option>

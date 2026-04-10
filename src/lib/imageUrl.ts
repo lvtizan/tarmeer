@@ -84,3 +84,20 @@ export function resolveImageUrl(url: string | null | undefined): string {
   }
   return normalized;
 }
+
+/**
+ * Resolve the URL for a thumbnail variant (blur, thumb, medium).
+ * e.g. resolveVariantUrl('/images/.../1.jpg', 'thumb') => '/images/.../1-thumb.webp'
+ */
+export function resolveVariantUrl(
+  url: string | null | undefined,
+  variant: 'blur' | 'thumb' | 'medium'
+): string {
+  const resolved = resolveImageUrl(url);
+  if (!resolved) return '';
+  if (resolved.startsWith('data:')) return resolved;
+  const dotIndex = resolved.lastIndexOf('.');
+  const slashIndex = resolved.lastIndexOf('/');
+  if (dotIndex === -1 || dotIndex < slashIndex) return resolved;
+  return `${resolved.slice(0, dotIndex)}-${variant}.webp`;
+}

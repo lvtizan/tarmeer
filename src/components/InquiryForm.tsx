@@ -4,15 +4,6 @@ import { ChevronDown, Phone, Send, User, MessageSquare } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
-const GCC_PHONE_OPTIONS = [
-  { label: 'UAE', code: '+971', maxDigits: 9 },
-  { label: 'KSA', code: '+966', maxDigits: 9 },
-  { label: 'Qatar', code: '+974', maxDigits: 8 },
-  { label: 'Kuwait', code: '+965', maxDigits: 8 },
-  { label: 'Oman', code: '+968', maxDigits: 8 },
-  { label: 'Bahrain', code: '+973', maxDigits: 8 },
-];
-
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const AREA_RANGES = [
   { label: '< 50m\u00B2', value: '< 50m\u00B2' },
@@ -29,8 +20,7 @@ interface InquiryFormProps {
 
 export default function InquiryForm({ companyId, recipientName = 'our team' }: InquiryFormProps) {
   const [name, setName] = useState('');
-  const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
-  const [phoneDigits, setPhoneDigits] = useState('');
+  const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [areaRange, setAreaRange] = useState('');
   const [message, setMessage] = useState('');
@@ -38,16 +28,13 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  const isSpamPhone = phoneDigits.length > 0 && /(.)\1{4,}/.test(phoneDigits);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phoneDigits || !city || !areaRange || isSpamPhone) return;
+    if (!name || !phone || !city || !areaRange) return;
 
     setSubmitting(true);
     setError('');
 
-    const phone = `${phoneRegion.code}${phoneDigits}`;
     try {
       const res = await fetch(`${API_BASE}/inquiries`, {
         method: 'POST',
@@ -117,40 +104,17 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
         {/* Phone */}
         <div>
           <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1.5">Phone Number</label>
-          <div className="flex gap-2">
-            <div className="relative">
-              <Phone className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <select
-                value={phoneRegion.code}
-                onChange={(e) => {
-                  const next = GCC_PHONE_OPTIONS.find((o) => o.code === e.target.value) || GCC_PHONE_OPTIONS[0];
-                  setPhoneRegion(next);
-                  setPhoneDigits((d) => d.slice(0, next.maxDigits));
-                }}
-                className="h-11 pl-9 pr-2 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition shrink-0"
-              >
-                {GCC_PHONE_OPTIONS.map((o) => (
-                  <option key={o.code} value={o.code}>{o.label} {o.code}</option>
-                ))}
-              </select>
-            </div>
+          <div className="relative">
+            <Phone className="w-4 h-4 text-stone-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="tel"
-              inputMode="numeric"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
-              value={phoneDigits}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '').slice(0, phoneRegion.maxDigits);
-                setPhoneDigits(digits);
-              }}
-              maxLength={phoneRegion.maxDigits}
-              placeholder="50 123 4567"
-              className={`flex-1 min-w-0 h-11 px-4 bg-stone-50 border rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 transition ${isSpamPhone ? 'border-red-300 focus:ring-red-200/50 focus:border-red-400' : 'border-stone-200 focus:ring-[#c6a065]/30 focus:border-[#c6a065]'}`}
+              placeholder="+971 50 123 4567"
+              className="w-full h-11 pl-11 pr-4 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition"
             />
           </div>
-          {isSpamPhone && (
-            <p className="mt-1 text-xs text-red-500">Please enter a valid phone number</p>
-          )}
         </div>
 
         {/* City */}
@@ -215,7 +179,7 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
         {/* Submit */}
         <button
           type="submit"
-          disabled={submitting || !name || !phoneDigits || !city || !areaRange || isSpamPhone}
+          disabled={submitting || !name || !phone || !city || !areaRange}
           className="w-full h-12 rounded-xl bg-[#c6a065] text-white font-semibold text-sm hover:bg-[#b8860b] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
         >
           {submitting ? (

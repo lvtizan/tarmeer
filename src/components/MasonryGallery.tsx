@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PortfolioCategories, PortfolioItem } from '../lib/companyData';
-import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
+import { resolveImageUrl } from '../lib/imageUrl';
 import { getImageFallbackCandidates } from '../lib/imageCleanup';
 
 const ITEMS_PER_PAGE = 12;
@@ -190,24 +190,12 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     }
                   }}
                 >
-                  {/* Blur placeholder */}
                   <img
-                    src={resolveVariantUrl(item.url, 'blur')}
-                    alt=""
-                    aria-hidden
-                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-lg"
-                  />
-                  {/* Thumb image */}
-                  <img
-                    src={resolveVariantUrl(item.url, 'thumb')}
+                    src={primarySrc}
                     alt={item.title || `${item.categoryName} project`}
                     loading="lazy"
-                    className="w-full h-auto object-cover transition-all duration-500 group-hover:scale-105 relative z-10"
+                    className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
                     onLoad={(e) => {
-                      // Hide blur placeholder once thumb loads
-                      const blurEl = e.currentTarget.previousElementSibling as HTMLElement | null;
-                      if (blurEl) blurEl.style.display = 'none';
-
                       const img = e.currentTarget;
                       const w = img.naturalWidth;
                       const h = img.naturalHeight;
@@ -215,17 +203,21 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                       const container = img.closest('.break-inside-avoid') as HTMLElement | null;
                       if (!container) return;
 
-                      if (w < 50 || h < 37) {
+                      // Hide: too small or extreme aspect ratio
+                      if (w < 200 || h < 150 || ratio > 3.5 || ratio < 0.25) {
                         container.classList.add('hidden');
                         return;
                       }
 
+                      // Fingerprint check: dark images + duplicates
                       const fp = getImageFingerprint(img);
                       if (fp) {
+                        // Too dark
                         if (fp.brightness < DARK_THRESHOLD) {
                           container.classList.add('hidden');
                           return;
                         }
+                        // Duplicate check
                         const isDuplicate = fingerprintsRef.current.some(
                           existing => compareFingerprints(existing, fp.pixels) > SIMILARITY_THRESHOLD
                         );
@@ -238,12 +230,6 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     }}
                     onError={(e) => {
                       const current = e.currentTarget;
-                      // Fall back to original image if thumb doesn't exist
-                      if (!current.dataset.fallback) {
-                        current.dataset.fallback = '1';
-                        current.src = primarySrc;
-                        return;
-                      }
                       const retryIndex = Number(current.dataset.retryIndex || '0');
                       if (retryIndex < fallbackCandidates.length - 1) {
                         const nextRetry = retryIndex + 1;

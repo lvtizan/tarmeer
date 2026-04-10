@@ -43,11 +43,6 @@ export default function Banner() {
       return;
     }
 
-    if (/(.)\1{4,}/.test(phone)) {
-      setError('Please enter a valid phone number.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const response = await fetch(`${API_BASE}/inquiries`, {

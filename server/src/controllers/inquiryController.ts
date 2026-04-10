@@ -37,28 +37,12 @@ export async function submitInquiry(req: any, res: any) {
       return res.status(400).json({ error: 'Phone and area range are required.' });
     }
 
-    // Validate phone: must be a GCC country code + 7-9 digits
-    const phoneDigitsOnly = phone.replace(/\D/g, '');
-    if (phoneDigitsOnly.length < 10 || phoneDigitsOnly.length > 15) {
-      return res.status(400).json({ error: 'Invalid phone number.' });
-    }
-
     if (city && !VALID_CITIES.includes(city)) {
       return res.status(400).json({ error: 'Invalid city.' });
     }
 
     if (!VALID_AREA_RANGES.includes(area_range)) {
       return res.status(400).json({ error: 'Invalid area range.' });
-    }
-
-    // Auto-dedup: soft-delete older active inquiries with the same phone
-    const normalizedPhone = phone.replace(/\D/g, '');
-    if (normalizedPhone.length >= 7) {
-      await pool.execute(
-        `UPDATE design_inquiries SET deleted_at = NOW(), admin_notes = CONCAT(IFNULL(admin_notes, ''), ' [auto-dedup: newer submission received]')
-         WHERE REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', '') LIKE ? AND deleted_at IS NULL`,
-        [`%${normalizedPhone.slice(-9)}`]
-      );
     }
 
     const [result] = await pool.execute(
