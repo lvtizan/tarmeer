@@ -34,17 +34,26 @@ run_check "Reliability invariants" node "$SCRIPT_DIR/lint-reliability.mjs"
 # 2. CORS/Nginx consistency
 run_check "CORS/Nginx consistency" node "$SCRIPT_DIR/lint-cors-nginx.mjs"
 
-# 3. Frontend type check
+# 3. SEO compliance (public pages) — soft check (warn, don't block)
+echo "▶ SEO compliance (soft)"
+if node "$SCRIPT_DIR/lint-seo.mjs" > /dev/null 2>&1; then
+  echo "  ✅ PASSED"
+else
+  echo "  ⚠️  WARNINGS (non-blocking) — run 'node scripts/harness/lint-seo.mjs' for details"
+fi
+echo ""
+
+# 4. Frontend type check
 if [ "$TARGET" = "frontend" ] || [ "$TARGET" = "both" ]; then
   run_check "Frontend type check" "$ROOT/node_modules/.bin/tsc" --noEmit --skipLibCheck
 fi
 
-# 4. Frontend build
+# 5. Frontend build
 if [ "$TARGET" = "frontend" ] || [ "$TARGET" = "both" ]; then
   run_check "Frontend build" "$ROOT/node_modules/.bin/vite" build
 fi
 
-# 5. Backend build
+# 6. Backend build
 if [ "$TARGET" = "backend" ] || [ "$TARGET" = "both" ]; then
   run_check "Backend build" bash -c "cd '$ROOT/server' && npx tsc"
 fi
