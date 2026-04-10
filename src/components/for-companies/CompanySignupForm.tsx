@@ -42,6 +42,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     setError(null);
 
     if (!contactName.trim()) return;
+    if (!phoneDigits.trim()) return;
     if (!companyName.trim()) return;
 
     setIsSubmitting(true);
@@ -141,6 +142,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               <input
                 type="tel"
                 inputMode="numeric"
+                required
                 value={phoneDigits}
                 onChange={(e) => {
                   const digits = e.target.value
