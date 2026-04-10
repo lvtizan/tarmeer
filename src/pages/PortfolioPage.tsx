@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
@@ -150,14 +150,31 @@ function JustifiedGallery({
   mode: LayoutMode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  // Initialize with a best-guess width so the FIRST render already produces
+  // the correct cell heights → document height is correct → scroll restore
+  // works without a clamped jump.
+  const [containerWidth, setContainerWidth] = useState(() => {
+    if (typeof window === 'undefined') return 1200;
+    // Page wrapper is max-w-[1400px] with px-4 (16px each side)
+    return Math.min(window.innerWidth - 32, 1400 - 32);
+  });
 
+  // Synchronous measurement before paint to correct any guess.
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    if (w > 0 && w !== containerWidth) setContainerWidth(w);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Watch for resizes after mount.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const measure = () => setContainerWidth(el.clientWidth);
-    measure();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth > 0) setContainerWidth(el.clientWidth);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -458,41 +475,49 @@ export default function PortfolioPage() {
     saveCacheNow(projectId, imageIdx);
   }, [saveCacheNow]);
 
-  // ── Scroll restore with three safety nets ──
-  // 1) Immediate rAF scrollTo once layout has the cached ratios
-  // 2) ResizeObserver: retry scrollTo every time document height grows (1500ms window)
-  // 3) Abort retry on user scroll interaction
+  // ── Scroll restore: jump to saved position WITHOUT a visible top-of-page flash ──
+  // useLayoutEffect runs after React commits the DOM but before the browser
+  // paints. Combined with the cached image ratios + initial container width
+  // guess in JustifiedGallery, the document already has its full height on
+  // first commit, so scrollTo(targetY) lands at the right spot — no flash, no
+  // animated scroll-down.
+  useLayoutEffect(() => {
+    if (!cached) return;
+    const targetY = cached.scrollY;
+    if (targetY <= 0) return;
+
+    // Force instant scroll regardless of any global CSS scroll-behavior:smooth
+    const html = document.documentElement;
+    const prevBehavior = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+    window.scrollTo(0, targetY);
+    html.style.scrollBehavior = prevBehavior;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Safety net: if the document height grows after first paint (late images,
+  // fonts) and we still haven't reached the target, retry quietly. Aborts on
+  // any user-initiated scroll so we never fight the user.
   useEffect(() => {
     if (!cached) return;
     const targetY = cached.scrollY;
     if (targetY <= 0) return;
 
     let stopped = false;
-    let rafId = 0;
-
     const tryScroll = () => {
       if (stopped) return;
-      // Only scroll if we're not already there (avoid fighting the user)
       if (Math.abs(window.scrollY - targetY) > 2) {
+        const html = document.documentElement;
+        const prev = html.style.scrollBehavior;
+        html.style.scrollBehavior = 'auto';
         window.scrollTo(0, targetY);
+        html.style.scrollBehavior = prev;
       }
     };
 
-    // Initial attempt on next frame (after React paints cached state)
-    rafId = requestAnimationFrame(() => {
-      tryScroll();
-      // Second attempt one more frame later for good measure
-      requestAnimationFrame(tryScroll);
-    });
-
-    // Retry as content grows (images decoding, fonts, etc.)
-    const ro = new ResizeObserver(() => {
-      if (stopped) return;
-      tryScroll();
-    });
+    const ro = new ResizeObserver(() => { if (!stopped) tryScroll(); });
     ro.observe(document.body);
 
-    // Abort on user-initiated scroll (wheel / touch / keyboard)
     const abort = () => { stopped = true; };
     window.addEventListener('wheel', abort, { once: true, passive: true });
     window.addEventListener('touchstart', abort, { once: true, passive: true });
@@ -502,7 +527,6 @@ export default function PortfolioPage() {
 
     return () => {
       stopped = true;
-      cancelAnimationFrame(rafId);
       ro.disconnect();
       clearTimeout(timeout);
       window.removeEventListener('wheel', abort);

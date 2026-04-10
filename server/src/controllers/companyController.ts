@@ -242,24 +242,77 @@ export async function getPublicProjectDetail(req: any, res: any) {
       }
     }
 
-    // For directory companies, projects come from portfolio_categories
-    // We can match by slug against category names
+    // For directory companies, "projects" live as portfolio_categories on the
+    // uae_companies row (one entry per category name). Build a synthetic
+    // project record by matching slugify(categoryName) against projectSlug.
+    let directorySiblings: Array<{ id: string; title: string; slug: string }> = [];
     if (!project && companySource === 'directory') {
-      // Directory companies don't have individual project records in the projects table
-      // Return 404 for now — directory company images use Lightbox, not project pages
-      return res.status(404).json({ error: 'Project not found' });
+      const [ucRows] = await pool.execute(
+        'SELECT portfolio_images FROM uae_companies WHERE id = ?',
+        [company.id]
+      );
+      const ucRow = (ucRows as any[])[0];
+      if (ucRow?.portfolio_images) {
+        let categories: Record<string, Array<{ url: string; title: string }>> = {};
+        try {
+          const parsed = typeof ucRow.portfolio_images === 'string'
+            ? JSON.parse(ucRow.portfolio_images)
+            : ucRow.portfolio_images;
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            categories = parsed;
+          }
+        } catch { /* skip malformed JSON */ }
+
+        // Build sibling list for nav (all categories with non-empty image arrays)
+        directorySiblings = Object.entries(categories)
+          .filter(([, items]) => Array.isArray(items) && items.length > 0)
+          .map(([catName]) => ({
+            id: `${company.id}-${slugify(catName)}`,
+            title: catName,
+            slug: slugify(catName),
+          }));
+
+        // Find the category matching projectSlug
+        for (const [catName, items] of Object.entries(categories)) {
+          if (slugify(catName) === projectSlug && Array.isArray(items) && items.length > 0) {
+            const imageUrls = items.map((it: any) => it?.url || '').filter(Boolean);
+            project = {
+              id: `${company.id}-${slugify(catName)}`,
+              title: catName,
+              slug: slugify(catName),
+              description: '',
+              style: catName,
+              location: '',
+              area: null,
+              year: null,
+              cost: null,
+              images: imageUrls,
+              tags: [],
+            };
+            break;
+          }
+        }
+      }
     }
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Get sibling projects for prev/next navigation + total count
-    const [siblings] = await pool.execute(
-      'SELECT id, title, slug FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC',
-      [company.id]
-    );
-    const projectCount = (siblings as any[]).length;
+    // Get sibling projects for prev/next navigation + total count.
+    // Registered company → query projects table. Directory company → use the
+    // synthetic sibling list built above from portfolio_categories.
+    let siblings: any[];
+    if (companySource === 'registered') {
+      const [projRows] = await pool.execute(
+        'SELECT id, title, slug FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC',
+        [company.id]
+      );
+      siblings = projRows as any[];
+    } else {
+      siblings = directorySiblings;
+    }
+    const projectCount = siblings.length;
 
     res.json({
       project: {
