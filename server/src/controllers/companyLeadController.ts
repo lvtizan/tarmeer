@@ -5,6 +5,15 @@ export async function submitCompanyLead(req: any, res: any) {
     const { contactName, phone, companyName, yearEstablished, scopeOfBusiness, lang } = req.body;
     const sourcePage = req.headers.referer || null;
 
+    // Auto-dedup: remove older leads with the same phone number
+    const normalizedPhone = phone.replace(/\D/g, '');
+    if (normalizedPhone.length >= 7) {
+      await pool.execute(
+        `DELETE FROM company_leads WHERE REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', '') LIKE ?`,
+        [`%${normalizedPhone.slice(-9)}`]
+      );
+    }
+
     const [result] = await pool.execute(
       `INSERT INTO company_leads (contact_name, phone, company_name, year_established, scope_of_business, lang, source_page)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
