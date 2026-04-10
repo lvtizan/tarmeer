@@ -29,7 +29,7 @@ const BENEFITS = [
 ];
 
 const STEPS = [
-  { title: 'Free Registration', text: 'Create your account for free and submit your profile for review by our expert panel.', icon: UserPlus },
+  { title: 'Quick Registration', text: 'Create your account and submit your profile for review by our expert panel.', icon: UserPlus },
   { title: 'Profile Approval', text: 'After approval, publish your professional profile and showcase your best MENA projects.', icon: Store },
   { title: 'Start Getting Leads', text: 'Receive matched project opportunities and unlock supplier resources at no registration cost.', icon: Handshake },
 ];
@@ -52,13 +52,13 @@ export default function ApplyPage() {
             className="inline-block py-1.5 px-4 rounded-full text-sm font-bold tracking-wider uppercase mb-4"
             style={{ backgroundColor: `${PRIMARY}20`, color: PRIMARY, border: `1px solid ${PRIMARY}40` }}
           >
-            100% Free Registration
+            Join Our Network
           </span>
           <h1 className="font-serif text-white text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-4">
-            Free Join: Tarmeer Designer Network
+            Join the Tarmeer Designer Network
           </h1>
           <p className="text-slate-200 text-lg sm:text-xl font-medium leading-relaxed max-w-2xl mx-auto mb-6">
-            Register 100% free to access premium suppliers, quality project leads, and direct Tarmeer support.
+            Access premium suppliers, quality project leads, and direct Tarmeer support.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -66,7 +66,7 @@ export default function ApplyPage() {
               className="btn-primary inline-flex items-center justify-center min-w-[160px] h-12 lg:h-14 px-8 text-base lg:text-lg text-white"
               onClick={() => trackAnalyticsEvent('apply_click', { placement: 'hero' })}
             >
-              Free Apply Now
+              Apply Now
             </Link>
           </div>
         </div>
@@ -80,10 +80,10 @@ export default function ApplyPage() {
               How It Works
             </h2>
             <p className="text-[#6b6b6b] text-lg max-w-2xl mx-auto">
-              Step 1 is free registration. Then we review, approve, and connect you with real opportunities.
+              Register, get reviewed, get approved, and start receiving real opportunities.
             </p>
             <p className="mt-3 inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold" style={{ backgroundColor: `${PRIMARY}15`, color: PRIMARY }}>
-              Free to join. No registration fee.
+              No registration fee required.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
@@ -165,7 +165,7 @@ export default function ApplyPage() {
                 className="btn-primary inline-flex items-center justify-center min-w-[200px] h-14 px-10 text-lg font-bold text-white"
                 onClick={() => trackAnalyticsEvent('apply_click', { placement: 'cta' })}
               >
-                Free Apply Now
+                Apply Now
               </Link>
             </div>
           </div>

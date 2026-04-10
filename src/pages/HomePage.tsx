@@ -25,7 +25,7 @@ export default function HomePage() {
     <>
       <Helmet>
         <title>Tarmeer - Find Interior Design & Renovation Companies in UAE</title>
-        <meta name="description" content="Connect with top interior designers, renovation companies, and fit-out professionals across Dubai, Abu Dhabi, and UAE. Browse portfolios, compare services, get free quotes." />
+        <meta name="description" content="Connect with top interior designers, renovation companies, and fit-out professionals across Dubai, Abu Dhabi, and UAE. Browse portfolios, compare services, get personalized quotes." />
         <meta property="og:title" content="Tarmeer - Find Interior Design & Renovation Companies in UAE" />
         <meta property="og:description" content="Connect with top interior designers and renovation companies in UAE." />
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />

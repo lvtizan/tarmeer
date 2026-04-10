@@ -192,7 +192,7 @@ function WhyCompleteSection() {
           </div>
           <div>
             <p className="text-sm font-semibold text-[#2c2c2c]">Receive Client Leads</p>
-            <p className="mt-0.5 text-xs text-stone-500">Clients can contact you directly through the platform — for free.</p>
+            <p className="mt-0.5 text-xs text-stone-500">Clients can contact you directly through the platform.</p>
           </div>
         </div>
         <div className="flex gap-3 rounded-xl bg-stone-50 p-4">

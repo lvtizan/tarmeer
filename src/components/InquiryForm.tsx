@@ -80,7 +80,7 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
   return (
     <div className="bg-white rounded-2xl border border-stone-100 overflow-hidden">
       <div className="bg-[#1c1917] px-6 py-5">
-        <h3 className="font-serif text-lg text-white font-medium">Get a Free Consultation</h3>
+        <h3 className="font-serif text-lg text-white font-medium">Request a Consultation</h3>
         <p className="text-white/60 text-sm mt-1">Tell us about your project</p>
       </div>
 
