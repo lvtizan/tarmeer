@@ -8,6 +8,7 @@
 | UI/Design rules          | `docs/DESIGN.md`                      |
 | Frontend conventions     | `docs/FRONTEND.md`                    |
 | Reliability invariants   | `docs/RELIABILITY.md`                 |
+| SEO rules                | `docs/SEO.md`                         |
 | Security policies        | `docs/SECURITY.md`                    |
 | Deploy checklist         | `docs/operations/deploy-runbook.md`   |
 | Test cases               | `docs/testing/`                       |
@@ -26,6 +27,7 @@
 4. **Images**: NEVER store base64 in DB — see Image Storage Rules below.
 5. **Test**: MUST run related test cases before deploy — see `docs/testing/`.
 6. **Frontend + Backend must match**: if frontend calls a new API, backend must be deployed first.
+7. **SEO**: all public-facing pages MUST have `<Helmet>` with title, description, og:title, og:description, og:image, canonical. Detail pages MUST include JSON-LD structured data. Run `node scripts/harness/lint-seo.mjs` to verify — see `docs/SEO.md`.
 
 ---
 

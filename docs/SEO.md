@@ -6,6 +6,24 @@ Last updated: 2026-04-10
 
 ---
 
+## SEO Signal Reference (per-page output)
+
+Every public detail page should emit ALL of these signals:
+
+| Signal | Content | Example |
+|--------|---------|---------|
+| **title** | `{Project} - {Tag1 Tag2 Tag3} Design in {Location} by {Company} \| Tarmeer` | `Villa Project - Modern Living Room Design in Dubai by Company \| Tarmeer` |
+| **description** | Natural sentence: project name, year, style + room type, company, location, budget (if any), tags list, photo count | 50–320 chars |
+| **keywords** | Project tags + style + geography (UAE/Dubai/Abu Dhabi) + company name + generic design terms, all deduped lowercase | `modern, living room, villa, dubai, ...` |
+| **og:article:tag** | One `<meta property="article:tag">` per project tag (Living Room / Modern / Villa...) — helps Google build topic clusters | Multiple meta tags |
+| **og:image** | Follows the currently-viewed photo, with `og:image:width=1200` `og:image:height=630` hints | Full HTTPS URL |
+| **robots** | `index, follow, max-image-preview:large` — allows Google Images to show full-size thumbnails | — |
+| **JSON-LD ImageGallery** | Up to 20 `ImageObject` entries + company logo/URL + `Place` address + year + keywords | See schema section below |
+| **JSON-LD BreadcrumbList** | `Home > Portfolio > Company > Project` — shows as breadcrumb in search results | See schema section below |
+| **canonical** | Strips `?from=portfolio&img=N` — all photo variants fold into one clean URL | `https://www.tarmeer.com/companies/slug/project-slug` |
+
+---
+
 ## Which pages are "public-facing"?
 
 Any page reachable by anonymous users (no auth). Currently:
