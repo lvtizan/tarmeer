@@ -144,10 +144,10 @@ export default function ForCompaniesPage() {
         </div>
       </section>
 
-      {/* ── 3. Feature Sections — compact card grid ── */}
-      <section className="bg-[#faf9f7] py-12 lg:py-16">
+      {/* ── 3. Features — full-bleed dark band ── */}
+      <section className="bg-[#1c1917] py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 rounded-2xl overflow-hidden">
             {([
               { icon: Search, tag: 'feature1Tag', title: 'feature1Title', desc: 'feature1Desc', checks: ['feature1Check1', 'feature1Check2', 'feature1Check3'] },
               { icon: Camera, tag: 'feature2Tag', title: 'feature2Title', desc: 'feature2Desc', checks: ['feature2Check1', 'feature2Check2', 'feature2Check3'] },
@@ -156,25 +156,27 @@ export default function ForCompaniesPage() {
               <motion.div
                 key={feat.tag}
                 {...fadeUp}
-                className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6"
+                className="bg-[#1c1917] p-6 sm:p-8"
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <FeatureIcon icon={feat.icon} />
-                  <p className="text-[11px] font-semibold text-[#b8864a] uppercase tracking-wider">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b8864a]/15">
+                    <feat.icon className="w-5 h-5 text-[#c6a065]" />
+                  </div>
+                  <p className="text-[11px] font-semibold text-[#c6a065] uppercase tracking-wider">
                     {t(lang, feat.tag)}
                   </p>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-[#1c1917]">
+                <h3 className="font-serif text-xl font-bold text-white">
                   {t(lang, feat.title)}
                 </h3>
-                <p className="text-[14px] text-[#6b6b6b] leading-relaxed mt-2">
+                <p className="text-[14px] text-white/55 leading-relaxed mt-2">
                   {t(lang, feat.desc)}
                 </p>
                 <div className="mt-4 space-y-2">
                   {feat.checks.map((key) => (
                     <div key={key} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-[#b8864a] flex-shrink-0" />
-                      <span className="text-[14px] text-[#2c2c2c]">{t(lang, key)}</span>
+                      <Check className="w-4 h-4 text-[#c6a065] flex-shrink-0" />
+                      <span className="text-[14px] text-white/80">{t(lang, key)}</span>
                     </div>
                   ))}
                 </div>
@@ -184,59 +186,56 @@ export default function ForCompaniesPage() {
         </div>
       </section>
 
-      {/* ── 4. Grid Section ── */}
-      <section className="bg-white py-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917] text-center mb-12">
+      {/* ── 4. Grid — full-bleed warm band ── */}
+      <section className="bg-[#f5f0e8] py-14 lg:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <motion.h2
+            {...fadeUp}
+            className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917] text-center mb-10"
+          >
             {t(lang, 'gridTitle')}
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          </motion.h2>
+          <div className="grid sm:grid-cols-3 gap-5 lg:gap-6">
             {[
               { icon: Share2, title: 'grid1Title' as const, desc: 'grid1Desc' as const },
-              {
-                icon: LayoutDashboard,
-                title: 'grid2Title' as const,
-                desc: 'grid2Desc' as const,
-              },
+              { icon: LayoutDashboard, title: 'grid2Title' as const, desc: 'grid2Desc' as const },
               { icon: Users, title: 'grid3Title' as const, desc: 'grid3Desc' as const },
             ].map((card, i) => (
               <motion.div
                 key={i}
                 {...fadeUp}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-[#faf9f7] rounded-2xl border border-stone-200 shadow-sm p-5 sm:p-6"
+                className="rounded-2xl bg-white p-6 shadow-sm"
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 shrink-0 rounded-xl bg-[#b8864a]/10 flex items-center justify-center mt-0.5">
-                    <card.icon className="w-5 h-5 text-[#b8864a]" />
-                  </div>
-                  <div>
-                    <h3 className="text-[15px] font-semibold text-[#1c1917]">
-                      {t(lang, card.title)}
-                    </h3>
-                    <p className="text-[14px] text-[#6b6b6b] leading-relaxed mt-1">
-                      {t(lang, card.desc)}
-                    </p>
-                  </div>
+                <div className="w-11 h-11 rounded-xl bg-[#b8864a]/10 flex items-center justify-center mb-4">
+                  <card.icon className="w-5 h-5 text-[#b8864a]" />
                 </div>
+                <h3 className="text-[16px] font-semibold text-[#1c1917] mb-2">
+                  {t(lang, card.title)}
+                </h3>
+                <p className="text-[14px] text-[#6b6b6b] leading-relaxed">
+                  {t(lang, card.desc)}
+                </p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── 5. CTA Banner ── */}
-      <section className="bg-gradient-to-r from-[#b8864a] to-[#c6a065] py-16">
+      {/* ── 5. CTA — full-bleed dark band ── */}
+      <section className="bg-[#1c1917] py-14 lg:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white mb-6">
+          <motion.h2 {...fadeUp} className="font-serif text-3xl lg:text-4xl font-bold text-white mb-5">
             {t(lang, 'ctaTitle')}
-          </h2>
-          <Link
-            to="/auth"
-            className="inline-block bg-white text-[#b8864a] font-semibold px-8 py-3.5 rounded-[20px] hover:bg-white/90 transition shadow-lg"
-          >
-            {t(lang, 'ctaButton')}
-          </Link>
+          </motion.h2>
+          <motion.div {...fadeUp}>
+            <Link
+              to="/auth"
+              className="inline-block bg-[#b8864a] text-white font-semibold px-10 py-3.5 rounded-[20px] hover:bg-[#a4763f] transition shadow-[0_8px_24px_rgba(184,134,74,0.3)]"
+            >
+              {t(lang, 'ctaButton')}
+            </Link>
+          </motion.div>
         </div>
       </section>
 
