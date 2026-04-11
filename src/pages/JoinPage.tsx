@@ -159,12 +159,39 @@ export default function JoinPage() {
         </div>
       </section>
 
-      {/* ── Grid — warm band ── */}
-      <section className="bg-[#f5f0e8] py-14 lg:py-20">
+      {/* ── Form + CTA ── */}
+      <section ref={formRef} className="bg-[#f5f0e8] py-14 lg:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <motion.div {...fadeUp}>
+              <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917]">
+                {t(lang, 'ctaTitle')}
+              </h2>
+              <p className="text-[#6b6b6b] mt-4 text-[15px] leading-relaxed max-w-md">
+                {t(lang, 'footerSubtitle')}
+              </p>
+              <div className="mt-6 space-y-3">
+                {(['footerCheck1', 'footerCheck2', 'footerCheck3'] as const).map((key) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-[#b8864a] flex-shrink-0" />
+                    <span className="text-[14px] text-[#2c2c2c]">{t(lang, key)}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+            <motion.div {...fadeUp}>
+              <CompanySignupForm lang={lang} />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Grid — dark band ── */}
+      <section className="bg-[#1c1917] py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <motion.h2
             {...fadeUp}
-            className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917] text-center mb-10"
+            className="font-serif text-3xl lg:text-4xl font-bold text-white text-center mb-10"
           >
             {t(lang, 'gridTitle')}
           </motion.h2>
@@ -178,46 +205,19 @@ export default function JoinPage() {
                 key={i}
                 {...fadeUp}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="rounded-2xl bg-white p-6 shadow-sm"
+                className="rounded-2xl bg-white/[0.07] border border-white/10 p-6"
               >
-                <div className="w-11 h-11 rounded-xl bg-[#b8864a]/10 flex items-center justify-center mb-4">
-                  <card.icon className="w-5 h-5 text-[#b8864a]" />
+                <div className="w-11 h-11 rounded-xl bg-[#b8864a]/20 flex items-center justify-center mb-4">
+                  <card.icon className="w-5 h-5 text-[#c6a065]" />
                 </div>
-                <h3 className="text-[16px] font-semibold text-[#1c1917] mb-2">
+                <h3 className="text-[16px] font-semibold text-white mb-2">
                   {t(lang, card.title)}
                 </h3>
-                <p className="text-[14px] text-[#6b6b6b] leading-relaxed">
+                <p className="text-[14px] text-white/60 leading-relaxed">
                   {t(lang, card.desc)}
                 </p>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Bottom Form + CTA ── */}
-      <section ref={formRef} className="bg-[#1c1917] py-14 lg:py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <motion.div {...fadeUp}>
-              <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white">
-                {t(lang, 'ctaTitle')}
-              </h2>
-              <p className="text-white/60 mt-4 text-[15px] leading-relaxed max-w-md">
-                {t(lang, 'footerSubtitle')}
-              </p>
-              <div className="mt-6 space-y-3">
-                {(['footerCheck1', 'footerCheck2', 'footerCheck3'] as const).map((key) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#c6a065] flex-shrink-0" />
-                    <span className="text-[14px] text-white/80">{t(lang, key)}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-            <motion.div {...fadeUp}>
-              <CompanySignupForm lang={lang} />
-            </motion.div>
           </div>
         </div>
       </section>
