@@ -22,14 +22,6 @@ const fadeUp = {
   transition: { duration: 0.5 },
 };
 
-/* Compact icon badge for feature sections */
-function FeatureIcon({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
-  return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#b8864a]/10">
-      <Icon className="w-6 h-6 text-[#b8864a]" />
-    </div>
-  );
-}
 
 export default function ForCompaniesPage() {
   const [lang, setLang] = useState<Lang>('en');
