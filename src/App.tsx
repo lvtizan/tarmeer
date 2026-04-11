@@ -151,8 +151,8 @@ function App() {
           <Route path="/join" element={<JoinPage />} />
 
           {/* ====== Auth ====== */}
-          <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
-          <Route path="/auth/callback" element={<Layout><AuthCallbackPage /></Layout>} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* ====== Public ====== */}
           <Route path="/*" element={

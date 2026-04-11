@@ -197,7 +197,7 @@ export default function AuthPage() {
   const showSocialAuth = ENABLE_GOOGLE_AUTH || ENABLE_FACEBOOK_AUTH;
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="flex min-h-[100dvh] flex-col bg-[#FAFAF9]">
       <Helmet>
         <title>Sign In / Register - Tarmeer</title>
         <meta name="description" content="Sign in or create your Tarmeer account to connect with interior design and renovation professionals in UAE." />
@@ -205,13 +205,13 @@ export default function AuthPage() {
       </Helmet>
       <Navbar forceShowOnAuth />
 
-      <div className="flex justify-center overflow-hidden px-4 pb-10 pt-[clamp(28px,8vh,72px)] sm:px-6 sm:pt-[clamp(32px,10vh,80px)]">
+      <div className="flex flex-1 items-start justify-center overflow-hidden px-4 pt-[clamp(20px,8vh,80px)] pb-6 sm:px-6 sm:pt-[clamp(24px,10vh,100px)]">
       {/* Premium Ambient Background */}
       <div className="absolute top-0 left-0 w-[700px] h-[700px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
 
       {/* Main Container - Left Right Split */}
-      <div className="relative z-10 w-full max-w-[1100px] mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-start">
+      <div className="relative z-10 w-full max-w-[1100px] mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-center">
 
         {/* Left Column - Value Proposition */}
         <div className="max-w-[580px]">
@@ -500,6 +500,13 @@ export default function AuthPage() {
         </div>
       </div>
       </div>
+
+      {/* Minimal footer — pinned to bottom */}
+      <footer className="py-4 text-center text-[11px] text-stone-400">
+        <span>&copy; {new Date().getFullYear()} Tarmeer</span>
+        <span className="mx-2">·</span>
+        <a href="/privacy" className="hover:text-stone-600 transition">Privacy</a>
+      </footer>
     </div>
   );
 }

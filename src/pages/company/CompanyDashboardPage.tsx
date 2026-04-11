@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, Phone, Globe, AlertCircle, CheckCircle2, Clock, Eye, Save } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MapPin, Phone, Globe, AlertCircle, CheckCircle2, Clock, Eye, Save, FolderOpen } from 'lucide-react';
 import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormSelect, FormLabel, FormTag } from '../../components/form/FormInput';
 
@@ -25,12 +26,15 @@ function getPublicSiteBase(): string {
 }
 
 export default function CompanyDashboardPage() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile>(EMPTY);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveText, setSaveText] = useState('');
+  const [projectCount, setProjectCount] = useState<number | null>(null);
+  const [showProjectHint, setShowProjectHint] = useState(false);
   const publicSiteBase = getPublicSiteBase();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTextTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -65,6 +69,14 @@ export default function CompanyDashboardPage() {
         setLoading(false);
       }
     })();
+
+    // Fetch project count to show hint after save
+    api.get('/auth/company/projects')
+      .then((d) => {
+        const list = d.projects || d || [];
+        setProjectCount(Array.isArray(list) ? list.length : 0);
+      })
+      .catch(() => setProjectCount(0));
   }, [serializeProfile]);
 
   const clearSaveTextLater = useCallback(() => {
@@ -109,12 +121,17 @@ export default function CompanyDashboardPage() {
       lastSavedSnapshotRef.current = serializeProfile(current);
       setSaveText(manual ? 'Saved' : 'Saved just now');
       clearSaveTextLater();
+
+      // Show project upload hint when user manually saves and has no projects
+      if (manual && projectCount === 0) {
+        setShowProjectHint(true);
+      }
     } catch (error: any) {
       setSaveText(error?.message || 'Failed to save');
     } finally {
       setSaving(false);
     }
-  }, [clearSaveTextLater, serializeProfile]);
+  }, [clearSaveTextLater, serializeProfile, projectCount]);
 
   useEffect(() => {
     if (loading) {
@@ -157,6 +174,18 @@ export default function CompanyDashboardPage() {
     }
   }, []);
 
+  // When the forced phone modal saves, sync the phone into the company profile
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const phone = (e as CustomEvent).detail?.phone;
+      if (phone) {
+        setProfile((p) => (p.phone ? p : { ...p, phone }));
+      }
+    };
+    window.addEventListener('phone-saved', handler);
+    return () => window.removeEventListener('phone-saved', handler);
+  }, []);
+
   const set = (f: string, v: string) => setProfile((p) => ({ ...p, [f]: v }));
   const toggleTag = (f: 'services'|'specialties', t: string) => {
     setProfile((p) => {
@@ -169,6 +198,37 @@ export default function CompanyDashboardPage() {
 
   return (
     <div className="w-full">
+      {/* ─── Modal: upload project prompt ─── */}
+      {showProjectHint && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#b8864a]/10">
+              <FolderOpen className="h-7 w-7 text-[#b8864a]" />
+            </div>
+            <h2 className="text-xl font-bold text-[#2c2c2c]">
+              One More Step
+            </h2>
+            <p className="mt-2 text-[15px] leading-relaxed text-[#6b6b6b]">
+              Your profile has been saved successfully. To get approved, you need to upload at least one portfolio project for review.
+            </p>
+            <button
+              type="button"
+              onClick={() => { setShowProjectHint(false); navigate('/company/projects'); }}
+              className="mt-6 w-full h-12 rounded-xl bg-[#b8864a] text-sm font-semibold text-white hover:bg-[#a4763f] transition"
+            >
+              Upload a Project Now
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowProjectHint(false)}
+              className="mt-3 w-full h-10 text-sm font-medium text-stone-500 hover:text-stone-700 transition"
+            >
+              I'll do it later
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto w-full max-w-[960px] px-6 space-y-6">
 
         {/* ─── Top bar ─── */}

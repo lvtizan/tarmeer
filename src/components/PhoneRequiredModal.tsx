@@ -78,6 +78,9 @@ export default function PhoneRequiredModal() {
         } catch { /* ignore */ }
       }
 
+      // Notify other components (e.g. profile pages) that phone was saved
+      window.dispatchEvent(new CustomEvent('phone-saved', { detail: { phone } }));
+
       setVisible(false);
     } catch (err: any) {
       const message = err?.message || 'Failed to update phone number. Please try again.';

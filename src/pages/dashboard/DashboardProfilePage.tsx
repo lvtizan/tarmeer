@@ -19,7 +19,7 @@ export default function DashboardProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
+  const fetchProfile = () => {
     api.getMe()
       .then((data) => {
         const u: UserData = data.user || {};
@@ -30,6 +30,17 @@ export default function DashboardProfilePage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  // Re-fetch profile when phone is saved via the forced modal
+  useEffect(() => {
+    const handler = () => fetchProfile();
+    window.addEventListener('phone-saved', handler);
+    return () => window.removeEventListener('phone-saved', handler);
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -37,7 +48,11 @@ export default function DashboardProfilePage() {
     setSaving(true);
     setMessage('');
     try {
-      await api.updateProfile({ fullName, phone, city });
+      const res = await api.updateProfile({ fullName, phone, city });
+      // Keep localStorage in sync so PhoneRequiredModal won't re-trigger
+      if (res.user) {
+        localStorage.setItem('user', JSON.stringify(res.user));
+      }
       setMessage('Profile updated successfully.');
     } catch (err: any) {
       setMessage(err.message || 'Failed to update.');
