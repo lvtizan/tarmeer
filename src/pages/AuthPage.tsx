@@ -194,7 +194,7 @@ export default function AuthPage() {
       </Helmet>
       <Navbar forceShowOnAuth />
 
-      <div className="flex min-h-[calc(100vh-4rem)] justify-center overflow-hidden px-4 pb-16 pt-[clamp(28px,10vh,96px)] sm:px-6 sm:pt-[clamp(40px,12vh,120px)]">
+      <div className="flex justify-center overflow-hidden px-4 pb-10 pt-[clamp(28px,8vh,72px)] sm:px-6 sm:pt-[clamp(32px,10vh,80px)]">
       {/* Premium Ambient Background */}
       <div className="absolute top-0 left-0 w-[700px] h-[700px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
