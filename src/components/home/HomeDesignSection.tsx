@@ -21,8 +21,8 @@ function StudioImage({ company, className }: { company: Company; className: stri
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
   const currentSrc = activeIndex === -1 ? '' : resolveImageUrl(images[activeIndex]);
   const thumbSrc = activeIndex === -1 ? '' : resolveVariantUrl(images[activeIndex], 'thumb');
-  const currentCandidates = getImageFallbackCandidates(currentSrc);
-  const displaySrc = imgRetryIndex === 0 ? thumbSrc : (currentCandidates[imgRetryIndex] || currentSrc);
+  const currentCandidates = [thumbSrc, ...getImageFallbackCandidates(currentSrc)].filter(Boolean);
+  const displaySrc = currentCandidates[imgRetryIndex] || currentSrc;
 
   useEffect(() => {
     setImgRetryIndex(0);

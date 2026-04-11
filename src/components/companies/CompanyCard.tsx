@@ -18,8 +18,8 @@ export default function CompanyCard({ company }: CompanyCardProps) {
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
   const currentSrc = activeIndex === -1 ? '' : resolveImageUrl(images[activeIndex]);
   const thumbSrc = activeIndex === -1 ? '' : resolveVariantUrl(images[activeIndex], 'thumb');
-  const currentCandidates = getImageFallbackCandidates(currentSrc);
-  const displaySrc = imgRetryIndex === 0 ? thumbSrc : (currentCandidates[imgRetryIndex] || currentSrc);
+  const currentCandidates = [thumbSrc, ...getImageFallbackCandidates(currentSrc)].filter(Boolean);
+  const displaySrc = currentCandidates[imgRetryIndex] || currentSrc;
   const hasMultiple = images.length > 1;
   const hasImage = Boolean(currentSrc);
 

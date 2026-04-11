@@ -168,14 +168,6 @@ export default function MaterialsPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 mt-6">
                   <a
-                    href={WHATSAPP_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-primary text-white text-center font-bold py-3 rounded-lg"
-                  >
-                    Book a Consultation
-                  </a>
-                  <a
                     href={GOOGLE_MAPS_URL}
                     target="_blank"
                     rel="noopener noreferrer"
