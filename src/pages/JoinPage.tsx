@@ -93,20 +93,8 @@ export default function JoinPage() {
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.88)_0%,rgba(28,25,23,0.75)_50%,rgba(28,25,23,0.6)_100%)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-          <div>
-            <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
-              {t(lang, 'tagline')}
-            </p>
-            <h1 className="font-serif text-4xl lg:text-5xl font-bold text-white leading-tight mt-4">
-              {t(lang, 'headline')}
-            </h1>
-            <p className="text-lg text-white/70 mt-6 max-w-lg">
-              {t(lang, 'subtitle')}
-            </p>
-          </div>
-
-          {/* Auth card */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-sm mx-auto lg:mx-0 w-full">
+          {/* Auth card — left */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-sm mx-auto lg:mx-0 w-full order-2 lg:order-1">
             <button
               type="button"
               onClick={() => {
@@ -166,6 +154,19 @@ export default function JoinPage() {
               <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Terms</Link>
               {' '}&bull;{' '}
               <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Privacy</Link>
+            </p>
+          </div>
+
+          {/* Text — right */}
+          <div className="order-1 lg:order-2">
+            <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
+              {t(lang, 'tagline')}
+            </p>
+            <h1 className="font-serif text-4xl lg:text-5xl font-bold text-white leading-tight mt-4">
+              {t(lang, 'headline')}
+            </h1>
+            <p className="text-lg text-white/70 mt-6 max-w-lg">
+              {t(lang, 'subtitle')}
             </p>
           </div>
         </div>
