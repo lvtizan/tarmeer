@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -24,12 +24,6 @@ const fadeUp = {
 
 export default function JoinPage() {
   const [lang, setLang] = useState<Lang>('en');
-  const formRef = useRef<HTMLDivElement>(null);
-
-  const scrollToForm = () => {
-    formRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <Helmet>
@@ -220,7 +214,7 @@ export default function JoinPage() {
       </section>
 
       {/* ── Form + CTA ── */}
-      <section ref={formRef} className="bg-[#f5f0e8] py-14 lg:py-20">
+      <section className="bg-[#f5f0e8] py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <motion.div {...fadeUp}>
