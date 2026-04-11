@@ -6,7 +6,6 @@ import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
 import SidebarNavLink from '../ui/SidebarNavLink';
 
-const PRIMARY = '#b8864a';
 const ADMIN_LANG_KEY = 'admin_lang';
 type AdminLang = 'en' | 'zh';
 
@@ -162,12 +161,7 @@ export default function AdminLayout() {
       <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-visible">
         {/* Logo - match designer: icon in rounded box + title */}
         <Link to="/" className="h-16 flex items-center px-6 border-b border-stone-200 hover:bg-stone-50 transition-colors">
-          <div
-            className="size-8 rounded flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${PRIMARY}20` }}
-          >
-            <img src="/images/tarmeer_logo.svg" alt="" className="h-8 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          </div>
+          <img src="/images/tarmeer_logo.svg" alt="" className="h-7 w-7 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <span className="ml-3 text-lg font-bold text-[#2c2c2c] flex-1">TARMEER</span>
         </Link>
 
