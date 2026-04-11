@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, MapPin, Calendar, Instagram, Globe, Briefcase, Mail } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
-import { resolveImageUrl } from '../../lib/imageUrl';
+import { resolveImageUrl, resolveVariantUrl } from '../../lib/imageUrl';
 
 interface CompanyCardProps {
   company: Company;
@@ -16,8 +16,9 @@ export default function CompanyCard({ company }: CompanyCardProps) {
   const images = company.projectImages;
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
   const currentSrc = activeIndex === -1 ? '' : resolveImageUrl(images[activeIndex]);
+  const thumbSrc = activeIndex === -1 ? '' : resolveVariantUrl(images[activeIndex], 'thumb');
   const currentCandidates = getImageFallbackCandidates(currentSrc);
-  const displaySrc = currentCandidates[imgRetryIndex] || currentSrc;
+  const displaySrc = imgRetryIndex === 0 ? thumbSrc : (currentCandidates[imgRetryIndex] || currentSrc);
   const hasMultiple = images.length > 1;
   const hasImage = Boolean(currentSrc);
 
@@ -86,7 +87,7 @@ export default function CompanyCard({ company }: CompanyCardProps) {
                 idx === activeIndex ? 'border-[#c6a065]' : 'border-transparent hover:border-stone-300'
               }`}
             >
-              <img src={resolveImageUrl(img)} alt={`${company.name} project ${idx + 1}`} className="w-full h-full object-cover" />
+              <img src={resolveVariantUrl(img, 'thumb')} alt={`${company.name} project ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = resolveImageUrl(img); }} />
             </button>
           ))}
         </div>

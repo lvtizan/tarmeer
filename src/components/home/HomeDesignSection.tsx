@@ -4,7 +4,7 @@ import { ArrowRight, MapPin } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
 import { fetchPublicCompanies } from '../../lib/publicApi';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
-import { resolveImageUrl } from '../../lib/imageUrl';
+import { resolveImageUrl, resolveVariantUrl } from '../../lib/imageUrl';
 
 const HERO_IMAGES = [
   '/images/uae-companies/portfolio/hba-hirsch-bedner/general/6.jpg',
@@ -20,8 +20,9 @@ function StudioImage({ company, className }: { company: Company; className: stri
   const images = company.projectImages;
   const activeIndex = getNextRenderableImageIndex(images, imgIndex, failedIndices);
   const currentSrc = activeIndex === -1 ? '' : resolveImageUrl(images[activeIndex]);
+  const thumbSrc = activeIndex === -1 ? '' : resolveVariantUrl(images[activeIndex], 'thumb');
   const currentCandidates = getImageFallbackCandidates(currentSrc);
-  const displaySrc = currentCandidates[imgRetryIndex] || currentSrc;
+  const displaySrc = imgRetryIndex === 0 ? thumbSrc : (currentCandidates[imgRetryIndex] || currentSrc);
 
   useEffect(() => {
     setImgRetryIndex(0);
@@ -121,7 +122,7 @@ export default function HomeDesignSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="relative mb-7 overflow-hidden rounded-[28px] border border-stone-200 bg-[#0f0f0d] min-h-[210px] sm:mb-8 sm:min-h-[240px]">
           <img
-            src={resolveImageUrl(HERO_IMAGES[heroImageIndex])}
+            src={resolveVariantUrl(HERO_IMAGES[heroImageIndex], 'medium')}
             alt="Premium design and build spaces across the Middle East"
             className="absolute inset-0 h-full w-full object-cover"
           />
