@@ -92,7 +92,7 @@ export default function JoinPage() {
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=85)' }}
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.88)_0%,rgba(28,25,23,0.75)_50%,rgba(28,25,23,0.6)_100%)]" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-[auto_1fr] gap-8 lg:gap-10 items-center">
           {/* Auth card — left */}
           <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-sm mx-auto lg:mx-0 w-full order-2 lg:order-1">
             <button
