@@ -63,7 +63,10 @@ export default function JoinPage() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 h-16 bg-white shadow-sm flex items-center px-4 sm:px-6">
         <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
-          <TarmeerLogo />
+          <div className="flex items-center gap-2">
+            <TarmeerLogo />
+            <span className="text-[13px] font-medium text-[#b8864a] tracking-wide">Business Hub</span>
+          </div>
           <div className="flex items-center gap-1 rounded-lg border border-stone-200 p-0.5">
             <button
               onClick={() => setLang('en')}
