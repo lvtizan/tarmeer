@@ -22,15 +22,11 @@ const fadeUp = {
   transition: { duration: 0.5 },
 };
 
-/* Large icon in a styled circle for feature sections */
+/* Compact icon badge for feature sections */
 function FeatureIcon({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="flex items-center justify-center">
-      <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full bg-[#b8864a]/8 flex items-center justify-center">
-        <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full bg-[#b8864a]/12 flex items-center justify-center">
-          <Icon className="w-10 h-10 lg:w-12 lg:h-12 text-[#b8864a]" />
-        </div>
-      </div>
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#b8864a]/10">
+      <Icon className="w-6 h-6 text-[#b8864a]" />
     </div>
   );
 }
@@ -148,92 +144,44 @@ export default function ForCompaniesPage() {
         </div>
       </section>
 
-      {/* ── 3. Feature Sections (alternating) ── */}
-      {/* Feature 1: GEO+SEO — illustration left, text right */}
-      <section className="bg-[#faf9f7] py-20 lg:py-28">
-        <motion.div
-          {...fadeUp}
-          className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center"
-        >
-          <FeatureIcon icon={Search} />
-          <div>
-            <p className="text-sm font-semibold text-[#b8864a] uppercase tracking-wider">
-              {t(lang, 'feature1Tag')}
-            </p>
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917] mt-3">
-              {t(lang, 'feature1Title')}
-            </h2>
-            <p className="text-[15px] text-[#6b6b6b] leading-relaxed mt-4">
-              {t(lang, 'feature1Desc')}
-            </p>
-            <div className="mt-6 space-y-3">
-              {(['feature1Check1', 'feature1Check2', 'feature1Check3'] as const).map((key) => (
-                <div key={key} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-[#b8864a] flex-shrink-0" />
-                  <span className="text-[15px] text-[#2c2c2c]">{t(lang, key)}</span>
+      {/* ── 3. Feature Sections — compact card grid ── */}
+      <section className="bg-[#faf9f7] py-12 lg:py-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
+            {([
+              { icon: Search, tag: 'feature1Tag', title: 'feature1Title', desc: 'feature1Desc', checks: ['feature1Check1', 'feature1Check2', 'feature1Check3'] },
+              { icon: Camera, tag: 'feature2Tag', title: 'feature2Title', desc: 'feature2Desc', checks: ['feature2Check1', 'feature2Check2', 'feature2Check3'] },
+              { icon: FileText, tag: 'feature3Tag', title: 'feature3Title', desc: 'feature3Desc', checks: ['feature3Check1', 'feature3Check2', 'feature3Check3'] },
+            ] as const).map((feat) => (
+              <motion.div
+                key={feat.tag}
+                {...fadeUp}
+                className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <FeatureIcon icon={feat.icon} />
+                  <p className="text-[11px] font-semibold text-[#b8864a] uppercase tracking-wider">
+                    {t(lang, feat.tag)}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Feature 2: AI Tagging — text left, illustration right */}
-      <section className="bg-white py-20 lg:py-28">
-        <motion.div
-          {...fadeUp}
-          className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center"
-        >
-          <div className="lg:order-first">
-            <p className="text-sm font-semibold text-[#b8864a] uppercase tracking-wider">
-              {t(lang, 'feature2Tag')}
-            </p>
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917] mt-3">
-              {t(lang, 'feature2Title')}
-            </h2>
-            <p className="text-[15px] text-[#6b6b6b] leading-relaxed mt-4">
-              {t(lang, 'feature2Desc')}
-            </p>
-            <div className="mt-6 space-y-3">
-              {(['feature2Check1', 'feature2Check2', 'feature2Check3'] as const).map((key) => (
-                <div key={key} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-[#b8864a] flex-shrink-0" />
-                  <span className="text-[15px] text-[#2c2c2c]">{t(lang, key)}</span>
+                <h3 className="font-serif text-xl font-bold text-[#1c1917]">
+                  {t(lang, feat.title)}
+                </h3>
+                <p className="text-[14px] text-[#6b6b6b] leading-relaxed mt-2">
+                  {t(lang, feat.desc)}
+                </p>
+                <div className="mt-4 space-y-2">
+                  {feat.checks.map((key) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-[#b8864a] flex-shrink-0" />
+                      <span className="text-[14px] text-[#2c2c2c]">{t(lang, key)}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </motion.div>
+            ))}
           </div>
-          <FeatureIcon icon={Camera} />
-        </motion.div>
-      </section>
-
-      {/* Feature 3: AI Writer — illustration left, text right */}
-      <section className="bg-[#faf9f7] py-20 lg:py-28">
-        <motion.div
-          {...fadeUp}
-          className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center"
-        >
-          <FeatureIcon icon={FileText} />
-          <div>
-            <p className="text-sm font-semibold text-[#b8864a] uppercase tracking-wider">
-              {t(lang, 'feature3Tag')}
-            </p>
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917] mt-3">
-              {t(lang, 'feature3Title')}
-            </h2>
-            <p className="text-[15px] text-[#6b6b6b] leading-relaxed mt-4">
-              {t(lang, 'feature3Desc')}
-            </p>
-            <div className="mt-6 space-y-3">
-              {(['feature3Check1', 'feature3Check2', 'feature3Check3'] as const).map((key) => (
-                <div key={key} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-[#b8864a] flex-shrink-0" />
-                  <span className="text-[15px] text-[#2c2c2c]">{t(lang, key)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── 4. Grid Section ── */}
