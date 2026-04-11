@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
+import AdminSelect from '../../components/ui/AdminSelect';
 
 type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
 type TypeFilter = 'all' | 'homeowner' | 'company';
@@ -36,6 +37,23 @@ const STATUS_BADGE: Record<string, string> = {
   contacted: 'bg-amber-100 text-amber-700',
   resolved: 'bg-green-100 text-green-700',
   archived: 'bg-stone-100 text-stone-500',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  new: '新询单',
+  contacted: '已联系',
+  resolved: '已解决',
+  archived: '已归档',
+};
+
+const CRM_LABEL: Record<string, string> = {
+  pending: '待同步',
+  synced: '已同步',
+  failed: '同步失败',
+  created: '已创建',
+  updated: '已更新',
+  linked: '已关联',
+  duplicate: '重复',
 };
 
 export default function AdminInquiriesPage() {
@@ -244,11 +262,11 @@ export default function AdminInquiriesPage() {
             onChange={(e) => { setStatusFilter(e.target.value as StatusFilter); setPage(1); }}
             className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
           >
-            <option value="all">All Status</option>
-            <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="resolved">Resolved</option>
-            <option value="archived">Archived</option>
+            <option value="all">全部状态</option>
+            <option value="new">新询单</option>
+            <option value="contacted">已联系</option>
+            <option value="resolved">已解决</option>
+            <option value="archived">已归档</option>
           </select>
         </div>
         <div className="flex-1 min-w-[200px]">
@@ -369,7 +387,7 @@ export default function AdminInquiriesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[inq.status]}`}>
-                        {inq.status}
+                        {STATUS_LABEL[inq.status] || inq.status}
                       </span>
                     </td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -385,7 +403,7 @@ export default function AdminInquiriesPage() {
                           const badgeClass = isLinked
                             ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : 'bg-green-50 text-green-700';
-                          const label = action ? `${action}` : 'synced';
+                          const label = action ? (CRM_LABEL[action] || action) : '已同步';
                           return (
                             <div className="flex flex-col items-start gap-1">
                               <span
@@ -395,7 +413,7 @@ export default function AdminInquiriesPage() {
                                 {label}
                               </span>
                               {isLinked && (
-                                <span className="text-[10px] text-amber-600">merged → check lead</span>
+                                <span className="text-[10px] text-amber-600">已合并 → 请检查</span>
                               )}
                             </div>
                           );
@@ -408,14 +426,14 @@ export default function AdminInquiriesPage() {
                                 className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
                                 title={inq.crm_last_error || undefined}
                               >
-                                failed
+                                同步失败
                               </span>
                               <button
                                 onClick={() => handleResendCrm(inq.id)}
                                 disabled={resendingId === inq.id}
                                 className="text-[10px] text-[#b8864a] hover:underline disabled:opacity-50"
                               >
-                                {resendingId === inq.id ? 'Resending…' : 'Resend'}
+                                {resendingId === inq.id ? '发送中…' : '重新发送'}
                               </button>
                             </div>
                           );
@@ -425,14 +443,14 @@ export default function AdminInquiriesPage() {
                         return (
                           <div className="flex flex-col items-start gap-1">
                             <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
-                              pending
+                              待同步
                             </span>
                             <button
                               onClick={() => handleResendCrm(inq.id)}
                               disabled={resendingId === inq.id}
                               className="text-[10px] text-[#b8864a] hover:underline disabled:opacity-50"
                             >
-                              {resendingId === inq.id ? 'Sending…' : 'Send now'}
+                              {resendingId === inq.id ? '发送中…' : '立即发送'}
                             </button>
                           </div>
                         );
@@ -460,10 +478,10 @@ export default function AdminInquiriesPage() {
                                 onChange={(e) => setEditStatus(e.target.value)}
                                 className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
                               >
-                                <option value="new">New</option>
-                                <option value="contacted">Contacted</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="archived">Archived</option>
+                                <option value="new">新询单</option>
+                                <option value="contacted">已联系</option>
+                                <option value="resolved">已解决</option>
+                                <option value="archived">已归档</option>
                               </select>
                             </div>
                             <div className="flex-1">
