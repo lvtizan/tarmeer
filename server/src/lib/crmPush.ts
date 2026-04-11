@@ -22,6 +22,7 @@ const CRM_INBOUND_URL = process.env.CRM_INBOUND_URL;
 const CRM_API_KEY = process.env.CRM_API_KEY;
 const CRM_TENANT_ID = process.env.CRM_TENANT_ID;
 const CRM_TRAFFIC_CHANNEL_ID = process.env.CRM_TRAFFIC_CHANNEL_ID;
+const CRM_COMPANY_TENANT_ID = process.env.CRM_COMPANY_TENANT_ID;
 
 export interface LeadPayload {
   inquiryId: number;
@@ -33,6 +34,15 @@ export interface LeadPayload {
   area?: string;
   notes?: string;
   page?: string;
+}
+
+export interface CompanyLeadPayload {
+  applicationId: number;
+  companyName: string;
+  phone?: string;
+  city?: string;
+  licenseNumber?: string;
+  description?: string;
 }
 
 async function markSynced(
@@ -146,6 +156,59 @@ export async function pushLeadToCRM(lead: LeadPayload): Promise<any> {
     };
     console.error('[CRM Push] Error (inquiry #' + lead.inquiryId + '):', errorPayload);
     await markFailed(lead.inquiryId, errorPayload).catch(() => {});
+    return null;
+  }
+}
+
+/**
+ * Push a company registration lead to CRM (separate tenant).
+ * Fire-and-forget, logs result to console.
+ */
+export async function pushCompanyLeadToCRM(lead: CompanyLeadPayload): Promise<any> {
+  const tenantId = CRM_COMPANY_TENANT_ID;
+  if (!CRM_INBOUND_URL || !CRM_API_KEY || !tenantId) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(CRM_INBOUND_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CRM_API_KEY,
+      },
+      body: JSON.stringify({
+        source: 'tarmeer-mall',
+        tenantId,
+        externalId: `company-app-${lead.applicationId}`,
+        name: lead.companyName,
+        phone: lead.phone || undefined,
+        city: lead.city || undefined,
+        notes: [
+          lead.licenseNumber ? `License: ${lead.licenseNumber}` : '',
+          lead.description || '',
+        ].filter(Boolean).join('\n') || undefined,
+        page: '/join-as-company',
+        trafficChannelId: CRM_TRAFFIC_CHANNEL_ID || undefined,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data || data.code !== 0) {
+      console.error(`[CRM Push] Company lead failed (app #${lead.applicationId}):`, {
+        httpStatus: response.status,
+        code: data?.code,
+        message: data?.message,
+      });
+      return null;
+    }
+
+    console.log(`[CRM Push] Company lead ${data.data?.action}: ${data.data?.leadId} (app #${lead.applicationId})`);
+    return data;
+  } catch (err: any) {
+    console.error(`[CRM Push] Company lead error (app #${lead.applicationId}):`, err.message);
     return null;
   }
 }

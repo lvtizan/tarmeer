@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { pushCompanyLeadToCRM } from '../lib/crmPush';
 
 // Submit company application
 export async function applyAsCompany(req: any, res: any) {
@@ -31,9 +32,21 @@ export async function applyAsCompany(req: any, res: any) {
       [userId, company_name, license_number || null, phone || null, city || null, address || null, description || null]
     );
 
+    const applicationId = (result as any).insertId;
+
+    // Fire-and-forget CRM push (company tenant)
+    pushCompanyLeadToCRM({
+      applicationId,
+      companyName: company_name,
+      phone: phone || undefined,
+      city: city || undefined,
+      licenseNumber: license_number || undefined,
+      description: description || undefined,
+    }).catch(() => {});
+
     res.status(201).json({
       message: 'Company application submitted successfully. It will be reviewed by our team.',
-      applicationId: (result as any).insertId,
+      applicationId,
       status: 'pending',
     });
   } catch (error) {
