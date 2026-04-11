@@ -31,6 +31,7 @@ const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
 const FaqPage = lazy(() => import('./pages/FaqPage'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
+const JoinPage = lazy(() => import('./pages/JoinPage'));
 
 // Onboarding
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
@@ -147,6 +148,7 @@ function App() {
 
           {/* ====== Independent landing pages ====== */}
           <Route path="/for-companies" element={<ForCompaniesPage />} />
+          <Route path="/join" element={<JoinPage />} />
 
           {/* ====== Auth ====== */}
           <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
