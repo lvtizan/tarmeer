@@ -200,10 +200,27 @@ function JoinAuthCard() {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            {!isNewEmail && (
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm text-stone-500">
+                  <input type="checkbox" className="rounded border-stone-300" />
+                  Remember me
+                </label>
+                <Link to="/forgot-password" className="text-sm text-[#b8864a] hover:text-[#a4763f]">
+                  Forgot password?
+                </Link>
+              </div>
+            )}
             <button type="submit" disabled={loading} className="btn-primary w-full h-[50px] text-[15px] text-white disabled:opacity-50">
               {loading ? 'Please wait...' : isNewEmail ? 'Create Account' : 'Sign In'}
             </button>
           </form>
+          <p className="text-center text-[11px] text-stone-400">
+            By continuing, you agree to our{' '}
+            <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Terms</Link>
+            {' '}&bull;{' '}
+            <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Privacy</Link>
+          </p>
         </div>
       )}
 
