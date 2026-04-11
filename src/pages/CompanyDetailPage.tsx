@@ -499,7 +499,7 @@ export default function CompanyDetailPage() {
 
           {/* Right: Sticky Inquiry Sidebar */}
           <div ref={sidebarRef} className="hidden lg:block w-[320px] flex-shrink-0">
-            <div className="sticky top-4 space-y-4">
+            <div className="sticky top-20 space-y-4">
               <ServiceInquiryCard title={`Get in touch with ${company.name}`} companyName={company.name} companySlug={company.id} />
 
               {/* Contact Info Card */}
