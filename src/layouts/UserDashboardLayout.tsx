@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
+import PhoneRequiredModal from '../components/PhoneRequiredModal';
 import SidebarNavLink from '../components/ui/SidebarNavLink';
 
 export default function UserDashboardLayout() {
@@ -27,6 +28,7 @@ export default function UserDashboardLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#faf9f7]">
+      <PhoneRequiredModal />
       {/* Top navbar — same as homepage */}
       <Navbar />
 

@@ -3,6 +3,7 @@ import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { Building2, FolderOpen, Settings } from 'lucide-react';
 import Navbar from '../Navbar';
+import PhoneRequiredModal from '../PhoneRequiredModal';
 
 const PRIMARY = '#b8864a';
 
@@ -17,6 +18,7 @@ export default function CompanyLayout() {
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
+      <PhoneRequiredModal />
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
