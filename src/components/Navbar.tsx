@@ -7,6 +7,7 @@ import { safeGetJSON } from '../lib/storage';
 import Avatar from './ui/Avatar';
 import NotificationBell from './NotificationBell';
 import { useNavigationHandler } from '../hooks/useNavigationHandler';
+import TarmeerLogo from './TarmeerLogo';
 
 const serviceCategories = {
   Design: [
@@ -129,15 +130,7 @@ export default function Navbar({
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-stone-200">
       <div className="w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between h-14 sm:h-16">
-        <Link to="/" className="flex items-center gap-2 font-serif text-xl sm:text-2xl font-bold text-[#2c2c2c]">
-          <img
-            src="/images/tarmeer_logo.svg"
-            alt=""
-            className="h-8 sm:h-9 w-auto"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-          TARMEER
-        </Link>
+        <TarmeerLogo />
 
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map(({ to, label }) => (

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
+import TarmeerLogo from '../components/TarmeerLogo';
 import {
   Check,
   Search,
@@ -75,10 +76,7 @@ export default function ForCompaniesPage() {
       {/* ── 1. Mini Header (sticky) ── */}
       <header className="sticky top-0 z-50 h-16 bg-white shadow-sm flex items-center px-4 sm:px-6">
         <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition">
-            <img src="/images/tarmeer_logo.svg" alt="Tarmeer" className="h-8" />
-            <span className="font-serif text-lg font-semibold text-[#1c1917]">Tarmeer</span>
-          </Link>
+          <TarmeerLogo />
           <div className="flex items-center gap-1 rounded-lg border border-stone-200 p-0.5">
             <button
               onClick={() => setLang('en')}
