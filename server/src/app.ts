@@ -171,17 +171,6 @@ app.get('/api/sitemap.xml', async (req, res) => {
       'SELECT slug, updated_at FROM company_profiles WHERE status = ? AND slug IS NOT NULL AND deleted_at IS NULL ORDER BY weight_score DESC',
       ['approved']
     );
-    // Get all published projects with their company slug
-    const [projects] = await pool.execute(
-      `SELECT p.slug AS project_slug, p.updated_at,
-              COALESCE(cp.slug, uc.slug) AS company_slug
-       FROM projects p
-       LEFT JOIN company_profiles cp ON p.company_id = cp.id AND cp.deleted_at IS NULL
-       LEFT JOIN uae_companies uc ON p.uae_company_id = uc.id
-       WHERE p.slug IS NOT NULL AND p.deleted_at IS NULL
-       ORDER BY p.updated_at DESC`
-    );
-
     const baseUrl = 'https://www.tarmeer.com';
     const today = new Date().toISOString().slice(0, 10);
 
@@ -212,14 +201,6 @@ app.get('/api/sitemap.xml', async (req, res) => {
       if (company.slug) {
         const lastmod = company.updated_at ? new Date(company.updated_at).toISOString().slice(0, 10) : today;
         xml += `  <url><loc>${baseUrl}/companies/${company.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${lastmod}</lastmod></url>\n`;
-      }
-    }
-
-    // Project pages
-    for (const project of projects as any[]) {
-      if (project.company_slug && project.project_slug) {
-        const lastmod = project.updated_at ? new Date(project.updated_at).toISOString().slice(0, 10) : today;
-        xml += `  <url><loc>${baseUrl}/companies/${project.company_slug}/${project.project_slug}</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>${lastmod}</lastmod></url>\n`;
       }
     }
 
