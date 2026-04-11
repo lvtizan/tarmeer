@@ -8,6 +8,7 @@ import {
   Share2, ExternalLink, X, BadgeCheck, ImageIcon,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
+import { trackViewContent } from '../lib/analytics';
 import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies, fetchAdminCompanyPreview } from '../lib/publicApi';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
@@ -90,6 +91,7 @@ export default function CompanyDetailPage() {
       .then((item) => {
         if (!active) return;
         setCompany(item);
+        trackViewContent({ content_name: item.name, content_id: item.id || id });
         // Redirect numeric IDs to slug-based URL
         if (id && !isNaN(Number(id)) && item.id && item.id !== id) {
           navigate(`/companies/${item.id}`, { replace: true });

@@ -4,6 +4,7 @@ import { ChevronRight, MapPin, Calendar, Instagram, Globe, Briefcase, Mail } fro
 import type { Company } from '../../lib/companyData';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
 import { resolveImageUrl, resolveVariantUrl } from '../../lib/imageUrl';
+import { trackClickButton } from '../../lib/analytics';
 
 interface CompanyCardProps {
   company: Company;
@@ -141,7 +142,7 @@ export default function CompanyCard({ company }: CompanyCardProps) {
           <Link
             to={`/companies/${company.id}`}
             className="inline-flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg border border-[#c6a065] text-[#c6a065] font-semibold whitespace-nowrap hover:bg-[#c6a065] hover:text-white transition-colors text-sm"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); trackClickButton({ content_name: `Send Message - ${company.name}` }); }}
           >
             <Mail className="w-4 h-4" />
             Send Message
@@ -149,6 +150,7 @@ export default function CompanyCard({ company }: CompanyCardProps) {
           <Link
             to={`/companies/${company.id}`}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#c6a065] text-white font-medium hover:bg-[#a67c47] transition text-sm"
+            onClick={() => trackClickButton({ content_name: `View - ${company.name}` })}
           >
             View
             <ChevronRight className="w-4 h-4" />

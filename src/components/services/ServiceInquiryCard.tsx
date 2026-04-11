@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
 import SelectField from '../form/SelectField';
+import { trackContact, trackLead } from '../../lib/analytics';
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const AREA_SIZES = ['< 50 m²', '50 - 100 m²', '100 - 200 m²', '200 - 500 m²', '500 m²+'];
@@ -76,6 +77,8 @@ export default function ServiceInquiryCard({
         source_page: window.location.pathname,
       });
       setSubmitted(true);
+      trackContact({ content_name: companyName || 'Service Page', content_id: companySlug || '' });
+      trackLead({ content_name: companyName || 'Service Page', content_id: companySlug || '' });
     } catch (err: any) {
       setError(err.message || 'Failed to submit. Please try again.');
     } finally {

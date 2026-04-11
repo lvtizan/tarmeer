@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { trackContact, trackLead } from '../../lib/analytics';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -63,6 +64,8 @@ export default function Banner() {
       }
 
       setSuccess('Submitted successfully. Our team will contact you soon.');
+      trackContact({ content_name: 'Homepage Banner' });
+      trackLead({ content_name: 'Homepage Banner' });
       setArea('');
       setPhone('');
     } catch (submitError: any) {

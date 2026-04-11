@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Phone, Send, User, MessageSquare } from 'lucide-react';
+import { trackContact, trackLead } from '../lib/analytics';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -56,6 +57,8 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
       }
 
       setSubmitted(true);
+      trackContact({ content_name: recipientName || 'Unknown' });
+      trackLead({ content_name: recipientName || 'Unknown', content_id: String(companyId || '') });
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
