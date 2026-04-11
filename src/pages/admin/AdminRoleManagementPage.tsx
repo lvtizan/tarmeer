@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { resolveImageUrl } from '../../lib/imageUrl';
+import AdminSelect from '../../components/ui/AdminSelect';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 type RoleTab = 'homeowners' | 'companies';
@@ -109,19 +110,19 @@ const AssignDesignerModal: React.FC<AssignDesignerModalProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-2">
             Select Designer
           </label>
-          <select
+          <AdminSelect
             value={selectedDesignerId}
-            onChange={(e) => setSelectedDesignerId(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(val) => setSelectedDesignerId(val)}
+            options={[
+              { value: '', label: 'Choose a designer...' },
+              ...approvedDesigners.map((designer) => ({
+                value: designer.id,
+                label: `${designer.name} (${designer.city})`,
+              })),
+            ]}
             disabled={isLoading}
-          >
-            <option value="">Choose a designer...</option>
-            {approvedDesigners.map((designer) => (
-              <option key={designer.id} value={designer.id}>
-                {designer.name} ({designer.city})
-              </option>
-            ))}
-          </select>
+            className="w-full"
+          />
           {approvedDesigners.length === 0 && (
             <p className="mt-2 text-sm text-amber-600">No approved designers available</p>
           )}

@@ -245,29 +245,29 @@ export default function AdminInquiriesPage() {
       <div className="flex flex-wrap gap-3 items-end">
         <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
-          <select
+          <AdminSelect
             value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value as TypeFilter); setPage(1); }}
-            className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-          >
-            <option value="all">All Types</option>
-            <option value="homeowner">Homeowner</option>
-            <option value="company">Company Lead</option>
-          </select>
+            onChange={(val) => { setTypeFilter(val as TypeFilter); setPage(1); }}
+            options={[
+              { value: 'all', label: 'All Types' },
+              { value: 'homeowner', label: 'Homeowner' },
+              { value: 'company', label: 'Company Lead' },
+            ]}
+          />
         </div>
         <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-          <select
+          <AdminSelect
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value as StatusFilter); setPage(1); }}
-            className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-          >
-            <option value="all">全部状态</option>
-            <option value="new">新询单</option>
-            <option value="contacted">已联系</option>
-            <option value="resolved">已解决</option>
-            <option value="archived">已归档</option>
-          </select>
+            onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+            options={[
+              { value: 'all', label: '全部状态' },
+              { value: 'new', label: '新询单' },
+              { value: 'contacted', label: '已联系' },
+              { value: 'resolved', label: '已解决' },
+              { value: 'archived', label: '已归档' },
+            ]}
+          />
         </div>
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
@@ -473,16 +473,16 @@ export default function AdminInquiriesPage() {
                           <div className="flex gap-4 items-end">
                             <div>
                               <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-                              <select
+                              <AdminSelect
                                 value={editStatus}
-                                onChange={(e) => setEditStatus(e.target.value)}
-                                className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-                              >
-                                <option value="new">新询单</option>
-                                <option value="contacted">已联系</option>
-                                <option value="resolved">已解决</option>
-                                <option value="archived">已归档</option>
-                              </select>
+                                onChange={(val) => setEditStatus(val)}
+                                options={[
+                                  { value: 'new', label: '新询单' },
+                                  { value: 'contacted', label: '已联系' },
+                                  { value: 'resolved', label: '已解决' },
+                                  { value: 'archived', label: '已归档' },
+                                ]}
+                              />
                             </div>
                             <div className="flex-1">
                               <label className="block text-xs font-medium text-stone-500 mb-1">Admin Notes</label>

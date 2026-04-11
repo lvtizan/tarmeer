@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
+import AdminSelect from '../ui/AdminSelect';
 
 interface Props {
   id: number;
@@ -90,10 +91,15 @@ export default function UserEditModal({ id, onClose, onSaved }: Props) {
 
           <div>
             <label className={labelCls}>City</label>
-            <select className={inputCls} value={data.city || ''} onChange={e => set('city', e.target.value)}>
-              <option value="">Select</option>
-              {EMIRATES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <AdminSelect
+              value={data.city || ''}
+              onChange={(val) => set('city', val)}
+              options={[
+                { value: '', label: 'Select' },
+                ...EMIRATES.map(c => ({ value: c, label: c })),
+              ]}
+              className="w-full"
+            />
           </div>
         </div>
 

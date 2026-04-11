@@ -6,6 +6,7 @@ import AdminTableSearch from '../../components/admin/AdminTableSearch';
 import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTab';
 import AdminDirectoryTable from '../../components/admin/AdminDirectoryTable';
 import AdminApplicationsTable from '../../components/admin/AdminApplicationsTable';
+import AdminSelect from '../../components/ui/AdminSelect';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -333,16 +334,16 @@ export default function AdminCompaniesPage() {
           <div className="flex flex-wrap gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-              <select
+              <AdminSelect
                 value={profileStatusFilter}
-                onChange={(e) => { setProfileStatusFilter(e.target.value as ProfileStatusFilter); setProfilePage(1); }}
-                className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-              >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
+                onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'approved', label: 'Approved' },
+                  { value: 'rejected', label: 'Rejected' },
+                ]}
+              />
             </div>
             <AdminTableSearch
               value={profileSearch}
@@ -383,15 +384,15 @@ export default function AdminCompaniesPage() {
           <div className="flex flex-wrap gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-              <select
+              <AdminSelect
                 value={claimedFilter}
-                onChange={(e) => { setClaimedFilter(e.target.value as ClaimedFilter); setCompanyPage(1); }}
-                className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-              >
-                <option value="all">All</option>
-                <option value="claimed">Claimed</option>
-                <option value="unclaimed">Unclaimed</option>
-              </select>
+                onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'claimed', label: 'Claimed' },
+                  { value: 'unclaimed', label: 'Unclaimed' },
+                ]}
+              />
             </div>
             <AdminTableSearch
               value={companySearch}
@@ -422,16 +423,16 @@ export default function AdminCompaniesPage() {
           <div className="flex flex-wrap gap-3 items-end">
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-              <select
+              <AdminSelect
                 value={pendingStatusFilter}
-                onChange={(e) => { setPendingStatusFilter(e.target.value as ProfileStatusFilter); setPendingPage(1); }}
-                className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-              >
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="all">All</option>
-              </select>
+                onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
+                options={[
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'approved', label: 'Approved' },
+                  { value: 'rejected', label: 'Rejected' },
+                  { value: 'all', label: 'All' },
+                ]}
+              />
             </div>
             <AdminTableSearch
               value={pendingSearch}

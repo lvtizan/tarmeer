@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
+import AdminSelect from '../ui/AdminSelect';
 
 interface Props {
   type: 'scraped' | 'profile';
@@ -150,10 +151,15 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>City</label>
-              <select className={inputCls} value={data.city || ''} onChange={e => set('city', e.target.value)}>
-                <option value="">Select</option>
-                {EMIRATES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <AdminSelect
+                value={data.city || ''}
+                onChange={(val) => set('city', val)}
+                options={[
+                  { value: '', label: 'Select' },
+                  ...EMIRATES.map(c => ({ value: c, label: c })),
+                ]}
+                className="w-full"
+              />
             </div>
             <div>
               <label className={labelCls}>{isScraped ? 'Area' : 'Address'}</label>
@@ -191,18 +197,28 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Company Type</label>
-                <select className={inputCls} value={data.company_type || ''} onChange={e => set('company_type', e.target.value)}>
-                  <option value="design_studio">Design Studio</option>
-                  <option value="renovation_company">Renovation Company</option>
-                </select>
+                <AdminSelect
+                  value={data.company_type || ''}
+                  onChange={(val) => set('company_type', val)}
+                  options={[
+                    { value: 'design_studio', label: 'Design Studio' },
+                    { value: 'renovation_company', label: 'Renovation Company' },
+                  ]}
+                  className="w-full"
+                />
               </div>
               <div>
                 <label className={labelCls}>Status</label>
-                <select className={inputCls} value={data.status || ''} onChange={e => set('status', e.target.value)}>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+                <AdminSelect
+                  value={data.status || ''}
+                  onChange={(val) => set('status', val)}
+                  options={[
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'approved', label: 'Approved' },
+                    { value: 'rejected', label: 'Rejected' },
+                  ]}
+                  className="w-full"
+                />
               </div>
             </div>
           )}

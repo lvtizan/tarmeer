@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
+import AdminSelect from '../../components/ui/AdminSelect';
 
 type StatusFilter = 'all' | 'new' | 'processing' | 'resolved' | 'rejected';
 
@@ -108,17 +109,17 @@ export default function AdminComplaintsPage() {
       <div className="flex flex-wrap gap-3 items-end">
         <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-          <select
+          <AdminSelect
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value as StatusFilter); setPage(1); }}
-            className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-          >
-            <option value="all">All Status</option>
-            <option value="new">New</option>
-            <option value="processing">Processing</option>
-            <option value="resolved">Resolved</option>
-            <option value="rejected">Rejected</option>
-          </select>
+            onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+            options={[
+              { value: 'all', label: 'All Status' },
+              { value: 'new', label: 'New' },
+              { value: 'processing', label: 'Processing' },
+              { value: 'resolved', label: 'Resolved' },
+              { value: 'rejected', label: 'Rejected' },
+            ]}
+          />
         </div>
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
@@ -216,16 +217,16 @@ export default function AdminComplaintsPage() {
                           <div className="flex gap-4 items-end">
                             <div>
                               <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-                              <select
+                              <AdminSelect
                                 value={editStatus}
-                                onChange={(e) => setEditStatus(e.target.value)}
-                                className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-                              >
-                                <option value="new">New</option>
-                                <option value="processing">Processing</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="rejected">Rejected</option>
-                              </select>
+                                onChange={(val) => setEditStatus(val)}
+                                options={[
+                                  { value: 'new', label: 'New' },
+                                  { value: 'processing', label: 'Processing' },
+                                  { value: 'resolved', label: 'Resolved' },
+                                  { value: 'rejected', label: 'Rejected' },
+                                ]}
+                              />
                             </div>
                             <div className="flex-1">
                               <label className="block text-xs font-medium text-stone-500 mb-1">Admin Notes</label>

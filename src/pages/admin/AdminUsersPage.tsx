@@ -5,6 +5,7 @@ import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
 import UserEditModal from '../../components/admin/UserEditModal';
+import AdminSelect from '../../components/ui/AdminSelect';
 
 type RoleFilter = 'all' | 'user' | 'designer' | 'company';
 type StatusFilter = 'all' | 'active' | 'suspended';
@@ -250,28 +251,28 @@ export default function AdminUsersPage() {
       <div className="flex flex-wrap gap-3 items-end">
         <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Role</label>
-          <select
+          <AdminSelect
             value={roleFilter}
-            onChange={(e) => { setRoleFilter(e.target.value as RoleFilter); setPage(1); }}
-            className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-          >
-            <option value="all">All Roles</option>
-            <option value="user">User</option>
-            <option value="designer">Designer</option>
-            <option value="company">Company</option>
-          </select>
+            onChange={(val) => { setRoleFilter(val as RoleFilter); setPage(1); }}
+            options={[
+              { value: 'all', label: 'All Roles' },
+              { value: 'user', label: 'User' },
+              { value: 'designer', label: 'Designer' },
+              { value: 'company', label: 'Company' },
+            ]}
+          />
         </div>
         <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-          <select
+          <AdminSelect
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value as StatusFilter); setPage(1); }}
-            className="h-9 px-3 border border-stone-200 rounded-lg text-sm bg-white"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
-          </select>
+            onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+            options={[
+              { value: 'all', label: 'All Status' },
+              { value: 'active', label: 'Active' },
+              { value: 'suspended', label: 'Suspended' },
+            ]}
+          />
         </div>
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
