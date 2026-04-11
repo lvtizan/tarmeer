@@ -28,16 +28,14 @@ export default function AuthCallbackPage() {
             localStorage.setItem('active_role', data.user.active_role || '');
           }
           const activeRole = data.user?.active_role;
-          if (!activeRole) {
-            navigate('/onboarding');
-          } else if (activeRole === 'company') {
+          if (activeRole === 'company') {
             navigate('/company');
           } else {
             navigate('/dashboard');
           }
         })
         .catch(() => {
-          navigate('/onboarding');
+          navigate('/dashboard');
         });
     } else if (error) {
       // 错误处理

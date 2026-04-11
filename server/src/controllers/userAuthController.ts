@@ -65,8 +65,10 @@ async function getLinkedDesignerPayload(user: { id: number; email: string }) {
 // Register a new user (role = 'user' by default)
 export async function register(req: any, res: any) {
   try {
-    const { email, password, fullName, full_name, phone, city } = req.body;
+    const { email, password, fullName, full_name, phone, city, role: requestedRole } = req.body;
     const name = fullName || full_name || email.split('@')[0];
+    const validRoles = ['homeowner', 'company'];
+    const assignRole = validRoles.includes(requestedRole) ? requestedRole : null;
 
     if (isTempEmail(email)) {
       return res.status(400).json({ error: 'Temporary email addresses are not allowed. Please use a valid email.' });
@@ -82,9 +84,10 @@ export async function register(req: any, res: any) {
     const { token: verificationToken, expires: verificationExpires } = generateVerificationToken();
 
     const [result] = await pool.execute(
-      `INSERT INTO users (email, password, full_name, phone, city, verification_token, verification_token_expires, role, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'user', 'active')`,
-      [email, hashedPassword, name, phone || null, normalizeCity(city), verificationToken, verificationExpires]
+      `INSERT INTO users (email, password, full_name, phone, city, verification_token, verification_token_expires, role, active_role, onboarding_completed, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+      [email, hashedPassword, name, phone || null, normalizeCity(city), verificationToken, verificationExpires,
+       assignRole || 'user', assignRole || null, assignRole ? 1 : 0]
     );
 
     const userId = (result as any).insertId;
@@ -574,6 +577,11 @@ export async function oauthCallback(req: any, res: any) {
       return res.redirect(`${frontendUrl}/auth?error=oauth_failed`);
     }
 
+    // Role passed via OAuth state parameter (?role=company|homeowner)
+    const oauthRole = req.query.state;
+    const validRoles = ['homeowner', 'company'];
+    const assignRole = validRoles.includes(oauthRole) ? oauthRole : null;
+
     // passportUser comes from designers table (passport strategy)
     // Find or create corresponding user record
     let [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [passportUser.email]);
@@ -581,21 +589,33 @@ export async function oauthCallback(req: any, res: any) {
 
     if (!user) {
       const [result] = await pool.execute(
-        `INSERT INTO users (email, password, full_name, avatar_url, role, email_verified, status)
-         VALUES (?, '', ?, ?, 'user', TRUE, 'active')`,
-        [passportUser.email, passportUser.full_name, passportUser.avatar_url || '']
+        `INSERT INTO users (email, password, full_name, avatar_url, role, active_role, onboarding_completed, email_verified, status)
+         VALUES (?, '', ?, ?, ?, ?, ?, TRUE, 'active')`,
+        [passportUser.email, passportUser.full_name, passportUser.avatar_url || '',
+         assignRole || 'user', assignRole || null, assignRole ? 1 : 0]
       );
       const userId = (result as any).insertId;
       await pool.execute('UPDATE designers SET user_id = ? WHERE id = ?', [userId, passportUser.id]);
 
       [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
       user = (rows as any[])[0];
-    } else if (!user.email_verified) {
-      await pool.execute('UPDATE users SET email_verified = TRUE WHERE id = ?', [user.id]);
+    } else {
+      if (!user.email_verified) {
+        await pool.execute('UPDATE users SET email_verified = TRUE WHERE id = ?', [user.id]);
+      }
+      // If user exists but no active_role and we have one from OAuth state, set it
+      if (!user.active_role && assignRole) {
+        await pool.execute(
+          'UPDATE users SET active_role = ?, role = ?, onboarding_completed = 1 WHERE id = ?',
+          [assignRole, assignRole, user.id]
+        );
+        user.active_role = assignRole;
+      }
     }
 
     const token = generateToken(user);
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=oauth`);
+    const roleParam = assignRole ? `&role=${assignRole}` : '';
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=oauth${roleParam}`);
   } catch (error) {
     console.error('OAuth callback error:', error);
     res.redirect(`${frontendUrl}/auth?error=oauth_error`);

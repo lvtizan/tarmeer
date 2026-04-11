@@ -167,10 +167,14 @@ router.post('/google/one-tap',
   userAuth.googleOneTap
 );
 
-// Google OAuth
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+// Google OAuth — accepts ?role=company|homeowner via state param
+router.get('/google', (req: any, res: any, next: any) => {
+  const role = req.query.role;
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    state: role === 'company' || role === 'homeowner' ? role : undefined,
+  })(req, res, next);
+});
 
 router.get('/callback/google',
   passport.authenticate('google', { failureRedirect: `${config.frontendUrl}/auth?error=google_failed` }),

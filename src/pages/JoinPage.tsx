@@ -99,7 +99,7 @@ export default function JoinPage() {
               type="button"
               onClick={() => {
                 const apiBase = import.meta.env.VITE_API_URL || '/api';
-                window.location.href = `${apiBase}/auth/google`;
+                window.location.href = `${apiBase}/auth/google?role=company`;
               }}
               className="w-full h-[50px] flex items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white text-[15px] font-medium text-[#2c2c2c] hover:bg-stone-50 transition"
             >
@@ -125,7 +125,7 @@ export default function JoinPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
-                if (email) window.location.href = `/auth?email=${encodeURIComponent(email)}`;
+                if (email) window.location.href = `/auth?role=company&email=${encodeURIComponent(email)}`;
               }}
               className="space-y-4"
             >

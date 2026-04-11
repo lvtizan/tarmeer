@@ -44,6 +44,18 @@ export default function AuthPage() {
   const [isNewEmail, setIsNewEmail] = useState<boolean | null>(null); // null = unknown, true = new, false = existing
 
   const [searchParams] = useSearchParams();
+  // Role from URL: /auth?role=company (from /join) or default homeowner
+  const urlRole = searchParams.get('role');
+  const authRole = urlRole === 'company' ? 'company' : 'homeowner';
+
+  // Pre-fill email from URL (from /join email continue)
+  useEffect(() => {
+    const urlEmail = searchParams.get('email');
+    if (urlEmail && !email) {
+      setEmail(urlEmail);
+      setStep('password');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const error = searchParams.get('error');
@@ -129,11 +141,9 @@ export default function AuthPage() {
         localStorage.setItem('user', JSON.stringify(response.user));
         localStorage.setItem('active_role', response.user.active_role || '');
       }
-      // Route based on active_role
+      // Route based on active_role (no more onboarding redirect)
       const activeRole = response.user?.active_role;
-      if (!activeRole) {
-        navigate('/onboarding');
-      } else if (activeRole === 'company') {
+      if (activeRole === 'company') {
         navigate('/company');
       } else {
         navigate('/dashboard');
@@ -155,6 +165,7 @@ export default function AuthPage() {
         full_name: '',
         phone: '',
         city: 'Dubai',
+        role: authRole,
       });
 
       setSuccess(res?.message || 'Account created! Please check your email to verify.');
@@ -288,23 +299,20 @@ export default function AuthPage() {
                         try {
                           // Pre-check: verify the OAuth endpoint is reachable before redirecting
                           const apiBase = import.meta.env.VITE_API_URL || '/api';
-                          const resp = await fetch(`${apiBase}/auth/google`, {
+                          const googleUrl = `${apiBase}/auth/google?role=${authRole}`;
+                          const resp = await fetch(googleUrl, {
                             method: 'GET',
-                            redirect: 'manual', // Don't follow redirect, just check it exists
+                            redirect: 'manual',
                           });
-                          // A 302/303 redirect to Google means the endpoint is working
                           if (resp.type === 'opaqueredirect' || resp.status === 302 || resp.status === 303 || resp.status === 301) {
-                            window.location.href = `${apiBase}/auth/google`;
+                            window.location.href = googleUrl;
                           } else if (resp.ok) {
-                            // Some browsers return opaque for cross-origin redirects — just go
-                            window.location.href = `${apiBase}/auth/google`;
+                            window.location.href = googleUrl;
                           } else {
                             setError('Google sign-in is temporarily unavailable. Please use email instead.');
                           }
                         } catch {
-                          // Network error or backend not reachable — redirect anyway, let browser handle
-                          // (in production behind nginx, fetch with redirect:manual may behave differently)
-                          window.location.href = `${import.meta.env.VITE_API_URL || '/api'}/auth/google`;
+                          window.location.href = `${import.meta.env.VITE_API_URL || '/api'}/auth/google?role=${authRole}`;
                         }
                       }}
                       className={socialButtonClass}
