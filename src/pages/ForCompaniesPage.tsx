@@ -204,17 +204,21 @@ export default function ForCompaniesPage() {
                 key={i}
                 {...fadeUp}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-[#faf9f7] rounded-2xl border border-stone-200 shadow-sm p-8"
+                className="bg-[#faf9f7] rounded-2xl border border-stone-200 shadow-sm p-5 sm:p-6"
               >
-                <div className="w-12 h-12 rounded-xl bg-[#b8864a]/10 flex items-center justify-center mb-4">
-                  <card.icon className="w-6 h-6 text-[#b8864a]" />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 shrink-0 rounded-xl bg-[#b8864a]/10 flex items-center justify-center mt-0.5">
+                    <card.icon className="w-5 h-5 text-[#b8864a]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-semibold text-[#1c1917]">
+                      {t(lang, card.title)}
+                    </h3>
+                    <p className="text-[14px] text-[#6b6b6b] leading-relaxed mt-1">
+                      {t(lang, card.desc)}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1c1917] mb-2">
-                  {t(lang, card.title)}
-                </h3>
-                <p className="text-[15px] text-[#6b6b6b] leading-relaxed">
-                  {t(lang, card.desc)}
-                </p>
               </motion.div>
             ))}
           </div>
