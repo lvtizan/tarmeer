@@ -215,7 +215,10 @@ export default function HomeownerDashboardPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* Area */}
               <div className="md:col-span-2">
-                <label className={labelCls}><Ruler className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />Property Area *</label>
+                <label className={labelCls}>
+                  <Ruler className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
+                  Property Area <span className="text-red-500">*</span>
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {AREA_OPTIONS.map(opt => (
                     <button key={opt} type="button" onClick={() => setAndSave('area_range', profile.area_range === opt ? '' : opt)}
@@ -228,7 +231,10 @@ export default function HomeownerDashboardPage() {
 
               {/* City */}
               <div>
-                <label className={labelCls}><MapPin className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />City *</label>
+                <label className={labelCls}>
+                  <MapPin className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
+                  City <span className="text-red-500">*</span>
+                </label>
                 <select value={profile.city} onChange={e => { set('city', e.target.value); triggerSave(); }}
                   className={fieldCls + " appearance-none cursor-pointer"}>
                   {EMIRATES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -237,7 +243,10 @@ export default function HomeownerDashboardPage() {
 
               {/* Phone */}
               <div>
-                <label className={labelCls}><Phone className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />Phone *</label>
+                <label className={labelCls}>
+                  <Phone className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
+                  Phone <span className="text-red-500">*</span>
+                </label>
                 <input type="tel" value={profile.phone} onChange={e => set('phone', e.target.value)}
                   onBlur={triggerSave} placeholder="+971 50 123 4567" className={fieldCls} />
               </div>

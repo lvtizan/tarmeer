@@ -6,6 +6,8 @@ import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
 import Navbar from '../components/Navbar';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
+import AuthCardShell from '../components/auth/AuthCardShell';
+import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '../components/auth/authCardStyles';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 // Google Auth: enabled by default (backend is configured), disable explicitly with 'false'
@@ -192,8 +194,6 @@ export default function AuthPage() {
     setError(null);
   };
 
-  const inputClass = "w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition-all duration-200";
-  const socialButtonClass = "w-full flex items-center justify-center gap-3 h-[50px] px-5 rounded-2xl border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50 transition-all duration-200 font-medium text-[#1c1917]";
   const showSocialAuth = ENABLE_GOOGLE_AUTH || ENABLE_FACEBOOK_AUTH;
 
   return (
@@ -251,8 +251,7 @@ export default function AuthPage() {
 
         {/* Right Column - Registration Card */}
         <div className="flex justify-center lg:justify-end">
-          <div className="w-full max-w-[440px]">
-            <div className="bg-white rounded-[28px] border border-stone-100/80 shadow-[0_4px_40px_rgba(0,0,0,0.04)] p-8 sm:p-10">
+          <AuthCardShell>
               {/* Error/Success Messages */}
               {error && (
                 <div className="mb-5 rounded-xl border border-red-100 bg-red-50/50 p-3.5">
@@ -315,7 +314,7 @@ export default function AuthPage() {
                           window.location.href = `${import.meta.env.VITE_API_URL || '/api'}/auth/google?role=${authRole}`;
                         }
                       }}
-                      className={socialButtonClass}
+                      className={AUTH_SOCIAL_BUTTON_CLASS}
                     >
                       <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -331,7 +330,7 @@ export default function AuthPage() {
                     <button
                       type="button"
                       onClick={() => window.location.href = '/api/auth/facebook'}
-                      className={socialButtonClass}
+                      className={AUTH_SOCIAL_BUTTON_CLASS}
                     >
                       <svg className="h-[18px] w-[18px]" fill="#1877F2" viewBox="0 0 24 24">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 17.062 24 12.073z"/>
@@ -364,7 +363,7 @@ export default function AuthPage() {
                           setError(null);
                         }}
                         placeholder="Enter your email"
-                        className={`${inputClass} pl-[52px] pr-[52px]`}
+                        className={`${AUTH_INPUT_CLASS} pl-[52px] pr-[52px]`}
                       />
                       {/* Email Status Indicator */}
                       {isNewEmail === true && (
@@ -426,7 +425,7 @@ export default function AuthPage() {
                           setError(null);
                         }}
                         placeholder="Enter your password"
-                        className={`${inputClass} pl-[52px] pr-12`}
+                        className={`${AUTH_INPUT_CLASS} pl-[52px] pr-12`}
                       />
                       <button
                         type="button"
@@ -497,8 +496,7 @@ export default function AuthPage() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
+          </AuthCardShell>
         </div>
       </div>
       </div>

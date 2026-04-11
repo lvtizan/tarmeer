@@ -5,12 +5,17 @@ import { motion } from 'framer-motion';
 import TarmeerLogo from '../components/TarmeerLogo';
 import { api } from '../lib/api';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
+import LoadingButton from '../components/ui/LoadingButton';
+import AuthCardShell from '../components/auth/AuthCardShell';
+import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '../components/auth/authCardStyles';
 import {
   Check,
   Search,
   Camera,
   FileText,
-  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Lock,
   Eye,
   EyeOff,
   Share2,
@@ -111,10 +116,8 @@ function JoinAuthCard() {
     }
   };
 
-  const inputClass = 'h-[50px] w-full px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white';
-
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-sm mx-auto lg:mx-0 w-full order-2 lg:order-1">
+    <AuthCardShell className="mx-auto lg:mx-0 order-2 lg:order-1">
       {error && (
         <div className="mb-4 rounded-xl border border-red-100 bg-red-50/50 p-3 text-sm text-red-600">{error}</div>
       )}
@@ -130,7 +133,7 @@ function JoinAuthCard() {
               const apiBase = import.meta.env.VITE_API_URL || '/api';
               window.location.href = `${apiBase}/auth/google?role=company`;
             }}
-            className="w-full h-[50px] flex items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white text-[15px] font-medium text-[#2c2c2c] hover:bg-stone-50 transition"
+            className={AUTH_SOCIAL_BUTTON_CLASS}
           >
             <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -141,8 +144,10 @@ function JoinAuthCard() {
             Continue with Google
           </button>
 
-          <div className="relative my-1">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-stone-100" /></div>
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-stone-100"></div>
+            </div>
             <div className="relative flex justify-center">
               <span className="px-4 bg-white text-[10px] text-stone-400 font-medium tracking-[0.15em]">OR CONTINUE WITH EMAIL</span>
             </div>
@@ -150,77 +155,97 @@ function JoinAuthCard() {
 
           <form onSubmit={handleEmailContinue} className="space-y-4">
             <div className="relative">
-              <svg className="absolute left-5 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-              </svg>
+              <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-stone-400" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 placeholder="Enter your email"
-                className={`${inputClass} pl-[52px]`}
+                className={`${AUTH_INPUT_CLASS} pl-[52px] pr-[52px]`}
               />
               {isNewEmail === true && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-emerald-600">New account</span>}
               {isNewEmail === false && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-stone-500">Sign in</span>}
             </div>
-            <button type="submit" className="btn-primary w-full h-[50px] text-[15px] text-white">
+            <button type="submit" className="w-full h-[54px] rounded-2xl bg-[#B8864A] text-white font-semibold text-[15px] hover:bg-[#a3780a] transition-all duration-200 disabled:opacity-35 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(184,134,74,0.25)]">
               Continue with email
             </button>
+            {error && error.includes('email') && <p className="text-sm text-red-500 mt-2">{error}</p>}
           </form>
 
-          <p className="text-center text-[11px] text-stone-400">
+          <p className="text-[10px] text-stone-400 text-center mt-5">
             By continuing, you agree to our{' '}
-            <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Terms</Link>
-            {' '}&bull;{' '}
-            <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Privacy</Link>
+            <a href="/privacy" className="text-stone-500 hover:text-[#B8864A] transition-colors">Terms</a>
+            {' '}•{' '}
+            <a href="/privacy" className="text-stone-500 hover:text-[#B8864A] transition-colors">Privacy</a>
           </p>
         </div>
       )}
 
       {step === 'password' && (
-        <div className="space-y-4">
-          <button onClick={() => { setStep('initial'); setPassword(''); setError(null); }} className="flex items-center gap-1 text-sm text-stone-500 hover:text-[#2c2c2c]">
-            <ChevronLeft className="w-4 h-4" /> Back
+        <div className="space-y-5">
+          <button
+            type="button"
+            onClick={() => {
+              setStep('initial');
+              setEmail('');
+              setPassword('');
+              setError(null);
+            }}
+            className="text-sm text-stone-400 hover:text-[#1c1917] transition flex items-center gap-1"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
+            Back
           </button>
-          <p className="text-sm text-[#2c2c2c]">
-            {isNewEmail ? 'Create password for' : 'Enter password for'}{' '}
-            <strong>{email}</strong>
-          </p>
+
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <p className="text-sm text-stone-500">
+              Enter password for <span className="font-medium text-[#1c1917]">{email}</span>
+            </p>
+
             <div className="relative">
+              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(null); }}
                 placeholder="Enter your password"
                 autoFocus
-                className={`${inputClass} pr-12`}
+                className={`${AUTH_INPUT_CLASS} pl-[52px] pr-12`}
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-stone-100 rounded-lg transition"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5 text-stone-400" /> : <Eye className="w-5 h-5 text-stone-400" />}
               </button>
             </div>
+            {error && error.includes('Password') && <p className="mt-2 text-sm text-red-500">{error}</p>}
+
             {!isNewEmail && (
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-stone-500">
-                  <input type="checkbox" className="rounded border-stone-300" />
-                  Remember me
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="h-4 w-4 rounded border-stone-300 text-[#B8864A] focus:ring-[#B8864A]" />
+                  <span className="text-sm text-stone-500">Remember me</span>
                 </label>
-                <Link to="/forgot-password" className="text-sm text-[#b8864a] hover:text-[#a4763f]">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-sm font-medium text-[#B8864A] hover:opacity-70 transition"
+                >
                   Forgot password?
-                </Link>
+                </button>
               </div>
             )}
-            <button type="submit" disabled={loading} className="btn-primary w-full h-[50px] text-[15px] text-white disabled:opacity-50">
-              {loading ? 'Please wait...' : isNewEmail ? 'Create Account' : 'Sign In'}
-            </button>
+
+            <LoadingButton
+              type="submit"
+              loading={loading}
+              className="w-full h-[54px] rounded-2xl font-semibold bg-[#B8864A] text-white hover:bg-[#a3780a] transition-all duration-200 shadow-[0_4px_20px_rgba(184,134,74,0.25)]"
+            >
+              {isNewEmail ? 'Create Account' : 'Sign In'}
+            </LoadingButton>
           </form>
-          <p className="text-center text-[11px] text-stone-400">
-            By continuing, you agree to our{' '}
-            <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Terms</Link>
-            {' '}&bull;{' '}
-            <Link to="/privacy" className="text-stone-500 hover:text-[#b8864a]">Privacy</Link>
-          </p>
         </div>
       )}
 
@@ -233,7 +258,7 @@ function JoinAuthCard() {
           <p className="text-sm text-[#6b6b6b]">We sent a verification link to <strong>{email}</strong>. Click it to activate your account.</p>
         </div>
       )}
-    </div>
+    </AuthCardShell>
   );
 }
 

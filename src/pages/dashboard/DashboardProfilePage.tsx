@@ -87,7 +87,9 @@ export default function DashboardProfilePage() {
 
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-stone-700">Full Name *</label>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700">
+                Full Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={fullName}
@@ -97,7 +99,9 @@ export default function DashboardProfilePage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-stone-700">Phone / WhatsApp *</label>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700">
+                Phone / WhatsApp <span className="text-red-500">*</span>
+              </label>
               <input
                 type="tel"
                 value={phone}
@@ -108,7 +112,9 @@ export default function DashboardProfilePage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-stone-700">Email *</label>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700">
+                Email <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
                 value={email}

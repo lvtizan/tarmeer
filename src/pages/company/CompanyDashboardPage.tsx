@@ -214,7 +214,7 @@ export default function CompanyDashboardPage() {
           {!isNew && (
             <div className={`mt-3 rounded-lg border px-4 py-2.5 text-sm ${
               profile.status === 'approved' ? 'border-green-200 bg-green-50 text-green-800' :
-              profile.status === 'rejected' ? 'border-red-200 bg-red-50 text-red-800' :
+              profile.status === 'rejected' ? 'border-amber-200 bg-amber-50 text-amber-900' :
               'border-amber-200 bg-amber-50 text-amber-800'
             }`}>
               <div className="flex items-center gap-2">
@@ -223,11 +223,18 @@ export default function CompanyDashboardPage() {
                 {profile.status === 'pending' && <Clock className="w-4 h-4" />}
                 <span className="font-semibold">
                   {profile.status === 'approved' ? 'Profile approved' :
-                   profile.status === 'rejected' ? 'Profile rejected' :
+                   profile.status === 'rejected' ? 'Profile needs updates' :
                    'Under review — usually 1-2 business days'}
                 </span>
               </div>
-              {profile.status === 'rejected' && profile.admin_notes && <p className="mt-1 text-red-700">{profile.admin_notes}</p>}
+              {profile.status === 'rejected' && (
+                <>
+                  <p className="mt-1 text-amber-900/90">请提交手机号和至少上传一个作品集，才会被审核。</p>
+                  {profile.admin_notes && (
+                    <p className="mt-1 text-amber-900/90">管理员备注：{profile.admin_notes}</p>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

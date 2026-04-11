@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, Navigate } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { Building2, FolderOpen, Settings } from 'lucide-react';
 import Navbar from '../Navbar';
 import PhoneRequiredModal from '../PhoneRequiredModal';
+import { safeRemoveItem } from '../../lib/storage';
 
 const PRIMARY = '#b8864a';
 
@@ -13,8 +14,40 @@ const navCls = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export default function CompanyLayout() {
+  const navigate = useNavigate();
   const token = api.getToken();
+  const [authValid, setAuthValid] = useState<boolean | null>(token ? null : false);
+
+  useEffect(() => {
+    if (!token) {
+      setAuthValid(false);
+      return;
+    }
+
+    let mounted = true;
+    api.get('/auth/me')
+      .then(() => {
+        if (mounted) setAuthValid(true);
+      })
+      .catch(() => {
+        api.clearToken();
+        safeRemoveItem('user');
+        safeRemoveItem('active_role');
+        if (mounted) {
+          setAuthValid(false);
+          navigate('/auth', { replace: true });
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [token, navigate]);
+
   if (!token) return <Navigate to="/auth" replace />;
+  if (authValid !== true) {
+    return <div className="min-h-screen flex items-center justify-center text-stone-400">Checking session...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">

@@ -194,7 +194,7 @@ export async function pushCompanyLeadToCRM(lead: CompanyLeadPayload): Promise<an
       signal: AbortSignal.timeout(5000),
     });
 
-    const data = await response.json().catch(() => null);
+    const data: any = await response.json().catch(() => null);
 
     if (!response.ok || !data || data.code !== 0) {
       console.error(`[CRM Push] Company lead failed (app #${lead.applicationId}):`, {

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { safeRemoveItem } from '../lib/storage';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -11,6 +13,7 @@ const GCC_PHONE_OPTIONS = [
 ];
 
 export default function PhoneRequiredModal() {
+  const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [country, setCountry] = useState(GCC_PHONE_OPTIONS[0]);
   const [digits, setDigits] = useState('');
@@ -77,7 +80,16 @@ export default function PhoneRequiredModal() {
 
       setVisible(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to update phone number. Please try again.');
+      const message = err?.message || 'Failed to update phone number. Please try again.';
+      if (/invalid authentication token|not authenticated|unauthorized/i.test(message)) {
+        api.clearToken();
+        safeRemoveItem('user');
+        safeRemoveItem('active_role');
+        setVisible(false);
+        navigate('/auth', { replace: true });
+        return;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
