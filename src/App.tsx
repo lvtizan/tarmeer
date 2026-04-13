@@ -39,6 +39,7 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 // Company portal
 const CompanyDashboardPage = lazy(() => import('./pages/company/CompanyDashboardPage'));
 const CompanyProjectsPage = lazy(() => import('./pages/company/CompanyProjectsPage'));
+const CompanyArticlesPage = lazy(() => import('./pages/company/CompanyArticlesPage'));
 
 // Homeowner dashboard
 const UserDashboardLayout = lazy(() => import('./layouts/UserDashboardLayout'));
@@ -129,6 +130,7 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<CompanyDashboardPage />} />
             <Route path="projects" element={<CompanyProjectsPage />} />
+            <Route path="articles" element={<CompanyArticlesPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 

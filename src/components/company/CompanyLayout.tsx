@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, Settings } from 'lucide-react';
+import { Building2, FolderOpen, FileText, Settings } from 'lucide-react';
 import Navbar from '../Navbar';
 import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
@@ -66,6 +66,10 @@ export default function CompanyLayout() {
               <NavLink to="/company/projects" className={navCls}>
                 <FolderOpen className="w-5 h-5" />
                 <span className="text-sm font-medium">Projects</span>
+              </NavLink>
+              <NavLink to="/company/articles" className={navCls}>
+                <FileText className="w-5 h-5" />
+                <span className="text-sm font-medium">Articles</span>
               </NavLink>
               <NavLink to="/company/settings" className={navCls}>
                 <Settings className="w-5 h-5" />
