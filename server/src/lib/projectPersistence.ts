@@ -43,7 +43,8 @@ function validateNoBase64Images(images: unknown): void {
   }
 
   for (const image of images) {
-    if (typeof image === 'string' && image.startsWith('data:')) {
+    const url = typeof image === 'string' ? image : (image as any)?.url || '';
+    if (url.startsWith('data:')) {
       throw new Error(BASE64_IMAGES_NOT_ALLOWED_ERROR);
     }
   }
@@ -76,7 +77,11 @@ export function normalizeProjectImages(value: unknown): string[] {
   }
 
   return value
-    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (item && typeof item === 'object' && 'url' in item) return (item as any).url;
+      return '';
+    })
     .filter((item) => item.length > 0);
 }
 
