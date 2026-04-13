@@ -28,7 +28,7 @@ export default function UserDashboardLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#faf9f7]">
-      <PhoneRequiredModal />
+      <PhoneRequiredModal blocking />
       {/* Top navbar — same as homepage */}
       <Navbar />
 

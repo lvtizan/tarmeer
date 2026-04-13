@@ -51,7 +51,7 @@ export default function CompanyLayout() {
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
-      <PhoneRequiredModal />
+      <PhoneRequiredModal blocking />
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">

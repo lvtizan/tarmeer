@@ -12,9 +12,10 @@ const GCC_PHONE_OPTIONS = [
   { label: 'Bahrain', code: '+973', maxDigits: 8 },
 ];
 
-export default function PhoneRequiredModal() {
+export default function PhoneRequiredModal({ blocking = false }: { blocking?: boolean }) {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
+  const [checking, setChecking] = useState(blocking);
   const [country, setCountry] = useState(GCC_PHONE_OPTIONS[0]);
   const [digits, setDigits] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,8 +44,17 @@ export default function PhoneRequiredModal() {
         }
       } catch { /* not logged in, skip */ }
     }
-    checkPhone();
+    checkPhone().finally(() => setChecking(false));
   }, []);
+
+  // In blocking mode, show loading while checking
+  if (blocking && checking) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   // Block escape key
   useEffect(() => {
@@ -119,8 +129,11 @@ export default function PhoneRequiredModal() {
         <h2 className="text-xl font-bold text-[#2c2c2c] mb-2">
           Phone Number Required
         </h2>
-        <p className="text-[15px] text-[#6b6b6b] mb-6">
-          Please provide your phone number to continue using the dashboard.
+        <p className="text-[15px] text-[#6b6b6b] mb-3">
+          Clients need your phone number to contact you about projects.
+        </p>
+        <p className="text-[13px] text-stone-400 mb-6">
+          Complete your profile with a phone number and upload your portfolio so clients can easily find and reach you.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
