@@ -217,7 +217,47 @@ export default function CompanyDetailPage() {
     "url": company.website || `https://www.tarmeer.com/companies/${company.id}`,
     ...(heroImages[0] ? { "image": `https://www.tarmeer.com${heroImages[0]}` } : {}),
     "priceRange": "$$",
-    "areaServed": "UAE",
+    "areaServed": [
+      { "@type": "City", "name": "Dubai" },
+      { "@type": "City", "name": "Abu Dhabi" },
+      { "@type": "City", "name": "Sharjah" },
+      { "@type": "City", "name": "Ajman" },
+      { "@type": "City", "name": "Ras Al Khaimah" },
+      { "@type": "City", "name": "Fujairah" },
+      { "@type": "City", "name": "Umm Al Quwain" },
+    ],
+    "knowsAbout": ['Interior Design', 'Renovation', 'Fit-out'],
+  };
+
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `What services does ${company.name} offer in ${company.city}?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `${company.name} offers professional interior design and renovation services in ${company.city}, UAE.${company.services.length > 0 ? ` Their specialties include ${company.services.slice(0, 5).join(', ')}.` : ' They serve residential and commercial clients.'}`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `How can I view ${company.name}'s portfolio?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `You can browse ${company.name}'s complete portfolio on their Tarmeer profile, featuring ${company.projectCount > 0 ? company.projectCount + '+ completed projects with professional photos' : 'their work and services'}.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `How do I contact ${company.name} for a consultation?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `You can request a free consultation with ${company.name} directly through their Tarmeer profile. Fill out the inquiry form and their team will contact you.`,
+        },
+      },
+    ],
   };
 
   const ogImage = heroImages[0]
@@ -245,6 +285,7 @@ export default function CompanyDetailPage() {
             { '@type': 'ListItem', position: 3, name: company.name, item: `https://www.tarmeer.com/companies/${company.id}` },
           ],
         })}</script>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${company.name} - ${company.city} - Tarmeer`} />
         <meta name="twitter:description" content={company.shortDescription} />
