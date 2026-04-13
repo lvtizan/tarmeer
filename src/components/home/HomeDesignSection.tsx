@@ -66,15 +66,15 @@ function FeaturedCompanyGrid({ companies }: { companies: Company[] }) {
           className="group grid min-h-[184px] grid-cols-[116px_1fr] gap-4 rounded-[24px] border border-stone-200 bg-white p-4 transition hover:border-stone-300 hover:shadow-[0_18px_40px_rgba(28,25,23,0.08)] sm:min-h-[196px] sm:grid-cols-[124px_1fr] sm:p-4.5"
         >
           <StudioImage company={company} className="aspect-[4/5] rounded-[20px]" />
-          <div className="min-w-0 self-center">
+          <div className="min-w-0 flex flex-col py-1">
             <p className="text-[10px] uppercase tracking-[0.22em] text-stone-400">{company.city}</p>
-            <h4 className="mt-2 font-serif text-[23px] leading-tight text-[#1c1917] transition group-hover:text-[#b8864a] sm:text-[26px]">
+            <h4 className="mt-2 font-serif text-[23px] leading-tight text-[#1c1917] transition group-hover:text-[#b8864a] sm:text-[26px] line-clamp-2">
               {company.name}
             </h4>
             <p className="mt-2.5 line-clamp-2 text-[13px] leading-6 text-stone-500 sm:text-[14px]">
               {company.shortDescription}
             </p>
-            <div className="mt-3.5 flex items-center gap-2 text-[9px] uppercase tracking-[0.16em] text-stone-400 sm:text-[10px]">
+            <div className="mt-auto pt-2 flex items-center gap-2 text-[9px] uppercase tracking-[0.16em] text-stone-400 sm:text-[10px]">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 {company.city}
