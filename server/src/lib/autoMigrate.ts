@@ -81,6 +81,36 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       INDEX idx_created_at (created_at)
     )`,
   },
+  {
+    name: 'system_config',
+    sql: `CREATE TABLE IF NOT EXISTS system_config (
+      config_key VARCHAR(100) NOT NULL PRIMARY KEY,
+      config_value TEXT,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`,
+  },
+  {
+    name: 'articles',
+    sql: `CREATE TABLE IF NOT EXISTS articles (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      company_profile_id INT,
+      title VARCHAR(500) NOT NULL,
+      slug VARCHAR(500),
+      content TEXT,
+      excerpt VARCHAR(500),
+      cover_image VARCHAR(500),
+      tags JSON,
+      status ENUM('draft','published') DEFAULT 'draft',
+      seo_title VARCHAR(200),
+      seo_description VARCHAR(300),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_company (company_profile_id),
+      INDEX idx_status (status),
+      INDEX idx_slug (slug),
+      INDEX idx_created_at (created_at)
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
