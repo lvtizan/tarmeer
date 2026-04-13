@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import pool from '../config/database';
 import config from '../config';
-import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
+import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, sendAdminPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
 import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 
@@ -291,37 +291,45 @@ export async function resendVerification(req: any, res: any) {
 
 // Forgot password
 export async function forgotPassword(req: any, res: any) {
+  const genericMessage = 'If that email is registered, you will receive a password reset link.';
   try {
     const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
 
-    const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
-
-    if ((rows as any[]).length === 0) {
-      return res.json({ message: 'If that email is registered, you will receive a password reset link.' });
-    }
-
-    const user = (rows as any[])[0];
-    if (user.status === 'suspended') {
-      return res.json({ message: 'If that email is registered, you will receive a password reset link.' });
-    }
-
-    const { token, expires } = generatePasswordResetToken();
-
-    await pool.execute(
-      'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?',
-      [token, expires, user.id]
-    );
-
+    const normalizedEmail = email.toLowerCase().trim();
     const frontendUrl = resolveFrontendUrl(req);
-    setImmediate(async () => {
-      try {
-        await sendPasswordResetEmail(email, token, frontendUrl);
-      } catch (emailError: any) {
-        console.error('[SMTP] Password reset email failed:', emailError?.message || emailError);
-      }
-    });
 
-    res.json({ message: 'If that email is registered, you will receive a password reset link.' });
+    // Check users table first
+    const [userRows] = await pool.execute('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
+    if ((userRows as any[]).length > 0) {
+      const user = (userRows as any[])[0];
+      if (user.status !== 'suspended') {
+        const { token, expires } = generatePasswordResetToken();
+        await pool.execute('UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?', [token, expires, user.id]);
+        setImmediate(async () => {
+          try { await sendPasswordResetEmail(normalizedEmail, token, frontendUrl); }
+          catch (e: any) { console.error('[SMTP] Password reset email failed:', e?.message); }
+        });
+      }
+      return res.json({ message: genericMessage });
+    }
+
+    // Check admin_users table as fallback
+    const [adminRows] = await pool.execute('SELECT id, email, is_active FROM admin_users WHERE email = ?', [normalizedEmail]);
+    if ((adminRows as any[]).length > 0) {
+      const admin = (adminRows as any[])[0];
+      if (admin.is_active) {
+        const { token, expires } = generatePasswordResetToken();
+        await pool.execute('UPDATE admin_users SET reset_token = ?, reset_token_expires = ? WHERE id = ?', [token, expires, admin.id]);
+        setImmediate(async () => {
+          try { await sendAdminPasswordResetEmail(normalizedEmail, token, frontendUrl); }
+          catch (e: any) { console.error('[SMTP] Admin password reset email failed:', e?.message); }
+        });
+      }
+      return res.json({ message: genericMessage });
+    }
+
+    res.json({ message: genericMessage });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ error: 'Failed to process request. Please try again.' });

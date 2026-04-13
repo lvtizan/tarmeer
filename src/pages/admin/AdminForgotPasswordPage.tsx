@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
-import { adminApi } from '../../lib/adminApi';
 
 export default function AdminForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -15,7 +14,12 @@ export default function AdminForgotPasswordPage() {
     setError(null);
 
     try {
-      await adminApi.forgotPassword(email);
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error('Failed to send reset email.');
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email.');
@@ -28,8 +32,8 @@ export default function AdminForgotPasswordPage() {
     <div className="min-h-[calc(100vh-4rem)] bg-[#faf9f7] px-4 pb-16 pt-[clamp(28px,10vh,96px)] sm:px-6 sm:pt-[clamp(40px,12vh,120px)]">
       <div className="mx-auto w-full max-w-md">
         <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-8">
-          <h1 className="text-2xl font-bold text-[#2c2c2c] mb-2 text-center">Admin Forgot Password</h1>
-          <p className="text-stone-600 text-center mb-6">Enter your admin email to receive a reset link.</p>
+          <h1 className="text-2xl font-bold text-[#2c2c2c] mb-2 text-center">Forgot Password</h1>
+          <p className="text-stone-600 text-center mb-6">Enter your email to receive a reset link.</p>
 
           {success ? (
             <div className="p-4 rounded-lg bg-green-50 border border-green-200 flex items-start gap-3">
