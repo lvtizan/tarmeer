@@ -191,7 +191,7 @@ export default function CompanyProjectsPage() {
     const entries = parseImageEntries(project.images);
     setImageEntries(entries);
     const aiCategories = entries.flatMap((e) => e.ai_category || []);
-    setTags((prev) => {
+    setTags(() => {
       const merged = parseMaybeArray(project.tags);
       return aiCategories.length > 0 ? [...new Set([...merged, ...aiCategories])] : merged;
     });
