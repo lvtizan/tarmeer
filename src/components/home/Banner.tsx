@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trackContact, trackLead } from '../../lib/analytics';
+import AdminSelect from '../ui/AdminSelect';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -116,21 +117,16 @@ export default function Banner() {
             <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
               <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">Phone/WA Number</label>
               <div className="grid grid-cols-[112px_1fr] items-center gap-3">
-                <select
+                <AdminSelect
                   value={phoneRegion.code}
-                  onChange={(event) => {
-                    const nextRegion = GCC_PHONE_OPTIONS.find((option) => option.code === event.target.value) || GCC_PHONE_OPTIONS[0];
+                  onChange={(val) => {
+                    const nextRegion = GCC_PHONE_OPTIONS.find((option) => option.code === val) || GCC_PHONE_OPTIONS[0];
                     setPhoneRegion(nextRegion);
                     setPhone((current) => current.slice(0, nextRegion.maxDigits));
                   }}
-                  className="h-11 rounded-[16px] border border-stone-200 bg-white/90 px-3 text-sm font-medium text-[#1c1917] outline-none"
-                >
-                  {GCC_PHONE_OPTIONS.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.label} {option.code}
-                    </option>
-                  ))}
-                </select>
+                  options={GCC_PHONE_OPTIONS.map((option) => ({ value: option.code, label: `${option.label} ${option.code}` }))}
+                  className="w-full"
+                />
                 <input
                   type="tel"
                   inputMode="numeric"
