@@ -501,8 +501,8 @@ export default function AuthPage() {
       </div>
 
       {/* Footer */}
-      <p className="relative z-10 py-3 text-center text-[11px] text-[#6b6b6b] shrink-0">
-        © {new Date().getFullYear()} Tarmeer · <a href="/privacy" className="hover:text-[#2c2c2c] transition">Privacy</a> · <a href="/dmca" className="hover:text-[#2c2c2c] transition">DMCA</a>
+      <p className="relative z-10 py-3 text-center text-[11px] text-[#2c2c2c] shrink-0">
+        © {new Date().getFullYear()} Tarmeer · <a href="/privacy" className="hover:text-[#b8864a] transition">Privacy</a> · <a href="/dmca" className="hover:text-[#b8864a] transition">DMCA</a>
       </p>
       </div>
     </div>
