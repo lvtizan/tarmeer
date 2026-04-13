@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import { t, type Lang } from '../../i18n/forCompanies';
+import AdminSelect from '../ui/AdminSelect';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -11,6 +12,8 @@ const GCC_PHONE_OPTIONS = [
   { label: 'Oman', code: '+968', maxDigits: 8 },
   { label: 'Bahrain', code: '+973', maxDigits: 8 },
 ];
+
+const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -23,6 +26,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [city, setCity] = useState('Dubai');
   const [yearEstablished, setYearEstablished] = useState('');
   const [scopeOfBusiness, setScopeOfBusiness] = useState('');
 
@@ -48,8 +52,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         body: JSON.stringify({
           name: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
-          city: 'N/A',
-          area_range: 'N/A',
+          city,
+          area_range: '500m²+',
           message: `[Company Inquiry] Company: ${companyName.trim()}${yearEstablished ? `, Est. ${yearEstablished}` : ''}${scopeOfBusiness.trim() ? `, Scope: ${scopeOfBusiness.trim()}` : ''}`,
         }),
       });
@@ -180,6 +184,17 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder={t(lang, 'companyNamePlaceholder')}
               className={inputClass}
+            />
+          </div>
+
+          {/* City */}
+          <div>
+            <label className={labelClass}>{lang === 'ar' ? 'المدينة' : 'City'}</label>
+            <AdminSelect
+              value={city}
+              onChange={setCity}
+              options={UAE_CITIES.map(c => ({ value: c, label: c }))}
+              className="w-full"
             />
           </div>
 
