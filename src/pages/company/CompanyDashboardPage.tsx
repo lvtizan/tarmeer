@@ -50,7 +50,26 @@ export default function CompanyDashboardPage() {
         const r = await api.get('/auth/company/profile');
         const d = r.profile || r;
         if (d && d.company_name) {
-          const nextProfile = pp(d);
+          let nextProfile = pp(d);
+          if (!nextProfile.phone) {
+            try {
+              const me = await api.get('/auth/me');
+              const userPhone = me?.user?.phone || '';
+              if (userPhone) {
+                nextProfile = { ...nextProfile, phone: userPhone };
+              }
+            } catch {
+              try {
+                const raw = localStorage.getItem('user');
+                const localPhone = raw ? (JSON.parse(raw)?.phone || '') : '';
+                if (localPhone) {
+                  nextProfile = { ...nextProfile, phone: localPhone };
+                }
+              } catch {
+                // Ignore malformed local user cache.
+              }
+            }
+          }
           setProfile(nextProfile);
           if (d.id) setProfileId(d.id);
           lastSavedSnapshotRef.current = serializeProfile(nextProfile);
@@ -229,7 +248,7 @@ export default function CompanyDashboardPage() {
               </div>
               {profile.status === 'rejected' && (
                 <>
-                  <p className="mt-1 text-amber-900/90">请提交手机号和至少上传一个作品集，才会被审核。</p>
+                  <p className="mt-1 text-amber-900/90">Please add your phone number and upload at least one portfolio project to be reviewed.</p>
                   {profile.admin_notes && (
                     <p className="mt-1 text-amber-900/90">管理员备注：{profile.admin_notes}</p>
                   )}

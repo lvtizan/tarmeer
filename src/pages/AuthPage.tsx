@@ -46,9 +46,7 @@ export default function AuthPage() {
   const [isNewEmail, setIsNewEmail] = useState<boolean | null>(null); // null = unknown, true = new, false = existing
 
   const [searchParams] = useSearchParams();
-  // Role from URL: /auth?role=company (from /join) or default homeowner
-  const urlRole = searchParams.get('role');
-  const authRole = urlRole === 'company' ? 'company' : 'homeowner';
+  const authRole = 'homeowner';
 
   // Pre-fill email from URL (from /join email continue)
   useEffect(() => {
@@ -197,7 +195,7 @@ export default function AuthPage() {
   const showSocialAuth = ENABLE_GOOGLE_AUTH || ENABLE_FACEBOOK_AUTH;
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="h-screen flex flex-col bg-[#FAFAF9] overflow-hidden">
       <Helmet>
         <title>Sign In / Register - Tarmeer</title>
         <meta name="description" content="Sign in or create your Tarmeer account to connect with interior design and renovation professionals in UAE." />
@@ -205,43 +203,44 @@ export default function AuthPage() {
       </Helmet>
       <Navbar forceShowOnAuth />
 
-      <div className="flex justify-center overflow-hidden px-4 pb-10 pt-[clamp(28px,8vh,72px)] sm:px-6 sm:pt-[clamp(32px,10vh,80px)]">
-      {/* Premium Ambient Background */}
-      <div className="absolute top-0 left-0 w-[700px] h-[700px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
+      <div className="relative flex flex-col flex-1 min-h-0">
+      {/* Ambient Background */}
+      <div className="pointer-events-none absolute top-0 left-0 w-[600px] h-[600px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-[500px] h-[500px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
 
-      {/* Main Container - Left Right Split */}
-      <div className="relative z-10 w-full max-w-[1100px] mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-start">
+      {/* Main Container */}
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-4 sm:px-6 min-h-0">
+      <div className="w-full max-w-[1100px] mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-10 items-center">
 
         {/* Left Column - Value Proposition */}
-        <div className="max-w-[580px]">
+        <div className="max-w-[580px] hidden lg:block">
           {/* Eyebrow */}
-          <p className="text-xs font-medium text-[#B8864A] tracking-[0.2em] mb-3 uppercase">
+          <p className="text-xs font-medium text-[#B8864A] tracking-[0.2em] mb-2 uppercase">
             UAE's Renovation Platform
           </p>
 
           {/* Main Title */}
-          <h1 className="font-serif text-[32px] sm:text-[38px] lg:text-[42px] text-[#1c1917] mb-4 leading-[1.2] tracking-tight">
+          <h1 className="font-serif text-[28px] lg:text-[36px] text-[#1c1917] mb-3 leading-[1.2] tracking-tight">
             Your Home Renovation<br />Starts Here
           </h1>
 
           {/* Description */}
-          <p className="text-stone-600 text-base leading-relaxed mb-8 max-w-[480px]">
+          <p className="text-stone-600 text-[15px] leading-relaxed mb-6 max-w-[480px]">
             Connect with top renovation companies and design studios across the UAE.
           </p>
 
           {/* Value Points */}
-          <div className="space-y-5">
+          <div className="space-y-4">
             {valuePoints.map((point, index) => {
               const Icon = point.icon;
               return (
-                <div key={index} className="flex gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#B8864A]/10 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-[#B8864A]" />
+                <div key={index} className="flex gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#B8864A]/10 flex items-center justify-center">
+                    <Icon className="w-4 h-4 text-[#B8864A]" />
                   </div>
-                  <div className="pt-1">
-                    <h3 className="font-semibold text-[#1c1917] mb-1">{point.title}</h3>
-                    <p className="text-sm text-stone-500 leading-relaxed">{point.description}</p>
+                  <div className="pt-0.5">
+                    <h3 className="font-semibold text-[#1c1917] text-sm mb-0.5">{point.title}</h3>
+                    <p className="text-sm text-stone-500 leading-snug">{point.description}</p>
                   </div>
                 </div>
               );
@@ -499,6 +498,12 @@ export default function AuthPage() {
           </AuthCardShell>
         </div>
       </div>
+      </div>
+
+      {/* Footer */}
+      <p className="relative z-10 py-3 text-center text-[11px] text-stone-300 shrink-0">
+        © {new Date().getFullYear()} Tarmeer · <a href="/privacy" className="hover:text-stone-400 transition">Privacy</a> · <a href="/dmca" className="hover:text-stone-400 transition">DMCA</a>
+      </p>
       </div>
     </div>
   );
