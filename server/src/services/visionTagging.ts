@@ -1,5 +1,5 @@
 import path from 'path';
-import vision from '@google-cloud/vision';
+import { ImageAnnotatorClient } from '@google-cloud/vision';
 import pool from '../config/database';
 import { config } from '../config';
 import { parseJsonField } from '../lib/parseJsonField';
@@ -40,10 +40,10 @@ const CATEGORY_MAP: Record<string, string[]> = {
 // Singleton Vision client
 // ============================================================
 
-let _client: vision.ImageAnnotatorClient | null = null;
+let _client: ImageAnnotatorClient | null = null;
 let _clientInitialized = false;
 
-export function getClient(): vision.ImageAnnotatorClient | null {
+export function getClient(): ImageAnnotatorClient | null {
   if (!config.vision.enabled) return null;
 
   if (!_clientInitialized) {
@@ -52,7 +52,7 @@ export function getClient(): vision.ImageAnnotatorClient | null {
       const opts = config.vision.credentialsPath
         ? { keyFilename: config.vision.credentialsPath }
         : {};
-      _client = new vision.ImageAnnotatorClient(opts);
+      _client = new ImageAnnotatorClient(opts);
     } catch (err) {
       console.error('[vision-tagging] Failed to initialise Vision client:', err);
       _client = null;
