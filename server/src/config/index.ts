@@ -47,6 +47,13 @@ export const config = {
   notificationEmail: 'lvyiming@kp99.cn',
 
   oauth: oauthConfig,
+
+  vision: {
+    credentialsPath: process.env.GOOGLE_VISION_CREDENTIALS || '',
+    enabled: process.env.GOOGLE_VISION_ENABLED === 'true',
+    maxLabels: 15,
+    minConfidence: 0.7,
+  },
 };
 
 export default config;
