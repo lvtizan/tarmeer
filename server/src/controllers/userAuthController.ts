@@ -414,6 +414,14 @@ export async function updateProfile(req: any, res: any) {
     values.push(userId);
     await pool.execute(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
 
+    // Sync phone to company_profiles if user has one
+    if (phone) {
+      await pool.execute(
+        'UPDATE company_profiles SET phone = ? WHERE user_id = ? AND (phone IS NULL OR phone = ?)',
+        [phone, userId, '']
+      ).catch(() => {});
+    }
+
     const [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
     res.json({ user: sanitizeUser((rows as any[])[0]) });
   } catch (error) {

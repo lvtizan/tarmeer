@@ -21,18 +21,29 @@ export default function PhoneRequiredModal() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check localStorage user for phone
-    try {
-      const raw = localStorage.getItem('user');
-      if (raw) {
-        const user = JSON.parse(raw);
-        if (!user.phone) {
+    // Check both localStorage AND API for phone
+    async function checkPhone() {
+      // Quick check from localStorage first
+      try {
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          const user = JSON.parse(raw);
+          if (!user.phone) {
+            setVisible(true);
+            return;
+          }
+        }
+      } catch { /* ignore */ }
+
+      // Verify from API (handles stale localStorage)
+      try {
+        const res = await api.get('/auth/me');
+        if (res.user && !res.user.phone) {
           setVisible(true);
         }
-      }
-    } catch {
-      // If parsing fails, do nothing
+      } catch { /* not logged in, skip */ }
     }
+    checkPhone();
   }, []);
 
   // Block escape key
