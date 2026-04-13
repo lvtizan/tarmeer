@@ -204,6 +204,24 @@ app.get('/api/sitemap.xml', async (req, res) => {
       }
     }
 
+    // Project pages — critical for search engine discovery
+    const [projects] = await pool.execute(
+      `SELECT p.slug AS project_slug, p.updated_at,
+              COALESCE(cp.slug, uc.slug) AS company_slug
+       FROM projects p
+       LEFT JOIN company_profiles cp ON p.company_profile_id = cp.id
+       LEFT JOIN designers d ON p.designer_id = d.id
+       LEFT JOIN uae_companies uc ON d.id = uc.id
+       WHERE p.status = 'published' AND p.slug IS NOT NULL AND p.deleted_at IS NULL
+       ORDER BY p.updated_at DESC`
+    );
+    for (const proj of projects as any[]) {
+      if (proj.project_slug && proj.company_slug) {
+        const lastmod = proj.updated_at ? new Date(proj.updated_at).toISOString().slice(0, 10) : today;
+        xml += `  <url><loc>${baseUrl}/companies/${proj.company_slug}/${proj.project_slug}</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>${lastmod}</lastmod></url>\n`;
+      }
+    }
+
     xml += '</urlset>';
 
     res.set('Content-Type', 'application/xml');
@@ -218,7 +236,43 @@ app.get('/api/sitemap.xml', async (req, res) => {
 // Robots.txt endpoint
 app.get('/api/robots.txt', (req, res) => {
   res.set('Content-Type', 'text/plain');
-  res.send(`User-agent: Googlebot\nAllow: /\nCrawl-delay: 2\n\nUser-agent: Bingbot\nAllow: /\nCrawl-delay: 5\n\nUser-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nCrawl-delay: 10\n\nSitemap: https://www.tarmeer.com/api/sitemap.xml\n`);
+  res.send([
+    'User-agent: Googlebot',
+    'Allow: /',
+    'Crawl-delay: 2',
+    '',
+    'User-agent: Bingbot',
+    'Allow: /',
+    'Crawl-delay: 5',
+    '',
+    '# AI search engine crawlers',
+    'User-agent: GPTBot',
+    'Allow: /companies/',
+    'Allow: /portfolio',
+    'Allow: /services/',
+    'Allow: /faq',
+    'Disallow: /api/',
+    'Disallow: /admin/',
+    '',
+    'User-agent: PerplexityBot',
+    'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /admin/',
+    '',
+    'User-agent: ClaudeBot',
+    'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /admin/',
+    '',
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /admin/',
+    'Crawl-delay: 10',
+    '',
+    'Sitemap: https://www.tarmeer.com/api/sitemap.xml',
+    '',
+  ].join('\n'));
 });
 
 import path from 'path';
@@ -234,6 +288,30 @@ if (fs.existsSync(SHARED_UPLOADS_DIR)) {
   app.use('/uploads', express.static(SHARED_UPLOADS_DIR));
   app.use('/api/uploads', express.static(SHARED_UPLOADS_DIR));
 }
+
+// Legacy URL cleanup: return 410 Gone for old Shopify/ecommerce paths
+// so Google removes them from index faster than 404.
+const LEGACY_PATH_PATTERNS = [
+  /^\/blogs?\//,          // /blogs/xxx, /blog/xxx
+  /^\/products\//,        // /products/xxx
+  /^\/collections\b/,    // /collections/
+  /^\/pages\//,           // /pages/xxx
+  /^\/promotions\b/,     // /promotions
+  /^\/account\//,         // /account/xxx
+  /^\/beacon\//,          // /beacon/sa
+  /^\/thank_you\b/,      // /thank_you
+  /^\/api\/customers\b/,  // /api/customers/sign_in, password_reset
+  /^\/api\/product-customizer\b/, // /api/product-customizer/checkout/order/create
+  /\$\{/,                 // any ${variable} template strings in URL
+];
+
+app.use((req, res, next) => {
+  if (LEGACY_PATH_PATTERNS.some(p => p.test(req.path))) {
+    res.status(410).set('X-Robots-Tag', 'noindex').send('Gone');
+    return;
+  }
+  next();
+});
 
 import { antiScraping } from './middleware/antiScraping';
 
