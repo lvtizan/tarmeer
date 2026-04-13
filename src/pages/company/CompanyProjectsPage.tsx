@@ -39,6 +39,23 @@ function parseMaybeArray(value: unknown): string[] {
   return [];
 }
 
+interface ImageEntry {
+  url: string;
+  ai_tags?: string[];
+  ai_category?: string[];
+  ai_tagged_at?: string;
+}
+
+function parseImageEntries(value: unknown): ImageEntry[] {
+  const raw = typeof value === 'string' ? (() => { try { return JSON.parse(value); } catch { return []; } })() : value;
+  if (!Array.isArray(raw)) return [];
+  return (raw as any[]).map((item: any) => {
+    if (typeof item === 'string') return { url: item };
+    if (item && typeof item === 'object' && item.url) return item as ImageEntry;
+    return { url: '' };
+  }).filter((e) => e.url);
+}
+
 export default function CompanyProjectsPage() {
   /* ── project form ── */
   const [form, setForm] = useState({ title:'', description:'', style:'', location:'', area:'' });
@@ -47,6 +64,7 @@ export default function CompanyProjectsPage() {
 
   /* ── image board ── */
   const [imgs, setImgs] = useState<string[]>([]);
+  const [imageEntries, setImageEntries] = useState<ImageEntry[]>([]);
   const [fps, setFps] = useState<string[]>([]);
   const [cover, setCover] = useState(0);
   const [prepping, setPrepping] = useState(false);
@@ -155,7 +173,7 @@ export default function CompanyProjectsPage() {
       }
 
       setEditingProjectId(null);
-      setForm({title:'',description:'',style:'',location:'',area:''});setTags([]);setImgs([]);setFps([]);setCover(0);
+      setForm({title:'',description:'',style:'',location:'',area:''});setTags([]);setImgs([]);setFps([]);setImageEntries([]);setCover(0);
       refreshProjects();
     }catch(e:any){setMsg(e.message||'Failed')}finally{setSubmitting(false)}
   };
@@ -170,7 +188,13 @@ export default function CompanyProjectsPage() {
       location: project.location || '',
       area: project.area || '',
     });
-    setTags(parseMaybeArray(project.tags));
+    const entries = parseImageEntries(project.images);
+    setImageEntries(entries);
+    const aiCategories = entries.flatMap((e) => e.ai_category || []);
+    setTags((prev) => {
+      const merged = parseMaybeArray(project.tags);
+      return aiCategories.length > 0 ? [...new Set([...merged, ...aiCategories])] : merged;
+    });
     setImgs(projectImages);
     setFps(projectImages.map((url, index) => `existing:${project.id}:${index}:${url.slice(-30)}`));
     setCover(0);
@@ -185,6 +209,7 @@ export default function CompanyProjectsPage() {
     setTags([]);
     setImgs([]);
     setFps([]);
+    setImageEntries([]);
     setCover(0);
     setTried(false);
     setMsg('');
@@ -358,20 +383,42 @@ export default function CompanyProjectsPage() {
               {imgs.length>0&&(
                 <div className="mt-3 max-h-[420px] overflow-y-auto pr-0.5 pb-0.5">
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                    {imgs.map((url,i)=>(
-                      <div key={i} draggable onDragStart={()=>setDragI(i)} onDragOver={e=>{e.preventDefault();if(dragO!==i)setDragO(i)}} onDrop={e=>{e.preventDefault();if(dragI!==null)mvImg(dragI,i);setDragI(null);setDragO(null)}} onDragEnd={()=>{setDragI(null);setDragO(null)}}
-                        className={`group relative aspect-square overflow-hidden rounded-xl border bg-stone-100 transition ${cover===i?'border-[#b8864a] ring-2 ring-[#b8864a]/35':dragO===i?'border-[#b8864a]/70':'border-stone-200'} ${dragI===i?'cursor-grabbing opacity-80':'cursor-grab'}`}>
-                        <img src={url} alt="" className="h-full w-full object-cover"/>
-                        {cover===i&&<div className="absolute left-1.5 top-1.5 rounded-full bg-[#b8864a] px-2 py-0.5 text-[10px] font-semibold text-white">Cover</div>}
-                        <div className="absolute right-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white"><GripVertical className="h-3.5 w-3.5"/></div>
-                        <div className="absolute inset-0 bg-black/45 opacity-0 transition-opacity group-hover:opacity-100"/>
-                        <div className="absolute inset-x-1.5 bottom-1.5 grid h-6 grid-cols-3 gap-1 opacity-0 transition group-hover:opacity-100">
-                          <button type="button" onClick={()=>setPrevI(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-stone-700"><Eye className="mx-auto h-3 w-3"/></button>
-                          <button type="button" onClick={()=>setCover(i)} className="rounded-md bg-white px-1 text-[10px] font-semibold text-stone-700">{cover===i?'Cover':'Set'}</button>
-                          <button type="button" onClick={()=>rmImg(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-red-600"><Trash2 className="mx-auto h-3 w-3"/></button>
+                    {imgs.map((url,i)=>{
+                      const entry = imageEntries.find((e) => e.url === url || url.includes(e.url) || e.url.includes(url));
+                      return (
+                      <div key={i} className="flex flex-col">
+                        <div draggable onDragStart={()=>setDragI(i)} onDragOver={e=>{e.preventDefault();if(dragO!==i)setDragO(i)}} onDrop={e=>{e.preventDefault();if(dragI!==null)mvImg(dragI,i);setDragI(null);setDragO(null)}} onDragEnd={()=>{setDragI(null);setDragO(null)}}
+                          className={`group relative aspect-square overflow-hidden rounded-xl border bg-stone-100 transition ${cover===i?'border-[#b8864a] ring-2 ring-[#b8864a]/35':dragO===i?'border-[#b8864a]/70':'border-stone-200'} ${dragI===i?'cursor-grabbing opacity-80':'cursor-grab'}`}>
+                          <img src={url} alt="" className="h-full w-full object-cover"/>
+                          {cover===i&&<div className="absolute left-1.5 top-1.5 rounded-full bg-[#b8864a] px-2 py-0.5 text-[10px] font-semibold text-white">Cover</div>}
+                          <div className="absolute right-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white"><GripVertical className="h-3.5 w-3.5"/></div>
+                          {entry?.ai_tagged_at && (
+                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#b8864a]/20 flex items-center justify-center" title="AI Tagged">
+                              <span className="text-[10px]">✦</span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/45 opacity-0 transition-opacity group-hover:opacity-100"/>
+                          <div className="absolute inset-x-1.5 bottom-1.5 grid h-6 grid-cols-3 gap-1 opacity-0 transition group-hover:opacity-100">
+                            <button type="button" onClick={()=>setPrevI(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-stone-700"><Eye className="mx-auto h-3 w-3"/></button>
+                            <button type="button" onClick={()=>setCover(i)} className="rounded-md bg-white px-1 text-[10px] font-semibold text-stone-700">{cover===i?'Cover':'Set'}</button>
+                            <button type="button" onClick={()=>rmImg(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-red-600"><Trash2 className="mx-auto h-3 w-3"/></button>
+                          </div>
                         </div>
+                        {entry?.ai_tags && entry.ai_tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1 px-1">
+                            {entry.ai_tags.slice(0, 4).map((tag) => (
+                              <span key={tag} className="inline-flex px-1.5 py-0.5 rounded text-[10px] bg-[#b8864a]/10 text-[#b8864a]">
+                                {tag}
+                              </span>
+                            ))}
+                            {entry.ai_tags.length > 4 && (
+                              <span className="text-[10px] text-stone-400">+{entry.ai_tags.length - 4}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
