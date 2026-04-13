@@ -1,8 +1,9 @@
 import pool from '../config/database';
+import { pushCompanyLeadToCRM } from '../lib/crmPush';
 
 export async function submitCompanyLead(req: any, res: any) {
   try {
-    const { contactName, phone, companyName, yearEstablished, scopeOfBusiness, lang } = req.body;
+    const { contactName, phone, companyName, city, yearEstablished, scopeOfBusiness, lang } = req.body;
     const sourcePage = req.headers.referer || null;
 
     const [result] = await pool.execute(
@@ -12,6 +13,19 @@ export async function submitCompanyLead(req: any, res: any) {
     );
 
     const leadId = (result as any).insertId;
+
+    // Fire-and-forget CRM push (company tenant)
+    pushCompanyLeadToCRM({
+      applicationId: leadId,
+      companyName: companyName || contactName,
+      phone: phone || undefined,
+      city: city || undefined,
+      licenseNumber: undefined,
+      description: [
+        scopeOfBusiness ? `Scope: ${scopeOfBusiness}` : '',
+        yearEstablished ? `Est. ${yearEstablished}` : '',
+      ].filter(Boolean).join(', ') || undefined,
+    }).catch(() => {});
 
     const [lead] = await pool.execute(
       'SELECT * FROM company_leads WHERE id = ?',

@@ -46,15 +46,16 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/inquiries`, {
+      const res = await fetch(`${API_BASE}/company-leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: contactName.trim(),
+          contactName: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
+          companyName: companyName.trim(),
           city,
-          area_range: '500m²+',
-          message: `[Company Inquiry] Company: ${companyName.trim()}${yearEstablished ? `, Est. ${yearEstablished}` : ''}${scopeOfBusiness.trim() ? `, Scope: ${scopeOfBusiness.trim()}` : ''}`,
+          yearEstablished: yearEstablished || undefined,
+          scopeOfBusiness: scopeOfBusiness.trim() || undefined,
         }),
       });
 
