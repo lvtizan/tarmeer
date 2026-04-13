@@ -268,6 +268,34 @@ router.delete('/notification-emails/:id', async (req: any, res: any) => {
   } catch (error) { res.status(500).json({ error: 'Failed to delete.' }); }
 });
 
+// System config (super admin only)
+router.get('/system-config', requireSuperAdmin, async (_req: any, res: any) => {
+  try {
+    const [rows] = await pool.execute('SELECT config_key, config_value FROM system_config');
+    res.json({ config: rows });
+  } catch (error) {
+    console.error('Get system config error:', error);
+    res.status(500).json({ error: 'Failed to load config.' });
+  }
+});
+
+router.put('/system-config', requireSuperAdmin, async (req: any, res: any) => {
+  try {
+    const { configs } = req.body;
+    if (!Array.isArray(configs)) return res.status(400).json({ error: 'configs array required.' });
+    for (const { key, value } of configs) {
+      await pool.execute(
+        'INSERT INTO system_config (config_key, config_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE config_value = ?',
+        [key, value, value]
+      );
+    }
+    res.json({ message: 'Config updated.' });
+  } catch (error) {
+    console.error('Update system config error:', error);
+    res.status(500).json({ error: 'Failed to update config.' });
+  }
+});
+
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);
 router.post('/admins', requireSuperAdmin, createSubAdmin);

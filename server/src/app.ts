@@ -17,6 +17,7 @@ import inquiryRoutes from './routes/inquiries';
 import notificationRoutes from './routes/notifications';
 import complaintRoutes from './routes/complaints';
 import companyLeadRoutes from './routes/companyLeads';
+import articleRoutes from './routes/articles';
 import config from './config';
 import {
   isPayloadTooLargeError,
@@ -333,6 +334,7 @@ app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/company-leads', companyLeadRoutes);
+app.use('/api/articles', articleRoutes);
 
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('Error:', err);
