@@ -12,6 +12,7 @@ import {
 } from '../lib/projectPersistence';
 import { persistProjectImages } from '../lib/projectImageStorage';
 import { slugify } from '../lib/slugify';
+import { tagProjectImages } from '../services/visionTagging';
 
 function normalizeProject(project: any) {
   return {
@@ -127,6 +128,11 @@ export async function createProject(req: any, res: any) {
       message: 'Project submitted successfully.',
       project: normalizeProject((project as any[])[0])
     });
+
+    // Fire-and-forget: AI tag images via Google Vision
+    tagProjectImages(projectId).catch((err) =>
+      console.error('[vision-tagging] Background tagging failed:', err)
+    );
   } catch (error) {
     if (error instanceof Error && error.message === PROJECT_IMAGES_REQUIRED_ERROR) {
       return res.status(400).json({ error: 'At least one project image is required.' });
@@ -317,6 +323,11 @@ export async function updateProject(req: any, res: any) {
       message: 'Updated successfully.',
       project: normalizeProject((updatedProject as any[])[0])
     });
+
+    // Fire-and-forget: AI tag new images via Google Vision
+    tagProjectImages(Number(id)).catch((err) =>
+      console.error('[vision-tagging] Background tagging failed:', err)
+    );
   } catch (error) {
     if (error instanceof Error && error.message === PROJECT_IMAGES_REQUIRED_ERROR) {
       return res.status(400).json({ error: 'At least one project image is required.' });
