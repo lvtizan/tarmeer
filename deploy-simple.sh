@@ -110,6 +110,7 @@ RSYNC_FLAGS=(
   --stats
   --human-readable
   --exclude=.DS_Store
+  --chmod=D755,F644
 )
 
 try_ssh_key_auth() {
