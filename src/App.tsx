@@ -30,6 +30,8 @@ const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
 const FaqPage = lazy(() => import('./pages/FaqPage'));
+const BlogPage = lazy(() => import('./pages/BlogPage'));
+const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
 const JoinPage = lazy(() => import('./pages/JoinPage'));
 
@@ -178,6 +180,8 @@ function App() {
                 <Route path="/dmca" element={<DmcaPage />} />
                 <Route path="/portfolio" element={<PortfolioPage />} />
                 <Route path="/faq" element={<FaqPage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogDetailPage />} />
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:companySlug/:projectSlug" element={<ProjectDetailPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />

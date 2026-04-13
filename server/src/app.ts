@@ -190,6 +190,7 @@ app.get('/api/sitemap.xml', async (req, res) => {
       { path: '/services/soft-decoration', changefreq: 'weekly', priority: '0.8' },
       { path: '/services/house-exterior', changefreq: 'weekly', priority: '0.8' },
       { path: '/for-companies', changefreq: 'weekly', priority: '0.8' },
+      { path: '/blog', changefreq: 'daily', priority: '0.8' },
       { path: '/privacy', changefreq: 'monthly', priority: '0.4' },
     ];
     for (const page of staticPages) {
@@ -202,6 +203,17 @@ app.get('/api/sitemap.xml', async (req, res) => {
       if (company.slug) {
         const lastmod = company.updated_at ? new Date(company.updated_at).toISOString().slice(0, 10) : today;
         xml += `  <url><loc>${baseUrl}/companies/${company.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${lastmod}</lastmod></url>\n`;
+      }
+    }
+
+    // Article pages
+    const [articleRows] = await pool.execute(
+      "SELECT slug, updated_at FROM articles WHERE status = 'published' AND slug IS NOT NULL ORDER BY created_at DESC"
+    );
+    for (const article of articleRows as any[]) {
+      if (article.slug) {
+        const lastmod = article.updated_at ? new Date(article.updated_at).toISOString().slice(0, 10) : today;
+        xml += `  <url><loc>${baseUrl}/blog/${article.slug}</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>${lastmod}</lastmod></url>\n`;
       }
     }
 
@@ -293,7 +305,7 @@ if (fs.existsSync(SHARED_UPLOADS_DIR)) {
 // Legacy URL cleanup: return 410 Gone for old Shopify/ecommerce paths
 // so Google removes them from index faster than 404.
 const LEGACY_PATH_PATTERNS = [
-  /^\/blogs?\//,          // /blogs/xxx, /blog/xxx
+  /^\/blogs\//,           // /blogs/xxx (old Shopify)
   /^\/products\//,        // /products/xxx
   /^\/collections\b/,    // /collections/
   /^\/pages\//,           // /pages/xxx
