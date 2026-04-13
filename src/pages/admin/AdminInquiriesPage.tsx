@@ -5,7 +5,7 @@ import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
 
 type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
-type TypeFilter = 'all' | 'homeowner' | 'company';
+type TypeFilter = 'homeowner' | 'company';
 
 interface InquiryRecord {
   id: number;
@@ -69,7 +69,7 @@ export default function AdminInquiriesPage() {
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(() => {
     const t = searchParams.get('type');
-    return t === 'homeowner' || t === 'company' ? t : 'all';
+    return t === 'homeowner' || t === 'company' ? t : 'homeowner';
   });
   const [error, setError] = useState('');
 
@@ -113,11 +113,11 @@ export default function AdminInquiriesPage() {
     }
   }, [page, statusFilter, search, viewMode, typeFilter]);
 
-  // Clear selection when viewMode changes
+  // Clear selection when viewMode or typeFilter changes
   useEffect(() => {
     setSelected(new Set());
     setPage(1);
-  }, [viewMode]);
+  }, [viewMode, typeFilter]);
 
   useEffect(() => { loadInquiries(); }, [loadInquiries]);
 
@@ -125,7 +125,7 @@ export default function AdminInquiriesPage() {
     const params: Record<string, string> = {};
     if (page > 1) params.page = String(page);
     if (statusFilter !== 'all') params.status = statusFilter;
-    if (typeFilter !== 'all') params.type = typeFilter;
+    if (typeFilter !== 'homeowner') params.type = typeFilter;
     if (search) params.search = search;
     setSearchParams(params, { replace: true });
   }, [page, statusFilter, typeFilter, search, setSearchParams]);
@@ -241,20 +241,24 @@ export default function AdminInquiriesPage() {
         </button>
       </div>
 
+      {/* Type tabs (secondary row) */}
+      <div className="flex gap-2">
+        <button onClick={() => { setTypeFilter('homeowner'); setPage(1); }}
+          className={typeFilter === 'homeowner'
+            ? 'bg-stone-800 text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
+            : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
+          业主询单
+        </button>
+        <button onClick={() => { setTypeFilter('company'); setPage(1); }}
+          className={typeFilter === 'company'
+            ? 'bg-stone-800 text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
+            : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
+          公司线索
+        </button>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs font-medium text-stone-500 mb-1">Type</label>
-          <AdminSelect
-            value={typeFilter}
-            onChange={(val) => { setTypeFilter(val as TypeFilter); setPage(1); }}
-            options={[
-              { value: 'all', label: 'All Types' },
-              { value: 'homeowner', label: 'Homeowner' },
-              { value: 'company', label: 'Company Lead' },
-            ]}
-          />
-        </div>
         <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
           <AdminSelect
