@@ -299,7 +299,9 @@ export async function forgotPassword(req: any, res: any) {
     const normalizedEmail = email.toLowerCase().trim();
     const frontendUrl = resolveFrontendUrl(req);
 
-    // Check users table first
+    let handled = false;
+
+    // Check users table
     const [userRows] = await pool.execute('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
     if ((userRows as any[]).length > 0) {
       const user = (userRows as any[])[0];
@@ -311,10 +313,10 @@ export async function forgotPassword(req: any, res: any) {
           catch (e: any) { console.error('[SMTP] Password reset email failed:', e?.message); }
         });
       }
-      return res.json({ message: genericMessage });
+      handled = true;
     }
 
-    // Check admin_users table as fallback
+    // Also check admin_users table (same email may exist in both)
     const [adminRows] = await pool.execute('SELECT id, email, is_active FROM admin_users WHERE email = ?', [normalizedEmail]);
     if ((adminRows as any[]).length > 0) {
       const admin = (adminRows as any[])[0];
@@ -326,7 +328,7 @@ export async function forgotPassword(req: any, res: any) {
           catch (e: any) { console.error('[SMTP] Admin password reset email failed:', e?.message); }
         });
       }
-      return res.json({ message: genericMessage });
+      handled = true;
     }
 
     res.json({ message: genericMessage });
