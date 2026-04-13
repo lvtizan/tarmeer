@@ -616,6 +616,16 @@ export default function ProjectDetailPage() {
           "genre": project.style,
           "url": `https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`,
         })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Companies', item: 'https://www.tarmeer.com/companies' },
+            { '@type': 'ListItem', position: 3, name: company.name, item: `https://www.tarmeer.com/companies/${company.slug || company.id}` },
+            { '@type': 'ListItem', position: 4, name: project.title, item: `https://www.tarmeer.com/companies/${companySlug}/${projectSlug}` },
+          ],
+        })}</script>
       </Helmet>
 
       {/* Back nav */}

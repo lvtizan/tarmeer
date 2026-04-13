@@ -236,6 +236,15 @@ export default function CompanyDetailPage() {
         <meta property="og:type" content="website" />
         <link rel="canonical" href={`https://www.tarmeer.com/companies/${company.id}`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Companies', item: 'https://www.tarmeer.com/companies' },
+            { '@type': 'ListItem', position: 3, name: company.name, item: `https://www.tarmeer.com/companies/${company.id}` },
+          ],
+        })}</script>
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${company.name} - ${company.city} - Tarmeer`} />
         <meta name="twitter:description" content={company.shortDescription} />
