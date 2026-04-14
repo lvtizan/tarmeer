@@ -28,6 +28,39 @@
 5. **Test**: MUST run related test cases before deploy — see `docs/testing/`.
 6. **Frontend + Backend must match**: if frontend calls a new API, backend must be deployed first.
 7. **SEO**: all public-facing pages MUST have `<Helmet>` with title, description, og:title, og:description, og:image, canonical. Detail pages MUST include JSON-LD structured data. Run `node scripts/harness/lint-seo.mjs` to verify — see `docs/SEO.md`.
+8. **Feature completion workflow**: MUST follow the 5-step workflow below before notifying user.
+
+---
+
+## Feature Completion Workflow (MUST FOLLOW)
+
+Every feature MUST go through these steps before notifying the user. No exceptions.
+
+### Step 1: Database Walk-through
+- List ALL tables touched by this feature
+- Trace FK relationships and shared fields (email, phone, user_id)
+- **Auth features**: MUST check users, admin_users, company_profiles, designers tables
+- Verify: every INSERT has matching SELECT, every UPDATE has matching read path
+
+### Step 2: Write Test Cases
+- Create/update test case doc in `docs/testing/`
+- Cover: happy path, edge cases, error handling, permission checks
+- **Auth features extra**: email delivery, phone collection, PhoneRequiredModal, role permissions
+- **Company features extra**: company_profiles sync, CRM push, minimum project count
+
+### Step 3: Local Automated Test
+- Start local server: `PORT=3099 DEV_SKIP_EMAIL=true node dist/app.js`
+- Run test cases via node script, verify API responses + DB state
+- ALL cases must PASS before proceeding
+
+### Step 4: Auto-commit
+- Commit feature code + test case docs together
+- Include test results in commit message (e.g. "Test results: 5/5 PASS")
+
+### Step 5: Notify User
+- Report: what was done, test results, ready to deploy or not
+- Wait for user confirmation before deploying
+- Deploy with `rsync --chmod=a+r` (prevents nginx 403 from macOS permissions)
 
 ---
 
