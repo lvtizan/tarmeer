@@ -137,7 +137,13 @@ export async function notifyCompanyRegistration(company: CompanyData) {
   });
 
   // Group email
-  const typeLabel = company.companyType === 'design_studio' ? 'Design Studio' : 'Renovation Company';
+  const typeLabels: Record<string, string> = {
+    design_studio: 'Design Studio', renovation_company: 'Renovation & Fit-out',
+    general_contractor: 'General Contractor', mep_contractor: 'MEP Contractor',
+    maintenance_company: 'Maintenance Company', specialty_trade: 'Specialty Trade',
+    landscaping: 'Landscaping & Pools',
+  };
+  const typeLabel = typeLabels[company.companyType] || company.companyType;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #b8864a;">New Company Registration</h2>

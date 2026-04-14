@@ -140,9 +140,15 @@ export default function AdminApplicationsTable({
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                    c.company_type === 'renovation_company' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
+                    c.company_type === 'design_studio' ? 'bg-purple-50 text-purple-600'
+                    : c.company_type === 'mep_contractor' ? 'bg-orange-50 text-orange-600'
+                    : c.company_type === 'general_contractor' ? 'bg-emerald-50 text-emerald-600'
+                    : c.company_type === 'maintenance_company' ? 'bg-cyan-50 text-cyan-600'
+                    : c.company_type === 'specialty_trade' ? 'bg-amber-50 text-amber-600'
+                    : c.company_type === 'landscaping' ? 'bg-green-50 text-green-600'
+                    : 'bg-blue-50 text-blue-600'
                   }`}>
-                    {c.company_type === 'renovation_company' ? 'Company' : 'Studio'}
+                    {{ design_studio: 'Studio', renovation_company: 'Renovation', general_contractor: 'Contractor', mep_contractor: 'MEP', maintenance_company: 'Maintenance', specialty_trade: 'Specialty', landscaping: 'Landscape' }[c.company_type] || c.company_type}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>

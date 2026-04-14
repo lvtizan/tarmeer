@@ -18,6 +18,16 @@ const GCC_PHONE_OPTIONS = [
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
+const COMPANY_TYPES = [
+  { value: 'design_studio', labelKey: 'typeDesignStudio' as const },
+  { value: 'renovation_company', labelKey: 'typeRenovation' as const },
+  { value: 'general_contractor', labelKey: 'typeGeneralContractor' as const },
+  { value: 'mep_contractor', labelKey: 'typeMepContractor' as const },
+  { value: 'maintenance_company', labelKey: 'typeMaintenanceCompany' as const },
+  { value: 'specialty_trade', labelKey: 'typeSpecialtyTrade' as const },
+  { value: 'landscaping', labelKey: 'typeLandscaping' as const },
+];
+
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 type Step = 'form' | 'password' | 'done';
@@ -35,6 +45,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [phoneDigits, setPhoneDigits] = useState('');
   const [email, setEmail] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [companyType, setCompanyType] = useState('');
   const [city, setCity] = useState('Dubai');
 
   // Password step fields
@@ -67,6 +78,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     if (!email.trim()) return;
     if (!phoneDigits.trim()) return;
     if (!companyName.trim()) return;
+    if (!companyType) { setError(lang === 'ar' ? 'يرجى اختيار نوع الشركة' : 'Please select a company type'); return; }
     if (phoneError) { setError(phoneError); return; }
     if (!isPhoneComplete(phoneDigits, phoneRegion.code)) { setError('Please enter a complete phone number'); return; }
 
@@ -79,6 +91,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           contactName: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           companyName: companyName.trim(),
+          companyType,
           city,
           email: email.trim(),
         }),
@@ -142,7 +155,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         contact_person: contactName.trim(),
         description: '',
         services: ['Interior Design'],
-        company_type: 'renovation_company',
+        company_type: companyType,
       });
 
       // 4. Navigate to company dashboard
@@ -350,6 +363,20 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder={t(lang, 'companyNamePlaceholder')}
               className={inputClass}
+            />
+          </div>
+
+          {/* Company Type */}
+          <div>
+            <label className={labelClass}>{t(lang, 'companyType')}</label>
+            <AdminSelect
+              value={companyType}
+              onChange={setCompanyType}
+              options={[
+                { value: '', label: t(lang, 'companyTypePlaceholder') },
+                ...COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey) })),
+              ]}
+              className="w-full"
             />
           </div>
 

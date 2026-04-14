@@ -53,8 +53,9 @@ export async function listApprovedCompanies(req: any, res: any) {
     }
 
     if (company_type) {
-      if (!['design_studio', 'renovation_company'].includes(company_type)) {
-        return res.status(400).json({ error: 'Invalid company_type. Must be design_studio or renovation_company.' });
+      const validTypes = ['design_studio', 'renovation_company', 'general_contractor', 'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping'];
+      if (!validTypes.includes(company_type)) {
+        return res.status(400).json({ error: `Invalid company_type. Must be one of: ${validTypes.join(', ')}` });
       }
       conditions.push(`cp.company_type = ?`);
       params.push(company_type);

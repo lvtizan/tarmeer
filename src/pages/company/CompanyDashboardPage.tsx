@@ -5,10 +5,10 @@ import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormSelect, FormLabel, FormTag } from '../../components/form/FormInput';
 
 /* ── Constants ── */
-const SERVICES = ['Interior Design','Architecture','Fit-Out','Renovation','Construction','Landscape','Furniture','Joinery','MEP','Project Management','Design & Build','Turnkey Solutions','Maintenance'];
+const SERVICES = ['Interior Design','Architecture','Fit-Out','Renovation','Construction','Landscape','Furniture','Joinery','MEP','Project Management','Design & Build','Turnkey Solutions','Maintenance','Glass & Aluminium','Painting & Finishing','Flooring & Tiling','Demolition','Steel & Fabrication','Curtains & Blinds','Cleaning Services','Pools'];
 const SPECIALTIES = ['Residential','Villa','Commercial','Hospitality','Retail','Office','Education','Healthcare','F&B','Luxury Residential','Mixed-Use'];
 const EMIRATES = ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain'];
-const TYPE_OPTIONS = [{ value:'design_studio', label:'Design Studio' },{ value:'renovation_company', label:'Renovation Company' }];
+const TYPE_OPTIONS = [{ value:'design_studio', label:'Design Studio' },{ value:'renovation_company', label:'Renovation & Fit-out' },{ value:'general_contractor', label:'General Contractor' },{ value:'mep_contractor', label:'MEP Contractor' },{ value:'maintenance_company', label:'Maintenance Company' },{ value:'specialty_trade', label:'Specialty Trade' },{ value:'landscaping', label:'Landscaping & Pools' }];
 
 /* ── Types ── */
 interface Profile { company_name:string; description:string; contact_person:string; phone:string; website:string; city:string; address:string; company_type:string; trade_license_number:string; establishment_year:number|null; services:string[]; specialties:string[]; status:string; admin_notes?:string; }

@@ -15,6 +15,8 @@ const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'F
 const SERVICES = [
   'Interior Design', 'Architecture', 'Fit-Out', 'Renovation', 'Construction', 'Landscape',
   'Furniture', 'Joinery', 'MEP', 'Project Management', 'Design & Build', 'Turnkey Solutions', 'Maintenance',
+  'Glass & Aluminium', 'Painting & Finishing', 'Flooring & Tiling', 'Demolition',
+  'Steel & Fabrication', 'Curtains & Blinds', 'Cleaning Services', 'Pools',
 ];
 
 const SPECIALTIES = [
@@ -202,7 +204,12 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                   onChange={(val) => set('company_type', val)}
                   options={[
                     { value: 'design_studio', label: 'Design Studio' },
-                    { value: 'renovation_company', label: 'Renovation Company' },
+                    { value: 'renovation_company', label: 'Renovation & Fit-out' },
+                    { value: 'general_contractor', label: 'General Contractor' },
+                    { value: 'mep_contractor', label: 'MEP Contractor' },
+                    { value: 'maintenance_company', label: 'Maintenance Company' },
+                    { value: 'specialty_trade', label: 'Specialty Trade' },
+                    { value: 'landscaping', label: 'Landscaping & Pools' },
                   ]}
                   className="w-full"
                 />

@@ -202,8 +202,14 @@ export async function importCompany(data: Record<string, string>, adminId: numbe
     ? JSON.stringify(data.specialties.split(',').map((s: string) => s.trim()).filter(Boolean))
     : null;
 
-  const companyType = (data.company_type || '').toLowerCase().includes('design')
-    ? 'design_studio' : 'renovation_company';
+  const rawType = (data.company_type || '').toLowerCase();
+  const companyType = rawType.includes('design') ? 'design_studio'
+    : rawType.includes('mep') || rawType.includes('hvac') ? 'mep_contractor'
+    : rawType.includes('general') || rawType.includes('construction') ? 'general_contractor'
+    : rawType.includes('maintenance') ? 'maintenance_company'
+    : rawType.includes('landscape') || rawType.includes('pool') ? 'landscaping'
+    : rawType.includes('specialty') || rawType.includes('glass') || rawType.includes('steel') ? 'specialty_trade'
+    : 'renovation_company';
 
   // Insert into company_profiles (as admin-created, auto-approved)
   const [result] = await pool.execute(

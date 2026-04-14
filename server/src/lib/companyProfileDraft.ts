@@ -1,6 +1,13 @@
+const VALID_COMPANY_TYPES = [
+  'design_studio', 'renovation_company', 'general_contractor',
+  'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping',
+];
+
 const VALID_SERVICES = [
   'Interior Design', 'Architecture', 'Fit-Out', 'Renovation', 'Construction', 'Landscape',
   'Furniture', 'Joinery', 'MEP', 'Project Management', 'Design & Build', 'Turnkey Solutions', 'Maintenance',
+  'Glass & Aluminium', 'Painting & Finishing', 'Flooring & Tiling', 'Demolition',
+  'Steel & Fabrication', 'Curtains & Blinds', 'Cleaning Services', 'Pools',
 ];
 
 const VALID_SPECIALTIES = [
@@ -79,8 +86,8 @@ export function validateCompanyProfilePayload(payload: CompanyProfilePayload) {
     return 'Company name is required to save your profile.';
   }
 
-  if (!['design_studio', 'renovation_company'].includes(payload.company_type)) {
-    return 'Company type must be either design_studio or renovation_company.';
+  if (!VALID_COMPANY_TYPES.includes(payload.company_type)) {
+    return `Company type must be one of: ${VALID_COMPANY_TYPES.join(', ')}`;
   }
 
   const invalidServices = payload.services.filter((service) => !VALID_SERVICES.includes(service));
