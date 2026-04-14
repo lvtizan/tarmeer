@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, FileText, Settings } from 'lucide-react';
+import { Building2, FolderOpen, FileText, Settings, ImagePlus } from 'lucide-react';
 import Navbar from '../Navbar';
 import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
@@ -83,12 +83,32 @@ export default function CompanyLayout() {
 
         </aside>
 
-        <main className="flex-1 overflow-y-auto md:ml-64">
-          <div className="p-6 lg:p-10">
+        <main className="flex-1 overflow-y-auto md:ml-64 pb-20 md:pb-0">
+          <div className="p-4 sm:p-6 lg:p-10">
             <Outlet />
           </div>
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex items-center justify-around px-2 py-2 safe-area-pb">
+        <NavLink to="/company/dashboard" end className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
+          <Building2 className="w-5 h-5" />
+          Dashboard
+        </NavLink>
+        <NavLink to="/company/projects" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
+          <FolderOpen className="w-5 h-5" />
+          Projects
+        </NavLink>
+        <NavLink to="/company/upload" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
+          <ImagePlus className="w-5 h-5" />
+          Upload
+        </NavLink>
+        <NavLink to="/company/settings" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
+          <Settings className="w-5 h-5" />
+          Settings
+        </NavLink>
+      </nav>
     </div>
   );
 }
