@@ -2,8 +2,22 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Phone, Send, User, MessageSquare } from 'lucide-react';
 import { trackContact, trackLead } from '../lib/analytics';
+import { validatePhone, isPhoneComplete } from '../lib/phoneValidation';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
+
+const GCC_CODES = ['+971', '+966', '+974', '+965', '+968', '+973'] as const;
+
+/** Parse a full phone string like "+971 50 123 4567" into { code, digits }. */
+function parsePhone(raw: string): { code: string; digits: string } | null {
+  const stripped = raw.replace(/[\s\-()]/g, '');
+  for (const code of GCC_CODES) {
+    if (stripped.startsWith(code)) {
+      return { code, digits: stripped.slice(code.length) };
+    }
+  }
+  return null;
+}
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const AREA_RANGES = [
@@ -29,9 +43,18 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
+  const parsed = parsePhone(phone);
+  const phoneError = parsed && isPhoneComplete(parsed.digits, parsed.code)
+    ? validatePhone(parsed.digits, parsed.code)
+    : null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !city || !areaRange) return;
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -115,9 +138,10 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
               onChange={(e) => setPhone(e.target.value)}
               required
               placeholder="+971 50 123 4567"
-              className="w-full h-11 pl-11 pr-4 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition"
+              className={`w-full h-11 pl-11 pr-4 bg-stone-50 border ${phoneError ? 'border-red-300' : 'border-stone-200'} rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition`}
             />
           </div>
+          {phoneError && <p className="text-[12px] text-red-600 mt-1.5">{phoneError}</p>}
         </div>
 
         {/* City */}

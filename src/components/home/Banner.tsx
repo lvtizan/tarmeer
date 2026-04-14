@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trackContact, trackLead } from '../../lib/analytics';
+import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
 import AdminSelect from '../ui/AdminSelect';
 
 const GCC_PHONE_OPTIONS = [
@@ -18,6 +19,10 @@ export default function Banner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const phoneError = isPhoneComplete(phone, phoneRegion.code)
+    ? validatePhone(phone, phoneRegion.code)
+    : null;
 
   const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -42,6 +47,11 @@ export default function Banner() {
 
     if (phone.length !== phoneRegion.maxDigits) {
       setError(`Phone number must be exactly ${phoneRegion.maxDigits} digits for ${phoneRegion.label}.`);
+      return;
+    }
+
+    if (phoneError) {
+      setError(phoneError);
       return;
     }
 
@@ -114,7 +124,7 @@ export default function Banner() {
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+            <div className={`rounded-[20px] border ${phoneError ? 'border-red-300' : 'border-stone-200'} bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]`}>
               <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">Phone/WA Number</label>
               <div className="grid grid-cols-[112px_1fr] items-center gap-3">
                 <AdminSelect
@@ -140,6 +150,7 @@ export default function Banner() {
                   placeholder={`Enter ${phoneRegion.maxDigits}-digit number`}
                 />
               </div>
+              {phoneError && <p className="text-[12px] text-red-600 mt-1.5">{phoneError}</p>}
             </div>
 
             {error && (
