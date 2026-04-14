@@ -220,7 +220,7 @@ export async function getPublicArticles(req: Request, res: Response) {
        WHERE a.status = 'published'
        ORDER BY a.created_at DESC
        LIMIT ? OFFSET ?`,
-      [String(limit), String(offset)]
+      [limit, offset]
     );
 
     res.json({
