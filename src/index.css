@@ -144,6 +144,23 @@ button:focus-visible {
 .article-content a:hover {
   color: var(--color-tarmeer-primary-btn-hover);
 }
+.article-content figure {
+  margin: 2em 0;
+}
+.article-content figure img {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+.article-content figcaption {
+  text-align: center;
+  font-size: 13px;
+  color: #6b6b6b;
+  margin-top: 0.5em;
+  font-style: italic;
+}
 
 /* 全站表单输入框 */
 .input-standard {

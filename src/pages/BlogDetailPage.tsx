@@ -27,38 +27,37 @@ function parseTags(tags: string | string[] | null): string[] {
 }
 
 /**
- * Convert markdown to clean HTML.
- * Strips raw markdown symbols (**, *, ##) and renders proper HTML tags.
- * No dependencies needed for this level of markdown.
+ * Markdown → HTML renderer.
+ * Supports: ## h2, ### h3, **bold**, *italic*, ![alt](url), ---, paragraphs.
+ * No raw markdown symbols left visible.
  */
 function markdownToHtml(md: string): string {
-  let html = md
+  return md
     // Escape HTML entities
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    // Headings: ### h3, ## h2 (process longer prefixes first)
+    // Images: ![alt](url)
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<figure><img src="$2" alt="$1" loading="lazy" /><figcaption>$1</figcaption></figure>')
+    // Headings
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    // Bold: **text**
+    // Bold
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic: *text* (but not inside <strong>)
+    // Italic
     .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
     // Horizontal rules
     .replace(/^---$/gm, '<hr />')
-    // Line breaks → paragraphs
+    // Paragraphs
     .split(/\n\n+/)
     .map((block) => {
-      const trimmed = block.trim();
-      if (!trimmed) return '';
-      // Don't wrap headings or hr in <p>
-      if (trimmed.startsWith('<h') || trimmed.startsWith('<hr')) return trimmed;
-      return `<p>${trimmed.replace(/\n/g, '<br />')}</p>`;
+      const t = block.trim();
+      if (!t) return '';
+      if (t.startsWith('<h') || t.startsWith('<hr') || t.startsWith('<figure')) return t;
+      return `<p>${t.replace(/\n/g, '<br />')}</p>`;
     })
     .filter(Boolean)
     .join('\n');
-
-  return html;
 }
 
 export default function BlogDetailPage() {
@@ -83,7 +82,7 @@ export default function BlogDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  // useMemo MUST be before any early returns (React hooks rule)
+  // Hooks before early returns
   const contentHtml = useMemo(
     () => (article?.content ? markdownToHtml(article.content) : ''),
     [article?.content],
@@ -126,9 +125,9 @@ export default function BlogDetailPage() {
     day: 'numeric',
   });
   const isoDate = new Date(article.created_at).toISOString();
-  const readingTime = Math.max(1, Math.ceil((article.content?.length || 0) / 1200));
+  const wordCount = article.content?.split(/\s+/).length || 0;
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  // JSON-LD: Article (Google News, Discover, Search)
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -147,21 +146,14 @@ export default function BlogDetailPage() {
       '@type': 'Organization',
       name: 'Tarmeer',
       url: 'https://www.tarmeer.com',
-      logo: {
-        '@type': 'ImageObject',
-        url: 'https://www.tarmeer.com/images/tarmeer_logo.svg',
-      },
+      logo: { '@type': 'ImageObject', url: 'https://www.tarmeer.com/images/tarmeer_logo.svg' },
     },
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': canonicalUrl,
-    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
     ...(tags.length > 0 ? { keywords: tags.join(', ') } : {}),
-    wordCount: article.content?.split(/\s+/).length || 0,
+    wordCount,
     inLanguage: 'en',
   };
 
-  // JSON-LD: BreadcrumbList
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -177,7 +169,6 @@ export default function BlogDetailPage() {
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
-        {/* Open Graph */}
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:image" content={coverImage} />
@@ -191,65 +182,46 @@ export default function BlogDetailPage() {
         {tags.map((tag) => (
           <meta key={tag} property="article:tag" content={tag} />
         ))}
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
         <meta name="twitter:image" content={coverImage} />
-        {/* SEO */}
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
         <meta name="keywords" content={`interior design UAE, renovation tips, ${tags.join(', ')}, Tarmeer blog`} />
         <link rel="canonical" href={canonicalUrl} />
-        {/* JSON-LD */}
         <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
       </Helmet>
 
       <article className="min-h-screen bg-white">
-        {/* Hero cover image — full width */}
-        {article.cover_image && (
-          <div className="w-full h-[320px] sm:h-[420px] lg:h-[480px] relative overflow-hidden">
-            <img
-              src={article.cover_image}
-              alt={article.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-          </div>
-        )}
-
-        {/* Article body — magazine layout */}
-        <div className="max-w-[720px] mx-auto px-5 sm:px-6">
-          {/* Back link */}
+        <div className="max-w-[720px] mx-auto px-5 sm:px-6 pt-8 pb-16">
+          {/* Back */}
           <Link
             to="/blog"
-            className="inline-flex items-center gap-1.5 text-sm text-[#6b6b6b] hover:text-[#b8864a] transition-colors mt-8 mb-10"
+            className="inline-flex items-center gap-1.5 text-sm text-[#6b6b6b] hover:text-[#b8864a] transition-colors mb-10"
           >
             <ArrowLeft className="w-4 h-4" />
             All Articles
           </Link>
 
-          {/* Tags above title */}
+          {/* Tags */}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#b8864a] bg-[#b8864a]/8 rounded-full"
-                >
+                <span key={tag} className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#b8864a] bg-[#b8864a]/8 rounded-full">
                   {tag}
                 </span>
               ))}
             </div>
           )}
 
-          {/* Title — large serif, magazine style */}
+          {/* Title */}
           <h1 className="font-serif text-[32px] sm:text-[40px] lg:text-[46px] font-bold leading-[1.15] tracking-tight text-[#1c1917] mb-5">
             {article.title}
           </h1>
 
-          {/* Meta line */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-[#6b6b6b] pb-8 mb-10 border-b border-stone-200">
+          {/* Meta */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-[#6b6b6b] mb-8">
             {article.company_name && (
               <span className="flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5" />
@@ -267,14 +239,26 @@ export default function BlogDetailPage() {
             <span>{readingTime} min read</span>
           </div>
 
-          {/* Article content — styled HTML */}
+          {/* Cover image — contained, rounded */}
+          {article.cover_image && (
+            <img
+              src={article.cover_image}
+              alt={article.title}
+              className="w-full h-auto rounded-2xl mb-10 aspect-[16/9] object-cover"
+            />
+          )}
+
+          {/* Divider */}
+          <hr className="border-stone-200 mb-10" />
+
+          {/* Article content */}
           <div
             className="article-content"
             dangerouslySetInnerHTML={{ __html: contentHtml }}
           />
 
           {/* Bottom CTA */}
-          <div className="mt-16 mb-16 py-10 px-8 bg-[#faf9f7] rounded-2xl text-center">
+          <div className="mt-16 py-10 px-8 bg-[#faf9f7] rounded-2xl text-center">
             <p className="font-serif text-xl font-bold text-[#1c1917] mb-2">
               Looking for renovation professionals?
             </p>
