@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import { t, type Lang } from '../../i18n/forCompanies';
+import { api } from '../../lib/api';
+import { MIN_PASSWORD_LENGTH } from '../../lib/constants';
 import AdminSelect from '../ui/AdminSelect';
 
 const GCC_PHONE_OPTIONS = [
@@ -17,30 +19,44 @@ const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
+type Step = 'form' | 'password' | 'done';
+
 interface CompanySignupFormProps {
   lang: Lang;
 }
 
 export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
-  const [contactName, setContactName] = useState('');
+  const navigate = useNavigate();
+
+  // Form fields
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
+  const [email, setEmail] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [city, setCity] = useState('Dubai');
-  const [yearEstablished, setYearEstablished] = useState('');
-  const [scopeOfBusiness, setScopeOfBusiness] = useState('');
 
+  // Password step fields
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // UI state
+  const [step, setStep] = useState<Step>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const inputClass =
+    'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
+
+  const labelClass = 'block text-xs font-medium uppercase tracking-wider text-stone-500 mb-1.5';
+
+  /* ── Step 1: Submit lead to CRM ── */
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!contactName.trim()) return;
+    if (!email.trim()) return;
     if (!phoneDigits.trim()) return;
     if (!companyName.trim()) return;
 
@@ -50,12 +66,11 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contactName: contactName.trim(),
+          contactName: '',
           phone: `${phoneRegion.code}${phoneDigits}`,
           companyName: companyName.trim(),
           city,
-          yearEstablished: yearEstablished || undefined,
-          scopeOfBusiness: scopeOfBusiness.trim() || undefined,
+          email: email.trim(),
         }),
       });
 
@@ -64,7 +79,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         throw new Error(body.error || 'Failed to submit. Please try again.');
       }
 
-      setSubmitted(true);
+      setStep('password');
     } catch (err: any) {
       setError(err?.message || 'Something went wrong. Please try again.');
     } finally {
@@ -72,33 +87,157 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     }
   };
 
-  const inputClass =
-    'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
+  /* ── Step 2: Register + login + create company profile ── */
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-  const labelClass = 'block text-xs font-medium uppercase tracking-wider text-stone-500 mb-1.5';
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(t(lang, 'passwordTooShort'));
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError(t(lang, 'passwordMismatch'));
+      return;
+    }
 
-  if (submitted) {
+    setIsSubmitting(true);
+    try {
+      const phone = `${phoneRegion.code}${phoneDigits}`;
+
+      // 1. Register
+      await api.post('/auth/register', {
+        email: email.trim(),
+        password,
+        full_name: '',
+        phone,
+        city,
+        role: 'company',
+      });
+
+      // 2. Login
+      const loginRes = await api.post('/auth/login', { email: email.trim(), password });
+      api.setToken(loginRes.token);
+
+      if (loginRes.user) {
+        localStorage.setItem('user', JSON.stringify(loginRes.user));
+        localStorage.setItem('active_role', 'company');
+      }
+
+      // 3. Create company profile
+      await api.post('/auth/company/profile', {
+        company_name: companyName.trim(),
+        phone,
+        city,
+        contact_person: '',
+        description: '',
+        services: ['Interior Design'],
+        company_type: 'renovation_company',
+      });
+
+      // 4. Navigate to company dashboard
+      navigate('/company');
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('already') || msg.includes('registered')) {
+        setError(null); // clear generic, show special UI below
+        setError(t(lang, 'emailAlreadyRegistered'));
+      } else {
+        setError(msg || 'Registration failed. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /* ── Password step UI ── */
+  if (step === 'password') {
+    const isEmailAlreadyRegistered = error === t(lang, 'emailAlreadyRegistered');
+
     return (
       <div
         dir={dir}
-        className="bg-white rounded-[20px] shadow-[0_18px_44px_rgba(28,25,23,0.14)] px-6 py-10 flex flex-col items-center justify-center text-center min-h-[320px]"
+        className="bg-white rounded-[20px] shadow-[0_18px_44px_rgba(28,25,23,0.14)] overflow-hidden"
       >
-        <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
-          <CheckCircle className="w-7 h-7 text-emerald-600" />
+        <div className="px-6 py-5 space-y-4">
+          {/* Company name badge */}
+          <div className="flex items-center gap-2 rounded-xl bg-stone-50 border border-stone-100 px-4 py-2.5">
+            <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+            <span className="text-[15px] font-semibold text-[#1c1917] truncate">{companyName}</span>
+          </div>
+
+          <p className="text-[15px] text-[#2c2c2c] leading-relaxed">
+            {t(lang, 'passwordStepTitle')}
+          </p>
+
+          <form onSubmit={handlePasswordSubmit} className="space-y-4" noValidate>
+            {/* Password */}
+            <div>
+              <label className={labelClass}>{t(lang, 'passwordLabel')}</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t(lang, 'passwordPlaceholder')}
+                className={inputClass}
+                minLength={MIN_PASSWORD_LENGTH}
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className={labelClass}>{t(lang, 'confirmPasswordLabel')}</label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder={t(lang, 'confirmPasswordPlaceholder')}
+                className={inputClass}
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
+                {error}
+                {isEmailAlreadyRegistered && (
+                  <>
+                    {' '}
+                    <Link
+                      to="/auth"
+                      className="font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2"
+                    >
+                      {t(lang, 'signInLink')}
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                  {t(lang, 'creatingPage')}
+                </>
+              ) : (
+                t(lang, 'createMyPage')
+              )}
+            </button>
+          </form>
         </div>
-        <p className="text-[15px] text-[#2c2c2c] leading-relaxed max-w-xs">
-          {t(lang, 'successMessage')}
-        </p>
-        <Link
-          to="/auth"
-          className="mt-4 text-[14px] font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2 transition"
-        >
-          {t(lang, 'successLoginLink')}
-        </Link>
       </div>
     );
   }
 
+  /* ── Main form UI ── */
   return (
     <div
       dir={dir}
@@ -109,20 +248,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           {t(lang, 'formTitle')}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {/* Contact Name */}
-          <div>
-            <label className={labelClass}>{t(lang, 'contactName')}</label>
-            <input
-              type="text"
-              required
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-              placeholder={t(lang, 'contactNamePlaceholder')}
-              className={inputClass}
-            />
-          </div>
-
+        <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
           {/* Phone Number */}
           <div>
             <label className={labelClass}>{t(lang, 'phone')}</label>
@@ -175,6 +301,19 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             </div>
           </div>
 
+          {/* Email */}
+          <div>
+            <label className={labelClass}>{t(lang, 'email')}</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t(lang, 'emailPlaceholder')}
+              className={inputClass}
+            />
+          </div>
+
           {/* Company Name */}
           <div>
             <label className={labelClass}>{t(lang, 'companyName')}</label>
@@ -190,41 +329,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
           {/* City */}
           <div>
-            <label className={labelClass}>{lang === 'ar' ? 'المدينة' : 'City'}</label>
+            <label className={labelClass}>{lang === 'ar' ? '\u0627\u0644\u0645\u062f\u064a\u0646\u0629' : 'City'}</label>
             <AdminSelect
               value={city}
               onChange={setCity}
               options={UAE_CITIES.map(c => ({ value: c, label: c }))}
               className="w-full"
-            />
-          </div>
-
-          {/* Year of Establishment — simple 4-digit input */}
-          <div>
-            <label className={labelClass}>{t(lang, 'yearEstablished')}</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              value={yearEstablished}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-                setYearEstablished(digits);
-              }}
-              placeholder={t(lang, 'yearPlaceholder')}
-              className={inputClass}
-            />
-          </div>
-
-          {/* Scope of Business */}
-          <div>
-            <label className={labelClass}>{t(lang, 'scopeOfBusiness')}</label>
-            <input
-              type="text"
-              value={scopeOfBusiness}
-              onChange={(e) => setScopeOfBusiness(e.target.value)}
-              placeholder={t(lang, 'scopePlaceholder')}
-              className={inputClass}
             />
           </div>
 
