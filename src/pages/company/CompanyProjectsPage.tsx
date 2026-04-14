@@ -352,7 +352,7 @@ export default function CompanyProjectsPage() {
                   dropActive ? 'border-[#b8864a] bg-amber-50' :
                   'border-stone-300 bg-stone-50 hover:bg-stone-100 hover:border-stone-400'
                 }`}>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
                     <ImagePlus className="h-6 w-6 text-[#b8864a]"/>
                   </div>
