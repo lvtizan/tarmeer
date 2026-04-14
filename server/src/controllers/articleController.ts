@@ -216,7 +216,7 @@ export async function getPublicArticles(req: Request, res: Response) {
       `SELECT a.id, a.title, a.slug, a.excerpt, a.cover_image, a.tags, a.created_at, a.updated_at,
               cp.company_name, cp.slug AS company_slug
        FROM articles a
-       JOIN company_profiles cp ON a.company_profile_id = cp.id
+       LEFT JOIN company_profiles cp ON a.company_profile_id = cp.id
        WHERE a.status = 'published'
        ORDER BY a.created_at DESC
        LIMIT ? OFFSET ?`,
@@ -242,7 +242,7 @@ export async function getPublicArticleBySlug(req: Request, res: Response) {
     const [rows] = await pool.execute(
       `SELECT a.*, cp.company_name, cp.slug AS company_slug, cp.logo_url
        FROM articles a
-       JOIN company_profiles cp ON a.company_profile_id = cp.id
+       LEFT JOIN company_profiles cp ON a.company_profile_id = cp.id
        WHERE a.slug = ? AND a.status = 'published'
        LIMIT 1`,
       [slug]
