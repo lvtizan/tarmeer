@@ -10,6 +10,7 @@
 | `lint-cors-nginx.mjs` | 检查 CORS 白名单与 Nginx 配置一致性 | 部署前 |
 | `lint-seo.mjs` | 检查公开页面 SEO 完整性（title/og/canonical/JSON-LD） | 部署前 |
 | `lint-docs-freshness.mjs` | 检查文档是否过时（超过30天未更新） | 每周 |
+| `lint-mobile.mjs` | 检查移动端适配：底部导航、路由注册、响应式间距、无溢出宽度 | 每次提交前、部署前 |
 | `lint-auth-flow.mjs` | 检查注册/登录/手机收集/忘记密码/缩略图生成等关键流程完整性（代码级） | 每次提交前、部署前 |
 | `test-auth-e2e.mjs` | Auth 端到端测试：注册→验证→登录→建 profile→手机同步→忘记密码（18 项） | 部署前必跑 |
 | `lint-scraper-sync.mjs` | 检查爬虫 JSON 与数据库 portfolio_images 是否同步 | 过滤/去重后、部署前 |

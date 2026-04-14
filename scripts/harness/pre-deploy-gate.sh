@@ -37,7 +37,10 @@ run_check "CORS/Nginx consistency" node "$SCRIPT_DIR/lint-cors-nginx.mjs"
 # 3. SEO compliance (public pages)
 run_check "SEO compliance" node "$SCRIPT_DIR/lint-seo.mjs"
 
-# 4. Auth & registration flow integrity
+# 4. Mobile adaptation
+run_check "Mobile adaptation" node "$SCRIPT_DIR/lint-mobile.mjs"
+
+# 5. Auth & registration flow integrity
 run_check "Auth flow integrity" node "$SCRIPT_DIR/lint-auth-flow.mjs"
 
 # 5. Auth E2E test (register, login, forgot-password, phone sync)

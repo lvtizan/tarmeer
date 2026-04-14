@@ -248,7 +248,7 @@ export default function CompanyDashboardPage() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-[960px] px-6 space-y-6">
+      <div className="mx-auto w-full max-w-[960px] px-4 sm:px-6 space-y-6">
 
         {/* ─── Top bar ─── */}
         <div className="sticky top-3 z-20 rounded-[24px] border border-stone-200 bg-[#faf9f7]/95 px-5 py-3.5 shadow-[0_12px_30px_rgba(28,18,8,0.08)] backdrop-blur">
