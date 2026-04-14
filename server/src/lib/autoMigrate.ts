@@ -170,8 +170,8 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // User permissions (JSON array of permission strings)
   { table: 'users', column: 'permissions', type: 'JSON NULL' },
 
-  // 以后新增字段在这里追加即可，例如：
-  // { table: 'designers', column: 'wechat_id', type: 'VARCHAR(255) NULL' },
+  // YouTube / external video link per project
+  { table: 'projects', column: 'video_url', type: 'VARCHAR(500) NULL' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）

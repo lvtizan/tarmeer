@@ -467,15 +467,11 @@ export default function JoinPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="bg-[#1c1917] py-6 border-t border-white/10">
-        <div className="flex gap-6 items-center justify-center">
-          <span className="text-sm text-white/40">&copy; 2026 Tarmeer</span>
-          <Link to="/privacy" className="text-sm text-white/40 hover:text-white/60 transition">
-            {t(lang, 'privacy')}
-          </Link>
-          <Link to="/contact" className="text-sm text-white/40 hover:text-white/60 transition">
-            {t(lang, 'contactUs')}
-          </Link>
+      <footer className="py-6">
+        <div className="flex items-center justify-center gap-2 text-xs text-stone-400">
+          <span>&copy; 2026 Tarmeer</span>
+          <span>·</span>
+          <Link to="/privacy" className="hover:text-stone-600 transition">Privacy Policy</Link>
         </div>
       </footer>
     </div>

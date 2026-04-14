@@ -276,7 +276,7 @@ export default function Navbar({
           {showJoinAsCompany && (
             <Link
               to="/join"
-              onClick={() => handleClick('/onboarding')}
+              onClick={() => handleClick('/join')}
               className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-stone-50 transition"
             >
               <Briefcase className="w-4 h-4" />

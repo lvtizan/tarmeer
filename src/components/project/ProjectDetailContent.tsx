@@ -15,6 +15,15 @@ interface ProjectDetailContentProps {
   disableImageLightbox?: boolean;
 }
 
+function extractYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
+  } catch {}
+  return null;
+}
+
 export default function ProjectDetailContent({
   project,
   designer,
@@ -22,6 +31,7 @@ export default function ProjectDetailContent({
   disableImageLightbox = false,
 }: ProjectDetailContentProps) {
   const galleryImages = sanitizeImageUrls(project.images);
+  const videoId = (project as any).video_url ? extractYouTubeId((project as any).video_url) : null;
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
@@ -54,6 +64,18 @@ export default function ProjectDetailContent({
         title={project.title}
         disableLightbox={disableImageLightbox}
       />
+
+      {videoId && (
+        <div className="mt-6 overflow-hidden rounded-2xl aspect-video bg-black">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`}
+            title="Project video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-start justify-between gap-4 mt-6">
         <div>

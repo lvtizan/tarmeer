@@ -58,7 +58,7 @@ function parseImageEntries(value: unknown): ImageEntry[] {
 
 export default function CompanyProjectsPage() {
   /* ── project form ── */
-  const [form, setForm] = useState({ title:'', description:'', style:'', location:'', area:'' });
+  const [form, setForm] = useState({ title:'', description:'', style:'', location:'', area:'', video_url:'' });
   const [tags, setTags] = useState<string[]>([]);
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
 
@@ -159,6 +159,7 @@ export default function CompanyProjectsPage() {
         style: form.style,
         location: form.location,
         area: form.area,
+        video_url: form.video_url || null,
         images: ordered,
         tags,
         status: publish ? 'pending' : 'draft',
@@ -173,7 +174,7 @@ export default function CompanyProjectsPage() {
       }
 
       setEditingProjectId(null);
-      setForm({title:'',description:'',style:'',location:'',area:''});setTags([]);setImgs([]);setFps([]);setImageEntries([]);setCover(0);
+      setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});setTags([]);setImgs([]);setFps([]);setImageEntries([]);setCover(0);
       refreshProjects();
     }catch(e:any){setMsg(e.message||'Failed')}finally{setSubmitting(false)}
   };
@@ -187,6 +188,7 @@ export default function CompanyProjectsPage() {
       style: project.style || '',
       location: project.location || '',
       area: project.area || '',
+      video_url: project.video_url || '',
     });
     const entries = parseImageEntries(project.images);
     setImageEntries(entries);
@@ -205,7 +207,7 @@ export default function CompanyProjectsPage() {
 
   const cancelEdit = () => {
     setEditingProjectId(null);
-    setForm({title:'',description:'',style:'',location:'',area:''});
+    setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});
     setTags([]);
     setImgs([]);
     setFps([]);
@@ -293,6 +295,14 @@ export default function CompanyProjectsPage() {
                 <label className={labelCls}>Description</label>
                 <textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Briefly describe project highlights or design intent (recommended)." rows={3} className={textareaCls}/>
                 <p className="mt-1 text-xs text-stone-500">Recommended: 50–200 characters.</p>
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelCls}>Video URL (YouTube)</label>
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.5V8.5l6.5 3.5-6.5 3.5z"/></svg>
+                  <input type="url" value={form.video_url} onChange={e=>setForm(p=>({...p,video_url:e.target.value}))} placeholder="https://www.youtube.com/watch?v=..." className={`${fieldCls} pl-9`}/>
+                </div>
+                <p className="mt-1 text-xs text-stone-500">Optional. Video will be embedded on the project page.</p>
               </div>
               <div>
                 <label className={labelCls}>Style *</label>

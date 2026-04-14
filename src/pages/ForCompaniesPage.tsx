@@ -211,7 +211,7 @@ export default function ForCompaniesPage() {
           </motion.h2>
           <motion.div {...fadeUp}>
             <Link
-              to="/auth"
+              to="/join"
               className="inline-block bg-[#b8864a] text-white font-semibold px-10 py-3.5 rounded-[20px] hover:bg-[#a4763f] transition shadow-[0_8px_24px_rgba(184,134,74,0.3)]"
             >
               {t(lang, 'ctaButton')}

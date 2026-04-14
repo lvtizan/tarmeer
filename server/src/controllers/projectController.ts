@@ -48,7 +48,7 @@ function compareProjectsNewestFirst(left: any, right: any) {
 export async function createProject(req: any, res: any) {
   try {
     const designer_id = req.user.id;
-    const { title, description, style, location, area, year, cost, images, tags, status } = req.body;
+    const { title, description, style, location, area, year, cost, images, tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
       designerId: designer_id,
@@ -82,8 +82,8 @@ export async function createProject(req: any, res: any) {
     const finalStatus = companyProfile?.status === 'approved' ? 'published' : values.status;
 
     const [result] = await pool.execute(
-      `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+      `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason, video_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
       [
         designer_id,
         companyProfileId,
@@ -97,6 +97,7 @@ export async function createProject(req: any, res: any) {
         values.images,
         values.tags,
         finalStatus,
+        video_url || null,
       ]
     );
     
@@ -259,7 +260,7 @@ export async function getProjectById(req: any, res: any) {
 export async function updateProject(req: any, res: any) {
   try {
     const { id } = req.params;
-    const { title, description, style, location, area, year, cost, images, tags, status } = req.body;
+    const { title, description, style, location, area, year, cost, images, tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
       designerId: req.user.id,
@@ -296,8 +297,8 @@ export async function updateProject(req: any, res: any) {
     }
     
     await pool.execute(
-      `UPDATE projects 
-       SET title = ?, description = ?, style = ?, location = ?, area = ?, year = ?, cost = ?, images = ?, tags = ?, status = ?, rejection_reason = NULL
+      `UPDATE projects
+       SET title = ?, description = ?, style = ?, location = ?, area = ?, year = ?, cost = ?, images = ?, tags = ?, status = ?, rejection_reason = NULL, video_url = ?
        WHERE id = ?`,
       [
         values.title,
@@ -310,6 +311,7 @@ export async function updateProject(req: any, res: any) {
         values.images,
         values.tags,
         values.status,
+        video_url || null,
         id,
       ]
     );

@@ -72,7 +72,7 @@ async function callOpenAI(config: LlmConfig, prompt: string) {
     throw new Error(`OpenAI API error ${res.status}: ${body}`);
   }
 
-  const data = await res.json();
+  const data: any = await res.json();
   const text = data.choices?.[0]?.message?.content;
   if (!text) return null;
 

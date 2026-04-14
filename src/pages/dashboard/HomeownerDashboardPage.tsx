@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Check, MapPin, Phone, Ruler, DollarSign, ImagePlus,
-  Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen,
+  Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { getDroppedImageFiles } from '../../lib/dropFiles';
@@ -59,7 +59,20 @@ function buildChecklist(profile: Profile | null, photoCount: number) {
    ════════════════════════════════════════════════════════════ */
 
 export default function HomeownerDashboardPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<UserData | null>(null);
+  const [switchingRole, setSwitchingRole] = useState(false);
+
+  const handleSwitchToCompany = async () => {
+    setSwitchingRole(true);
+    try {
+      await api.post('/auth/switch-role', { role: 'company' });
+      localStorage.setItem('active_role', 'company');
+      navigate('/company');
+    } catch {
+      setSwitchingRole(false);
+    }
+  };
   const [profile, setProfile] = useState<Profile>(EMPTY);
   const [isNew, setIsNew] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -200,6 +213,21 @@ export default function HomeownerDashboardPage() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* ── Company switch banner ── */}
+        <div className="rounded-2xl border border-[#b8864a]/20 bg-[#b8864a]/5 px-5 py-3.5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Briefcase className="w-4 h-4 text-[#b8864a] shrink-0" />
+            <span className="text-sm text-[#2c2c2c]">Are you a renovation company? This is the homeowner dashboard.</span>
+          </div>
+          <button
+            onClick={handleSwitchToCompany}
+            disabled={switchingRole}
+            className="shrink-0 text-sm font-semibold text-[#b8864a] hover:underline disabled:opacity-50"
+          >
+            {switchingRole ? 'Switching…' : 'Switch to Business →'}
+          </button>
         </div>
 
         {/* ══════ Two column grid ══════ */}

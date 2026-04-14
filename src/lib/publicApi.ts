@@ -33,6 +33,7 @@ export interface PublicProjectData {
   cost: string;
   description: string;
   tags?: string[];
+  video_url?: string;
 }
 
 export interface PublicDesignerDetailData extends PublicDesignerCardData {
