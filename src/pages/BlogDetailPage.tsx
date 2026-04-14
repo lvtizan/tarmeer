@@ -83,6 +83,12 @@ export default function BlogDetailPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  // useMemo MUST be before any early returns (React hooks rule)
+  const contentHtml = useMemo(
+    () => (article?.content ? markdownToHtml(article.content) : ''),
+    [article?.content],
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--color-tarmeer-bg)] flex items-center justify-center">
@@ -121,8 +127,6 @@ export default function BlogDetailPage() {
   });
   const isoDate = new Date(article.created_at).toISOString();
   const readingTime = Math.max(1, Math.ceil((article.content?.length || 0) / 1200));
-
-  const contentHtml = useMemo(() => markdownToHtml(article.content || ''), [article.content]);
 
   // JSON-LD: Article (Google News, Discover, Search)
   const articleJsonLd = {
