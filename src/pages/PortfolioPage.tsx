@@ -828,9 +828,29 @@ export default function PortfolioPage() {
           </section>
         )}
 
-        <div ref={observerRef} className="h-20 flex items-center justify-center">
+        <div ref={observerRef} className="flex flex-col items-center justify-center py-6">
           {loading && !initialLoading && (
-            <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
+            <>
+              {/* Skeleton placeholder grid */}
+              <div className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl overflow-hidden"
+                    style={{
+                      height: `${180 + (i % 3) * 40}px`,
+                      backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.5s infinite',
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
+            </>
+          )}
+          {!hasMore && projects.length > 0 && (
+            <p className="text-sm text-stone-400 py-4">All projects loaded</p>
           )}
         </div>
       </div>
