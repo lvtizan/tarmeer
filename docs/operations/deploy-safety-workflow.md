@@ -38,10 +38,20 @@ DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES bash deploy-simple.sh
 3. Do not manually copy only `index.html` unless matching new `/assets/*` files are also uploaded into `/assets/`
 4. Prefer rsync with checksums over manual scp to avoid mismatched versions
 
+## Version Bump Rule
+
+Every deployment **must** bump the version in `package.json` by `+0.1` (patch level).
+
+1. Before building, update `"version"` in `package.json` (e.g. `4.0.1` → `4.0.2`)
+2. Commit the version bump together with the feature/fix commit, or as a separate `chore: bump version to X.Y.Z` commit
+3. Push to remote before or after deploy
+4. Version format: `major.minor.patch` — each deploy increments `patch` by 1
+
 ## Pre-Deploy Checklist
 
 - User approved deployment in the current conversation
 - Rule file reviewed
+- Version bumped in `package.json`
 - Working tree has intended changes only
 - Build completed successfully
 

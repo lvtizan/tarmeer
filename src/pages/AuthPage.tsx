@@ -195,7 +195,7 @@ export default function AuthPage() {
   const showSocialAuth = ENABLE_GOOGLE_AUTH || ENABLE_FACEBOOK_AUTH;
 
   return (
-    <div className="h-screen flex flex-col bg-[#FAFAF9] overflow-hidden">
+    <div className="flex min-h-[100dvh] flex-col bg-[#FAFAF9]">
       <Helmet>
         <title>Sign In / Register - Tarmeer</title>
         <meta name="description" content="Sign in or create your Tarmeer account to connect with interior design and renovation professionals in UAE." />
@@ -203,14 +203,13 @@ export default function AuthPage() {
       </Helmet>
       <Navbar forceShowOnAuth />
 
-      <div className="relative flex flex-col flex-1 min-h-0">
-      {/* Ambient Background */}
-      <div className="pointer-events-none absolute top-0 left-0 w-[600px] h-[600px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
-      <div className="pointer-events-none absolute bottom-0 right-0 w-[500px] h-[500px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
+      <div className="flex flex-1 items-start justify-center overflow-hidden px-4 pt-[clamp(20px,8vh,80px)] pb-6 sm:px-6 sm:pt-[clamp(24px,10vh,100px)]">
+      {/* Premium Ambient Background */}
+      <div className="absolute top-0 left-0 w-[700px] h-[700px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
 
-      {/* Main Container */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-4 sm:px-6 min-h-0">
-      <div className="w-full max-w-[1100px] mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-10 items-center">
+      {/* Main Container - Left Right Split */}
+      <div className="relative z-10 w-full max-w-[1100px] mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-center">
 
         {/* Left Column - Value Proposition */}
         <div className="max-w-[580px] hidden lg:block">
@@ -500,11 +499,12 @@ export default function AuthPage() {
       </div>
       </div>
 
-      {/* Footer */}
-      <p className="relative z-10 py-3 text-center text-[11px] text-[#6b6b6b] shrink-0">
-        © {new Date().getFullYear()} Tarmeer · <a href="/privacy" className="hover:text-[#2c2c2c] transition">Privacy</a> · <a href="/dmca" className="hover:text-[#2c2c2c] transition">DMCA</a>
-      </p>
-      </div>
+      {/* Minimal footer — pinned to bottom */}
+      <footer className="py-4 text-center text-[11px] text-stone-400">
+        <span>&copy; {new Date().getFullYear()} Tarmeer</span>
+        <span className="mx-2">·</span>
+        <a href="/privacy" className="hover:text-stone-600 transition">Privacy</a>
+      </footer>
     </div>
   );
 }

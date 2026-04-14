@@ -67,7 +67,41 @@ export async function findOrLinkDesignerForUser(user: UserIdentity) {
   );
 
   if (!resolution.designer) {
-    return null;
+    // Auto-create a designer row for this user so they can own projects.
+    // This is the fix for company users (registered via users table) who submit projects:
+    // projects.designer_id has FK to designers.id, so without this row the insert fails.
+    const [userRows] = await pool.execute(
+      'SELECT full_name FROM users WHERE id = ?',
+      [user.id],
+    );
+    const fullName = (userRows as any[])[0]?.full_name || user.email.split('@')[0] || 'User';
+
+    try {
+      const [insertResult] = await pool.execute(
+        `INSERT INTO designers (user_id, email, full_name, status, email_verified)
+         VALUES (?, ?, ?, 'approved', 1)`,
+        [user.id, user.email, fullName],
+      );
+      const newId = (insertResult as any).insertId;
+      return { id: newId, user_id: user.id, email: user.email };
+    } catch (err: any) {
+      // If email already exists (race or leftover row), fetch and link it
+      if (err?.code === 'ER_DUP_ENTRY') {
+        const [existing] = await pool.execute(
+          'SELECT id FROM designers WHERE email = ? LIMIT 1',
+          [user.email],
+        );
+        const existingId = (existing as any[])[0]?.id;
+        if (existingId) {
+          await pool.execute(
+            'UPDATE designers SET user_id = ?, deleted_at = NULL WHERE id = ?',
+            [user.id, existingId],
+          );
+          return { id: existingId, user_id: user.id, email: user.email };
+        }
+      }
+      throw err;
+    }
   }
 
   if (resolution.shouldLinkByEmail) {

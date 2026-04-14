@@ -156,7 +156,7 @@ function App() {
 
           {/* ====== Auth ====== */}
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/auth/callback" element={<Layout><AuthCallbackPage /></Layout>} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* ====== Public ====== */}
           <Route path="/*" element={

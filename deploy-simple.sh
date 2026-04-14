@@ -203,6 +203,46 @@ else
   fi
 fi
 
+# 0. 同步最新代码（防止覆盖他人已推送的热修复）
+echo "🔄 步骤 0/3: 同步最新代码..."
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "⚠️  检测到未提交的本地修改："
+  git status --short
+  if [[ "${ALLOW_DIRTY_DEPLOY:-NO}" != "YES" ]]; then
+    echo ""
+    echo "❌ 部署已阻止：请先提交或 stash 本地修改"
+    echo "强制部署（不推荐）：ALLOW_DIRTY_DEPLOY=YES"
+    exit 1
+  fi
+  echo "⏭️  ALLOW_DIRTY_DEPLOY=YES，跳过脏工作区检查"
+fi
+
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo "当前分支: ${CURRENT_BRANCH}"
+git fetch origin "${CURRENT_BRANCH}"
+
+LOCAL_SHA=$(git rev-parse HEAD)
+REMOTE_SHA=$(git rev-parse "origin/${CURRENT_BRANCH}")
+if [[ "${LOCAL_SHA}" != "${REMOTE_SHA}" ]]; then
+  BEHIND=$(git rev-list --count "HEAD..origin/${CURRENT_BRANCH}")
+  AHEAD=$(git rev-list --count "origin/${CURRENT_BRANCH}..HEAD")
+  if [[ "${BEHIND}" -gt 0 ]]; then
+    echo "📥 本地落后远端 ${BEHIND} 个 commit，执行 git pull..."
+    git pull --ff-only origin "${CURRENT_BRANCH}"
+  fi
+  if [[ "${AHEAD}" -gt 0 ]]; then
+    echo "📤 本地领先远端 ${AHEAD} 个 commit，建议先 push"
+    if [[ "${ALLOW_UNPUSHED_DEPLOY:-NO}" != "YES" ]]; then
+      echo "❌ 部署已阻止：请先 git push 把本地 commit 推到远端"
+      echo "强制部署（不推荐）：ALLOW_UNPUSHED_DEPLOY=YES"
+      exit 1
+    fi
+    echo "⏭️  ALLOW_UNPUSHED_DEPLOY=YES，跳过未推送检查"
+  fi
+fi
+echo "✓ 代码已是最新"
+echo ""
+
 # 1. 构建项目
 echo "📦 步骤 1/3: 构建项目..."
 npm run build
