@@ -127,8 +127,13 @@ export default function BlogDetailPage() {
         <meta property="og:description" content={pageDescription} />
         <meta property="og:image" content={article.cover_image || 'https://www.tarmeer.com/og-image.png'} />
         <meta property="og:type" content="article" />
+        <meta property="og:url" content={canonicalUrl} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="keywords" content={`interior design, Tarmeer blog${article.tags ? ', ' + article.tags : ''}`} />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={article.cover_image || 'https://www.tarmeer.com/images/tarmeer_logo.svg'} />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="keywords" content={`interior design, Tarmeer blog${article.tags ? ', ' + (Array.isArray(article.tags) ? article.tags.join(', ') : article.tags) : ''}`} />
         <link rel="canonical" href={canonicalUrl} />
         <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
@@ -180,12 +185,12 @@ export default function BlogDetailPage() {
 
           {article.tags && (
             <div className="flex flex-wrap gap-2 mb-8">
-              {article.tags.split(',').map((tag) => (
+              {(Array.isArray(article.tags) ? article.tags : (() => { try { return JSON.parse(article.tags); } catch { return []; } })()).map((tag: string) => (
                 <span
-                  key={tag.trim()}
+                  key={tag}
                   className="px-3 py-1 text-xs rounded-2xl border border-stone-200 text-stone-600"
                 >
-                  {tag.trim()}
+                  {tag}
                 </span>
               ))}
             </div>
