@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
 import SidebarNavLink from '../ui/SidebarNavLink';
+import TarmeerLogo from '../TarmeerLogo';
 
 const ADMIN_LANG_KEY = 'admin_lang';
 type AdminLang = 'en' | 'zh';
@@ -159,11 +160,10 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-[#faf9f7] flex">
       {/* Sidebar - match DesignerLayout style */}
       <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-visible">
-        {/* Logo - match designer: icon in rounded box + title */}
-        <Link to="/" className="h-16 flex items-center px-6 border-b border-stone-200 hover:bg-stone-50 transition-colors">
-          <img src="/images/tarmeer_logo.svg" alt="" className="h-7 w-7 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <span className="ml-3 text-lg font-bold text-[#2c2c2c] flex-1">TARMEER</span>
-        </Link>
+        {/* Logo */}
+        <div className="h-16 flex items-center px-6 border-b border-stone-200">
+          <TarmeerLogo />
+        </div>
 
         {/* Navigation - active: left border + light bg like designer */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto overflow-x-visible">
