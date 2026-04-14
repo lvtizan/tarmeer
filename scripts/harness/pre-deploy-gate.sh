@@ -37,7 +37,10 @@ run_check "CORS/Nginx consistency" node "$SCRIPT_DIR/lint-cors-nginx.mjs"
 # 3. SEO compliance (public pages)
 run_check "SEO compliance" node "$SCRIPT_DIR/lint-seo.mjs"
 
-# 4. Frontend type check
+# 4. Scraper JSON↔DB sync check
+run_check "Scraper JSON↔DB sync" node "$SCRIPT_DIR/lint-scraper-sync.mjs"
+
+# 5. Frontend type check
 if [ "$TARGET" = "frontend" ] || [ "$TARGET" = "both" ]; then
   run_check "Frontend type check" "$ROOT/node_modules/.bin/tsc" --noEmit --skipLibCheck
 fi
