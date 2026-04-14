@@ -40,7 +40,10 @@ run_check "SEO compliance" node "$SCRIPT_DIR/lint-seo.mjs"
 # 4. Auth & registration flow integrity
 run_check "Auth flow integrity" node "$SCRIPT_DIR/lint-auth-flow.mjs"
 
-# 5. Scraper JSON↔DB sync check
+# 5. Auth E2E test (register, login, forgot-password, phone sync)
+run_check "Auth E2E test" node "$SCRIPT_DIR/test-auth-e2e.mjs"
+
+# 6. Scraper JSON↔DB sync check
 run_check "Scraper JSON↔DB sync" node "$SCRIPT_DIR/lint-scraper-sync.mjs"
 
 # 5. Frontend type check
