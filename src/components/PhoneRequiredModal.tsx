@@ -47,16 +47,7 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
     checkPhone().finally(() => setChecking(false));
   }, []);
 
-  // In blocking mode, show loading while checking
-  if (blocking && checking) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
-        <div className="text-white text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  // Block escape key
+  // Block escape key — MUST be before any early returns (React hooks rule)
   useEffect(() => {
     if (!visible) return;
     const handler = (e: KeyboardEvent) => {
@@ -65,6 +56,15 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [visible]);
+
+  // In blocking mode, show loading while checking
+  if (blocking && checking) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   if (!visible) return null;
 
