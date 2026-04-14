@@ -94,17 +94,29 @@ export default function HomeownerDashboardPage() {
   /* ── Load ── */
   useEffect(() => {
     (async () => {
+      let userPhone = '';
       try {
         const me = await api.get('/auth/me');
-        if (me.user) setUser(me.user);
+        if (me.user) { setUser(me.user); userPhone = me.user.phone || ''; }
       } catch {}
       try {
         const res = await api.get('/auth/homeowner/profile');
         const d = res.profile || res.data || res;
-        if (d && d.area_range) { setProfile({ area_range: d.area_range || '', city: d.city || 'Dubai', address: d.address || '', phone: d.phone || '', stage: d.stage || '', budget_range: d.budget_range || '', notes: d.notes || '' }); setIsNew(false); }
-      } catch {}
+        if (d && d.area_range) { setProfile({ area_range: d.area_range || '', city: d.city || 'Dubai', address: d.address || '', phone: d.phone || userPhone || '', stage: d.stage || '', budget_range: d.budget_range || '', notes: d.notes || '' }); setIsNew(false); }
+        else if (userPhone) { setProfile(prev => ({ ...prev, phone: userPhone })); }
+      } catch { if (userPhone) { setProfile(prev => ({ ...prev, phone: userPhone })); } }
       setLoading(false);
     })();
+  }, []);
+
+  // Listen for phone-saved event from PhoneRequiredModal
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const phone = (e as CustomEvent).detail?.phone;
+      if (phone) setProfile(prev => ({ ...prev, phone }));
+    };
+    window.addEventListener('phone-saved', handler);
+    return () => window.removeEventListener('phone-saved', handler);
   }, []);
 
   /* ── Auto-save ── */
