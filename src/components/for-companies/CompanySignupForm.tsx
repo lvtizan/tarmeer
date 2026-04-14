@@ -30,6 +30,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const navigate = useNavigate();
 
   // Form fields
+  const [contactName, setContactName] = useState('');
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
   const [email, setEmail] = useState('');
@@ -62,6 +63,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     e.preventDefault();
     setError(null);
 
+    if (!contactName.trim()) return;
     if (!email.trim()) return;
     if (!phoneDigits.trim()) return;
     if (!companyName.trim()) return;
@@ -74,7 +76,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contactName: '',
+          contactName: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           companyName: companyName.trim(),
           city,
@@ -117,7 +119,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       await api.post('/auth/register', {
         email: email.trim(),
         password,
-        full_name: '',
+        full_name: contactName.trim(),
         phone,
         city,
         role: 'company',
@@ -137,7 +139,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         company_name: companyName.trim(),
         phone,
         city,
-        contact_person: '',
+        contact_person: contactName.trim(),
         description: '',
         services: ['Interior Design'],
         company_type: 'renovation_company',
@@ -257,6 +259,19 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         </h2>
 
         <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
+          {/* Contact Name */}
+          <div>
+            <label className={labelClass}>{t(lang, 'contactName')}</label>
+            <input
+              type="text"
+              required
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              placeholder={t(lang, 'contactNamePlaceholder')}
+              className={inputClass}
+            />
+          </div>
+
           {/* Phone Number */}
           <div>
             <label className={labelClass}>{t(lang, 'phone')}</label>
