@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } fr
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
-import { resolveImageUrl } from '../lib/imageUrl';
+import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 import { DEFAULT_RATIO } from '../lib/justifyRows';
 import { computeLayout, type LayoutMode } from '../lib/portfolioLayout';
@@ -106,7 +106,7 @@ function useImagePreloader(
         settle(ratio, hidden);
       };
       img.onerror = () => settle(0, true);
-      img.src = resolveImageUrl(src);
+      img.src = resolveVariantUrl(src, 'thumb');
 
       // Safety timeout (10s). Marks the image as hidden so the group resolves.
       const t = window.setTimeout(() => {
@@ -260,9 +260,10 @@ function JustifiedGallery({
 
             {/* Image */}
             <img
-              src={resolveImageUrl(item.src)}
+              src={resolveVariantUrl(item.src, 'thumb')}
               alt=""
               loading="lazy"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = resolveImageUrl(item.src); }}
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
             />
 
