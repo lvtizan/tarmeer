@@ -42,6 +42,11 @@ Every feature MUST go through these steps before notifying the user. No exceptio
 - **Auth features**: MUST check users, admin_users, company_profiles, designers tables
 - Verify: every INSERT has matching SELECT, every UPDATE has matching read path
 
+### Step 1.5: Pitfall Check (before coding)
+- Read MEMORY.md pitfall records before starting development
+- Check each pitfall against current feature for relevance
+- Key pitfalls: image permissions (chmod), JSON field parsing (Array.isArray), prepared statement LIMIT/OFFSET, nginx route conflicts
+
 ### Step 2: Write Test Cases
 - Create/update test case doc in `docs/testing/`
 - Cover: happy path, edge cases, error handling, permission checks
@@ -57,10 +62,16 @@ Every feature MUST go through these steps before notifying the user. No exceptio
 - Commit feature code + test case docs together
 - Include test results in commit message (e.g. "Test results: 5/5 PASS")
 
+### Step 4.5: Pre-deploy Pitfall Check
+- rsync MUST use `--chmod=a+r` (macOS 600 permissions → nginx 403)
+- New frontend API calls → deploy backend FIRST
+- JSON fields: use `Array.isArray()` not `.split()`
+- `pool.execute` LIMIT/OFFSET → use `pool.query` with integer concatenation
+- nginx legacy URL rules must not conflict with valid routes
+
 ### Step 5: Notify User
 - Report: what was done, test results, ready to deploy or not
 - Wait for user confirmation before deploying
-- Deploy with `rsync --chmod=a+r` (prevents nginx 403 from macOS permissions)
 
 ---
 
