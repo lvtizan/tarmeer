@@ -106,7 +106,7 @@ function useImagePreloader(
         settle(ratio, hidden);
       };
       img.onerror = () => settle(0, true);
-      img.src = resolveVariantUrl(src, 'thumb');
+      img.src = resolveVariantUrl(src, 'thumb'); // Use thumb for fast dimension detection
 
       // Safety timeout (10s). Marks the image as hidden so the group resolves.
       const t = window.setTimeout(() => {
@@ -260,7 +260,7 @@ function JustifiedGallery({
 
             {/* Image */}
             <img
-              src={resolveVariantUrl(item.src, 'thumb')}
+              src={resolveVariantUrl(item.src, 'medium')}
               alt=""
               loading="lazy"
               onError={(e) => { (e.currentTarget as HTMLImageElement).src = resolveImageUrl(item.src); }}
@@ -583,16 +583,28 @@ export default function PortfolioPage() {
 
   useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadMore(); } }, [activeTag]);
 
+  // Use refs to avoid recreating observer on every state change
+  const loadMoreRef = useRef(loadMore);
+  loadMoreRef.current = loadMore;
+  const hasMoreRef = useRef(hasMore);
+  hasMoreRef.current = hasMore;
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
+
   useEffect(() => {
     if (!observerRef.current) return;
     const target = observerRef.current;
     const observer = new IntersectionObserver(
-      entries => { if (entries[0].isIntersecting && hasMore && !loading) loadMore(); },
-      { threshold: 0.1, rootMargin: '0px 0px 800px 0px' },
+      entries => {
+        if (entries[0].isIntersecting && hasMoreRef.current && !loadingRef.current) {
+          loadMoreRef.current();
+        }
+      },
+      { threshold: 0.1, rootMargin: '0px 0px 1200px 0px' },
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [hasMore, loading, loadMore]);
+  }, []); // Stable — never recreated
 
   const { grouped, singles } = useMemo(() => {
     const g: PortfolioProject[] = [];
