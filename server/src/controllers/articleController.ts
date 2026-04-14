@@ -212,15 +212,14 @@ export async function getPublicArticles(req: Request, res: Response) {
     );
     const total = (countRows as any[])[0].total;
 
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       `SELECT a.id, a.title, a.slug, a.excerpt, a.cover_image, a.tags, a.created_at, a.updated_at,
               cp.company_name, cp.slug AS company_slug
        FROM articles a
        LEFT JOIN company_profiles cp ON a.company_profile_id = cp.id
        WHERE a.status = 'published'
        ORDER BY a.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
+       LIMIT ${limit} OFFSET ${offset}`
     );
 
     res.json({
