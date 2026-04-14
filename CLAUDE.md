@@ -122,6 +122,8 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 ### Global UI Components (MUST USE)
 - **Logo**: Always use `<TarmeerLogo />` from `src/components/TarmeerLogo.tsx`. NEVER create inline logo markup.
 - **Select/Dropdown**: Always use `<AdminSelect />` from `src/components/ui/AdminSelect.tsx`. NEVER use raw `<select>` tags.
+- **Phone Validation**: Always use `validatePhone()` + `isPhoneComplete()` from `src/lib/phoneValidation.ts`. All phone inputs MUST have inline validation (fake number rejection, UAE prefix check).
+- **Lead/Inquiry Forms**: Use `<LeadForm />` from `src/components/form/LeadForm.tsx` (when available). Configure via `fields` prop, NEVER duplicate form logic across pages. Existing forms (Banner, InquiryForm, CompanySignupForm) should be migrated to LeadForm when touched.
 
 ### Rules
 1. NEVER create local `inputClass` constants — use the standard pattern above
@@ -130,6 +132,9 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 4. All focus states use `ring-[#B8864A]/15` — no blue outlines
 5. Labels always use `text-sm font-medium text-stone-500`
 6. NEVER create inline logo/brand elements — use `<TarmeerLogo />`
+7. NEVER use raw `<select>` — use `<AdminSelect />`
+8. NEVER create new phone input without `phoneValidation.ts` validation
+9. NEVER duplicate form logic — new lead/inquiry forms MUST use the shared `<LeadForm />` component (when built), or at minimum reuse `phoneValidation.ts` and `AdminSelect`
 7. NEVER use raw `<select>` — use `<AdminSelect />`
 
 ---
