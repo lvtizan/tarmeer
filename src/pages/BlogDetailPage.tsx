@@ -83,10 +83,18 @@ export default function BlogDetailPage() {
   }, [slug]);
 
   // Hooks before early returns
-  const contentHtml = useMemo(
-    () => (article?.content ? markdownToHtml(article.content) : ''),
-    [article?.content],
-  );
+  const contentHtml = useMemo(() => {
+    if (!article?.content) return '';
+    let content = article.content;
+    // Remove first image if it duplicates the cover image
+    if (article.cover_image) {
+      const coverId = article.cover_image.match(/photo-[a-zA-Z0-9-]+/)?.[0];
+      if (coverId) {
+        content = content.replace(new RegExp(`!\\[[^\\]]*\\]\\([^)]*${coverId}[^)]*\\)\\n*`), '');
+      }
+    }
+    return markdownToHtml(content);
+  }, [article?.content, article?.cover_image]);
 
   if (loading) {
     return (
