@@ -55,6 +55,7 @@ interface PublicCompanyRecord {
   email?: string;
   services?: string[] | string;
   specialties?: string[] | string;
+  company_type?: string;
   logo_url?: string;
   portfolio_images?: string[] | string;
   project_count?: number;
@@ -299,6 +300,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     portfolioCategoriesByProject: Object.keys(portfolioCategoriesByProject).length > 0 ? portfolioCategoriesByProject : undefined,
     isClaimed: !!company.is_claimed,
     isSigned: !!company.is_signed,
+    companyType: company.company_type || undefined,
     weightScore: company.weight_score ?? undefined,
     projects: Array.isArray(company.projects)
       ? company.projects
@@ -513,6 +515,7 @@ export async function fetchCompanyPreviewDetail(profileId: string): Promise<Comp
     projectImages: allImages,
     portfolioCategories: categories,
     isClaimed: true,
+    companyType: profile.company_type || undefined,
   };
 }
 
@@ -571,5 +574,6 @@ export async function fetchAdminCompanyPreview(profileId: string): Promise<Compa
     projectImages: allImages,
     portfolioCategories: categories,
     isClaimed: true,
+    companyType: profile.company_type || undefined,
   };
 }

@@ -8,6 +8,7 @@ import {
   Share2, ExternalLink, X, BadgeCheck, ImageIcon,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
+import { getCompanyTypeLabel } from '../lib/companyData';
 import { trackViewContent } from '../lib/analytics';
 import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies, fetchAdminCompanyPreview } from '../lib/publicApi';
 import { resolveImageUrl } from '../lib/imageUrl';
@@ -226,7 +227,8 @@ export default function CompanyDetailPage() {
       { "@type": "City", "name": "Fujairah" },
       { "@type": "City", "name": "Umm Al Quwain" },
     ],
-    "knowsAbout": ['Interior Design', 'Renovation', 'Fit-out'],
+    "knowsAbout": company.services.length > 0 ? company.services : ['Interior Design', 'Renovation', 'Fit-out'],
+    ...(company.companyType ? { "additionalType": getCompanyTypeLabel(company.companyType) } : {}),
   };
 
   const faqJsonLd = {
@@ -267,8 +269,8 @@ export default function CompanyDetailPage() {
   return (
     <div className="min-h-screen bg-white">
       <Helmet>
-        <title>{company.name} - Interior Design in {company.city} - Tarmeer</title>
-        <meta name="description" content={`${company.name} provides ${company.services.slice(0, 3).join(', ')} services in ${company.city}, UAE. ${company.shortDescription}`} />
+        <title>{company.name} - {getCompanyTypeLabel(company.companyType) || 'Interior Design'} in {company.city} - Tarmeer</title>
+        <meta name="description" content={`${company.name}${company.companyType ? ` (${getCompanyTypeLabel(company.companyType)})` : ''} provides ${company.services.slice(0, 3).join(', ')} services in ${company.city}, UAE. ${company.shortDescription}`} />
         <meta property="og:title" content={`${company.name} - ${company.city} - Tarmeer`} />
         <meta property="og:description" content={company.shortDescription} />
         <meta property="og:image" content={ogImage} />
@@ -359,6 +361,14 @@ export default function CompanyDetailPage() {
                   ) : null}
                 </h1>
                 <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-sm">
+                  {company.companyType && getCompanyTypeLabel(company.companyType) && (
+                    <>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#f5f0e8] text-[#8b6914] font-medium">
+                        {getCompanyTypeLabel(company.companyType)}
+                      </span>
+                      <span className="text-stone-300">&middot;</span>
+                    </>
+                  )}
                   <span className="text-[#b8864a] font-medium">{company.projectCount}+ projects</span>
                   <span className="text-stone-300">&middot;</span>
                   <span className="text-stone-500">{company.city}, UAE</span>
@@ -589,6 +599,12 @@ export default function CompanyDetailPage() {
               <div className="border border-stone-200 rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Business Details</h3>
                 <dl className="space-y-2 text-sm">
+                  {company.companyType && getCompanyTypeLabel(company.companyType) && (
+                    <div className="flex justify-between">
+                      <dt className="text-stone-500">Type</dt>
+                      <dd className="text-[#1c1917]">{getCompanyTypeLabel(company.companyType)}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <dt className="text-stone-500">Location</dt>
                     <dd className="text-[#1c1917]">{company.city}, UAE</dd>

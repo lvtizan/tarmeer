@@ -3,6 +3,7 @@ import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, 
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import type { Company } from '../lib/companyData';
+import { getCompanyTypeLabel } from '../lib/companyData';
 import { fetchPublicCompanies } from '../lib/publicApi';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../lib/imageCleanup';
 import { resolveImageUrl } from '../lib/imageUrl';
@@ -131,7 +132,15 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
           </div>
 
           {/* Rating + Reviews placeholder */}
-          <div className="flex items-center gap-2 mb-2 text-sm">
+          <div className="flex items-center gap-2 mb-2 text-sm flex-wrap">
+            {company.companyType && getCompanyTypeLabel(company.companyType) && (
+              <>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#f5f0e8] text-[#8b6914] font-medium">
+                  {getCompanyTypeLabel(company.companyType)}
+                </span>
+                <span className="text-stone-300">&middot;</span>
+              </>
+            )}
             <span className="text-[#b8860b] font-medium">{company.projectCount}+ projects</span>
             <span className="text-stone-300">&middot;</span>
             <span className="text-stone-400">{company.city}, UAE</span>
@@ -219,6 +228,7 @@ export default function CompaniesPage() {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string>('');
   const [foundedRange, setFoundedRange] = useState<string>('');
 
   useEffect(() => {
@@ -247,6 +257,10 @@ export default function CompaniesPage() {
     () => [...new Set(companies.flatMap((c) => c.styles).filter(Boolean))].sort(),
     [companies]
   );
+  const typeOptions = useMemo(
+    () => [...new Set(companies.map((c) => c.companyType).filter(Boolean))] as string[],
+    [companies]
+  );
   const serviceOptions = useMemo(
     () => [...new Set(companies.flatMap((c) => c.services).filter(Boolean))].sort(),
     [companies]
@@ -263,6 +277,7 @@ export default function CompaniesPage() {
         ) return false;
       }
       if (selectedCity && company.city !== selectedCity) return false;
+      if (selectedType && company.companyType !== selectedType) return false;
       if (selectedStyles.length > 0 && !selectedStyles.some((s) => company.styles.includes(s))) return false;
       if (selectedServices.length > 0 && !selectedServices.some((s) => company.services.includes(s))) return false;
       if (foundedRange) {
@@ -273,19 +288,20 @@ export default function CompaniesPage() {
       }
       return true;
     });
-  }, [companies, searchQuery, selectedCity, selectedStyles, selectedServices, foundedRange]);
+  }, [companies, searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, foundedRange]);
 
   const clearAllFilters = () => {
     setSearchQuery('');
     setSelectedCity('');
+    setSelectedType('');
     setSelectedStyles([]);
     setSelectedServices([]);
     setFoundedRange('');
   };
 
   const hasActiveFilters = useMemo(() => {
-    return searchQuery || selectedCity || selectedStyles.length > 0 || selectedServices.length > 0 || foundedRange;
-  }, [searchQuery, selectedCity, selectedStyles, selectedServices, foundedRange]);
+    return searchQuery || selectedCity || selectedType || selectedStyles.length > 0 || selectedServices.length > 0 || foundedRange;
+  }, [searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, foundedRange]);
 
   const getFoundedLabel = (range: string) => {
     const labels: Record<string, string> = {
@@ -299,10 +315,16 @@ export default function CompaniesPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <Helmet>
-        <title>Interior Design Companies in UAE - Tarmeer</title>
-        <meta name="description" content="Browse and compare interior design companies, renovation firms, and fit-out contractors in Dubai, Abu Dhabi, Sharjah. View portfolios and request quotes." />
-        <meta property="og:title" content="Interior Design Companies in UAE - Tarmeer" />
-        <meta property="og:description" content="Browse and compare interior design companies, renovation firms, and fit-out contractors in UAE." />
+        <title>{selectedType ? `${getCompanyTypeLabel(selectedType)} Companies in ${selectedCity || 'UAE'}` : 'Interior Design Companies in UAE'} - Tarmeer</title>
+        <meta name="description" content={selectedType
+          ? `Browse ${getCompanyTypeLabel(selectedType).toLowerCase()} companies in ${selectedCity || 'UAE'}. View portfolios, compare services, and request quotes on Tarmeer.`
+          : 'Browse and compare interior design companies, renovation firms, and fit-out contractors in Dubai, Abu Dhabi, Sharjah. View portfolios and request quotes.'
+        } />
+        <meta property="og:title" content={`${selectedType ? `${getCompanyTypeLabel(selectedType)} Companies` : 'Interior Design Companies'} in ${selectedCity || 'UAE'} - Tarmeer`} />
+        <meta property="og:description" content={selectedType
+          ? `Find top ${getCompanyTypeLabel(selectedType).toLowerCase()} companies in ${selectedCity || 'UAE'} on Tarmeer.`
+          : 'Browse and compare interior design companies, renovation firms, and fit-out contractors in UAE.'
+        } />
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta property="og:url" content="https://www.tarmeer.com/companies" />
         <meta property="og:type" content="website" />
@@ -395,6 +417,7 @@ export default function CompaniesPage() {
             <div className="flex flex-wrap gap-2">
               {searchQuery && <ActiveFilterChip label={`"${searchQuery}"`} onRemove={() => setSearchQuery('')} />}
               {selectedCity && <ActiveFilterChip label={selectedCity} onRemove={() => setSelectedCity('')} />}
+              {selectedType && <ActiveFilterChip label={getCompanyTypeLabel(selectedType)} onRemove={() => setSelectedType('')} />}
               {foundedRange && <ActiveFilterChip label={getFoundedLabel(foundedRange)} onRemove={() => setFoundedRange('')} />}
               {selectedStyles.map((s) => (
                 <ActiveFilterChip key={s} label={s} onRemove={() => setSelectedStyles((prev) => prev.filter((v) => v !== s))} />
@@ -428,6 +451,24 @@ export default function CompaniesPage() {
                 </div>
 
                 <hr className="border-stone-100" />
+
+                {/* Company Type */}
+                {typeOptions.length > 0 && (
+                  <>
+                    <div>
+                      <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Company Type</h4>
+                      <div className="space-y-1">
+                        <FilterOption selected={!selectedType} onClick={() => setSelectedType('')}>All Types</FilterOption>
+                        {typeOptions.map((type) => (
+                          <FilterOption key={type} selected={selectedType === type} onClick={() => setSelectedType(type)}>
+                            {getCompanyTypeLabel(type)}
+                          </FilterOption>
+                        ))}
+                      </div>
+                    </div>
+                    <hr className="border-stone-100" />
+                  </>
+                )}
 
                 {/* Founded */}
                 <div>

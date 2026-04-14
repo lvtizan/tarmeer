@@ -34,6 +34,23 @@ export interface Company {
   weightScore?: number;
   /** Project list for project cards (claimed companies only) */
   projects?: Array<{ title: string; slug: string; description: string; style: string; location: string; images: string[] }>;
+  /** Company type (design_studio, renovation_company, etc.) */
+  companyType?: string;
+}
+
+export const COMPANY_TYPE_LABELS: Record<string, string> = {
+  design_studio: 'Design Studio',
+  renovation_company: 'Renovation & Fit-out',
+  general_contractor: 'General Contractor',
+  mep_contractor: 'MEP Contractor',
+  maintenance_company: 'Maintenance Company',
+  specialty_trade: 'Specialty Trade',
+  landscaping: 'Landscaping & Pools',
+};
+
+export function getCompanyTypeLabel(type?: string): string {
+  if (!type) return '';
+  return COMPANY_TYPE_LABELS[type] || '';
 }
 
 export function summarizeCompanyDescription(description: string): string {
