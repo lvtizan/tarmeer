@@ -29,7 +29,7 @@ export default function MaterialCategoryPage() {
   }
 
   const canonicalUrl = `https://www.tarmeer.com/materials/${category}`;
-  const ogImage = `https://www.tarmeer.com/images/materials-banner.png`;
+  const ogImage = `https://www.tarmeer.com/images/materials-banner.jpg`;
   const rawDescription = `${cat.heroSubtitle ?? ''} ${cat.description ?? ''}`.trim();
   const metaDescription = rawDescription.slice(0, 300);
 
@@ -55,7 +55,7 @@ export default function MaterialCategoryPage() {
       {/* Materials banner */}
       <section className="w-full aspect-[21/9] sm:aspect-[3/1] max-h-[320px] bg-stone-200 overflow-hidden">
         <img
-          src="/images/materials-banner.png"
+          src="/images/materials-banner.jpg"
           alt="Tarmeer building materials"
           className="w-full h-full object-cover"
         />

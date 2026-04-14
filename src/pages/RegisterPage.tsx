@@ -106,7 +106,7 @@ export default function RegisterPage() {
               <div
                 className="relative w-full aspect-[4/3] bg-center bg-no-repeat bg-cover rounded-xl shadow-2xl overflow-hidden"
                 style={{
-                  backgroundImage: 'url(/images/showroom-sharjah-panorama.png)',
+                  backgroundImage: 'url(/images/showroom-sharjah-panorama.jpg)',
                 }}
               />
             </div>

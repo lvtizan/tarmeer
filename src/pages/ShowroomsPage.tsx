@@ -147,11 +147,11 @@ export default function MaterialsPage() {
             <div className="rounded-lg overflow-hidden border border-stone-200 bg-white shadow-sm">
               <div className="w-full bg-stone-100">
                 <img
-                  src="/images/showroom-sharjah-panorama.png"
+                  src="/images/showroom-sharjah-panorama.jpg"
                   alt="Tarmeer showroom Sharjah"
                   className="w-full h-auto object-contain"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/materials-banner.png';
+                    (e.target as HTMLImageElement).src = '/images/materials-banner.jpg';
                   }}
                 />
               </div>
@@ -300,7 +300,7 @@ export default function MaterialsPage() {
 
                 <div className="relative overflow-hidden rounded-[18px] border border-stone-200 bg-stone-100">
                   <img
-                    src="/images/showroom-sharjah-panorama.png"
+                    src="/images/showroom-sharjah-panorama.jpg"
                     alt="Tarmeer showroom and material display environment"
                     className="h-full w-full object-cover"
                     onError={(e) => {
