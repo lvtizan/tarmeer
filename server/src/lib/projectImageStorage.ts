@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { generateVariants } from './imageVariants';
 
 const DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/;
 const PROJECT_UPLOADS_RELATIVE_DIR = '/uploads/projects';
@@ -77,6 +78,8 @@ async function persistSingleImageDataUrl(dataUrl: string, designerId: unknown, p
 
   await fs.mkdir(absoluteDir, { recursive: true });
   await fs.writeFile(absoluteFilePath, buffer);
+  // Generate thumbnail variants (blur, thumb, medium)
+  generateVariants(absoluteFilePath).catch(() => {});
   return relativeUrl;
 }
 
