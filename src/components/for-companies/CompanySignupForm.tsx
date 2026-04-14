@@ -5,6 +5,7 @@ import { t, type Lang } from '../../i18n/forCompanies';
 import { api } from '../../lib/api';
 import { MIN_PASSWORD_LENGTH } from '../../lib/constants';
 import AdminSelect from '../ui/AdminSelect';
+import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -39,6 +40,11 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Phone validation
+  const phoneError = isPhoneComplete(phoneDigits, phoneRegion.code)
+    ? validatePhone(phoneDigits, phoneRegion.code)
+    : null;
+
   // UI state
   const [step, setStep] = useState<Step>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +65,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     if (!email.trim()) return;
     if (!phoneDigits.trim()) return;
     if (!companyName.trim()) return;
+    if (phoneError) { setError(phoneError); return; }
+    if (!isPhoneComplete(phoneDigits, phoneRegion.code)) { setError('Please enter a complete phone number'); return; }
 
     setIsSubmitting(true);
     try {
@@ -296,9 +304,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 }}
                 maxLength={phoneRegion.maxDigits}
                 placeholder={t(lang, 'phonePlaceholder')}
-                className={`${inputClass} flex-1 min-w-0`}
+                className={`${inputClass} flex-1 min-w-0 ${phoneError ? 'border-red-300 focus:border-red-400 focus:ring-red-200/30' : ''}`}
               />
             </div>
+            {phoneError && (
+              <p className="mt-1.5 text-[12px] text-red-600">{phoneError}</p>
+            )}
           </div>
 
           {/* Email */}
