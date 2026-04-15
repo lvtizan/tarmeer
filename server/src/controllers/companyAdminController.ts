@@ -172,6 +172,21 @@ function sanitizeProjectImages(imagesField: any): string[] {
   return out;
 }
 
+/**
+ * Admin view: extract all image URLs without filtering by file existence.
+ * Admins need to see every image (including /images/uae-companies/... paths)
+ * regardless of whether the file exists on this server's filesystem.
+ */
+function extractAllProjectImageUrls(imagesField: any): string[] {
+  const rawImages = toStringArray(imagesField);
+  const seen = new Set<string>();
+  return rawImages.filter((url) => {
+    if (!url || seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
+}
+
 function toCategorizedPortfolioItems(value: any): Array<{ url: string; category: string | null }> {
   const parsed = parseJsonField(value);
   if (!parsed) return [];
@@ -816,7 +831,7 @@ export async function getAdminProject(req: any, res: any) {
     }
 
     const project = (rows as any[])[0];
-    project.images = sanitizeProjectImages(project.images);
+    project.images = extractAllProjectImageUrls(project.images);
     project.tags = toStringArray(project.tags);
 
     res.json({ project });

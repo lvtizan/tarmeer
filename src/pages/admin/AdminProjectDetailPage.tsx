@@ -5,6 +5,14 @@ import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
 
+function reorder<T>(arr: T[], from: number, to: number): T[] {
+  if (from === to) return arr;
+  const next = [...arr];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
 interface ProjectData {
   id: number;
   title: string;
@@ -53,6 +61,8 @@ export default function AdminProjectDetailPage() {
   const [status, setStatus] = useState('draft');
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -226,23 +236,47 @@ export default function AdminProjectDetailPage() {
         <div className="bg-green-50 border border-green-200 rounded-2xl p-3 text-sm text-green-700">{saveMsg}</div>
       )}
 
-      {/* Image Gallery */}
+      {/* Image Gallery — drag to reorder, lazy load */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-3">
-        <h2 className="text-sm font-medium text-stone-500">Images ({images.length})</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-stone-500">Images ({images.length})</h2>
+          {images.length > 1 && (
+            <span className="text-xs text-stone-400">Drag to reorder · First image is the cover</span>
+          )}
+        </div>
         <div className="grid grid-cols-3 gap-3">
           {images.map((img, idx) => (
-            <div key={idx} className="relative group aspect-video bg-stone-100 rounded-xl overflow-hidden">
+            <div
+              key={idx}
+              draggable
+              onDragStart={() => setDraggingIdx(idx)}
+              onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (draggingIdx !== null && draggingIdx !== idx) {
+                  setImages((prev) => reorder(prev, draggingIdx, idx));
+                }
+                setDraggingIdx(null);
+                setDragOverIdx(null);
+              }}
+              onDragEnd={() => { setDraggingIdx(null); setDragOverIdx(null); }}
+              className={`relative group aspect-video bg-stone-100 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-opacity ${draggingIdx === idx ? 'opacity-40' : dragOverIdx === idx ? 'ring-2 ring-[#b8864a]' : ''}`}
+            >
               <SmartImage
                 src={img}
                 alt={`Image ${idx + 1}`}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
+              {idx === 0 && (
+                <span className="absolute left-2 top-2 rounded-md bg-[#b8864a] px-1.5 py-0.5 text-[10px] font-semibold text-white">Cover</span>
+              )}
               <button
                 onClick={() => handleRemoveImage(idx)}
                 className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm font-bold"
                 title="Remove image"
               >
-                x
+                ×
               </button>
             </div>
           ))}
