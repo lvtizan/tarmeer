@@ -43,7 +43,8 @@ function log(tc, ok, detail) {
 async function cleanup() {
   if (conn) {
     await conn.query("DELETE FROM company_profiles WHERE company_name IN ('E2E_Homeowner','E2E_Company')").catch(() => {});
-    await conn.query("DELETE FROM users WHERE email IN ('e2e-homeowner@test.com','e2e-company@test.com')").catch(() => {});
+    await conn.query("DELETE FROM users WHERE email LIKE 'e2e-%@test.com'").catch(() => {});
+    await conn.query("DELETE FROM designers WHERE email LIKE 'e2e-%@test.com'").catch(() => {});
     await conn.query("DELETE FROM company_leads WHERE company_name='E2E_Company'").catch(() => {});
     await conn.query("DELETE FROM admin_users WHERE email='e2e-admin@test.com'").catch(() => {});
   }
@@ -221,7 +222,96 @@ async function main() {
     log('Reset token in admin_users', !!rt2[0]?.reset_token, rt2[0]?.reset_token ? 'token written' : 'NULL');
 
     // ══════════════════════════════════════
-    // TEST 6: Phone validation (API level)
+    // TEST 6: check-availability edge cases
+    // ══════════════════════════════════════
+    console.log('\n── check-availability ──');
+
+    // Known registered + verified user → unavailable
+    const avail1 = await post('/auth/check-availability', { email: 'e2e-homeowner@test.com' });
+    log('Verified user → emailAvailable=false', avail1.data?.emailAvailable === false, JSON.stringify(avail1.data));
+
+    // Unknown email → available
+    const avail2 = await post('/auth/check-availability', { email: 'totally-new@test.com' });
+    log('Unknown email → emailAvailable=true', avail2.data?.emailAvailable === true, JSON.stringify(avail2.data));
+
+    // ══════════════════════════════════════
+    // TEST 7: Legacy Designer Migration (verified + password)
+    // ══════════════════════════════════════
+    console.log('\n── Legacy Designer Migration ──');
+
+    // Seed a verified designer with a password
+    const { createRequire: cr2 } = await import('module');
+    const req2 = cr2(import.meta.url);
+    const bcrypt = req2(path.join(SERVER_DIR, 'node_modules/bcryptjs'));
+    const legacyHash = await bcrypt.hash('LegacyPass123', 10);
+    await conn.query(
+      "INSERT INTO designers (email, password, full_name, email_verified, status, is_approved) VALUES ('e2e-legacy@test.com', ?, 'Legacy Designer', 1, 'approved', 1)",
+      [legacyHash]
+    );
+
+    // check-availability must say "taken" (verified designer)
+    const avail3 = await post('/auth/check-availability', { email: 'e2e-legacy@test.com' });
+    log('Legacy designer → emailAvailable=false', avail3.data?.emailAvailable === false, JSON.stringify(avail3.data));
+
+    // Login with correct password → should auto-migrate and return token
+    const legacyLogin = await post('/auth/login', { email: 'e2e-legacy@test.com', password: 'LegacyPass123' });
+    log('Legacy designer login succeeds', !!legacyLogin.data?.token, legacyLogin.data?.error || (legacyLogin.data?.token ? 'token OK' : 'no token'));
+
+    // users table should now have the migrated record
+    const [migratedUser] = await conn.query("SELECT id, role FROM users WHERE email='e2e-legacy@test.com'");
+    log('Legacy designer migrated to users', migratedUser.length > 0, 'role=' + migratedUser[0]?.role);
+
+    // designers.user_id should be updated
+    const [linkedDesigner] = await conn.query("SELECT user_id FROM designers WHERE email='e2e-legacy@test.com'");
+    log('designers.user_id linked', !!linkedDesigner[0]?.user_id, 'user_id=' + linkedDesigner[0]?.user_id);
+
+    // ══════════════════════════════════════
+    // TEST 8: Legacy Designer — wrong password
+    // ══════════════════════════════════════
+    console.log('\n── Legacy Designer Wrong Password ──');
+
+    const legacyBadPw = await post('/auth/login', { email: 'e2e-legacy@test.com', password: 'WrongPassword' });
+    log('Wrong password → 401', legacyBadPw.status === 401, 'HTTP ' + legacyBadPw.status);
+
+    // ══════════════════════════════════════
+    // TEST 9: Legacy Designer — OAuth (no password)
+    // ══════════════════════════════════════
+    console.log('\n── Legacy Designer OAuth (no password) ──');
+
+    await conn.query(
+      "INSERT INTO designers (email, password, full_name, email_verified, status, is_approved) VALUES ('e2e-legacy-oauth@test.com', NULL, 'OAuth Designer', 1, 'approved', 1)"
+    );
+
+    // check-availability: verified, no password → still "taken" (email_verified=1)
+    const avail4 = await post('/auth/check-availability', { email: 'e2e-legacy-oauth@test.com' });
+    log('OAuth designer → emailAvailable=false', avail4.data?.emailAvailable === false, JSON.stringify(avail4.data));
+
+    // Login attempt → clear error about Google sign-in
+    const oauthLogin = await post('/auth/login', { email: 'e2e-legacy-oauth@test.com', password: 'anything' });
+    log('OAuth designer login → 401 + clear message', oauthLogin.status === 401 && oauthLogin.data?.error?.includes('Google'), oauthLogin.data?.error);
+
+    // ══════════════════════════════════════
+    // TEST 10: Legacy Designer — Unverified (can re-register)
+    // ══════════════════════════════════════
+    console.log('\n── Legacy Designer Unverified (re-register) ──');
+
+    await conn.query(
+      "INSERT INTO designers (email, password, full_name, email_verified, status) VALUES ('e2e-legacy-unverified@test.com', 'hash', 'Unverified', 0, 'pending')"
+    );
+
+    // check-availability: NOT verified → treated as available
+    const avail5 = await post('/auth/check-availability', { email: 'e2e-legacy-unverified@test.com' });
+    log('Unverified designer → emailAvailable=true', avail5.data?.emailAvailable === true, JSON.stringify(avail5.data));
+
+    // Can register fresh
+    const reReg = await post('/auth/register', {
+      email: 'e2e-legacy-unverified@test.com', password: 'NewPass123',
+      full_name: 'Re-Register', phone: '', city: 'Dubai', role: 'company',
+    });
+    log('Unverified designer can re-register', reReg.status === 201, 'HTTP ' + reReg.status + ' ' + (reReg.data?.error || ''));
+
+    // ══════════════════════════════════════
+    // TEST 11: Input Validation (was TEST 6)
     // ══════════════════════════════════════
     console.log('\n── Input Validation ──');
 
