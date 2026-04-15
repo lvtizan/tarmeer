@@ -1,19 +1,23 @@
+import { forwardRef } from 'react';
+
 interface AdminSelectProps {
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   className?: string;
   disabled?: boolean;
+  error?: boolean;
 }
 
-export default function AdminSelect({ value, onChange, options, className = '', disabled }: AdminSelectProps) {
+const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, onChange, options, className = '', disabled, error }, ref) => {
   return (
     <div className={`relative inline-block ${className}`}>
       <select
+        ref={ref}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="appearance-none bg-white border border-stone-200 rounded-full px-5 pr-10 py-2.5 text-sm text-[#2c2c2c] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] hover:border-stone-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full"
+        className={`appearance-none bg-white border rounded-full px-5 pr-10 py-2.5 text-sm text-[#2c2c2c] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] hover:border-stone-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full ${error ? 'border-red-300 ring-2 ring-red-200/30' : 'border-stone-200'}`}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -31,4 +35,8 @@ export default function AdminSelect({ value, onChange, options, className = '', 
       </svg>
     </div>
   );
-}
+});
+
+AdminSelect.displayName = 'AdminSelect';
+
+export default AdminSelect;

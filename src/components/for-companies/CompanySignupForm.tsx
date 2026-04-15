@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { t, type Lang } from '../../i18n/forCompanies';
 import AdminSelect from '../ui/AdminSelect';
@@ -48,9 +48,13 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     ? validatePhone(phoneDigits, phoneRegion.code)
     : null;
 
+  // Refs
+  const companyTypeRef = useRef<HTMLSelectElement>(null);
+
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [companyTypeError, setCompanyTypeError] = useState(false);
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
@@ -66,7 +70,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
     if (phoneError) { setError(phoneError); return; }
     if (!isPhoneComplete(phoneDigits, phoneRegion.code)) { setError(lang === 'ar' ? 'يرجى إدخال رقم هاتف كامل' : 'Please enter a complete phone number'); return; }
-    if (!companyType) { setError(lang === 'ar' ? 'يرجى اختيار نوع الشركة' : 'Please select a company type'); return; }
+    if (!companyType) {
+      setCompanyTypeError(true);
+      companyTypeRef.current?.focus();
+      companyTypeRef.current?.click();
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -205,13 +214,15 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           <div>
             <label className={labelClass}>{t(lang, 'companyType')}</label>
             <AdminSelect
+              ref={companyTypeRef}
               value={companyType}
-              onChange={setCompanyType}
+              onChange={(v) => { setCompanyType(v); if (v) setCompanyTypeError(false); }}
               options={[
                 { value: '', label: t(lang, 'companyTypePlaceholder') },
                 ...COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey) })),
               ]}
               className="w-full"
+              error={companyTypeError}
             />
           </div>
 
