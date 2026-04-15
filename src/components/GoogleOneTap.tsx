@@ -43,18 +43,14 @@ export default function GoogleOneTap() {
       (window as any).google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
-        auto_select: true,       // 自动选择已登录的账号
+        auto_select: true,
         cancel_on_tap_outside: true,
         context: 'signin',
         itp_support: true,
+        use_fedcm_for_prompt: true, // opt-in to FedCM — suppresses deprecation warnings
       });
 
-      (window as any).google.accounts.id.prompt((notification: any) => {
-        // Silently handle FedCM disabled / browser policy rejections
-        if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-          // User dismissed or FedCM unavailable — no action needed
-        }
-      });
+      (window as any).google.accounts.id.prompt();
     };
 
     document.head.appendChild(script);
