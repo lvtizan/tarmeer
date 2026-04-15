@@ -132,6 +132,8 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'company_profiles', column: 'delete_reason', type: 'VARCHAR(500) NULL' },
   { table: 'company_profiles', column: 'home_display_order', type: 'INT NOT NULL DEFAULT 0' },
   { table: 'company_profiles', column: 'list_display_order', type: 'INT NOT NULL DEFAULT 0' },
+  { table: 'company_leads', column: 'company_type', type: 'VARCHAR(100) NULL' },
+  { table: 'company_leads', column: 'city', type: 'VARCHAR(100) NULL' },
 
   // design_inquiries soft-delete + CRM sync
   { table: 'design_inquiries', column: 'deleted_at', type: 'DATETIME NULL' },

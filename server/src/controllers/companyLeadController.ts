@@ -3,18 +3,19 @@ import { pushCompanyLeadToCRM } from '../lib/crmPush';
 
 export async function submitCompanyLead(req: any, res: any) {
   try {
-    const { contactName, phone, companyName, city, yearEstablished, scopeOfBusiness, lang } = req.body;
+    const { contactName, phone, companyName, city, companyType, yearEstablished, scopeOfBusiness, lang } = req.body;
     const sourcePage = req.headers.referer || null;
 
     const [result] = await pool.execute(
-      `INSERT INTO company_leads (contact_name, phone, company_name, year_established, scope_of_business, lang, source_page)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [contactName, phone, companyName, yearEstablished || null, scopeOfBusiness || null, lang || 'en', sourcePage]
+      `INSERT INTO company_leads (contact_name, phone, company_name, company_type, city, year_established, scope_of_business, lang, source_page)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [contactName, phone, companyName, companyType || null, city || null, yearEstablished || null, scopeOfBusiness || null, lang || 'en', sourcePage]
     );
 
     const leadId = (result as any).insertId;
 
     // Fire-and-forget CRM push (company tenant)
+    // notes field carries company_type so CRM sales team sees it
     pushCompanyLeadToCRM({
       applicationId: leadId,
       companyName: companyName || contactName,
@@ -22,8 +23,9 @@ export async function submitCompanyLead(req: any, res: any) {
       city: city || undefined,
       licenseNumber: undefined,
       description: [
-        scopeOfBusiness ? `Scope: ${scopeOfBusiness}` : '',
+        companyType ? `Type: ${companyType}` : '',
         yearEstablished ? `Est. ${yearEstablished}` : '',
+        scopeOfBusiness ? `Scope: ${scopeOfBusiness}` : '',
       ].filter(Boolean).join(', ') || undefined,
     }).catch(() => {});
 

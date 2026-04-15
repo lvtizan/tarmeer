@@ -5,6 +5,7 @@ import {
   validateCompanyProfilePayload,
 } from '../lib/companyProfileDraft';
 import { slugify } from '../lib/slugify';
+import { parseJsonField } from '../lib/parseJsonField';
 
 /**
  * POST /api/company/profile
@@ -142,7 +143,13 @@ export async function getCompanyProjects(req: any, res: any) {
       [companyProfileId]
     );
 
-    res.json({ projects });
+    const normalized = (projects as any[]).map((p) => ({
+      ...p,
+      images: parseJsonField(p.images) || [],
+      tags: parseJsonField(p.tags) || [],
+    }));
+
+    res.json({ projects: normalized });
   } catch (error) {
     console.error('Get company projects error:', error);
     res.status(500).json({ error: 'Failed to get projects.' });

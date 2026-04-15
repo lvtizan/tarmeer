@@ -186,7 +186,9 @@ export default function CompanyProjectsPage() {
   };
 
   const startEdit = (project: any) => {
-    const projectImages = parseMaybeArray(project.images);
+    // Use parseImageEntries to correctly handle both string and {url, ai_tags} object formats
+    const entries = parseImageEntries(project.images);
+    const projectImages = entries.map((e) => e.url).filter(Boolean);
     setEditingProjectId(Number(project.id));
     setForm({
       title: project.title || '',
@@ -196,7 +198,6 @@ export default function CompanyProjectsPage() {
       area: project.area || '',
       video_url: project.video_url || '',
     });
-    const entries = parseImageEntries(project.images);
     setImageEntries(entries);
     const aiCategories = entries.flatMap((e) => e.ai_category || []);
     setTags(() => {
@@ -276,7 +277,8 @@ export default function CompanyProjectsPage() {
           {projects.length > 0 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {projects.map((p: any) => {
-                const coverImg = Array.isArray(p.images) && p.images.length > 0 ? (typeof p.images[0] === 'string' ? p.images[0] : '') : '';
+                const firstImage = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
+                const coverImg = typeof firstImage === 'string' ? firstImage : (firstImage && typeof firstImage === 'object' && firstImage.url ? firstImage.url : '');
                 return (
                   <div key={p.id} className="group overflow-hidden rounded-[20px] border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md">
                     <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
