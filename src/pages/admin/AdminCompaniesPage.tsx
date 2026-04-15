@@ -7,7 +7,6 @@ import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTa
 import AdminDirectoryTable from '../../components/admin/AdminDirectoryTable';
 import AdminApplicationsTable from '../../components/admin/AdminApplicationsTable';
 import AdminSelect from '../../components/ui/AdminSelect';
-import RegistrationChart from '../../components/admin/RegistrationChart';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -42,6 +41,7 @@ interface CompanyProfileRecord {
   user_email: string;
   project_count: number;
   created_at: string;
+  is_signed?: boolean;
 }
 
 export default function AdminCompaniesPage() {
@@ -65,6 +65,8 @@ export default function AdminCompaniesPage() {
   const [profileBadgeTotal, setProfileBadgeTotal] = useState(0);
   const [profileSortDir, setProfileSortDir] = useState<SortDir>('desc');
   const [profileSortActive, setProfileSortActive] = useState(false);
+  const [profileUpdatedSortDir, setProfileUpdatedSortDir] = useState<SortDir>('desc');
+  const [profileUpdatedSortActive, setProfileUpdatedSortActive] = useState(false);
 
   // Applications tab state
   const [pendingProfiles, setPendingProfiles] = useState<CompanyProfileRecord[]>([]);
@@ -100,12 +102,14 @@ export default function AdminCompaniesPage() {
   const loadProfiles = useCallback(async () => {
     setProfileLoading(true);
     try {
+      const activeSortBy = profileUpdatedSortActive ? 'updated_at' : profileSortActive ? 'project_count' : undefined;
+      const activeSortDir = profileUpdatedSortActive ? profileUpdatedSortDir : profileSortActive ? profileSortDir : undefined;
       const result = await adminApi.getRegisteredCompanies({
         page: profilePage, limit: 20,
         status: profileStatusFilter === 'all' ? undefined : profileStatusFilter,
         search: profileSearch || undefined,
-        sort_by: profileSortActive ? 'project_count' : undefined,
-        sort_dir: profileSortActive ? profileSortDir : undefined,
+        sort_by: activeSortBy,
+        sort_dir: activeSortDir,
       });
       setProfiles(result.companies);
       setProfileTotal(result.total);
@@ -114,7 +118,7 @@ export default function AdminCompaniesPage() {
       }
     } catch (err: any) { setError(err.message); }
     finally { setProfileLoading(false); }
-  }, [profilePage, profileStatusFilter, profileSearch, profileSortActive, profileSortDir]);
+  }, [profilePage, profileStatusFilter, profileSearch, profileSortActive, profileSortDir, profileUpdatedSortActive, profileUpdatedSortDir]);
 
   const loadPending = useCallback(async () => {
     setPendingLoading(true);
@@ -294,10 +298,7 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-6">
-        <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
-        <RegistrationChart />
-      </div>
+      <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-stone-100 rounded-lg p-1 w-fit">
@@ -368,7 +369,24 @@ export default function AdminCompaniesPage() {
             orderSavingId={orderSavingId}
             sortDir={profileSortDir}
             sortActive={profileSortActive}
-            onSortToggle={() => toggleSort(profileSortActive, setProfileSortActive, profileSortDir, setProfileSortDir, setProfilePage)}
+            onSortToggle={() => { setProfileUpdatedSortActive(false); toggleSort(profileSortActive, setProfileSortActive, profileSortDir, setProfileSortDir, setProfilePage); }}
+            updatedSortActive={profileUpdatedSortActive}
+            updatedSortDir={profileUpdatedSortDir}
+            onUpdatedSortToggle={() => {
+              setProfileSortActive(false);
+              if (!profileUpdatedSortActive) { setProfileUpdatedSortActive(true); setProfileUpdatedSortDir('desc'); }
+              else if (profileUpdatedSortDir === 'desc') { setProfileUpdatedSortDir('asc'); }
+              else { setProfileUpdatedSortActive(false); }
+              setProfilePage(1);
+            }}
+            onToggleSigned={async (id, isSigned) => {
+              try {
+                await adminApi.toggleCompanySigned(id, isSigned);
+                setProfiles(prev => prev.map(p => p.id === id ? { ...p, is_signed: isSigned } : p));
+              } catch (err: any) {
+                alert(err.message || 'Failed to update signed status.');
+              }
+            }}
             onBulkUnapprove={async (ids) => {
               try {
                 await adminApi.bulkUnapproveCompanies(ids);

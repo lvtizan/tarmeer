@@ -41,7 +41,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [companyName, setCompanyName] = useState('');
   const [companyType, setCompanyType] = useState('');
   const [establishmentYear, setEstablishmentYear] = useState('');
-  const [city, setCity] = useState('Dubai');
+  const [city, setCity] = useState('');
 
   // Phone validation
   const phoneError = isPhoneComplete(phoneDigits, phoneRegion.code)
@@ -68,13 +68,21 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     e.preventDefault();
     setError(null);
 
+    if (!contactName.trim()) { setError('Please enter your name'); return; }
+    if (!phoneDigits.trim()) { setError('Please enter your phone number'); return; }
     if (phoneError) { setError(phoneError); return; }
-    if (!isPhoneComplete(phoneDigits, phoneRegion.code)) { setError(lang === 'ar' ? 'يرجى إدخال رقم هاتف كامل' : 'Please enter a complete phone number'); return; }
+    if (!isPhoneComplete(phoneDigits, phoneRegion.code)) { setError('Please enter a complete phone number'); return; }
+    if (!companyName.trim()) { setError('Please enter your company name'); return; }
+    if (!city) { setError('Please select your city'); return; }
     if (!companyType) {
       setCompanyTypeError(true);
       companyTypeRef.current?.focus();
       companyTypeRef.current?.click();
       return;
+    }
+    if (establishmentYear) {
+      const yr = Number(establishmentYear);
+      if (yr < 1900 || yr > 2026) { setError('Year must be between 1900 and 2026'); return; }
     }
 
     setIsSubmitting(true);
@@ -128,13 +136,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           {t(lang, 'formTitle')}
         </h2>
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
           {/* Contact Name */}
           <div>
             <label className={labelClass}>{t(lang, 'contactName')}</label>
             <input
               type="text"
-              required
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
               placeholder={t(lang, 'contactNamePlaceholder')}
@@ -179,7 +186,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               <input
                 type="tel"
                 inputMode="numeric"
-                required
                 value={phoneDigits}
                 onChange={(e) => {
                   const digits = e.target.value
@@ -202,11 +208,24 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             <label className={labelClass}>{t(lang, 'companyName')}</label>
             <input
               type="text"
-              required
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder={t(lang, 'companyNamePlaceholder')}
               className={inputClass}
+            />
+          </div>
+
+          {/* City */}
+          <div>
+            <label className={labelClass}>{lang === 'ar' ? '\u0627\u0644\u0645\u062f\u064a\u0646\u0629' : 'City'}</label>
+            <AdminSelect
+              value={city}
+              onChange={setCity}
+              options={[
+                { value: '', label: lang === 'ar' ? 'اختر المدينة' : 'Select city' },
+                ...UAE_CITIES.map(c => ({ value: c, label: c })),
+              ]}
+              className="w-full"
             />
           </div>
 
@@ -230,24 +249,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           <div>
             <label className={labelClass}>{t(lang, 'yearEstablished')}</label>
             <input
-              type="number"
-              min="1900"
-              max="2026"
+              type="text"
+              inputMode="numeric"
               value={establishmentYear}
-              onChange={(e) => setEstablishmentYear(e.target.value)}
+              onChange={(e) => setEstablishmentYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder={t(lang, 'yearPlaceholder')}
               className={inputClass}
-            />
-          </div>
-
-          {/* City */}
-          <div>
-            <label className={labelClass}>{lang === 'ar' ? '\u0627\u0644\u0645\u062f\u064a\u0646\u0629' : 'City'}</label>
-            <AdminSelect
-              value={city}
-              onChange={setCity}
-              options={UAE_CITIES.map(c => ({ value: c, label: c }))}
-              className="w-full"
             />
           </div>
 
