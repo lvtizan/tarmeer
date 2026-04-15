@@ -50,6 +50,7 @@ export const config = {
 
   vision: {
     credentialsPath: process.env.GOOGLE_VISION_CREDENTIALS || '',
+    apiKey: process.env.GEMINI_API_KEY || '',
     enabled: process.env.GOOGLE_VISION_ENABLED === 'true',
     maxLabels: 15,
     minConfidence: 0.7,

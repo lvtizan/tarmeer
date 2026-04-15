@@ -1,12 +1,9 @@
+import fs from 'fs';
 import path from 'path';
-import { ImageAnnotatorClient } from '@google-cloud/vision';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import pool from '../config/database';
 import { config } from '../config';
 import { parseJsonField } from '../lib/parseJsonField';
-
-// ============================================================
-// Types
-// ============================================================
 
 interface ImageEntry {
   url: string;
@@ -15,61 +12,37 @@ interface ImageEntry {
   ai_tagged_at?: string;
 }
 
-// ============================================================
-// Category map — Vision labels → 14 semantic categories
-// ============================================================
+const VALID_CATEGORIES = [
+  'Kitchen', 'Bathroom', 'Living', 'Bedroom', 'Villa', 'Apartment',
+  'Majlis', 'Dining', 'Outdoor', 'Lighting', 'Storage', 'Renovation',
+  'Materials', 'Workspace',
+];
 
-const CATEGORY_MAP: Record<string, string[]> = {
-  Kitchen:     ['kitchen', 'countertop', 'cabinet', 'sink', 'cooking', 'stove', 'oven'],
-  Bathroom:    ['bathroom', 'shower', 'bathtub', 'toilet', 'vanity', 'faucet'],
-  Living:      ['living room', 'sofa', 'couch', 'lounge', 'television', 'fireplace'],
-  Bedroom:     ['bedroom', 'bed', 'mattress', 'pillow', 'wardrobe', 'nightstand'],
-  Villa:       ['villa', 'mansion', 'estate', 'facade', 'exterior', 'house'],
-  Apartment:   ['apartment', 'flat', 'condo', 'balcony', 'high-rise'],
-  Majlis:      ['majlis', 'arabic', 'traditional', 'cushion'],
-  Dining:      ['dining', 'dining room', 'dining table', 'chandelier'],
-  Outdoor:     ['outdoor', 'garden', 'pool', 'swimming pool', 'patio', 'terrace', 'landscape'],
-  Lighting:    ['lighting', 'lamp', 'chandelier', 'pendant light', 'sconce', 'ceiling light'],
-  Storage:     ['storage', 'closet', 'shelf', 'bookcase', 'drawer', 'cabinet'],
-  Renovation:  ['renovation', 'construction', 'remodel', 'building'],
-  Materials:   ['marble', 'wood', 'tile', 'stone', 'granite', 'ceramic', 'glass', 'concrete'],
-  Workspace:   ['office', 'desk', 'workspace', 'study', 'computer', 'monitor'],
-};
+let _genAI: GoogleGenerativeAI | null = null;
+let _initialized = false;
 
-// ============================================================
-// Singleton Vision client
-// ============================================================
-
-let _client: ImageAnnotatorClient | null = null;
-let _clientInitialized = false;
-
-export function getClient(): ImageAnnotatorClient | null {
+function getGenAI(): GoogleGenerativeAI | null {
   if (!config.vision.enabled) return null;
 
-  if (!_clientInitialized) {
-    _clientInitialized = true;
+  if (!_initialized) {
+    _initialized = true;
+    const key = config.vision.apiKey;
+    if (!key) {
+      console.error('[vision-tagging] GEMINI_API_KEY not set');
+      return null;
+    }
     try {
-      const opts = config.vision.credentialsPath
-        ? { keyFilename: config.vision.credentialsPath }
-        : {};
-      _client = new ImageAnnotatorClient(opts);
+      _genAI = new GoogleGenerativeAI(key);
     } catch (err) {
-      console.error('[vision-tagging] Failed to initialise Vision client:', err);
-      _client = null;
+      console.error('[vision-tagging] Failed to initialise Gemini client:', err);
     }
   }
 
-  return _client;
+  return _genAI;
 }
 
-// ============================================================
-// Helpers
-// ============================================================
-
 export function normalizeImageEntry(entry: unknown): ImageEntry {
-  if (typeof entry === 'string') {
-    return { url: entry };
-  }
+  if (typeof entry === 'string') return { url: entry };
   if (entry && typeof entry === 'object') {
     const obj = entry as Record<string, unknown>;
     return {
@@ -82,66 +55,47 @@ export function normalizeImageEntry(entry: unknown): ImageEntry {
   return { url: '' };
 }
 
-export function mapToCategories(labels: string[]): string[] {
-  const matched = new Set<string>();
-  const lowerLabels = labels.map(l => l.toLowerCase());
-
-  for (const [category, keywords] of Object.entries(CATEGORY_MAP)) {
-    for (const keyword of keywords) {
-      if (lowerLabels.some(label => label.includes(keyword))) {
-        matched.add(category);
-        break;
-      }
-    }
-  }
-
-  return Array.from(matched);
-}
-
 export function resolveAbsolutePath(imageUrl: string): string {
-  // imageUrl is like /uploads/projects/1/2/2026/04/uuid.jpg
   const serverRoot = path.resolve(__dirname, '../../');
   return path.join(serverRoot, 'public', imageUrl);
 }
 
-export async function analyzeImage(absolutePath: string): Promise<{ labels: string[] }> {
-  const client = getClient();
-  if (!client) return { labels: [] };
+export async function analyzeImage(absolutePath: string): Promise<{ labels: string[]; categories: string[] }> {
+  const genAI = getGenAI();
+  if (!genAI) return { labels: [], categories: [] };
 
-  const [result] = await client.annotateImage({
-    image: { source: { filename: absolutePath } },
-    features: [
-      { type: 'LABEL_DETECTION',      maxResults: config.vision.maxLabels },
-      { type: 'OBJECT_LOCALIZATION',  maxResults: config.vision.maxLabels },
-    ],
-  });
+  const imageData = fs.readFileSync(absolutePath);
+  const base64 = imageData.toString('base64');
+  const ext = path.extname(absolutePath).toLowerCase();
+  const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
 
-  const seen = new Set<string>();
-  const labels: string[] = [];
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const addLabel = (description: string | null | undefined, score: number | null | undefined) => {
-    if (!description) return;
-    const confidence = score ?? 0;
-    if (confidence < config.vision.minConfidence) return;
-    const key = description.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    labels.push(description);
-  };
+  const prompt = `Analyze this interior design / architecture image. Return ONLY a valid JSON object with no markdown, no code blocks, just raw JSON:
+{
+  "labels": ["up to 15 descriptive tags: materials, furniture, room features, style keywords"],
+  "categories": ["pick only matching ones from: Kitchen, Bathroom, Living, Bedroom, Villa, Apartment, Majlis, Dining, Outdoor, Lighting, Storage, Renovation, Materials, Workspace"]
+}`;
 
-  for (const annotation of result.labelAnnotations ?? []) {
-    addLabel(annotation.description, annotation.score);
+  const result = await model.generateContent([
+    prompt,
+    { inlineData: { data: base64, mimeType } },
+  ]);
+
+  const text = result.response.text().trim();
+
+  try {
+    const parsed = JSON.parse(text);
+    const labels: string[] = Array.isArray(parsed.labels) ? parsed.labels.map(String) : [];
+    const categories: string[] = Array.isArray(parsed.categories)
+      ? parsed.categories.filter((c: string) => VALID_CATEGORIES.includes(c))
+      : [];
+    return { labels, categories };
+  } catch {
+    console.error('[vision-tagging] Failed to parse Gemini response:', text.slice(0, 200));
+    return { labels: [], categories: [] };
   }
-  for (const obj of result.localizedObjectAnnotations ?? []) {
-    addLabel(obj.name, obj.score);
-  }
-
-  return { labels };
 }
-
-// ============================================================
-// Main entry point
-// ============================================================
 
 export async function tagProjectImages(projectId: number): Promise<void> {
   if (!config.vision.enabled) {
@@ -180,10 +134,8 @@ export async function tagProjectImages(projectId: number): Promise<void> {
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
 
-    // Skip already tagged
     if (entry.ai_tagged_at) continue;
 
-    // Skip external URLs (not hosted on this server)
     if (!entry.url || !entry.url.startsWith('/uploads/')) {
       console.log('[vision-tagging] Skipping external URL:', entry.url);
       continue;
@@ -191,11 +143,14 @@ export async function tagProjectImages(projectId: number): Promise<void> {
 
     const absolutePath = resolveAbsolutePath(entry.url);
 
+    if (!fs.existsSync(absolutePath)) {
+      console.warn('[vision-tagging] File not found:', absolutePath);
+      continue;
+    }
+
     try {
       console.log(`[vision-tagging] Analysing image ${i + 1}/${entries.length}: ${entry.url}`);
-      const { labels } = await analyzeImage(absolutePath);
-
-      const categories = mapToCategories(labels);
+      const { labels, categories } = await analyzeImage(absolutePath);
 
       entries[i] = {
         ...entry,
@@ -210,7 +165,6 @@ export async function tagProjectImages(projectId: number): Promise<void> {
       console.log(`[vision-tagging] Tagged: labels=${labels.length}, categories=${categories.join(', ')}`);
     } catch (err) {
       console.error('[vision-tagging] Failed to analyse image', entry.url, err);
-      // Continue with remaining images
     }
   }
 
@@ -219,7 +173,6 @@ export async function tagProjectImages(projectId: number): Promise<void> {
     return;
   }
 
-  // Merge new categories into existing project tags
   const existingTags: string[] = parseJsonField(row.tags as string | null) ?? [];
   const mergedTags = Array.from(new Set([...existingTags, ...allNewCategories]));
 
@@ -228,9 +181,7 @@ export async function tagProjectImages(projectId: number): Promise<void> {
       'UPDATE projects SET images = ?, tags = ? WHERE id = ?',
       [JSON.stringify(entries), JSON.stringify(mergedTags), projectId]
     );
-    console.log(
-      `[vision-tagging] Project ${projectId} updated — tags: [${mergedTags.join(', ')}]`
-    );
+    console.log(`[vision-tagging] Project ${projectId} updated — tags: [${mergedTags.join(', ')}]`);
   } catch (err) {
     console.error('[vision-tagging] DB error saving tags for project', projectId, err);
   }
