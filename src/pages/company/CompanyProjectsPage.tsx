@@ -58,6 +58,9 @@ function parseImageEntries(value: unknown): ImageEntry[] {
 }
 
 export default function CompanyProjectsPage() {
+  /* ── view mode ── */
+  const [mode, setMode] = useState<'list' | 'form'>('list');
+
   /* ── project form ── */
   const [form, setForm] = useState({ title:'', description:'', style:'', location:'', area:'', video_url:'' });
   const [tags, setTags] = useState<string[]>([]);
@@ -177,6 +180,7 @@ export default function CompanyProjectsPage() {
 
       setEditingProjectId(null);
       setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});setTags([]);setImgs([]);setFps([]);setImageEntries([]);setCover(0);
+      setMode('list');
       refreshProjects();
     }catch(e:any){showToast(e.message||'Failed', 'error')}finally{setSubmitting(false)}
   };
@@ -202,7 +206,8 @@ export default function CompanyProjectsPage() {
     setImgs(projectImages);
     setFps(projectImages.map((url, index) => `existing:${project.id}:${index}:${url.slice(-30)}`));
     setCover(0);
-        setTried(false);
+    setTried(false);
+    setMode('form');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -215,7 +220,8 @@ export default function CompanyProjectsPage() {
     setImageEntries([]);
     setCover(0);
     setTried(false);
-      };
+    setMode('list');
+  };
 
   const removeProject = async (projectId: number) => {
     if (!window.confirm('Delete this project?')) return;
@@ -239,28 +245,117 @@ export default function CompanyProjectsPage() {
   if(!form.location) missingFields.push('city');
   if(imgs.length===0) missingFields.push('images');
 
+  /* ── List view ── */
+  if (mode === 'list') {
+    return (
+      <div className="w-full">
+        <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-[#2c2c2c]">My Projects ({projects.length})</h1>
+              <p className="mt-0.5 text-sm text-stone-500">Manage your portfolio projects.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMode('form')}
+              className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition hover:opacity-90"
+              style={{ backgroundColor: PRIMARY }}
+            >
+              <ImagePlus className="h-4 w-4" />
+              New Project
+            </button>
+          </div>
+
+          {projectsLoadError && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+              {projectsLoadError}
+            </div>
+          )}
+
+          {projects.length > 0 ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((p: any) => {
+                const coverImg = Array.isArray(p.images) && p.images.length > 0 ? (typeof p.images[0] === 'string' ? p.images[0] : '') : '';
+                return (
+                  <div key={p.id} className="group overflow-hidden rounded-[20px] border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+                      {coverImg
+                        ? <img src={resolveImageUrl(coverImg)} alt={p.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                        : <div className="flex h-full w-full items-center justify-center text-stone-300"><Image className="h-10 w-10" /></div>}
+                      <span className={`absolute left-3 top-3 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${p.status === 'published' ? 'bg-green-100 text-green-800' : p.status === 'pending' ? 'bg-amber-100 text-amber-800' : p.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-stone-100 text-stone-700'}`}>
+                        {p.status === 'published' ? 'Approved' : p.status === 'pending' ? 'Under Review' : p.status === 'rejected' ? 'Rejected' : 'Draft'}
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="truncate font-semibold text-[#2c2c2c]">{p.title || 'Untitled'}</h3>
+                      <p className="mt-1 text-xs text-stone-500">{[p.style, p.location].filter(Boolean).join(' · ') || 'No details'}</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(p)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg h-9 px-3 border border-stone-200 bg-white text-[#2c2c2c] text-sm font-medium hover:bg-stone-50 hover:border-[#b8864a]/30 transition"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void removeProject(Number(p.id))}
+                          className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-red-200 text-red-500 hover:bg-red-50 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-6 py-16 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#b8864a]/10">
+                <FolderOpen className="h-7 w-7 text-[#b8864a]" />
+              </div>
+              <p className="text-sm font-semibold text-stone-700">No projects yet</p>
+              <p className="mt-1 text-xs text-stone-500 mb-4">Upload your first portfolio project to get started.</p>
+              <button
+                type="button"
+                onClick={() => setMode('form')}
+                className="inline-flex h-9 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white"
+                style={{ backgroundColor: PRIMARY }}
+              >
+                <ImagePlus className="h-4 w-4" />
+                Upload First Project
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Form view ── */
   return (
     <div className="w-full">
       <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
 
-        {/* ── Sticky top bar (same style as /designer/upload) ── */}
+        {/* ── Sticky top bar ── */}
         <div className="sticky top-3 z-20 mb-4 w-full rounded-[24px] border border-stone-200 bg-[#faf9f7]/95 px-5 py-3.5 shadow-[0_12px_30px_rgba(28,18,8,0.08)] backdrop-blur md:px-6">
           <div className="flex w-full flex-wrap items-start justify-between gap-5">
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold text-[#2c2c2c]">Upload New Project</h1>
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="mb-1 inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-700 transition"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Back to Projects
+              </button>
+              <h1 className="text-2xl font-bold text-[#2c2c2c]">{editingProjectId ? 'Edit Project' : 'Upload New Project'}</h1>
               <p className="text-sm text-stone-500">Complete your project and submit it for review.</p>
             </div>
             <div className="flex w-full shrink-0 gap-3 sm:w-auto">
-              {editingProjectId && (
-                <button
-                  type="button"
-                  onClick={cancelEdit}
-                  disabled={submitting}
-                  className="h-10 flex-1 rounded-lg border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 sm:flex-none disabled:opacity-50"
-                >
-                  Cancel Edit
-                </button>
-              )}
               <button type="button" onClick={()=>submit(false)} disabled={submitting||imgs.length===0}
                 className="h-10 flex-1 rounded-lg border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 sm:flex-none disabled:opacity-50">
                 {submitting ? 'Saving...' : editingProjectId ? 'Update Draft' : 'Save Draft'}
@@ -436,58 +531,6 @@ export default function CompanyProjectsPage() {
           </aside>
         </form>
 
-        {/* ── Project List ── */}
-        <div className="mt-8">
-          <h2 className="mb-4 text-lg font-bold text-[#2c2c2c]">Project List ({projects.length})</h2>
-
-          {projectsLoadError && (
-            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-              {projectsLoadError}
-            </div>
-          )}
-
-          {projects.length > 0 ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((p:any)=>{
-                const cover = Array.isArray(p.images)&&p.images.length>0?(typeof p.images[0]==='string'?p.images[0]:''):'';
-                return(
-                  <div key={p.id} className="group overflow-hidden rounded-[20px] border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
-                      {cover?<img src={resolveImageUrl(cover)} alt={p.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/>:<div className="flex h-full w-full items-center justify-center text-stone-300"><Image className="h-10 w-10"/></div>}
-                      <span className={`absolute left-3 top-3 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${p.status==='published'?'bg-green-100 text-green-800':p.status==='pending'?'bg-amber-100 text-amber-800':p.status==='rejected'?'bg-red-100 text-red-800':'bg-stone-100 text-stone-700'}`}>{p.status==='published'?'Approved':p.status==='pending'?'Under Review':p.status==='rejected'?'Rejected':'Draft'}</span>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="truncate font-semibold text-[#2c2c2c]">{p.title||'Untitled'}</h3>
-                      <p className="mt-1 text-xs text-stone-500">{[p.style,p.location].filter(Boolean).join(' · ')||'No details'}</p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(p)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg h-9 px-3 border border-stone-200 bg-white text-[#2c2c2c] text-sm font-medium hover:bg-stone-50 hover:border-[#b8864a]/30 transition"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void removeProject(Number(p.id))}
-                          className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-red-200 text-red-500 hover:bg-red-50 transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center">
-              <p className="text-sm font-semibold text-stone-700">No projects yet</p>
-              <p className="mt-1 text-xs text-stone-500">Create your first project above, then it will appear in this list.</p>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* ── Lightbox ── */}

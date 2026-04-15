@@ -172,7 +172,6 @@ export default function AuthPage() {
       setStep('done');
     } catch (err: any) {
       console.error('Registration error:', err);
-      // If email already exists, show a helpful message
       if (err.message?.includes('already') || err.message?.includes('registered')) {
         setError('This email is already registered. Please try logging in instead.');
       } else {

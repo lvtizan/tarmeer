@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import TarmeerLogo from '../components/TarmeerLogo';
@@ -23,7 +23,6 @@ import {
   Users,
 } from 'lucide-react';
 import { t, type Lang } from '../i18n/forCompanies';
-import CompanySignupForm from '../components/for-companies/CompanySignupForm';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -31,6 +30,7 @@ type AuthStep = 'initial' | 'password' | 'done';
 
 function JoinAuthCard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<AuthStep>('initial');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +39,16 @@ function JoinAuthCard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Company signup data from /for-companies form
+  const companySignupData = searchParams.get('company_name') ? {
+    company_name: searchParams.get('company_name') || '',
+    contact_person: searchParams.get('contact_person') || '',
+    phone: searchParams.get('phone') || '',
+    city: searchParams.get('city') || 'Dubai',
+    company_type: searchParams.get('company_type') || 'renovation_company',
+    establishment_year: searchParams.get('establishment_year') || null,
+  } : null;
 
   // Check email availability (debounced)
   useEffect(() => {
@@ -87,11 +97,25 @@ function JoinAuthCard() {
         localStorage.setItem('admin_token', response.token);
         localStorage.setItem('admin', JSON.stringify(response.admin));
         navigate('/admin');
-      } else if (response.user?.active_role === 'company') {
-        navigate('/company');
-      } else {
-        navigate('/company');
+        return;
       }
+      // Create company profile if coming from /for-companies
+      if (companySignupData) {
+        localStorage.setItem('active_role', 'company');
+        try {
+          await api.post('/auth/company/profile', {
+            company_name: companySignupData.company_name,
+            phone: companySignupData.phone,
+            city: companySignupData.city,
+            contact_person: companySignupData.contact_person,
+            description: '',
+            services: ['Interior Design'],
+            company_type: companySignupData.company_type,
+            establishment_year: companySignupData.establishment_year ? Number(companySignupData.establishment_year) : null,
+          });
+        } catch { /* profile may already exist */ }
+      }
+      navigate('/company');
     } catch (err: any) {
       setLoading(false);
       setError(err.message || 'Invalid email or password.');
@@ -102,7 +126,35 @@ function JoinAuthCard() {
     setLoading(true);
     setError(null);
     try {
-      await api.post('/auth/register', { email, password, full_name: '', phone: '', city: 'Dubai', role: 'company' });
+      await api.post('/auth/register', {
+        email, password,
+        full_name: companySignupData?.contact_person || '',
+        phone: companySignupData?.phone || '',
+        city: companySignupData?.city || 'Dubai',
+        role: 'company',
+      });
+
+      // If company signup, auto-login and create profile
+      if (companySignupData) {
+        const loginRes = await api.post('/auth/login', { email, password });
+        api.setToken(loginRes.token);
+        if (loginRes.user) {
+          localStorage.setItem('user', JSON.stringify(loginRes.user));
+          localStorage.setItem('active_role', 'company');
+        }
+        await api.post('/auth/company/profile', {
+          company_name: companySignupData.company_name,
+          phone: companySignupData.phone,
+          city: companySignupData.city,
+          contact_person: companySignupData.contact_person,
+          description: '',
+          services: ['Interior Design'],
+          company_type: companySignupData.company_type,
+        });
+        navigate('/company');
+        return;
+      }
+
       setSuccess('Account created! Please check your email to verify.');
       setStep('done');
     } catch (err: any) {
@@ -131,6 +183,10 @@ function JoinAuthCard() {
             type="button"
             onClick={() => {
               const apiBase = import.meta.env.VITE_API_URL || '/api';
+              // Store company signup data for after Google callback
+              if (companySignupData) {
+                sessionStorage.setItem('pending_company_profile', JSON.stringify(companySignupData));
+              }
               window.location.href = `${apiBase}/auth/google?role=company`;
             }}
             className={AUTH_SOCIAL_BUTTON_CLASS}
@@ -342,12 +398,9 @@ export default function JoinPage() {
           style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=85)' }}
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.88)_0%,rgba(28,25,23,0.75)_50%,rgba(28,25,23,0.6)_100%)]" />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-[auto_1fr] gap-8 lg:gap-10 items-center">
-          {/* Auth card — left (inline auth flow) */}
-          <JoinAuthCard />
-
-          {/* Text — right */}
-          <div className="order-1 lg:order-2">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-[1fr_auto] gap-8 lg:gap-10 items-center">
+          {/* Text — left */}
+          <div>
             <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
               {t(lang, 'tagline')}
             </p>
@@ -358,6 +411,9 @@ export default function JoinPage() {
               {t(lang, 'subtitle')}
             </p>
           </div>
+
+          {/* Auth card — right */}
+          <JoinAuthCard />
         </div>
       </section>
 
@@ -403,39 +459,12 @@ export default function JoinPage() {
         </div>
       </section>
 
-      {/* ── Form + CTA ── */}
+      {/* ── Grid — light band ── */}
       <section className="bg-[#f5f0e8] py-14 lg:py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <motion.div {...fadeUp}>
-              <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917]">
-                {t(lang, 'ctaTitle')}
-              </h2>
-              <p className="text-[#6b6b6b] mt-4 text-[15px] leading-relaxed max-w-md">
-                {t(lang, 'footerSubtitle')}
-              </p>
-              <div className="mt-6 space-y-3">
-                {(['footerCheck1', 'footerCheck2', 'footerCheck3'] as const).map((key) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#b8864a] flex-shrink-0" />
-                    <span className="text-[14px] text-[#2c2c2c]">{t(lang, key)}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-            <motion.div {...fadeUp}>
-              <CompanySignupForm lang={lang} />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Grid — dark band ── */}
-      <section className="bg-[#1c1917] py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <motion.h2
             {...fadeUp}
-            className="font-serif text-3xl lg:text-4xl font-bold text-white text-center mb-10"
+            className="font-serif text-3xl lg:text-4xl font-bold text-[#1c1917] text-center mb-10"
           >
             {t(lang, 'gridTitle')}
           </motion.h2>
@@ -449,15 +478,15 @@ export default function JoinPage() {
                 key={i}
                 {...fadeUp}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="rounded-2xl bg-white/[0.07] border border-white/10 p-6"
+                className="rounded-2xl bg-white p-6 shadow-sm"
               >
-                <div className="w-11 h-11 rounded-xl bg-[#b8864a]/20 flex items-center justify-center mb-4">
-                  <card.icon className="w-5 h-5 text-[#c6a065]" />
+                <div className="w-11 h-11 rounded-xl bg-[#b8864a]/10 flex items-center justify-center mb-4">
+                  <card.icon className="w-5 h-5 text-[#b8864a]" />
                 </div>
-                <h3 className="text-[16px] font-semibold text-white mb-2">
+                <h3 className="text-[16px] font-semibold text-[#1c1917] mb-2">
                   {t(lang, card.title)}
                 </h3>
-                <p className="text-[14px] text-white/60 leading-relaxed">
+                <p className="text-[14px] text-[#6b6b6b] leading-relaxed">
                   {t(lang, card.desc)}
                 </p>
               </motion.div>
