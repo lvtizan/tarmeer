@@ -355,7 +355,10 @@ export default function CompanyDetailPage() {
                 <h1 className="font-serif text-2xl font-semibold text-[#1c1917]">
                   {company.name}
                   {company.isSigned ? (
-                    <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded bg-[#b8864a]/10 text-[#b8864a] text-xs font-bold tracking-wider shrink-0">VIP</span>
+                    <svg className="inline w-6 h-6 ml-1.5 shrink-0" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2L2 9l3 11h14l3-11L12 2z" fill="#b8864a" fillOpacity="0.12" stroke="#b8864a" strokeWidth="1.5" strokeLinejoin="round"/>
+                      <text x="12" y="16" textAnchor="middle" fill="#b8864a" fontSize="10" fontWeight="bold" fontFamily="sans-serif">V</text>
+                    </svg>
                   ) : company.isClaimed ? (
                     <BadgeCheck className="inline w-5 h-5 ml-1.5 text-[#b8864a]/70 shrink-0" />
                   ) : null}
