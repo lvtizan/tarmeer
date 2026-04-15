@@ -22,13 +22,14 @@ export async function upsertProfile(req: any, res: any) {
     const servicesJson = JSON.stringify(payload.services);
     const specialtiesJson = JSON.stringify(payload.specialties);
     const slug = slugify(payload.company_name);
+    const onboardingStep = typeof req.body.onboarding_step === 'number' ? req.body.onboarding_step : null;
 
     // Check if profile exists
     const [existing] = await pool.execute('SELECT id FROM company_profiles WHERE user_id = ?', [userId]);
 
     if ((existing as any[]).length > 0) {
       await pool.execute(
-        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, slug = ? WHERE user_id = ?`,
+        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, slug = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?) WHERE user_id = ?`,
         [
           payload.company_name,
           payload.description,
@@ -44,13 +45,14 @@ export async function upsertProfile(req: any, res: any) {
           payload.establishment_year,
           specialtiesJson,
           slug,
+          onboardingStep || 0,
           userId,
         ]
       );
     } else {
       await pool.execute(
-        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, slug, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, slug, status, onboarding_step)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
         [
           userId,
           payload.company_name,
@@ -67,6 +69,7 @@ export async function upsertProfile(req: any, res: any) {
           payload.establishment_year,
           specialtiesJson,
           slug,
+          onboardingStep || 0,
         ]
       );
 
@@ -102,10 +105,17 @@ export async function getProfile(req: any, res: any) {
     const [rows] = await pool.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
 
     if ((rows as any[]).length === 0) {
-      return res.json({ profile: null });
+      return res.json({ profile: null, projectCount: 0 });
     }
 
-    res.json({ profile: (rows as any[])[0] });
+    const profile = (rows as any[])[0];
+    const [countRows] = await pool.execute(
+      'SELECT COUNT(*) as cnt FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL',
+      [profile.id]
+    );
+    const projectCount = (countRows as any[])[0]?.cnt || 0;
+
+    res.json({ profile, projectCount });
   } catch (error) {
     console.error('Get company profile error:', error);
     res.status(500).json({ error: 'Failed to get company profile.' });
