@@ -154,7 +154,49 @@ async function tryAdminLogin(email: string, password: string): Promise<{
   };
 }
 
-// Login against users table (falls back to admin_users)
+// Migrate a legacy designer account to users table on first login
+async function tryDesignerMigrationLogin(email: string, password: string): Promise<{
+  token: string;
+  user: any;
+  designer: any;
+} | null> {
+  const [rows] = await pool.execute(
+    'SELECT * FROM designers WHERE email = ? AND deleted_at IS NULL',
+    [email]
+  );
+  const designers = rows as any[];
+  if (designers.length === 0) return null;
+
+  const designer = designers[0];
+  if (!designer.email_verified || !designer.password) return null;
+
+  const isValid = await bcrypt.compare(password, designer.password);
+  if (!isValid) return null;
+
+  // If already linked to a user, just return that user
+  if (designer.user_id) {
+    const [userRows] = await pool.execute('SELECT * FROM users WHERE id = ?', [designer.user_id]);
+    if ((userRows as any[]).length > 0) {
+      const user = (userRows as any[])[0];
+      return { token: generateToken(user), user: sanitizeUser(user), designer };
+    }
+  }
+
+  // Lazy migration: create users row for this legacy designer
+  const [result] = await pool.execute(
+    `INSERT INTO users (email, password, full_name, phone, city, email_verified, role, active_role, onboarding_completed, status)
+     VALUES (?, ?, ?, ?, ?, TRUE, 'company', 'company', 1, 'active')`,
+    [email, designer.password, designer.full_name, designer.phone || null, designer.city || null]
+  );
+  const userId = (result as any).insertId;
+  await pool.execute('UPDATE designers SET user_id = ? WHERE id = ?', [userId, designer.id]);
+
+  const [newUserRows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
+  const user = (newUserRows as any[])[0];
+  return { token: generateToken(user), user: sanitizeUser(user), designer: { ...designer, user_id: userId } };
+}
+
+// Login against users table (falls back to admin_users, then legacy designers)
 export async function login(req: any, res: any) {
   try {
     const { email, password } = req.body;
@@ -163,11 +205,16 @@ export async function login(req: any, res: any) {
     const users = rows as any[];
 
     if (users.length === 0) {
-      // No user found — try admin_users
+      // No user found — try admin_users, then legacy designers
       const adminResult = await tryAdminLogin(email, password);
       if (adminResult) {
         recordAuthSuccess(req, res, () => {});
         return res.json(adminResult);
+      }
+      const designerResult = await tryDesignerMigrationLogin(email, password);
+      if (designerResult) {
+        recordAuthSuccess(req, res, () => {});
+        return res.json(designerResult);
       }
       recordAuthFailure(req, res, () => {});
       return res.status(401).json({ error: 'Invalid email or password.' });
