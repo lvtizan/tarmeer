@@ -291,6 +291,7 @@ export default function CompanyOnboardingPage() {
         company_name: profileData.company_name,
         contact_person: profileData.contact_person,
         phone: profileData.phone,
+        company_type: companyType || 'renovation_company',
         onboarding_step: 3,
       };
 
