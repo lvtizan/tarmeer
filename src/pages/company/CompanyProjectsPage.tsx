@@ -149,7 +149,10 @@ export default function CompanyProjectsPage() {
   /* ── submit project ── */
   const submit = async (publish: boolean) => {
     setTried(true);
-    if(!form.title.trim()||!form.style||!form.location||imgs.length===0){return}
+    if(!form.title.trim()||!form.style||!form.location||imgs.length===0){
+      showToast('Please complete all required fields', 'error');
+      return;
+    }
     setSubmitting(true);    try{
       const ordered=[imgs[cover],...imgs.filter((_,i)=>i!==cover)];
       const payload = {
@@ -283,7 +286,7 @@ export default function CompanyProjectsPage() {
             <div className="mb-4"><h2 className="text-lg font-bold text-[#2c2c2c]">Project Details</h2><p className="text-sm text-stone-500">Add the key project details for review.</p></div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className={labelCls}>Project Title *</label>
+                <label className={labelCls}>Project Title <span className="text-red-500">*</span></label>
                 <input type="text" value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Enter project title" className={`${fieldCls} ${tried&&!form.title.trim()?'!border-red-400':''}`}/>
                 {tried&&!form.title.trim()&&<p className="mt-1 text-xs text-red-500">Project title is required</p>}
               </div>
@@ -301,12 +304,12 @@ export default function CompanyProjectsPage() {
                 <p className="mt-1 text-xs text-stone-500">Optional. Video will be embedded on the project page.</p>
               </div>
               <div>
-                <label className={labelCls}>Style *</label>
+                <label className={labelCls}>Style <span className="text-red-500">*</span></label>
                 <SelectField name="style" value={form.style} onChange={e=>setForm(p=>({...p,style:(e.target as any).value}))} className={tried&&!form.style?'!border-red-400':''}>{STYLES.map(s=><option key={s.value||'e'} value={s.value}>{s.label}</option>)}</SelectField>
                 {tried&&!form.style&&<p className="mt-1 text-xs text-red-500">Please select a style</p>}
               </div>
               <div>
-                <label className={labelCls}>Location (City) *</label>
+                <label className={labelCls}>Location (City) <span className="text-red-500">*</span></label>
                 <SelectField name="location" value={form.location} onChange={e=>setForm(p=>({...p,location:(e.target as any).value}))} className={tried&&!form.location?'!border-red-400':''}>
                   <option value="">Select city</option>
                   {CITIES.map(c=><option key={c} value={c}>{c}</option>)}
@@ -327,12 +330,13 @@ export default function CompanyProjectsPage() {
 
           {/* RIGHT: Image Board — unified single block */}
           <aside className="min-w-0 space-y-4 xl:sticky xl:top-28 xl:self-start">
-            <section className="min-w-0 rounded-[24px] border border-stone-200 bg-white p-[18px] shadow-[0_18px_50px_rgba(28,18,8,0.06)]">
+            <section className={`min-w-0 rounded-[24px] border bg-white p-[18px] shadow-[0_18px_50px_rgba(28,18,8,0.06)] ${tried && imgs.length === 0 ? 'border-red-400' : 'border-stone-200'}`}>
               <div className="mb-2.5 flex items-start justify-between gap-3">
                 <div><h2 className="text-lg font-bold text-[#2c2c2c]">Image Board</h2><p className="mt-0.5 text-xs text-stone-500">{imgs.length>0?`${imgs.length} images · ${formatFileSize(gb)}`:'Add images to your project'}</p></div>
                 {imgs[cover]&&<div className="w-[128px] rounded-xl border border-stone-200 bg-stone-50 p-1.5"><div className="text-[10px] font-semibold text-stone-500">Cover</div><div className="mt-1 aspect-video w-full rounded-lg bg-cover bg-center" style={{backgroundImage:`url(${imgs[cover]})`}}/></div>}
               </div>
 
+              {tried && imgs.length === 0 && <p className="mb-2 text-xs text-red-500">At least one project image is required</p>}
               {notice&&<div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 flex justify-between">{notice}<button type="button" onClick={()=>setNotice('')}><X className="w-3 h-3"/></button></div>}
 
               {/* Scrape result preview */}
