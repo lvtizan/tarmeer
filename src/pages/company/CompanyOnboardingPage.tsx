@@ -257,12 +257,12 @@ export default function CompanyOnboardingPage() {
 
     setSaving(true);
     try {
-      const orderedImages = images.map((url, i) => ({ url, order: i }));
       await api.post('/projects', {
         title: projectTitle.trim(),
+        description: '',
         location: city,
-        style: style || undefined,
-        images: orderedImages,
+        style: style || null,
+        images: images,
         tags: [],
         status: 'pending',
       });
@@ -486,7 +486,7 @@ export default function CompanyOnboardingPage() {
 
               {/* Drop zone */}
               <div>
-                <label className={LABEL_CLS}>Photos *</label>
+                <label className={LABEL_CLS}>Project Photos *</label>
                 <input
                   ref={fileInputRef}
                   type="file"
