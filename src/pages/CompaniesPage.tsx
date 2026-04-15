@@ -435,7 +435,7 @@ export default function CompaniesPage() {
         <div className="flex gap-8">
           {/* Left Sidebar - Filters */}
           <aside className="w-60 flex-shrink-0 hidden lg:block">
-            <div className="lg:sticky lg:top-24">
+            <div className="lg:sticky lg:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto custom-scrollbar">
               <div className="bg-white rounded-[22px] border border-stone-100 p-5 shadow-sm shadow-stone-100/50 space-y-6">
                 {/* City */}
                 <div>
