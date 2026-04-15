@@ -6,6 +6,7 @@ import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
 import SidebarNavLink from '../ui/SidebarNavLink';
 import TarmeerLogo from '../TarmeerLogo';
+import ToastContainer from '../ui/Toast';
 
 const ADMIN_LANG_KEY = 'admin_lang';
 type AdminLang = 'en' | 'zh';
@@ -263,6 +264,7 @@ export default function AdminLayout() {
       <main className="flex-1 overflow-auto p-6 md:p-10">
         <Outlet />
       </main>
+      <ToastContainer />
       {tooltip && (
         <div
           className="pointer-events-none fixed z-[9999] w-80 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-3 text-sm leading-relaxed text-stone-700 shadow-xl"

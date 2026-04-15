@@ -7,6 +7,7 @@ import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTa
 import AdminDirectoryTable from '../../components/admin/AdminDirectoryTable';
 import AdminApplicationsTable from '../../components/admin/AdminApplicationsTable';
 import AdminSelect from '../../components/ui/AdminSelect';
+import RegistrationChart from '../../components/admin/RegistrationChart';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -293,7 +294,10 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
+      <div className="flex items-start justify-between gap-6">
+        <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
+        <RegistrationChart />
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-stone-100 rounded-lg p-1 w-fit">

@@ -782,3 +782,29 @@ export async function getActivityLogs(req: any, res: Response) {
     res.status(500).json({ error: 'Failed to get activity logs.' });
   }
 }
+
+export async function getRegistrationStats(req: any, res: Response) {
+  const days = Math.min(parseInt(req.query.days as string) || 30, 90);
+  try {
+    const [userRows] = await pool.execute(
+      `SELECT DATE(created_at) as date, COUNT(*) as count
+       FROM users
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND deleted_at IS NULL
+       GROUP BY DATE(created_at)
+       ORDER BY date ASC`,
+      [days]
+    );
+    const [companyRows] = await pool.execute(
+      `SELECT DATE(created_at) as date, COUNT(*) as count
+       FROM company_profiles
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND deleted_at IS NULL
+       GROUP BY DATE(created_at)
+       ORDER BY date ASC`,
+      [days]
+    );
+    res.json({ users: userRows, companies: companyRows });
+  } catch (error) {
+    console.error('Registration stats error:', error);
+    res.status(500).json({ error: 'Failed to get registration stats.' });
+  }
+}

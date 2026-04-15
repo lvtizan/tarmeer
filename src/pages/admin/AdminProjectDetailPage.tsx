@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
+import { showToast } from '../../components/ui/Toast';
 
 function reorder<T>(arr: T[], from: number, to: number): T[] {
   if (from === to) return arr;
@@ -48,7 +49,6 @@ export default function AdminProjectDetailPage() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [saveMsg, setSaveMsg] = useState('');
   const [allProjects, setAllProjects] = useState<ProjectListItem[]>([]);
 
   // Form fields
@@ -120,7 +120,6 @@ export default function AdminProjectDetailPage() {
   const handleSave = async () => {
     if (!companyId) return;
     setSaving(true);
-    setSaveMsg('');
     setError('');
     try {
       const data = {
@@ -142,8 +141,7 @@ export default function AdminProjectDetailPage() {
         return;
       }
       await adminApi.updateAdminProject(companyId, projectId!, data);
-      setSaveMsg('Saved');
-      setTimeout(() => setSaveMsg(''), 2000);
+      showToast('Saved successfully', 'success');
     } catch (err: any) {
       setError(err.message || 'Failed to save');
     } finally {
@@ -232,9 +230,6 @@ export default function AdminProjectDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-sm text-red-700">{error}</div>
       )}
 
-      {saveMsg && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-3 text-sm text-green-700">{saveMsg}</div>
-      )}
 
       {/* Image Gallery — drag to reorder, lazy load */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-3">
@@ -359,9 +354,9 @@ export default function AdminProjectDetailPage() {
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        {!isNew ? (
+      {/* Delete button */}
+      {!isNew && (
+        <div>
           <button
             onClick={() => setShowDeleteConfirm(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm text-stone-400 hover:text-stone-600 transition-colors"
@@ -369,16 +364,8 @@ export default function AdminProjectDetailPage() {
             <Trash2 className="w-4 h-4" />
             Delete
           </button>
-        ) : <div />}
-
-        <button
-          onClick={handleSave}
-          disabled={saving || !title.trim()}
-          className="btn-primary px-8 disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : isNew ? 'Create Project' : 'Save Changes'}
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
@@ -406,6 +393,18 @@ export default function AdminProjectDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Sticky save bar */}
+      <div className="sticky bottom-0 -mx-6 md:-mx-10 px-6 md:px-10 py-4 bg-white/90 backdrop-blur border-t border-stone-200 flex items-center justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving || !title.trim()}
+          className="btn-primary px-8 disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : isNew ? 'Create Project' : 'Save Changes'}
+        </button>
+      </div>
+
     </div>
   );
 }
