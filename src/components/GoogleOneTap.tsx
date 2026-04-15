@@ -49,7 +49,12 @@ export default function GoogleOneTap() {
         itp_support: true,
       });
 
-      (window as any).google.accounts.id.prompt();
+      (window as any).google.accounts.id.prompt((notification: any) => {
+        // Silently handle FedCM disabled / browser policy rejections
+        if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
+          // User dismissed or FedCM unavailable — no action needed
+        }
+      });
     };
 
     document.head.appendChild(script);

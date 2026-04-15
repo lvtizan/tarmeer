@@ -243,6 +243,18 @@ fi
 echo "✓ 代码已是最新"
 echo ""
 
+# 0. Bump patch version
+CURRENT_VER=$(node -p "require('./package.json').version")
+IFS='.' read -r V_MAJOR V_MINOR V_PATCH <<< "$CURRENT_VER"
+NEW_VER="${V_MAJOR}.${V_MINOR}.$((V_PATCH + 1))"
+echo "🔖 版本号：${CURRENT_VER} → ${NEW_VER}"
+npm version "$NEW_VER" --no-git-tag-version --allow-same-version
+git add package.json package-lock.json 2>/dev/null || true
+git commit -m "chore: bump version to ${NEW_VER}" --allow-empty
+git tag -a "v${NEW_VER}" -m "Release v${NEW_VER}"
+echo "✓ 已打 tag v${NEW_VER}"
+echo ""
+
 # 1. 构建项目
 echo "📦 步骤 1/3: 构建项目..."
 npm run build
