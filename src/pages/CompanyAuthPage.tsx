@@ -325,7 +325,7 @@ const fadeUp = {
   transition: { duration: 0.5 },
 };
 
-export default function JoinPage() {
+export default function CompanyAuthPage() {
   const [lang, setLang] = useState<Lang>('en');
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>

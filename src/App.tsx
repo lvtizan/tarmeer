@@ -15,7 +15,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const ShowroomsPage = lazy(() => import('./pages/ShowroomsPage'));
 const MaterialCategoryPage = lazy(() => import('./pages/MaterialCategoryPage'));
 const BrandPage = lazy(() => import('./pages/BrandPage'));
-const AuthPage = lazy(() => import('./pages/AuthPage'));
+const AuthPage = lazy(() => import('./pages/HomeownerAuthPage'));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
@@ -34,7 +34,7 @@ const FaqPage = lazy(() => import('./pages/FaqPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
-const JoinPage = lazy(() => import('./pages/JoinPage'));
+const JoinPage = lazy(() => import('./pages/CompanyAuthPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Onboarding

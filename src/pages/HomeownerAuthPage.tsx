@@ -30,7 +30,7 @@ const valuePoints = [
   },
 ];
 
-export default function AuthPage() {
+export default function HomeownerAuthPage() {
   const navigate = useNavigate();
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
