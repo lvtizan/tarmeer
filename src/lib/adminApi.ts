@@ -372,6 +372,10 @@ class AdminApiClient {
     return this.request(`/stats/registrations?days=${days}`);
   }
 
+  async getDailyStats(days = 30) {
+    return this.request(`/stats/daily?days=${days}`);
+  }
+
   async getStatsOverview(startDate?: string, endDate?: string) {
     const query = new URLSearchParams();
     if (startDate) query.set('startDate', startDate);
