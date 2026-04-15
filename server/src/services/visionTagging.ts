@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import pool from '../config/database';
 import { config } from '../config';
 import { parseJsonField } from '../lib/parseJsonField';
+import { ALL_PORTFOLIO_TAGS } from '../lib/tagTaxonomy';
 
 interface ImageEntry {
   url: string;
@@ -12,11 +13,7 @@ interface ImageEntry {
   ai_tagged_at?: string;
 }
 
-const VALID_CATEGORIES = [
-  'Kitchen', 'Bathroom', 'Living', 'Bedroom', 'Villa', 'Apartment',
-  'Majlis', 'Dining', 'Outdoor', 'Lighting', 'Storage', 'Renovation',
-  'Materials', 'Workspace',
-];
+const VALID_CATEGORIES = ALL_PORTFOLIO_TAGS as readonly string[];
 
 let _genAI: GoogleGenerativeAI | null = null;
 let _initialized = false;
@@ -71,11 +68,13 @@ export async function analyzeImage(absolutePath: string): Promise<{ labels: stri
 
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+  const categoriesList = VALID_CATEGORIES.join(', ');
   const prompt = `Analyze this interior design / architecture image. Return ONLY a valid JSON object with no markdown, no code blocks, just raw JSON:
 {
   "labels": ["up to 15 descriptive tags: materials, furniture, room features, style keywords"],
-  "categories": ["pick only matching ones from: Kitchen, Bathroom, Living, Bedroom, Villa, Apartment, Majlis, Dining, Outdoor, Lighting, Storage, Renovation, Materials, Workspace"]
-}`;
+  "categories": ["pick only matching ones from: ${categoriesList}"]
+}
+For categories, identify both the room type (Living Room, Bedroom, Kitchen, etc.) AND the design style (Modern, Luxury, Minimalist, Classical, Arabic, Industrial, Scandinavian, Coastal, Art Deco, Bohemian). Include all that apply.`;
 
   const result = await model.generateContent([
     prompt,
