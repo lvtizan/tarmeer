@@ -5,7 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft, Globe, Instagram, MapPin, Briefcase,
   Calendar, FolderOpen, Phone, Mail, ChevronLeft, ChevronRight,
-  Share2, ExternalLink, X, BadgeCheck, ImageIcon, Crown,
+  Share2, ExternalLink, X, BadgeCheck, ImageIcon,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
 import { getCompanyTypeLabel } from '../lib/companyData';
@@ -355,7 +355,7 @@ export default function CompanyDetailPage() {
                 <h1 className="font-serif text-2xl font-semibold text-[#1c1917]">
                   {company.name}
                   {company.isSigned ? (
-                    <Crown className="inline w-5 h-5 ml-1.5 shrink-0 text-[#b8864a]" />
+                    <span className="inline ml-1.5 text-[18px] font-bold italic tracking-[0.08em] shrink-0 bg-gradient-to-b from-[#d4a853] to-[#9a7035] bg-clip-text text-transparent" style={{fontFamily:'Georgia, serif', verticalAlign:'baseline'}}>VIP</span>
                   ) : company.isClaimed ? (
                     <BadgeCheck className="inline w-5 h-5 ml-1.5 text-[#b8864a]/70 shrink-0" />
                   ) : null}
