@@ -117,7 +117,7 @@ export default function CompanyOnboardingPage() {
           api.get('/auth/company/profile').catch(() => null),
         ]);
 
-        const user = meRes.data?.user || meRes.data;
+        const user = meRes?.user || meRes;
         if (user?.full_name) setContactPerson(user.full_name);
 
         // pre-fill phone from user
@@ -129,7 +129,8 @@ export default function CompanyOnboardingPage() {
           }
         }
 
-        const profile = profileRes?.data?.profile || profileRes?.data;
+        const profile = profileRes?.profile || null;
+        const projectCount = profileRes?.projectCount || 0;
         const onboardingStep = profile?.onboarding_step ?? 0;
 
         if (profile) {
@@ -140,10 +141,11 @@ export default function CompanyOnboardingPage() {
           });
           if (profile.company_name) setCompanyName(profile.company_name);
           if (profile.contact_person) setContactPerson(profile.contact_person);
+          if (profile.company_type) setCompanyType(profile.company_type);
         }
 
         // redirect or resume
-        if (onboardingStep >= 2 && profile?.projects_count > 0) {
+        if (onboardingStep >= 2 && projectCount > 0) {
           navigate('/company/dashboard', { replace: true });
           return;
         }
@@ -232,7 +234,7 @@ export default function CompanyOnboardingPage() {
         company_type: 'renovation_company',
         onboarding_step: 1,
       });
-      await api.put('/auth/profile', { phone: fullPhone });
+      await api.put('/auth/me', { phone: fullPhone });
 
       setProfileData({
         company_name: companyName.trim(),
