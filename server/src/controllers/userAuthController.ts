@@ -168,7 +168,12 @@ async function tryDesignerMigrationLogin(email: string, password: string): Promi
   if (designers.length === 0) return null;
 
   const designer = designers[0];
-  if (!designer.email_verified || !designer.password) return null;
+  if (!designer.password) return null;
+  if (!designer.email_verified) {
+    // Account exists but unverified — check-availability now excludes these,
+    // so this path means the user tried to login directly; tell them to re-register
+    throw Object.assign(new Error('This account was not verified. Please register again to create a new account.'), { status: 401 });
+  }
 
   const isValid = await bcrypt.compare(password, designer.password);
   if (!isValid) return null;
@@ -211,10 +216,14 @@ export async function login(req: any, res: any) {
         recordAuthSuccess(req, res, () => {});
         return res.json(adminResult);
       }
-      const designerResult = await tryDesignerMigrationLogin(email, password);
-      if (designerResult) {
-        recordAuthSuccess(req, res, () => {});
-        return res.json(designerResult);
+      try {
+        const designerResult = await tryDesignerMigrationLogin(email, password);
+        if (designerResult) {
+          recordAuthSuccess(req, res, () => {});
+          return res.json(designerResult);
+        }
+      } catch (e: any) {
+        return res.status(e.status || 401).json({ error: e.message || 'Invalid email or password.' });
       }
       recordAuthFailure(req, res, () => {});
       return res.status(401).json({ error: 'Invalid email or password.' });
