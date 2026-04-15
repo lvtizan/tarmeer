@@ -289,7 +289,7 @@ export default function JoinPage() {
         <meta name="twitter:title" content="Join Tarmeer — For Renovation Companies in UAE" />
         <meta name="twitter:description" content="Grow your renovation business with AI-driven leads and GEO+SEO optimization." />
         <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
-        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="robots" content="noindex, nofollow" />
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',

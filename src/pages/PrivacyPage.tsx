@@ -1,8 +1,17 @@
+import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>Privacy Policy - Tarmeer</title>
+        <meta name="description" content="Tarmeer privacy policy. How we handle your data, cookies, and personal information." />
+        <link rel="canonical" href="https://www.tarmeer.com/privacy" />
+        <meta property="og:title" content="Privacy Policy - Tarmeer" />
+        <meta property="og:description" content="Tarmeer privacy policy." />
+        <meta property="og:url" content="https://www.tarmeer.com/privacy" />
+      </Helmet>
       <PageContainer className="py-12 sm:py-16">
         <div className="max-w-4xl mx-auto">
           <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-8">

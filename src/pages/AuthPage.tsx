@@ -199,6 +199,7 @@ export default function AuthPage() {
       <Helmet>
         <title>Sign In / Register - Tarmeer</title>
         <meta name="description" content="Sign in or create your Tarmeer account to connect with interior design and renovation professionals in UAE." />
+        <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://www.tarmeer.com/auth" />
       </Helmet>
       <Navbar forceShowOnAuth />

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
@@ -27,6 +28,10 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7] flex items-center justify-center px-4">
+      <Helmet>
+        <title>Forgot Password - Tarmeer</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-8">
           <h1 className="font-serif text-2xl font-bold text-[#2c2c2c] mb-2 text-center">

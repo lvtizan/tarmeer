@@ -34,6 +34,7 @@ const BlogPage = lazy(() => import('./pages/BlogPage'));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
 const JoinPage = lazy(() => import('./pages/JoinPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Onboarding
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
@@ -191,6 +192,7 @@ function App() {
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:companySlug/:projectSlug" element={<ProjectDetailPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>
           } />

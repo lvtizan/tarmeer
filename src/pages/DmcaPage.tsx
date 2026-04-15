@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
 import { submitComplaint } from '../lib/api';
 
@@ -67,6 +68,14 @@ export default function DmcaPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
+      <Helmet>
+        <title>DMCA Policy - Tarmeer</title>
+        <meta name="description" content="Tarmeer DMCA and copyright policy. How to report copyright infringement." />
+        <link rel="canonical" href="https://www.tarmeer.com/dmca" />
+        <meta property="og:title" content="DMCA Policy - Tarmeer" />
+        <meta property="og:description" content="Tarmeer DMCA and copyright policy." />
+        <meta property="og:url" content="https://www.tarmeer.com/dmca" />
+      </Helmet>
       <PageContainer className="py-12 sm:py-16">
         <div className="max-w-4xl mx-auto">
           <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-8">

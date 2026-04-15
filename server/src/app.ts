@@ -283,6 +283,12 @@ app.get('/api/robots.txt', (req, res) => {
     'Disallow: /admin/',
     'Crawl-delay: 10',
     '',
+    '# Ignore query parameters (prevent duplicate content)',
+    'Disallow: /*?from=',
+    'Disallow: /*?img=',
+    'Disallow: /*?preview=',
+    'Disallow: /*?tab=',
+    '',
     'Sitemap: https://www.tarmeer.com/api/sitemap.xml',
     '',
   ].join('\n'));

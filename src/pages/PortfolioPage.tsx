@@ -261,7 +261,7 @@ function JustifiedGallery({
             {/* Image */}
             <img
               src={resolveVariantUrl(item.src, 'medium')}
-              alt=""
+              alt="Interior design project"
               loading="lazy"
               onError={(e) => { (e.currentTarget as HTMLImageElement).src = resolveImageUrl(item.src); }}
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
