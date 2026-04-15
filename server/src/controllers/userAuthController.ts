@@ -168,7 +168,9 @@ async function tryDesignerMigrationLogin(email: string, password: string): Promi
   if (designers.length === 0) return null;
 
   const designer = designers[0];
-  if (!designer.password) return null;
+  if (!designer.password) {
+    throw Object.assign(new Error('This account was registered with Google. Please use "Continue with Google" to sign in, or use "Forgot password" to set a password.'), { status: 401 });
+  }
   if (!designer.email_verified) {
     // Account exists but unverified — check-availability now excludes these,
     // so this path means the user tried to login directly; tell them to re-register
