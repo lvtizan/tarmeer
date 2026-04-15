@@ -16,6 +16,7 @@ export default function CompanyLayout() {
   const navigate = useNavigate();
   const token = api.getToken();
   const [authValid, setAuthValid] = useState<boolean | null>(token ? null : false);
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -27,15 +28,28 @@ export default function CompanyLayout() {
     api.get('/auth/me')
       .then(() => {
         if (mounted) setAuthValid(true);
+        // Check onboarding status
+        return api.get('/auth/company/profile');
+      })
+      .then((res) => {
+        if (!mounted) return;
+        const profile = res?.profile;
+        const projectCount = res?.projectCount || 0;
+        const step = profile?.onboarding_step || 0;
+        setNeedsOnboarding(projectCount === 0 && step < 2);
       })
       .catch(() => {
+        if (!mounted) return;
+        // If profile fetch fails but auth succeeded, don't block
+        if (authValid === true) {
+          setNeedsOnboarding(true); // no profile = needs onboarding
+          return;
+        }
         api.clearToken();
         safeRemoveItem('user');
         safeRemoveItem('active_role');
-        if (mounted) {
-          setAuthValid(false);
-          navigate('/auth', { replace: true });
-        }
+        setAuthValid(false);
+        navigate('/auth', { replace: true });
       });
 
     return () => {
@@ -44,8 +58,11 @@ export default function CompanyLayout() {
   }, [token, navigate]);
 
   if (!token) return <Navigate to="/auth" replace />;
-  if (authValid !== true) {
+  if (authValid !== true || needsOnboarding === null) {
     return <div className="min-h-screen flex items-center justify-center text-stone-400">Checking session...</div>;
+  }
+  if (needsOnboarding) {
+    return <Navigate to="/company/onboarding" replace />;
   }
 
   return (
