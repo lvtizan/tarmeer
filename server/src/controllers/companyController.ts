@@ -167,7 +167,10 @@ export async function getPortfolioFeed(req: any, res: any) {
       (p): p is NonNullable<typeof p> => p !== null && !seenCompanyNames.has(p.companyName.toLowerCase())
     );
 
-    const allProjects = [...registeredProjects, ...dedupedDirectory];
+    // When tag filter is active, exclude directory projects (they have no tags)
+    const allProjects = tagFilter
+      ? registeredProjects
+      : [...registeredProjects, ...dedupedDirectory];
 
     // Count total for pagination
     const [countResult] = await pool.execute(`
@@ -184,7 +187,7 @@ export async function getPortfolioFeed(req: any, res: any) {
       pagination: {
         page,
         limit,
-        total: registeredTotal + dedupedDirectory.length,
+        total: tagFilter ? registeredTotal : registeredTotal + dedupedDirectory.length,
       },
     });
   } catch (error) {
