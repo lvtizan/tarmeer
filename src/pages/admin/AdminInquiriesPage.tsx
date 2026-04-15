@@ -1,8 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Info } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
+
+const CRM_ACTION_TOOLTIP: Record<string, string> = {
+  created: 'CRM 中新建了一条线索',
+  updated: '已更新到 CRM 已有线索',
+  linked: '该联系人在 CRM 已存在，此次询盘被合并到原线索——CRM 团队可能不会收到新通知，请手动检查',
+  duplicate: '同一联系人已有未处理线索，自动判定为重复',
+  synced: '已同步到 CRM',
+};
+const CRM_STATUS_TOOLTIP = {
+  failed: 'CRM 同步失败，可点击「重新发送」重试',
+  pending: '尚未同步到 CRM',
+};
 
 type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
 type TypeFilter = 'all' | 'homeowner' | 'company';
@@ -443,13 +456,17 @@ export default function AdminInquiriesPage() {
                             ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : 'bg-green-50 text-green-700';
                           const label = action ? (CRM_LABEL[action] || action) : '已同步';
+                          const tip = (action && CRM_ACTION_TOOLTIP[action]) || CRM_ACTION_TOOLTIP.synced;
                           return (
                             <div className="flex flex-col items-start gap-1">
-                              <span
-                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}
-                                title={inq.crm_lead_id ? `CRM lead: ${inq.crm_lead_id}` : undefined}
-                              >
-                                {label}
+                              <span className="inline-flex items-center gap-1">
+                                <span
+                                  className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}
+                                  title={inq.crm_lead_id ? `CRM lead: ${inq.crm_lead_id}` : undefined}
+                                >
+                                  {label}
+                                </span>
+                                <span title={tip} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
                               </span>
                               {isLinked && (
                                 <span className="text-[10px] text-amber-600">已合并 → 请检查</span>
@@ -461,11 +478,14 @@ export default function AdminInquiriesPage() {
                         if (status === 'failed') {
                           return (
                             <div className="flex flex-col items-start gap-1">
-                              <span
-                                className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
-                                title={inq.crm_last_error || undefined}
-                              >
-                                同步失败
+                              <span className="inline-flex items-center gap-1">
+                                <span
+                                  className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
+                                  title={inq.crm_last_error || undefined}
+                                >
+                                  同步失败
+                                </span>
+                                <span title={CRM_STATUS_TOOLTIP.failed} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
                               </span>
                               <button
                                 onClick={() => handleResendCrm(inq.id)}
@@ -481,8 +501,11 @@ export default function AdminInquiriesPage() {
                         // pending (not yet attempted) or legacy rows with no status
                         return (
                           <div className="flex flex-col items-start gap-1">
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
-                              待同步
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
+                                待同步
+                              </span>
+                              <span title={CRM_STATUS_TOOLTIP.pending} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
                             </span>
                             <button
                               onClick={() => handleResendCrm(inq.id)}
