@@ -39,6 +39,7 @@ const JoinPage = lazy(() => import('./pages/JoinPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 
 // Company portal
+const CompanyOnboardingPage = lazy(() => import('./pages/company/CompanyOnboardingPage'));
 const CompanyDashboardPage = lazy(() => import('./pages/company/CompanyDashboardPage'));
 const CompanyProjectsPage = lazy(() => import('./pages/company/CompanyProjectsPage'));
 const CompanyUploadPage = lazy(() => import('./pages/company/CompanyUploadPage'));
@@ -127,6 +128,9 @@ function App() {
 
           {/* ====== Onboarding ====== */}
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+
+          {/* ====== Company Onboarding (independent, no CompanyLayout) ====== */}
+          <Route path="/company/onboarding" element={<ProtectedRoute><CompanyOnboardingPage /></ProtectedRoute>} />
 
           {/* ====== Company ====== */}
           <Route path="/company" element={<ProtectedRoute><CompanyLayout /></ProtectedRoute>}>
