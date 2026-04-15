@@ -5,7 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft, Globe, Instagram, MapPin, Briefcase,
   Calendar, FolderOpen, Phone, Mail, ChevronLeft, ChevronRight,
-  Share2, ExternalLink, X, BadgeCheck, ImageIcon,
+  Share2, ExternalLink, X, BadgeCheck, ImageIcon, Crown,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
 import { getCompanyTypeLabel } from '../lib/companyData';
@@ -355,10 +355,7 @@ export default function CompanyDetailPage() {
                 <h1 className="font-serif text-2xl font-semibold text-[#1c1917]">
                   {company.name}
                   {company.isSigned ? (
-                    <svg className="inline w-6 h-6 ml-1.5 shrink-0" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 2L2 9l3 11h14l3-11L12 2z" fill="#b8864a" fillOpacity="0.12" stroke="#b8864a" strokeWidth="1.5" strokeLinejoin="round"/>
-                      <text x="12" y="16" textAnchor="middle" fill="#b8864a" fontSize="10" fontWeight="bold" fontFamily="sans-serif">V</text>
-                    </svg>
+                    <Crown className="inline w-5 h-5 ml-1.5 shrink-0 text-[#b8864a]" />
                   ) : company.isClaimed ? (
                     <BadgeCheck className="inline w-5 h-5 ml-1.5 text-[#b8864a]/70 shrink-0" />
                   ) : null}

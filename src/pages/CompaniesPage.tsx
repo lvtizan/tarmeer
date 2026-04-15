@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck } from 'lucide-react';
+import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Crown, Mail, BadgeCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import type { Company } from '../lib/companyData';
@@ -124,10 +124,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
             <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
               {company.name}
               {company.isSigned ? (
-                <svg className="inline w-5 h-5 ml-1 shrink-0" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L2 9l3 11h14l3-11L12 2z" fill="#b8864a" fillOpacity="0.12" stroke="#b8864a" strokeWidth="1.5" strokeLinejoin="round"/>
-                  <text x="12" y="16" textAnchor="middle" fill="#b8864a" fontSize="10" fontWeight="bold" fontFamily="sans-serif">V</text>
-                </svg>
+                <Crown className="inline w-4 h-4 ml-1 shrink-0 text-[#b8864a]" />
               ) : company.isClaimed ? (
                 <BadgeCheck className="inline w-4 h-4 ml-1 text-[#b8864a]/70 shrink-0" />
               ) : null}
