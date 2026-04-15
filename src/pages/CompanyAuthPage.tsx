@@ -78,8 +78,20 @@ function JoinAuthCard() {
     setError(null);
     if (isNewEmail === true) {
       await performRegister();
-    } else {
+    } else if (isNewEmail === false) {
       await performLogin();
+    } else {
+      // null: debounce 还没跑完，同步查一次再决定
+      try {
+        const result = await api.post('/auth/check-availability', { email });
+        if (result.emailAvailable === true) {
+          await performRegister();
+        } else {
+          await performLogin();
+        }
+      } catch {
+        await performLogin();
+      }
     }
   };
 
