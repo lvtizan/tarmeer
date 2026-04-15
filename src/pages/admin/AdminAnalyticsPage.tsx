@@ -20,6 +20,12 @@ const GOOGLE_ANALYTICS_URL = 'https://analytics.google.com/analytics/web/#/p4884
 
 const VISITOR_PAGE_SIZE = 50;
 
+interface DailyRegistrationRow {
+  stat_date: string;
+  homeowner_count: number;
+  company_count: number;
+}
+
 interface CompanyVisitorRow {
   page_path: string;
   company_name: string;
@@ -44,6 +50,7 @@ export default function AdminAnalyticsPage() {
   const [overview, setOverview] = useState<AnalyticsOverview>(INITIAL_OVERVIEW);
   const [visitorIpCount, setVisitorIpCount] = useState(0);
   const [companyVisitors, setCompanyVisitors] = useState<CompanyVisitorRow[]>([]);
+  const [dailyRegistrations, setDailyRegistrations] = useState<DailyRegistrationRow[]>([]);
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
   const [visitorTotal, setVisitorTotal] = useState(0);
   const [visitorPage, setVisitorPage] = useState(1);
@@ -66,14 +73,16 @@ export default function AdminAnalyticsPage() {
   const loadInitial = async () => {
     setLoading(true);
     try {
-      const [overviewResult, visitorOverview, companyResult] = await Promise.all([
+      const [overviewResult, visitorOverview, companyResult, regResult] = await Promise.all([
         adminApi.getAnalyticsOverview(),
         adminApi.getVisitorOverview(),
         adminApi.getCompanyVisitors(),
+        adminApi.getDailyRegistrations(),
       ]);
       setOverview(overviewResult.overview);
       setVisitorIpCount(visitorOverview.uniqueIpCount);
       setCompanyVisitors(companyResult.companies || []);
+      setDailyRegistrations(regResult.dailyRegistrations || []);
     } finally {
       setLoading(false);
     }
@@ -134,6 +143,9 @@ export default function AdminAnalyticsPage() {
         <StatCard label="WhatsApp Clicks" value={formatCount(overview.whatsapp_clicks)} />
         <StatCard label="Contact Submits" value={formatCount(overview.contact_submits)} />
       </div>
+
+      {/* Daily Registrations Chart */}
+      <DailyRegistrationsChart rows={dailyRegistrations} />
 
       {/* Company Visitors Chart */}
       <CompanyVisitorsChart rows={companyVisitors} />
@@ -329,6 +341,61 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-stone-200 bg-white p-4">
       <p className="text-xs text-stone-500 uppercase tracking-wide">{label}</p>
       <p className="text-xl font-bold text-[#2c2c2c] mt-1">{value}</p>
+    </div>
+  );
+}
+
+function DailyRegistrationsChart({ rows }: { rows: DailyRegistrationRow[] }) {
+  const maxCount = rows.reduce(
+    (max, r) => Math.max(max, Number(r.homeowner_count) || 0, Number(r.company_count) || 0),
+    0
+  );
+  const CHART_H = 220;
+
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  return (
+    <div className="rounded-lg border border-stone-200 bg-white p-4 mb-6">
+      <h2 className="text-lg font-semibold text-[#2c2c2c] mb-1">Daily Registrations</h2>
+      <p className="text-xs text-stone-500 mb-4">Homeowner vs. Company signups per day</p>
+
+      <div className="flex items-center gap-4 text-xs text-stone-600 mb-3">
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-[#b8864a]" />Homeowner</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-[#6b6b6b]" />Company</span>
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="text-sm text-stone-500 py-6">No registration data yet.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <div className="flex items-end gap-4 pt-8" style={{ minHeight: CHART_H + 48 }}>
+            {rows.map((r) => {
+              const h = Number(r.homeowner_count) || 0;
+              const c = Number(r.company_count) || 0;
+              const hPx = maxCount > 0 ? Math.max(h > 0 ? 2 : 0, Math.round((h / maxCount) * CHART_H)) : 0;
+              const cPx = maxCount > 0 ? Math.max(c > 0 ? 2 : 0, Math.round((c / maxCount) * CHART_H)) : 0;
+              return (
+                <div key={r.stat_date} className="flex flex-col items-center gap-2 shrink-0">
+                  <div className="flex items-end gap-1" style={{ height: CHART_H }}>
+                    <div className="relative flex flex-col items-center justify-end" style={{ width: 18, height: CHART_H }}>
+                      <span className="absolute text-[11px] font-medium text-[#2c2c2c] tabular-nums" style={{ bottom: hPx + 24 }}>{h}</span>
+                      <div className="rounded-t-sm bg-[#b8864a]" style={{ width: 18, height: hPx }} />
+                    </div>
+                    <div className="relative flex flex-col items-center justify-end" style={{ width: 18, height: CHART_H }}>
+                      <span className="absolute text-[11px] font-medium text-[#2c2c2c] tabular-nums" style={{ bottom: cPx + 24 }}>{c}</span>
+                      <div className="rounded-t-sm bg-[#6b6b6b]" style={{ width: 18, height: cPx }} />
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-stone-500 whitespace-nowrap">{formatDate(r.stat_date)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

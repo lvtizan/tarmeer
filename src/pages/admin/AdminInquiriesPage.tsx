@@ -199,6 +199,23 @@ export default function AdminInquiriesPage() {
     loadInquiries();
   };
 
+  const [counts, setCounts] = useState<{ homeowner: number; company: number }>({ homeowner: 0, company: 0 });
+  useEffect(() => {
+    (async () => {
+      try {
+        const [all, companyRes] = await Promise.all([
+          adminApi.getInquiries({ page: 1, limit: 1 }),
+          adminApi.getInquiries({ page: 1, limit: 1, search: '[Company Inquiry]' }),
+        ]);
+        const total = all.pagination.total;
+        const company = companyRes.pagination.total;
+        setCounts({ homeowner: Math.max(0, total - company), company });
+      } catch {
+        // non-blocking; leave counts at 0
+      }
+    })();
+  }, [viewMode]);
+
   const [resendingId, setResendingId] = useState<number | null>(null);
   const handleResendCrm = async (id: number) => {
     setResendingId(id);
@@ -219,15 +236,29 @@ export default function AdminInquiriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-800">Inquiries</h1>
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
-        >
-          Export Excel
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold text-stone-800">Inquiries</h1>
+
+      {/* Stats bars — right-aligned horizontal bars */}
+      {(() => {
+        const max = Math.max(counts.homeowner, counts.company, 1);
+        const Row = ({ label, value, color }: { label: string; value: number; color: string }) => (
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-stone-500 w-20 text-right shrink-0">{label}</span>
+            <div className="flex-1 flex justify-end">
+              <div className="h-5 rounded-full" style={{ width: `${(value / max) * 100}%`, backgroundColor: color, minWidth: value > 0 ? '8px' : 0 }} />
+            </div>
+            <span className="text-sm font-medium text-[#2c2c2c] w-12 text-right tabular-nums">{value}</span>
+          </div>
+        );
+        return (
+          <div className="flex justify-end">
+            <div className="w-full max-w-md bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-2">
+              <Row label="业主询单数" value={counts.homeowner} color="#b8864a" />
+              <Row label="公司线索" value={counts.company} color="#6b6b6b" />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* View mode tabs */}
       <div className="flex gap-2">
@@ -269,7 +300,7 @@ export default function AdminInquiriesPage() {
             ]}
           />
         </div>
-        <div className="flex-1 min-w-[200px]">
+        <div className="w-56">
           <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
           <input
             type="text" value={search}
@@ -277,6 +308,14 @@ export default function AdminInquiriesPage() {
             placeholder="Name or phone..."
             className="h-9 w-full px-3 border border-stone-200 rounded-lg text-sm bg-white"
           />
+        </div>
+        <div className="ml-auto">
+          <button
+            onClick={handleExport}
+            className="h-9 px-4 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
+          >
+            Export Excel
+          </button>
         </div>
       </div>
 
@@ -456,8 +495,8 @@ export default function AdminInquiriesPage() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-stone-500 text-xs">
-                      {new Date(inq.created_at).toLocaleDateString()}
+                    <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">
+                      {new Date(inq.created_at).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
                     </td>
                   </tr>
                   {expandedId === inq.id && (

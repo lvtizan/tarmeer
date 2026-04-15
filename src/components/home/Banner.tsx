@@ -20,14 +20,6 @@ export default function Banner() {
 
   const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
-  const getAreaRange = (value: number) => {
-    if (value < 50) return '< 50m²';
-    if (value <= 100) return '50-100m²';
-    if (value <= 200) return '100-200m²';
-    if (value <= 500) return '200-500m²';
-    return '500m²+';
-  };
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -53,7 +45,7 @@ export default function Banner() {
           name: 'Website Visitor',
           phone: `${phoneRegion.code}${phone}`,
           city: 'Dubai',
-          area_range: getAreaRange(numericArea),
+          area_range: `${numericArea}m²`,
           message: `Quick booking from home banner. Area: ${numericArea}m².`,
         }),
       });
