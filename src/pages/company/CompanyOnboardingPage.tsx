@@ -46,12 +46,13 @@ const SPECIALTIES = [
 ];
 
 const COMPANY_TYPES = [
-  { value: 'Renovation Company', label: 'Renovation Company' },
-  { value: 'Interior Design Studio', label: 'Interior Design Studio' },
-  { value: 'Architecture Firm', label: 'Architecture Firm' },
-  { value: 'Fit-Out Contractor', label: 'Fit-Out Contractor' },
-  { value: 'Design & Build', label: 'Design & Build' },
-  { value: 'Other', label: 'Other' },
+  { value: 'renovation_company', label: 'Renovation Company' },
+  { value: 'design_studio', label: 'Interior Design Studio' },
+  { value: 'general_contractor', label: 'General Contractor' },
+  { value: 'mep_contractor', label: 'MEP Contractor' },
+  { value: 'maintenance_company', label: 'Maintenance Company' },
+  { value: 'specialty_trade', label: 'Specialty Trade' },
+  { value: 'landscaping', label: 'Landscaping' },
 ];
 
 const CITY_OPTIONS = [
@@ -98,7 +99,7 @@ export default function CompanyOnboardingPage() {
   const [services, setServices] = useState<string[]>([]);
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [website, setWebsite] = useState('');
-  const [companyType, setCompanyType] = useState('');
+  const [companyType, setCompanyType] = useState('renovation_company');
 
   // cached profile data for step 2/3 re-posts
   const [profileData, setProfileData] = useState<{ company_name: string; contact_person: string; phone: string }>({
@@ -228,6 +229,7 @@ export default function CompanyOnboardingPage() {
         company_name: companyName.trim(),
         contact_person: contactPerson.trim(),
         phone: fullPhone,
+        company_type: 'renovation_company',
         onboarding_step: 1,
       });
       await api.put('/auth/profile', { phone: fullPhone });
