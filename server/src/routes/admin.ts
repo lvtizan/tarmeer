@@ -195,8 +195,8 @@ router.delete('/roles/companies/:companyId/projects/:projectId', deleteAdminProj
 router.put('/roles/companies/:companyId/projects/:projectId/restore', restoreAdminProject);
 
 // Weight system: toggle signed status
-router.put('/roles/companies/:id/toggle-signed', requireSuperAdmin, toggleCompanyProfileSigned);
-router.put('/companies/:companyId/toggle-signed', requireSuperAdmin, toggleDirectorySigned);
+router.put('/roles/companies/:id/toggle-signed', toggleCompanyProfileSigned);
+router.put('/companies/:companyId/toggle-signed', toggleDirectorySigned);
 
 // Weight config management
 router.get('/weight-config', requireSuperAdmin, getWeightConfigList);
