@@ -5,6 +5,7 @@ import {
   Link2, Loader2, FolderOpen, Image, Pencil,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { showToast } from '../../components/ui/Toast';
 import { getDroppedImageFiles } from '../../lib/dropFiles';
 import SelectField from '../../components/form/SelectField';
 import {
@@ -82,7 +83,6 @@ export default function CompanyProjectsPage() {
 
   /* ── submit ── */
   const [submitting, setSubmitting] = useState(false);
-  const [msg, setMsg] = useState('');
   const [tried, setTried] = useState(false);
 
   /* ── existing projects ── */
@@ -150,8 +150,7 @@ export default function CompanyProjectsPage() {
   const submit = async (publish: boolean) => {
     setTried(true);
     if(!form.title.trim()||!form.style||!form.location||imgs.length===0){return}
-    setSubmitting(true);setMsg('');
-    try{
+    setSubmitting(true);    try{
       const ordered=[imgs[cover],...imgs.filter((_,i)=>i!==cover)];
       const payload = {
         title: form.title,
@@ -167,16 +166,16 @@ export default function CompanyProjectsPage() {
 
       if (editingProjectId) {
         await api.put(`/projects/${editingProjectId}`, payload);
-        setMsg(publish ? 'Project updated and submitted for review!' : 'Draft updated!');
+        showToast(publish ? 'Project updated and submitted for review!' : 'Draft updated!', 'success');
       } else {
         await api.post('/projects', payload);
-        setMsg(publish ? 'Project submitted for review!' : 'Draft saved!');
+        showToast(publish ? 'Project submitted for review!' : 'Draft saved!', 'success');
       }
 
       setEditingProjectId(null);
       setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});setTags([]);setImgs([]);setFps([]);setImageEntries([]);setCover(0);
       refreshProjects();
-    }catch(e:any){setMsg(e.message||'Failed')}finally{setSubmitting(false)}
+    }catch(e:any){showToast(e.message||'Failed', 'error')}finally{setSubmitting(false)}
   };
 
   const startEdit = (project: any) => {
@@ -200,8 +199,7 @@ export default function CompanyProjectsPage() {
     setImgs(projectImages);
     setFps(projectImages.map((url, index) => `existing:${project.id}:${index}:${url.slice(-30)}`));
     setCover(0);
-    setMsg('');
-    setTried(false);
+        setTried(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -214,8 +212,7 @@ export default function CompanyProjectsPage() {
     setImageEntries([]);
     setCover(0);
     setTried(false);
-    setMsg('');
-  };
+      };
 
   const removeProject = async (projectId: number) => {
     if (!window.confirm('Delete this project?')) return;
@@ -225,9 +222,9 @@ export default function CompanyProjectsPage() {
         cancelEdit();
       }
       refreshProjects();
-      setMsg('Project deleted.');
+      showToast('Project deleted.', 'success');
     } catch (error: any) {
-      setMsg(error?.message || 'Failed to delete project.');
+      showToast(error?.message || 'Failed to delete project.', 'error');
     }
   };
 
@@ -277,7 +274,6 @@ export default function CompanyProjectsPage() {
           </div>
         </div>
 
-        {msg && <div className={`mb-3 rounded-lg border p-3 text-sm ${msg.includes('Failed')||msg.includes('required')?'border-red-200 bg-red-50 text-red-700':'border-green-200 bg-green-50 text-green-700'}`}>{msg}</div>}
 
         {/* ── Left-Right layout (same as /designer/upload) ── */}
         <form onSubmit={e=>e.preventDefault()} className="grid w-full items-start gap-4 xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.04fr)]">

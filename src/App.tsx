@@ -4,6 +4,7 @@ import { AdminProvider } from './contexts/AdminContext';
 import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
 import GoogleOneTap from './components/GoogleOneTap';
+import ToastContainer from './components/ui/Toast';
 
 const Layout = lazy(() => import('./components/Layout'));
 const CompanyLayout = lazy(() => import('./components/company/CompanyLayout'));
@@ -99,6 +100,7 @@ function App() {
     <>
       <SeoManager />
       <GoogleOneTap />
+      <ToastContainer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* ====== Admin ====== */}
