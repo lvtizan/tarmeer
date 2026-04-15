@@ -29,6 +29,7 @@ import {
   getStatsOverview,
   getActivityLogs,
   getRegistrationStats,
+  getDailyStatsReport,
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
@@ -104,6 +105,7 @@ router.put('/password', changePassword);
 // Stats (requires can_view_stats permission)
 router.get('/stats/overview', requirePermission('can_view_stats'), getStatsOverview);
 router.get('/stats/registrations', getRegistrationStats);
+router.get('/stats/daily', requirePermission('can_view_stats'), getDailyStatsReport);
 router.get('/activity-logs', getActivityLogs);
 router.get('/visitors/overview', requirePermission('can_view_stats'), getVisitorOverview);
 router.get('/visitors', requirePermission('can_view_stats'), listVisitors);

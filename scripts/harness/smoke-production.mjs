@@ -97,6 +97,29 @@ await test('Page Access', 'admin.tarmeer.com returns 200', async () => {
   if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
 });
 
+await test('Cache Headers', 'index.html has no-cache directive', async () => {
+  const res = await fetch(`${BASE}/index.html`, { redirect: 'follow' });
+  const cc = res.headers.get('cache-control') || '';
+  if (!cc.includes('no-cache') && !cc.includes('no-store')) {
+    throw new Error(`Expected no-cache/no-store on index.html, got: "${cc}"`);
+  }
+});
+
+await test('Cache Headers', '/assets/ JS bundle has immutable cache', async () => {
+  // Fetch the HTML first to extract an actual asset URL
+  const htmlRes = await fetch(BASE, { redirect: 'follow' });
+  const html = await htmlRes.text();
+  const match = html.match(/src="(\/assets\/[^"]+\.js)"/);
+  if (!match) throw new Error('Could not find /assets/*.js reference in homepage HTML');
+  const assetUrl = `${BASE}${match[1]}`;
+  const assetRes = await fetch(assetUrl);
+  if (assetRes.status !== 200) throw new Error(`Asset ${match[1]} returned ${assetRes.status}`);
+  const cc = assetRes.headers.get('cache-control') || '';
+  if (!cc.includes('immutable') && !cc.includes('max-age=31536000')) {
+    throw new Error(`Expected immutable cache on asset, got: "${cc}"`);
+  }
+});
+
 // ── Output ───────────────────────────────────────────────────────────
 
 console.log(`\n🔍 Production Smoke Test: ${BASE}\n`);

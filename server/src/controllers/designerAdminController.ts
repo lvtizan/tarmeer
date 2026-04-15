@@ -783,6 +783,93 @@ export async function getActivityLogs(req: any, res: Response) {
   }
 }
 
+export async function getDailyStatsReport(req: any, res: Response) {
+  const days = Math.min(parseInt(req.query.days as string) || 30, 90);
+  try {
+    // Generate a date series for the requested range
+    const [dateRows] = await pool.query(
+      `SELECT DATE(DATE_SUB(CURDATE(), INTERVAL seq DAY)) as d
+       FROM (SELECT 0 seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
+             UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+             UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14
+             UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19
+             UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24
+             UNION SELECT 25 UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29
+             UNION SELECT 30 UNION SELECT 31 UNION SELECT 32 UNION SELECT 33 UNION SELECT 34
+             UNION SELECT 35 UNION SELECT 36 UNION SELECT 37 UNION SELECT 38 UNION SELECT 39
+             UNION SELECT 40 UNION SELECT 41 UNION SELECT 42 UNION SELECT 43 UNION SELECT 44
+             UNION SELECT 45 UNION SELECT 46 UNION SELECT 47 UNION SELECT 48 UNION SELECT 49
+             UNION SELECT 50 UNION SELECT 51 UNION SELECT 52 UNION SELECT 53 UNION SELECT 54
+             UNION SELECT 55 UNION SELECT 56 UNION SELECT 57 UNION SELECT 58 UNION SELECT 59
+             UNION SELECT 60 UNION SELECT 61 UNION SELECT 62 UNION SELECT 63 UNION SELECT 64
+             UNION SELECT 65 UNION SELECT 66 UNION SELECT 67 UNION SELECT 68 UNION SELECT 69
+             UNION SELECT 70 UNION SELECT 71 UNION SELECT 72 UNION SELECT 73 UNION SELECT 74
+             UNION SELECT 75 UNION SELECT 76 UNION SELECT 77 UNION SELECT 78 UNION SELECT 79
+             UNION SELECT 80 UNION SELECT 81 UNION SELECT 82 UNION SELECT 83 UNION SELECT 84
+             UNION SELECT 85 UNION SELECT 86 UNION SELECT 87 UNION SELECT 88 UNION SELECT 89) t
+       WHERE seq < ${days}
+       ORDER BY d ASC`
+    ) as any[];
+
+    const dates: string[] = dateRows.map((r: any) => r.d instanceof Date ? r.d.toISOString().slice(0, 10) : String(r.d).slice(0, 10));
+
+    const [userRows] = await pool.query(
+      `SELECT DATE(created_at) as date, COUNT(*) as count
+       FROM users
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY) AND deleted_at IS NULL
+       GROUP BY DATE(created_at)`
+    ) as any[];
+
+    const [companyRows] = await pool.query(
+      `SELECT DATE(created_at) as date, COUNT(*) as count
+       FROM company_profiles
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY) AND deleted_at IS NULL
+       GROUP BY DATE(created_at)`
+    ) as any[];
+
+    const [inquiryRows] = await pool.query(
+      `SELECT DATE(created_at) as date, COUNT(*) as count
+       FROM inquiries
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY)
+       GROUP BY DATE(created_at)`
+    ) as any[];
+
+    const toMap = (rows: any[]) => {
+      const m: Record<string, number> = {};
+      for (const r of rows) {
+        const d = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
+        m[d] = Number(r.count);
+      }
+      return m;
+    };
+
+    const uMap = toMap(userRows);
+    const cMap = toMap(companyRows);
+    const iMap = toMap(inquiryRows);
+
+    const data = dates.map((date) => ({
+      date,
+      new_homeowners: uMap[date] || 0,
+      new_companies: cMap[date] || 0,
+      new_inquiries: iMap[date] || 0,
+    }));
+
+    const totals = data.reduce(
+      (acc, r) => ({
+        new_homeowners: acc.new_homeowners + r.new_homeowners,
+        new_companies: acc.new_companies + r.new_companies,
+        new_inquiries: acc.new_inquiries + r.new_inquiries,
+      }),
+      { new_homeowners: 0, new_companies: 0, new_inquiries: 0 }
+    );
+
+    res.json({ data, totals, days });
+  } catch (error) {
+    console.error('Daily stats error:', error);
+    res.status(500).json({ error: 'Failed to get daily stats.' });
+  }
+}
+
 export async function getRegistrationStats(req: any, res: Response) {
   const days = Math.min(parseInt(req.query.days as string) || 30, 90);
   try {

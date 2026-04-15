@@ -102,14 +102,12 @@ export default function AdminCompaniesPage() {
   const loadProfiles = useCallback(async () => {
     setProfileLoading(true);
     try {
-      const activeSortBy = profileUpdatedSortActive ? 'updated_at' : profileSortActive ? 'project_count' : undefined;
-      const activeSortDir = profileUpdatedSortActive ? profileUpdatedSortDir : profileSortActive ? profileSortDir : undefined;
       const result = await adminApi.getRegisteredCompanies({
         page: profilePage, limit: 20,
         status: profileStatusFilter === 'all' ? undefined : profileStatusFilter,
         search: profileSearch || undefined,
-        sort_by: activeSortBy,
-        sort_dir: activeSortDir,
+        sort_by: profileUpdatedSortActive ? 'updated_at' : profileSortActive ? 'project_count' : undefined,
+        sort_dir: profileUpdatedSortActive ? profileUpdatedSortDir : profileSortActive ? profileSortDir : undefined,
       });
       setProfiles(result.companies);
       setProfileTotal(result.total);
@@ -369,16 +367,10 @@ export default function AdminCompaniesPage() {
             orderSavingId={orderSavingId}
             sortDir={profileSortDir}
             sortActive={profileSortActive}
-            onSortToggle={() => { setProfileUpdatedSortActive(false); toggleSort(profileSortActive, setProfileSortActive, profileSortDir, setProfileSortDir, setProfilePage); }}
-            updatedSortActive={profileUpdatedSortActive}
+            onSortToggle={() => toggleSort(profileSortActive, setProfileSortActive, profileSortDir, setProfileSortDir, setProfilePage)}
             updatedSortDir={profileUpdatedSortDir}
-            onUpdatedSortToggle={() => {
-              setProfileSortActive(false);
-              if (!profileUpdatedSortActive) { setProfileUpdatedSortActive(true); setProfileUpdatedSortDir('desc'); }
-              else if (profileUpdatedSortDir === 'desc') { setProfileUpdatedSortDir('asc'); }
-              else { setProfileUpdatedSortActive(false); }
-              setProfilePage(1);
-            }}
+            updatedSortActive={profileUpdatedSortActive}
+            onUpdatedSortToggle={() => toggleSort(profileUpdatedSortActive, setProfileUpdatedSortActive, profileUpdatedSortDir, setProfileUpdatedSortDir, setProfilePage)}
             onToggleSigned={async (id, isSigned) => {
               try {
                 await adminApi.toggleCompanySigned(id, isSigned);

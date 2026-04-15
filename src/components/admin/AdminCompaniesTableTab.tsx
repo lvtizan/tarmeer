@@ -18,6 +18,7 @@ interface CompanyProfileRecord {
   user_email: string;
   project_count: number;
   created_at: string;
+  updated_at?: string;
   is_signed?: boolean;
   weight_score?: number;
 }
@@ -45,6 +46,9 @@ interface AdminCompaniesTableTabProps {
   onSortToggle: () => void;
   onBulkUnapprove?: (ids: number[]) => void;
   onToggleSigned?: (id: number, isSigned: boolean) => void;
+  updatedSortActive?: boolean;
+  updatedSortDir?: SortDir;
+  onUpdatedSortToggle?: () => void;
 }
 
 export default function AdminCompaniesTableTab({
@@ -62,6 +66,9 @@ export default function AdminCompaniesTableTab({
   onSortToggle,
   onBulkUnapprove,
   onToggleSigned,
+  updatedSortActive,
+  updatedSortDir,
+  onUpdatedSortToggle,
 }: AdminCompaniesTableTabProps) {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -159,16 +166,22 @@ export default function AdminCompaniesTableTab({
               <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">Signed</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">已签约</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Weight</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Joined</th>
+              <th
+                className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
+                onClick={onUpdatedSortToggle}
+              >
+                更新时间 {updatedSortActive ? (updatedSortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
+              </th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <TableSpinner colSpan={11} />
+              <TableSpinner colSpan={12} />
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={11} className="text-center py-12 text-stone-400">No records</td></tr>
+              <tr><td colSpan={12} className="text-center py-12 text-stone-400">No records</td></tr>
             ) : profiles.map((c) => (
               <tr
                 key={c.id}
@@ -248,6 +261,7 @@ export default function AdminCompaniesTableTab({
                 </td>
                 <td className="px-4 py-3 text-stone-600 text-xs font-mono">{c.weight_score ?? '—'}</td>
                 <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-stone-500 text-xs">{c.updated_at ? new Date(c.updated_at).toLocaleDateString() : '—'}</td>
               </tr>
             ))}
           </tbody>

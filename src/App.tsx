@@ -75,6 +75,7 @@ const AdminCompanyImportPage = lazy(() => import('./pages/admin/AdminCompanyImpo
 const AdminCompanyDetailPage = lazy(() => import('./pages/admin/AdminCompanyDetailPage'));
 const AdminRegisteredCompanyDetailPage = lazy(() => import('./pages/admin/AdminRegisteredCompanyDetailPage'));
 const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'));
+const AdminStatsPage = lazy(() => import('./pages/admin/AdminStatsPage'));
 const AdminProjectDetailPage = lazy(() => import('./pages/admin/AdminProjectDetailPage'));
 
 function PageLoader() {
@@ -123,6 +124,7 @@ function App() {
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />
             <Route path="company-import" element={<AdminCompanyImportPage />} />
             <Route path="help" element={<AdminHelpPage />} />
+            <Route path="stats" element={<AdminStatsPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/forgot-password" element={<Layout navbarVariant="admin-auth"><AdminForgotPasswordPage /></Layout>} />

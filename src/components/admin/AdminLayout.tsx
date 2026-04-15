@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, BarChart2 } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -46,6 +46,11 @@ const navItems = [
     to: '/admin/notification-emails', labelEn: 'Notify Emails', labelZh: '通知邮箱', icon: Mail,
     infoEn: 'Configure recipients for system notifications to ensure operational events are delivered.',
     infoZh: '配置系统通知接收邮箱，确保运营事件及时送达。',
+  },
+  {
+    to: '/admin/stats', labelEn: 'Stats Report', labelZh: '数据报表', icon: BarChart2, permission: 'can_view_stats' as const,
+    infoEn: 'Daily registration trends for homeowners, companies, and inquiries.',
+    infoZh: '每日注册趋势报表，含业主、公司与询盘数据。',
   },
   {
     to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,

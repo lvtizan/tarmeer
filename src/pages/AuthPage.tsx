@@ -115,9 +115,20 @@ export default function AuthPage() {
     // If we know it's a new email, register directly
     if (isNewEmail === true) {
       await performRegister();
-    } else {
-      // Existing email or unknown, try login first
+    } else if (isNewEmail === false) {
       await performLogin();
+    } else {
+      // null: debounce hasn't resolved yet — check synchronously before deciding
+      try {
+        const result = await api.post('/auth/check-availability', { email });
+        if (result.emailAvailable === true) {
+          await performRegister();
+        } else {
+          await performLogin();
+        }
+      } catch {
+        await performLogin();
+      }
     }
   };
 
@@ -382,7 +393,6 @@ export default function AuthPage() {
                     >
                       Continue with email
                     </button>
-                    {error && error.includes('email') && <p className="text-sm text-red-500 mt-2">{error}</p>}
                   </form>
 
                   {/* Terms */}
