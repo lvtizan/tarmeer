@@ -382,7 +382,19 @@ export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, ta
 }> {
   const seedParam = seed ? `&seed=${seed}` : '';
   const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
-  return request(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}${tagParam}`);
+  const response = await request<{
+    projects: Array<Omit<PortfolioProject, 'images'> & { images: unknown }>;
+    pagination: { page: number; limit: number; total: number };
+  }>(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}${tagParam}`);
+
+  // Defensive: older backends (or any future regressions) may leak the raw
+  // `[{url, ai_tags, ...}, ...]` shape from Gemini-tagged projects into the
+  // response. parseJsonArray/extractUrl unwrap that back to string URLs so
+  // the waterfall doesn't silently hide every tagged project.
+  return {
+    ...response,
+    projects: response.projects.map(p => ({ ...p, images: parseJsonArray(p.images) })),
+  };
 }
 
 export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {

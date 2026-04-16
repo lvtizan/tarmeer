@@ -5,6 +5,7 @@ import {
   buildPublicCompanyDetailQuery,
 } from '../lib/publicCompaniesQuery';
 import { slugify } from '../lib/slugify';
+import { extractImageUrls } from '../lib/projectImagesSerialization';
 
 const PUBLIC_COMPANY_WHERE = `WHERE is_active = 1`;
 
@@ -68,13 +69,12 @@ export async function getPortfolioFeed(req: any, res: any) {
       LIMIT ${Number(limit)} OFFSET ${Number(offset)}
     `);
 
-    // Format registered company projects
+    // Format registered company projects.
+    // `row.images` may be the legacy ["url", ...] shape or the Gemini-tagged
+    // [{url, ai_tags, ...}, ...] shape — extractImageUrls normalizes both into
+    // a flat string array so the frontend <img src> resolves correctly.
     const registeredProjects = (rows as any[]).map(row => {
-      let images: string[] = [];
-      try {
-        const parsed = typeof row.images === 'string' ? JSON.parse(row.images) : row.images;
-        if (Array.isArray(parsed)) images = parsed.filter(Boolean);
-      } catch { /* skip malformed JSON */ }
+      const images = extractImageUrls(row.images);
       let tags: string[] = [];
       try {
         const parsed = typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags;
@@ -249,11 +249,9 @@ export async function getPublicProjectDetail(req: any, res: any) {
       );
       if ((projRows as any[]).length > 0) {
         project = (projRows as any[])[0];
-        // Parse images/tags - handle both string and already-parsed array
-        if (typeof project.images === 'string') {
-          try { project.images = JSON.parse(project.images); } catch { project.images = []; }
-        }
-        if (!Array.isArray(project.images)) project.images = [];
+        // Normalize images: supports legacy ["url",...] and Gemini-tagged
+        // [{url, ai_tags, ...},...] shapes. Tags are always plain strings.
+        project.images = extractImageUrls(project.images);
         if (typeof project.tags === 'string') {
           try { project.tags = JSON.parse(project.tags); } catch { project.tags = []; }
         }
