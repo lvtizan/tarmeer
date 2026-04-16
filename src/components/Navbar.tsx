@@ -33,32 +33,8 @@ const serviceCategories = {
   ],
 };
 
-const portfolioCategories = {
-  'By Room': [
-    { label: 'Living Room', to: '/portfolio?tag=Living+Room' },
-    { label: 'Bedroom', to: '/portfolio?tag=Bedroom' },
-    { label: 'Kitchen', to: '/portfolio?tag=Kitchen' },
-    { label: 'Bathroom', to: '/portfolio?tag=Bathroom' },
-    { label: 'Dining Room', to: '/portfolio?tag=Dining+Room' },
-    { label: 'Home Office', to: '/portfolio?tag=Home+Office' },
-    { label: 'Majlis', to: '/portfolio?tag=Majlis' },
-    { label: 'Hallway', to: '/portfolio?tag=Hallway' },
-    { label: 'Nursery', to: '/portfolio?tag=Nursery' },
-    { label: 'Patio', to: '/portfolio?tag=Patio' },
-  ],
-  'By Style': [
-    { label: 'Modern', to: '/portfolio?tag=Modern' },
-    { label: 'Luxury', to: '/portfolio?tag=Luxury' },
-    { label: 'Minimalist', to: '/portfolio?tag=Minimalist' },
-    { label: 'Classical', to: '/portfolio?tag=Classical' },
-    { label: 'Arabic', to: '/portfolio?tag=Arabic' },
-    { label: 'Industrial', to: '/portfolio?tag=Industrial' },
-    { label: 'Scandinavian', to: '/portfolio?tag=Scandinavian' },
-    { label: 'Coastal', to: '/portfolio?tag=Coastal' },
-    { label: 'Art Deco', to: '/portfolio?tag=Art+Deco' },
-    { label: 'Bohemian', to: '/portfolio?tag=Bohemian' },
-  ],
-};
+// portfolioCategories — kept for when /portfolio is re-enabled
+// const portfolioCategories = { ... };
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -75,7 +51,6 @@ export default function Navbar({
 }) {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
@@ -137,59 +112,7 @@ export default function Navbar({
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
 
-          {/* Portfolio Dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setPortfolioDropdownOpen(true)}
-            onMouseLeave={() => setPortfolioDropdownOpen(false)}
-          >
-            <Link
-              to="/portfolio"
-              onClick={() => { handleClick('/portfolio'); setPortfolioDropdownOpen(false); }}
-              className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-            >
-              Portfolio
-              <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
-            </Link>
-            <AnimatePresence>
-              {portfolioDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50"
-                >
-                  <div className="p-5 grid grid-cols-2 gap-8 min-w-[320px]">
-                    {Object.entries(portfolioCategories).map(([category, items]) => (
-                      <div key={category}>
-                        <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">{category}</h3>
-                        <ul className="space-y-1.5">
-                          {items.map(item => (
-                            <li key={item.to}>
-                              <Link
-                                to={item.to}
-                                onClick={() => { handleClick(item.to); setPortfolioDropdownOpen(false); }}
-                                className="text-sm text-stone-600 hover:text-[#b8864a] transition"
-                              >
-                                {item.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t border-stone-200 px-5 py-3 bg-stone-50 rounded-b-lg">
-                    <Link to="/portfolio" onClick={() => { handleClick('/portfolio'); setPortfolioDropdownOpen(false); }}
-                      className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-                      All Projects {'>'}
-                    </Link>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          {/* Portfolio Dropdown — temporarily hidden */}
 
           {/* Find Company Dropdown */}
           <div
@@ -310,7 +233,7 @@ export default function Navbar({
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
 
-            {renderNavLink('/portfolio', 'Portfolio', 'py-2')}
+            {/* Portfolio link — temporarily hidden */}
 
             {/* Mobile Find Company Section */}
             <div className="py-2">

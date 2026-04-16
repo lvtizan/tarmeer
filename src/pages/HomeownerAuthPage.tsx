@@ -46,7 +46,8 @@ export default function HomeownerAuthPage() {
   const [isNewEmail, setIsNewEmail] = useState<boolean | null>(null); // null = unknown, true = new, false = existing
 
   const [searchParams] = useSearchParams();
-  const authRole = 'homeowner';
+  const authRole = searchParams.get('role') === 'company' ? 'company' : 'homeowner';
+
 
   // Pre-fill email from URL (from /join email continue)
   useEffect(() => {
