@@ -273,11 +273,11 @@ function OnboardingStepper({
           </div>
         </div>
 
-        {/* Active step detail card */}
+        {/* Active step detail card (only for steps with an action, i.e. step 1 & 2) */}
         {steps.map((step, i) => {
           const isActive = !step.done && i === steps.findIndex(s => !s.done);
-          if (!isActive && !step.done) return null;
           if (!isActive) return null;
+          if (!step.action) return null;
           return (
             <div key={step.number} className="rounded-xl border border-[#b8864a]/20 bg-[#b8864a]/5 px-4 py-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
