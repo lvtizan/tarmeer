@@ -300,12 +300,16 @@ import fs from 'fs';
 const PRIMARY_UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
 const SHARED_UPLOADS_DIR = '/tarmeer/tarmeer_web_crm/server/uploads';
 
+// Uploaded images are UUID-named and never rewritten → safe to cache for a
+// year with the `immutable` directive so browsers skip revalidation entirely.
+const UPLOADS_STATIC_OPTS = { maxAge: '365d', immutable: true } as const;
+
 // Keep primary uploads first, then fallback to shared CRM uploads path.
-app.use('/uploads', express.static(PRIMARY_UPLOADS_DIR));
-app.use('/api/uploads', express.static(PRIMARY_UPLOADS_DIR));
+app.use('/uploads', express.static(PRIMARY_UPLOADS_DIR, UPLOADS_STATIC_OPTS));
+app.use('/api/uploads', express.static(PRIMARY_UPLOADS_DIR, UPLOADS_STATIC_OPTS));
 if (fs.existsSync(SHARED_UPLOADS_DIR)) {
-  app.use('/uploads', express.static(SHARED_UPLOADS_DIR));
-  app.use('/api/uploads', express.static(SHARED_UPLOADS_DIR));
+  app.use('/uploads', express.static(SHARED_UPLOADS_DIR, UPLOADS_STATIC_OPTS));
+  app.use('/api/uploads', express.static(SHARED_UPLOADS_DIR, UPLOADS_STATIC_OPTS));
 }
 
 // Legacy URL cleanup: return 410 Gone for old Shopify/ecommerce paths

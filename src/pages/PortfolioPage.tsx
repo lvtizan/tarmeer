@@ -258,12 +258,22 @@ function JustifiedGallery({
               }}
             />
 
-            {/* Image */}
+            {/* Image — thumb variant is ~12KB vs medium ~45KB. If the thumb is
+                missing (older upload pre-variant-generation) fall back once to
+                the original; the dataset guard prevents an onError loop when
+                the original is also unreachable. */}
             <img
-              src={resolveVariantUrl(item.src, 'medium')}
+              src={resolveVariantUrl(item.src, 'thumb')}
               alt="Interior design project"
               loading="lazy"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).src = resolveImageUrl(item.src); }}
+              decoding="async"
+              onError={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                if (img.dataset.fallback !== '1') {
+                  img.dataset.fallback = '1';
+                  img.src = resolveImageUrl(item.src);
+                }
+              }}
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
             />
 
