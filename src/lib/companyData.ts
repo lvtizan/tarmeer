@@ -46,6 +46,7 @@ export const COMPANY_TYPE_LABELS: Record<string, string> = {
   maintenance_company: 'Maintenance Company',
   specialty_trade: 'Specialty Trade',
   landscaping: 'Landscaping & Pools',
+  furnishing: 'Furnishing',
 };
 
 export function getCompanyTypeLabel(type?: string): string {

@@ -862,7 +862,7 @@ const CompaniesTab: React.FC<{
                     {company.city}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {{ design_studio: 'Design Studio', renovation_company: 'Renovation', general_contractor: 'Contractor', mep_contractor: 'MEP', maintenance_company: 'Maintenance', specialty_trade: 'Specialty', landscaping: 'Landscaping' }[company.company_type!] || '—'}
+                    {{ design_studio: 'Design Studio', renovation_company: 'Renovation', general_contractor: 'Contractor', mep_contractor: 'MEP', maintenance_company: 'Maintenance', specialty_trade: 'Specialty', landscaping: 'Landscaping', furnishing: 'Furnishing' }[company.company_type!] || '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">

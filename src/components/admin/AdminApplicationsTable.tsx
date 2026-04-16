@@ -148,7 +148,7 @@ export default function AdminApplicationsTable({
                     : c.company_type === 'landscaping' ? 'bg-green-50 text-green-600'
                     : 'bg-blue-50 text-blue-600'
                   }`}>
-                    {{ design_studio: 'Studio', renovation_company: 'Renovation', general_contractor: 'Contractor', mep_contractor: 'MEP', maintenance_company: 'Maintenance', specialty_trade: 'Specialty', landscaping: 'Landscape' }[c.company_type] || c.company_type}
+                    {{ design_studio: 'Studio', renovation_company: 'Renovation', general_contractor: 'Contractor', mep_contractor: 'MEP', maintenance_company: 'Maintenance', specialty_trade: 'Specialty', landscaping: 'Landscape', furnishing: 'Furnishing' }[c.company_type] || c.company_type}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>

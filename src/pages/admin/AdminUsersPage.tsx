@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Pencil, Shield, Home, Building2, X } from 'lucide-react';
+import { Pencil, Shield, Home, Building2, X, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
@@ -158,6 +158,74 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
   );
 }
 
+// ── Delete Reason Modal ─────────────────────────────────────────────────────
+
+interface DeleteReasonModalProps {
+  names: string[];
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+function DeleteReasonModal({ names, onConfirm, onCancel, loading }: DeleteReasonModalProps) {
+  const [reason, setReason] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-stone-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Trash2 size={18} className="text-red-500" />
+              <h2 className="text-xl font-bold text-stone-800">
+                Delete {names.length === 1 ? 'User' : `${names.length} Users`}
+              </h2>
+            </div>
+            <p className="text-sm text-stone-500">
+              {names.length === 1
+                ? names[0]
+                : names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : '')}
+            </p>
+          </div>
+          <button onClick={onCancel} className="text-stone-400 hover:text-stone-600 transition mt-0.5">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="px-6 py-4 space-y-3">
+          <label className="block text-sm font-medium text-stone-600">
+            Delete reason <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="请输入删除原因..."
+            rows={3}
+            className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a] resize-none"
+            autoFocus
+          />
+        </div>
+
+        <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-stone-100">
+          <button
+            onClick={onCancel}
+            className="flex-1 h-10 rounded-2xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(reason.trim())}
+            disabled={!reason.trim() || loading}
+            className="flex-1 h-10 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition disabled:opacity-50"
+          >
+            {loading ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -179,6 +247,9 @@ export default function AdminUsersPage() {
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
   const [editUserId, setEditUserId] = useState<number | null>(null);
   const [permissionUser, setPermissionUser] = useState<UserRecord | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [deleteModal, setDeleteModal] = useState<{ ids: number[]; names: string[] } | null>(null);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -226,17 +297,31 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDeleteUser = async (user: UserRecord) => {
-    const reason = window.prompt(`Delete user "${user.full_name}"\nPlease enter delete reason / 请输入删除原因：`, '');
-    if (!reason || !reason.trim()) return;
-    setDeleteLoadingId(user.id);
+  const handleDeleteUser = (user: UserRecord) => {
+    setDeleteModal({ ids: [user.id], names: [user.full_name] });
+  };
+
+  const handleBulkDeleteClick = () => {
+    const selected = users.filter((u) => selectedIds.has(u.id));
+    setDeleteModal({ ids: selected.map((u) => u.id), names: selected.map((u) => u.full_name) });
+  };
+
+  const handleDeleteConfirm = async (reason: string) => {
+    if (!deleteModal) return;
+    setBulkDeleteLoading(true);
     try {
-      await adminApi.deleteUser(user.id, reason.trim());
+      for (const id of deleteModal.ids) {
+        setDeleteLoadingId(id);
+        await adminApi.deleteUser(id, reason);
+      }
+      setSelectedIds(new Set());
+      setDeleteModal(null);
       await loadUsers();
     } catch (err: any) {
       alert(err.message || 'Failed to delete user.');
     } finally {
       setDeleteLoadingId(null);
+      setBulkDeleteLoading(false);
     }
   };
 
@@ -244,7 +329,17 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-stone-800">Users</h1>
-        <span className="text-sm text-stone-500">{total} total</span>
+        <div className="flex items-center gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDeleteClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition"
+            >
+              <Trash2 size={14} /> Delete Selected ({selectedIds.size})
+            </button>
+          )}
+          <span className="text-sm text-stone-500">{total} total</span>
+        </div>
       </div>
 
       {/* Filters */}
@@ -294,6 +389,20 @@ export default function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={users.length > 0 && users.every((u) => selectedIds.has(u.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(new Set(users.map((u) => u.id)));
+                      } else {
+                        setSelectedIds(new Set());
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-stone-300 accent-[#b8864a] cursor-pointer"
+                  />
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Email</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Role</th>
@@ -304,15 +413,29 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <TableSpinner colSpan={6} />
+                <TableSpinner colSpan={7} />
               ) : users.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-stone-400">No users found</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-stone-400">No users found</td></tr>
               ) : users.map((user) => (
                 <tr
                   key={user.id}
-                  className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition"
+                  className={`group border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition ${selectedIds.has(user.id) ? 'bg-amber-50/40' : ''}`}
                   onClick={() => navigate(`/admin/users/${user.id}`)}
                 >
+                  <td className="px-4 py-3 w-10" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(user.id)}
+                      onChange={(e) => {
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(user.id); else next.delete(user.id);
+                          return next;
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-stone-300 accent-[#b8864a] cursor-pointer"
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-stone-800">{user.full_name}</div>
                     {user.city && <div className="text-xs text-stone-400">{user.city}</div>}
@@ -416,6 +539,15 @@ export default function AdminUsersPage() {
           user={permissionUser}
           onClose={() => setPermissionUser(null)}
           onSaved={() => loadUsers()}
+        />
+      )}
+
+      {deleteModal && (
+        <DeleteReasonModal
+          names={deleteModal.names}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteModal(null)}
+          loading={bulkDeleteLoading}
         />
       )}
     </div>

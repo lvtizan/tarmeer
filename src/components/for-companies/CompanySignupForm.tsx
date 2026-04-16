@@ -23,6 +23,7 @@ const COMPANY_TYPES = [
   { value: 'maintenance_company', labelKey: 'typeMaintenanceCompany' as const },
   { value: 'specialty_trade', labelKey: 'typeSpecialtyTrade' as const },
   { value: 'landscaping', labelKey: 'typeLandscaping' as const },
+  { value: 'furnishing', labelKey: 'typeFurnishing' as const },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';

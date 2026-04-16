@@ -47,6 +47,7 @@ const translations = {
     typeMaintenanceCompany: 'Maintenance Company',
     typeSpecialtyTrade: 'Specialty Trade',
     typeLandscaping: 'Landscaping & Pools',
+    typeFurnishing: 'Furnishing',
     // Stats
     statsCompanies: 'Companies on Platform',
     statsPhotos: 'Project Photos Showcased',
@@ -116,6 +117,7 @@ const translations = {
     typeMaintenanceCompany: 'شركة صيانة',
     typeSpecialtyTrade: 'تجارة متخصصة',
     typeLandscaping: 'تنسيق حدائق ومسابح',
+    typeFurnishing: 'تأثيث',
     submit: 'أنشئ صفحتي',
     submitting: '\u062c\u0627\u0631\u064a \u0627\u0644\u0625\u0631\u0633\u0627\u0644...',
     successMessage: '\u0633\u064a\u062a\u0648\u0627\u0635\u0644 \u0641\u0631\u064a\u0642\u0646\u0627 \u0645\u0639\u0643 \u0641\u064a \u0623\u0642\u0631\u0628 \u0648\u0642\u062a. \u064a\u0645\u0643\u0646\u0643 \u0623\u064a\u0636\u0627\u064b \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0625\u0643\u0645\u0627\u0644 \u0645\u0644\u0641\u0643 \u0627\u0644\u0634\u062e\u0635\u064a.',

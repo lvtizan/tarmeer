@@ -1,6 +1,6 @@
 const VALID_COMPANY_TYPES = [
   'design_studio', 'renovation_company', 'general_contractor',
-  'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping',
+  'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping', 'furnishing',
 ];
 
 const VALID_SERVICES = [

@@ -210,6 +210,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                     { value: 'maintenance_company', label: 'Maintenance Company' },
                     { value: 'specialty_trade', label: 'Specialty Trade' },
                     { value: 'landscaping', label: 'Landscaping & Pools' },
+                    { value: 'furnishing', label: 'Furnishing' },
                   ]}
                   className="w-full"
                 />

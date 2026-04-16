@@ -191,7 +191,7 @@ export default function AdminRegisteredCompanyDetailPage() {
               </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
-                  {{ design_studio: 'Design Studio', renovation_company: 'Renovation & Fit-out', general_contractor: 'General Contractor', mep_contractor: 'MEP Contractor', maintenance_company: 'Maintenance Company', specialty_trade: 'Specialty Trade', landscaping: 'Landscaping & Pools' }[company.company_type] || company.company_type}
+                  {{ design_studio: 'Design Studio', renovation_company: 'Renovation & Fit-out', general_contractor: 'General Contractor', mep_contractor: 'MEP Contractor', maintenance_company: 'Maintenance Company', specialty_trade: 'Specialty Trade', landscaping: 'Landscaping & Pools', furnishing: 'Furnishing' }[company.company_type] || company.company_type}
                 </span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>
                   {company.status}
