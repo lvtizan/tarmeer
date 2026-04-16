@@ -275,8 +275,8 @@ export default function Navbar({
           ) : null}
           {showJoinAsCompany && (
             <Link
-              to="/join"
-              onClick={() => handleClick('/join')}
+              to="/for-companies"
+              onClick={() => handleClick('/for-companies')}
               className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-stone-50 transition"
             >
               <Briefcase className="w-4 h-4" />
@@ -287,7 +287,7 @@ export default function Navbar({
 
         <div className="flex items-center gap-2 md:hidden">
           {showJoinAsCompany && (
-            <Link to="/join" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
+            <Link to="/for-companies" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
               <Briefcase className="w-3.5 h-3.5" />
               Join as Company
             </Link>
