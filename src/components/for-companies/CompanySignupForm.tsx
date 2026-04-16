@@ -169,10 +169,22 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       api.setToken(response.token);
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user));
-        localStorage.setItem('active_role', response.user.active_role || 'company');
+        localStorage.setItem('active_role', 'company');
       }
-      // If no existing profile, prefill data was saved; profile page will read it
-      navigate(existingHasProfile ? '/company/dashboard' : '/company/profile');
+      // If no existing profile, auto-create it with form data so dashboard onboarding can proceed
+      if (!existingHasProfile) {
+        await api.post('/auth/company/profile', {
+          company_name: companyName.trim(),
+          contact_person: contactName.trim(),
+          phone: `${phoneRegion.code}${phoneDigits}`,
+          city,
+          company_type: companyType,
+          establishment_year: establishmentYear ? Number(establishmentYear) : null,
+          description: '',
+          services: ['Interior Design'],
+        }).catch(() => {});
+      }
+      navigate('/company/dashboard');
     } catch (err: any) {
       setLoginError(err?.message || 'Invalid email or password.');
     } finally {

@@ -133,31 +133,6 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
             setLocalPhone(parsed.local);
           }
         } else {
-          // Check sessionStorage prefill from for-companies signup flow
-          try {
-            const raw = sessionStorage.getItem('company_signup_prefill');
-            if (raw) {
-              const pre = JSON.parse(raw);
-              sessionStorage.removeItem('company_signup_prefill');
-              const prefilled: ProfileData = {
-                ...EMPTY_PROFILE,
-                company_name: pre.company_name || '',
-                contact_person: pre.contact_person || '',
-                phone: pre.phone || '',
-                city: pre.city || 'Dubai',
-                company_type: pre.company_type || 'renovation_company',
-                establishment_year: pre.establishment_year ? Number(pre.establishment_year) : null,
-              };
-              setProfile(prefilled);
-              lastSavedSnapshotRef.current = serialize(prefilled);
-              if (prefilled.phone) {
-                const parsed = parsePhone(prefilled.phone);
-                setDialCode(parsed.dialCode);
-                setLocalPhone(parsed.local);
-              }
-              return;
-            }
-          } catch {}
           lastSavedSnapshotRef.current = serialize(EMPTY_PROFILE);
         }
       } catch {
