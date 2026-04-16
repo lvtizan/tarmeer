@@ -236,30 +236,37 @@ function OnboardingStepper({
 
       {/* Step row connector */}
       <div className="px-4 py-5">
-        <div className="flex items-start mb-6">
+        {/* Grid: each step gets equal 1/3 width, circle centered inside column.
+            Connectors are absolute-positioned from center-of-col to center-of-next-col. */}
+        <div className="grid grid-cols-3 mb-6 relative">
           {steps.map((step, i) => (
-            <div key={step.number} className="flex items-start flex-1 min-w-0">
-              {/* Step circle + label */}
-              <div className="flex flex-col items-center w-16 flex-shrink-0">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                  step.done
-                    ? 'bg-[#b8864a] text-white'
-                    : i === steps.findIndex(s => !s.done)
-                      ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
-                      : 'bg-stone-100 text-stone-400'
-                }`}>
-                  {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
-                </div>
-                <span className={`mt-1.5 text-[10px] font-medium text-center leading-tight ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
-                  {step.label}
-                </span>
-              </div>
-              {/* Connector line */}
-              {i < steps.length - 1 && (
-                <div className={`mt-[18px] flex-1 h-0.5 mx-1 transition-all ${
-                  steps[i].done ? 'bg-[#b8864a]' : 'bg-stone-200'
+            <div key={step.number} className="flex flex-col items-center relative">
+              {/* Left connector (from previous step center to this center) */}
+              {i > 0 && (
+                <div className={`absolute top-[18px] right-1/2 left-0 h-0.5 transition-all ${
+                  steps[i - 1].done ? 'bg-[#b8864a]' : 'bg-stone-200'
                 }`} />
               )}
+              {/* Right connector (from this center to next step center) */}
+              {i < steps.length - 1 && (
+                <div className={`absolute top-[18px] left-1/2 right-0 h-0.5 transition-all ${
+                  step.done ? 'bg-[#b8864a]' : 'bg-stone-200'
+                }`} />
+              )}
+              {/* Circle */}
+              <div className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                step.done
+                  ? 'bg-[#b8864a] text-white'
+                  : i === steps.findIndex(s => !s.done)
+                    ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
+                    : 'bg-stone-100 text-stone-400'
+              }`}>
+                {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
+              </div>
+              {/* Label */}
+              <span className={`mt-1.5 text-[10px] font-medium text-center leading-tight px-1 ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+                {step.label}
+              </span>
             </div>
           ))}
         </div>
