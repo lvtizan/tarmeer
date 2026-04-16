@@ -3,6 +3,7 @@ import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { Building2, FolderOpen, FileText, User, ImagePlus, Settings } from 'lucide-react';
 import Navbar from '../Navbar';
+import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
 
 const navCls = ({ isActive }: { isActive: boolean }) =>
@@ -45,6 +46,7 @@ export default function CompanyLayout() {
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
+      <PhoneRequiredModal blocking />
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
