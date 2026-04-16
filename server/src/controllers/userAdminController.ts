@@ -302,7 +302,7 @@ function normalizeDeleteReason(rawReason: unknown): string | null {
   return trimmed;
 }
 
-// Soft delete user
+// Hard delete user and all associated data
 export async function deleteUser(req: any, res: any) {
   try {
     const { id } = req.params;
@@ -321,25 +321,25 @@ export async function deleteUser(req: any, res: any) {
     }
 
     const [rows] = await pool.execute(
-      'SELECT id, email, full_name, deleted_at FROM users WHERE id = ? LIMIT 1',
+      'SELECT id, email, full_name FROM users WHERE id = ? LIMIT 1',
       [userId]
     );
     const user = (rows as any[])[0];
     if (!user) return res.status(404).json({ error: 'User not found.' });
-    if (user.deleted_at) return res.status(400).json({ error: 'User is already deleted.' });
 
-    await pool.execute(
-      `UPDATE users
-       SET deleted_at = NOW(), deleted_by_admin_id = ?, delete_reason = ?, status = 'suspended'
-       WHERE id = ?`,
-      [adminId, reason, userId]
-    );
-
+    // Log before deletion (so audit trail is preserved)
     await logActivity(adminId, 'delete_user', 'user', userId, {
       email: user.email,
       full_name: user.full_name,
       reason,
     });
+
+    // Hard delete all associated data
+    await pool.execute('DELETE FROM homeowner_profiles WHERE user_id = ?', [userId]);
+    await pool.execute('DELETE FROM company_profiles WHERE user_id = ?', [userId]);
+    // Unlink designers (preserve portfolio, but remove user association)
+    await pool.execute('UPDATE designers SET user_id = NULL WHERE user_id = ?', [userId]);
+    await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
 
     res.json({ message: 'User deleted successfully.' });
   } catch (error) {
