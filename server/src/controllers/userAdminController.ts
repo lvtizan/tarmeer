@@ -334,11 +334,20 @@ export async function deleteUser(req: any, res: any) {
       reason,
     });
 
-    // Hard delete all associated data
+    // Hard delete all associated data — order matters to avoid FK constraint errors
     await pool.execute('DELETE FROM homeowner_profiles WHERE user_id = ?', [userId]);
+
+    // Delete articles linked to company_profiles of this user (must come before company_profiles)
+    await pool.execute(
+      'DELETE FROM articles WHERE company_profile_id IN (SELECT id FROM company_profiles WHERE user_id = ?)',
+      [userId]
+    );
+
     await pool.execute('DELETE FROM company_profiles WHERE user_id = ?', [userId]);
+
     // Unlink designers (preserve portfolio, but remove user association)
     await pool.execute('UPDATE designers SET user_id = NULL WHERE user_id = ?', [userId]);
+
     await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
 
     res.json({ message: 'User deleted successfully.' });

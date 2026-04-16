@@ -220,6 +220,10 @@ class AdminApiClient {
       if (response.status === 409 && serverError) {
         throw new Error(serverError);
       }
+      // 403 Forbidden: always show the actual server message (e.g. "Super admin privileges required")
+      if (response.status === 403 && serverError) {
+        throw new Error(serverError);
+      }
       const devMessage = `接口 /admin${endpoint} 请求失败：${errorMessage}`;
       throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));
     }
