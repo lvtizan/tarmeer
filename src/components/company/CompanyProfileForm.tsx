@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Globe, MapPin, Phone } from 'lucide-react';
 import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormSelect, FormLabel, FormTag } from '../form/FormInput';
@@ -77,11 +77,15 @@ export function parseProfile(r: any): ProfileData {
 interface Props {
   /** Called after every successful save. Passes back the saved profile id. */
   onSaved?: (profileId: number | null) => void;
-  /** Show save status text + manual Save button in the top-right */
-  showSaveBar?: boolean;
 }
 
-export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Props) {
+export interface CompanyProfileFormRef {
+  save: () => void;
+  saving: boolean;
+  saveText: string;
+}
+
+const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function CompanyProfileForm({ onSaved }, ref) {
   const [profile, setProfile] = useState<ProfileData>(EMPTY_PROFILE);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -201,6 +205,12 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
     if (saveTextTimer.current) clearTimeout(saveTextTimer.current);
   }, []);
 
+  useImperativeHandle(ref, () => ({
+    save: () => void saveProfile(true),
+    get saving() { return saving; },
+    get saveText() { return saveText; },
+  }), [saveProfile, saving, saveText]);
+
   const set = (f: string, v: string) => setProfile(p => ({ ...p, [f]: v }));
   const toggleTag = (f: 'services' | 'specialties', t: string) =>
     setProfile(p => ({ ...p, [f]: p[f].includes(t) ? p[f].filter(x => x !== t) : [...p[f], t] }));
@@ -208,29 +218,11 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
   if (loading) return <div className="flex items-center justify-center py-12 text-stone-400 text-sm">Loading...</div>;
 
   return (
-    <div className="space-y-5">
-      {showSaveBar && (
-        <div className="flex items-center justify-end gap-3">
-          {saveText && (
-            <span className={`text-sm font-medium ${
-              saveText === 'Saved' || saveText === 'Draft saved' ? 'text-emerald-600' :
-              saveText === 'Saving...' ? 'text-stone-400' : 'text-red-600'
-            }`}>
-              {saving && <span className="inline-block w-3 h-3 border-2 border-[#b8864a] border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />}
-              {saveText}
-            </span>
-          )}
-          <button type="button" onClick={() => void saveProfile(true)} disabled={saving}
-            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition disabled:opacity-60">
-            Save
-          </button>
-        </div>
-      )}
-
+    <div className="space-y-3">
       {/* Basic Info */}
-      <section className="rounded-2xl border border-stone-200 bg-white p-5">
-        <h2 className="text-sm font-bold text-[#2c2c2c] mb-4">Basic Information</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <section className="rounded-2xl border border-stone-200 bg-white p-4">
+        <h2 className="text-sm font-bold text-[#2c2c2c] mb-3">Basic Information</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="md:col-span-2">
             <FormLabel required>Company Name</FormLabel>
             <FormInput value={profile.company_name} onChange={e => set('company_name', e.target.value)} placeholder="Enter company name" />
@@ -270,15 +262,15 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
           </div>
           <div className="md:col-span-2">
             <FormLabel required>Description</FormLabel>
-            <FormTextarea value={profile.description} rows={4} onChange={e => set('description', e.target.value)} placeholder="Tell potential clients about your company, expertise, and what makes you unique..." />
+            <FormTextarea value={profile.description} rows={3} onChange={e => set('description', e.target.value)} placeholder="Tell potential clients about your company, expertise, and what makes you unique..." />
           </div>
         </div>
       </section>
 
       {/* Company Details */}
-      <section className="rounded-2xl border border-stone-200 bg-white p-5">
-        <h2 className="text-sm font-bold text-[#2c2c2c] mb-4">Company Details</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <section className="rounded-2xl border border-stone-200 bg-white p-4">
+        <h2 className="text-sm font-bold text-[#2c2c2c] mb-3">Company Details</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <FormLabel icon={<Globe className="w-3.5 h-3.5" />}>Website</FormLabel>
             <FormInput type="url" value={profile.website} onChange={e => set('website', e.target.value)} placeholder="https://yourcompany.com" />
@@ -311,26 +303,25 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
       </section>
 
       {/* Services & Specialties */}
-      <section className="rounded-2xl border border-stone-200 bg-white p-5">
-        <h2 className="text-sm font-bold text-[#2c2c2c] mb-4">Services & Specialties</h2>
-        <div className="space-y-5">
+      <section className="rounded-2xl border border-stone-200 bg-white p-4">
+        <h2 className="text-sm font-bold text-[#2c2c2c] mb-3">Services & Specialties</h2>
+        <div className="space-y-3">
           <div>
             <FormLabel required>Services</FormLabel>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 mt-1.5">
               {SERVICES.map(t => <FormTag key={t} label={t} active={profile.services.includes(t)} onClick={() => toggleTag('services', t)} />)}
             </div>
           </div>
           <div>
             <FormLabel>Project Specialties</FormLabel>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 mt-1.5">
               {SPECIALTIES.map(t => <FormTag key={t} label={t} active={profile.specialties.includes(t)} onClick={() => toggleTag('specialties', t)} />)}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Save status (non-bar mode) */}
-      {!showSaveBar && saveText && (
+      {saveText && (
         <p className={`text-xs text-right ${
           saveText === 'Saved' || saveText === 'Draft saved' ? 'text-emerald-600' :
           saveText === 'Saving...' ? 'text-stone-400' : 'text-red-600'
@@ -338,4 +329,6 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
       )}
     </div>
   );
-}
+});
+
+export default CompanyProfileForm;

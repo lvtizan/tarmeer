@@ -114,7 +114,7 @@ export default function AdminDesignerDetailPage() {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <Link to="/admin/companies" className="inline-flex items-center gap-2 text-sm font-medium mb-6" style={{ color: PRIMARY }}>
           <ArrowLeft className="w-4 h-4" />
           Back to companies
@@ -131,7 +131,7 @@ export default function AdminDesignerDetailPage() {
   const { designer, projects, stats } = detail;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <Link to="/admin/companies" className="inline-flex items-center gap-2 text-sm font-medium mb-6" style={{ color: PRIMARY }}>
         <ArrowLeft className="w-4 h-4" />
         Back to companies

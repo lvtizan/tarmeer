@@ -64,6 +64,7 @@ export default function AdminInstallPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto w-full">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center size-12 rounded-xl mb-4" style={{ backgroundColor: `${PRIMARY}20` }}>
@@ -145,6 +146,7 @@ export default function AdminInstallPage() {
         <p className="mt-4 text-center text-xs text-stone-500">
           This account will have full administrative access to the system.
         </p>
+      </div>
       </div>
     </div>
   );

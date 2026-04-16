@@ -98,7 +98,7 @@ export default function CompanyProjectsPage() {
         const raw = Array.isArray(d.projects || d) ? (d.projects || d) : [];
         setProjects(raw.map((project: any) => ({
           ...project,
-          images: parseMaybeArray(project.images),
+          images: parseImageEntries(project.images).map((e) => e.url),
           tags: parseMaybeArray(project.tags),
         })));
       })
@@ -172,10 +172,16 @@ export default function CompanyProjectsPage() {
 
       if (editingProjectId) {
         await api.put(`/projects/${editingProjectId}`, payload);
-        showToast(publish ? 'Project updated and submitted for review!' : 'Draft updated!', 'success');
+        showToast(publish ? 'Project updated!' : 'Draft updated!', 'success');
       } else {
         await api.post('/projects', payload);
-        showToast(publish ? 'Project submitted for review!' : 'Draft saved!', 'success');
+        // Auto-submit for review on first project upload
+        if (publish && projects.length === 0) {
+          try { await api.post('/auth/company/profile', {}); } catch { /* no-op */ }
+          showToast('Project uploaded! Your profile has been submitted for review.', 'success');
+        } else {
+          showToast(publish ? 'Project submitted for review!' : 'Draft saved!', 'success');
+        }
       }
 
       setEditingProjectId(null);

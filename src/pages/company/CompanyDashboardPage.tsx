@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Circle, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp, Send } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp, ExternalLink } from 'lucide-react';
 import { api } from '../../lib/api';
-import { showToast } from '../../components/ui/Toast';
 
 interface ProfileSummary {
+  id?: number;
   company_name: string;
   description: string;
   contact_person: string;
@@ -19,8 +19,6 @@ export default function CompanyDashboardPage() {
   const [projectCount, setProjectCount] = useState(0);
   const [articleCount, setArticleCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -35,6 +33,7 @@ export default function CompanyDashboardPage() {
           const d = profileRes.value?.profile || profileRes.value;
           if (d?.company_name) {
             setProfile({
+              id: d.id ? Number(d.id) : undefined,
               company_name: d.company_name || '',
               description: d.description || '',
               contact_person: d.contact_person || '',
@@ -60,19 +59,6 @@ export default function CompanyDashboardPage() {
     })();
   }, []);
 
-  const handleSubmitForReview = async () => {
-    setSubmittingReview(true);
-    try {
-      await api.post('/auth/company/profile', {});
-    } catch {
-      // Profile already submitted — no-op
-    } finally {
-      setSubmittingReview(false);
-    }
-    setReviewSubmitted(true);
-    showToast('Submitted! We\'ll get back to you within 1–2 business days.', 'success');
-  };
-
   // Onboarding step completion
   const step1Done = !!(profile?.company_name && profile?.description && profile?.phone);
   const step2Done = projectCount > 0;
@@ -92,13 +78,26 @@ export default function CompanyDashboardPage() {
     <div className="w-full max-w-[900px] mx-auto space-y-8">
 
       {/* ── Welcome header ── */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#2c2c2c]">
-          {companyName ? `Welcome, ${companyName}` : 'Welcome to your Dashboard'}
-        </h1>
-        <p className="mt-1 text-sm text-stone-500">
-          Complete the steps below to get discovered by potential clients.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#2c2c2c]">
+            {companyName ? `Welcome, ${companyName}` : 'Welcome to your Dashboard'}
+          </h1>
+          <p className="mt-1 text-sm text-stone-500">
+            Complete the steps below to get discovered by potential clients.
+          </p>
+        </div>
+        {profile?.id && (
+          <a
+            href={`/companies/${profile.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-medium text-stone-600 hover:border-[#b8864a]/40 hover:text-[#b8864a] transition"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Preview
+          </a>
+        )}
       </div>
 
       {/* ── Onboarding stepper ── */}
@@ -114,31 +113,12 @@ export default function CompanyDashboardPage() {
         />
       )}
 
-      {/* ── Submit for Review CTA ── */}
-      {step1Done && step2Done && !step3Done && !reviewSubmitted && (
-        <div className="rounded-2xl border-2 border-[#b8864a]/40 bg-gradient-to-br from-[#b8864a]/8 to-[#b8864a]/3 px-6 py-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-          <div className="flex-1">
-            <p className="text-base font-bold text-[#2c2c2c]">Your profile is ready — submit for review</p>
-            <p className="mt-0.5 text-sm text-stone-500">Our team will review and approve within 1–2 business days.</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmitForReview}
-            disabled={submittingReview}
-            className="flex-shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-xl bg-[#b8864a] text-white text-sm font-bold hover:bg-[#a4763f] transition disabled:opacity-60 shadow-md"
-          >
-            <Send className="w-4 h-4" />
-            {submittingReview ? 'Submitting...' : 'Submit for Review'}
-          </button>
-        </div>
-      )}
-
-      {/* ── Submitted confirmation ── */}
-      {step1Done && step2Done && !step3Done && reviewSubmitted && (
+      {/* ── Under review banner ── */}
+      {step1Done && step2Done && !step3Done && (
         <div className="rounded-2xl border border-stone-200 bg-stone-50 px-6 py-5 flex items-center gap-4">
           <Clock className="w-5 h-5 text-[#b8864a] flex-shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-[#2c2c2c]">Application submitted — under review</p>
+            <p className="text-sm font-semibold text-[#2c2c2c]">Profile under review</p>
             <p className="text-xs text-stone-500 mt-0.5">Our team will notify you within 1–2 business days.</p>
           </div>
         </div>

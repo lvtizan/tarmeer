@@ -6,11 +6,11 @@ import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
 
 const CRM_ACTION_TOOLTIP: Record<string, string> = {
-  created: 'CRM 中新建了一条线索',
-  updated: '已更新到 CRM 已有线索',
-  linked: '该联系人在 CRM 已存在，此次询盘被合并到原线索——CRM 团队可能不会收到新通知，请手动检查',
-  duplicate: '同一联系人已有未处理线索，自动判定为重复',
-  synced: '已同步到 CRM',
+  created: '✅ 已在 CRM 创建新线索，销售可正常跟进。',
+  updated: '🔄 该联系人在 CRM 已有线索，本次询盘信息已合并更新到原线索。',
+  linked: '⚠️ 该联系人（手机号/邮箱）在 CRM 中已存在，本次询盘被自动合并到原线索。CRM 团队不会收到新线索通知，请手动在 CRM 中查看并跟进！',
+  duplicate: '🔁 同一联系人短时间内已有未处理线索，系统自动判定为重复，未创建新线索。',
+  synced: '✅ 已成功同步到 CRM。',
 };
 const CRM_STATUS_TOOLTIP = {
   failed: 'CRM 同步失败，可点击「重新发送」重试',
@@ -43,6 +43,8 @@ interface InquiryRecord {
   crm_action: string | null;
   crm_last_error: string | null;
   crm_sync_attempts: number | null;
+  deleted_at?: string | null;
+  deleted_reason?: string | null;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -251,24 +253,20 @@ export default function AdminInquiriesPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-stone-800">Inquiries</h1>
 
-      {/* Stats bars — right-aligned horizontal bars */}
+      {/* Stats — inline compact */}
       {(() => {
-        const max = Math.max(counts.homeowner, counts.company, 1);
-        const Row = ({ label, value, color }: { label: string; value: number; color: string }) => (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-stone-500 w-20 text-right shrink-0">{label}</span>
-            <div className="flex-1 flex justify-end">
-              <div className="h-5 rounded-full" style={{ width: `${(value / max) * 100}%`, backgroundColor: color, minWidth: value > 0 ? '8px' : 0 }} />
-            </div>
-            <span className="text-sm font-medium text-[#2c2c2c] w-12 text-right tabular-nums">{value}</span>
-          </div>
-        );
         return (
-          <div className="flex justify-end">
-            <div className="w-full max-w-md bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-2">
-              <Row label="业主询单数" value={counts.homeowner} color="#b8864a" />
-              <Row label="公司线索" value={counts.company} color="#6b6b6b" />
-            </div>
+          <div className="flex items-center gap-4 text-sm">
+            <span className="flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: '#b8864a' }} />
+              <span className="text-stone-500">业主询单</span>
+              <span className="font-semibold text-[#2c2c2c] tabular-nums">{counts.homeowner}</span>
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: '#6b6b6b' }} />
+              <span className="text-stone-500">公司线索</span>
+              <span className="font-semibold text-[#2c2c2c] tabular-nums">{counts.company}</span>
+            </span>
           </div>
         );
       })()}
@@ -419,11 +417,29 @@ export default function AdminInquiriesPage() {
                         {inq.message?.startsWith('[Company Inquiry]') && (
                           <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#b8864a]/10 text-[#b8864a]">Company</span>
                         )}
+                        {inq.deleted_at && (
+                          <span className="inline-flex cursor-help relative group" onClick={(e) => e.stopPropagation()}>
+                            <Info className="w-3.5 h-3.5 text-red-400" />
+                            <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-50 hidden group-hover:block w-72 rounded-lg border border-stone-200 bg-white p-3 text-[12px] leading-relaxed text-stone-700 shadow-xl whitespace-normal">
+                              <div className="font-semibold text-red-600 mb-1">删除理由</div>
+                              <div>{inq.deleted_reason || '—（无记录）'}</div>
+                              {inq.deleted_at && (
+                                <div className="text-stone-400 mt-1 text-[11px]">
+                                  删除时间：{new Date(inq.deleted_at).toLocaleString()}
+                                </div>
+                              )}
+                            </span>
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-stone-600">{inq.phone}</td>
                     <td className="px-4 py-3 text-stone-600">{inq.city || <span className="text-stone-400">—</span>}</td>
-                    <td className="px-4 py-3 text-stone-600">{inq.area_range}</td>
+                    <td className="px-4 py-3 text-stone-600">{(() => {
+                      const fromMessage = inq.message?.match(/Area[:：]?\s*([\d,]+)\s*m²/i);
+                      if (fromMessage) return `${fromMessage[1]}m²`;
+                      return inq.area_range?.replace(/\+$/, '') || '—';
+                    })()}</td>
                     <td className="px-4 py-3 text-xs">
                       {inq.source_company_name ? (
                         inq.source_company_slug ? (
@@ -470,7 +486,12 @@ export default function AdminInquiriesPage() {
                                 >
                                   {label}
                                 </span>
-                                <span title={tip} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
+                                <span className="inline-flex cursor-help relative group">
+                                  <Info className="w-3.5 h-3.5 text-stone-400" />
+                                  <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-50 hidden group-hover:block w-72 rounded-lg border border-stone-200 bg-white p-3 text-[12px] leading-relaxed text-stone-700 shadow-xl whitespace-normal">
+                                    {tip}
+                                  </span>
+                                </span>
                               </span>
                               {isLinked && (
                                 <span className="text-[10px] text-amber-600">已合并 → 请检查</span>

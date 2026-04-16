@@ -56,6 +56,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [companyTypeError, setCompanyTypeError] = useState(false);
+  const [tried, setTried] = useState(false);
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
@@ -67,18 +68,17 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   /* ── Step 1: Submit lead to CRM ── */
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTried(true);
     setError(null);
 
-    if (!contactName.trim()) { setError('Please enter your name'); return; }
-    if (!phoneDigits.trim()) { setError('Please enter your phone number'); return; }
+    if (!contactName.trim()) { setError('Please fill in all required fields'); return; }
+    if (!phoneDigits.trim() || !isPhoneComplete(phoneDigits, phoneRegion.code)) { setError('Please fill in all required fields'); return; }
     if (phoneError) { setError(phoneError); return; }
-    if (!isPhoneComplete(phoneDigits, phoneRegion.code)) { setError('Please enter a complete phone number'); return; }
-    if (!companyName.trim()) { setError('Please enter your company name'); return; }
-    if (!city) { setError('Please select your city'); return; }
+    if (!companyName.trim()) { setError('Please fill in all required fields'); return; }
+    if (!city) { setError('Please fill in all required fields'); return; }
     if (!companyType) {
       setCompanyTypeError(true);
-      companyTypeRef.current?.focus();
-      companyTypeRef.current?.click();
+      setError('Please fill in all required fields');
       return;
     }
     if (establishmentYear) {
@@ -140,19 +140,23 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
           {/* Contact Name */}
           <div>
-            <label className={labelClass}>{t(lang, 'contactName')}</label>
+            <label className={labelClass}>
+              {t(lang, 'contactName')} <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
               placeholder={t(lang, 'contactNamePlaceholder')}
-              className={inputClass}
+              className={`${inputClass} ${tried && !contactName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
             />
           </div>
 
           {/* Phone Number */}
           <div>
-            <label className={labelClass}>{t(lang, 'phone')}</label>
+            <label className={labelClass}>
+              {t(lang, 'phone')} <span className="text-red-500">*</span>
+            </label>
             <div className="flex gap-2">
               <div className="relative shrink-0">
                 <select
@@ -196,7 +200,11 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 }}
                 maxLength={phoneRegion.maxDigits}
                 placeholder={t(lang, 'phonePlaceholder')}
-                className={`${inputClass} flex-1 min-w-0 ${phoneError ? 'border-red-300 focus:border-red-400 focus:ring-red-200/30' : ''}`}
+                className={`${inputClass} flex-1 min-w-0 ${
+                  phoneError || (tried && !isPhoneComplete(phoneDigits, phoneRegion.code))
+                    ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30'
+                    : ''
+                }`}
               />
             </div>
             {phoneError && (
@@ -206,19 +214,23 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
           {/* Company Name */}
           <div>
-            <label className={labelClass}>{t(lang, 'companyName')}</label>
+            <label className={labelClass}>
+              {t(lang, 'companyName')} <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder={t(lang, 'companyNamePlaceholder')}
-              className={inputClass}
+              className={`${inputClass} ${tried && !companyName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
             />
           </div>
 
           {/* City */}
           <div>
-            <label className={labelClass}>{lang === 'ar' ? '\u0627\u0644\u0645\u062f\u064a\u0646\u0629' : 'City'}</label>
+            <label className={labelClass}>
+              {lang === 'ar' ? 'المدينة' : 'City'} <span className="text-red-500">*</span>
+            </label>
             <AdminSelect
               value={city}
               onChange={setCity}
@@ -227,12 +239,15 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 ...UAE_CITIES.map(c => ({ value: c, label: c })),
               ]}
               className="w-full"
+              error={tried && !city}
             />
           </div>
 
           {/* Company Type */}
           <div>
-            <label className={labelClass}>{t(lang, 'companyType')}</label>
+            <label className={labelClass}>
+              {t(lang, 'companyType')} <span className="text-red-500">*</span>
+            </label>
             <AdminSelect
               ref={companyTypeRef}
               value={companyType}
@@ -242,7 +257,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 ...COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey) })),
               ]}
               className="w-full"
-              error={companyTypeError}
+              error={companyTypeError || (tried && !companyType)}
             />
           </div>
 

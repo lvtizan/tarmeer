@@ -411,7 +411,6 @@ export default function CompanyArticlesPage() {
           </div>
         )}
       </div>
-      </div>
     </div>
   );
 }

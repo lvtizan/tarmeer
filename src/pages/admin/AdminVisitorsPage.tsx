@@ -43,7 +43,7 @@ export default function AdminVisitorsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-[#2c2c2c]">Visitor Statistics</h1>
         <a

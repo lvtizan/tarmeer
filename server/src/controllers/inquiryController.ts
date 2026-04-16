@@ -256,8 +256,8 @@ export async function batchDeleteInquiries(req: any, res: any) {
 
     // Soft delete
     const [result] = await pool.execute(
-      `UPDATE design_inquiries SET deleted_at = NOW(), deleted_by = ? WHERE id IN (${activePlaceholders})`,
-      [adminId, ...activeIds]
+      `UPDATE design_inquiries SET deleted_at = NOW(), deleted_by = ?, deleted_reason = ? WHERE id IN (${activePlaceholders})`,
+      [adminId, reason.trim(), ...activeIds]
     );
 
     // Audit log

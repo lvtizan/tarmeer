@@ -109,7 +109,7 @@ export default function AdminCompanyImportPage() {
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-stone-900 mb-2">Import Company</h1>
       <p className="text-sm text-stone-500 mb-8">
         Download the Word template, send it to partner companies, then upload the filled document to import their info.

@@ -71,7 +71,7 @@ export default function AdminUserDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Back link */}
       <Link to="/admin/users" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="w-4 h-4" /> Back to users

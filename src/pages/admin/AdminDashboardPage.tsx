@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">Dashboard</h1>
       <p className="text-stone-500 text-sm mb-8">Overview of designers and platform statistics.</p>
 

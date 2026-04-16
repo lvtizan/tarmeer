@@ -95,7 +95,7 @@ export default function AdminCompanyDetailPage() {
   const backTab = searchParams.get('tab') || 'directory';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-4xl mx-auto">
       {/* Back button */}
       <button
         onClick={() => navigate(`/admin/companies?tab=${backTab}`)}

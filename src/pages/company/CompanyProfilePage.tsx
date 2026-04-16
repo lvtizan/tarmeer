@@ -1,38 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '../../lib/api';
-import CompanyProfileForm from '../../components/company/CompanyProfileForm';
+import CompanyProfileForm, { type CompanyProfileFormRef } from '../../components/company/CompanyProfileForm';
 
 export default function CompanyProfilePage() {
-  const [profileId, setProfileId] = useState<number | null>(null);
   const [status, setStatus] = useState<string>('pending');
   const [adminNotes, setAdminNotes] = useState<string>('');
   const [isNew, setIsNew] = useState(true);
+  const [btnSaving, setBtnSaving] = useState(false);
+  const formRef = useRef<CompanyProfileFormRef>(null);
 
   useEffect(() => {
     api.get('/auth/company/profile').then(r => {
       const d = r?.profile || r;
       if (d?.company_name) {
         setIsNew(false);
-        if (d.id) setProfileId(Number(d.id));
         if (d.status) setStatus(d.status);
         if (d.admin_notes) setAdminNotes(d.admin_notes);
       }
     }).catch(() => {});
   }, []);
 
-  function handleSaved(id: number | null) {
-    if (id) setProfileId(id);
+  function handleSaved(_id: number | null) {
     setIsNew(false);
   }
 
   return (
-    <div className="w-full max-w-[840px] mx-auto space-y-6">
+    <div className="w-full max-w-[840px] mx-auto space-y-3">
 
-      {/* ── Page header ── */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#2c2c2c]">Company Profile</h1>
-        <p className="mt-1 text-sm text-stone-500">Changes save automatically as a draft.</p>
+      {/* ── Page header + Save button ── */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-[#2c2c2c]">Company Profile</h1>
+          <p className="mt-0.5 text-sm text-stone-500">Changes save automatically as a draft.</p>
+        </div>
+        <button
+          type="button"
+          disabled={btnSaving}
+          onClick={async () => {
+            setBtnSaving(true);
+            formRef.current?.save();
+            setTimeout(() => setBtnSaving(false), 1200);
+          }}
+          className="flex-shrink-0 flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition disabled:opacity-60"
+        >
+          {btnSaving && <span className="inline-block w-3 h-3 border-2 border-[#b8864a] border-t-transparent rounded-full animate-spin" />}
+          Save
+        </button>
       </div>
 
       {/* ── Status banner (approved / rejected only) ── */}
@@ -54,7 +68,7 @@ export default function CompanyProfilePage() {
         </div>
       )}
 
-      <CompanyProfileForm showSaveBar onSaved={handleSaved} />
+      <CompanyProfileForm ref={formRef} onSaved={handleSaved} />
 
     </div>
   );

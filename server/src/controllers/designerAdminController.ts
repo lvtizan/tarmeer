@@ -813,10 +813,12 @@ export async function getDailyStatsReport(req: any, res: Response) {
 
     const dates: string[] = dateRows.map((r: any) => r.d instanceof Date ? r.d.toISOString().slice(0, 10) : String(r.d).slice(0, 10));
 
+    // Count queries (homeowners only: role='homeowner' or 'user', not company/designer)
     const [userRows] = await pool.query(
       `SELECT DATE(created_at) as date, COUNT(*) as count
        FROM users
        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY) AND deleted_at IS NULL
+         AND role IN ('homeowner', 'user')
        GROUP BY DATE(created_at)`
     ) as any[];
 
@@ -829,9 +831,34 @@ export async function getDailyStatsReport(req: any, res: Response) {
 
     const [inquiryRows] = await pool.query(
       `SELECT DATE(created_at) as date, COUNT(*) as count
-       FROM inquiries
+       FROM design_inquiries
        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY)
        GROUP BY DATE(created_at)`
+    ) as any[];
+
+    // Detail queries for tooltip
+    const [homeownerDetail] = await pool.query(
+      `SELECT DATE(created_at) as date, full_name, email, city
+       FROM users
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY) AND deleted_at IS NULL
+         AND role IN ('homeowner', 'user')
+       ORDER BY created_at DESC`
+    ) as any[];
+
+    const [companyDetail] = await pool.query(
+      `SELECT DATE(cp.created_at) as date, cp.company_name, u.email, cp.city,
+              (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count
+       FROM company_profiles cp
+       LEFT JOIN users u ON cp.user_id = u.id
+       WHERE cp.created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY) AND cp.deleted_at IS NULL
+       ORDER BY cp.created_at DESC`
+    ) as any[];
+
+    const [inquiryDetail] = await pool.query(
+      `SELECT DATE(created_at) as date, name, phone, city, source_company_name
+       FROM design_inquiries
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY)
+       ORDER BY created_at DESC`
     ) as any[];
 
     const toMap = (rows: any[]) => {
@@ -843,15 +870,45 @@ export async function getDailyStatsReport(req: any, res: Response) {
       return m;
     };
 
+    const toDetailMap = (rows: any[]) => {
+      const m: Record<string, any[]> = {};
+      for (const r of rows) {
+        const d = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
+        if (!m[d]) m[d] = [];
+        m[d].push(r);
+      }
+      return m;
+    };
+
     const uMap = toMap(userRows);
     const cMap = toMap(companyRows);
     const iMap = toMap(inquiryRows);
+    const homeownerDetailMap = toDetailMap(homeownerDetail);
+    const companyDetailMap = toDetailMap(companyDetail);
+    const inquiryDetailMap = toDetailMap(inquiryDetail);
 
     const data = dates.map((date) => ({
       date,
       new_homeowners: uMap[date] || 0,
       new_companies: cMap[date] || 0,
       new_inquiries: iMap[date] || 0,
+      homeowner_list: (homeownerDetailMap[date] || []).map((r: any) => ({
+        name: r.full_name || r.email?.split('@')[0] || '—',
+        email: r.email,
+        city: r.city,
+      })),
+      company_list: (companyDetailMap[date] || []).map((r: any) => ({
+        name: r.company_name || '—',
+        email: r.email,
+        city: r.city,
+        projects: r.project_count || 0,
+      })),
+      inquiry_list: (inquiryDetailMap[date] || []).map((r: any) => ({
+        name: r.name || '—',
+        phone: r.phone,
+        city: r.city,
+        company: r.source_company_name,
+      })),
     }));
 
     const totals = data.reduce(

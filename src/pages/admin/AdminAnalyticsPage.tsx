@@ -110,7 +110,7 @@ export default function AdminAnalyticsPage() {
   const visitorTotalPages = Math.max(1, Math.ceil(visitorTotal / VISITOR_PAGE_SIZE));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-[#2c2c2c]">Analytics</h1>
         <a

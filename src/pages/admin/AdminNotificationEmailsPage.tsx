@@ -74,7 +74,7 @@ export default function AdminNotificationEmailsPage() {
   if (loading) return <div className="p-8"><PageSpinner /></div>;
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-stone-900 mb-2">Notification Emails</h1>
       <p className="text-sm text-stone-500 mb-8">
         Emails listed here will receive notifications when new inquiries or company registrations come in.

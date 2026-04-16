@@ -141,7 +141,7 @@ export default function AdminRegisteredCompanyDetailPage() {
   const specialties = parseJsonArray(company.specialties);
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {/* Back button */}
       <button
         onClick={() => navigate(`/admin/companies?tab=${backTab}`)}
