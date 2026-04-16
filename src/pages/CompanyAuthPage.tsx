@@ -146,25 +146,35 @@ function JoinAuthCard() {
         role: 'company',
       });
 
-      // If company signup, auto-login and create profile
+      // If company signup, try to auto-login and create profile
       if (companySignupData) {
-        const loginRes = await api.post('/auth/login', { email, password });
-        api.setToken(loginRes.token);
-        if (loginRes.user) {
-          localStorage.setItem('user', JSON.stringify(loginRes.user));
-          localStorage.setItem('active_role', 'company');
+        try {
+          const loginRes = await api.post('/auth/login', { email, password });
+          api.setToken(loginRes.token);
+          if (loginRes.user) {
+            localStorage.setItem('user', JSON.stringify(loginRes.user));
+            localStorage.setItem('active_role', 'company');
+          }
+          await api.post('/auth/company/profile', {
+            company_name: companySignupData.company_name,
+            phone: companySignupData.phone,
+            city: companySignupData.city,
+            contact_person: companySignupData.contact_person,
+            description: '',
+            services: ['Interior Design'],
+            company_type: companySignupData.company_type,
+          });
+          navigate('/company');
+          return;
+        } catch (loginErr: any) {
+          // Email verification required — show friendly message instead of red error
+          if (loginErr.message?.toLowerCase().includes('verify')) {
+            setSuccess(`Account created! Please check ${email} to verify, then log in.`);
+            setStep('done');
+            return;
+          }
+          throw loginErr;
         }
-        await api.post('/auth/company/profile', {
-          company_name: companySignupData.company_name,
-          phone: companySignupData.phone,
-          city: companySignupData.city,
-          contact_person: companySignupData.contact_person,
-          description: '',
-          services: ['Interior Design'],
-          company_type: companySignupData.company_type,
-        });
-        navigate('/company');
-        return;
       }
 
       setSuccess('Account created! Please check your email to verify.');
