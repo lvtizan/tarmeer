@@ -14,6 +14,20 @@ export async function submitCompanyLead(req: any, res: any) {
 
     const leadId = (result as any).insertId;
 
+    // Mirror into design_inquiries so it appears in the admin Company inquiries tab
+    const inquiryMessage = [
+      `[Company Inquiry]`,
+      `Company: ${companyName}`,
+      companyType ? `Type: ${companyType}` : '',
+      yearEstablished ? `Est. ${yearEstablished}` : '',
+    ].filter(Boolean).join(' | ');
+
+    pool.execute(
+      `INSERT INTO design_inquiries (name, phone, city, area_range, message, source_company_name)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [contactName, phone, city || null, companyType || 'company-lead', inquiryMessage, companyName]
+    ).catch(() => {});
+
     // Fire-and-forget CRM push (company tenant)
     // notes field carries company_type so CRM sales team sees it
     pushCompanyLeadToCRM({
