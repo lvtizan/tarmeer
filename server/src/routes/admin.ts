@@ -62,7 +62,7 @@ import {
   updateWeightConfig,
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
-import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents } from '../controllers/analyticsAdminController';
+import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations } from '../controllers/analyticsAdminController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
@@ -112,6 +112,7 @@ router.get('/visitors', requirePermission('can_view_stats'), listVisitors);
 router.get('/analytics/overview', requirePermission('can_view_stats'), getAnalyticsOverview);
 router.get('/analytics/company-visitors', requirePermission('can_view_stats'), getCompanyVisitors);
 router.get('/analytics/events', requirePermission('can_view_stats'), listAnalyticsEvents);
+router.get('/analytics/daily-registrations', requirePermission('can_view_stats'), getDailyRegistrations);
 
 // Designer management
 router.get('/designers', getDesignersForAdmin);

@@ -26,7 +26,8 @@ function buildLeadFromRow(row: any): LeadPayload {
 }
 
 const VALID_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
-const VALID_AREA_RANGES = ['< 50m²', '50-100m²', '100-200m²', '200-500m²', '500m²+'];
+// Area is stored as a free-form short string (e.g. "2500m²"). Validate length only.
+const MAX_AREA_LENGTH = 64;
 
 // Submit inquiry (public, no auth required)
 export async function submitInquiry(req: any, res: any) {
@@ -41,8 +42,8 @@ export async function submitInquiry(req: any, res: any) {
       return res.status(400).json({ error: 'Invalid city.' });
     }
 
-    if (!VALID_AREA_RANGES.includes(area_range)) {
-      return res.status(400).json({ error: 'Invalid area range.' });
+    if (typeof area_range !== 'string' || area_range.length === 0 || area_range.length > MAX_AREA_LENGTH) {
+      return res.status(400).json({ error: 'Invalid area.' });
     }
 
     const [result] = await pool.execute(

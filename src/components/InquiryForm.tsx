@@ -20,13 +20,6 @@ function parsePhone(raw: string): { code: string; digits: string } | null {
 }
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
-const AREA_RANGES = [
-  { label: '< 50m\u00B2', value: '< 50m\u00B2' },
-  { label: '50-100m\u00B2', value: '50-100m\u00B2' },
-  { label: '100-200m\u00B2', value: '100-200m\u00B2' },
-  { label: '200-500m\u00B2', value: '200-500m\u00B2' },
-  { label: '500m\u00B2+', value: '500m\u00B2+' },
-];
 
 interface InquiryFormProps {
   companyId?: number | string;
@@ -37,7 +30,7 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
-  const [areaRange, setAreaRange] = useState('');
+  const [areaValue, setAreaValue] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -50,7 +43,8 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone || !city || !areaRange) return;
+    if (!name || !phone || !city || !areaValue) return;
+    const area = `${Number(areaValue)}m\u00B2`;
     if (phoneError) {
       setError(phoneError);
       return;
@@ -67,7 +61,7 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
           name,
           phone,
           city,
-          area_range: areaRange,
+          area_range: area,
           message: message || undefined,
           company_id: companyId || undefined,
           source_page: window.location.pathname,
@@ -163,22 +157,21 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
           </div>
         </div>
 
-        {/* Area Range */}
+        {/* Area */}
         <div>
-          <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1.5">Project Area</label>
+          <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1.5">Project Area (m²)</label>
           <div className="relative">
-            <select
-              value={areaRange}
-              onChange={(e) => setAreaRange(e.target.value)}
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={areaValue}
+              onChange={(e) => setAreaValue(e.target.value)}
               required
-              className="w-full appearance-none h-11 px-4 pr-10 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition"
-            >
-              <option value="">Select area range</option>
-              {AREA_RANGES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-stone-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              placeholder="e.g. 2500"
+              className="w-full h-11 px-4 pr-12 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">m²</span>
           </div>
         </div>
 
@@ -206,7 +199,7 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
         {/* Submit */}
         <button
           type="submit"
-          disabled={submitting || !name || !phone || !city || !areaRange}
+          disabled={submitting || !name || !phone || !city || !areaValue}
           className="w-full h-12 rounded-xl bg-[#c6a065] text-white font-semibold text-sm hover:bg-[#b8860b] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
         >
           {submitting ? (

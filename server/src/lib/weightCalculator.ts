@@ -19,16 +19,6 @@ async function getWeightConfig(): Promise<WeightConfig> {
   return defaults;
 }
 
-function isProfileComplete(company: any): boolean {
-  // Basic info: name, phone, city, description must all be non-empty
-  return !!(
-    (company.company_name || company.name_en) &&
-    (company.phone) &&
-    (company.city) &&
-    (company.description)
-  );
-}
-
 export async function calculateAllWeights(): Promise<{ updated: number }> {
   const config = await getWeightConfig();
   let updated = 0;
@@ -41,8 +31,7 @@ export async function calculateAllWeights(): Promise<{ updated: number }> {
   );
 
   for (const company of profiles as any[]) {
-    let score = 0;
-    if (isProfileComplete(company)) score += config.base_profile_score;
+    let score = config.base_profile_score;
     score += (Number(company.project_count) || 0) * config.per_project_score;
     if (company.is_signed) score += config.signed_score;
 
@@ -56,8 +45,7 @@ export async function calculateAllWeights(): Promise<{ updated: number }> {
   );
 
   for (const company of directories as any[]) {
-    let score = 0;
-    if (isProfileComplete(company)) score += config.base_profile_score;
+    let score = config.base_profile_score;
     score += (Number(company.project_count) || 0) * config.per_project_score;
     if (company.is_signed) score += config.signed_score;
 

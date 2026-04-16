@@ -276,3 +276,25 @@ export async function listAnalyticsEvents(req: Request<{}, {}, {}, AnalyticsEven
     res.status(500).json({ error: 'Failed to list analytics events.' });
   }
 }
+
+export async function getDailyRegistrations(req: Request<{}, {}, {}, AnalyticsQueryParams>, res: Response): Promise<void> {
+  const end = toDateString(req.query.endDate) || new Date().toISOString().slice(0, 10);
+  const start = toDateString(req.query.startDate) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT DATE(created_at) AS stat_date,
+              SUM(CASE WHEN role = 'homeowner' THEN 1 ELSE 0 END) AS homeowner_count,
+              SUM(CASE WHEN role = 'company' THEN 1 ELSE 0 END) AS company_count
+         FROM users
+        WHERE DATE(created_at) BETWEEN ? AND ?
+        GROUP BY DATE(created_at)
+        ORDER BY stat_date ASC`,
+      [start, end]
+    );
+    res.json({ dailyRegistrations: rows, dateRange: { start, end } });
+  } catch (error) {
+    console.error('Error getting daily registrations:', error);
+    res.status(500).json({ error: 'Failed to load registration stats.' });
+  }
+}

@@ -4,16 +4,6 @@ import SelectField from '../form/SelectField';
 import { trackContact, trackLead } from '../../lib/analytics';
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
-const AREA_SIZES = ['< 50 m²', '50 - 100 m²', '100 - 200 m²', '200 - 500 m²', '500 m²+'];
-
-// Map display labels to DB-stored values
-const AREA_SIZE_MAP: Record<string, string> = {
-  '< 50 m²': '< 50m²',
-  '50 - 100 m²': '50-100m²',
-  '100 - 200 m²': '100-200m²',
-  '200 - 500 m²': '200-500m²',
-  '500 m²+': '500m²+',
-};
 
 interface ServiceInquiryCardProps {
   title: string;
@@ -69,7 +59,7 @@ export default function ServiceInquiryCard({
         name: form.name || undefined,
         phone: form.phone,
         city: form.city || undefined,
-        area_range: AREA_SIZE_MAP[form.areaSize] || form.areaSize,
+        area_range: `${Number(form.areaSize)}m\u00B2`,
         message: form.message || undefined,
         company_id: companyId || undefined,
         source_company_name: companyName || undefined,
@@ -126,10 +116,12 @@ export default function ServiceInquiryCard({
           {UAE_CITIES.map((city) => (<option key={city} value={city}>{city}</option>))}
         </SelectField>
       )}
-      <SelectField value={form.areaSize} onChange={(e) => setForm((prev) => ({ ...prev, areaSize: e.target.value }))}>
-        <option value="">Select area size</option>
-        {AREA_SIZES.map((size) => (<option key={size} value={size}>{size}</option>))}
-      </SelectField>
+      <div className="relative">
+        <input type="number" min={1} step={1} placeholder="Project area (m²)" value={form.areaSize}
+          onChange={(e) => setForm((prev) => ({ ...prev, areaSize: e.target.value }))}
+          className={inputCls + ' pr-12'} />
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-stone-400 pointer-events-none">m²</span>
+      </div>
       {!minimal && (
         <textarea placeholder="Message (optional)" rows={3} value={form.message}
           onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}

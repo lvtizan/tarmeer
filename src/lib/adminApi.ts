@@ -396,6 +396,16 @@ class AdminApiClient {
     return this.request('/visitors/overview');
   }
 
+  async getDailyRegistrations(params: { startDate?: string; endDate?: string } = {}): Promise<{
+    dailyRegistrations: Array<{ stat_date: string; homeowner_count: number; company_count: number }>;
+    dateRange: { start: string; end: string };
+  }> {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    return this.request(`/analytics/daily-registrations?${query.toString()}`);
+  }
+
   async getVisitors(params: { page?: number; limit?: number } = {}): Promise<{
     visitors: VisitorRecord[];
     pagination: { page: number; limit: number; total: number; pages: number };

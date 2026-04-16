@@ -267,7 +267,9 @@ export default function AdminLayout() {
 
       {/* Main content - same padding as designer */}
       <main className="flex-1 overflow-auto p-6 md:p-10">
-        <Outlet />
+        <div className="w-full max-w-6xl mx-auto">
+          <Outlet />
+        </div>
       </main>
       <ToastContainer />
       {tooltip && (

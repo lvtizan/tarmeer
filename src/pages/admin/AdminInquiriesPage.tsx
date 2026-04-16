@@ -1,8 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Info } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
+
+const CRM_ACTION_TOOLTIP: Record<string, string> = {
+  created: 'CRM 中新建了一条线索',
+  updated: '已更新到 CRM 已有线索',
+  linked: '该联系人在 CRM 已存在，此次询盘被合并到原线索——CRM 团队可能不会收到新通知，请手动检查',
+  duplicate: '同一联系人已有未处理线索，自动判定为重复',
+  synced: '已同步到 CRM',
+};
+const CRM_STATUS_TOOLTIP = {
+  failed: 'CRM 同步失败，可点击「重新发送」重试',
+  pending: '尚未同步到 CRM',
+};
 
 type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
 type TypeFilter = 'homeowner' | 'company';
@@ -199,6 +212,23 @@ export default function AdminInquiriesPage() {
     loadInquiries();
   };
 
+  const [counts, setCounts] = useState<{ homeowner: number; company: number }>({ homeowner: 0, company: 0 });
+  useEffect(() => {
+    (async () => {
+      try {
+        const [all, companyRes] = await Promise.all([
+          adminApi.getInquiries({ page: 1, limit: 1 }),
+          adminApi.getInquiries({ page: 1, limit: 1, search: '[Company Inquiry]' }),
+        ]);
+        const total = all.pagination.total;
+        const company = companyRes.pagination.total;
+        setCounts({ homeowner: Math.max(0, total - company), company });
+      } catch {
+        // non-blocking; leave counts at 0
+      }
+    })();
+  }, [viewMode]);
+
   const [resendingId, setResendingId] = useState<number | null>(null);
   const handleResendCrm = async (id: number) => {
     setResendingId(id);
@@ -219,15 +249,29 @@ export default function AdminInquiriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-800">Inquiries</h1>
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
-        >
-          Export Excel
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold text-stone-800">Inquiries</h1>
+
+      {/* Stats bars — right-aligned horizontal bars */}
+      {(() => {
+        const max = Math.max(counts.homeowner, counts.company, 1);
+        const Row = ({ label, value, color }: { label: string; value: number; color: string }) => (
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-stone-500 w-20 text-right shrink-0">{label}</span>
+            <div className="flex-1 flex justify-end">
+              <div className="h-5 rounded-full" style={{ width: `${(value / max) * 100}%`, backgroundColor: color, minWidth: value > 0 ? '8px' : 0 }} />
+            </div>
+            <span className="text-sm font-medium text-[#2c2c2c] w-12 text-right tabular-nums">{value}</span>
+          </div>
+        );
+        return (
+          <div className="flex justify-end">
+            <div className="w-full max-w-md bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-2">
+              <Row label="业主询单数" value={counts.homeowner} color="#b8864a" />
+              <Row label="公司线索" value={counts.company} color="#6b6b6b" />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* View mode tabs */}
       <div className="flex gap-2">
@@ -273,7 +317,7 @@ export default function AdminInquiriesPage() {
             ]}
           />
         </div>
-        <div className="flex-1 min-w-[200px]">
+        <div className="w-56">
           <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
           <input
             type="text" value={search}
@@ -281,6 +325,14 @@ export default function AdminInquiriesPage() {
             placeholder="Name or phone..."
             className="h-9 w-full px-3 border border-stone-200 rounded-lg text-sm bg-white"
           />
+        </div>
+        <div className="ml-auto">
+          <button
+            onClick={handleExport}
+            className="h-9 px-4 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
+          >
+            Export Excel
+          </button>
         </div>
       </div>
 
@@ -408,13 +460,17 @@ export default function AdminInquiriesPage() {
                             ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : 'bg-green-50 text-green-700';
                           const label = action ? (CRM_LABEL[action] || action) : '已同步';
+                          const tip = (action && CRM_ACTION_TOOLTIP[action]) || CRM_ACTION_TOOLTIP.synced;
                           return (
                             <div className="flex flex-col items-start gap-1">
-                              <span
-                                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}
-                                title={inq.crm_lead_id ? `CRM lead: ${inq.crm_lead_id}` : undefined}
-                              >
-                                {label}
+                              <span className="inline-flex items-center gap-1">
+                                <span
+                                  className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}
+                                  title={inq.crm_lead_id ? `CRM lead: ${inq.crm_lead_id}` : undefined}
+                                >
+                                  {label}
+                                </span>
+                                <span title={tip} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
                               </span>
                               {isLinked && (
                                 <span className="text-[10px] text-amber-600">已合并 → 请检查</span>
@@ -426,11 +482,14 @@ export default function AdminInquiriesPage() {
                         if (status === 'failed') {
                           return (
                             <div className="flex flex-col items-start gap-1">
-                              <span
-                                className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
-                                title={inq.crm_last_error || undefined}
-                              >
-                                同步失败
+                              <span className="inline-flex items-center gap-1">
+                                <span
+                                  className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
+                                  title={inq.crm_last_error || undefined}
+                                >
+                                  同步失败
+                                </span>
+                                <span title={CRM_STATUS_TOOLTIP.failed} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
                               </span>
                               <button
                                 onClick={() => handleResendCrm(inq.id)}
@@ -446,8 +505,11 @@ export default function AdminInquiriesPage() {
                         // pending (not yet attempted) or legacy rows with no status
                         return (
                           <div className="flex flex-col items-start gap-1">
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
-                              待同步
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
+                                待同步
+                              </span>
+                              <span title={CRM_STATUS_TOOLTIP.pending} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
                             </span>
                             <button
                               onClick={() => handleResendCrm(inq.id)}
@@ -460,8 +522,8 @@ export default function AdminInquiriesPage() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-stone-500 text-xs">
-                      {new Date(inq.created_at).toLocaleDateString()}
+                    <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">
+                      {new Date(inq.created_at).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
                     </td>
                   </tr>
                   {expandedId === inq.id && (
