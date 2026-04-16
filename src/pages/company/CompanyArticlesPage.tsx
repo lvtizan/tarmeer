@@ -322,6 +322,14 @@ export default function CompanyArticlesPage() {
   return (
     <div className="w-full">
       {toastEl}
+      {/* SEO tip banner */}
+      <div className="mb-4 flex items-center gap-3 rounded-xl bg-[#b8864a]/8 border border-[#b8864a]/20 px-4 py-3">
+        <span className="text-base">✍️</span>
+        <p className="text-sm text-[#7a5c2e] leading-snug">
+          每发布一篇文章，系统会为你增加 <strong>10 分权重</strong>。高质量的项目文章还能提升 Google SEO 排名，为你带来更多有机流量。
+        </p>
+      </div>
+
       <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
 
         {/* Header */}

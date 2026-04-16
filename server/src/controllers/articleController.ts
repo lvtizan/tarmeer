@@ -28,7 +28,7 @@ export async function generateArticleDraft(req: Request, res: Response) {
       return res.status(503).json({ error: 'AI article generation is not yet available.' });
     }
 
-    const userId = (req as any).user.id;
+    const userId = (req as any).user.userId ?? (req as any).user.id;
     const companyProfileId = await getCompanyProfileId(userId);
     if (!companyProfileId) {
       return res.status(403).json({ error: 'Company profile required.' });
@@ -87,7 +87,7 @@ export async function createArticle(req: Request, res: Response) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const userId = (req as any).user.id;
+    const userId = (req as any).user.userId ?? (req as any).user.id;
     const companyProfileId = await getCompanyProfileId(userId);
     if (!companyProfileId) {
       return res.status(403).json({ error: 'Company profile required.' });
@@ -116,7 +116,7 @@ export async function createArticle(req: Request, res: Response) {
 // ──────────────────────────────────────────────
 export async function updateArticle(req: Request, res: Response) {
   try {
-    const userId = (req as any).user.id;
+    const userId = (req as any).user.userId ?? (req as any).user.id;
     const companyProfileId = await getCompanyProfileId(userId);
     if (!companyProfileId) {
       return res.status(403).json({ error: 'Company profile required.' });
@@ -152,7 +152,7 @@ export async function updateArticle(req: Request, res: Response) {
 // ──────────────────────────────────────────────
 export async function deleteArticle(req: Request, res: Response) {
   try {
-    const userId = (req as any).user.id;
+    const userId = (req as any).user.userId ?? (req as any).user.id;
     const companyProfileId = await getCompanyProfileId(userId);
     if (!companyProfileId) {
       return res.status(403).json({ error: 'Company profile required.' });
@@ -180,7 +180,7 @@ export async function deleteArticle(req: Request, res: Response) {
 // ──────────────────────────────────────────────
 export async function getMyArticles(req: Request, res: Response) {
   try {
-    const userId = (req as any).user.id;
+    const userId = (req as any).user.userId ?? (req as any).user.id;
     const companyProfileId = await getCompanyProfileId(userId);
     if (!companyProfileId) {
       return res.status(403).json({ error: 'Company profile required.' });

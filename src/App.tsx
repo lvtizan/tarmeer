@@ -46,6 +46,7 @@ const CompanyDashboardPage = lazy(() => import('./pages/company/CompanyDashboard
 const CompanyProjectsPage = lazy(() => import('./pages/company/CompanyProjectsPage'));
 const CompanyUploadPage = lazy(() => import('./pages/company/CompanyUploadPage'));
 const CompanyArticlesPage = lazy(() => import('./pages/company/CompanyArticlesPage'));
+const CompanyProfilePage = lazy(() => import('./pages/company/CompanyProfilePage'));
 
 // Homeowner dashboard
 const UserDashboardLayout = lazy(() => import('./layouts/UserDashboardLayout'));
@@ -187,6 +188,7 @@ function App() {
             <Route path="projects" element={<CompanyProjectsPage />} />
             <Route path="upload" element={<CompanyUploadPage />} />
             <Route path="articles" element={<CompanyArticlesPage />} />
+            <Route path="profile" element={<CompanyProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 
