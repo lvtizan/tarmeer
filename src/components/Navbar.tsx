@@ -38,6 +38,7 @@ const serviceCategories = {
 
 const navLinks = [
   { to: '/', label: 'Home' },
+  { to: '/portfolio', label: 'Portfolio' },
 ];
 
 type NavbarVariant = 'default' | 'admin-auth';
