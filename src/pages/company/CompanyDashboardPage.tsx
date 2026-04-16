@@ -136,7 +136,7 @@ export default function CompanyDashboardPage() {
       )}
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         <StatCard
           icon={<FolderOpen className="w-5 h-5 text-[#b8864a]" />}
           label="Projects"
@@ -235,35 +235,33 @@ function OnboardingStepper({
       </div>
 
       {/* Step row connector */}
-      <div className="px-6 py-5">
-        <div className="flex justify-center mb-6">
-          <div className="flex items-start">
-            {steps.map((step, i) => (
-              <div key={step.number} className="flex items-start">
-                {/* Step circle + label */}
-                <div className="flex flex-col items-center">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                    step.done
-                      ? 'bg-[#b8864a] text-white'
-                      : i === steps.findIndex(s => !s.done)
-                        ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
-                        : 'bg-stone-100 text-stone-400'
-                  }`}>
-                    {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
-                  </div>
-                  <span className={`mt-1.5 text-[11px] font-medium whitespace-nowrap text-center ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
-                    {step.label}
-                  </span>
+      <div className="px-4 py-5">
+        <div className="flex items-start mb-6">
+          {steps.map((step, i) => (
+            <div key={step.number} className="flex items-start flex-1 min-w-0">
+              {/* Step circle + label */}
+              <div className="flex flex-col items-center w-16 flex-shrink-0">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  step.done
+                    ? 'bg-[#b8864a] text-white'
+                    : i === steps.findIndex(s => !s.done)
+                      ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
+                      : 'bg-stone-100 text-stone-400'
+                }`}>
+                  {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
                 </div>
-                {/* Connector line */}
-                {i < steps.length - 1 && (
-                  <div className={`mt-[18px] w-20 sm:w-28 h-0.5 mx-3 transition-all ${
-                    steps[i].done ? 'bg-[#b8864a]' : 'bg-stone-200'
-                  }`} />
-                )}
+                <span className={`mt-1.5 text-[10px] font-medium text-center leading-tight ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+                  {step.label}
+                </span>
               </div>
-            ))}
-          </div>
+              {/* Connector line */}
+              {i < steps.length - 1 && (
+                <div className={`mt-[18px] flex-1 h-0.5 mx-1 transition-all ${
+                  steps[i].done ? 'bg-[#b8864a]' : 'bg-stone-200'
+                }`} />
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Active step detail card (only for steps with an action, i.e. step 1 & 2) */}
@@ -317,15 +315,15 @@ function StatCard({ icon, label, value, hint, onClick }: {
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border border-stone-200 bg-white p-4 text-left hover:shadow-md transition group"
+      className="rounded-2xl border border-stone-200 bg-white p-3 sm:p-4 text-left hover:shadow-md transition group"
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-1.5">
         {icon}
-        <ArrowRight className="w-4 h-4 text-stone-300 group-hover:text-[#b8864a] transition" />
+        <ArrowRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#b8864a] transition" />
       </div>
-      <p className="text-2xl font-bold text-[#2c2c2c]">{value}</p>
-      <p className="text-xs font-medium text-stone-600 mt-0.5">{label}</p>
-      <p className="text-[11px] text-stone-400 mt-0.5">{hint}</p>
+      <p className="text-xl sm:text-2xl font-bold text-[#2c2c2c]">{value}</p>
+      <p className="text-[11px] sm:text-xs font-medium text-stone-600 mt-0.5">{label}</p>
+      <p className="text-[10px] sm:text-[11px] text-stone-400 mt-0.5 hidden sm:block">{hint}</p>
     </button>
   );
 }
