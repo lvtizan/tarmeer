@@ -250,15 +250,14 @@ export default function CompanyProjectsPage() {
   if (mode === 'list') {
     return (
       <div className="w-full">
-        {/* Ranking tip banner */}
-          <div className="mb-4 flex items-center gap-3 rounded-xl bg-[#b8864a]/8 border border-[#b8864a]/20 px-4 py-3">
+          <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
+          {/* Ranking tip banner */}
+          <div className="mb-6 flex items-center gap-3 rounded-xl bg-[#b8864a]/8 border border-[#b8864a]/20 px-4 py-3">
             <span className="text-base">🏆</span>
             <p className="text-sm text-[#7a5c2e] leading-snug">
-              每增加一个项目，系统会为你增加 <strong>10 分权重</strong>。项目越多，排名越高，被客户发现的机会越大。
+              Each project you upload adds <strong>+10 points</strong> to your ranking score. More projects means higher visibility to potential clients.
             </p>
           </div>
-
-          <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
           {/* Header */}
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>

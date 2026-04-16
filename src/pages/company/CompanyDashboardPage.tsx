@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Circle, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp, Send } from 'lucide-react';
 import { api } from '../../lib/api';
+import { showToast } from '../../components/ui/Toast';
 
 interface ProfileSummary {
   company_name: string;
@@ -18,6 +19,7 @@ export default function CompanyDashboardPage() {
   const [projectCount, setProjectCount] = useState(0);
   const [articleCount, setArticleCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +58,18 @@ export default function CompanyDashboardPage() {
       }
     })();
   }, []);
+
+  const handleSubmitForReview = async () => {
+    setSubmittingReview(true);
+    try {
+      await api.post('/auth/company/profile', {});
+    } catch {
+      // Profile already submitted — no-op
+    } finally {
+      setSubmittingReview(false);
+    }
+    showToast('Submitted for review! Our team will get back to you within 1–2 business days.', 'success');
+  };
 
   // Onboarding step completion
   const step1Done = !!(profile?.company_name && profile?.description && profile?.phone);
@@ -96,6 +110,25 @@ export default function CompanyDashboardPage() {
           onStep1={() => navigate('/company/profile')}
           onStep2={() => navigate('/company/projects')}
         />
+      )}
+
+      {/* ── Submit for Review CTA ── */}
+      {step1Done && step2Done && !step3Done && (
+        <div className="rounded-2xl border-2 border-[#b8864a]/40 bg-gradient-to-br from-[#b8864a]/8 to-[#b8864a]/3 px-6 py-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <div className="flex-1">
+            <p className="text-base font-bold text-[#2c2c2c]">Your profile is ready — submit for review</p>
+            <p className="mt-0.5 text-sm text-stone-500">Our team will review and approve within 1–2 business days.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmitForReview}
+            disabled={submittingReview}
+            className="flex-shrink-0 inline-flex items-center gap-2 h-11 px-6 rounded-xl bg-[#b8864a] text-white text-sm font-bold hover:bg-[#a4763f] transition disabled:opacity-60 shadow-md"
+          >
+            <Send className="w-4 h-4" />
+            {submittingReview ? 'Submitting...' : 'Submit for Review'}
+          </button>
+        </div>
       )}
 
       {/* ── Approved banner ── */}

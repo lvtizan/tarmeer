@@ -75,7 +75,7 @@ export default function CompanyArticlesPage() {
 
   const loadArticles = useCallback(async () => {
     try {
-      const res = await api.get('/api/articles/mine');
+      const res = await api.get('/articles/mine');
       setArticles(res.articles || []);
     } catch {
       setArticles([]);
@@ -93,7 +93,7 @@ export default function CompanyArticlesPage() {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const res = await api.post('/api/articles/generate', {});
+      const res = await api.post('/articles/generate', {});
       setForm(f => ({ ...f, title: res.title || f.title, content: res.content || f.content, excerpt: res.excerpt || f.excerpt }));
       showToast('Draft generated');
     } catch {
@@ -117,9 +117,9 @@ export default function CompanyArticlesPage() {
         seo_description: form.seo_description || null,
       };
       if (editing === 'new') {
-        await api.post('/api/articles', body);
+        await api.post('/articles', body);
       } else if (editing) {
-        await api.put(`/api/articles/${editing.id}`, body);
+        await api.put(`/articles/${editing.id}`, body);
       }
       showToast('Article saved');
       setEditing(null);
@@ -134,7 +134,7 @@ export default function CompanyArticlesPage() {
   const handleDelete = async (id: number) => {
     if (!window.confirm('Delete this article? This cannot be undone.')) return;
     try {
-      await api.delete(`/api/articles/${id}`);
+      await api.delete(`/articles/${id}`);
       showToast('Article deleted');
       if (editing && editing !== 'new' && (editing as Article).id === id) setEditing(null);
       await loadArticles();
@@ -322,15 +322,14 @@ export default function CompanyArticlesPage() {
   return (
     <div className="w-full">
       {toastEl}
+      <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
       {/* SEO tip banner */}
-      <div className="mb-4 flex items-center gap-3 rounded-xl bg-[#b8864a]/8 border border-[#b8864a]/20 px-4 py-3">
+      <div className="mb-6 flex items-center gap-3 rounded-xl bg-[#b8864a]/8 border border-[#b8864a]/20 px-4 py-3">
         <span className="text-base">✍️</span>
         <p className="text-sm text-[#7a5c2e] leading-snug">
-          每发布一篇文章，系统会为你增加 <strong>10 分权重</strong>。高质量的项目文章还能提升 Google SEO 排名，为你带来更多有机流量。
+          Each article you publish adds <strong>+10 points</strong> to your ranking score and improves your Google SEO, bringing in more organic traffic.
         </p>
       </div>
-
-      <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between gap-4">
@@ -411,6 +410,7 @@ export default function CompanyArticlesPage() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, AlertCircle, Eye } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { api } from '../../lib/api';
 import CompanyProfileForm from '../../components/company/CompanyProfileForm';
 
@@ -54,21 +54,17 @@ export default function CompanyProfilePage() {
         )}
       </div>
 
-      {/* ── Status banner ── */}
-      {!isNew && (
+      {/* ── Status banner (approved / rejected only) ── */}
+      {!isNew && status !== 'pending' && (
         <div className={`rounded-xl border px-4 py-3 text-sm ${
           status === 'approved' ? 'border-green-200 bg-green-50 text-green-800' :
-          status === 'rejected'  ? 'border-amber-200 bg-amber-50 text-amber-900' :
-          'border-amber-200 bg-amber-50 text-amber-800'
+          'border-amber-200 bg-amber-50 text-amber-900'
         }`}>
           <div className="flex items-center gap-2">
             {status === 'approved' && <CheckCircle2 className="w-4 h-4" />}
             {status === 'rejected'  && <AlertCircle className="w-4 h-4" />}
-            {status === 'pending'   && <Clock className="w-4 h-4" />}
             <span className="font-semibold">
-              {status === 'approved' ? 'Profile approved — visible to clients' :
-               status === 'rejected'  ? 'Profile needs updates' :
-               'Under review — usually 1–2 business days'}
+              {status === 'approved' ? 'Profile approved — visible to clients' : 'Profile needs updates'}
             </span>
           </div>
           {status === 'rejected' && adminNotes && (
