@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHand
 import { Globe, MapPin, Phone } from 'lucide-react';
 import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormSelect, FormLabel, FormTag } from '../form/FormInput';
+import AdminSelect from '../ui/AdminSelect';
 
 const GCC_DIAL_CODES = [
   { code: '+971', label: '🇦🇪 UAE (+971)' },
@@ -132,6 +133,31 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
             setLocalPhone(parsed.local);
           }
         } else {
+          // Check sessionStorage prefill from for-companies signup flow
+          try {
+            const raw = sessionStorage.getItem('company_signup_prefill');
+            if (raw) {
+              const pre = JSON.parse(raw);
+              sessionStorage.removeItem('company_signup_prefill');
+              const prefilled: ProfileData = {
+                ...EMPTY_PROFILE,
+                company_name: pre.company_name || '',
+                contact_person: pre.contact_person || '',
+                phone: pre.phone || '',
+                city: pre.city || 'Dubai',
+                company_type: pre.company_type || 'renovation_company',
+                establishment_year: pre.establishment_year ? Number(pre.establishment_year) : null,
+              };
+              setProfile(prefilled);
+              lastSavedSnapshotRef.current = serialize(prefilled);
+              if (prefilled.phone) {
+                const parsed = parsePhone(prefilled.phone);
+                setDialCode(parsed.dialCode);
+                setLocalPhone(parsed.local);
+              }
+              return;
+            }
+          } catch {}
           lastSavedSnapshotRef.current = serialize(EMPTY_PROFILE);
         }
       } catch {
@@ -234,19 +260,15 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
           <div>
             <FormLabel required icon={<Phone className="w-3.5 h-3.5" />}>Phone</FormLabel>
             <div className="flex gap-2">
-              <select
+              <AdminSelect
                 value={dialCode}
-                onChange={e => {
-                  const code = e.target.value;
+                onChange={code => {
                   setDialCode(code);
                   setProfile(p => ({ ...p, phone: `${code}${localPhone}` }));
                 }}
-                className="h-[42px] rounded-lg border border-stone-200 bg-stone-50 px-2 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 flex-shrink-0"
-              >
-                {GCC_DIAL_CODES.map(c => (
-                  <option key={c.code} value={c.code}>{c.label}</option>
-                ))}
-              </select>
+                options={GCC_DIAL_CODES.map(c => ({ value: c.code, label: c.label }))}
+                className="shrink-0 w-[170px]"
+              />
               <input
                 type="tel"
                 value={localPhone}
@@ -256,7 +278,7 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
                   setProfile(p => ({ ...p, phone: `${dialCode}${num}` }));
                 }}
                 placeholder="50 123 4567"
-                className="h-[42px] flex-1 rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] placeholder:text-stone-400 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20"
+                className="h-[50px] flex-1 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 text-[15px] text-[#2c2c2c] placeholder:text-stone-400 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:bg-white"
               />
             </div>
           </div>

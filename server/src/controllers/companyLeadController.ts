@@ -6,6 +6,23 @@ export async function submitCompanyLead(req: any, res: any) {
     const { contactName, phone, companyName, city, companyType, yearEstablished, scopeOfBusiness, lang } = req.body;
     const sourcePage = req.headers.referer || null;
 
+    // Check if phone number already registered
+    if (phone) {
+      const [userRows] = await pool.execute(
+        `SELECT u.id,
+                (SELECT COUNT(*) FROM company_profiles cp WHERE cp.user_id = u.id LIMIT 1) AS has_company
+         FROM users u WHERE u.phone = ? AND u.deleted_at IS NULL LIMIT 1`,
+        [phone]
+      );
+      const existingUser = (userRows as any[])[0];
+      if (existingUser) {
+        return res.status(409).json({
+          phoneExists: true,
+          hasCompanyProfile: existingUser.has_company > 0,
+        });
+      }
+    }
+
     const [result] = await pool.execute(
       `INSERT INTO company_leads (contact_name, phone, company_name, company_type, city, year_established, scope_of_business, lang, source_page)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,

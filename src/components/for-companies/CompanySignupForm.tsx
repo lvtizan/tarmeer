@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { t, type Lang } from '../../i18n/forCompanies';
 import AdminSelect from '../ui/AdminSelect';
 import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
+import { api } from '../../lib/api';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -58,6 +59,14 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [companyTypeError, setCompanyTypeError] = useState(false);
   const [tried, setTried] = useState(false);
 
+  // Phone-exists inline login state
+  const [phoneExistsMode, setPhoneExistsMode] = useState(false);
+  const [existingHasProfile, setExistingHasProfile] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   const inputClass =
@@ -101,6 +110,28 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         }),
       });
 
+      if (res.status === 409) {
+        const body = await res.json().catch(() => ({}));
+        if (body.phoneExists) {
+          const hasProfile = !!body.hasCompanyProfile;
+          setExistingHasProfile(hasProfile);
+          if (!hasProfile) {
+            // Save form data so profile page can prefill after login
+            sessionStorage.setItem('company_signup_prefill', JSON.stringify({
+              company_name: companyName.trim(),
+              contact_person: contactName.trim(),
+              phone: `${phoneRegion.code}${phoneDigits}`,
+              city,
+              company_type: companyType,
+              establishment_year: establishmentYear || null,
+            }));
+          }
+          setPhoneExistsMode(true);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || 'Failed to submit. Please try again.');
@@ -124,6 +155,31 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     }
   };
 
+  /* ── Step 2: Login when phone already registered ── */
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail.trim() || !loginPassword) {
+      setLoginError('Please enter your email and password.');
+      return;
+    }
+    setLoginSubmitting(true);
+    setLoginError(null);
+    try {
+      const response = await api.post('/auth/login', { email: loginEmail.trim(), password: loginPassword });
+      api.setToken(response.token);
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem('active_role', response.user.active_role || 'company');
+      }
+      // If no existing profile, prefill data was saved; profile page will read it
+      navigate(existingHasProfile ? '/company/dashboard' : '/company/profile');
+    } catch (err: any) {
+      setLoginError(err?.message || 'Invalid email or password.');
+    } finally {
+      setLoginSubmitting(false);
+    }
+  };
+
 
 
   /* ── Main form UI ── */
@@ -133,6 +189,82 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       className="bg-white rounded-[20px] shadow-[0_18px_44px_rgba(28,25,23,0.14)] overflow-hidden"
     >
       <div className="px-6 py-5 space-y-4">
+        {/* ── Phone-exists inline login panel ── */}
+        {phoneExistsMode ? (
+          <>
+            <div className="flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
+              <span className="text-amber-500 text-lg leading-none mt-0.5">⚠️</span>
+              <div>
+                <p className="text-[15px] font-semibold text-[#1c1917]">
+                  {lang === 'ar' ? 'هذا الرقم مسجّل بالفعل' : 'This phone number is already registered'}
+                </p>
+                <p className="text-sm text-stone-500 mt-0.5">
+                  {existingHasProfile
+                    ? (lang === 'ar' ? 'سجّل الدخول للوصول إلى لوحة التحكم' : 'Sign in to access your dashboard')
+                    : (lang === 'ar' ? 'سجّل الدخول لاستكمال ملفك الشركة' : 'Sign in to complete your company profile')}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleLoginSubmit} className="space-y-3" noValidate>
+              <div>
+                <label className={labelClass}>
+                  {lang === 'ar' ? 'البريد الإلكتروني' : 'Email'} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder={lang === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
+                  className={inputClass}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {lang === 'ar' ? 'كلمة المرور' : 'Password'} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder={lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
+                  className={inputClass}
+                />
+              </div>
+
+              {loginError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
+                  {loginError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loginSubmitting}
+                className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loginSubmitting ? (
+                  <>
+                    <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                    {lang === 'ar' ? 'جارٍ الدخول...' : 'Signing in...'}
+                  </>
+                ) : (
+                  lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPhoneExistsMode(false); setLoginError(null); }}
+                className="w-full text-center text-sm text-stone-500 hover:text-stone-700 py-1"
+              >
+                {lang === 'ar' ? '← العودة' : '← Back'}
+              </button>
+            </form>
+          </>
+        ) : (
+        <>
         <h2 className="text-[18px] font-bold text-[#1c1917] leading-snug">
           {t(lang, 'formTitle')}
         </h2>
@@ -158,36 +290,16 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               {t(lang, 'phone')} <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
-              <div className="relative shrink-0">
-                <select
-                  value={phoneRegion.code}
-                  onChange={(e) => {
-                    const next =
-                      GCC_PHONE_OPTIONS.find((o) => o.code === e.target.value) ||
-                      GCC_PHONE_OPTIONS[0];
-                    setPhoneRegion(next);
-                    setPhoneDigits((d) => d.slice(0, next.maxDigits));
-                  }}
-                  className="h-[50px] rounded-2xl border border-stone-200 bg-stone-50/80 pl-4 pr-9 text-[15px] font-medium text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition appearance-none"
-                >
-                  {GCC_PHONE_OPTIONS.map((o) => (
-                    <option key={o.code} value={o.code}>
-                      {o.label} {o.code}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
+              <AdminSelect
+                value={phoneRegion.code}
+                onChange={(code) => {
+                  const next = GCC_PHONE_OPTIONS.find((o) => o.code === code) || GCC_PHONE_OPTIONS[0];
+                  setPhoneRegion(next);
+                  setPhoneDigits((d) => d.slice(0, next.maxDigits));
+                }}
+                options={GCC_PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} (${o.code})` }))}
+                className="shrink-0 w-[150px]"
+              />
               <input
                 type="tel"
                 inputMode="numeric"
@@ -297,6 +409,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             )}
           </button>
         </form>
+        </>
+        )}
       </div>
     </div>
   );
