@@ -316,6 +316,91 @@ All localStorage access should use the safe wrappers from `src/lib/storage.ts` (
 
 ---
 
+## Mobile Adaptation Rules
+
+These rules apply to all pages. Violations should be fixed whenever a page is touched.
+
+### 1. Step Indicators / Stepper
+
+- **Always use `grid grid-cols-N`**, never `flex` with fixed-width connectors.
+- Connector lines must be **absolute-positioned** from the center of one column to the center of the next (`left-1/2 right-0` / `right-1/2 left-0`, `top-[18px]`).
+- The circle must have `relative z-10` so it renders above the connector line.
+- Labels must **wrap** — never add `whitespace-nowrap` to step labels.
+- Label font: `text-[10px]` with `text-center leading-tight px-1`.
+
+```tsx
+// Correct pattern
+<div className="grid grid-cols-3 relative">
+  {steps.map((step, i) => (
+    <div className="flex flex-col items-center relative">
+      {i > 0 && <div className="absolute top-[18px] right-1/2 left-0 h-0.5 bg-stone-200" />}
+      {i < steps.length - 1 && <div className="absolute top-[18px] left-1/2 right-0 h-0.5 bg-stone-200" />}
+      <div className="relative z-10 w-9 h-9 rounded-full ...">...</div>
+      <span className="mt-1.5 text-[10px] text-center leading-tight px-1">...</span>
+    </div>
+  ))}
+</div>
+```
+
+### 2. Card Grids
+
+- **2 cards**: `grid-cols-2` — always symmetric.
+- **3 cards**: `grid-cols-3` with smaller padding (`p-3 sm:p-4`), not `grid-cols-2` which creates an orphaned third card.
+- **4+ cards**: `grid-cols-2 sm:grid-cols-4` (2 on mobile, 4 on desktop).
+- Secondary hint text inside cards: `hidden sm:block` on mobile to avoid cramping.
+- Font sizes in cards: `text-xl sm:text-2xl` for numbers, `text-[11px] sm:text-xs` for labels.
+
+### 3. Select / Dropdown Controls
+
+- **Never use native `<select>`** — Android renders it as a dark-background OS dialog with poor contrast.
+- Always use `<AdminSelect>` from `src/components/ui/AdminSelect.tsx`.
+- `AdminSelect` is a custom div-based dropdown: white background, 15px text, stone border, max-h-60 scrollable list.
+- Touch target per option: `py-3` minimum (≈ 44px).
+
+### 4. Form Inputs
+
+- Input height: `h-[50px]` — keep on all screen sizes (adequate touch target).
+- Labels: `text-xs font-medium uppercase tracking-wider text-stone-500` — do not shrink on mobile.
+- Required field markers: red asterisk `<span className="text-red-500">*</span>` on all required labels.
+- Validation: show red border (`border-red-400`) only after first submit attempt (`tried` state pattern).
+
+### 5. Touch Targets
+
+- All interactive elements (buttons, links, nav items): `min-h-[44px]`.
+- Dropdown list items: `py-3` (≈ 44px).
+- Icon-only buttons: `w-10 h-10` minimum with `flex items-center justify-center`.
+
+### 6. Typography Minimums
+
+| Use | Class | Min size |
+|-----|-------|----------|
+| Body / input text | `text-[15px]` | 15px |
+| Labels / captions | `text-xs` | 12px |
+| Step labels / micro | `text-[10px]` | 10px |
+| Never below | — | 10px |
+
+- Never use `text-stone-300` or lighter for readable text (contrast too low).
+- `text-stone-400` only for placeholder text inside inputs.
+
+### 7. Layout & Spacing
+
+- Page-level padding: `px-4 sm:px-6` (16px on mobile, 24px on sm+).
+- Card internal padding: `p-3 sm:p-4`.
+- Section gaps: `space-y-4` on mobile, `space-y-6` on desktop where needed.
+- Horizontal overflow: avoid any `whitespace-nowrap` on text that could exceed 320px.
+
+### 8. Testing Checklist (before deploy)
+
+When touching a page with UI components, verify on 375px viewport:
+- [ ] No horizontal scroll
+- [ ] All text readable (no truncation/clipping)
+- [ ] Step circles centered within their columns
+- [ ] Card grids symmetric (no orphaned cards)
+- [ ] Select dropdowns open with white background
+- [ ] All touch targets ≥ 44px
+
+---
+
 ## Build & Dev
 
 ### Commands
