@@ -3,6 +3,29 @@ import { Globe, MapPin, Phone } from 'lucide-react';
 import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormSelect, FormLabel, FormTag } from '../form/FormInput';
 
+const GCC_DIAL_CODES = [
+  { code: '+971', label: '🇦🇪 UAE (+971)' },
+  { code: '+966', label: '🇸🇦 KSA (+966)' },
+  { code: '+965', label: '🇰🇼 Kuwait (+965)' },
+  { code: '+973', label: '🇧🇭 Bahrain (+973)' },
+  { code: '+974', label: '🇶🇦 Qatar (+974)' },
+  { code: '+968', label: '🇴🇲 Oman (+968)' },
+  { code: '+1',   label: '🇺🇸 US (+1)' },
+  { code: '+44',  label: '🇬🇧 UK (+44)' },
+  { code: '+91',  label: '🇮🇳 India (+91)' },
+  { code: '+20',  label: '🇪🇬 Egypt (+20)' },
+  { code: '+92',  label: '🇵🇰 Pakistan (+92)' },
+];
+
+function parsePhone(full: string): { dialCode: string; local: string } {
+  for (const { code } of GCC_DIAL_CODES) {
+    if (full.startsWith(code)) {
+      return { dialCode: code, local: full.slice(code.length).trim() };
+    }
+  }
+  return { dialCode: '+971', local: full };
+}
+
 /* ── Constants ── */
 export const SERVICES = ['Interior Design','Architecture','Fit-Out','Renovation','Construction','Landscape','Furniture','Joinery','MEP','Project Management','Design & Build','Turnkey Solutions','Maintenance','Glass & Aluminium','Painting & Finishing','Flooring & Tiling','Demolition','Steel & Fabrication','Curtains & Blinds','Cleaning Services','Pools'];
 export const SPECIALTIES = ['Residential','Villa','Commercial','Hospitality','Retail','Office','Education','Healthcare','F&B','Luxury Residential','Mixed-Use'];
@@ -64,6 +87,8 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveText, setSaveText] = useState('');
+  const [dialCode, setDialCode] = useState('+971');
+  const [localPhone, setLocalPhone] = useState('');
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTextTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,6 +122,11 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
           setProfile(next);
           if (d.id) setProfileId(Number(d.id));
           lastSavedSnapshotRef.current = serialize(next);
+          if (next.phone) {
+            const parsed = parsePhone(next.phone);
+            setDialCode(parsed.dialCode);
+            setLocalPhone(parsed.local);
+          }
         } else {
           lastSavedSnapshotRef.current = serialize(EMPTY_PROFILE);
         }
@@ -140,7 +170,7 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
       const newId = saved?.id ? Number(saved.id) : profileId;
       if (saved?.id) setProfileId(Number(saved.id));
       lastSavedSnapshotRef.current = serialize(current);
-      setSaveText(manual ? 'Saved' : 'Saved just now');
+      setSaveText(manual ? 'Saved' : 'Draft saved');
       clearSaveTextLater();
       onSaved?.(newId);
     } catch (err: any) {
@@ -183,7 +213,7 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
         <div className="flex items-center justify-end gap-3">
           {saveText && (
             <span className={`text-sm font-medium ${
-              saveText === 'Saved' || saveText === 'Saved just now' ? 'text-emerald-600' :
+              saveText === 'Saved' || saveText === 'Draft saved' ? 'text-emerald-600' :
               saveText === 'Saving...' ? 'text-stone-400' : 'text-red-600'
             }`}>
               {saving && <span className="inline-block w-3 h-3 border-2 border-[#b8864a] border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />}
@@ -211,7 +241,32 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
           </div>
           <div>
             <FormLabel required icon={<Phone className="w-3.5 h-3.5" />}>Phone</FormLabel>
-            <FormInput type="tel" value={profile.phone} onChange={e => set('phone', e.target.value)} placeholder="+971 50 123 4567" />
+            <div className="flex gap-2">
+              <select
+                value={dialCode}
+                onChange={e => {
+                  const code = e.target.value;
+                  setDialCode(code);
+                  setProfile(p => ({ ...p, phone: `${code}${localPhone}` }));
+                }}
+                className="h-[42px] rounded-lg border border-stone-200 bg-stone-50 px-2 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 flex-shrink-0"
+              >
+                {GCC_DIAL_CODES.map(c => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </select>
+              <input
+                type="tel"
+                value={localPhone}
+                onChange={e => {
+                  const num = e.target.value;
+                  setLocalPhone(num);
+                  setProfile(p => ({ ...p, phone: `${dialCode}${num}` }));
+                }}
+                placeholder="50 123 4567"
+                className="h-[42px] flex-1 rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] placeholder:text-stone-400 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20"
+              />
+            </div>
           </div>
           <div className="md:col-span-2">
             <FormLabel required>Description</FormLabel>
@@ -277,7 +332,7 @@ export default function CompanyProfileForm({ onSaved, showSaveBar = false }: Pro
       {/* Save status (non-bar mode) */}
       {!showSaveBar && saveText && (
         <p className={`text-xs text-right ${
-          saveText === 'Saved' || saveText === 'Saved just now' ? 'text-emerald-600' :
+          saveText === 'Saved' || saveText === 'Draft saved' ? 'text-emerald-600' :
           saveText === 'Saving...' ? 'text-stone-400' : 'text-red-600'
         }`}>{saveText}</p>
       )}

@@ -243,32 +243,34 @@ function OnboardingStepper({
 
       {/* Step row connector */}
       <div className="px-6 py-5">
-        <div className="flex items-center justify-between mb-6">
-          {steps.map((step, i) => (
-            <div key={step.number} className="flex items-center flex-1">
-              {/* Step circle */}
-              <div className="flex flex-col items-center">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                  step.done
-                    ? 'bg-[#b8864a] text-white'
-                    : i === steps.findIndex(s => !s.done)
-                      ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
-                      : 'bg-stone-100 text-stone-400'
-                }`}>
-                  {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
+        <div className="flex justify-center mb-6">
+          <div className="flex items-start">
+            {steps.map((step, i) => (
+              <div key={step.number} className="flex items-start">
+                {/* Step circle + label */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                    step.done
+                      ? 'bg-[#b8864a] text-white'
+                      : i === steps.findIndex(s => !s.done)
+                        ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
+                        : 'bg-stone-100 text-stone-400'
+                  }`}>
+                    {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
+                  </div>
+                  <span className={`mt-1.5 text-[11px] font-medium whitespace-nowrap text-center ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+                    {step.label}
+                  </span>
                 </div>
-                <span className={`mt-1.5 text-[11px] font-medium whitespace-nowrap ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
-                  {step.label}
-                </span>
+                {/* Connector line */}
+                {i < steps.length - 1 && (
+                  <div className={`mt-[18px] w-20 sm:w-28 h-0.5 mx-3 transition-all ${
+                    steps[i].done ? 'bg-[#b8864a]' : 'bg-stone-200'
+                  }`} />
+                )}
               </div>
-              {/* Connector line */}
-              {i < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 transition-all ${
-                  steps[i].done ? 'bg-[#b8864a]' : 'bg-stone-200'
-                }`} />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Active step detail card */}

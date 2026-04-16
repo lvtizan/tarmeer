@@ -1,21 +1,13 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Eye } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '../../lib/api';
 import CompanyProfileForm from '../../components/company/CompanyProfileForm';
-
-function getPublicSiteBase(): string {
-  if (typeof window === 'undefined') return '';
-  const { hostname, protocol } = window.location;
-  if (hostname.startsWith('admin.')) return `${protocol}//www.${hostname.replace(/^admin\./, '')}`;
-  return '';
-}
 
 export default function CompanyProfilePage() {
   const [profileId, setProfileId] = useState<number | null>(null);
   const [status, setStatus] = useState<string>('pending');
   const [adminNotes, setAdminNotes] = useState<string>('');
   const [isNew, setIsNew] = useState(true);
-  const publicSiteBase = getPublicSiteBase();
 
   useEffect(() => {
     api.get('/auth/company/profile').then(r => {
@@ -38,20 +30,9 @@ export default function CompanyProfilePage() {
     <div className="w-full max-w-[840px] mx-auto space-y-6">
 
       {/* ── Page header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#2c2c2c]">Company Profile</h1>
-          <p className="mt-1 text-sm text-stone-500">Changes save automatically as you type.</p>
-        </div>
-        {profileId && (
-          <a
-            href={`${publicSiteBase || ''}/companies/${profileId}?preview=1&from=company-dashboard`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-stone-200 bg-white text-sm font-semibold text-stone-700 hover:bg-stone-50 transition flex-shrink-0"
-          >
-            <Eye className="w-4 h-4" />Preview
-          </a>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold text-[#2c2c2c]">Company Profile</h1>
+        <p className="mt-1 text-sm text-stone-500">Changes save automatically as a draft.</p>
       </div>
 
       {/* ── Status banner (approved / rejected only) ── */}
