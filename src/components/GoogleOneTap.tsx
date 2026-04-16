@@ -11,7 +11,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 // 不弹 One Tap 的页面（公司注册/登录页通过 email 流程处理，无需 One Tap）
-const EXCLUDED_PATHS = ['/auth', '/login', '/register', '/designer/', '/for-companies', '/join'];
+const EXCLUDED_PATHS = ['/auth', '/login', '/register', '/designer/', '/for-companies', '/join', '/admin', '/verify-email'];
 
 // 模块级标志 — 跨组件 mount/unmount 保持，彻底防止重复初始化
 let gsiInitialized = false;

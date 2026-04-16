@@ -1,4 +1,4 @@
-import { Suspense, lazy, type ReactNode } from 'react';
+import { Suspense, lazy, type ReactNode, Component, type ErrorInfo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AdminProvider } from './contexts/AdminContext';
 import { api } from './lib/api';
@@ -78,6 +78,48 @@ const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'));
 const AdminStatsPage = lazy(() => import('./pages/admin/AdminStatsPage'));
 const AdminProjectDetailPage = lazy(() => import('./pages/admin/AdminProjectDetailPage'));
 
+// Catches "Failed to fetch dynamically imported module" errors caused by stale browser cache after deploy
+class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: Error) {
+    if (error.message?.includes('dynamically imported module') || error.message?.includes('Failed to fetch')) {
+      return { hasError: true };
+    }
+    return null;
+  }
+  componentDidCatch(error: Error, _info: ErrorInfo) {
+    if (error.message?.includes('dynamically imported module') || error.message?.includes('Failed to fetch')) {
+      // Auto-reload once to pick up the new bundle
+      const reloaded = sessionStorage.getItem('chunk_reload');
+      if (!reloaded) {
+        sessionStorage.setItem('chunk_reload', '1');
+        window.location.reload();
+      }
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
+          <div className="text-center px-6">
+            <p className="text-stone-600 mb-4">A new version is available. Please refresh to continue.</p>
+            <button
+              onClick={() => { sessionStorage.removeItem('chunk_reload'); window.location.reload(); }}
+              className="btn-primary px-6 py-2 rounded-2xl text-sm font-semibold"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function PageLoader() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
@@ -102,6 +144,7 @@ function App() {
       <SeoManager />
       <GoogleOneTap />
       <ToastContainer />
+      <ChunkErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* ====== Admin ====== */}
@@ -202,6 +245,7 @@ function App() {
           } />
         </Routes>
       </Suspense>
+      </ChunkErrorBoundary>
     </>
   );
 }

@@ -151,7 +151,19 @@ export default function CompanyOnboardingPage() {
           return;
         }
 
-        if (onboardingStep === 1) {
+        if (onboardingStep >= 1) {
+          setStep(2);
+        } else if (profile?.company_name && profile?.contact_person) {
+          // Profile already created during registration — auto-advance past step 1
+          try {
+            await api.post('/auth/company/profile', {
+              company_name: profile.company_name,
+              contact_person: profile.contact_person,
+              phone: profile.phone || '',
+              company_type: profile.company_type || 'renovation_company',
+              onboarding_step: 1,
+            });
+          } catch { /* ignore, best-effort */ }
           setStep(2);
         } else {
           setStep(1);
