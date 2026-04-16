@@ -5,6 +5,7 @@ import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
 import GoogleOneTap from './components/GoogleOneTap';
 import ToastContainer from './components/ui/Toast';
+import { useMetaPixelPageView } from './hooks/useMetaPixelPageView';
 
 const Layout = lazy(() => import('./components/Layout'));
 const CompanyLayout = lazy(() => import('./components/company/CompanyLayout'));
@@ -140,6 +141,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 }
 
 function App() {
+  useMetaPixelPageView();
   return (
     <>
       <SeoManager />
