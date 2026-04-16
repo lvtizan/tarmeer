@@ -168,21 +168,31 @@ async function tryDesignerMigrationLogin(email: string, password: string): Promi
   if (designers.length === 0) return null;
 
   const designer = designers[0];
+
+  // Check if the linked user account has been deleted by admin
+  const linkedUserDeleted = designer.user_id
+    ? await (async () => {
+        const [r] = await pool.execute('SELECT id, deleted_at FROM users WHERE id = ?', [designer.user_id]);
+        const u = (r as any[])[0];
+        return !u || u.deleted_at !== null;
+      })()
+    : false;
+
   if (!designer.password) {
+    // Google OAuth account: if the admin deleted the linked user, allow re-registration
+    if (linkedUserDeleted) return null;
     throw Object.assign(new Error('This account was registered with Google. Please use "Continue with Google" to sign in, or use "Forgot password" to set a password.'), { status: 401 });
   }
   if (!designer.email_verified) {
-    // Account exists but unverified — check-availability now excludes these,
-    // so this path means the user tried to login directly; tell them to re-register
     throw Object.assign(new Error('This account was not verified. Please register again to create a new account.'), { status: 401 });
   }
 
   const isValid = await bcrypt.compare(password, designer.password);
   if (!isValid) return null;
 
-  // If already linked to a user, just return that user
-  if (designer.user_id) {
-    const [userRows] = await pool.execute('SELECT * FROM users WHERE id = ?', [designer.user_id]);
+  // If already linked to an active (non-deleted) user, return that user
+  if (designer.user_id && !linkedUserDeleted) {
+    const [userRows] = await pool.execute('SELECT * FROM users WHERE id = ? AND deleted_at IS NULL', [designer.user_id]);
     if ((userRows as any[]).length > 0) {
       const user = (userRows as any[])[0];
       return { token: generateToken(user), user: sanitizeUser(user), designer };
