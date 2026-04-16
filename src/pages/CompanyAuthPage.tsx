@@ -138,12 +138,15 @@ function JoinAuthCard() {
     setLoading(true);
     setError(null);
     try {
+      // Signup source: if from /for-companies landing, it's "for-companies-landing"
+      const source = companySignupData ? 'for-companies-landing' : 'join-page';
       await api.post('/auth/register', {
         email, password,
         full_name: companySignupData?.contact_person || '',
         phone: companySignupData?.phone || '',
         city: companySignupData?.city || 'Dubai',
         role: 'company',
+        signup_source: source,
       });
 
       // If company signup, try to auto-login and create profile
@@ -163,6 +166,8 @@ function JoinAuthCard() {
             description: '',
             services: ['Interior Design'],
             company_type: companySignupData.company_type,
+            establishment_year: companySignupData.establishment_year ? Number(companySignupData.establishment_year) : null,
+            signup_source: source,
           });
           navigate('/company');
           return;

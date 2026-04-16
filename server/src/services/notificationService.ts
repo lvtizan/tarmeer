@@ -7,7 +7,7 @@ import { transporter, FROM_EMAIL, FROM_NAME, REPLY_TO_EMAIL, RETURN_PATH_EMAIL, 
 
 interface CreateNotification {
   userId?: number | null; // null = admin broadcast
-  type: 'inquiry' | 'company_registration' | 'system';
+  type: 'inquiry' | 'company_registration' | 'user_registration' | 'system';
   title: string;
   message: string;
   link?: string;
@@ -122,7 +122,21 @@ interface CompanyData {
   city: string;
   companyType: string;
   services: string[];
+  signupSource?: string;
 }
+
+const SOURCE_LABELS: Record<string, string> = {
+  'for-companies-landing': '企业落地页（/for-companies）',
+  'join-page': '注册页邮箱（/join）',
+  'join-page-google': '注册页 Google 登录（/join）',
+  'auth-page': '登录页邮箱（/auth）',
+  'auth-page-google': '登录页 Google 登录（/auth）',
+  'google-oauth': 'Google OAuth（业主）',
+  'google-oauth-company': 'Google OAuth（企业）',
+  'google-one-tap': 'Google One Tap 弹窗',
+  'designer-application': '设计师申请',
+  'home-banner': '首页 Banner',
+};
 
 export async function notifyCompanyRegistration(company: CompanyData) {
   const title = `New company registered: ${company.companyName}`;
@@ -144,6 +158,7 @@ export async function notifyCompanyRegistration(company: CompanyData) {
     landscaping: 'Landscaping & Pools', furnishing: 'Furnishing',
   };
   const typeLabel = typeLabels[company.companyType] || company.companyType;
+  const sourceLabel = company.signupSource ? (SOURCE_LABELS[company.signupSource] || company.signupSource) : '未知';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #b8864a;">New Company Registration</h2>
@@ -154,12 +169,60 @@ export async function notifyCompanyRegistration(company: CompanyData) {
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${company.phone}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>City:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${company.city}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Services:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${company.services.join(', ')}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>注册渠道:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #b8864a;"><strong>${sourceLabel}</strong></td></tr>
         <tr><td style="padding: 8px 0;"><strong>Time:</strong></td><td style="padding: 8px 0;">${new Date().toLocaleString('en-US')}</td></tr>
       </table>
       <p style="margin-top: 20px; color: #666;">Please log in to the admin panel to review and approve.</p>
     </div>
   `;
-  const text = `New Company: ${company.companyName} (${typeLabel}), ${company.contactPerson}, ${company.phone}, ${company.city}`;
+  const text = `New Company: ${company.companyName} (${typeLabel}), ${company.contactPerson}, ${company.phone}, ${company.city} | 渠道: ${sourceLabel}`;
 
   await sendGroupEmail('[Tarmeer] New Company Registration', html, text);
+}
+
+// ============================================================
+// New user/homeowner registration notification
+// ============================================================
+
+interface UserData {
+  email: string;
+  fullName: string;
+  phone?: string | null;
+  city?: string | null;
+  role: string;
+  signupSource?: string | null;
+}
+
+export async function notifyUserRegistration(user: UserData) {
+  const title = `New user registered: ${user.fullName || user.email}`;
+  const msg = `${user.fullName || user.email} (${user.role})${user.city ? ' in ' + user.city : ''}`;
+
+  // In-app
+  await createNotification({
+    type: 'user_registration',
+    title,
+    message: msg,
+    link: '/admin/users',
+  });
+
+  const sourceLabel = user.signupSource ? (SOURCE_LABELS[user.signupSource] || user.signupSource) : '未知';
+  const roleLabel = user.role === 'homeowner' || user.role === 'user' ? '业主' : user.role === 'designer' ? '设计师' : user.role;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #b8864a;">New User Registration</h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${user.fullName || '—'}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${user.email}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Role:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${roleLabel}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${user.phone || '—'}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>City:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${user.city || '—'}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>注册渠道:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #b8864a;"><strong>${sourceLabel}</strong></td></tr>
+        <tr><td style="padding: 8px 0;"><strong>Time:</strong></td><td style="padding: 8px 0;">${new Date().toLocaleString('en-US')}</td></tr>
+      </table>
+    </div>
+  `;
+  const text = `New ${roleLabel}: ${user.fullName || user.email}, ${user.phone || '—'}, ${user.city || '—'} | 渠道: ${sourceLabel}`;
+
+  await sendGroupEmail(`[Tarmeer] New ${roleLabel} Registration`, html, text);
 }

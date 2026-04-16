@@ -18,6 +18,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
 
   const selected = options.find((o) => o.value === value);
 
+  // Desktop outside-click to close
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
@@ -28,6 +29,23 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
+
+  const optionList = options.map((opt) => (
+    <button
+      key={opt.value}
+      type="button"
+      onClick={() => { onChange(opt.value); setOpen(false); }}
+      className={`w-full text-left px-5 py-4 text-[15px] transition hover:bg-stone-50 ${
+        opt.value === value
+          ? 'text-[#b8864a] font-medium bg-[#b8864a]/5'
+          : opt.value === ''
+          ? 'text-stone-400'
+          : 'text-[#1c1917]'
+      }`}
+    >
+      {opt.label}
+    </button>
+  ));
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -46,7 +64,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
         ))}
       </select>
 
-      {/* Custom trigger */}
+      {/* Trigger button */}
       <button
         type="button"
         disabled={disabled}
@@ -64,27 +82,47 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
         </svg>
       </button>
 
-      {/* Dropdown list */}
       {open && (
-        <ul className="absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
-          {options.map((opt) => (
-            <li key={opt.value}>
-              <button
-                type="button"
-                onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`w-full text-left px-5 py-3 text-[15px] transition hover:bg-stone-50 ${
-                  opt.value === value
-                    ? 'text-[#b8864a] font-medium bg-[#b8864a]/5'
-                    : opt.value === ''
-                    ? 'text-stone-400'
-                    : 'text-[#1c1917]'
-                }`}
-              >
-                {opt.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          {/* Mobile: fixed centered modal */}
+          <div
+            className="sm:hidden fixed inset-0 z-[200] bg-black/40 flex items-center justify-center px-6"
+            onMouseDown={() => setOpen(false)}
+          >
+            <div
+              className="w-full bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 py-4 border-b border-stone-100">
+                <p className="text-sm font-semibold text-[#2c2c2c]">Select an option</p>
+              </div>
+              <div className="divide-y divide-stone-100">
+                {optionList}
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop: absolute dropdown below trigger */}
+          <ul className="hidden sm:block absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+            {options.map((opt) => (
+              <li key={opt.value}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(opt.value); setOpen(false); }}
+                  className={`w-full text-left px-5 py-3 text-[15px] transition hover:bg-stone-50 ${
+                    opt.value === value
+                      ? 'text-[#b8864a] font-medium bg-[#b8864a]/5'
+                      : opt.value === ''
+                      ? 'text-stone-400'
+                      : 'text-[#1c1917]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

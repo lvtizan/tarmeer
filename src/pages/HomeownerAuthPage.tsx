@@ -177,6 +177,7 @@ export default function HomeownerAuthPage() {
         phone: '',
         city: 'Dubai',
         role: authRole,
+        signup_source: 'auth-page',
       });
 
       setSuccess(res?.message || 'Account created! Please check your email to verify.');

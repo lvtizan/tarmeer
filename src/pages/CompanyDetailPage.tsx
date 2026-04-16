@@ -353,12 +353,13 @@ export default function CompanyDetailPage() {
               )}
               <div className="flex-1 min-w-0">
                 <h1 className="font-serif text-2xl font-semibold text-[#1c1917]">
+                  {company.isSigned && (
+                    <span className="inline-flex items-center mr-2 px-2 py-[3px] rounded bg-gradient-to-b from-[#d4a853] to-[#b8864a] text-white text-[12px] font-bold tracking-wider leading-none shrink-0 align-middle">VIP</span>
+                  )}
                   {company.name}
-                  {company.isSigned ? (
-                    <span className="inline ml-1.5 text-[18px] font-bold italic tracking-[0.08em] shrink-0 bg-gradient-to-b from-[#d4a853] to-[#9a7035] bg-clip-text text-transparent" style={{fontFamily:'Georgia, serif', verticalAlign:'baseline'}}>VIP</span>
-                  ) : company.isClaimed ? (
+                  {!company.isSigned && company.isClaimed && (
                     <BadgeCheck className="inline w-5 h-5 ml-1.5 text-[#b8864a]/70 shrink-0" />
-                  ) : null}
+                  )}
                 </h1>
                 <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-sm">
                   {company.companyType && getCompanyTypeLabel(company.companyType) && (

@@ -24,6 +24,7 @@ export async function upsertProfile(req: any, res: any) {
     const specialtiesJson = JSON.stringify(payload.specialties);
     const slug = slugify(payload.company_name);
     const onboardingStep = typeof req.body.onboarding_step === 'number' ? req.body.onboarding_step : null;
+    const signupSource = typeof req.body.signup_source === 'string' ? req.body.signup_source.slice(0, 64) : null;
 
     // Check if profile exists
     const [existing] = await pool.execute('SELECT id FROM company_profiles WHERE user_id = ?', [userId]);
@@ -52,8 +53,8 @@ export async function upsertProfile(req: any, res: any) {
       );
     } else {
       await pool.execute(
-        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, slug, status, onboarding_step)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
+        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, slug, status, onboarding_step, signup_source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
         [
           userId,
           payload.company_name,
@@ -71,6 +72,7 @@ export async function upsertProfile(req: any, res: any) {
           specialtiesJson,
           slug,
           onboardingStep || 0,
+          signupSource,
         ]
       );
 
@@ -79,6 +81,7 @@ export async function upsertProfile(req: any, res: any) {
         notifyCompanyRegistration({
           companyName: payload.company_name, contactPerson: payload.contact_person,
           phone: payload.phone, city: payload.city, companyType: payload.company_type, services: payload.services,
+          signupSource: signupSource || undefined,
         }).catch(() => {});
       });
     }

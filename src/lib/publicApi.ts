@@ -93,14 +93,20 @@ function sanitizePortfolioCategories(
   return output;
 }
 
+function extractUrl(item: any): string {
+  if (typeof item === 'string') return item;
+  if (item && typeof item === 'object' && typeof item.url === 'string') return item.url;
+  return '';
+}
+
 function parseJsonArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value.map((item) => String(item || '')).filter(Boolean);
+    return value.map(extractUrl).filter(Boolean);
   }
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.map((item) => String(item || '')).filter(Boolean) : [];
+      return Array.isArray(parsed) ? parsed.map(extractUrl).filter(Boolean) : [];
     } catch {
       return [];
     }

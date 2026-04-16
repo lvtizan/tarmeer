@@ -4,6 +4,7 @@ import axios from 'axios';
 import pool from '../config/database';
 import config from '../config';
 import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, sendAdminPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
+import { notifyUserRegistration } from '../services/notificationService';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
 import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 
@@ -65,8 +66,9 @@ async function getLinkedDesignerPayload(user: { id: number; email: string }) {
 // Register a new user (role = 'user' by default)
 export async function register(req: any, res: any) {
   try {
-    const { email, password, fullName, full_name, phone, city, role: requestedRole } = req.body;
+    const { email, password, fullName, full_name, phone, city, role: requestedRole, signup_source } = req.body;
     const name = fullName || full_name || email.split('@')[0];
+    const source = typeof signup_source === 'string' ? signup_source.slice(0, 64) : null;
     const validRoles = ['homeowner', 'company'];
     const assignRole = validRoles.includes(requestedRole) ? requestedRole : null;
 
@@ -84,10 +86,10 @@ export async function register(req: any, res: any) {
     const { token: verificationToken, expires: verificationExpires } = generateVerificationToken();
 
     const [result] = await pool.execute(
-      `INSERT INTO users (email, password, full_name, phone, city, verification_token, verification_token_expires, role, active_role, onboarding_completed, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+      `INSERT INTO users (email, password, full_name, phone, city, verification_token, verification_token_expires, role, active_role, onboarding_completed, status, signup_source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
       [email, hashedPassword, name, phone || null, normalizeCity(city), verificationToken, verificationExpires,
-       assignRole || 'user', assignRole || null, assignRole ? 1 : 0]
+       assignRole || 'user', assignRole || null, assignRole ? 1 : 0, source]
     );
 
     const userId = (result as any).insertId;
@@ -102,6 +104,20 @@ export async function register(req: any, res: any) {
       } catch (emailError: any) {
         console.error('[SMTP] Verification email failed:', emailError?.message || emailError);
       }
+    }
+
+    // Notify admins of new user registration (skip 'company' role — handled by profile creation)
+    if ((assignRole || 'user') !== 'company') {
+      setImmediate(() => {
+        notifyUserRegistration({
+          email,
+          fullName: name,
+          phone: phone || null,
+          city: city || null,
+          role: assignRole || 'user',
+          signupSource: source,
+        }).catch(() => {});
+      });
     }
 
     res.status(201).json({
@@ -620,8 +636,8 @@ export async function googleOneTap(req: any, res: any) {
       } else {
         // Create new user
         const [result] = await pool.execute(
-          `INSERT INTO users (email, password, full_name, avatar_url, role, email_verified, status)
-           VALUES (?, '', ?, ?, 'user', TRUE, 'active')`,
+          `INSERT INTO users (email, password, full_name, avatar_url, role, email_verified, status, signup_source)
+           VALUES (?, '', ?, ?, 'user', TRUE, 'active', 'google-one-tap')`,
           [email, name, picture]
         );
         const userId = (result as any).insertId;
@@ -674,14 +690,29 @@ export async function oauthCallback(req: any, res: any) {
     let user = (rows as any[])[0];
 
     if (!user) {
+      const googleSource = assignRole === 'company' ? 'google-oauth-company' : 'google-oauth';
       const [result] = await pool.execute(
-        `INSERT INTO users (email, password, full_name, avatar_url, role, active_role, onboarding_completed, email_verified, status)
-         VALUES (?, '', ?, ?, ?, ?, ?, TRUE, 'active')`,
+        `INSERT INTO users (email, password, full_name, avatar_url, role, active_role, onboarding_completed, email_verified, status, signup_source)
+         VALUES (?, '', ?, ?, ?, ?, ?, TRUE, 'active', ?)`,
         [passportUser.email, passportUser.full_name, passportUser.avatar_url || '',
-         assignRole || 'user', assignRole || null, assignRole ? 1 : 0]
+         assignRole || 'user', assignRole || null, assignRole ? 1 : 0, googleSource]
       );
       const userId = (result as any).insertId;
       await pool.execute('UPDATE designers SET user_id = ? WHERE id = ?', [userId, passportUser.id]);
+
+      // Notify admins of new user registration via Google OAuth
+      if ((assignRole || 'user') !== 'company') {
+        setImmediate(() => {
+          notifyUserRegistration({
+            email: passportUser.email,
+            fullName: passportUser.full_name,
+            phone: null,
+            city: null,
+            role: assignRole || 'user',
+            signupSource: googleSource,
+          }).catch(() => {});
+        });
+      }
 
       [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
       user = (rows as any[])[0];
