@@ -20,6 +20,7 @@ export default function CompanyDashboardPage() {
   const [articleCount, setArticleCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -68,7 +69,8 @@ export default function CompanyDashboardPage() {
     } finally {
       setSubmittingReview(false);
     }
-    showToast('Submitted for review! Our team will get back to you within 1–2 business days.', 'success');
+    setReviewSubmitted(true);
+    showToast('Submitted! We\'ll get back to you within 1–2 business days.', 'success');
   };
 
   // Onboarding step completion
@@ -113,7 +115,7 @@ export default function CompanyDashboardPage() {
       )}
 
       {/* ── Submit for Review CTA ── */}
-      {step1Done && step2Done && !step3Done && (
+      {step1Done && step2Done && !step3Done && !reviewSubmitted && (
         <div className="rounded-2xl border-2 border-[#b8864a]/40 bg-gradient-to-br from-[#b8864a]/8 to-[#b8864a]/3 px-6 py-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
           <div className="flex-1">
             <p className="text-base font-bold text-[#2c2c2c]">Your profile is ready — submit for review</p>
@@ -128,6 +130,17 @@ export default function CompanyDashboardPage() {
             <Send className="w-4 h-4" />
             {submittingReview ? 'Submitting...' : 'Submit for Review'}
           </button>
+        </div>
+      )}
+
+      {/* ── Submitted confirmation ── */}
+      {step1Done && step2Done && !step3Done && reviewSubmitted && (
+        <div className="rounded-2xl border border-stone-200 bg-stone-50 px-6 py-5 flex items-center gap-4">
+          <Clock className="w-5 h-5 text-[#b8864a] flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-[#2c2c2c]">Application submitted — under review</p>
+            <p className="text-xs text-stone-500 mt-0.5">Our team will notify you within 1–2 business days.</p>
+          </div>
         </div>
       )}
 
