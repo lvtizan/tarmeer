@@ -25,7 +25,7 @@ export default function CompanyDashboardPage() {
         const [profileRes, projectsRes, articlesRes] = await Promise.allSettled([
           api.get('/auth/company/profile'),
           api.get('/auth/company/projects'),
-          api.get('/api/articles/mine'),
+          api.get('/articles/mine'),
         ]);
 
         if (profileRes.status === 'fulfilled') {
