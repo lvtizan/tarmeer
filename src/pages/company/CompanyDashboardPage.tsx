@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp } from 'lucide-react';
 import { api } from '../../lib/api';
-import CompanyProfileForm from '../../components/company/CompanyProfileForm';
 
 interface ProfileSummary {
   company_name: string;
@@ -20,47 +19,49 @@ export default function CompanyDashboardPage() {
   const [articleCount, setArticleCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [profileRes, projectsRes, articlesRes] = await Promise.allSettled([
-        api.get('/auth/company/profile'),
-        api.get('/auth/company/projects'),
-        api.get('/articles/mine'),
-      ]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [profileRes, projectsRes, articlesRes] = await Promise.allSettled([
+          api.get('/auth/company/profile'),
+          api.get('/auth/company/projects'),
+          api.get('/articles/mine'),
+        ]);
 
-      if (profileRes.status === 'fulfilled') {
-        const d = profileRes.value?.profile || profileRes.value;
-        if (d?.company_name) {
-          setProfile({
-            company_name: d.company_name || '',
-            description: d.description || '',
-            contact_person: d.contact_person || '',
-            phone: d.phone || '',
-            status: d.status || 'pending',
-            admin_notes: d.admin_notes,
-          });
+        if (profileRes.status === 'fulfilled') {
+          const d = profileRes.value?.profile || profileRes.value;
+          if (d?.company_name) {
+            setProfile({
+              company_name: d.company_name || '',
+              description: d.description || '',
+              contact_person: d.contact_person || '',
+              phone: d.phone || '',
+              status: d.status || 'pending',
+              admin_notes: d.admin_notes,
+            });
+          }
         }
-      }
 
-      if (projectsRes.status === 'fulfilled') {
-        const list = projectsRes.value?.projects || projectsRes.value || [];
-        setProjectCount(Array.isArray(list) ? list.length : 0);
-      }
+        if (projectsRes.status === 'fulfilled') {
+          const list = projectsRes.value?.projects || projectsRes.value || [];
+          setProjectCount(Array.isArray(list) ? list.length : 0);
+        }
 
-      if (articlesRes.status === 'fulfilled') {
-        const list = articlesRes.value?.articles || [];
-        setArticleCount(Array.isArray(list) ? list.length : 0);
+        if (articlesRes.status === 'fulfilled') {
+          const list = articlesRes.value?.articles || [];
+          setArticleCount(Array.isArray(list) ? list.length : 0);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
+    })();
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
-
+  // Onboarding step completion
   const step1Done = !!(profile?.company_name && profile?.description && profile?.phone);
   const step2Done = projectCount > 0;
   const step3Done = profile?.status === 'approved';
+
   const companyName = profile?.company_name || '';
 
   if (loading) {
@@ -92,7 +93,7 @@ export default function CompanyDashboardPage() {
           step3Done={step3Done}
           profileStatus={profile?.status || 'pending'}
           adminNotes={profile?.admin_notes}
-          onStep1Done={loadData}
+          onStep1={() => navigate('/company/profile')}
           onStep2={() => navigate('/company/projects')}
         />
       )}
@@ -162,16 +163,40 @@ export default function CompanyDashboardPage() {
 /* ── Onboarding Stepper ── */
 function OnboardingStepper({
   step1Done, step2Done, step3Done, profileStatus, adminNotes,
-  onStep1Done, onStep2,
+  onStep1, onStep2,
 }: {
   step1Done: boolean; step2Done: boolean; step3Done: boolean;
   profileStatus: string; adminNotes?: string;
-  onStep1Done: () => void;
-  onStep2: () => void;
+  onStep1: () => void; onStep2: () => void;
 }) {
-  const activeStep = !step1Done ? 1 : !step2Done ? 2 : 3;
-  const stepDone = [step1Done, step2Done, step3Done];
-  const stepLabels = ['Complete Profile', 'Upload First Project', 'Under Review'];
+  const steps = [
+    {
+      number: 1,
+      label: 'Complete Profile',
+      desc: step1Done ? 'Company info filled in' : 'Add company name, description & phone',
+      done: step1Done,
+      action: onStep1,
+      actionLabel: step1Done ? 'Edit Profile' : 'Complete Now',
+    },
+    {
+      number: 2,
+      label: 'Upload First Project',
+      desc: step2Done ? 'Portfolio uploaded' : 'Show clients what you can do',
+      done: step2Done,
+      action: onStep2,
+      actionLabel: step2Done ? 'Add More' : 'Upload Now',
+    },
+    {
+      number: 3,
+      label: 'Under Review',
+      desc: profileStatus === 'rejected'
+        ? `Needs updates${adminNotes ? ': ' + adminNotes : ''}`
+        : 'Our team will review and approve within 1–2 business days',
+      done: step3Done,
+      action: null,
+      actionLabel: '',
+    },
+  ];
 
   return (
     <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm">
@@ -183,76 +208,74 @@ function OnboardingStepper({
         </span>
       </div>
 
-      <div className="px-6 py-5 space-y-6">
-        {/* Step row connector */}
-        <div className="flex items-center">
-          {[1, 2, 3].map((n, i) => (
-            <div key={n} className="flex items-center flex-1">
+      {/* Step row connector */}
+      <div className="px-6 py-5">
+        <div className="flex items-center justify-between mb-6">
+          {steps.map((step, i) => (
+            <div key={step.number} className="flex items-center flex-1">
+              {/* Step circle */}
               <div className="flex flex-col items-center">
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                  stepDone[i]
+                  step.done
                     ? 'bg-[#b8864a] text-white'
-                    : n === activeStep
+                    : i === steps.findIndex(s => !s.done)
                       ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
                       : 'bg-stone-100 text-stone-400'
                 }`}>
-                  {stepDone[i] ? <CheckCircle2 className="w-4 h-4" /> : n}
+                  {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
                 </div>
-                <span className={`mt-1.5 text-[11px] font-medium whitespace-nowrap ${
-                  stepDone[i] || n === activeStep ? 'text-[#b8864a]' : 'text-stone-400'
-                }`}>
-                  {stepLabels[i]}
+                <span className={`mt-1.5 text-[11px] font-medium whitespace-nowrap ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+                  {step.label}
                 </span>
               </div>
-              {i < 2 && (
-                <div className={`flex-1 h-0.5 mx-2 transition-all ${stepDone[i] ? 'bg-[#b8864a]' : 'bg-stone-200'}`} />
+              {/* Connector line */}
+              {i < steps.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 transition-all ${
+                  steps[i].done ? 'bg-[#b8864a]' : 'bg-stone-200'
+                }`} />
               )}
             </div>
           ))}
         </div>
 
-        {/* Step 1: full inline profile form */}
-        {activeStep === 1 && (
-          <div>
-            <p className="text-sm text-stone-500 mb-4">填写公司信息，让客户找到你。填完自动保存，完善三个必填项（公司名、描述、电话）后步骤自动推进。</p>
-            <CompanyProfileForm onSaved={onStep1Done} />
-          </div>
-        )}
-
-        {/* Step 2: Upload project */}
-        {activeStep === 2 && (
-          <div className="rounded-xl border border-[#b8864a]/20 bg-[#b8864a]/5 p-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-[#2c2c2c]">Step 2: Upload Your First Project</p>
-              <p className="mt-0.5 text-xs text-stone-500">Show clients what you can do — photos speak louder than words.</p>
+        {/* Active step detail card */}
+        {steps.map((step, i) => {
+          const isActive = !step.done && i === steps.findIndex(s => !s.done);
+          if (!isActive && !step.done) return null;
+          if (!isActive) return null;
+          return (
+            <div key={step.number} className="rounded-xl border border-[#b8864a]/20 bg-[#b8864a]/5 px-4 py-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5">
+                  {step.done
+                    ? <CheckCircle2 className="w-4 h-4 text-[#b8864a]" />
+                    : <Circle className="w-4 h-4 text-[#b8864a]" />
+                  }
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#2c2c2c]">Step {step.number}: {step.label}</p>
+                  <p className="mt-0.5 text-xs text-stone-500">{step.desc}</p>
+                </div>
+              </div>
+              {step.action && (
+                <button
+                  type="button"
+                  onClick={step.action}
+                  className="flex-shrink-0 flex items-center gap-1.5 h-8 px-4 rounded-lg bg-[#b8864a] text-white text-xs font-semibold hover:bg-[#a4763f] transition"
+                >
+                  {step.actionLabel}
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+              {!step.action && (
+                <div className="flex-shrink-0 flex items-center gap-1.5 text-xs text-stone-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>1–2 business days</span>
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={onStep2}
-              className="flex-shrink-0 flex items-center gap-1.5 h-8 px-4 rounded-lg bg-[#b8864a] text-white text-xs font-semibold hover:bg-[#a4763f] transition"
-            >
-              Upload Now <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-
-        {/* Step 3: Under review */}
-        {activeStep === 3 && (
-          <div className="rounded-xl border border-[#b8864a]/20 bg-[#b8864a]/5 p-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-[#2c2c2c]">Step 3: Under Review</p>
-              <p className="mt-0.5 text-xs text-stone-500">
-                {profileStatus === 'rejected'
-                  ? `Needs updates${adminNotes ? ': ' + adminNotes : ''}`
-                  : 'Our team will review and approve within 1–2 business days.'}
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-stone-400 flex-shrink-0">
-              <Clock className="w-3.5 h-3.5" />
-              <span>1–2 days</span>
-            </div>
-          </div>
-        )}
+          );
+        })}
       </div>
     </div>
   );
