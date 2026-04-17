@@ -12,6 +12,7 @@ const ADMIN_LANG_KEY = 'admin_lang';
 type AdminLang = 'en' | 'zh';
 
 const navItems = [
+  // ── Core Business ──
   {
     to: '/admin', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, end: true, permission: 'can_view_stats' as const,
     infoEn: 'Analyze traffic/events, company visitors, compare trends, and jump to external analytics platforms.',
@@ -33,29 +34,26 @@ const navItems = [
     infoZh: '查看客户询盘、更新跟进状态，并同步转化备注。',
   },
   {
-    to: '/admin/complaints', labelEn: 'Complaints', labelZh: '投诉', icon: ShieldAlert,
-    infoEn: 'Handle abuse/report tickets, complete investigation notes, and close complaint workflows.',
-    infoZh: '处理举报/投诉工单，补全调查记录并完成闭环。',
+    to: '/admin/stats', labelEn: 'Stats Report', labelZh: '数据报表', icon: BarChart2, permission: 'can_view_stats' as const,
+    infoEn: 'Daily registration trends for homeowners, companies, and inquiries.',
+    infoZh: '每日注册趋势报表，含业主、公司与询盘数据。',
+  },
+  // ── Tools ──
+  {
+    to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
+    infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
+    infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
   },
   {
     to: '/admin/company-import', labelEn: 'Import Company', labelZh: '导入公司', icon: FileUp,
     infoEn: 'Bulk import company records from templates and validate key fields before publishing.',
     infoZh: '通过模板批量导入公司信息，发布前校验关键字段。',
   },
+  // ── Other ──
   {
-    to: '/admin/notification-emails', labelEn: 'Notify Emails', labelZh: '通知邮箱', icon: Mail,
-    infoEn: 'Configure recipients for system notifications to ensure operational events are delivered.',
-    infoZh: '配置系统通知接收邮箱，确保运营事件及时送达。',
-  },
-  {
-    to: '/admin/stats', labelEn: 'Stats Report', labelZh: '数据报表', icon: BarChart2, permission: 'can_view_stats' as const,
-    infoEn: 'Daily registration trends for homeowners, companies, and inquiries.',
-    infoZh: '每日注册趋势报表，含业主、公司与询盘数据。',
-  },
-  {
-    to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
-    infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
-    infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
+    to: '/admin/complaints', labelEn: 'Complaints', labelZh: '投诉', icon: ShieldAlert,
+    infoEn: 'Handle abuse/report tickets, complete investigation notes, and close complaint workflows.',
+    infoZh: '处理举报/投诉工单，补全调查记录并完成闭环。',
   },
 ];
 
@@ -64,6 +62,11 @@ const adminItems = [
     to: '/admin/admins', labelEn: 'Admin Users', labelZh: '管理员', icon: UserCog, superAdminOnly: true,
     infoEn: 'Manage administrator accounts, permissions, and privileged access boundaries.',
     infoZh: '管理管理员账号、权限与高权限访问边界。',
+  },
+  {
+    to: '/admin/notification-emails', labelEn: 'Notify Emails', labelZh: '通知邮箱', icon: Mail, superAdminOnly: true,
+    infoEn: 'Configure recipients for system notifications to ensure operational events are delivered.',
+    infoZh: '配置系统通知接收邮箱，确保运营事件及时送达。',
   },
 ];
 

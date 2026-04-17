@@ -121,14 +121,14 @@ export default function Navbar({
             onMouseEnter={() => setDropdownOpen(true)}
             onMouseLeave={() => setDropdownOpen(false)}
           >
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(prev => !prev)}
+            <Link
+              to="/companies"
+              onClick={() => { setDropdownOpen(false); handleClick('/companies'); }}
               className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
             >
               Find Company
               <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
+            </Link>
 
             <AnimatePresence>
               {dropdownOpen && (
