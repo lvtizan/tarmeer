@@ -1,420 +1,314 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { adminApi } from '../../lib/adminApi';
-import { useAdmin } from '../../contexts/AdminContext';
-import { PageSpinner } from '../../components/ui/Spinner';
-import AdminSelect from '../../components/ui/AdminSelect';
 
-interface DailyStatsRow {
+interface DetailItem {
+  name: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  projects?: number;
+  company?: string;
+}
+
+interface DayRow {
   date: string;
   new_homeowners: number;
   new_companies: number;
   new_inquiries: number;
-  homeowner_list: Array<{ name: string; email: string | null; city: string | null }>;
-  company_list: Array<{ name: string; email: string | null; city: string | null; projects: number }>;
-  inquiry_list: Array<{ name: string; phone: string | null; city: string | null; company: string | null }>;
+  homeowner_list?: DetailItem[];
+  company_list?: DetailItem[];
+  inquiry_list?: DetailItem[];
 }
 
-interface DailyStatsResponse {
-  data: DailyStatsRow[];
+interface StatsData {
+  data: DayRow[];
   totals: { new_homeowners: number; new_companies: number; new_inquiries: number };
   days: number;
 }
 
-type RangeDays = '7' | '30' | '90';
+const COLORS = {
+  homeowners: '#b8864a',
+  companies: '#2c6e49',
+  inquiries: '#5b7fcb',
+};
 
-const RANGE_OPTIONS: { value: RangeDays; label: string }[] = [
-  { value: '7', label: 'Last 7 days' },
-  { value: '30', label: 'Last 30 days' },
-  { value: '90', label: 'Last 90 days' },
-];
+const DAYS_OPTIONS = [7, 30, 90] as const;
+type DaysOption = typeof DAYS_OPTIONS[number];
 
-const SERIES = [
-  { key: 'new_homeowners' as const, label: 'Homeowners', color: '#b8864a' },
-  { key: 'new_companies' as const, label: 'Companies', color: '#2c7da0' },
-  { key: 'new_inquiries' as const, label: 'Inquiries', color: '#6a994e' },
-];
+type TooltipType = 'homeowners' | 'companies' | 'inquiries';
+interface TooltipData { x: number; y: number; type: TooltipType; items: DetailItem[]; date: string }
 
-export default function AdminStatsPage() {
-  const { hasPermission } = useAdmin();
-  const [range, setRange] = useState<RangeDays>('30');
-  const [isLoading, setIsLoading] = useState(true);
-  const [report, setReport] = useState<DailyStatsResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+function BarChart({ data, maxVal }: { data: DayRow[]; maxVal: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerW, setContainerW] = useState(800);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   useEffect(() => {
-    if (!hasPermission('can_view_stats')) {
-      setIsLoading(false);
-      return;
-    }
+    if (!containerRef.current) return;
+    const obs = new ResizeObserver(([entry]) => setContainerW(entry.contentRect.width));
+    obs.observe(containerRef.current);
+    setContainerW(containerRef.current.clientWidth);
+    return () => obs.disconnect();
+  }, []);
 
-    let cancelled = false;
-    const run = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = (await adminApi.getDailyStats(Number(range))) as DailyStatsResponse;
-        if (!cancelled) setReport(result);
-      } catch (err: unknown) {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : 'Failed to load stats report.';
-          setError(message);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
+  if (data.length === 0) return <div ref={containerRef} className="flex items-center justify-center h-[260px] text-stone-400 text-sm">暂无数据</div>;
 
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [hasPermission, range]);
-
-  if (!hasPermission('can_view_stats')) {
-    return <div className="text-stone-500">You do not have permission to view the stats report.</div>;
-  }
+  const PL = 40;
+  const chartW = containerW - PL - 16;
+  const chartH = 220;
+  const groupW = chartW / data.length;
+  const barW = Math.max(4, Math.min(18, groupW / 4.5));
+  const barGap = Math.max(1, barW * 0.15);
+  const totalBarGroupW = barW * 3 + barGap * 2;
 
   return (
-    <div className="w-full">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
-        <h1 className="text-3xl font-bold text-[#2c2c2c]">Stats Report</h1>
-        <div className="w-[180px]">
-          <AdminSelect
-            value={range}
-            onChange={(v) => setRange(v as RangeDays)}
-            options={RANGE_OPTIONS}
-          />
-        </div>
-      </div>
-      <p className="text-stone-500 text-sm mb-6">
-        New homeowners, companies, and inquiries over time. Live counts — no cron dependency.
-      </p>
+    <div ref={containerRef} className="w-full relative">
+      <svg width="100%" height={chartH + 50} className="overflow-visible">
+        {/* Y grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((r) => {
+          const y = 10 + chartH - r * chartH;
+          return (
+            <g key={r}>
+              <line x1={PL} x2={containerW - 16} y1={y} y2={y} stroke="#e7e5e4" strokeWidth={0.5} />
+              <text x={PL - 6} y={y + 3.5} textAnchor="end" fontSize={10} fill="#a8a29e">
+                {Math.round(r * maxVal)}
+              </text>
+            </g>
+          );
+        })}
 
-      {isLoading ? (
-        <PageSpinner text="Loading stats report..." />
-      ) : error ? (
-        <div className="p-6 rounded-2xl border border-red-200 bg-red-50 text-red-600">{error}</div>
-      ) : !report || report.data.length === 0 ? (
-        <div className="p-6 rounded-2xl border border-stone-200 bg-white text-stone-500">
-          No data for the selected range.
-        </div>
-      ) : (
-        <>
-          <TotalsRow totals={report.totals} />
-          <TrendChart data={report.data} />
-          <DetailTable data={report.data} />
-        </>
-      )}
-    </div>
-  );
-}
+        {/* Bars */}
+        {data.map((d, i) => {
+          const groupCenter = PL + i * groupW + groupW / 2;
+          const x0 = groupCenter - totalBarGroupW / 2;
+          const vals: { val: number; color: string; type: TooltipType; items: DetailItem[] }[] = [
+            { val: d.new_homeowners, color: COLORS.homeowners, type: 'homeowners', items: d.homeowner_list || [] },
+            { val: d.new_companies, color: COLORS.companies, type: 'companies', items: d.company_list || [] },
+            { val: d.new_inquiries, color: COLORS.inquiries, type: 'inquiries', items: d.inquiry_list || [] },
+          ];
 
-function TotalsRow({ totals }: { totals: DailyStatsResponse['totals'] }) {
-  const cards = [
-    { label: 'New Homeowners', value: totals.new_homeowners, color: SERIES[0].color },
-    { label: 'New Companies', value: totals.new_companies, color: SERIES[1].color },
-    { label: 'New Inquiries', value: totals.new_inquiries, color: SERIES[2].color },
-  ];
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-      {cards.map((c) => (
-        <div
-          key={c.label}
-          className="bg-white rounded-2xl border border-stone-200 shadow-sm px-5 py-4"
-        >
-          <div className="text-sm font-medium text-stone-500">{c.label}</div>
-          <div className="mt-1 flex items-baseline gap-2">
-            <div className="text-3xl font-bold" style={{ color: c.color }}>
-              {c.value}
-            </div>
-            <div className="text-xs text-stone-500">in range</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+          return (
+            <g key={d.date}>
+              {vals.map((v, j) => {
+                const barH = maxVal > 0 ? (v.val / maxVal) * chartH : 0;
+                const bx = x0 + j * (barW + barGap);
+                const by = 10 + chartH - barH;
 
-interface TrendChartProps {
-  data: DailyStatsRow[];
-}
+                return (
+                  <g key={j}>
+                    <rect
+                      x={bx}
+                      y={by}
+                      width={barW}
+                      height={Math.max(barH, 0)}
+                      rx={2}
+                      fill={v.color}
+                      opacity={0.85}
+                      className="cursor-pointer"
+                      onMouseEnter={(e) => {
+                        if (v.val > 0 && v.items.length > 0) {
+                          const rect = (e.target as SVGRectElement).getBoundingClientRect();
+                          const containerRect = containerRef.current?.getBoundingClientRect();
+                          setTooltip({
+                            x: rect.left - (containerRect?.left || 0) + barW / 2,
+                            y: rect.top - (containerRect?.top || 0) - 8,
+                            type: v.type,
+                            items: v.items,
+                            date: d.date,
+                          });
+                        }
+                      }}
+                      onMouseLeave={() => setTooltip(null)}
+                    />
+                    {v.val > 0 && (
+                      <text
+                        x={bx + barW / 2}
+                        y={by - 4}
+                        textAnchor="middle"
+                        fontSize={9}
+                        fontWeight={600}
+                        fill={v.color}
+                      >
+                        {v.val}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
 
-function TrendChart({ data }: TrendChartProps) {
-  const width = 960;
-  const height = 280;
-  const padding = { top: 16, right: 16, bottom: 28, left: 36 };
-
-  const { paths, maxY, xStep, xCoords } = useMemo(() => {
-    const innerW = width - padding.left - padding.right;
-    const innerH = height - padding.top - padding.bottom;
-    const n = data.length;
-    const step = n > 1 ? innerW / (n - 1) : innerW;
-
-    const max = Math.max(
-      1,
-      ...data.map((d) => Math.max(d.new_homeowners, d.new_companies, d.new_inquiries))
-    );
-
-    const xs = data.map((_, i) => padding.left + step * i);
-
-    const toPath = (key: (typeof SERIES)[number]['key']) => {
-      return data
-        .map((d, i) => {
-          const x = xs[i];
-          const y = padding.top + innerH - (d[key] / max) * innerH;
-          return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-        })
-        .join(' ');
-    };
-
-    return {
-      paths: SERIES.map((s) => ({ ...s, d: toPath(s.key) })),
-      maxY: max,
-      xStep: step,
-      xCoords: xs,
-    };
-  }, [data]);
-
-  const innerTop = padding.top;
-  const innerBottom = height - padding.bottom;
-  const gridLines = [0, 0.25, 0.5, 0.75, 1];
-
-  // Label every ~7 ticks to avoid crowding
-  const labelEvery = Math.max(1, Math.ceil(data.length / 8));
-
-  return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 mb-6">
-      <div className="flex flex-wrap items-center gap-4 mb-3">
-        {SERIES.map((s) => (
-          <div key={s.key} className="flex items-center gap-2 text-sm text-[#2c2c2c]">
-            <span className="inline-block w-3 h-3 rounded-full" style={{ background: s.color }} />
-            {s.label}
-          </div>
-        ))}
-      </div>
-      <div className="w-full overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          preserveAspectRatio="none"
-          className="w-full h-[280px]"
-          role="img"
-          aria-label="Daily trends chart"
-        >
-          {/* Y gridlines */}
-          {gridLines.map((g) => {
-            const y = innerTop + (innerBottom - innerTop) * (1 - g);
-            const value = Math.round(maxY * g);
-            return (
-              <g key={g}>
-                <line
-                  x1={padding.left}
-                  x2={width - padding.right}
-                  y1={y}
-                  y2={y}
-                  stroke="#e7e5e4"
-                  strokeWidth={1}
-                />
-                <text x={8} y={y + 4} fontSize={10} fill="#6b6b6b">
-                  {value}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* X axis labels */}
-          {data.map((d, i) => {
-            if (i % labelEvery !== 0 && i !== data.length - 1) return null;
-            const x = xCoords[i];
-            return (
+              {/* X label */}
               <text
-                key={d.date}
-                x={x}
-                y={height - 8}
+                x={groupCenter}
+                y={10 + chartH + 16}
                 fontSize={10}
-                fill="#6b6b6b"
+                fill="#a8a29e"
                 textAnchor="middle"
               >
                 {d.date.slice(5)}
               </text>
-            );
-          })}
+            </g>
+          );
+        })}
+      </svg>
 
-          {/* Series lines */}
-          {paths.map((p) => (
-            <path key={p.key} d={p.d} fill="none" stroke={p.color} strokeWidth={2} />
+      {/* Tooltip */}
+      {tooltip && (
+        <div
+          className="absolute z-50 bg-white border border-stone-200 rounded-lg shadow-lg px-3 py-2 text-xs pointer-events-none"
+          style={{
+            left: tooltip.x,
+            top: tooltip.y,
+            transform: 'translate(-50%, -100%)',
+            maxWidth: 320,
+            minWidth: 180,
+          }}
+        >
+          <div className="font-semibold text-stone-700 mb-1.5 border-b border-stone-100 pb-1">
+            {tooltip.date} · {{ homeowners: '业主', companies: '装企', inquiries: '询盘' }[tooltip.type]}
+          </div>
+          {tooltip.items.slice(0, 15).map((item, idx) => (
+            <div key={idx} className="flex items-center gap-2 py-0.5 text-stone-600">
+              <span className="truncate flex-1">{item.name}</span>
+              {item.city && <span className="text-stone-400 shrink-0">{item.city}</span>}
+              {tooltip.type === 'companies' && item.projects !== undefined && (
+                <span className="text-[#2c6e49] font-medium shrink-0">{item.projects} 项目</span>
+              )}
+              {tooltip.type === 'inquiries' && item.phone && (
+                <span className="text-stone-400 shrink-0">{item.phone}</span>
+              )}
+            </div>
           ))}
-
-          {/* Data point dots (small, for clarity when few points) */}
-          {data.length <= 14 &&
-            paths.map((p) =>
-              data.map((d, i) => {
-                const innerH = height - padding.top - padding.bottom;
-                const x = xCoords[i];
-                const y =
-                  padding.top + innerH - (d[p.key] / maxY) * innerH;
-                return (
-                  <circle
-                    key={`${p.key}-${d.date}`}
-                    cx={x}
-                    cy={y}
-                    r={2.5}
-                    fill={p.color}
-                  />
-                );
-              })
-            )}
-
-          {/* Invisible hover bands are a nice-to-have; skipped to keep SVG simple */}
-          {xStep > 0 && null}
-        </svg>
-      </div>
+          {tooltip.items.length > 15 && (
+            <div className="text-stone-400 mt-1">+{tooltip.items.length - 15} more</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-interface DetailTableProps {
-  data: DailyStatsRow[];
-}
+export default function AdminStatsPage() {
+  const [days, setDays] = useState<DaysOption>(30);
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-function DetailTable({ data }: DetailTableProps) {
-  // Last 14 days, most recent first
-  const recent = useMemo(() => {
-    const sorted = [...data].sort((a, b) => (a.date < b.date ? 1 : -1));
-    return sorted.slice(0, 14);
-  }, [data]);
+  useEffect(() => {
+    setLoading(true);
+    (adminApi.getDailyStats(days) as Promise<StatsData>)
+      .then((res) => setStats(res))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [days]);
+
+  const data = stats?.data || [];
+  const totals = stats?.totals || { new_homeowners: 0, new_companies: 0, new_inquiries: 0 };
+
+  const maxVal = Math.max(
+    1,
+    ...data.map((d) => Math.max(d.new_homeowners, d.new_companies, d.new_inquiries))
+  );
+
+  const recentRows = [...data].reverse().slice(0, 14);
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-stone-200">
-        <h2 className="text-[15px] font-semibold text-[#2c2c2c]">Last 14 Days Detail</h2>
-        <p className="text-xs text-stone-500 mt-1">
-          Click a row to expand and see individual homeowners, companies, and inquiries for that day.
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-stone-800">注册报表</h1>
+          <p className="text-xs text-stone-400 mt-0.5">数据每天迪拜深夜 02:00 自动统计一次，实时注册今日数据实时可见</p>
+        </div>
+        <div className="flex items-center gap-1 bg-stone-100 rounded-lg p-1">
+          {DAYS_OPTIONS.map((d) => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                days === d
+                  ? 'bg-white text-stone-800 shadow-sm'
+                  : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              近{d}天
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: '新业主', value: totals.new_homeowners, color: COLORS.homeowners },
+          { label: '新装企', value: totals.new_companies, color: COLORS.companies },
+          { label: '新询盘', value: totals.new_inquiries, color: COLORS.inquiries },
+        ].map((c) => (
+          <div key={c.label} className="bg-white rounded-2xl border border-stone-200 p-5">
+            <div className="text-xs font-medium text-stone-400 mb-1">{c.label}</div>
+            <div className="text-3xl font-bold" style={{ color: c.color }}>
+              {loading ? '—' : c.value.toLocaleString()}
+            </div>
+            <div className="text-xs text-stone-400 mt-1">近{days}天合计</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Bar Chart */}
+      <div className="bg-white rounded-2xl border border-stone-200 p-6">
+        <div className="flex items-center gap-5 mb-4 text-[11px]">
+          {[
+            { label: '业主注册', color: COLORS.homeowners },
+            { label: '装企注册', color: COLORS.companies },
+            { label: '询盘', color: COLORS.inquiries },
+          ].map((l) => (
+            <span key={l.label} className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-sm" style={{ background: l.color, opacity: 0.85 }} />
+              <span className="text-stone-500">{l.label}</span>
+            </span>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-[260px] text-stone-400 text-sm">加载中...</div>
+        ) : (
+          <BarChart data={data} maxVal={maxVal} />
+        )}
+      </div>
+
+      {/* Recent data table */}
+      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-stone-100">
+          <span className="text-sm font-medium text-stone-700">近14天明细</span>
+        </div>
+        <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-stone-200 bg-stone-50/60">
-              <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">Date</th>
-              <th className="py-3 px-4 text-right text-sm font-medium text-stone-500">
-                <span style={{ color: SERIES[0].color }}>Homeowners</span>
-              </th>
-              <th className="py-3 px-4 text-right text-sm font-medium text-stone-500">
-                <span style={{ color: SERIES[1].color }}>Companies</span>
-              </th>
-              <th className="py-3 px-4 text-right text-sm font-medium text-stone-500">
-                <span style={{ color: SERIES[2].color }}>Inquiries</span>
-              </th>
+            <tr className="text-xs text-stone-400 border-b border-stone-100">
+              <th className="text-left px-5 py-2.5 font-medium">日期</th>
+              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.homeowners }}>新业主</th>
+              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.companies }}>新装企</th>
+              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.inquiries }}>询盘</th>
             </tr>
           </thead>
           <tbody>
-            {recent.map((row) => (
-              <DayRow key={row.date} row={row} />
-            ))}
-            {recent.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-6 px-4 text-sm text-stone-500 text-center">
-                  No data.
+            {loading ? (
+              <tr><td colSpan={4} className="text-center py-8 text-stone-400">加载中...</td></tr>
+            ) : recentRows.length === 0 ? (
+              <tr><td colSpan={4} className="text-center py-8 text-stone-400">暂无数据</td></tr>
+            ) : recentRows.map((row) => (
+              <tr key={row.date} className="border-b border-stone-50 hover:bg-stone-50/50 transition-colors">
+                <td className="px-5 py-2.5 text-stone-600 font-mono text-xs">{row.date}</td>
+                <td className="px-5 py-2.5 text-right font-medium" style={{ color: row.new_homeowners > 0 ? COLORS.homeowners : '#d1cec9' }}>
+                  {row.new_homeowners || '—'}
+                </td>
+                <td className="px-5 py-2.5 text-right font-medium" style={{ color: row.new_companies > 0 ? COLORS.companies : '#d1cec9' }}>
+                  {row.new_companies || '—'}
+                </td>
+                <td className="px-5 py-2.5 text-right font-medium" style={{ color: row.new_inquiries > 0 ? COLORS.inquiries : '#d1cec9' }}>
+                  {row.new_inquiries || '—'}
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function DayRow({ row }: { row: DailyStatsRow }) {
-  const [expanded, setExpanded] = useState(false);
-  const hasDetail =
-    row.homeowner_list.length > 0 ||
-    row.company_list.length > 0 ||
-    row.inquiry_list.length > 0;
-
-  return (
-    <>
-      <tr
-        className={`border-b border-stone-100 ${hasDetail ? 'cursor-pointer hover:bg-stone-50' : ''}`}
-        onClick={() => hasDetail && setExpanded((v) => !v)}
-      >
-        <td className="py-3 px-4 text-[15px] text-[#2c2c2c] font-medium">
-          {row.date}
-          {hasDetail && (
-            <span className="ml-2 text-xs text-stone-400">{expanded ? '▾' : '▸'}</span>
-          )}
-        </td>
-        <td className="py-3 px-4 text-[15px] text-right text-[#2c2c2c]">{row.new_homeowners}</td>
-        <td className="py-3 px-4 text-[15px] text-right text-[#2c2c2c]">{row.new_companies}</td>
-        <td className="py-3 px-4 text-[15px] text-right text-[#2c2c2c]">{row.new_inquiries}</td>
-      </tr>
-      {expanded && hasDetail && (
-        <tr className="bg-stone-50/60 border-b border-stone-100">
-          <td colSpan={4} className="py-4 px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <DetailList
-                title="Homeowners"
-                color={SERIES[0].color}
-                items={row.homeowner_list.map((h) => ({
-                  title: h.name,
-                  subtitle: h.email || '—',
-                  meta: h.city || '',
-                }))}
-              />
-              <DetailList
-                title="Companies"
-                color={SERIES[1].color}
-                items={row.company_list.map((c) => ({
-                  title: c.name,
-                  subtitle: c.email || '—',
-                  meta: `${c.city || ''}${c.projects ? ` · ${c.projects} projects` : ''}`,
-                }))}
-              />
-              <DetailList
-                title="Inquiries"
-                color={SERIES[2].color}
-                items={row.inquiry_list.map((i) => ({
-                  title: i.name,
-                  subtitle: i.phone || '—',
-                  meta: `${i.city || ''}${i.company ? ` · ${i.company}` : ''}`,
-                }))}
-              />
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-interface DetailListProps {
-  title: string;
-  color: string;
-  items: Array<{ title: string; subtitle: string; meta: string }>;
-}
-
-function DetailList({ title, color, items }: DetailListProps) {
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-        <span className="text-sm font-medium text-[#2c2c2c]">
-          {title} <span className="text-stone-400 font-normal">({items.length})</span>
-        </span>
-      </div>
-      {items.length === 0 ? (
-        <div className="text-xs text-stone-400">None</div>
-      ) : (
-        <ul className="space-y-1.5">
-          {items.map((it, idx) => (
-            <li key={idx} className="text-xs">
-              <div className="text-[#2c2c2c] font-medium truncate">{it.title}</div>
-              <div className="text-stone-500 truncate">{it.subtitle}</div>
-              {it.meta && <div className="text-stone-400 truncate">{it.meta}</div>}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

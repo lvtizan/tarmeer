@@ -42,9 +42,18 @@ function rewriteAdminAbsoluteUrl(url: string): string {
   }
 }
 
-export function resolveImageUrl(url: string | null | undefined): string {
+export function resolveImageUrl(url: unknown): string {
   if (!url) return '';
-  const trimmed = url.trim();
+  // Support AI-tagged image objects: {url, ai_tags, ...}
+  let raw: string;
+  if (typeof url === 'string') {
+    raw = url;
+  } else if (typeof url === 'object' && typeof (url as any).url === 'string') {
+    raw = (url as any).url;
+  } else {
+    return '';
+  }
+  const trimmed = raw.trim();
   if (!trimmed) return '';
   if (trimmed.startsWith('data:')) return trimmed; // base64 — pass through
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {

@@ -42,9 +42,15 @@ export async function calculateAllWeights(): Promise<{ updated: number }> {
     updated++;
   }
 
-  // 2. Calculate for uae_companies (directory companies)
+  // 2. Calculate for uae_companies (directory companies).
+  // project_count is derived from portfolio_images JSON length (no DB column).
   const [directories] = await pool.execute(
-    `SELECT id, name_en, phone, city, description, is_signed, project_count FROM uae_companies`
+    `SELECT id, name_en, phone, city, description, is_signed,
+       COALESCE(
+         JSON_LENGTH(CAST(portfolio_images AS JSON)),
+         0
+       ) as project_count
+     FROM uae_companies`
   );
 
   for (const company of directories as any[]) {

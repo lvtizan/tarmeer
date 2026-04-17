@@ -1,10 +1,34 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+
+const VERSION = readFileSync('VERSION', 'utf8').trim();
+const COMMIT = (() => {
+  try { return execSync('git rev-parse --short HEAD').toString().trim(); }
+  catch { return 'dev'; }
+})();
+const BUILD_TIME = new Date().toISOString();
+
+const versionPlugin = {
+  name: 'tarmeer-version-html',
+  transformIndexHtml(html: string) {
+    return html
+      .replace(/%VITE_APP_VERSION%/g, VERSION)
+      .replace(/%VITE_APP_COMMIT%/g, COMMIT)
+      .replace(/%VITE_APP_BUILD_TIME%/g, BUILD_TIME);
+  },
+};
 
 export default defineConfig({
   base: '/',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), versionPlugin],
+  define: {
+    __APP_VERSION__: JSON.stringify(VERSION),
+    __APP_COMMIT__: JSON.stringify(COMMIT),
+    __APP_BUILD_TIME__: JSON.stringify(BUILD_TIME),
+  },
   server: {
     host: '0.0.0.0', // 允许内网访问
     port: 5180,

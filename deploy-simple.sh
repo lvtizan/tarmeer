@@ -104,7 +104,6 @@ AUTH_MODE=""
 SELECTED_SSH_KEY=""
 RSYNC_FLAGS=(
   -az
-  --delete
   --checksum
   --itemize-changes
   --stats
@@ -112,6 +111,9 @@ RSYNC_FLAGS=(
   --exclude=.DS_Store
   --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r
 )
+# Note: --delete removed intentionally. Keeps old chunk files on server so users
+# with stale browser tabs can still lazy-load their cached bundles after a deploy.
+# This prevents the annoying "A new version is available" prompt.
 
 try_ssh_key_auth() {
   local key_path="$1"

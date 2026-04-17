@@ -147,7 +147,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         company_type: companyType,
         ...(establishmentYear ? { establishment_year: establishmentYear } : {}),
       });
-      navigate(`/join?${params.toString()}`);
+      navigate(`/auth?${params.toString()}`);
     } catch (err: any) {
       setError(err?.message || 'Something went wrong. Please try again.');
     } finally {

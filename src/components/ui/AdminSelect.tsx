@@ -30,6 +30,14 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  // Lock body scroll while mobile modal is open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
   const optionList = options.map((opt) => (
     <button
       key={opt.value}
@@ -103,7 +111,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
           </div>
 
           {/* Desktop: absolute dropdown below trigger */}
-          <ul className="hidden sm:block absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+          <ul className="hidden sm:block absolute z-[200] mt-1 w-full bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
             {options.map((opt) => (
               <li key={opt.value}>
                 <button

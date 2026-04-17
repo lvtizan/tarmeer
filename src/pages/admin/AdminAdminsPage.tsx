@@ -21,6 +21,10 @@ export default function AdminAdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editPermissionsAdmin, setEditPermissionsAdmin] = useState<Admin | null>(null);
+  const [editPermissions, setEditPermissions] = useState({ can_approve: false, can_sort: false, can_view_stats: false });
+  const [savingPermissions, setSavingPermissions] = useState(false);
+  const [permError, setPermError] = useState('');
   const [createData, setCreateData] = useState({
     email: '',
     password: '',
@@ -86,6 +90,31 @@ export default function AdminAdminsPage() {
       setError(err.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const openPermissions = (admin: Admin) => {
+    setEditPermissionsAdmin(admin);
+    setEditPermissions({
+      can_approve: !!admin.permissions?.can_approve,
+      can_sort: !!admin.permissions?.can_sort,
+      can_view_stats: !!admin.permissions?.can_view_stats,
+    });
+    setPermError('');
+  };
+
+  const savePermissions = async () => {
+    if (!editPermissionsAdmin) return;
+    setSavingPermissions(true);
+    setPermError('');
+    try {
+      await adminApi.updateAdmin(editPermissionsAdmin.id, { permissions: editPermissions });
+      setEditPermissionsAdmin(null);
+      await loadAdmins();
+    } catch (err: any) {
+      setPermError(err.message || 'Failed to update permissions.');
+    } finally {
+      setSavingPermissions(false);
     }
   };
 
@@ -172,20 +201,30 @@ export default function AdminAdminsPage() {
                   </span>
                 </td>
                 <td className="py-4 px-4">
-                  {admin.permissions ? (
-                    <div className="flex flex-wrap gap-1">
-                      {admin.permissions.can_approve && (
+                  {admin.role === 'super_admin' ? (
+                    <span className="text-stone-400 text-sm">All permissions</span>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {admin.permissions?.can_approve && (
                         <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">Approve</span>
                       )}
-                      {admin.permissions.can_sort && (
+                      {admin.permissions?.can_sort && (
                         <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">Sort</span>
                       )}
-                      {admin.permissions.can_view_stats && (
+                      {admin.permissions?.can_view_stats && (
                         <span className="px-2 py-0.5 bg-stone-100 text-stone-700 text-xs rounded">Stats</span>
                       )}
+                      {!admin.permissions?.can_approve && !admin.permissions?.can_sort && !admin.permissions?.can_view_stats && (
+                        <span className="text-stone-400 text-xs">No permissions</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => openPermissions(admin)}
+                        className="text-xs font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2"
+                      >
+                        编辑权限
+                      </button>
                     </div>
-                  ) : (
-                    <span className="text-stone-400 text-sm">All permissions</span>
                   )}
                 </td>
                 <td className="py-4 px-4">
@@ -341,6 +380,85 @@ export default function AdminAdminsPage() {
                 className="px-4 py-2 bg-[#b8864a] text-white rounded-lg hover:bg-[#a67c47] disabled:opacity-50"
               >
                 {isSubmitting ? 'Creating...' : 'Create Admin'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Permissions Modal */}
+      {editPermissionsAdmin && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+          onMouseDown={() => setEditPermissionsAdmin(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-full max-w-md"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-[#2c2c2c] mb-1">编辑权限</h3>
+            <p className="text-sm text-stone-500 mb-5">
+              {editPermissionsAdmin.full_name} · {editPermissionsAdmin.email}
+            </p>
+
+            {permError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">
+                {permError}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editPermissions.can_approve}
+                  onChange={(e) => setEditPermissions({ ...editPermissions, can_approve: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                />
+                <div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">审批权限</div>
+                  <div className="text-[12px] text-stone-500">审批/拒绝设计师和公司申请</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editPermissions.can_sort}
+                  onChange={(e) => setEditPermissions({ ...editPermissions, can_sort: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                />
+                <div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">排序权限</div>
+                  <div className="text-[12px] text-stone-500">修改首页和列表展示顺序</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editPermissions.can_view_stats}
+                  onChange={(e) => setEditPermissions({ ...editPermissions, can_view_stats: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                />
+                <div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">查看统计</div>
+                  <div className="text-[12px] text-stone-500">查看数据分析和报表页面</div>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => setEditPermissionsAdmin(null)}
+                className="h-11 px-4 text-stone-600 hover:text-[#2c2c2c] text-[15px]"
+              >
+                取消
+              </button>
+              <button
+                onClick={savePermissions}
+                disabled={savingPermissions}
+                className="h-11 px-5 bg-[#b8864a] text-white rounded-xl hover:bg-[#a67c47] disabled:opacity-50 text-[15px] font-medium"
+              >
+                {savingPermissions ? '保存中...' : '保存'}
               </button>
             </div>
           </div>

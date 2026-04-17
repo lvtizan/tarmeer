@@ -35,7 +35,7 @@ export default function PricingSection() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
         style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1920&q=80)`,
+          backgroundImage: `url(https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1280&q=60&auto=format&fm=webp)`,
         }}
       />
       <div className="absolute inset-0 bg-[#f5f0e8]/95" />

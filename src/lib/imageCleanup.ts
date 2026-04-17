@@ -19,7 +19,12 @@ function getRootStaticBase(): string {
 const ROOT_STATIC_BASE = getRootStaticBase();
 
 function toTrimmedString(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
+  if (typeof value === 'string') return value.trim();
+  // Support AI-tagged image objects: {url, ai_tags, ai_category, ...}
+  if (value && typeof value === 'object' && typeof (value as any).url === 'string') {
+    return (value as any).url.trim();
+  }
+  return '';
 }
 
 function rewriteKnownBrokenPortfolioPath(path: string): string {
@@ -63,8 +68,8 @@ function rewriteUploadsToApi(url: string): string {
   return url;
 }
 
-export function imageDedupKey(url: string): string {
-  const trimmed = url.trim();
+export function imageDedupKey(url: unknown): string {
+  const trimmed = toTrimmedString(url);
   if (!trimmed) return '';
 
   try {
@@ -172,8 +177,8 @@ export function getNextRenderableImageIndex(
   return -1;
 }
 
-export function getImageFallbackCandidates(url: string): string[] {
-  const trimmed = url.trim();
+export function getImageFallbackCandidates(url: unknown): string[] {
+  const trimmed = toTrimmedString(url);
   if (!trimmed) return [];
 
   const EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif'];

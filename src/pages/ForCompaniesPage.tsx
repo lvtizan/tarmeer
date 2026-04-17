@@ -71,6 +71,10 @@ export default function ForCompaniesPage() {
             },
           })}
         </script>
+        {/* Preload hero image for instant paint */}
+        {/* Preload responsive hero image */}
+        <link rel="preload" as="image" fetchPriority="high" href="/images/hero/hero-renovation-md.webp" media="(max-width: 1024px)" />
+        <link rel="preload" as="image" fetchPriority="high" href="/images/hero/hero-renovation-lg.webp" media="(min-width: 1025px)" />
       </Helmet>
 
       {/* ── 1. Mini Header (sticky) ── */}
@@ -104,10 +108,24 @@ export default function ForCompaniesPage() {
 
       {/* ── 2. Hero Section ── */}
       <section className="min-h-[600px] relative overflow-hidden">
+        {/* Blur placeholder — instant paint */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=85)' }}
+          style={{ backgroundImage: 'url(/images/hero/hero-renovation-blur.webp)', filter: 'blur(20px)', transform: 'scale(1.1)' }}
         />
+        {/* Real hero image — responsive */}
+        <picture className="absolute inset-0">
+          <source media="(max-width: 640px)" srcSet="/images/hero/hero-renovation-sm.webp" />
+          <source media="(max-width: 1024px)" srcSet="/images/hero/hero-renovation-md.webp" />
+          <source media="(max-width: 1600px)" srcSet="/images/hero/hero-renovation-lg.webp" />
+          <img
+            src="/images/hero/hero-renovation-xl.webp"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            fetchPriority="high"
+          />
+        </picture>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.88)_0%,rgba(28,25,23,0.75)_50%,rgba(28,25,23,0.6)_100%)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>

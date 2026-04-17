@@ -626,7 +626,12 @@ export default function PortfolioPage() {
     return { grouped: g, singles: s };
   }, [projects]);
 
-  const singlesUrls = useMemo(() => singles.map(s => s.images[0]), [singles]);
+  const singlesUrls = useMemo(() => singles.map(s => {
+    const first = s.images[0];
+    if (typeof first === 'string') return first;
+    if (first && typeof first === 'object' && typeof (first as any).url === 'string') return (first as any).url;
+    return '';
+  }), [singles]);
   const singlesInitialRatios = useMemo(
     () => ratiosCacheRef.current.get(SINGLES_RATIO_KEY),
     // Re-read when singles set changes so cache hit still works across pagination
@@ -683,7 +688,7 @@ export default function PortfolioPage() {
                   name: p.title || 'Interior Design Project',
                   description: p.description || `${p.style || 'Interior design'} project by ${p.companyName}`,
                   creator: { '@type': 'Organization', name: p.companyName },
-                  ...(p.images[0] ? { image: `https://www.tarmeer.com${p.images[0]}` } : {}),
+                  ...(p.images[0] ? { image: `https://www.tarmeer.com${typeof p.images[0] === 'string' ? p.images[0] : ((p.images[0] as any)?.url || '')}` } : {}),
                   ...(p.companySlug && p.slug ? { url: `https://www.tarmeer.com/companies/${p.companySlug}/${p.slug}` } : {}),
                 },
               })),

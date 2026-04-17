@@ -35,7 +35,6 @@ const FaqPage = lazy(() => import('./pages/FaqPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
 const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
-const JoinPage = lazy(() => import('./pages/CompanyAuthPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Onboarding
@@ -80,7 +79,8 @@ const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'));
 const AdminStatsPage = lazy(() => import('./pages/admin/AdminStatsPage'));
 const AdminProjectDetailPage = lazy(() => import('./pages/admin/AdminProjectDetailPage'));
 
-// Catches "Failed to fetch dynamically imported module" errors caused by stale browser cache after deploy
+// Silently auto-reloads when lazy-loaded chunks fail (stale cache after deploy).
+// Loop guard: max 2 reloads per 60s window to avoid infinite refresh.
 class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
     super(props);
@@ -94,32 +94,30 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: 
   }
   componentDidCatch(error: Error, _info: ErrorInfo) {
     if (error.message?.includes('dynamically imported module') || error.message?.includes('Failed to fetch')) {
-      // Auto-reload once to pick up the new bundle
-      const reloaded = sessionStorage.getItem('chunk_reload');
-      if (!reloaded) {
-        sessionStorage.setItem('chunk_reload', '1');
+      const KEY = 'chunk_reload_times';
+      const now = Date.now();
+      const raw = sessionStorage.getItem(KEY);
+      const times: number[] = raw ? JSON.parse(raw).filter((t: number) => now - t < 60000) : [];
+      if (times.length < 2) {
+        times.push(now);
+        sessionStorage.setItem(KEY, JSON.stringify(times));
         window.location.reload();
       }
+      // If we've reloaded twice in 60s, give up silently — user continues on old version.
     }
   }
   render() {
-    if (this.state.hasError) {
-      return (
-        <div className="fixed inset-0 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
-          <div className="text-center px-6">
-            <p className="text-stone-600 mb-4">A new version is available. Please refresh to continue.</p>
-            <button
-              onClick={() => { sessionStorage.removeItem('chunk_reload'); window.location.reload(); }}
-              className="btn-primary px-6 py-2 rounded-2xl text-sm font-semibold"
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
-      );
-    }
+    // Even if hasError is true, render children. Reload is in flight or we've given up.
+    // Avoids flashing an error screen to the user.
     return this.props.children;
   }
+}
+
+// Clear reload counter on successful mount (means new bundle loaded OK)
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    sessionStorage.removeItem('chunk_reload_times');
+  });
 }
 
 function PageLoader() {
@@ -210,7 +208,7 @@ function App() {
 
           {/* ====== Independent landing pages ====== */}
           <Route path="/for-companies" element={<ForCompaniesPage />} />
-          <Route path="/join" element={<JoinPage />} />
+          <Route path="/join" element={<Navigate to="/for-companies" replace />} />
 
           {/* ====== Auth ====== */}
           <Route path="/auth" element={<AuthPage />} />
