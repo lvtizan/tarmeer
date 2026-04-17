@@ -250,86 +250,67 @@ export default function AdminInquiriesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-stone-800">Inquiries</h1>
-
-      {/* Stats — inline compact */}
-      {(() => {
-        return (
-          <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: '#b8864a' }} />
-              <span className="text-stone-500">业主询单</span>
-              <span className="font-semibold text-[#2c2c2c] tabular-nums">{counts.homeowner}</span>
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: '#6b6b6b' }} />
-              <span className="text-stone-500">公司线索</span>
-              <span className="font-semibold text-[#2c2c2c] tabular-nums">{counts.company}</span>
-            </span>
-          </div>
-        );
-      })()}
-
-      {/* View mode tabs */}
-      <div className="flex gap-2">
-        <button onClick={() => setViewMode('active')}
-          className={viewMode === 'active' ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm' : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm'}>
-          Active
-        </button>
-        <button onClick={() => setViewMode('deleted')}
-          className={viewMode === 'deleted' ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm' : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm'}>
-          Deleted
+    <div className="space-y-4">
+      {/* Row 1: Title + Export */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-[#2c2c2c]">线索管理</h1>
+        <button onClick={handleExport} className="btn-primary h-9 px-5 text-sm rounded-2xl">
+          导出 Excel
         </button>
       </div>
 
-      {/* Type tabs (secondary row) */}
-      <div className="flex gap-2">
-        <button onClick={() => { setTypeFilter('homeowner'); setPage(1); }}
-          className={typeFilter === 'homeowner'
-            ? 'bg-stone-800 text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
-            : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
-          业主询单
-        </button>
-        <button onClick={() => { setTypeFilter('company'); setPage(1); }}
-          className={typeFilter === 'company'
-            ? 'bg-stone-800 text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
-            : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
-          公司线索
-        </button>
-      </div>
+      {/* Row 2: Type tabs | Status + Search | Active/Deleted toggle */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Type tabs with badge counts */}
+        <div className="flex gap-2">
+          <button onClick={() => { setTypeFilter('homeowner'); setPage(1); }}
+            className={typeFilter === 'homeowner'
+              ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
+              : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
+            业主询单 ({counts.homeowner})
+          </button>
+          <button onClick={() => { setTypeFilter('company'); setPage(1); }}
+            className={typeFilter === 'company'
+              ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
+              : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
+            公司线索 ({counts.company})
+          </button>
+        </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-          <AdminSelect
-            value={statusFilter}
-            onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
-            options={[
-              { value: 'all', label: '全部状态' },
-              { value: 'new', label: '新询单' },
-              { value: 'contacted', label: '已联系' },
-              { value: 'resolved', label: '已解决' },
-              { value: 'archived', label: '已归档' },
-            ]}
-          />
-        </div>
-        <div className="w-56">
-          <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
-          <input
-            type="text" value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Name or phone..."
-            className="h-9 w-full px-3 border border-stone-200 rounded-lg text-sm bg-white"
-          />
-        </div>
-        <div className="ml-auto">
-          <button
-            onClick={handleExport}
-            className="h-9 px-4 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
-          >
-            Export Excel
+        {/* Status dropdown */}
+        <AdminSelect
+          value={statusFilter}
+          onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+          options={[
+            { value: 'all', label: '全部状态' },
+            { value: 'new', label: '新询单' },
+            { value: 'contacted', label: '已联系' },
+            { value: 'resolved', label: '已解决' },
+            { value: 'archived', label: '已归档' },
+          ]}
+        />
+
+        {/* Search */}
+        <input
+          type="text" value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="搜索姓名或电话..."
+          className="h-9 w-48 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+        />
+
+        {/* Active / Deleted toggle — pushed right */}
+        <div className="flex gap-1 ml-auto bg-stone-100 rounded-2xl p-0.5">
+          <button onClick={() => setViewMode('active')}
+            className={viewMode === 'active'
+              ? 'bg-white text-[#2c2c2c] shadow-sm rounded-2xl px-3 py-1 text-sm font-medium'
+              : 'text-[#6b6b6b] rounded-2xl px-3 py-1 text-sm hover:text-[#2c2c2c] transition'}>
+            有效
+          </button>
+          <button onClick={() => setViewMode('deleted')}
+            className={viewMode === 'deleted'
+              ? 'bg-white text-[#2c2c2c] shadow-sm rounded-2xl px-3 py-1 text-sm font-medium'
+              : 'text-[#6b6b6b] rounded-2xl px-3 py-1 text-sm hover:text-[#2c2c2c] transition'}>
+            已删除
           </button>
         </div>
       </div>
