@@ -12,6 +12,7 @@ import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
   MAX_ESTIMATED_PAYLOAD_BYTES, MAX_TOTAL_UPLOAD_BYTES, buildUploadSizeMessage,
 } from '../../lib/projectImageUpload';
+import { findDuplicates } from '../../lib/imageDedup';
 
 const PRIMARY = '#b8864a';
 const STYLES = [{ value:'', label:'Select a style' },{ value:'modern', label:'Modern Contemporary' },{ value:'islamic', label:'Modern Islamic' },{ value:'classic', label:'Neo-Classic' },{ value:'minimalist', label:'Minimalist' },{ value:'industrial', label:'Industrial' }];
@@ -119,8 +120,18 @@ export default function CompanyProjectsPage() {
       const p = await convertProjectImagesForUpload(unique);
       const eb = imgs.reduce((s,u)=>s+estimateDataUrlBytes(u), 0);
       if (eb+p.estimatedPayloadBytes > MAX_ESTIMATED_PAYLOAD_BYTES) { setNotice(`Too large. Keep under ${formatFileSize(MAX_ESTIMATED_PAYLOAD_BYTES)}.`); return; }
-      setImgs(prev=>[...prev,...p.dataUrls]);
-      setFps(prev=>[...prev,...unique.map(f=>`${f.name}:${f.size}:${f.lastModified}`)]);
+
+      // Dedup: check new images against existing + each other
+      const { duplicateIndices } = await findDuplicates(p.dataUrls, imgs);
+      const dedupedUrls = p.dataUrls.filter((_, i) => !duplicateIndices.includes(i));
+      const dedupedFps = unique.filter((_, i) => !duplicateIndices.includes(i));
+      if (duplicateIndices.length > 0) {
+        setNotice(`${duplicateIndices.length} duplicate image(s) removed automatically.`);
+      }
+      if (dedupedUrls.length === 0) { if (!duplicateIndices.length) setNotice('No new images.'); return; }
+
+      setImgs(prev=>[...prev,...dedupedUrls]);
+      setFps(prev=>[...prev,...dedupedFps.map(f=>`${f.name}:${f.size}:${f.lastModified}`)]);
     } catch (e:any) { setNotice(e.message||'Failed'); }
     finally { setPrepping(false); }
   };
