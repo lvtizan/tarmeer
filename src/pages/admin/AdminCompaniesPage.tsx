@@ -63,7 +63,7 @@ export default function AdminCompaniesPage() {
   const [directoryOrderSavingKey, setDirectoryOrderSavingKey] = useState<string | null>(null);
   const [profileBadgeTotal, setProfileBadgeTotal] = useState(0);
   const [profileSortDir, setProfileSortDir] = useState<SortDir>('desc');
-  const [profileSortActive, setProfileSortActive] = useState(false);
+  const [profileSortActive, setProfileSortActive] = useState(true);
   const [profileUpdatedSortDir, setProfileUpdatedSortDir] = useState<SortDir>('desc');
   const [profileUpdatedSortActive, setProfileUpdatedSortActive] = useState(false);
 
@@ -76,7 +76,7 @@ export default function AdminCompaniesPage() {
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingBadgeTotal, setPendingBadgeTotal] = useState(0);
   const [pendingSortDir, setPendingSortDir] = useState<SortDir>('desc');
-  const [pendingSortActive, setPendingSortActive] = useState(false);
+  const [pendingSortActive, setPendingSortActive] = useState(true);
 
   // Directory tab state
   const [companies, setCompanies] = useState<CompanyRecord[]>([]);
@@ -188,11 +188,13 @@ export default function AdminCompaniesPage() {
     setProfilePage(1);
     setProfileSearch('');
     setProfileStatusFilter('all');
-    setProfileSortActive(false);
+    setProfileSortActive(true);
+    setProfileSortDir('desc');
     setPendingPage(1);
     setPendingSearch('');
     setPendingStatusFilter('pending');
-    setPendingSortActive(false);
+    setPendingSortActive(true);
+    setPendingSortDir('desc');
     setCompanyPage(1);
     setCompanySearch('');
     setClaimedFilter('all');

@@ -438,3 +438,31 @@ This means frontend code can use relative paths like `/api/auth/me` or `/uploads
 ### Backend
 
 The Express backend lives in `server/` as a separate npm project. It runs on port 3002 and serves the API + uploaded files.
+
+---
+
+## Admin List Page Conventions
+
+All admin list pages (Inquiries, Companies, Users, Designers) MUST follow these patterns:
+
+### Filter Row
+- All filter controls use uniform `h-9` (36px) height
+- AdminSelect: `className="!h-9 !px-3 !text-sm"` to override default h-[50px]
+- Search input: `h-9 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm`
+- No labels above filter controls (placeholder text is sufficient)
+- Layout: `flex items-center gap-2` or `gap-3`
+
+### Batch Action Bar
+Shown when `selected.size > 0`, positioned between filters and table:
+- Container: `flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11`
+- Selected count: `text-sm text-stone-500` — format: "N selected"
+- Delete button: `flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition` with Trash2 icon (size 14)
+- Restore button: `h-8 px-4 text-sm text-white bg-[#b8864a] rounded-xl hover:bg-[#a07840] transition`
+- NEVER use filled red background (bg-red-50/bg-red-600) for delete buttons — always white bg with red border
+
+### Table
+- Container: `bg-white rounded-2xl border border-stone-200 shadow-sm`
+- Header row: `bg-stone-50 border-b border-stone-200`
+- Column headers: `text-left px-4 py-3 font-medium text-stone-600`
+- Body rows: `border-b border-stone-100 hover:bg-stone-50 transition`
+- Default sort: project_count or created_at DESC (most relevant first)
