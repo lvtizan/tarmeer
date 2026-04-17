@@ -22,13 +22,47 @@ export default function AuthCallbackPage() {
         },
       })
         .then(res => res.json())
-        .then(data => {
+        .then(async (data) => {
           if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
             localStorage.setItem('active_role', data.user.active_role || '');
           }
           const activeRole = data.user?.active_role;
           if (activeRole === 'company') {
+            // Apply pending company profile from /for-companies signup
+            try {
+              const raw = sessionStorage.getItem('pending_company_profile');
+              if (raw) {
+                const pending = JSON.parse(raw);
+                sessionStorage.removeItem('pending_company_profile');
+                // Update user phone if missing
+                if (pending.phone && !data.user?.phone) {
+                  await fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/profile`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ phone: pending.phone }),
+                  }).catch(() => {});
+                  // Update localStorage
+                  if (data.user) { data.user.phone = pending.phone; localStorage.setItem('user', JSON.stringify(data.user)); }
+                }
+                // Create company profile
+                await fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/company/profile`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                  body: JSON.stringify({
+                    company_name: pending.company_name || '',
+                    contact_person: pending.contact_person || '',
+                    phone: pending.phone || '',
+                    city: pending.city || '',
+                    company_type: pending.company_type || 'renovation_company',
+                    description: '',
+                    services: pending.services || ['Interior Design'],
+                    establishment_year: pending.establishment_year || null,
+                    signup_source: pending.signup_source || 'for-companies-landing',
+                  }),
+                }).catch(() => {});
+              }
+            } catch { /* best-effort */ }
             navigate('/company');
           } else {
             navigate('/dashboard');
