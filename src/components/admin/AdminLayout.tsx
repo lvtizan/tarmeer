@@ -104,7 +104,7 @@ export default function AdminLayout() {
       ]);
       setMenuCounts({
         '/admin/users': usersRes?.pagination?.total ?? 0,
-        '/admin/companies': companiesRes?.pagination?.total ?? 0,
+        '/admin/companies': companiesRes?.total ?? companiesRes?.pagination?.total ?? 0,
       });
     } catch { /* ignore */ }
   }, []);

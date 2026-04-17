@@ -64,6 +64,7 @@ export async function submitCompanyLead(req: any, res: any) {
     // notes field carries company_type so CRM sales team sees it
     pushCompanyLeadToCRM({
       applicationId: leadId,
+      contactName: contactName || undefined,
       companyName: companyName || contactName,
       phone: phone || undefined,
       city: city || undefined,

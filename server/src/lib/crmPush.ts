@@ -54,6 +54,7 @@ function parseChannel(url?: string): { channelPlatform: string; channelAccountNa
 
 export interface CompanyLeadPayload {
   applicationId: number;
+  contactName?: string;
   companyName: string;
   phone?: string;
   city?: string;
@@ -201,10 +202,10 @@ export async function pushCompanyLeadToCRM(lead: CompanyLeadPayload): Promise<an
         source: 'tarmeer-mall',
         tenantId,
         externalId: `company-app-${lead.applicationId}`,
-        name: lead.companyName,
+        name: lead.contactName || lead.companyName,
         phone: lead.phone || undefined,
         city: lead.city || undefined,
-        company: lead.companyName || undefined,
+        company: lead.companyName,
         notes: [
           lead.licenseNumber ? `License: ${lead.licenseNumber}` : '',
           lead.description || '',
