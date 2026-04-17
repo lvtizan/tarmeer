@@ -119,19 +119,30 @@ export async function getInquiries(req: any, res: any) {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
+    // Group by phone: count duplicates, keep only the latest row per phone
     const [countRows] = await pool.execute(
-      `SELECT COUNT(*) as total FROM design_inquiries di ${where}`,
+      `SELECT COUNT(*) as total FROM (
+         SELECT di.phone FROM design_inquiries di ${where}
+         GROUP BY COALESCE(NULLIF(di.phone,''), CAST(di.id AS CHAR))
+       ) grouped`,
       params
     );
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.execute(
-      `SELECT di.*,
-        cp.company_name
-       FROM design_inquiries di
-       LEFT JOIN company_profiles cp ON di.company_id = cp.id
-       ${where}
-       ORDER BY di.created_at DESC
+      `SELECT latest.*,
+        cp.company_name,
+        dup.dup_count
+       FROM design_inquiries latest
+       LEFT JOIN company_profiles cp ON latest.company_id = cp.id
+       INNER JOIN (
+         SELECT MAX(di.id) as max_id,
+                COALESCE(NULLIF(di.phone,''), CAST(di.id AS CHAR)) as group_key,
+                COUNT(*) as dup_count
+         FROM design_inquiries di ${where}
+         GROUP BY group_key
+       ) dup ON latest.id = dup.max_id
+       ORDER BY latest.created_at DESC
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
       params
     );

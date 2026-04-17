@@ -71,6 +71,7 @@ interface InquiryRecord {
   crm_sync_attempts: number | null;
   deleted_at?: string | null;
   deleted_reason?: string | null;
+  dup_count?: number;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -398,7 +399,12 @@ export default function AdminInquiriesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-stone-600">{inq.phone}</td>
+                    <td className="px-4 py-3 text-stone-600">
+                      {inq.phone}
+                      {(inq.dup_count || 0) > 1 && (
+                        <span className="ml-1.5 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 text-stone-500">×{inq.dup_count}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-stone-600">{inq.city || <span className="text-stone-400">—</span>}</td>
                     <td className="px-4 py-3 text-stone-600">{(() => {
                       const fromMessage = inq.message?.match(/Area[:：]?\s*([\d,]+)\s*m²/i);
