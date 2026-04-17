@@ -380,8 +380,7 @@ export default function AdminInquiriesPage() {
                 <>
                   <tr
                     key={inq.id}
-                    className={`border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition ${expandedId === inq.id ? 'bg-stone-50' : ''}`}
-                    onClick={() => handleExpand(inq)}
+                    className="border-b border-stone-100 hover:bg-stone-50 transition"
                   >
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(inq.id)} onChange={() => toggleSelect(inq.id)} />
@@ -519,52 +518,6 @@ export default function AdminInquiriesPage() {
                       {new Date(inq.created_at).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
                     </td>
                   </tr>
-                  {expandedId === inq.id && (
-                    <tr key={`${inq.id}-detail`} className="bg-stone-50">
-                      <td colSpan={9} className="px-4 py-4">
-                        <div className="space-y-3 max-w-2xl">
-                          {inq.message && (
-                            <div>
-                              <span className="text-xs font-medium text-stone-500">Message:</span>
-                              <p className="text-sm text-stone-700 mt-1">{inq.message}</p>
-                            </div>
-                          )}
-                          <div className="flex gap-4 items-end">
-                            <div>
-                              <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-                              <AdminSelect
-                                value={editStatus}
-                                onChange={(val) => setEditStatus(val)}
-                                options={[
-                                  { value: 'new', label: '新询单' },
-                                  { value: 'contacted', label: '已联系' },
-                                  { value: 'resolved', label: '已解决' },
-                                  { value: 'archived', label: '已归档' },
-                                ]}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <label className="block text-xs font-medium text-stone-500 mb-1">Admin Notes</label>
-                              <input
-                                type="text"
-                                value={editNotes}
-                                onChange={(e) => setEditNotes(e.target.value)}
-                                placeholder="Add notes..."
-                                className="h-9 w-full px-3 border border-stone-200 rounded-lg text-sm bg-white"
-                              />
-                            </div>
-                            <button
-                              onClick={() => handleUpdate(inq.id)}
-                              disabled={updating}
-                              className="h-9 px-4 bg-[#b8864a] text-white text-sm rounded-lg hover:bg-[#a07840] disabled:opacity-50"
-                            >
-                              {updating ? '...' : 'Save'}
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
                 </>
               ))}
             </tbody>
