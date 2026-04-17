@@ -88,12 +88,6 @@ export default function AdminInquiriesPage() {
   });
   const [error, setError] = useState('');
 
-  // Expanded detail
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [editNotes, setEditNotes] = useState('');
-  const [editStatus, setEditStatus] = useState('');
-  const [updating, setUpdating] = useState(false);
-
   // Batch delete / recycle bin
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [viewMode, setViewMode] = useState<'active' | 'deleted'>('active');
@@ -138,29 +132,6 @@ export default function AdminInquiriesPage() {
   }, [page, statusFilter, typeFilter, search, setSearchParams]);
 
   const totalPages = Math.ceil(total / 20);
-
-  const handleExpand = (inquiry: InquiryRecord) => {
-    if (expandedId === inquiry.id) {
-      setExpandedId(null);
-    } else {
-      setExpandedId(inquiry.id);
-      setEditNotes(inquiry.admin_notes || '');
-      setEditStatus(inquiry.status);
-    }
-  };
-
-  const handleUpdate = async (id: number) => {
-    setUpdating(true);
-    try {
-      await adminApi.updateInquiryStatus(id, editStatus, editNotes);
-      setExpandedId(null);
-      loadInquiries();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setUpdating(false);
-    }
-  };
 
   const handleExport = () => {
     const url = adminApi.getInquiriesExportUrl({
