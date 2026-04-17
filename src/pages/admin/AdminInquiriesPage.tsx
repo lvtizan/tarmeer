@@ -252,26 +252,27 @@ export default function AdminInquiriesPage() {
         </button>
       </div>
 
-      {/* Row 2: Type tabs | Status + Search | Active/Deleted toggle */}
+      {/* Row 2: Type tabs | Status + Search | Active/Deleted toggle — all h-9 */}
       <div className="flex items-center gap-3 flex-wrap">
         {/* Type tabs with badge counts */}
         <div className="flex gap-2">
           <button onClick={() => { setTypeFilter('homeowner'); setPage(1); }}
-            className={typeFilter === 'homeowner'
-              ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
-              : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
+            className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'homeowner'
+              ? 'bg-[#b8864a] text-white'
+              : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
             业主询单 ({counts.homeowner})
           </button>
           <button onClick={() => { setTypeFilter('company'); setPage(1); }}
-            className={typeFilter === 'company'
-              ? 'bg-[#b8864a] text-white rounded-2xl px-4 py-1.5 text-sm font-medium'
-              : 'border border-stone-200 text-stone-600 rounded-2xl px-4 py-1.5 text-sm hover:bg-stone-50 transition'}>
+            className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'company'
+              ? 'bg-[#b8864a] text-white'
+              : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
             公司线索 ({counts.company})
           </button>
         </div>
 
         {/* Status dropdown */}
         <AdminSelect
+          className="!h-9 !px-3 !text-sm"
           value={statusFilter}
           onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
           options={[
@@ -288,21 +289,21 @@ export default function AdminInquiriesPage() {
           type="text" value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="搜索姓名或电话..."
-          className="h-9 w-48 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+          className="h-9 w-48 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
         />
 
         {/* Active / Deleted toggle — pushed right */}
-        <div className="flex gap-1 ml-auto bg-stone-100 rounded-2xl p-0.5">
+        <div className="flex items-center gap-0.5 ml-auto h-9 bg-stone-100 rounded-2xl px-0.5">
           <button onClick={() => setViewMode('active')}
-            className={viewMode === 'active'
-              ? 'bg-white text-[#2c2c2c] shadow-sm rounded-2xl px-3 py-1 text-sm font-medium'
-              : 'text-[#6b6b6b] rounded-2xl px-3 py-1 text-sm hover:text-[#2c2c2c] transition'}>
+            className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'active'
+              ? 'bg-white text-[#2c2c2c] shadow-sm'
+              : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
             有效
           </button>
           <button onClick={() => setViewMode('deleted')}
-            className={viewMode === 'deleted'
-              ? 'bg-white text-[#2c2c2c] shadow-sm rounded-2xl px-3 py-1 text-sm font-medium'
-              : 'text-[#6b6b6b] rounded-2xl px-3 py-1 text-sm hover:text-[#2c2c2c] transition'}>
+            className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'deleted'
+              ? 'bg-white text-[#2c2c2c] shadow-sm'
+              : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
             已删除
           </button>
         </div>

@@ -79,7 +79,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
         onClick={() => !disabled && setOpen((o) => !o)}
         className={`flex items-center justify-between w-full h-[50px] px-5 rounded-2xl border bg-stone-50/80 text-[15px] text-left cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
           error ? 'border-red-400 ring-2 ring-red-200/30' : 'border-stone-200'
-        } ${!value ? 'text-stone-400' : 'text-[#1c1917]'}`}
+        } ${!value ? 'text-stone-400' : 'text-[#1c1917]'} ${className}`}
       >
         <span className="truncate">{selected?.label || options[0]?.label}</span>
         <svg
