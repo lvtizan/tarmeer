@@ -363,16 +363,16 @@ export default function AdminInquiriesPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Area</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Source</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
+                {typeFilter !== 'company' && <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>}
                 <th className="text-left px-4 py-3 font-medium text-stone-600">CRM</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Date</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <TableSpinner colSpan={9} />
+                <TableSpinner colSpan={typeFilter === 'company' ? 8 : 9} />
               ) : inquiries.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
+                <tr><td colSpan={typeFilter === 'company' ? 8 : 9} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
               ) : inquiries.map((inq) => (
                 <>
                   <tr
@@ -407,26 +407,26 @@ export default function AdminInquiriesPage() {
                     })()}</td>
                     <td className="px-4 py-3 text-xs">
                       {inq.source_company_name ? (
-                        inq.source_company_slug ? (
-                          <a
-                            href={`/companies/${inq.source_company_slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[#b8864a] font-medium hover:underline"
-                          >{inq.source_company_name}</a>
-                        ) : (
-                          <span className="text-[#b8864a] font-medium">{inq.source_company_name}</span>
-                        )
+                        <a
+                          href={inq.source_company_slug
+                            ? `/companies/${inq.source_company_slug}`
+                            : `https://www.google.com/search?q=${encodeURIComponent(inq.source_company_name + ' UAE')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[#b8864a] font-medium hover:underline"
+                        >{inq.source_company_name}</a>
                       ) : (
                         <span className="text-stone-400">Homepage</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[inq.status]}`}>
-                        {STATUS_LABEL[inq.status] || inq.status}
-                      </span>
-                    </td>
+                    {typeFilter !== 'company' && (
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[inq.status]}`}>
+                          {STATUS_LABEL[inq.status] || inq.status}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       {(() => {
                         const status = inq.crm_sync_status;
