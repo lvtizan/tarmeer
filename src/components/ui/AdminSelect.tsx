@@ -134,7 +134,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
           {/* Desktop: fixed dropdown (escapes overflow-hidden containers) */}
           {dropPos && (
             <ul
-              className="hidden sm:block fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden max-h-60 overflow-y-auto"
+              className={`hidden sm:block fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden ${options.length > 10 ? 'max-h-[70vh] overflow-y-auto' : ''}`}
               style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width }}
             >
               {options.map((opt) => (
