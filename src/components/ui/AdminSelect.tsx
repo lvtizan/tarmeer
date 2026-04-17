@@ -135,7 +135,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
           {dropPos && (
             <ul
               className={`hidden sm:block fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden ${options.length > 10 ? 'max-h-[70vh] overflow-y-auto' : ''}`}
-              style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width }}
+              style={{ top: dropPos.top, left: dropPos.left, minWidth: Math.max(dropPos.width, 140), width: 'auto' }}
             >
               {options.map((opt) => (
                 <li key={opt.value}>
