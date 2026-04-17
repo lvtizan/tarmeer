@@ -104,23 +104,15 @@ export default function AdminInquiriesPage() {
     setLoading(true);
     setError('');
     try {
-      // Combine user search with type filter
-      let effectiveSearch = search || undefined;
-      if (typeFilter === 'company') {
-        effectiveSearch = effectiveSearch ? `[Company Inquiry] ${effectiveSearch}` : '[Company Inquiry]';
-      }
       const result = await adminApi.getInquiries({
         page, limit: 20,
         status: statusFilter === 'all' ? undefined : statusFilter,
-        search: effectiveSearch,
+        search: search || undefined,
         deleted: viewMode === 'deleted',
+        type: typeFilter,
       });
-      let filtered = result.inquiries;
-      if (typeFilter === 'homeowner') {
-        filtered = filtered.filter((inq: InquiryRecord) => !inq.message?.startsWith('[Company Inquiry]'));
-      }
-      setInquiries(filtered);
-      setTotal(typeFilter === 'homeowner' ? filtered.length : result.pagination.total);
+      setInquiries(result.inquiries);
+      setTotal(result.pagination.total);
     } catch (err: any) {
       setError(err.message || 'Failed to load inquiries.');
     } finally {
@@ -218,13 +210,14 @@ export default function AdminInquiriesPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [all, companyRes] = await Promise.all([
-          adminApi.getInquiries({ page: 1, limit: 1 }),
-          adminApi.getInquiries({ page: 1, limit: 1, search: '[Company Inquiry]' }),
+        const [homeownerRes, companyRes] = await Promise.all([
+          adminApi.getInquiries({ page: 1, limit: 1, type: 'homeowner', deleted: viewMode === 'deleted' }),
+          adminApi.getInquiries({ page: 1, limit: 1, type: 'company', deleted: viewMode === 'deleted' }),
         ]);
-        const total = all.pagination.total;
-        const company = companyRes.pagination.total;
-        setCounts({ homeowner: Math.max(0, total - company), company });
+        setCounts({
+          homeowner: homeownerRes.pagination.total,
+          company: companyRes.pagination.total,
+        });
       } catch {
         // non-blocking; leave counts at 0
       }

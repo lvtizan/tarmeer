@@ -88,7 +88,7 @@ export async function getInquiries(req: any, res: any) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
-    const { status, designer_id, company_id, search } = req.query;
+    const { status, designer_id, company_id, search, type } = req.query;
 
     const showDeleted = req.query.deleted === 'true';
 
@@ -108,6 +108,11 @@ export async function getInquiries(req: any, res: any) {
     if (company_id) {
       where += ' AND di.company_id = ?';
       params.push(company_id);
+    }
+    if (type === 'homeowner') {
+      where += " AND (di.message IS NULL OR di.message NOT LIKE '[Company Inquiry]%')";
+    } else if (type === 'company') {
+      where += " AND di.message LIKE '[Company Inquiry]%'";
     }
     if (search) {
       where += ' AND (di.name LIKE ? OR di.phone LIKE ? OR di.source_company_name LIKE ?)';

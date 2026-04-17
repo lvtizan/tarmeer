@@ -544,13 +544,14 @@ class AdminApiClient {
   }
 
   // Inquiry management
-  async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string; deleted?: boolean }) {
+  async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string; deleted?: boolean; type?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.status) query.set('status', params.status);
     if (params?.search) query.set('search', params.search);
     if (params?.deleted) query.set('deleted', 'true');
+    if (params?.type) query.set('type', params.type);
     return this.request(`/inquiries?${query.toString()}`);
   }
 
