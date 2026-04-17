@@ -17,6 +17,7 @@ interface CompanyProfileRecord {
   user_name: string;
   user_email: string;
   project_count: number;
+  today_project_count?: number;
   created_at: string;
   updated_at?: string;
   is_signed?: boolean;
@@ -163,7 +164,6 @@ export default function AdminCompaniesTableTab({
               >
                 Projects {sortActive ? (sortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
               </th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">已签约</th>
@@ -179,9 +179,9 @@ export default function AdminCompaniesTableTab({
           </thead>
           <tbody>
             {loading ? (
-              <TableSpinner colSpan={12} />
+              <TableSpinner colSpan={11} />
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={12} className="text-center py-12 text-stone-400">No records</td></tr>
+              <tr><td colSpan={11} className="text-center py-12 text-stone-400">No records</td></tr>
             ) : profiles.map((c) => (
               <tr
                 key={c.id}
@@ -213,11 +213,11 @@ export default function AdminCompaniesTableTab({
                   <div className="font-medium text-stone-800 text-xs">{c.user_name}</div>
                   <div className="text-xs text-stone-400">{c.user_email}</div>
                 </td>
-                <td className="px-4 py-3 text-stone-700 font-medium">{c.project_count}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${PROFILE_STATUS_COLORS[c.status] || 'bg-gray-100'}`}>
-                    {c.status}
-                  </span>
+                <td className="px-4 py-3 text-stone-700 font-medium">
+                  {c.project_count}
+                  {c.today_project_count != null && c.today_project_count > 0 && (
+                    <span className="ml-1.5 text-[10px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">今天+{c.today_project_count}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <div className="relative">

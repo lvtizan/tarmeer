@@ -101,13 +101,16 @@ export default function AdminLayout() {
 
   const fetchMenuCounts = useCallback(async () => {
     try {
-      const [usersRes, companiesRes] = await Promise.all([
+      const [usersRes, companiesRes, homeownerInqRes, companyInqRes] = await Promise.all([
         adminApi.getUsers({ page: 1, limit: 1 }),
         adminApi.getRegisteredCompanies({ page: 1, limit: 1 }),
+        adminApi.getInquiries({ page: 1, limit: 1, type: 'homeowner' }),
+        adminApi.getInquiries({ page: 1, limit: 1, type: 'company' }),
       ]);
       setMenuCounts({
         '/admin/users': usersRes?.pagination?.total ?? 0,
         '/admin/companies': companiesRes?.total ?? companiesRes?.pagination?.total ?? 0,
+        '/admin/inquiries': (homeownerInqRes?.pagination?.total ?? 0) + (companyInqRes?.pagination?.total ?? 0),
       });
     } catch { /* ignore */ }
   }, []);

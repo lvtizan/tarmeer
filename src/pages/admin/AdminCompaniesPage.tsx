@@ -326,10 +326,6 @@ export default function AdminCompaniesPage() {
         ))}
       </div>
 
-      <span className="text-sm text-stone-500">
-        Home Display: <span className={homeOrderCount >= 6 ? 'text-red-500 font-medium' : 'text-[#b8864a] font-medium'}>{homeOrderCount}/6</span>
-      </span>
-
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
       {/* ── Companies Tab ── */}
