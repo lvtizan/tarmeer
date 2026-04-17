@@ -134,6 +134,20 @@ export default function CompanyOnboardingPage() {
         const projectCount = profileRes?.projectCount || 0;
         const onboardingStep = profile?.onboarding_step ?? 0;
 
+        // Read pending signup data (saved during /for-companies registration)
+        let pending: any = null;
+        try {
+          const raw = sessionStorage.getItem('pending_company_profile');
+          if (raw) { pending = JSON.parse(raw); sessionStorage.removeItem('pending_company_profile'); }
+        } catch { /* ignore */ }
+        // Also check company_signup_prefill (inline login path)
+        if (!pending) {
+          try {
+            const raw2 = sessionStorage.getItem('company_signup_prefill');
+            if (raw2) { pending = JSON.parse(raw2); sessionStorage.removeItem('company_signup_prefill'); }
+          } catch { /* ignore */ }
+        }
+
         if (profile) {
           setProfileData({
             company_name: profile.company_name || '',
@@ -143,6 +157,40 @@ export default function CompanyOnboardingPage() {
           if (profile.company_name) setCompanyName(profile.company_name);
           if (profile.contact_person) setContactPerson(profile.contact_person);
           if (profile.company_type) setCompanyType(profile.company_type);
+        }
+
+        // Apply pending data if profile fields are empty
+        if (pending && (!profile?.company_name || !profile?.contact_person)) {
+          if (pending.company_name) setCompanyName(pending.company_name);
+          if (pending.contact_person) setContactPerson(pending.contact_person);
+          if (pending.company_type) setCompanyType(pending.company_type);
+          if (pending.phone) {
+            const match = GCC_PHONE_OPTIONS.find((o: any) => pending.phone.startsWith(o.code));
+            if (match) {
+              setPhoneRegion(match);
+              setPhoneDigits(pending.phone.slice(match.code.length));
+            }
+          }
+          // Auto-save the pending data to profile
+          try {
+            await api.post('/auth/company/profile', {
+              company_name: pending.company_name || '',
+              contact_person: pending.contact_person || '',
+              phone: pending.phone || '',
+              company_type: pending.company_type || 'renovation_company',
+              city: pending.city || '',
+              description: '',
+              services: pending.services || ['Interior Design'],
+              establishment_year: pending.establishment_year || null,
+              signup_source: pending.signup_source || 'for-companies-landing',
+              onboarding_step: 1,
+            });
+            setProfileData({
+              company_name: pending.company_name || '',
+              contact_person: pending.contact_person || '',
+              phone: pending.phone || '',
+            });
+          } catch { /* best-effort */ }
         }
 
         // redirect or resume

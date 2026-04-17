@@ -133,6 +133,35 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
             setLocalPhone(parsed.local);
           }
         } else {
+          // Check for pending signup data from /for-companies registration
+          let pending: any = null;
+          try {
+            const raw = sessionStorage.getItem('pending_company_profile');
+            if (raw) { pending = JSON.parse(raw); sessionStorage.removeItem('pending_company_profile'); }
+          } catch { /* ignore */ }
+          if (!pending) {
+            try {
+              const raw2 = sessionStorage.getItem('company_signup_prefill');
+              if (raw2) { pending = JSON.parse(raw2); sessionStorage.removeItem('company_signup_prefill'); }
+            } catch { /* ignore */ }
+          }
+          if (pending) {
+            const prefilled = {
+              ...EMPTY_PROFILE,
+              company_name: pending.company_name || '',
+              contact_person: pending.contact_person || '',
+              phone: pending.phone || '',
+              city: pending.city || '',
+              company_type: pending.company_type || 'renovation_company',
+              services: pending.services || ['Interior Design'],
+            };
+            setProfile(prefilled);
+            if (prefilled.phone) {
+              const parsed = parsePhone(prefilled.phone);
+              setDialCode(parsed.dialCode);
+              setLocalPhone(parsed.local);
+            }
+          }
           lastSavedSnapshotRef.current = serialize(EMPTY_PROFILE);
         }
       } catch {

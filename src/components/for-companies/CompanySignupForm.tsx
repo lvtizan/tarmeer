@@ -267,6 +267,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           navigate('/company');
           return;
         } catch {
+          // Save profile data so it can be applied after email verification + login
+          sessionStorage.setItem('pending_company_profile', JSON.stringify(profileData));
           setRegSuccess(
             lang === 'ar'
               ? `تم إنشاء الحساب! يرجى التحقق من ${regEmail.trim()} ثم تسجيل الدخول.`
