@@ -64,6 +64,23 @@ const RULES = [
     },
   },
   {
+    id: 'search-filter-same-row',
+    desc: 'Search input and filter dropdown must be in the same flex row — do not stack vertically',
+    test: (line, ctx) => {
+      // Detect a standalone div wrapping only a search input (not inside a flex row with filters)
+      if (/className.*max-w-md/.test(line) && !/flex/.test(line) && /relative/.test(line)) {
+        ctx._standaloneSearch = true;
+        return false;
+      }
+      if (ctx._standaloneSearch && /placeholder.*search/i.test(line)) {
+        ctx._standaloneSearch = false;
+        return true;
+      }
+      ctx._standaloneSearch = false;
+      return false;
+    },
+  },
+  {
     id: 'no-native-dialog',
     desc: 'Native browser dialog (alert/prompt/confirm) — use Toast or custom Modal instead',
     test: (line) => {

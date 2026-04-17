@@ -326,25 +326,65 @@ export default function AdminCompaniesPage() {
         ))}
       </div>
 
-      {/* Global search — syncs across all tabs */}
-      <div className="relative max-w-md">
-        <input
-          type="text" value={profileSearch}
-          onChange={(e) => {
-            const v = e.target.value;
-            setProfileSearch(v); setProfilePage(1);
-            setCompanySearch(v); setCompanyPage(1);
-            setPendingSearch(v); setPendingPage(1);
-          }}
-          placeholder="Search company name, email..."
-          className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-        />
-        {profileSearch && (
-          <button onClick={() => {
-            setProfileSearch(''); setProfilePage(1);
-            setCompanySearch(''); setCompanyPage(1);
-            setPendingSearch(''); setPendingPage(1);
-          }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
+      {/* Toolbar: search + filters in one row */}
+      <div className="flex items-center gap-2">
+        <div className="relative max-w-md flex-1">
+          <input
+            type="text" value={profileSearch}
+            onChange={(e) => {
+              const v = e.target.value;
+              setProfileSearch(v); setProfilePage(1);
+              setCompanySearch(v); setCompanyPage(1);
+              setPendingSearch(v); setPendingPage(1);
+            }}
+            placeholder="Search company name, email..."
+            className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+          />
+          {profileSearch && (
+            <button onClick={() => {
+              setProfileSearch(''); setProfilePage(1);
+              setCompanySearch(''); setCompanyPage(1);
+              setPendingSearch(''); setPendingPage(1);
+            }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
+          )}
+        </div>
+        {tab === 'companies' && (
+          <AdminSelect
+            className="!h-9 !px-3 !text-sm"
+            value={profileStatusFilter}
+            onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'rejected', label: 'Rejected' },
+            ]}
+          />
+        )}
+        {tab === 'directory' && (
+          <AdminSelect
+            className="!h-9 !px-3 !text-sm"
+            value={claimedFilter}
+            onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'claimed', label: 'Claimed' },
+              { value: 'unclaimed', label: 'Unclaimed' },
+            ]}
+          />
+        )}
+        {tab === 'applications' && (
+          <AdminSelect
+            className="!h-9 !px-3 !text-sm"
+            value={pendingStatusFilter}
+            onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
+            options={[
+              { value: 'pending', label: 'Pending' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'rejected', label: 'Rejected' },
+              { value: 'all', label: 'All' },
+            ]}
+          />
         )}
       </div>
 
@@ -353,19 +393,6 @@ export default function AdminCompaniesPage() {
       {/* ── Companies Tab ── */}
       {tab === 'companies' && (
         <>
-          <div className="flex items-center gap-2">
-            <AdminSelect
-              className="!h-9 !px-3 !text-sm"
-              value={profileStatusFilter}
-              onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' },
-              ]}
-            />
-          </div>
 
           <AdminCompaniesTableTab
             profiles={profiles}
@@ -407,30 +434,6 @@ export default function AdminCompaniesPage() {
       {/* ── Directory Tab ── */}
       {tab === 'directory' && (
         <>
-          <div className="flex items-center gap-2">
-            <AdminSelect
-              className="!h-9 !px-3 !text-sm"
-              value={claimedFilter}
-              onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'claimed', label: 'Claimed' },
-                { value: 'unclaimed', label: 'Unclaimed' },
-              ]}
-            />
-            <div className="relative flex-1 min-w-0">
-              <input
-                type="text" value={companySearch}
-                onChange={(e) => { setCompanySearch(e.target.value); setCompanyPage(1); }}
-                placeholder="Company name..."
-                className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-              />
-              {companySearch && (
-                <button onClick={() => { setCompanySearch(''); setCompanyPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
-              )}
-            </div>
-          </div>
-
           <AdminDirectoryTable
             companies={companies}
             loading={companyLoading}
@@ -450,31 +453,6 @@ export default function AdminCompaniesPage() {
       {/* ── Applications Tab ── */}
       {tab === 'applications' && (
         <>
-          <div className="flex items-center gap-2">
-            <AdminSelect
-              className="!h-9 !px-3 !text-sm"
-              value={pendingStatusFilter}
-              onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
-              options={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' },
-                { value: 'all', label: 'All' },
-              ]}
-            />
-            <div className="relative flex-1 min-w-0">
-              <input
-                type="text" value={pendingSearch}
-                onChange={(e) => { setPendingSearch(e.target.value); setPendingPage(1); }}
-                placeholder="Company name, email..."
-                className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-              />
-              {pendingSearch && (
-                <button onClick={() => { setPendingSearch(''); setPendingPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
-              )}
-            </div>
-          </div>
-
           <AdminApplicationsTable
             profiles={pendingProfiles}
             loading={pendingLoading}
