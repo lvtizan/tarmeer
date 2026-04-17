@@ -190,6 +190,41 @@ async function checkImageStoragePaths() {
   }
 }
 
+// ─── Rule 7: CRM tenant routing — company leads must NOT call pushLeadToCRM ──
+async function checkCrmTenantRouting() {
+  const label = '7: CRM tenant routing (company leads → company tenant only)';
+  const source = await readSource('server/src/controllers/companyLeadController.ts');
+  if (!source) {
+    fail(label, 'companyLeadController.ts not found');
+    return;
+  }
+
+  // pushLeadToCRM must NOT be imported or called in this file.
+  // That function pushes to the homeowner CRM tenant, which is wrong for company leads.
+  // Incident: 2026-04-18 — 47 company users appeared as 业主 in CRM because production
+  // code called pushLeadToCRM on the design_inquiries mirror row.
+  if (/pushLeadToCRM/.test(source)) {
+    fail(label, 'companyLeadController.ts references pushLeadToCRM — company leads must only use pushCompanyLeadToCRM');
+  } else {
+    pass(label, 'pushLeadToCRM not referenced in companyLeadController.ts');
+  }
+
+  // pushCompanyLeadToCRM must still be called (company CRM push must exist).
+  if (/pushCompanyLeadToCRM/.test(source)) {
+    pass(label, 'pushCompanyLeadToCRM is called for company CRM push');
+  } else {
+    fail(label, 'pushCompanyLeadToCRM not found in companyLeadController.ts — company leads will not reach CRM');
+  }
+
+  // Mirror INSERT must set crm_sync_status='synced' to prevent retry workers
+  // from picking it up and accidentally pushing to homeowner CRM.
+  if (/design_inquiries[\s\S]{0,400}'synced'/.test(source)) {
+    pass(label, "mirror design_inquiries INSERT sets crm_sync_status='synced'");
+  } else {
+    fail(label, "mirror design_inquiries INSERT must set crm_sync_status='synced'");
+  }
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────────
 async function main() {
   console.log('=== Reliability Invariant Linter ===\n');
@@ -200,6 +235,7 @@ async function main() {
   await checkNginxBareDomain();
   await checkNotificationBellAdminOnly();
   await checkImageStoragePaths();
+  await checkCrmTenantRouting();
 
   console.log('\n' + '='.repeat(40));
   if (failures > 0) {
