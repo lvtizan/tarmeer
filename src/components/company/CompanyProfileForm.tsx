@@ -92,6 +92,7 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveText, setSaveText] = useState('');
+  const [tried, setTried] = useState(false);
   const [dialCode, setDialCode] = useState('+971');
   const [localPhone, setLocalPhone] = useState('');
 
@@ -180,8 +181,13 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
 
   const saveProfile = useCallback(async (manual = false) => {
     const current = profileRef.current;
-    if (!current.company_name.trim()) {
-      if (manual) setSaveText('Company name is required.');
+    const missing = !current.company_name.trim() || !current.contact_person.trim() || !current.phone.trim() || !current.description.trim() || current.services.length === 0;
+    if (missing) {
+      if (manual) {
+        setTried(true);
+        setSaveText('Please complete all required fields.');
+        clearSaveTextLater();
+      }
       return;
     }
     setSaving(true);
@@ -256,11 +262,13 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="md:col-span-2">
             <FormLabel required>Company Name</FormLabel>
-            <FormInput value={profile.company_name} onChange={e => set('company_name', e.target.value)} placeholder="Enter company name" />
+            <FormInput value={profile.company_name} onChange={e => set('company_name', e.target.value)} placeholder="Enter company name" className={tried && !profile.company_name.trim() ? '!border-red-400' : ''} />
+            {tried && !profile.company_name.trim() && <p className="mt-1 text-xs text-red-500">Company name is required</p>}
           </div>
           <div>
             <FormLabel required>Contact Person</FormLabel>
-            <FormInput value={profile.contact_person} onChange={e => set('contact_person', e.target.value)} placeholder="Full name" />
+            <FormInput value={profile.contact_person} onChange={e => set('contact_person', e.target.value)} placeholder="Full name" className={tried && !profile.contact_person.trim() ? '!border-red-400' : ''} />
+            {tried && !profile.contact_person.trim() && <p className="mt-1 text-xs text-red-500">Contact person is required</p>}
           </div>
           <div>
             <FormLabel required icon={<Phone className="w-3.5 h-3.5" />}>Phone</FormLabel>
@@ -283,13 +291,15 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
                   setProfile(p => ({ ...p, phone: `${dialCode}${num}` }));
                 }}
                 placeholder="50 123 4567"
-                className="h-[50px] flex-1 rounded-2xl border border-stone-200 bg-stone-50/80 px-4 text-[15px] text-[#2c2c2c] placeholder:text-stone-400 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:bg-white"
+                className={`h-[50px] flex-1 rounded-2xl border bg-stone-50/80 px-4 text-[15px] text-[#2c2c2c] placeholder:text-stone-400 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:bg-white ${tried && !profile.phone.trim() ? 'border-red-400' : 'border-stone-200'}`}
               />
             </div>
+            {tried && !profile.phone.trim() && <p className="mt-1 text-xs text-red-500">Phone number is required</p>}
           </div>
           <div className="md:col-span-2">
             <FormLabel required>Description</FormLabel>
-            <FormTextarea value={profile.description} rows={3} onChange={e => set('description', e.target.value)} placeholder="Tell potential clients about your company, expertise, and what makes you unique..." />
+            <FormTextarea value={profile.description} rows={3} onChange={e => set('description', e.target.value)} placeholder="Tell potential clients about your company, expertise, and what makes you unique..." className={tried && !profile.description.trim() ? '!border-red-400' : ''} />
+            {tried && !profile.description.trim() && <p className="mt-1 text-xs text-red-500">Description is required</p>}
           </div>
         </div>
       </section>
@@ -335,9 +345,10 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
         <div className="space-y-3">
           <div>
             <FormLabel required>Services</FormLabel>
-            <div className="flex flex-wrap gap-2 mt-1.5">
+            <div className={`flex flex-wrap gap-2 mt-1.5 ${tried && profile.services.length === 0 ? 'rounded-2xl border-2 border-dashed border-red-300 p-2' : ''}`}>
               {SERVICES.map(t => <FormTag key={t} label={t} active={profile.services.includes(t)} onClick={() => toggleTag('services', t)} />)}
             </div>
+            {tried && profile.services.length === 0 && <p className="mt-1 text-xs text-red-500">Select at least one service</p>}
           </div>
           <div>
             <FormLabel>Project Specialties</FormLabel>
