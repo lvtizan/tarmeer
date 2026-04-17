@@ -80,6 +80,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
+  const [menuCounts, setMenuCounts] = useState<Record<string, number>>({});
   const [lang, setLang] = useState<AdminLang>(() => {
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_LANG_KEY) : null;
     return saved === 'zh' ? 'zh' : 'en';
@@ -95,11 +96,25 @@ export default function AdminLayout() {
     }
   }, []);
 
+  const fetchMenuCounts = useCallback(async () => {
+    try {
+      const [usersRes, companiesRes] = await Promise.all([
+        adminApi.getUsers({ page: 1, limit: 1 }),
+        adminApi.getRegisteredCompanies({ page: 1, limit: 1 }),
+      ]);
+      setMenuCounts({
+        '/admin/users': usersRes?.pagination?.total ?? 0,
+        '/admin/companies': companiesRes?.pagination?.total ?? 0,
+      });
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     fetchNotificationCounts();
+    fetchMenuCounts();
     const interval = setInterval(fetchNotificationCounts, 60000);
     return () => clearInterval(interval);
-  }, [fetchNotificationCounts]);
+  }, [fetchNotificationCounts, fetchMenuCounts]);
 
   // Mark notifications seen when visiting a page, then refresh counts
   useEffect(() => {
@@ -187,6 +202,9 @@ export default function AdminLayout() {
                 <Icon className="w-5 h-5 shrink-0" />
                 <span className="flex items-center gap-1.5">
                   <span>{t(item.labelEn, item.labelZh)}</span>
+                  {menuCounts[item.to] != null && menuCounts[item.to] > 0 && (
+                    <span className="text-[11px] text-stone-400 font-normal">{menuCounts[item.to]}</span>
+                  )}
                   <span
                     className="relative inline-flex items-center"
                     onMouseEnter={(e) => showTooltip(e, t(item.infoEn, item.infoZh))}

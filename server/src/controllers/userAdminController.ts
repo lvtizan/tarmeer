@@ -13,6 +13,7 @@ export async function listUsers(req: any, res: any) {
     const params: any[] = [];
 
     if (role) { where += ' AND role = ?'; params.push(role); }
+    else { where += " AND role != 'company'"; }
     if (status) { where += ' AND status = ?'; params.push(status); }
     if (search) {
       where += ' AND (full_name LIKE ? OR email LIKE ?)';

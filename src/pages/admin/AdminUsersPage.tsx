@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Pencil, Shield, Home, Building2, X, Trash2 } from 'lucide-react';
+import { Pencil, Shield, X, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
 import UserEditModal from '../../components/admin/UserEditModal';
-import AdminSelect from '../../components/ui/AdminSelect';
-
-type RoleFilter = 'all' | 'user' | 'designer' | 'company';
-type StatusFilter = 'all' | 'active' | 'suspended';
 
 interface UserRecord {
   id: number;
@@ -21,11 +17,6 @@ interface UserRecord {
   email_verified: boolean;
   created_at: string;
 }
-
-const STATUS_BADGE: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  suspended: 'bg-red-100 text-red-700',
-};
 
 const AVAILABLE_PERMISSIONS = [
   { key: 'manage_projects', label: 'Manage Projects', desc: 'Can create, edit and delete projects' },
@@ -82,8 +73,7 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
     }
   };
 
-  const roleLabel = user.role === 'company' ? '公司' : user.role === 'user' ? '业主' : user.role;
-  const RoleIcon = user.role === 'company' ? Building2 : user.role === 'user' ? Home : null;
+  const roleLabel = user.role === 'user' ? '业主' : user.role;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -97,7 +87,6 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
             </div>
             <div className="flex items-center gap-2 text-sm text-stone-500">
               <span className="font-medium text-stone-700">{user.full_name}</span>
-              {RoleIcon && <RoleIcon size={13} className="text-stone-400" />}
               <span>{roleLabel}</span>
             </div>
           </div>
@@ -233,14 +222,6 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page') || '1')));
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>(() => {
-    const r = searchParams.get('role');
-    return r === 'user' || r === 'designer' || r === 'company' ? r : 'all';
-  });
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
-    const s = searchParams.get('status');
-    return s === 'active' || s === 'suspended' ? s : 'all';
-  });
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -258,8 +239,6 @@ export default function AdminUsersPage() {
       const result = await adminApi.getUsers({
         page,
         limit: 20,
-        role: roleFilter === 'all' ? undefined : roleFilter,
-        status: statusFilter === 'all' ? undefined : statusFilter,
         search: search || undefined,
       });
       setUsers(result.users);
@@ -269,18 +248,16 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, roleFilter, statusFilter, search]);
+  }, [page, search]);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
   useEffect(() => {
     const params: Record<string, string> = {};
     if (page > 1) params.page = String(page);
-    if (roleFilter !== 'all') params.role = roleFilter;
-    if (statusFilter !== 'all') params.status = statusFilter;
     if (search) params.search = search;
     setSearchParams(params, { replace: true });
-  }, [page, roleFilter, statusFilter, search, setSearchParams]);
+  }, [page, search, setSearchParams]);
 
   const totalPages = Math.ceil(total / 20);
 
@@ -333,28 +310,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <AdminSelect
-          className="!h-9 !px-3 !text-sm"
-          value={roleFilter}
-          onChange={(val) => { setRoleFilter(val as RoleFilter); setPage(1); }}
-          options={[
-            { value: 'all', label: 'All Roles' },
-            { value: 'user', label: 'User' },
-            { value: 'designer', label: 'Designer' },
-            { value: 'company', label: 'Company' },
-          ]}
-        />
-        <AdminSelect
-          className="!h-9 !px-3 !text-sm"
-          value={statusFilter}
-          onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
-          options={[
-            { value: 'all', label: 'All Status' },
-            { value: 'active', label: 'Active' },
-            { value: 'suspended', label: 'Suspended' },
-          ]}
-        />
+      <div className="flex items-center gap-2">
         <div className="flex-1 min-w-[200px]">
           <input
             type="text"
@@ -403,17 +359,16 @@ export default function AdminUsersPage() {
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Email</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Role</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Phone</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Registered</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <TableSpinner colSpan={7} />
+                <TableSpinner colSpan={6} />
               ) : users.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400">No users found</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-stone-400">No users found</td></tr>
               ) : users.map((user) => (
                 <tr
                   key={user.id}
@@ -439,26 +394,7 @@ export default function AdminUsersPage() {
                     {user.city && <div className="text-xs text-stone-400">{user.city}</div>}
                   </td>
                   <td className="px-4 py-3 text-stone-600">{user.email}</td>
-                  <td className="px-4 py-3">
-                    {user.role === 'user' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700">
-                        <Home size={11} /> 业主
-                      </span>
-                    ) : user.role === 'company' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        <Building2 size={11} /> 公司
-                      </span>
-                    ) : (
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-[#b8864a]/10 text-[#b8864a]">
-                        {user.role}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[user.status]}`}>
-                      {user.status}
-                    </span>
-                  </td>
+                  <td className="px-4 py-3 text-stone-600 text-sm">{user.phone || <span className="text-stone-300">—</span>}</td>
                   <td className="relative px-4 py-3 text-stone-500 text-xs">
                     <span>{new Date(user.created_at).toLocaleDateString()}</span>
                     <HoverDeleteIconButton
