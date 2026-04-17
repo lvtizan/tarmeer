@@ -69,6 +69,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
   // New user registration (stay on page instead of redirecting to /auth)
   const [registerMode, setRegisterMode] = useState(false);
+  const [regStep, setRegStep] = useState<'email' | 'password'>('email');
+  const [regIsNewEmail, setRegIsNewEmail] = useState<boolean | null>(null);
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regError, setRegError] = useState<string | null>(null);
@@ -193,62 +195,97 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
 
 
-  /* ── Step 3: Register new account (email + password) ── */
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+  /* ── Step 3a: Check email availability ── */
+  const handleEmailContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regEmail.trim() || !regPassword) {
-      setRegError(lang === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill in all fields.');
-      return;
-    }
-    if (regPassword.length < 6) {
-      setRegError(lang === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters.');
+    if (!regEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())) {
+      setRegError(lang === 'ar' ? 'يرجى إدخال بريد إلكتروني صالح' : 'Please enter a valid email.');
       return;
     }
     setRegSubmitting(true);
     setRegError(null);
     try {
-      const source = 'for-companies-landing';
-      await api.post('/auth/register', {
-        email: regEmail.trim(),
-        password: regPassword,
-        full_name: contactName.trim(),
-        phone: `${phoneRegion.code}${phoneDigits}`,
-        city,
-        role: 'company',
-        signup_source: source,
-      });
+      const res = await api.post('/auth/check-availability', { email: regEmail.trim() });
+      setRegIsNewEmail(res.isNewEmail !== false);
+      setRegStep('password');
+    } catch {
+      // If check fails, assume new and proceed
+      setRegIsNewEmail(true);
+      setRegStep('password');
+    } finally {
+      setRegSubmitting(false);
+    }
+  };
 
-      // Try auto-login + create profile
-      try {
+  /* ── Step 3b: Register or login with password ── */
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regPassword) {
+      setRegError(lang === 'ar' ? 'يرجى إدخال كلمة المرور' : 'Please enter your password.');
+      return;
+    }
+    if (regIsNewEmail && regPassword.length < 6) {
+      setRegError(lang === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters.');
+      return;
+    }
+    setRegSubmitting(true);
+    setRegError(null);
+    const source = 'for-companies-landing';
+    const profileData = {
+      company_name: companyName.trim(),
+      phone: `${phoneRegion.code}${phoneDigits}`,
+      city,
+      contact_person: contactName.trim(),
+      description: '',
+      services: ['Interior Design'],
+      company_type: companyType,
+      establishment_year: establishmentYear ? Number(establishmentYear) : null,
+      signup_source: source,
+    };
+
+    try {
+      if (regIsNewEmail) {
+        // New user: register → auto-login → create profile
+        await api.post('/auth/register', {
+          email: regEmail.trim(),
+          password: regPassword,
+          full_name: contactName.trim(),
+          phone: `${phoneRegion.code}${phoneDigits}`,
+          city,
+          role: 'company',
+          signup_source: source,
+        });
+
+        try {
+          const loginRes = await api.post('/auth/login', { email: regEmail.trim(), password: regPassword });
+          api.setToken(loginRes.token);
+          if (loginRes.user) {
+            localStorage.setItem('user', JSON.stringify(loginRes.user));
+            localStorage.setItem('active_role', 'company');
+          }
+          await api.post('/auth/company/profile', profileData);
+          navigate('/company');
+          return;
+        } catch {
+          setRegSuccess(
+            lang === 'ar'
+              ? `تم إنشاء الحساب! يرجى التحقق من ${regEmail.trim()} ثم تسجيل الدخول.`
+              : `Account created! Please check ${regEmail.trim()} to verify your email, then sign in.`
+          );
+        }
+      } else {
+        // Existing user: login → create/update profile
         const loginRes = await api.post('/auth/login', { email: regEmail.trim(), password: regPassword });
         api.setToken(loginRes.token);
         if (loginRes.user) {
           localStorage.setItem('user', JSON.stringify(loginRes.user));
           localStorage.setItem('active_role', 'company');
         }
-        await api.post('/auth/company/profile', {
-          company_name: companyName.trim(),
-          phone: `${phoneRegion.code}${phoneDigits}`,
-          city,
-          contact_person: contactName.trim(),
-          description: '',
-          services: ['Interior Design'],
-          company_type: companyType,
-          establishment_year: establishmentYear ? Number(establishmentYear) : null,
-          signup_source: source,
-        });
+        await api.post('/auth/company/profile', profileData).catch(() => {});
         navigate('/company');
-        return;
-      } catch {
-        // Email verification required
-        setRegSuccess(
-          lang === 'ar'
-            ? `تم إنشاء الحساب! يرجى التحقق من ${regEmail.trim()} ثم تسجيل الدخول.`
-            : `Account created! Please check ${regEmail.trim()} to verify your email, then sign in.`
-        );
       }
     } catch (err: any) {
-      setRegError(err.message || 'Registration failed.');
+      setRegError(err.message || (regIsNewEmail ? 'Registration failed.' : 'Invalid email or password.'));
     } finally {
       setRegSubmitting(false);
     }
@@ -385,62 +422,92 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   </div>
                 </div>
 
-                <form onSubmit={handleRegisterSubmit} className="space-y-3" noValidate>
-                  <div>
-                    <label className={labelClass}>
-                      {lang === 'ar' ? 'البريد الإلكتروني' : 'Email'} <span className="text-red-500">*</span>
-                    </label>
+                {regError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
+                    {regError}
+                  </p>
+                )}
+
+                {regStep === 'email' ? (
+                  /* Step 3a: Email input */
+                  <form onSubmit={handleEmailContinue} className="space-y-3" noValidate>
                     <input
                       type="email"
                       value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
+                      onChange={(e) => { setRegEmail(e.target.value); setRegError(null); }}
                       placeholder={lang === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
                       className={inputClass}
                       autoFocus
                     />
-                  </div>
-                  <div>
-                    <label className={labelClass}>
-                      {lang === 'ar' ? 'كلمة المرور' : 'Password'} <span className="text-red-500">*</span>
-                    </label>
+                    <button
+                      type="submit"
+                      disabled={regSubmitting || !regEmail.trim()}
+                      className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {regSubmitting ? (
+                        <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                      ) : (
+                        lang === 'ar' ? 'المتابعة بالبريد الإلكتروني' : 'Continue with email'
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setRegisterMode(false); setRegError(null); }}
+                      className="w-full text-center text-sm text-stone-500 hover:text-stone-700 py-1"
+                    >
+                      {lang === 'ar' ? '← العودة' : '← Back'}
+                    </button>
+
+                    <p className="text-[10px] text-stone-400 text-center">
+                      {lang === 'ar' ? 'بالمتابعة، أنت توافق على' : 'By continuing, you agree to our'}{' '}
+                      <a href="/privacy" className="text-stone-500 hover:text-[#B8864A]">Terms</a>
+                      {' '}•{' '}
+                      <a href="/privacy" className="text-stone-500 hover:text-[#B8864A]">Privacy</a>
+                    </p>
+                  </form>
+                ) : (
+                  /* Step 3b: Password input */
+                  <form onSubmit={handlePasswordSubmit} className="space-y-3" noValidate>
+                    <p className="text-sm text-stone-500">
+                      {regIsNewEmail
+                        ? (lang === 'ar' ? 'أنشئ كلمة مرور لـ' : 'Create a password for')
+                        : (lang === 'ar' ? 'أدخل كلمة المرور لـ' : 'Enter password for')
+                      }{' '}
+                      <span className="font-medium text-[#1c1917]">{regEmail}</span>
+                    </p>
                     <input
                       type="password"
                       value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder={lang === 'ar' ? '6 أحرف على الأقل' : 'At least 6 characters'}
+                      onChange={(e) => { setRegPassword(e.target.value); setRegError(null); }}
+                      placeholder={regIsNewEmail
+                        ? (lang === 'ar' ? '6 أحرف على الأقل' : 'At least 6 characters')
+                        : (lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password')
+                      }
                       className={inputClass}
+                      autoFocus
                     />
-                  </div>
-
-                  {regError && (
-                    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
-                      {regError}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={regSubmitting}
-                    className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {regSubmitting ? (
-                      <>
-                        <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
-                        {lang === 'ar' ? 'جارٍ التسجيل...' : 'Creating account...'}
-                      </>
-                    ) : (
-                      lang === 'ar' ? 'إنشاء حساب' : 'Create Account'
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => { setRegisterMode(false); setRegError(null); }}
-                    className="w-full text-center text-sm text-stone-500 hover:text-stone-700 py-1"
-                  >
-                    {lang === 'ar' ? '← العودة' : '← Back'}
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      disabled={regSubmitting || !regPassword}
+                      className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {regSubmitting ? (
+                        <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                      ) : regIsNewEmail ? (
+                        lang === 'ar' ? 'إنشاء حساب' : 'Create Account'
+                      ) : (
+                        lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setRegStep('email'); setRegPassword(''); setRegError(null); }}
+                      className="w-full text-center text-sm text-stone-500 hover:text-stone-700 py-1"
+                    >
+                      {lang === 'ar' ? '← العودة' : '← Back'}
+                    </button>
+                  </form>
+                )}
               </>
             )}
           </>
