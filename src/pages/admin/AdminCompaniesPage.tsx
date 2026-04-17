@@ -326,6 +326,28 @@ export default function AdminCompaniesPage() {
         ))}
       </div>
 
+      {/* Global search — syncs across all tabs */}
+      <div className="relative max-w-md">
+        <input
+          type="text" value={profileSearch}
+          onChange={(e) => {
+            const v = e.target.value;
+            setProfileSearch(v); setProfilePage(1);
+            setCompanySearch(v); setCompanyPage(1);
+            setPendingSearch(v); setPendingPage(1);
+          }}
+          placeholder="Search company name, email..."
+          className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+        />
+        {profileSearch && (
+          <button onClick={() => {
+            setProfileSearch(''); setProfilePage(1);
+            setCompanySearch(''); setCompanyPage(1);
+            setPendingSearch(''); setPendingPage(1);
+          }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
+        )}
+      </div>
+
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
       {/* ── Companies Tab ── */}
@@ -343,17 +365,6 @@ export default function AdminCompaniesPage() {
                 { value: 'rejected', label: 'Rejected' },
               ]}
             />
-            <div className="relative flex-1 min-w-0">
-              <input
-                type="text" value={profileSearch}
-                onChange={(e) => { setProfileSearch(e.target.value); setProfilePage(1); }}
-                placeholder="Company name, email..."
-                className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-              />
-              {profileSearch && (
-                <button onClick={() => { setProfileSearch(''); setProfilePage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
-              )}
-            </div>
           </div>
 
           <AdminCompaniesTableTab

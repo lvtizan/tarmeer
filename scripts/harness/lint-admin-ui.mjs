@@ -63,6 +63,17 @@ const RULES = [
       return /className.*\bgap-3\b/.test(line);
     },
   },
+  {
+    id: 'no-native-dialog',
+    desc: 'Native browser dialog (alert/prompt/confirm) — use Toast or custom Modal instead',
+    test: (line) => {
+      // Skip comments and imports
+      if (/^\s*(\/\/|\/\*|\*|import )/.test(line)) return false;
+      // Skip circle-alert icon references
+      if (/circle-alert|AlertCircle|alertClass/.test(line)) return false;
+      return /\balert\s*\(|\bprompt\s*\(|\bconfirm\s*\(|window\.prompt\(|window\.alert\(|window\.confirm\(/.test(line);
+    },
+  },
 ];
 
 function scanFile(filePath) {
