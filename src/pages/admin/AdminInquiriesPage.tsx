@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Info } from 'lucide-react';
+import { Info, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
@@ -316,9 +316,9 @@ export default function AdminInquiriesPage() {
           {viewMode === 'active' ? (
             <button
               onClick={() => setDeleteModalOpen(true)}
-              className="px-4 py-1.5 text-sm text-white bg-[#8b2525] rounded-2xl hover:bg-[#6b1d1d] transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition"
             >
-              Delete Selected ({selected.size})
+              <Trash2 size={14} /> Delete Selected ({selected.size})
             </button>
           ) : (
             <button

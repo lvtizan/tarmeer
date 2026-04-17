@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { adminApi, Designer } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
@@ -436,9 +436,9 @@ export default function AdminDesignersPage() {
               <button
                 onClick={() => setBulkDeleteModalOpen(true)}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-stone-800 text-white rounded-lg text-sm hover:bg-black disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition disabled:opacity-50"
               >
-                Delete Selected ({selectedIds.length})
+                <Trash2 size={14} /> Delete Selected ({selectedIds.length})
               </button>
             </>
           )}
