@@ -401,6 +401,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       city,
                       company_type: companyType,
                       establishment_year: establishmentYear || null,
+                      services: ['Interior Design'],
+                      signup_source: 'for-companies-landing',
                     }));
                     window.location.href = `${apiBase}/auth/google?role=company`;
                   }}

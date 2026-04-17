@@ -154,6 +154,7 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
               city: pending.city || '',
               company_type: pending.company_type || 'renovation_company',
               services: pending.services || ['Interior Design'],
+              establishment_year: pending.establishment_year || '',
             };
             setProfile(prefilled);
             if (prefilled.phone) {
