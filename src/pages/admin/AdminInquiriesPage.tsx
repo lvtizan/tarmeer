@@ -39,7 +39,7 @@ const CRM_ACTION_TOOLTIP: Record<string, string> = {
   synced: '✅ 已成功同步到 CRM。',
 };
 const CRM_STATUS_TOOLTIP = {
-  failed: 'CRM 同步失败，可点击「重新发送」重试',
+  failed: 'CRM 同步失败',
   pending: '尚未同步到 CRM',
 };
 
@@ -221,24 +221,6 @@ export default function AdminInquiriesPage() {
       }
     })();
   }, [viewMode]);
-
-  const [resendingId, setResendingId] = useState<number | null>(null);
-  const handleResendCrm = async (id: number) => {
-    setResendingId(id);
-    try {
-      const result: any = await adminApi.resendInquiryCrm(id);
-      if (result?.success) {
-        alert(`CRM sync OK: action=${result.action}, leadId=${result.leadId}`);
-      } else {
-        alert(`CRM sync failed: ${result?.error || 'unknown error'}`);
-      }
-      loadInquiries();
-    } catch (err: any) {
-      alert(`CRM sync error: ${err.message || err}`);
-    } finally {
-      setResendingId(null);
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -468,44 +450,26 @@ export default function AdminInquiriesPage() {
 
                         if (status === 'failed') {
                           return (
-                            <div className="flex flex-col items-start gap-1">
-                              <span className="inline-flex items-center gap-1">
-                                <span
-                                  className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
-                                  title={inq.crm_last_error || undefined}
-                                >
-                                  同步失败
-                                </span>
-                                <FloatingTip>{CRM_STATUS_TOOLTIP.failed}</FloatingTip>
-                              </span>
-                              <button
-                                onClick={() => handleResendCrm(inq.id)}
-                                disabled={resendingId === inq.id}
-                                className="text-[10px] text-[#b8864a] hover:underline disabled:opacity-50"
+                            <span className="inline-flex items-center gap-1">
+                              <span
+                                className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200"
+                                title={inq.crm_last_error || undefined}
                               >
-                                {resendingId === inq.id ? '发送中…' : '重新发送'}
-                              </button>
-                            </div>
+                                同步失败
+                              </span>
+                              <FloatingTip>{CRM_STATUS_TOOLTIP.failed}</FloatingTip>
+                            </span>
                           );
                         }
 
                         // pending (not yet attempted) or legacy rows with no status
                         return (
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="inline-flex items-center gap-1">
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
-                                待同步
-                              </span>
-                              <FloatingTip>{CRM_STATUS_TOOLTIP.pending}</FloatingTip>
+                          <span className="inline-flex items-center gap-1">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
+                              待同步
                             </span>
-                            <button
-                              onClick={() => handleResendCrm(inq.id)}
-                              disabled={resendingId === inq.id}
-                              className="text-[10px] text-[#b8864a] hover:underline disabled:opacity-50"
-                            >
-                              {resendingId === inq.id ? '发送中…' : '立即发送'}
-                            </button>
-                          </div>
+                            <FloatingTip>{CRM_STATUS_TOOLTIP.pending}</FloatingTip>
+                          </span>
                         );
                       })()}
                     </td>
