@@ -253,15 +253,17 @@ function OnboardingStepper({
                   step.done ? 'bg-[#b8864a]' : 'bg-stone-200'
                 }`} />
               )}
-              {/* Circle */}
-              <div className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+              {/* Circle — solid white ring behind to mask connector line */}
+              <div className="relative z-10 w-9 h-9 rounded-full bg-white flex items-center justify-center">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                 step.done
                   ? 'bg-[#b8864a] text-white'
                   : i === steps.findIndex(s => !s.done)
-                    ? 'bg-[#b8864a]/10 text-[#b8864a] border-2 border-[#b8864a]'
+                    ? 'bg-white text-[#b8864a] border-2 border-[#b8864a]'
                     : 'bg-stone-100 text-stone-400'
               }`}>
                 {step.done ? <CheckCircle2 className="w-4 h-4" /> : step.number}
+              </div>
               </div>
               {/* Label */}
               <span className={`mt-1.5 text-[10px] font-medium text-center leading-tight px-1 ${step.done ? 'text-[#b8864a]' : 'text-stone-400'}`}>
