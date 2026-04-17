@@ -119,11 +119,13 @@ export async function getInquiries(req: any, res: any) {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    // Group by phone: count duplicates, keep only the latest row per phone
+    // Group by phone: count duplicates, keep only the latest row per phone.
+    // Use a derived column alias via a subquery to satisfy ONLY_FULL_GROUP_BY.
+    const groupExpr = "COALESCE(NULLIF(di.phone,''), CAST(di.id AS CHAR))";
+
     const [countRows] = await pool.execute(
       `SELECT COUNT(*) as total FROM (
-         SELECT di.phone FROM design_inquiries di ${where}
-         GROUP BY COALESCE(NULLIF(di.phone,''), CAST(di.id AS CHAR))
+         SELECT ${groupExpr} as gk FROM design_inquiries di ${where} GROUP BY gk
        ) grouped`,
       params
     );
@@ -136,11 +138,9 @@ export async function getInquiries(req: any, res: any) {
        FROM design_inquiries latest
        LEFT JOIN company_profiles cp ON latest.company_id = cp.id
        INNER JOIN (
-         SELECT MAX(di.id) as max_id,
-                COALESCE(NULLIF(di.phone,''), CAST(di.id AS CHAR)) as group_key,
-                COUNT(*) as dup_count
+         SELECT MAX(di.id) as max_id, COUNT(*) as dup_count
          FROM design_inquiries di ${where}
-         GROUP BY group_key
+         GROUP BY ${groupExpr}
        ) dup ON latest.id = dup.max_id
        ORDER BY latest.created_at DESC
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
