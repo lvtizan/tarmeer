@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import config from '../config';
 import pool from '../config/database';
-import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -30,13 +29,9 @@ export async function authenticate(req: any, res: any, next: any) {
       if (users[0].status === 'suspended') {
         return res.status(403).json({ error: 'Account suspended.' });
       }
-      const linkedDesigner = await findOrLinkDesignerForUser({
-        id: users[0].id,
-        email: users[0].email,
-      });
       req.user = {
         userId: users[0].id,
-        id: linkedDesigner ? linkedDesigner.id : users[0].id,
+        id: users[0].id,
         email: users[0].email,
         role: users[0].role,
         active_role: users[0].active_role,

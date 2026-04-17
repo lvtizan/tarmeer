@@ -220,11 +220,9 @@ app.get('/api/sitemap.xml', async (req, res) => {
     // Project pages — critical for search engine discovery
     const [projects] = await pool.execute(
       `SELECT p.slug AS project_slug, p.updated_at,
-              COALESCE(cp.slug, uc.slug) AS company_slug
+              cp.slug AS company_slug
        FROM projects p
        LEFT JOIN company_profiles cp ON p.company_profile_id = cp.id
-       LEFT JOIN designers d ON p.designer_id = d.id
-       LEFT JOIN uae_companies uc ON d.id = uc.id
        WHERE p.status = 'published' AND p.slug IS NOT NULL AND p.deleted_at IS NULL
        ORDER BY p.updated_at DESC`
     );

@@ -6,7 +6,6 @@ import config from '../config';
 import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, sendAdminPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
 import { notifyUserRegistration } from '../services/notificationService';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
-import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email',
@@ -48,19 +47,39 @@ function generateToken(user: { id: number; email: string; role: string }) {
 }
 
 async function getLinkedDesignerPayload(user: { id: number; email: string }) {
-  const linkedDesigner = await findOrLinkDesignerForUser(user);
-  if (!linkedDesigner) {
+  // Look up company_profile for this user instead of legacy designers table
+  const [rows] = await pool.execute(
+    `SELECT id, company_name as full_name, phone, city, description as bio, logo_url as avatar_url, status, created_at, updated_at
+     FROM company_profiles
+     WHERE user_id = ? AND deleted_at IS NULL`,
+    [user.id]
+  );
+
+  const profile = (rows as any[])[0];
+  if (!profile) {
     return null;
   }
 
-  const [rows] = await pool.execute(
-    `SELECT id, email, full_name, title, phone, city, address, bio, avatar_url, style, expertise, status, is_approved, email_verified, display_order, created_at, updated_at
-     FROM designers
-     WHERE id = ? AND deleted_at IS NULL`,
-    [linkedDesigner.id]
-  );
-
-  return (rows as any[])[0] || null;
+  // Map to the shape the frontend expects (designer-like payload)
+  return {
+    id: profile.id,
+    email: user.email,
+    full_name: profile.full_name,
+    title: '',
+    phone: profile.phone,
+    city: profile.city,
+    address: null,
+    bio: profile.bio,
+    avatar_url: profile.avatar_url,
+    style: null,
+    expertise: [],
+    status: profile.status,
+    is_approved: profile.status === 'approved' ? 1 : 0,
+    email_verified: 1,
+    display_order: 0,
+    created_at: profile.created_at,
+    updated_at: profile.updated_at,
+  };
 }
 
 // Register a new user (role = 'user' by default)
@@ -104,6 +123,14 @@ export async function register(req: any, res: any) {
       } catch (emailError: any) {
         console.error('[SMTP] Verification email failed:', emailError?.message || emailError);
       }
+    }
+
+    // Backfill company_leads.email so getProfile can match by email when phone is missing
+    if (assignRole === 'company' && phone) {
+      pool.execute(
+        'UPDATE company_leads SET email = ? WHERE phone = ? AND email IS NULL ORDER BY created_at DESC LIMIT 1',
+        [email, phone]
+      ).catch(() => {});
     }
 
     // Notify admins of new user registration (skip 'company' role — handled by profile creation)
@@ -679,10 +706,20 @@ export async function oauthCallback(req: any, res: any) {
       return res.redirect(`${frontendUrl}/auth?error=oauth_failed`);
     }
 
-    // Role passed via OAuth state parameter (?role=company|homeowner)
-    const oauthRole = req.query.state;
+    // Role (and optional phone) passed via OAuth state parameter
+    const rawState = req.query.state;
+    let oauthRole: string | undefined;
+    let oauthPhone: string | undefined;
+    try {
+      const parsed = JSON.parse(rawState);
+      oauthRole = parsed.role;
+      oauthPhone = parsed.phone;
+    } catch {
+      // Legacy plain string state (e.g. "company")
+      oauthRole = rawState;
+    }
     const validRoles = ['homeowner', 'company'];
-    const assignRole = validRoles.includes(oauthRole) ? oauthRole : null;
+    const assignRole = validRoles.includes(oauthRole as string) ? oauthRole : null;
 
     // passportUser comes from designers table (passport strategy)
     // Find or create corresponding user record
@@ -692,13 +729,16 @@ export async function oauthCallback(req: any, res: any) {
     if (!user) {
       const googleSource = assignRole === 'company' ? 'google-oauth-company' : 'google-oauth';
       const [result] = await pool.execute(
-        `INSERT INTO users (email, password, full_name, avatar_url, role, active_role, onboarding_completed, email_verified, status, signup_source)
-         VALUES (?, '', ?, ?, ?, ?, ?, TRUE, 'active', ?)`,
-        [passportUser.email, passportUser.full_name, passportUser.avatar_url || '',
+        `INSERT INTO users (email, password, full_name, phone, avatar_url, role, active_role, onboarding_completed, email_verified, status, signup_source)
+         VALUES (?, '', ?, ?, ?, ?, ?, ?, TRUE, 'active', ?)`,
+        [passportUser.email, passportUser.full_name, oauthPhone || null, passportUser.avatar_url || '',
          assignRole || 'user', assignRole || null, assignRole ? 1 : 0, googleSource]
       );
       const userId = (result as any).insertId;
-      await pool.execute('UPDATE designers SET user_id = ? WHERE id = ?', [userId, passportUser.id]);
+      // Link legacy designer row if it exists (passport strategy may have created one)
+      if (passportUser.id) {
+        await pool.execute('UPDATE designers SET user_id = ? WHERE id = ? AND user_id IS NULL', [userId, passportUser.id]).catch(() => {});
+      }
 
       // Notify admins of new user registration via Google OAuth
       if ((assignRole || 'user') !== 'company') {
@@ -706,7 +746,7 @@ export async function oauthCallback(req: any, res: any) {
           notifyUserRegistration({
             email: passportUser.email,
             fullName: passportUser.full_name,
-            phone: null,
+            phone: oauthPhone || null,
             city: null,
             role: assignRole || 'user',
             signupSource: googleSource,
@@ -728,6 +768,20 @@ export async function oauthCallback(req: any, res: any) {
         );
         user.active_role = assignRole;
       }
+      // Backfill phone from OAuth state if user has no phone yet
+      if (oauthPhone && !user.phone) {
+        await pool.execute('UPDATE users SET phone = ? WHERE id = ?', [oauthPhone, user.id]);
+        user.phone = oauthPhone;
+      }
+    }
+
+    // Backfill company_leads.email so getProfile can match by email too
+    const matchPhone = user.phone || oauthPhone;
+    if (assignRole === 'company' && matchPhone) {
+      pool.execute(
+        'UPDATE company_leads SET email = ? WHERE phone = ? AND email IS NULL ORDER BY created_at DESC LIMIT 1',
+        [passportUser.email, matchPhone]
+      ).catch(() => {});
     }
 
     const token = generateToken(user);

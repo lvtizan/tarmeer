@@ -47,11 +47,11 @@ function compareProjectsNewestFirst(left: any, right: any) {
 
 export async function createProject(req: any, res: any) {
   try {
-    const designer_id = req.user.id;
+    const userId = req.user.userId;
     const { title, description, style, location, area, year, cost, images, tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
-      designerId: designer_id,
+      designerId: userId,
     });
     const finalImages = assertProjectHasImages(persistedImages);
     const projectStatus = status === 'draft'
@@ -70,10 +70,10 @@ export async function createProject(req: any, res: any) {
       status: projectStatus,
     });
     
-    // Auto-link project to company profile if the designer has one
+    // Look up company profile for this user
     const [cpRows] = await pool.execute(
-      'SELECT id, status FROM company_profiles WHERE user_id = (SELECT user_id FROM designers WHERE id = ?) LIMIT 1',
-      [designer_id]
+      'SELECT id, status FROM company_profiles WHERE user_id = ? LIMIT 1',
+      [userId]
     );
     const companyProfile = (cpRows as any[])[0] || null;
     const companyProfileId = companyProfile?.id || null;
@@ -85,7 +85,7 @@ export async function createProject(req: any, res: any) {
       `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason, video_url)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
       [
-        designer_id,
+        null,
         companyProfileId,
         values.title,
         values.description,
@@ -114,13 +114,15 @@ export async function createProject(req: any, res: any) {
       [projectId]
     );
     
-    const [designer] = await pool.execute(
-      'SELECT * FROM designers WHERE id = ?',
-      [designer_id]
+    // Use company profile or user info for notification
+    const [cpInfo] = await pool.execute(
+      'SELECT cp.company_name as full_name, u.email, cp.phone FROM company_profiles cp JOIN users u ON u.id = cp.user_id WHERE cp.user_id = ? LIMIT 1',
+      [userId]
     );
-    
+    const notificationDesigner = (cpInfo as any[])[0] || { full_name: 'Unknown', email: req.user.email };
+
     try {
-      await sendProjectSubmissionEmail((project as any[])[0], (designer as any[])[0]);
+      await sendProjectSubmissionEmail((project as any[])[0], notificationDesigner);
     } catch (notificationError) {
       console.error('Project submission notification error:', notificationError);
     }
@@ -154,18 +156,18 @@ export async function getProjects(req: any, res: any) {
     const designer_id = req.query.designer_id;
     const status = 'published';
     
-    let whereClause = `WHERE p.status = ? AND d.status = 'approved' AND d.is_approved = 1 AND d.deleted_at IS NULL`;
+    let whereClause = `WHERE p.status = ? AND cp.status = 'approved' AND cp.deleted_at IS NULL`;
     const params: any[] = [status];
-    
+
     if (designer_id) {
-      whereClause += ' AND p.designer_id = ?';
+      whereClause += ' AND p.company_profile_id = ?';
       params.push(designer_id);
     }
-    
+
     const [countResult] = await pool.execute(
       `SELECT COUNT(*) as total
        FROM projects p
-       INNER JOIN designers d ON p.designer_id = d.id
+       INNER JOIN company_profiles cp ON p.company_profile_id = cp.id
        ${whereClause}`,
       params
     );
@@ -174,7 +176,7 @@ export async function getProjects(req: any, res: any) {
     
     const listQuery = buildPublicProjectsListQuery({
       status,
-      designerId: designer_id,
+      companyProfileId: designer_id,
       limit,
       offset,
     });
@@ -198,13 +200,13 @@ export async function getProjects(req: any, res: any) {
 
 export async function getMyProjects(req: any, res: any) {
   try {
-    const designerId = req.user.id;
+    const userId = req.user.userId;
 
     const [projects] = await pool.execute(
       `SELECT id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason, created_at, updated_at
        FROM projects
-       WHERE designer_id = ?`,
-      [designerId]
+       WHERE company_profile_id IN (SELECT id FROM company_profiles WHERE user_id = ?)`,
+      [userId]
     );
 
     // Avoid sorting large JSON image payloads inside MySQL, which can exhaust sort memory.
@@ -236,11 +238,11 @@ export async function getProjectById(req: any, res: any) {
          p.images,
          p.tags,
          p.created_at,
-         d.full_name as designer_name,
-              d.city as designer_city, d.avatar_url as designer_avatar, d.bio as designer_bio
+         cp.company_name as designer_name,
+         cp.city as designer_city, cp.logo_url as designer_avatar, cp.description as designer_bio
        FROM projects p
-       INNER JOIN designers d ON p.designer_id = d.id
-       WHERE p.id = ? AND p.status = 'published' AND d.status = 'approved' AND d.is_approved = 1 AND d.deleted_at IS NULL`,
+       INNER JOIN company_profiles cp ON p.company_profile_id = cp.id
+       WHERE p.id = ? AND p.status = 'published' AND cp.status = 'approved'`,
       [id]
     );
     
@@ -263,7 +265,7 @@ export async function updateProject(req: any, res: any) {
     const { title, description, style, location, area, year, cost, images, tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
-      designerId: req.user.id,
+      designerId: req.user.userId,
       projectId: id,
     });
     const finalImages = assertProjectHasImages(persistedImages);
@@ -292,7 +294,13 @@ export async function updateProject(req: any, res: any) {
       return res.status(404).json({ error: 'Project not found.' });
     }
     
-    if (req.user.id !== (project as any[])[0].designer_id) {
+    // Permission check: verify user owns this project via company_profiles
+    const projectRow = (project as any[])[0];
+    const [ownerCheck] = await pool.execute(
+      'SELECT id FROM company_profiles WHERE id = ? AND user_id = ?',
+      [projectRow.company_profile_id, req.user.userId]
+    );
+    if ((ownerCheck as any[]).length === 0) {
       return res.status(403).json({ error: 'You cannot edit another designer\'s project.' });
     }
     
@@ -355,7 +363,13 @@ export async function deleteProject(req: any, res: any) {
       return res.status(404).json({ error: 'Project not found.' });
     }
     
-    if (req.user.id !== (project as any[])[0].designer_id) {
+    // Permission check: verify user owns this project via company_profiles
+    const delProjectRow = (project as any[])[0];
+    const [delOwnerCheck] = await pool.execute(
+      'SELECT id FROM company_profiles WHERE id = ? AND user_id = ?',
+      [delProjectRow.company_profile_id, req.user.userId]
+    );
+    if ((delOwnerCheck as any[]).length === 0) {
       return res.status(403).json({ error: 'You cannot delete another designer\'s project.' });
     }
     

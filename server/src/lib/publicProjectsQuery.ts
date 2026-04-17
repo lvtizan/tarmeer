@@ -1,17 +1,17 @@
 interface BuildPublicProjectsListQueryInput {
   status: string;
-  designerId?: string;
+  companyProfileId?: string;
   limit: number;
   offset: number;
 }
 
 export function buildPublicProjectsListQuery(input: BuildPublicProjectsListQueryInput) {
-  let whereClause = `WHERE p.status = ? AND d.status = 'approved' AND d.is_approved = 1 AND d.deleted_at IS NULL`;
+  let whereClause = `WHERE p.status = ? AND cp.status = 'approved' AND cp.deleted_at IS NULL`;
   const params: string[] = [input.status];
 
-  if (input.designerId) {
-    whereClause += ' AND p.designer_id = ?';
-    params.push(input.designerId);
+  if (input.companyProfileId) {
+    whereClause += ' AND p.company_profile_id = ?';
+    params.push(input.companyProfileId);
   }
 
   return {
@@ -27,12 +27,12 @@ export function buildPublicProjectsListQuery(input: BuildPublicProjectsListQuery
          p.images,
          p.tags,
          p.created_at,
-         d.full_name as designer_name,
-         d.city as designer_city,
-         d.avatar_url as designer_avatar,
-         d.bio as designer_bio
+         cp.company_name as designer_name,
+         cp.city as designer_city,
+         cp.logo_url as designer_avatar,
+         cp.description as designer_bio
        FROM projects p
-       INNER JOIN designers d ON p.designer_id = d.id
+       INNER JOIN company_profiles cp ON p.company_profile_id = cp.id
        ${whereClause}
        ORDER BY p.created_at DESC
        LIMIT ${input.limit} OFFSET ${input.offset}`,

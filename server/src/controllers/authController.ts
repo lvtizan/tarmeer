@@ -542,24 +542,28 @@ export async function googleOneTap(req: any, res: any) {
         provider: 'google',
       });
       designer = result.designer;
-
-      // 如果是已有账号关联但邮箱未验证，自动验证
-      if (result.needsVerification) {
-        await pool.execute(
-          'UPDATE designers SET email_verified = TRUE WHERE id = ?',
-          [designer.id]
-        );
-      }
     }
 
-    // 生成 JWT
+    // Resolve to users table — all JWTs must use new format { userId }
+    let userId = designer.user_id;
+    if (!userId) {
+      const [userRows] = await pool.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+      userId = (userRows as any[])[0]?.id;
+    }
+    if (!userId) {
+      return res.status(500).json({ error: 'Failed to resolve user account.' });
+    }
+
+    // 生成新格式 JWT（auth 中间件走 users 表路径）
+    const [userRow] = await pool.execute('SELECT id, email, role FROM users WHERE id = ?', [userId]);
+    const user = (userRow as any[])[0];
     const token = jwt.sign(
-      { id: designer.id, email: designer.email },
+      { userId: user.id, email: user.email, role: user.role },
       config.jwt.secret,
       { expiresIn: '7d' }
     );
 
-    console.log(`[GoogleOneTap] Login success: ${designer.email} (id=${designer.id})`);
+    console.log(`[GoogleOneTap] Login success: ${user.email} (userId=${user.id})`);
 
     res.json({ token });
   } catch (error: any) {

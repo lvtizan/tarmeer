@@ -336,19 +336,34 @@ export async function deleteUser(req: any, res: any) {
     });
 
     // Hard delete all associated data — order matters to avoid FK constraint errors
-    await pool.execute('DELETE FROM homeowner_profiles WHERE user_id = ?', [userId]);
+    // 1. Projects linked to this user's company profiles
+    await pool.execute(
+      'DELETE FROM projects WHERE company_profile_id IN (SELECT id FROM company_profiles WHERE user_id = ?)',
+      [userId]
+    );
 
-    // Delete articles linked to company_profiles of this user (must come before company_profiles)
+    // 2. Articles linked to company profiles
     await pool.execute(
       'DELETE FROM articles WHERE company_profile_id IN (SELECT id FROM company_profiles WHERE user_id = ?)',
       [userId]
     );
 
+    // 3. Profile tables
     await pool.execute('DELETE FROM company_profiles WHERE user_id = ?', [userId]);
+    await pool.execute('DELETE FROM homeowner_profiles WHERE user_id = ?', [userId]);
 
-    // Unlink designers (preserve portfolio, but remove user association)
-    await pool.execute('UPDATE designers SET user_id = NULL WHERE user_id = ?', [userId]);
+    // 4. Designer rows (auto-created by auth middleware)
+    await pool.execute('DELETE FROM designers WHERE user_id = ?', [userId]);
 
+    // 5. Other associated data
+    await pool.execute('DELETE FROM company_applications WHERE user_id = ?', [userId]);
+    await pool.execute('DELETE FROM notifications WHERE user_id = ?', [userId]);
+    await pool.execute('DELETE FROM design_inquiries WHERE user_id = ?', [userId]);
+
+    // 6. Unlink directory companies
+    await pool.execute('UPDATE uae_companies SET owner_user_id = NULL WHERE owner_user_id = ?', [userId]);
+
+    // 7. Delete user last
     await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
 
     res.json({ message: 'User deleted successfully.' });

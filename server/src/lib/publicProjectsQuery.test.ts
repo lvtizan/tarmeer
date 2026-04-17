@@ -5,7 +5,7 @@ import { buildPublicProjectsListQuery } from './publicProjectsQuery';
 test('buildPublicProjectsListQuery embeds limit and offset but keeps filters parameterized', () => {
   const result = buildPublicProjectsListQuery({
     status: 'published',
-    designerId: '42',
+    companyProfileId: '42',
     limit: 12,
     offset: 24,
   });
@@ -22,17 +22,17 @@ test('buildPublicProjectsListQuery selects consistent designer metadata fields',
     offset: 0,
   });
 
-  assert.match(result.sql, /d\.city as designer_city/);
-  assert.match(result.sql, /d\.bio as designer_bio/);
-  assert.match(result.sql, /d\.avatar_url as designer_avatar/);
+  assert.match(result.sql, /cp\.city as designer_city/);
+  assert.match(result.sql, /cp\.description as designer_bio/);
+  assert.match(result.sql, /cp\.logo_url as designer_avatar/);
 });
 
-test('buildPublicProjectsListQuery excludes soft-deleted designers', () => {
+test('buildPublicProjectsListQuery excludes soft-deleted company profiles', () => {
   const result = buildPublicProjectsListQuery({
     status: 'published',
     limit: 3,
     offset: 0,
   });
 
-  assert.match(result.sql, /d\.deleted_at IS NULL/);
+  assert.match(result.sql, /cp\.deleted_at IS NULL/);
 });

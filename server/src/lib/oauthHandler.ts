@@ -124,7 +124,7 @@ export async function createOAuthDesigner(
   const existing = await findDesignerByEmail(email);
 
   if (existing) {
-    // 关联 OAuth ID
+    // Legacy: link OAuth ID to existing designer row (keep it working for old accounts)
     await linkOAuthToDesigner(existing.id, provider, oauthId);
 
     // Ensure user record exists in users table
@@ -136,7 +136,7 @@ export async function createOAuthDesigner(
       } else {
         const [ur] = await pool.execute(
           `INSERT INTO users (email, password, full_name, phone, city, role, status, email_verified)
-           VALUES (?, '', ?, ?, ?, 'designer', 'active', 1)`,
+           VALUES (?, '', ?, ?, ?, 'user', 'active', 1)`,
           [email, existing.full_name || displayName, existing.phone || '', existing.city || 'Dubai']
         );
         userId = (ur as any).insertId;
@@ -145,14 +145,11 @@ export async function createOAuthDesigner(
       existing.user_id = userId;
     }
 
-    // 下载头像
+    // Download avatar to users table
     if (photoUrl) {
-      const avatarUrl = await downloadAvatar(photoUrl, existing.id);
+      const avatarUrl = await downloadAvatar(photoUrl, existing.user_id || existing.id);
       if (avatarUrl) {
-        await pool.execute(
-          'UPDATE designers SET avatar_url = ? WHERE id = ?',
-          [avatarUrl, existing.id]
-        );
+        await pool.execute('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarUrl, existing.user_id]);
         existing.avatar_url = avatarUrl;
       }
     }
@@ -164,54 +161,33 @@ export async function createOAuthDesigner(
     };
   }
 
-  // 创建新用户：先在 users 表创建，再在 designers 表创建并关联
-  const field = provider === 'google' ? 'google_id' : 'facebook_id';
-
-  // Step 1: Create user record
+  // Create new user in users table only (no designers table)
   const [userResult] = await pool.execute(
     `INSERT INTO users (email, password, full_name, phone, city, avatar_url, role, status, email_verified)
-     VALUES (?, '', ?, '', 'Dubai', ?, 'designer', 'active', 1)`,
+     VALUES (?, '', ?, '', 'Dubai', ?, 'user', 'active', 1)`,
     [email, displayName, photoUrl || null]
   );
   const userId = (userResult as any).insertId;
 
-  // Step 2: Create designer record linked to user
-  const [result] = await pool.execute(
-    `INSERT INTO designers
-     (email, full_name, ${field}, oauth_provider, email_verified, status, is_approved, city, user_id)
-     VALUES (?, ?, ?, ?, TRUE, ?, ?, ?, ?)`,
-    [
-      email,
-      displayName,
-      oauthId,
-      provider,
-      'pending',
-      0,
-      'Dubai',
-      userId,
-    ]
-  );
-
-  const designerId = (result as any).insertId;
-
-  // 下载头像（用真实 ID，避免竞态条件）
+  // Download avatar using user ID
+  let savedAvatarUrl = photoUrl || null;
   if (photoUrl) {
-    const avatarUrl = await downloadAvatar(photoUrl, designerId);
+    const avatarUrl = await downloadAvatar(photoUrl, userId);
     if (avatarUrl) {
-      await pool.execute(
-        'UPDATE designers SET avatar_url = ? WHERE id = ?',
-        [avatarUrl, designerId]
-      );
+      await pool.execute('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarUrl, userId]);
+      savedAvatarUrl = avatarUrl;
     }
   }
 
-  const [designer] = await pool.execute(
-    'SELECT id, email, email_verified, full_name, avatar_url FROM designers WHERE id = ?',
-    [designerId]
-  );
-
   return {
-    designer: (designer as DesignerResult[])[0],
+    designer: {
+      id: userId,
+      email,
+      email_verified: true,
+      full_name: displayName,
+      avatar_url: savedAvatarUrl || undefined,
+      user_id: userId,
+    } as DesignerResult,
     isNew: true,
     needsVerification: false,
   };

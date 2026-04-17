@@ -10,12 +10,12 @@ export function sanitizePublicDesigner(designer: any) {
 
   return {
     id: designer.id,
-    full_name: toPublicString(designer.full_name),
-    title: toPublicString(designer.title),
+    full_name: toPublicString(designer.company_name || designer.full_name),
+    title: toPublicString(designer.title || ''),
     city: toPublicString(designer.city),
-    bio: toPublicString(designer.bio),
-    avatar_url: sanitizeAvatarUrl(designer.avatar_url),
-    style: toPublicString(designer.style),
+    bio: toPublicString(designer.description || designer.bio),
+    avatar_url: sanitizeAvatarUrl(designer.logo_url || designer.avatar_url),
+    style: toPublicString(designer.style || ''),
     expertise: parseJsonField(designer.expertise) || [],
     display_order: designer.display_order || 0,
     project_count: designer.project_count || 0,

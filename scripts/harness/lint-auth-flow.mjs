@@ -150,6 +150,44 @@ for (const f of logoPages) {
   );
 }
 
+// ─── 10. No INSERT INTO designers in non-legacy code ───
+// Only legacy auth (authController.ts) and designer application may INSERT into designers.
+// All other paths (registration, OAuth, auth middleware) must NOT write to designers.
+const noDesignerInsertFiles = [
+  'server/src/controllers/userAuthController.ts',
+  'server/src/middleware/auth.ts',
+  'server/src/lib/oauthHandler.ts',
+  'server/src/controllers/companyProfileController.ts',
+  'server/src/controllers/homeownerController.ts',
+];
+for (const f of noDesignerInsertFiles) {
+  const content = readFile(f);
+  if (!content) continue;
+  const name = path.basename(f);
+  const hasInsertDesigners = /INSERT\s+INTO\s+designers/i.test(content);
+  check(
+    `${name} does NOT INSERT INTO designers`,
+    !hasInsertDesigners,
+    `${name} must not write to designers table — use users + company_profiles/homeowner_profiles`
+  );
+}
+
+// ─── 11. Auth middleware must NOT call findOrLinkDesignerForUser ───
+const authMiddleware = readFile('server/src/middleware/auth.ts');
+check(
+  'auth.ts does NOT call findOrLinkDesignerForUser',
+  authMiddleware && !authMiddleware.includes('findOrLinkDesignerForUser'),
+  'Auth middleware must not auto-create designer rows — removed in designer refactor'
+);
+
+// ─── 12. New users go to users table, roles go to profile tables ───
+// Registration must INSERT users, NOT designers. Roles: company → company_profiles, homeowner → homeowner_profiles
+check(
+  'userAuthController register writes to users table',
+  userAuth && /INSERT INTO users/.test(userAuth),
+  'register() must INSERT INTO users, not designers'
+);
+
 // ─── Summary ───
 console.log(`\n${'='.repeat(40)}`);
 console.log(`  ${passed}/${passed + failed} checks passed`);

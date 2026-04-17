@@ -4,7 +4,6 @@ import {
   sanitizePublicProject,
 } from '../lib/publicDesignerSerialization';
 import { buildPublicDesignersListQuery } from '../lib/publicDesignersQuery';
-import { findOrLinkDesignerForUser } from '../lib/linkedDesigner';
 import { parseJsonField } from '../lib/parseJsonField';
 
 function normalizeCity(city?: string | null): string | null {
@@ -153,24 +152,28 @@ export async function updateDesigner(req: any, res: any) {
     );
 
     if ((existingRows as any[]).length === 0) {
-      const linkedDesigner = await findOrLinkDesignerForUser({
-        id: req.user.userId,
-        email: req.user.email,
-      });
-
-      if (!linkedDesigner) {
-        return res.status(404).json({ error: 'Designer not found.' });
-      }
-
-      effectiveDesignerId = linkedDesigner.id;
-      [existingRows] = await pool.execute(
-        'SELECT * FROM designers WHERE id = ? AND deleted_at IS NULL',
-        [effectiveDesignerId]
+      // Try to find designer linked to this user's company profile
+      const [cpRows] = await pool.execute(
+        'SELECT id FROM company_profiles WHERE user_id = ? LIMIT 1',
+        [req.user.userId]
       );
 
-      if ((existingRows as any[]).length === 0) {
+      if ((cpRows as any[]).length === 0) {
         return res.status(404).json({ error: 'Designer not found.' });
       }
+
+      // Look for a designer row linked to this user
+      const [linkedRows] = await pool.execute(
+        'SELECT * FROM designers WHERE user_id = ? AND deleted_at IS NULL LIMIT 1',
+        [req.user.userId]
+      );
+
+      if ((linkedRows as any[]).length === 0) {
+        return res.status(404).json({ error: 'Designer not found.' });
+      }
+
+      effectiveDesignerId = (linkedRows as any[])[0].id;
+      existingRows = linkedRows;
     }
 
     const existing = (existingRows as any[])[0];

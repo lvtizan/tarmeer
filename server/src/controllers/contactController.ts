@@ -53,9 +53,9 @@ export async function getContacts(req: any, res: any) {
     const total = (countResult as any[])[0].total;
     
     const [contacts] = await pool.execute(
-      `SELECT c.*, d.full_name as designer_name, p.title as project_title
+      `SELECT c.*, cp.company_name as designer_name, p.title as project_title
        FROM contacts c
-       LEFT JOIN designers d ON c.designer_id = d.id
+       LEFT JOIN company_profiles cp ON c.designer_id = cp.id
        LEFT JOIN projects p ON c.project_id = p.id
        ${whereClause}
        ORDER BY c.created_at DESC

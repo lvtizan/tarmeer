@@ -96,10 +96,7 @@ export async function listCompanies(req: any, res: any) {
     let whereClause = 'WHERE cp.deleted_at IS NULL';
     const params: any[] = [];
 
-    if (status === 'all') {
-      // "all" in this context means approved + rejected, not pending (pending belongs in Applications)
-      whereClause += " AND cp.status IN ('approved', 'rejected')";
-    } else {
+    if (status !== 'all') {
       whereClause += ' AND cp.status = ?';
       params.push(status);
     }
@@ -399,6 +396,7 @@ function normalizeDeleteReason(rawReason: unknown): string | null {
 
 /**
  * PUT /api/admin/roles/companies/:id/delete
+ * Cascading hard delete: company_profile + user + all related data
  */
 export async function deleteCompanyProfile(req: any, res: any) {
   try {
@@ -414,22 +412,32 @@ export async function deleteCompanyProfile(req: any, res: any) {
     );
     const profile = (rows as any[])[0];
     if (!profile) return res.status(404).json({ error: 'Company profile not found.' });
-    if (profile.deleted_at) return res.status(400).json({ error: 'Company profile is already deleted.' });
 
-    await pool.execute(
-      `UPDATE company_profiles
-       SET deleted_at = NOW(), deleted_by_admin_id = ?, delete_reason = ?, status = 'rejected'
-       WHERE id = ?`,
-      [adminId, reason, id]
-    );
+    const userId = profile.user_id;
 
+    // Log before deletion (audit trail preserved)
     await logActivity(adminId, 'delete_company_profile', 'company_profile', id, {
       company_name: profile.company_name,
-      user_id: profile.user_id,
+      user_id: userId,
       reason,
     });
 
-    res.json({ message: 'Company profile deleted successfully.' });
+    // Cascading hard delete — child tables first to respect FK constraints
+    await pool.execute('DELETE FROM projects WHERE company_profile_id = ?', [id]);
+    await pool.execute('DELETE FROM articles WHERE company_profile_id = ?', [id]);
+    await pool.execute('DELETE FROM company_profiles WHERE id = ?', [id]);
+
+    if (userId) {
+      await pool.execute('DELETE FROM designers WHERE user_id = ?', [userId]);
+      await pool.execute('DELETE FROM company_applications WHERE user_id = ?', [userId]);
+      await pool.execute('DELETE FROM notifications WHERE user_id = ?', [userId]);
+      await pool.execute('DELETE FROM design_inquiries WHERE user_id = ?', [userId]);
+      await pool.execute('DELETE FROM homeowner_profiles WHERE user_id = ?', [userId]);
+      await pool.execute('UPDATE uae_companies SET owner_user_id = NULL WHERE owner_user_id = ?', [userId]);
+      await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+    }
+
+    res.json({ message: 'Company profile and all related data deleted successfully.' });
   } catch (error) {
     console.error('Delete company profile error:', error);
     res.status(500).json({ error: 'Failed to delete company profile.' });

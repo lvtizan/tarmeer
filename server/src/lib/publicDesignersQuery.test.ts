@@ -13,11 +13,11 @@ test('buildPublicDesignersListQuery embeds limit and offset for mysql2 compatibi
   assert.deepEqual(result.params, []);
 });
 
-test('buildPublicDesignersListQuery excludes soft-deleted designers', () => {
+test('buildPublicDesignersListQuery excludes soft-deleted company profiles', () => {
   const result = buildPublicDesignersListQuery({
     limit: 8,
     offset: 0,
   });
 
-  assert.match(result.sql, /deleted_at IS NULL/);
+  assert.match(result.sql, /cp\.deleted_at IS NULL/);
 });
