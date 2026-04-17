@@ -55,7 +55,8 @@ export async function submitCompanyLead(req: any, res: any) {
         phone,
         city: city || undefined,
         notes: `Company: ${companyName}${companyType ? ` | Type: ${companyType}` : ''}`,
-        page: '/join-as-company',
+        page: sourcePage || '/join-as-company',
+        company: companyName || undefined,
       }).catch(() => {});
     }
 
@@ -67,6 +68,7 @@ export async function submitCompanyLead(req: any, res: any) {
       phone: phone || undefined,
       city: city || undefined,
       licenseNumber: undefined,
+      page: sourcePage || undefined,
       description: [
         companyType ? `Type: ${companyType}` : '',
         yearEstablished ? `Est. ${yearEstablished}` : '',

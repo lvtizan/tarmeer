@@ -34,6 +34,23 @@ export interface LeadPayload {
   area?: string;
   notes?: string;
   page?: string;
+  company?: string;
+}
+
+/** Extract UTM params from a URL string. */
+function parseUtm(url?: string): { channelPlatform: string; sourceAccount: string } {
+  if (!url) return { channelPlatform: 'website', sourceAccount: '官网表单' };
+  try {
+    const u = new URL(url, 'https://www.tarmeer.com');
+    const source = u.searchParams.get('utm_source');
+    const content = u.searchParams.get('utm_content');
+    return {
+      channelPlatform: source || 'website',
+      sourceAccount: content || '官网表单',
+    };
+  } catch {
+    return { channelPlatform: 'website', sourceAccount: '官网表单' };
+  }
 }
 
 export interface CompanyLeadPayload {
@@ -43,6 +60,7 @@ export interface CompanyLeadPayload {
   city?: string;
   licenseNumber?: string;
   description?: string;
+  page?: string;
 }
 
 async function markSynced(
@@ -92,6 +110,7 @@ export async function pushLeadToCRM(lead: LeadPayload): Promise<any> {
   let data: any = null;
 
   try {
+    const utm = parseUtm(lead.page);
     const response = await fetch(CRM_INBOUND_URL, {
       method: 'POST',
       headers: {
@@ -109,6 +128,9 @@ export async function pushLeadToCRM(lead: LeadPayload): Promise<any> {
         area: lead.area || undefined,
         notes: lead.notes || undefined,
         page: lead.page || undefined,
+        company: lead.company || undefined,
+        channelPlatform: utm.channelPlatform,
+        sourceAccount: utm.sourceAccount,
         trafficChannelId: CRM_TRAFFIC_CHANNEL_ID || undefined,
       }),
       signal: AbortSignal.timeout(5000),
@@ -184,11 +206,14 @@ export async function pushCompanyLeadToCRM(lead: CompanyLeadPayload): Promise<an
         name: lead.companyName,
         phone: lead.phone || undefined,
         city: lead.city || undefined,
+        company: lead.companyName || undefined,
         notes: [
           lead.licenseNumber ? `License: ${lead.licenseNumber}` : '',
           lead.description || '',
         ].filter(Boolean).join('\n') || undefined,
-        page: '/join-as-company',
+        page: lead.page || '/join-as-company',
+        channelPlatform: parseUtm(lead.page).channelPlatform,
+        sourceAccount: parseUtm(lead.page).sourceAccount,
         trafficChannelId: CRM_TRAFFIC_CHANNEL_ID || undefined,
       }),
       signal: AbortSignal.timeout(5000),

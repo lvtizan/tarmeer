@@ -70,6 +70,7 @@ export async function submitInquiry(req: any, res: any) {
       area: area_range || undefined,
       notes: [companyName ? `Company: ${companyName}` : '', message || ''].filter(Boolean).join(' | ') || undefined,
       page: source_page || undefined,
+      company: source_company_name || undefined,
     }).catch(() => {});
 
     res.status(201).json({

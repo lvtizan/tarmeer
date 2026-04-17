@@ -64,7 +64,7 @@ export default function InquiryForm({ companyId, recipientName = 'our team' }: I
           area_range: area,
           message: message || undefined,
           company_id: companyId || undefined,
-          source_page: window.location.pathname,
+          source_page: window.location.href,
         }),
       });
 
