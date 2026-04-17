@@ -289,7 +289,7 @@ export default function AdminInquiriesPage() {
           type="text" value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="搜索姓名或电话..."
-          className="h-9 w-48 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+          className="h-9 w-[36rem] px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
         />
 
         {/* Active / Deleted toggle — pushed right */}
@@ -355,8 +355,8 @@ export default function AdminInquiriesPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-xl border border-stone-200">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
