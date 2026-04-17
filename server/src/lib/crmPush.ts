@@ -37,19 +37,18 @@ export interface LeadPayload {
   company?: string;
 }
 
-/** Extract UTM params from a URL string. */
-function parseUtm(url?: string): { channelPlatform: string; sourceAccount: string } {
-  if (!url) return { channelPlatform: 'website', sourceAccount: '官网表单' };
+/** Extract UTM-based channel info from a URL string. */
+function parseChannel(url?: string): { channelPlatform: string; channelAccountName: string } {
+  if (!url) return { channelPlatform: 'website', channelAccountName: 'Tarmeer Mall' };
   try {
     const u = new URL(url, 'https://www.tarmeer.com');
     const source = u.searchParams.get('utm_source');
-    const content = u.searchParams.get('utm_content');
     return {
       channelPlatform: source || 'website',
-      sourceAccount: content || '官网表单',
+      channelAccountName: 'Tarmeer Mall',
     };
   } catch {
-    return { channelPlatform: 'website', sourceAccount: '官网表单' };
+    return { channelPlatform: 'website', channelAccountName: 'Tarmeer Mall' };
   }
 }
 
@@ -110,7 +109,7 @@ export async function pushLeadToCRM(lead: LeadPayload): Promise<any> {
   let data: any = null;
 
   try {
-    const utm = parseUtm(lead.page);
+    const ch = parseChannel(lead.page);
     const response = await fetch(CRM_INBOUND_URL, {
       method: 'POST',
       headers: {
@@ -129,9 +128,8 @@ export async function pushLeadToCRM(lead: LeadPayload): Promise<any> {
         notes: lead.notes || undefined,
         page: lead.page || undefined,
         company: lead.company || undefined,
-        channelPlatform: utm.channelPlatform,
-        sourceAccount: utm.sourceAccount,
-        trafficChannelId: CRM_TRAFFIC_CHANNEL_ID || undefined,
+        channelPlatform: ch.channelPlatform,
+        channelAccountName: ch.channelAccountName,
       }),
       signal: AbortSignal.timeout(5000),
     });
@@ -212,9 +210,8 @@ export async function pushCompanyLeadToCRM(lead: CompanyLeadPayload): Promise<an
           lead.description || '',
         ].filter(Boolean).join('\n') || undefined,
         page: lead.page || '/join-as-company',
-        channelPlatform: parseUtm(lead.page).channelPlatform,
-        sourceAccount: parseUtm(lead.page).sourceAccount,
-        trafficChannelId: CRM_TRAFFIC_CHANNEL_ID || undefined,
+        channelPlatform: parseChannel(lead.page).channelPlatform,
+        channelAccountName: parseChannel(lead.page).channelAccountName,
       }),
       signal: AbortSignal.timeout(5000),
     });
