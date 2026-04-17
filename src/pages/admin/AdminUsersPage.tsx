@@ -329,57 +329,55 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-stone-800">Users</h1>
-        <div className="flex items-center gap-3">
-          {selectedIds.size > 0 && (
-            <button
-              onClick={handleBulkDeleteClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition"
-            >
-              <Trash2 size={14} /> Delete Selected ({selectedIds.size})
-            </button>
-          )}
-          <span className="text-sm text-stone-500">{total} total</span>
-        </div>
+        <span className="text-sm text-stone-500">{total} total</span>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs font-medium text-stone-500 mb-1">Role</label>
-          <AdminSelect
-            value={roleFilter}
-            onChange={(val) => { setRoleFilter(val as RoleFilter); setPage(1); }}
-            options={[
-              { value: 'all', label: 'All Roles' },
-              { value: 'user', label: 'User' },
-              { value: 'designer', label: 'Designer' },
-              { value: 'company', label: 'Company' },
-            ]}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
-          <AdminSelect
-            value={statusFilter}
-            onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
-            options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'active', label: 'Active' },
-              { value: 'suspended', label: 'Suspended' },
-            ]}
-          />
-        </div>
+      <div className="flex flex-wrap gap-3 items-center">
+        <AdminSelect
+          className="!h-9 !px-3 !text-sm"
+          value={roleFilter}
+          onChange={(val) => { setRoleFilter(val as RoleFilter); setPage(1); }}
+          options={[
+            { value: 'all', label: 'All Roles' },
+            { value: 'user', label: 'User' },
+            { value: 'designer', label: 'Designer' },
+            { value: 'company', label: 'Company' },
+          ]}
+        />
+        <AdminSelect
+          className="!h-9 !px-3 !text-sm"
+          value={statusFilter}
+          onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'active', label: 'Active' },
+            { value: 'suspended', label: 'Suspended' },
+          ]}
+        />
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
           <input
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Name or email..."
-            className="h-9 w-full px-3 border border-stone-200 rounded-lg text-sm bg-white"
+            className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
           />
         </div>
       </div>
+
+      {/* Batch action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11">
+          <span className="text-sm text-stone-500">{selectedIds.size} selected</span>
+          <button
+            onClick={handleBulkDeleteClick}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
+          >
+            <Trash2 size={14} /> 删除 ({selectedIds.size})
+          </button>
+        </div>
+      )}
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 

@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { adminApi, Designer } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { resolveImageUrl } from '../../lib/imageUrl';
-import SelectField from '../../components/form/SelectField';
+import AdminSelect from '../../components/ui/AdminSelect';
 import { formatCount } from '../../lib/formatNumber';
 import { PageSpinner } from '../../components/ui/Spinner';
 
@@ -373,77 +373,59 @@ export default function AdminDesignersPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg border border-stone-200 mb-6">
-        <div className="flex flex-wrap gap-4 items-center">
-          {/* Status filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-stone-500">Status:</span>
-            <SelectField
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as StatusFilter);
-                setPage(1);
-              }}
-              className="min-w-[140px] border-stone-300 bg-white px-3"
-            >
-              <option value="all">All</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </SelectField>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-stone-500">Lifecycle:</span>
-            <SelectField
-              value={deletedFilter}
-              onChange={(e) => {
-                setDeletedFilter(e.target.value as DeletedFilter);
-                setPage(1);
-              }}
-              className="min-w-[140px] border-stone-300 bg-white px-3"
-            >
-              <option value="active">Active</option>
-              <option value="deleted">Deleted</option>
-              <option value="all">All</option>
-            </SelectField>
-          </div>
-
-          {/* Search */}
-          <div className="flex-1 min-w-[200px]">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by name, email, or city..."
-              className="h-12 w-full px-3 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
-            />
-          </div>
-
-          {/* Bulk actions */}
-          {canApprove && selectedIds.length > 0 && viewMode === 'list' && (
-            <>
-              <button
-                onClick={handleBulkApprove}
-                disabled={isSubmitting || selectedPendingIds.length === 0}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
-              >
-                Approve Selected ({selectedPendingIds.length})
-              </button>
-              <button
-                onClick={() => setBulkDeleteModalOpen(true)}
-                disabled={isSubmitting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition disabled:opacity-50"
-              >
-                <Trash2 size={14} /> Delete Selected ({selectedIds.length})
-              </button>
-            </>
-          )}
+      <div className="flex flex-wrap gap-3 items-center mb-6">
+        <AdminSelect
+          className="!h-9 !px-3 !text-sm"
+          value={statusFilter}
+          onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'rejected', label: 'Rejected' },
+          ]}
+        />
+        <AdminSelect
+          className="!h-9 !px-3 !text-sm"
+          value={deletedFilter}
+          onChange={(val) => { setDeletedFilter(val as DeletedFilter); setPage(1); }}
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'deleted', label: 'Deleted' },
+            { value: 'all', label: 'All' },
+          ]}
+        />
+        <div className="flex-1 min-w-[200px]">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Search by name, email, or city..."
+            className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+          />
         </div>
       </div>
+
+      {/* Batch action bar */}
+      {canApprove && selectedIds.length > 0 && viewMode === 'list' && (
+        <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11 mb-6">
+          <span className="text-sm text-stone-500">{selectedIds.length} selected</span>
+          <button
+            onClick={handleBulkApprove}
+            disabled={isSubmitting || selectedPendingIds.length === 0}
+            className="h-8 px-4 text-sm text-white bg-green-600 rounded-xl hover:bg-green-700 transition disabled:opacity-50"
+          >
+            批准 ({selectedPendingIds.length})
+          </button>
+          <button
+            onClick={() => setBulkDeleteModalOpen(true)}
+            disabled={isSubmitting}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition disabled:opacity-50"
+          >
+            <Trash2 size={14} /> 删除 ({selectedIds.length})
+          </button>
+        </div>
+      )}
 
       {/* Sort Mode */}
       {viewMode === 'sort' && canSort && deletedFilter === 'active' && (

@@ -71,13 +71,14 @@ export default function AdminApplicationsTable({
   return (
     <div>
       {selected.size > 0 && (
-        <div className="mb-3">
+        <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11 mb-3">
+          <span className="text-sm text-stone-500">{selected.size} selected</span>
           <button
             onClick={handleBatchDelete}
-            className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 text-sm font-medium"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
           >
-            <Trash2 size={16} />
-            Delete {selected.size}
+            <Trash2 size={14} />
+            删除 ({selected.size})
           </button>
         </div>
       )}

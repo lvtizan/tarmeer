@@ -311,21 +311,21 @@ export default function AdminInquiriesPage() {
 
       {/* Batch action bar */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2">
-          <span className="text-sm text-stone-600">{selected.size} selected</span>
+        <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11">
+          <span className="text-sm text-stone-500">{selected.size} selected</span>
           {viewMode === 'active' ? (
             <button
               onClick={() => setDeleteModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition"
+              className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
             >
-              <Trash2 size={14} /> Delete Selected ({selected.size})
+              <Trash2 size={14} /> 删除 ({selected.size})
             </button>
           ) : (
             <button
               onClick={handleBatchRestore}
-              className="px-4 py-1.5 text-sm text-white bg-[#b8864a] rounded-2xl hover:bg-[#a07840] transition"
+              className="h-8 px-4 text-sm text-white bg-[#b8864a] rounded-xl hover:bg-[#a07840] transition"
             >
-              Restore Selected ({selected.size})
+              恢复 ({selected.size})
             </button>
           )}
         </div>
