@@ -113,7 +113,42 @@ export async function upsertProfile(req: any, res: any) {
 export async function getProfile(req: any, res: any) {
   try {
     const userId = req.user.userId;
-    const [rows] = await pool.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+    let [rows] = await pool.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+
+    // Auto-create profile from company_leads if user has no profile yet
+    if ((rows as any[]).length === 0) {
+      const [userRows] = await pool.execute('SELECT phone, email FROM users WHERE id = ?', [userId]);
+      const userPhone = (userRows as any[])[0]?.phone;
+      const userEmail = (userRows as any[])[0]?.email;
+
+      // Match by phone first, then by email as fallback (covers Google OAuth without phone)
+      let lead: any = null;
+      if (userPhone) {
+        const [leadRows] = await pool.execute(
+          'SELECT contact_name, phone, company_name, company_type, city, year_established FROM company_leads WHERE phone = ? ORDER BY created_at DESC LIMIT 1',
+          [userPhone]
+        );
+        lead = (leadRows as any[])[0];
+      }
+      if (!lead && userEmail) {
+        const [leadRows] = await pool.execute(
+          'SELECT contact_name, phone, company_name, company_type, city, year_established FROM company_leads WHERE email = ? ORDER BY created_at DESC LIMIT 1',
+          [userEmail]
+        );
+        lead = (leadRows as any[])[0];
+      }
+
+      if (lead) {
+        const leadSlug = slugify(lead.company_name || '');
+        await pool.execute(
+          `INSERT INTO company_profiles (user_id, company_name, contact_person, phone, city, address, company_type, establishment_year, slug, status, description, services, specialties, onboarding_step, signup_source)
+           VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, 'pending', '', '["Interior Design"]', '[]', 0, 'company-lead-backfill')`,
+          [userId, lead.company_name, lead.contact_name, lead.phone, lead.city || null, lead.company_type || null, lead.year_established || null, leadSlug]
+        );
+        await pool.execute("UPDATE users SET active_role = 'company' WHERE id = ?", [userId]);
+        [rows] = await pool.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+      }
+    }
 
     if ((rows as any[]).length === 0) {
       return res.json({ profile: null, projectCount: 0 });

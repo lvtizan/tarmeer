@@ -214,7 +214,8 @@ function JoinAuthCard() {
               if (companySignupData) {
                 sessionStorage.setItem('pending_company_profile', JSON.stringify(companySignupData));
               }
-              window.location.href = `${apiBase}/auth/google?role=company`;
+              const phoneParam = companySignupData?.phone ? `&phone=${encodeURIComponent(companySignupData.phone)}` : '';
+              window.location.href = `${apiBase}/auth/google?role=company${phoneParam}`;
             }}
             className={AUTH_SOCIAL_BUTTON_CLASS}
           >

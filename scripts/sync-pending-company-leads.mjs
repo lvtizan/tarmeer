@@ -3,8 +3,10 @@
  * One-time script: push pending company inquiries to CRM.
  * Run on server: cd /tarmeer/tarmeer_api && node sync-pending-company-leads.mjs
  */
-const { default: pool } = await import('./dist/config/database.js');
-const { pushLeadToCRM } = await import('./dist/lib/crmPush.js');
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pool = require('./dist/config/database').default;
+const { pushLeadToCRM } = require('./dist/lib/crmPush');
 
 const [rows] = await pool.execute(
   `SELECT id, name, phone, city, message FROM design_inquiries

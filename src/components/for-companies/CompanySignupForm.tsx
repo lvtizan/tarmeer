@@ -404,7 +404,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       services: ['Interior Design'],
                       signup_source: 'for-companies-landing',
                     }));
-                    window.location.href = `${apiBase}/auth/google?role=company`;
+                    const phoneFull = encodeURIComponent(`${phoneRegion.code}${phoneDigits}`);
+                    window.location.href = `${apiBase}/auth/google?role=company&phone=${phoneFull}`;
                   }}
                   className="flex h-12 w-full items-center justify-center gap-3 rounded-[20px] border border-stone-200 bg-white text-[15px] font-medium text-[#1c1917] shadow-sm transition hover:bg-stone-50"
                 >
