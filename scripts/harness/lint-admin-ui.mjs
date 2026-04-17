@@ -11,6 +11,7 @@
  *   4. No raw <select> tags (use AdminSelect)
  *   5. Table containers use rounded-2xl + shadow-sm
  *   6. No mixed gap values in a single toolbar row
+ *   7. No absolute-positioned dropdowns inside overflow-hidden containers (use fixed)
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -18,6 +19,7 @@ import { join, relative } from 'path';
 
 const ROOT = new URL('../../', import.meta.url).pathname.replace(/\/$/, '');
 const ADMIN_DIR = join(ROOT, 'src/pages/admin');
+const COMPONENTS_DIR = join(ROOT, 'src/components');
 
 const RULES = [
   {
@@ -100,12 +102,46 @@ function getAdminFiles(dir) {
   return files;
 }
 
+// Global rules (applied to components too)
+const GLOBAL_RULES = [
+  {
+    id: 'no-absolute-dropdown',
+    desc: 'Dropdown uses absolute positioning — will be clipped by overflow-hidden parents. Use fixed positioning instead',
+    test: (line) => /absolute.*z-\[.*dropdown\b|absolute.*mt-1.*bg-white.*border.*rounded.*shadow/.test(line),
+  },
+];
+
+function scanFileGlobal(filePath) {
+  const content = readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n');
+  const findings = [];
+  const rel = relative(ROOT, filePath);
+  for (let i = 0; i < lines.length; i++) {
+    for (const rule of GLOBAL_RULES) {
+      if (rule.test(lines[i])) {
+        findings.push({ file: rel, line: i + 1, rule: rule.id, desc: rule.desc });
+      }
+    }
+  }
+  return findings;
+}
+
 // Run
 const files = getAdminFiles(ADMIN_DIR);
+const componentFiles = getAdminFiles(COMPONENTS_DIR);
 let total = 0;
 
 for (const f of files) {
   const findings = scanFile(f);
+  for (const finding of findings) {
+    console.log(`[${finding.rule}] ${finding.file}:${finding.line} — ${finding.desc}`);
+    total++;
+  }
+}
+
+// Global component checks
+for (const f of componentFiles) {
+  const findings = scanFileGlobal(f);
   for (const finding of findings) {
     console.log(`[${finding.rule}] ${finding.file}:${finding.line} — ${finding.desc}`);
     total++;

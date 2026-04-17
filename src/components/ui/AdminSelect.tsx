@@ -1,4 +1,4 @@
-import { forwardRef, useState, useRef, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, useState, useRef, useEffect, useImperativeHandle, useCallback } from 'react';
 
 interface AdminSelectProps {
   value: string;
@@ -37,6 +37,25 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, [open]);
+
+  // Calculate fixed position for desktop dropdown (avoids overflow clipping)
+  const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const updateDropPos = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updateDropPos();
+    window.addEventListener('scroll', updateDropPos, true);
+    window.addEventListener('resize', updateDropPos);
+    return () => {
+      window.removeEventListener('scroll', updateDropPos, true);
+      window.removeEventListener('resize', updateDropPos);
+    };
+  }, [open, updateDropPos]);
 
   const optionList = options.map((opt) => (
     <button
@@ -110,26 +129,31 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
             </div>
           </div>
 
-          {/* Desktop: absolute dropdown below trigger */}
-          <ul className="hidden sm:block absolute z-[200] mt-1 w-full bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
-            {options.map((opt) => (
-              <li key={opt.value}>
-                <button
-                  type="button"
-                  onClick={() => { onChange(opt.value); setOpen(false); }}
-                  className={`w-full text-left px-5 py-3 text-[15px] transition hover:bg-stone-50 ${
-                    opt.value === value
-                      ? 'text-[#b8864a] font-medium bg-[#b8864a]/5'
-                      : opt.value === ''
-                      ? 'text-stone-400'
-                      : 'text-[#1c1917]'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+          {/* Desktop: fixed dropdown (escapes overflow-hidden containers) */}
+          {dropPos && (
+            <ul
+              className="hidden sm:block fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden max-h-60 overflow-y-auto"
+              style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width }}
+            >
+              {options.map((opt) => (
+                <li key={opt.value}>
+                  <button
+                    type="button"
+                    onClick={() => { onChange(opt.value); setOpen(false); }}
+                    className={`w-full text-left px-5 py-3 text-[15px] transition hover:bg-stone-50 ${
+                      opt.value === value
+                        ? 'text-[#b8864a] font-medium bg-[#b8864a]/5'
+                        : opt.value === ''
+                        ? 'text-stone-400'
+                        : 'text-[#1c1917]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
     </div>
