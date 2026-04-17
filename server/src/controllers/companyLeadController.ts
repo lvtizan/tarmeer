@@ -1,5 +1,5 @@
 import pool from '../config/database';
-import { pushCompanyLeadToCRM } from '../lib/crmPush';
+import { pushCompanyLeadToCRM, pushLeadToCRM } from '../lib/crmPush';
 
 export async function submitCompanyLead(req: any, res: any) {
   try {
@@ -39,11 +39,25 @@ export async function submitCompanyLead(req: any, res: any) {
       yearEstablished ? `Est. ${yearEstablished}` : '',
     ].filter(Boolean).join(' | ');
 
-    pool.execute(
+    const [mirrorResult] = await pool.execute(
       `INSERT INTO design_inquiries (name, phone, city, area_range, message, source_company_name)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [contactName, phone, city || null, companyType || 'company-lead', inquiryMessage, companyName]
-    ).catch(() => {});
+    ).catch(() => [{ insertId: 0 }]);
+    const mirrorInquiryId = (mirrorResult as any).insertId;
+
+    // Sync the mirrored inquiry to CRM so it shows "已同步" in admin
+    if (mirrorInquiryId) {
+      pushLeadToCRM({
+        inquiryId: mirrorInquiryId,
+        externalId: `inquiry-${mirrorInquiryId}`,
+        name: contactName || 'Anonymous',
+        phone,
+        city: city || undefined,
+        notes: `Company: ${companyName}${companyType ? ` | Type: ${companyType}` : ''}`,
+        page: '/join-as-company',
+      }).catch(() => {});
+    }
 
     // Fire-and-forget CRM push (company tenant)
     // notes field carries company_type so CRM sales team sees it

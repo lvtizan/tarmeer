@@ -389,9 +389,6 @@ export default function AdminInquiriesPage() {
                     <td className="px-4 py-3 font-medium text-stone-800">
                       <div className="flex items-center gap-2">
                         {inq.name || <span className="text-stone-400">—</span>}
-                        {inq.message?.startsWith('[Company Inquiry]') && (
-                          <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#b8864a]/10 text-[#b8864a]">Company</span>
-                        )}
                         {inq.deleted_at && (
                           <span className="inline-flex cursor-help relative group" onClick={(e) => e.stopPropagation()}>
                             <Info className="w-3.5 h-3.5 text-red-400" />
