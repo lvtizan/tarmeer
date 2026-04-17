@@ -46,6 +46,7 @@ Every feature MUST go through these steps before notifying the user. No exceptio
 - Read MEMORY.md pitfall records before starting development
 - Check each pitfall against current feature for relevance
 - Key pitfalls: image permissions (chmod), JSON field parsing (Array.isArray), prepared statement LIMIT/OFFSET, nginx route conflicts
+- **Admin page changes**: MUST run `node scripts/harness/lint-admin-ui.mjs` before AND after coding
 
 ### Step 2: Write Test Cases
 - Create/update test case doc in `docs/testing/`

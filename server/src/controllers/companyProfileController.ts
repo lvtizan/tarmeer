@@ -26,12 +26,14 @@ export async function upsertProfile(req: any, res: any) {
     const onboardingStep = typeof req.body.onboarding_step === 'number' ? req.body.onboarding_step : null;
     const signupSource = typeof req.body.signup_source === 'string' ? req.body.signup_source.slice(0, 64) : null;
 
-    // Check if profile exists
-    const [existing] = await pool.execute('SELECT id FROM company_profiles WHERE user_id = ?', [userId]);
+    // Check if profile exists (fetch old onboarding_step for notification trigger)
+    const [existing] = await pool.execute('SELECT id, onboarding_step, signup_source FROM company_profiles WHERE user_id = ?', [userId]);
+    const oldStep = (existing as any[])[0]?.onboarding_step ?? -1;
+    const existingSource = (existing as any[])[0]?.signup_source;
 
     if ((existing as any[]).length > 0) {
       await pool.execute(
-        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, slug = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?) WHERE user_id = ?`,
+        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, slug = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?), signup_source = COALESCE(signup_source, ?) WHERE user_id = ?`,
         [
           payload.company_name,
           payload.description,
@@ -48,6 +50,7 @@ export async function upsertProfile(req: any, res: any) {
           specialtiesJson,
           slug,
           onboardingStep || 0,
+          signupSource,
           userId,
         ]
       );
@@ -75,13 +78,17 @@ export async function upsertProfile(req: any, res: any) {
           signupSource,
         ]
       );
+    }
 
-      // Notify admins of new company registration
+    // Notify admins when onboarding reaches step 2+ (user has filled all info + uploaded project)
+    const newStep = Math.max(onboardingStep || 0, oldStep);
+    if (oldStep < 2 && newStep >= 2) {
+      const effectiveSource = signupSource || existingSource || undefined;
       setImmediate(() => {
         notifyCompanyRegistration({
           companyName: payload.company_name, contactPerson: payload.contact_person,
           phone: payload.phone, city: payload.city, companyType: payload.company_type, services: payload.services,
-          signupSource: signupSource || undefined,
+          signupSource: effectiveSource,
         }).catch(() => {});
       });
     }

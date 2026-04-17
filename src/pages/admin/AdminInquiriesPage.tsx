@@ -1,9 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Info } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
+
+/* ── Floating Tooltip (portal-free, renders outside table overflow) ── */
+function FloatingTip({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const show = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({ top: r.top + r.height / 2, left: r.right + 8 });
+  };
+  return (
+    <>
+      <span ref={ref} className="inline-flex cursor-help" onMouseEnter={show} onMouseLeave={() => setPos(null)}>
+        {icon || <Info className="w-3.5 h-3.5 text-stone-400" />}
+      </span>
+      {pos && (
+        <div
+          className="fixed z-[9999] w-72 rounded-lg border border-stone-200 bg-white p-3 text-[12px] leading-relaxed text-stone-700 shadow-xl whitespace-normal"
+          style={{ top: pos.top, left: pos.left, transform: 'translateY(-50%)' }}
+        >
+          {children}
+        </div>
+      )}
+    </>
+  );
+}
 
 const CRM_ACTION_TOOLTIP: Record<string, string> = {
   created: '✅ 已在 CRM 创建新线索，销售可正常跟进。',
@@ -223,23 +249,23 @@ export default function AdminInquiriesPage() {
         </button>
       </div>
 
-      {/* Row 2: Type tabs | Status + Search | Active/Deleted toggle — all h-9 */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {/* Type tabs with badge counts */}
-        <div className="flex gap-2">
-          <button onClick={() => { setTypeFilter('homeowner'); setPage(1); }}
-            className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'homeowner'
-              ? 'bg-[#b8864a] text-white'
-              : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
-            业主询单 ({counts.homeowner})
-          </button>
-          <button onClick={() => { setTypeFilter('company'); setPage(1); }}
-            className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'company'
-              ? 'bg-[#b8864a] text-white'
-              : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
-            公司线索 ({counts.company})
-          </button>
-        </div>
+      {/* Row 2: Type tabs | Status + Search | Active/Deleted toggle — uniform h-9, gap-2 */}
+      <div className="flex items-center gap-2">
+        {/* Type tabs */}
+        <button onClick={() => { setTypeFilter('homeowner'); setPage(1); }}
+          className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'homeowner'
+            ? 'bg-[#b8864a] text-white'
+            : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
+          业主询单 ({counts.homeowner})
+        </button>
+        <button onClick={() => { setTypeFilter('company'); setPage(1); }}
+          className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'company'
+            ? 'bg-[#b8864a] text-white'
+            : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
+          公司线索 ({counts.company})
+        </button>
+
+        <div className="w-px h-5 bg-stone-200" />
 
         {/* Status dropdown */}
         <AdminSelect
@@ -260,11 +286,11 @@ export default function AdminInquiriesPage() {
           type="text" value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="搜索姓名或电话..."
-          className="h-9 w-[36rem] px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+          className="h-9 flex-1 min-w-0 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
         />
 
-        {/* Active / Deleted toggle — pushed right */}
-        <div className="flex items-center gap-0.5 ml-auto h-9 bg-stone-100 rounded-2xl px-0.5">
+        {/* Active / Deleted toggle */}
+        <div className="flex items-center gap-0.5 h-9 bg-stone-100 rounded-2xl px-0.5">
           <button onClick={() => setViewMode('active')}
             className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'active'
               ? 'bg-white text-[#2c2c2c] shadow-sm'
@@ -326,8 +352,8 @@ export default function AdminInquiriesPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200">
-        <div className="overflow-x-auto overflow-y-visible">
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
@@ -360,17 +386,14 @@ export default function AdminInquiriesPage() {
                       <div className="flex items-center gap-2">
                         {inq.name || <span className="text-stone-400">—</span>}
                         {inq.deleted_at && (
-                          <span className="inline-flex cursor-help relative group" onClick={(e) => e.stopPropagation()}>
-                            <Info className="w-3.5 h-3.5 text-red-400" />
-                            <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-50 hidden group-hover:block w-72 rounded-lg border border-stone-200 bg-white p-3 text-[12px] leading-relaxed text-stone-700 shadow-xl whitespace-normal">
+                          <span onClick={(e) => e.stopPropagation()}>
+                            <FloatingTip icon={<Info className="w-3.5 h-3.5 text-red-400" />}>
                               <div className="font-semibold text-red-600 mb-1">删除理由</div>
                               <div>{inq.deleted_reason || '—（无记录）'}</div>
-                              {inq.deleted_at && (
-                                <div className="text-stone-400 mt-1 text-[11px]">
-                                  删除时间：{new Date(inq.deleted_at).toLocaleString()}
-                                </div>
-                              )}
-                            </span>
+                              <div className="text-stone-400 mt-1 text-[11px]">
+                                删除时间：{new Date(inq.deleted_at).toLocaleString()}
+                              </div>
+                            </FloatingTip>
                           </span>
                         )}
                       </div>
@@ -428,12 +451,7 @@ export default function AdminInquiriesPage() {
                                 >
                                   {label}
                                 </span>
-                                <span className="inline-flex cursor-help relative group">
-                                  <Info className="w-3.5 h-3.5 text-stone-400" />
-                                  <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-50 hidden group-hover:block w-72 rounded-lg border border-stone-200 bg-white p-3 text-[12px] leading-relaxed text-stone-700 shadow-xl whitespace-normal">
-                                    {tip}
-                                  </span>
-                                </span>
+                                <FloatingTip>{tip}</FloatingTip>
                               </span>
                               {isLinked && (
                                 <span className="text-[10px] text-amber-600">已合并 → 请检查</span>
@@ -452,7 +470,7 @@ export default function AdminInquiriesPage() {
                                 >
                                   同步失败
                                 </span>
-                                <span title={CRM_STATUS_TOOLTIP.failed} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
+                                <FloatingTip>{CRM_STATUS_TOOLTIP.failed}</FloatingTip>
                               </span>
                               <button
                                 onClick={() => handleResendCrm(inq.id)}
@@ -472,7 +490,7 @@ export default function AdminInquiriesPage() {
                               <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-500">
                                 待同步
                               </span>
-                              <span title={CRM_STATUS_TOOLTIP.pending} className="inline-flex cursor-help"><Info className="w-3.5 h-3.5 text-stone-400" /></span>
+                              <FloatingTip>{CRM_STATUS_TOOLTIP.pending}</FloatingTip>
                             </span>
                             <button
                               onClick={() => handleResendCrm(inq.id)}
