@@ -30,9 +30,11 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  // Lock body scroll while mobile modal is open
+  // Lock body scroll while mobile modal is open (desktop doesn't need it)
   useEffect(() => {
     if (!open) return;
+    const isMobile = window.innerWidth < 640;
+    if (!isMobile) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
