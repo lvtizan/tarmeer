@@ -57,7 +57,7 @@ export default function AdminCompaniesPage() {
   const [profileTotal, setProfileTotal] = useState(0);
   const [profilePage, setProfilePage] = useState(1);
   const [profileStatusFilter, setProfileStatusFilter] = useState<ProfileStatusFilter>('all');
-  const [profileSearch, setProfileSearch] = useState('');
+  const [profileSearch, setProfileSearch] = useState(() => searchParams.get('search') || '');
   const [profileLoading, setProfileLoading] = useState(false);
   const [orderSavingId, setOrderSavingId] = useState<number | null>(null);
   const [directoryOrderSavingKey, setDirectoryOrderSavingKey] = useState<string | null>(null);
@@ -72,7 +72,7 @@ export default function AdminCompaniesPage() {
   const [pendingTotal, setPendingTotal] = useState(0);
   const [pendingPage, setPendingPage] = useState(1);
   const [pendingStatusFilter, setPendingStatusFilter] = useState<ProfileStatusFilter>('pending');
-  const [pendingSearch, setPendingSearch] = useState('');
+  const [pendingSearch, setPendingSearch] = useState(() => searchParams.get('search') || '');
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingBadgeTotal, setPendingBadgeTotal] = useState(0);
   const [pendingSortDir, setPendingSortDir] = useState<SortDir>('desc');
@@ -83,7 +83,7 @@ export default function AdminCompaniesPage() {
   const [companyTotal, setCompanyTotal] = useState(0);
   const [companyPage, setCompanyPage] = useState(1);
   const [claimedFilter, setClaimedFilter] = useState<ClaimedFilter>('all');
-  const [companySearch, setCompanySearch] = useState('');
+  const [companySearch, setCompanySearch] = useState(() => searchParams.get('search') || '');
   const [companyLoading, setCompanyLoading] = useState(false);
   const directoryLoaded = useRef(false);
   const [directoryBadgeTotal, setDirectoryBadgeTotal] = useState(0);
@@ -326,27 +326,7 @@ export default function AdminCompaniesPage() {
         ))}
       </div>
 
-      {/* Global search — syncs across all tabs */}
-      <div className="relative max-w-md">
-        <input
-          type="text" value={profileSearch}
-          onChange={(e) => {
-            const v = e.target.value;
-            setProfileSearch(v); setProfilePage(1);
-            setCompanySearch(v); setCompanyPage(1);
-            setPendingSearch(v); setPendingPage(1);
-          }}
-          placeholder="Search company name, email..."
-          className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-        />
-        {profileSearch && (
-          <button onClick={() => {
-            setProfileSearch(''); setProfilePage(1);
-            setCompanySearch(''); setCompanyPage(1);
-            setPendingSearch(''); setPendingPage(1);
-          }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
-        )}
-      </div>
+      {/* Search removed — use global search bar at top */}
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
@@ -418,17 +398,7 @@ export default function AdminCompaniesPage() {
                 { value: 'unclaimed', label: 'Unclaimed' },
               ]}
             />
-            <div className="relative flex-1 min-w-0">
-              <input
-                type="text" value={companySearch}
-                onChange={(e) => { setCompanySearch(e.target.value); setCompanyPage(1); }}
-                placeholder="Company name..."
-                className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-              />
-              {companySearch && (
-                <button onClick={() => { setCompanySearch(''); setCompanyPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
-              )}
-            </div>
+            {/* search removed — use global search bar */}
           </div>
 
           <AdminDirectoryTable
@@ -462,17 +432,7 @@ export default function AdminCompaniesPage() {
                 { value: 'all', label: 'All' },
               ]}
             />
-            <div className="relative flex-1 min-w-0">
-              <input
-                type="text" value={pendingSearch}
-                onChange={(e) => { setPendingSearch(e.target.value); setPendingPage(1); }}
-                placeholder="Company name, email..."
-                className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-              />
-              {pendingSearch && (
-                <button onClick={() => { setPendingSearch(''); setPendingPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
-              )}
-            </div>
+            {/* search removed — use global search bar */}
           </div>
 
           <AdminApplicationsTable
