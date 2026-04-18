@@ -7,6 +7,7 @@ import Avatar from '../ui/Avatar';
 import SidebarNavLink from '../ui/SidebarNavLink';
 import TarmeerLogo from '../TarmeerLogo';
 import ToastContainer from '../ui/Toast';
+import AdminGlobalSearch from './AdminGlobalSearch';
 
 const ADMIN_LANG_KEY = 'admin_lang';
 type AdminLang = 'en' | 'zh';
@@ -29,9 +30,9 @@ const navItems = [
     infoZh: '管理 Companies / Directory / Applications，包含审批、排序与资料维护。',
   },
   {
-    to: '/admin/inquiries', labelEn: 'Inquiries', labelZh: '询盘', icon: MessageSquare,
+    to: '/admin/inquiries', labelEn: 'Leads', labelZh: '线索', icon: MessageSquare,
     infoEn: 'Review customer leads, update follow-up status, and keep conversion notes synchronized.',
-    infoZh: '查看客户询盘、更新跟进状态，并同步转化备注。',
+    infoZh: '查看客户线索、更新跟进状态，并同步转化备注。',
   },
   {
     to: '/admin/stats', labelEn: 'Stats Report', labelZh: '数据报表', icon: BarChart2, permission: 'can_view_stats' as const,
@@ -184,14 +185,18 @@ export default function AdminLayout() {
   const hideTooltip = () => setTooltip(null);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] flex">
-      {/* Sidebar - match DesignerLayout style */}
-      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-visible">
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-stone-200">
+    <div className="min-h-screen bg-[#faf9f7] flex flex-col">
+      {/* Top header — Logo + Global Search */}
+      <header className="h-16 bg-white border-b border-stone-200 flex items-center gap-4 px-6 sticky top-0 z-30 shrink-0">
+        <div className="w-48 shrink-0">
           <TarmeerLogo />
         </div>
+        <AdminGlobalSearch />
+      </header>
 
+      <div className="flex flex-1 overflow-hidden">
+      {/* Sidebar - match DesignerLayout style */}
+      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-[calc(100vh-4rem)] overflow-visible">
         {/* Navigation - active: left border + light bg like designer */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto overflow-x-visible">
           {filteredNavItems.map((item) => {
@@ -295,6 +300,7 @@ export default function AdminLayout() {
           <Outlet />
         </div>
       </main>
+      </div>
       <ToastContainer />
       {tooltip && (
         <div

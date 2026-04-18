@@ -288,6 +288,17 @@ class AdminApiClient {
     this.clearToken();
   }
 
+  async globalSearch(q: string): Promise<{
+    homeownerLeads: Array<{ id: number; name: string; phone: string; city: string; source: string; crmStatus: string; type: 'homeowner'; createdAt: string }>;
+    companyLeads: Array<{ id: number; name: string; phone: string; city: string; companyName: string; channel: string; companyType: string; crmStatus: string; type: 'company'; createdAt: string }>;
+    users: Array<{ id: number; name: string; phone: string; email: string; role: string; status: string; source: string; createdAt: string }>;
+    registeredCompanies: Array<{ id: number; name: string; phone: string; city: string; status: string; email: string; type: 'registered' }>;
+    directoryCompanies: Array<{ id: number; name: string; phone: string; city: string; type: 'directory' }>;
+  }> {
+    const params = new URLSearchParams({ q });
+    return this.request(`/search?${params}`);
+  }
+
   // Designers
   async getDesigners(params: {
     status?: string;

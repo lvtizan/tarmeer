@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Info, Trash2 } from 'lucide-react';
+import { Info, Trash2, FileDown } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
@@ -142,9 +142,13 @@ export default function AdminInquiriesPage() {
   }, [page, statusFilter, search, viewMode, typeFilter]);
 
   // Clear selection when viewMode or typeFilter changes
+  // Also reset status filter when switching to company tab (contacted/resolved/archived don't apply)
   useEffect(() => {
     setSelected(new Set());
     setPage(1);
+    if (typeFilter === 'company' && ['contacted', 'resolved', 'archived'].includes(statusFilter)) {
+      setStatusFilter('all');
+    }
   }, [viewMode, typeFilter]);
 
   useEffect(() => { loadInquiries(); }, [loadInquiries]);
@@ -224,12 +228,9 @@ export default function AdminInquiriesPage() {
 
   return (
     <div className="space-y-4">
-      {/* Row 1: Title + Export */}
+      {/* Row 1: Title */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-[#2c2c2c]">线索管理</h1>
-        <button onClick={handleExport} className="btn-primary h-9 px-5 text-sm rounded-2xl">
-          导出 Excel
-        </button>
       </div>
 
       {/* Row 2: Type tabs | Status + Search | Active/Deleted toggle — uniform h-9, gap-2 */}
@@ -250,12 +251,15 @@ export default function AdminInquiriesPage() {
 
         <div className="w-px h-5 bg-stone-200" />
 
-        {/* Status dropdown */}
+        {/* Status dropdown — company leads only have new/all */}
         <AdminSelect
           className="!h-9 !px-3 !text-sm"
           value={statusFilter}
           onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
-          options={[
+          options={typeFilter === 'company' ? [
+            { value: 'all', label: '全部状态' },
+            { value: 'new', label: '新询单' },
+          ] : [
             { value: 'all', label: '全部状态' },
             { value: 'new', label: '新询单' },
             { value: 'contacted', label: '已联系' },
@@ -291,17 +295,24 @@ export default function AdminInquiriesPage() {
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
-      {/* Batch action bar */}
+      {/* Batch action bar — only visible when rows are selected */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11">
-          <span className="text-sm text-stone-500">{selected.size} selected</span>
+        <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 h-11">
           {viewMode === 'active' ? (
-            <button
-              onClick={() => setDeleteModalOpen(true)}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
-            >
-              <Trash2 size={14} /> 删除 ({selected.size})
-            </button>
+            <>
+              <button
+                onClick={() => setDeleteModalOpen(true)}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
+              >
+                <Trash2 size={14} /> 删除 ({selected.size})
+              </button>
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-stone-200 bg-white text-stone-600 text-sm font-medium hover:bg-stone-50 transition"
+              >
+                <FileDown size={14} /> 导出 Excel ({selected.size})
+              </button>
+            </>
           ) : (
             <button
               onClick={handleBatchRestore}
@@ -344,8 +355,8 @@ export default function AdminInquiriesPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Phone</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Area</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Source</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{typeFilter === 'company' ? '服务范围' : '面积'}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{typeFilter === 'company' ? '公司名' : '来源'}</th>
                 {typeFilter !== 'company' && <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>}
                 <th className="text-left px-4 py-3 font-medium text-stone-600">CRM</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Date</th>

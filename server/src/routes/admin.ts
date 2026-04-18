@@ -63,6 +63,7 @@ import {
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations } from '../controllers/analyticsAdminController';
+import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
@@ -100,6 +101,7 @@ router.use(requireAdmin);
 
 // Profile
 router.get('/profile', getProfile);
+router.get('/search', globalSearch);
 router.put('/password', changePassword);
 
 // Stats (requires can_view_stats permission)
