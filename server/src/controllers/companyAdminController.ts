@@ -49,10 +49,10 @@ function toStringArray(value: any): string[] {
     if (Array.isArray(node)) return node.flatMap((item) => collect(item));
     if (typeof node === 'object') {
       const direct = [node.url, node.src, node.imageUrl]
-        .filter((v) => typeof v === 'string')
+        .filter((v) => typeof v === 'string' && v)
         .map((v) => normalizeLegacyImageUrl(String(v)));
-      const nested = Object.values(node).flatMap((item) => collect(item));
-      return [...direct, ...nested];
+      if (direct.length > 0) return direct;
+      return Object.values(node).flatMap((item) => collect(item));
     }
     return [];
   };
@@ -857,13 +857,30 @@ export async function updateAdminProject(req: any, res: any) {
     }
 
     // Handle base64 images
-    let persistedImages: string[] | undefined;
+    let finalImages: any[] | undefined;
     if (Array.isArray(images)) {
       const designerId = await resolveDesignerIdForProfile(Number(companyId));
-      persistedImages = await persistProjectImages(images, {
+      const persistedUrls = await persistProjectImages(images, {
         designerId,
         projectId: Number(projectId),
       });
+
+      // Preserve AI tag metadata for existing images
+      const [currentRows] = await pool.execute(
+        'SELECT images FROM projects WHERE id = ? AND company_profile_id = ?',
+        [projectId, companyId]
+      );
+      const currentRaw = (currentRows as any[])[0]?.images;
+      const currentParsed = parseJsonField(currentRaw);
+      const currentArray = Array.isArray(currentParsed) ? currentParsed : [];
+      const metaByUrl = new Map<string, any>();
+      for (const item of currentArray) {
+        if (item && typeof item === 'object' && typeof item.url === 'string') {
+          metaByUrl.set(item.url, item);
+        }
+      }
+
+      finalImages = persistedUrls.map((url) => metaByUrl.get(url) ?? url);
     }
 
     await pool.execute(
@@ -877,7 +894,7 @@ export async function updateAdminProject(req: any, res: any) {
         style ?? null,
         location ?? null,
         year ?? null,
-        JSON.stringify(persistedImages ?? []),
+        JSON.stringify(finalImages ?? []),
         JSON.stringify(tags ?? []),
         projectId,
         companyId,
