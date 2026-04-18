@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Users, Building2, MessageSquare } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
+import CopyButton from '../ui/CopyButton';
 
 type SearchResults = Awaited<ReturnType<typeof adminApi.globalSearch>>;
 type FlatResult =
@@ -101,7 +102,7 @@ export default function AdminGlobalSearch() {
   const showPanel = open && q.length >= 2;
 
   return (
-    <div ref={panelRef} className="relative flex-1 max-w-xl">
+    <div ref={panelRef} className="relative w-[520px]">
       {/* Input */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
@@ -147,9 +148,12 @@ export default function AdminGlobalSearch() {
                     const i = idx++;
                     return (
                       <button key={item.id} onMouseDown={() => navigateTo({ kind: 'homeowner', item })}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
+                        className={`group w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#2c2c2c] truncate">{highlight(item.name || '—', q)}</div>
+                          <div className="flex items-center gap-1 text-sm font-medium text-[#2c2c2c]">
+                            <span className="truncate">{highlight(item.name || '—', q)}</span>
+                            {item.name && <CopyButton text={item.name} />}
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
                             <span>{highlight(item.phone, q)}</span>
                             {item.city && <span>· {item.city}</span>}
@@ -175,11 +179,12 @@ export default function AdminGlobalSearch() {
                     const i = idx++;
                     return (
                       <button key={item.id} onMouseDown={() => navigateTo({ kind: 'company', item })}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
+                        className={`group w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#2c2c2c] truncate">
-                            {highlight(item.name || '—', q)}
-                            {item.companyName && <span className="text-stone-400 font-normal ml-1.5">· {highlight(item.companyName, q)}</span>}
+                          <div className="flex items-center gap-1 text-sm font-medium text-[#2c2c2c]">
+                            <span className="truncate">{highlight(item.name || '—', q)}</span>
+                            {item.name && <CopyButton text={item.name} />}
+                            {item.companyName && <span className="text-stone-400 font-normal ml-1 flex items-center gap-1">· <span className="truncate">{highlight(item.companyName, q)}</span><CopyButton text={item.companyName} /></span>}
                           </div>
                           <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
                             <span>{highlight(item.phone, q)}</span>
@@ -206,9 +211,12 @@ export default function AdminGlobalSearch() {
                     const i = idx++;
                     return (
                       <button key={item.id} onMouseDown={() => navigateTo({ kind: 'user', item })}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
+                        className={`group w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#2c2c2c] truncate">{highlight(item.name, q)}</div>
+                          <div className="flex items-center gap-1 text-sm font-medium text-[#2c2c2c]">
+                            <span className="truncate">{highlight(item.name, q)}</span>
+                            <CopyButton text={item.name} />
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
                             {item.phone && <span>{highlight(item.phone, q)}</span>}
                             <span className="text-stone-400">· {highlight(item.email, q)}</span>
@@ -236,9 +244,12 @@ export default function AdminGlobalSearch() {
                     const i = idx++;
                     return (
                       <button key={`cp-${item.id}`} onMouseDown={() => navigateTo({ kind: 'registeredCompany', item })}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
+                        className={`group w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#2c2c2c] truncate">{highlight(item.name, q)}</div>
+                          <div className="flex items-center gap-1 text-sm font-medium text-[#2c2c2c]">
+                            <span className="truncate">{highlight(item.name, q)}</span>
+                            <CopyButton text={item.name} />
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
                             {item.phone && <span>{highlight(item.phone, q)}</span>}
                             {item.city && <span>· {item.city}</span>}
@@ -252,9 +263,12 @@ export default function AdminGlobalSearch() {
                     const i = idx++;
                     return (
                       <button key={`uc-${item.id}`} onMouseDown={() => navigateTo({ kind: 'directoryCompany', item })}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
+                        className={`group w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-stone-50 transition ${cursor === i ? 'bg-stone-50' : ''}`}>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#2c2c2c] truncate">{highlight(item.name, q)}</div>
+                          <div className="flex items-center gap-1 text-sm font-medium text-[#2c2c2c]">
+                            <span className="truncate">{highlight(item.name, q)}</span>
+                            <CopyButton text={item.name} />
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
                             {item.phone && <span>{highlight(item.phone, q)}</span>}
                             {item.city && <span>· {item.city}</span>}

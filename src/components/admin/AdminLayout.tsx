@@ -186,12 +186,13 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7] flex flex-col">
-      {/* Top header — Logo + Global Search */}
-      <header className="h-16 bg-white border-b border-stone-200 flex items-center gap-4 px-6 sticky top-0 z-30 shrink-0">
-        <div className="w-48 shrink-0">
-          <TarmeerLogo />
+      {/* Top header — Logo | Search (centered) | spacer */}
+      <header className="h-16 bg-white border-b border-stone-200 grid grid-cols-[16rem_1fr_16rem] items-center px-6 sticky top-0 z-30 shrink-0">
+        <TarmeerLogo />
+        <div className="flex justify-center">
+          <AdminGlobalSearch />
         </div>
-        <AdminGlobalSearch />
+        <div />
       </header>
 
       <div className="flex flex-1 overflow-hidden">

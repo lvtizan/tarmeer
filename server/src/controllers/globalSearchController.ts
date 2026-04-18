@@ -58,22 +58,22 @@ export async function globalSearch(req: any, res: any) {
          ORDER BY created_at DESC LIMIT 5`,
         [like, like, like]
       ),
-      // Registered companies
+      // Registered companies (column is company_name, not name)
       pool.execute(
-        `SELECT cp.id, cp.name, cp.phone, cp.city, cp.status, u.email
+        `SELECT cp.id, cp.company_name AS name, cp.phone, cp.city, cp.status, u.email
          FROM company_profiles cp
          LEFT JOIN users u ON u.id = cp.user_id
          WHERE cp.deleted_at IS NULL
-           AND (cp.name LIKE ? OR cp.phone LIKE ? OR u.email LIKE ?)
+           AND (cp.company_name LIKE ? OR cp.phone LIKE ? OR u.email LIKE ?)
          ORDER BY cp.created_at DESC LIMIT 5`,
         [like, like, like]
       ),
-      // Directory companies
+      // Directory companies (column is name_en, not name)
       pool.execute(
-        `SELECT id, name, phone, city, 'directory' as source
+        `SELECT id, name_en AS name, phone, city, 'directory' as source
          FROM uae_companies
-         WHERE name LIKE ? OR phone LIKE ?
-         ORDER BY name LIMIT 5`,
+         WHERE name_en LIKE ? OR phone LIKE ?
+         ORDER BY name_en LIMIT 5`,
         [like, like]
       ),
     ]);
