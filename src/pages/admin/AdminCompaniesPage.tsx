@@ -299,43 +299,38 @@ export default function AdminCompaniesPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-stone-100 rounded-lg p-1 w-fit">
-        {([
-          ['companies', `Companies (${profileBadgeTotal})`],
-          ['directory', `Directory (${directoryBadgeTotal})`],
-          ['applications', `Applications (${pendingBadgeTotal})`],
-        ] as [Tab, string][]).map(([t, label]) => (
-          <button
-            key={t}
-            onClick={() => {
-              setTab(t);
-              if (t === 'applications') {
-                adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
-              }
-            }}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === t ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
-          >
-            <span className="relative inline-flex items-start">
-              {label}
-              {t === 'applications' && hasNewApplications && (
-                <span className="absolute -top-0.5 -right-2.5 inline-block w-2 h-2 rounded-full bg-red-500" />
-              )}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Tabs + inline filters */}
+      <div className="flex items-center gap-3">
+        <div className="flex gap-1 bg-stone-100 rounded-lg p-1">
+          {([
+            ['companies', `Companies (${profileBadgeTotal})`],
+            ['directory', `Directory (${directoryBadgeTotal})`],
+            ['applications', `Applications (${pendingBadgeTotal})`],
+          ] as [Tab, string][]).map(([t, label]) => (
+            <button
+              key={t}
+              onClick={() => {
+                setTab(t);
+                if (t === 'applications') {
+                  adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
+                }
+              }}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === t ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
+            >
+              <span className="relative inline-flex items-start">
+                {label}
+                {t === 'applications' && hasNewApplications && (
+                  <span className="absolute -top-0.5 -right-2.5 inline-block w-2 h-2 rounded-full bg-red-500" />
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
 
-      {/* Search removed — use global search bar at top */}
-
-      {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
-
-      {/* ── Companies Tab ── */}
-      {tab === 'companies' && (
-        <>
-          <div className="flex items-center gap-2">
+        <div className="ml-auto w-36">
+          {tab === 'companies' && (
             <AdminSelect
-              className="!h-9 !px-3 !text-sm"
+              className="!h-9 !px-3 !text-sm !rounded-lg"
               value={profileStatusFilter}
               onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
               options={[
@@ -345,8 +340,42 @@ export default function AdminCompaniesPage() {
                 { value: 'rejected', label: 'Rejected' },
               ]}
             />
-          </div>
+          )}
+          {tab === 'directory' && (
+            <AdminSelect
+              className="!h-9 !px-3 !text-sm !rounded-lg"
+              value={claimedFilter}
+              onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'claimed', label: 'Claimed' },
+                { value: 'unclaimed', label: 'Unclaimed' },
+              ]}
+            />
+          )}
+          {tab === 'applications' && (
+            <AdminSelect
+              className="!h-9 !px-3 !text-sm !rounded-lg"
+              value={pendingStatusFilter}
+              onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' },
+                { value: 'all', label: 'All' },
+              ]}
+            />
+          )}
+        </div>
+      </div>
 
+      {/* Search removed — use global search bar at top */}
+
+      {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
+
+      {/* ── Companies Tab ── */}
+      {tab === 'companies' && (
+        <>
           <AdminCompaniesTableTab
             profiles={profiles}
             loading={profileLoading}
@@ -387,20 +416,6 @@ export default function AdminCompaniesPage() {
       {/* ── Directory Tab ── */}
       {tab === 'directory' && (
         <>
-          <div className="flex items-center gap-2">
-            <AdminSelect
-              className="!h-9 !px-3 !text-sm"
-              value={claimedFilter}
-              onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'claimed', label: 'Claimed' },
-                { value: 'unclaimed', label: 'Unclaimed' },
-              ]}
-            />
-            {/* search removed — use global search bar */}
-          </div>
-
           <AdminDirectoryTable
             companies={companies}
             loading={companyLoading}
@@ -420,21 +435,6 @@ export default function AdminCompaniesPage() {
       {/* ── Applications Tab ── */}
       {tab === 'applications' && (
         <>
-          <div className="flex items-center gap-2">
-            <AdminSelect
-              className="!h-9 !px-3 !text-sm"
-              value={pendingStatusFilter}
-              onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
-              options={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' },
-                { value: 'all', label: 'All' },
-              ]}
-            />
-            {/* search removed — use global search bar */}
-          </div>
-
           <AdminApplicationsTable
             profiles={pendingProfiles}
             loading={pendingLoading}
