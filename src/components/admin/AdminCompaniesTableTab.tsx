@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import SmartImage from '../ui/SmartImage';
 import { TableSpinner } from '../ui/Spinner';
 import { Trash2 } from 'lucide-react';
+import CopyButton from '../ui/CopyButton';
 
 interface CompanyProfileRecord {
   id: number;
@@ -200,6 +201,7 @@ export default function AdminCompaniesTableTab({
                       </div>
                     )}
                     <span className="font-medium text-stone-800">{c.company_name}</span>
+                    <CopyButton text={c.company_name} />
                   </div>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>

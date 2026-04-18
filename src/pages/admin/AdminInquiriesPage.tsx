@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Info, Trash2, FileDown } from 'lucide-react';
+import CopyButton from '../../components/ui/CopyButton';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
@@ -108,7 +109,7 @@ export default function AdminInquiriesPage() {
     const s = searchParams.get('status');
     return s === 'new' || s === 'contacted' || s === 'resolved' || s === 'archived' ? s : 'all';
   });
-  const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [search] = useState(() => searchParams.get('search') || '');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(() => {
     const t = searchParams.get('type');
     return t === 'homeowner' || t === 'company' ? t : 'homeowner';
@@ -268,13 +269,7 @@ export default function AdminInquiriesPage() {
           ]}
         />
 
-        {/* Search */}
-        <input
-          type="text" value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder="搜索姓名或电话..."
-          className="h-9 flex-1 min-w-0 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-        />
+        {/* Search removed — use global search bar at top */}
 
         {/* Active / Deleted toggle */}
         <div className="flex items-center gap-0.5 h-9 bg-stone-100 rounded-2xl px-0.5">
@@ -371,14 +366,15 @@ export default function AdminInquiriesPage() {
                 <>
                   <tr
                     key={inq.id}
-                    className="border-b border-stone-100 hover:bg-stone-50 transition"
+                    className="group border-b border-stone-100 hover:bg-stone-50 transition"
                   >
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(inq.id)} onChange={() => toggleSelect(inq.id)} />
                     </td>
                     <td className="px-4 py-3 font-medium text-stone-800">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         {inq.name || <span className="text-stone-400">—</span>}
+                        {inq.name && <CopyButton text={inq.name} />}
                         {inq.deleted_at && (
                           <span onClick={(e) => e.stopPropagation()}>
                             <FloatingTip icon={<Info className="w-3.5 h-3.5 text-red-400" />}>

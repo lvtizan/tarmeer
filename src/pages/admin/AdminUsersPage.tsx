@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Pencil, Shield, X, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
+import CopyButton from '../../components/ui/CopyButton';
 import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
 import UserEditModal from '../../components/admin/UserEditModal';
 
@@ -222,7 +223,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page') || '1')));
-  const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [search] = useState(() => searchParams.get('search') || '');
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
@@ -309,18 +310,7 @@ export default function AdminUsersPage() {
         <span className="text-sm text-stone-500">{total} total</span>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-[200px]">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Name or email..."
-            className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-          />
-        </div>
-      </div>
+      {/* Filters — search removed, use global search bar above */}
 
       {/* Batch action bar */}
       {selectedIds.size > 0 && (
@@ -390,7 +380,10 @@ export default function AdminUsersPage() {
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-stone-800">{user.full_name}</div>
+                    <div className="flex items-center gap-1 font-medium text-stone-800">
+                      <span>{user.full_name}</span>
+                      <CopyButton text={user.full_name} />
+                    </div>
                     {user.city && <div className="text-xs text-stone-400">{user.city}</div>}
                   </td>
                   <td className="px-4 py-3 text-stone-600">{user.email}</td>
