@@ -8,7 +8,6 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
   ComposedChart, Line,
 } from 'recharts';
-import { useNavigate } from 'react-router-dom';
 import type { AnalyticsOverview, VisitorRecord } from '../../lib/adminApi';
 
 /* ─── Types ─── */
@@ -20,6 +19,7 @@ interface DetailItem {
   city?: string;
   projects?: number;
   company?: string;
+  area_range?: string;
 }
 
 interface DayRow {
@@ -171,6 +171,22 @@ const COLOR_INQUIRY = '#6b6b6b';
 
 const PIE_COLORS = ['#B8864A', '#5b7fcb', '#6b6b6b', '#2c6e49', '#e0a86e', '#8b5cf6', '#14b8a6', '#f59e0b'];
 
+/* ─── Page path → readable name ─── */
+function getPageDisplayName(path: string): string {
+  if (path === '/') return '首页';
+  if (path === '/companies') return '装企列表';
+  if (path === '/portfolio') return '作品集';
+  if (path === '/for-companies') return '装企注册';
+  if (path === '/contact') return '联系我们';
+  if (path === '/faq') return 'FAQ';
+  if (path.startsWith('/companies/')) {
+    const slug = path.replace('/companies/', '');
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  if (path.startsWith('/projects/')) return '项目详情';
+  return path;
+}
+
 /* ─── Custom Recharts Tooltip ─── */
 
 interface ChartTooltipProps {
@@ -189,14 +205,40 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   const row = payload[0]?.payload;
   if (!row) return null;
 
-  const sections: Array<{ label: string; color: string; count: number; items: DetailItem[] }> = [
-    { label: '业主', color: COLOR_HOMEOWNER, count: row.new_homeowners, items: row.homeowner_list || [] },
-    { label: '装企', color: COLOR_COMPANY, count: row.new_companies, items: row.company_list || [] },
-    { label: '询盘', color: COLOR_INQUIRY, count: row.new_inquiries, items: row.inquiry_list || [] },
+  const sections: Array<{ label: string; type: 'homeowner' | 'company' | 'inquiry'; color: string; count: number; items: DetailItem[] }> = [
+    { label: '业主', type: 'homeowner', color: COLOR_HOMEOWNER, count: row.new_homeowners, items: row.homeowner_list || [] },
+    { label: '装企', type: 'company', color: COLOR_COMPANY, count: row.new_companies, items: row.company_list || [] },
+    { label: '询盘', type: 'inquiry', color: COLOR_INQUIRY, count: row.new_inquiries, items: row.inquiry_list || [] },
   ];
 
+  const formatItem = (item: DetailItem, type: 'homeowner' | 'company' | 'inquiry'): string => {
+    if (type === 'homeowner') {
+      // name (city) · phone/email
+      let s = item.name;
+      if (item.city) s += ` (${item.city})`;
+      const contact = item.phone || item.email;
+      if (contact) s += ` · ${contact}`;
+      return s;
+    }
+    if (type === 'company') {
+      // name (city) · phone/email · N projects
+      let s = item.name;
+      if (item.city) s += ` (${item.city})`;
+      const contact = item.phone || item.email;
+      if (contact) s += ` · ${contact}`;
+      if (item.projects !== undefined && item.projects !== null) s += ` · ${item.projects} projects`;
+      return s;
+    }
+    // inquiry: name · phone · city · area_range
+    let s = item.name;
+    if (item.phone) s += ` · ${item.phone}`;
+    if (item.city) s += ` · ${item.city}`;
+    if (item.area_range) s += ` · ${item.area_range}`;
+    return s;
+  };
+
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl shadow-lg px-4 py-3 text-xs max-w-[320px]">
+    <div className="bg-white border border-stone-200 rounded-2xl shadow-lg px-4 py-3 text-xs max-w-[380px]">
       <div className="font-semibold text-[#2c2c2c] mb-2 text-[13px]">{label}</div>
       {sections.map((s) => (
         <div key={s.label} className="mb-2 last:mb-0">
@@ -207,7 +249,7 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
           {s.items.length > 0 && (
             <div className="ml-4 text-[#6b6b6b]">
               {s.items.slice(0, 8).map((item, i) => (
-                <div key={i} className="truncate">{item.name}{item.city ? ` (${item.city})` : ''}</div>
+                <div key={i} className="truncate">{formatItem(item, s.type)}</div>
               ))}
               {s.items.length > 8 && <div className="text-stone-400">+{s.items.length - 8} more</div>}
             </div>
@@ -232,6 +274,7 @@ export default function AdminAnalyticsPage() {
   const { t } = useAdminT();
   const { hasPermission } = useAdmin();
   const [activeTab, setActiveTab] = useState<'registration' | 'visitor'>('registration');
+  const [days, setDays] = useState<DaysOption>(30);
 
   if (!hasPermission('can_view_stats')) {
     return <div className="text-[#6b6b6b]">{t('You do not have permission to view analytics.', '您没有查看分析数据的权限。')}</div>;
@@ -242,33 +285,55 @@ export default function AdminAnalyticsPage() {
       {/* Page title */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Analytics', '数据分析')}</h1>
+        <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="text-sm text-[#B8864A] hover:underline">
+          Google Analytics ↗
+        </a>
       </div>
 
-      {/* Tab buttons */}
-      <div className="flex items-center gap-1 mb-6">
-        <button
-          onClick={() => setActiveTab('registration')}
-          className={`px-5 py-2 rounded-2xl text-sm font-medium transition-colors ${
-            activeTab === 'registration'
-              ? 'bg-[#B8864A] text-white shadow-sm'
-              : 'bg-white border border-stone-200 text-[#6b6b6b] hover:text-[#2c2c2c]'
-          }`}
-        >
-          {t('Registration Data', '注册数据')}
-        </button>
-        <button
-          onClick={() => setActiveTab('visitor')}
-          className={`px-5 py-2 rounded-2xl text-sm font-medium transition-colors ${
-            activeTab === 'visitor'
-              ? 'bg-[#B8864A] text-white shadow-sm'
-              : 'bg-white border border-stone-200 text-[#6b6b6b] hover:text-[#2c2c2c]'
-          }`}
-        >
-          {t('Visitor Data', '访客数据')}
-        </button>
+      {/* Tab buttons + time range on same row */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setActiveTab('registration')}
+            className={`px-5 py-2 rounded-2xl text-sm font-medium transition-colors ${
+              activeTab === 'registration'
+                ? 'bg-[#B8864A] text-white shadow-sm'
+                : 'bg-white border border-stone-200 text-[#6b6b6b] hover:text-[#2c2c2c]'
+            }`}
+          >
+            {t('Registration Data', '注册数据')}
+          </button>
+          <button
+            onClick={() => setActiveTab('visitor')}
+            className={`px-5 py-2 rounded-2xl text-sm font-medium transition-colors ${
+              activeTab === 'visitor'
+                ? 'bg-[#B8864A] text-white shadow-sm'
+                : 'bg-white border border-stone-200 text-[#6b6b6b] hover:text-[#2c2c2c]'
+            }`}
+          >
+            {t('Visitor Data', '访客数据')}
+          </button>
+        </div>
+        {activeTab === 'registration' && (
+          <div className="flex items-center gap-1 bg-stone-100 rounded-2xl p-1">
+            {DAYS_OPTIONS.map((d) => (
+              <button
+                key={d}
+                onClick={() => setDays(d)}
+                className={`px-4 py-1.5 rounded-2xl text-xs font-medium transition-colors ${
+                  days === d
+                    ? 'bg-white text-[#2c2c2c] shadow-sm'
+                    : 'text-[#6b6b6b] hover:text-[#2c2c2c]'
+                }`}
+              >
+                {t(`${d} days`, `${d}天`)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {activeTab === 'registration' && <RegistrationTab />}
+      {activeTab === 'registration' && <RegistrationTab days={days} />}
       {activeTab === 'visitor' && <VisitorTab />}
     </div>
   );
@@ -295,7 +360,6 @@ const VISITOR_PAGE_SIZE = 50;
 
 function VisitorTab() {
   const { t } = useAdminT();
-  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
@@ -452,7 +516,7 @@ function VisitorTab() {
                 margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
                 onClick={(state: any) => {
                   if (state?.activePayload?.[0]?.payload?.slug) {
-                    navigate(`/admin/companies/${state.activePayload[0].payload.slug}`);
+                    window.open(`/companies/${state.activePayload[0].payload.slug}`, '_blank');
                   }
                 }}
               >
@@ -461,30 +525,55 @@ function VisitorTab() {
                 <YAxis
                   type="category"
                   dataKey="company_name"
-                  width={160}
+                  width={200}
                   tick={{ fontSize: 11, fill: '#6b6b6b' }}
-                  tickFormatter={(v: string) => v.length > 22 ? v.slice(0, 20) + '...' : v}
+                  tickFormatter={(v: string) => {
+                    // Convert slug-like names to readable: replace hyphens, capitalize words
+                    const readable = v.includes('-') ? v.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : v;
+                    return readable;
+                  }}
                 />
                 <Tooltip
                   contentStyle={{ borderRadius: 16, border: '1px solid #e7e5e4', fontSize: 12 }}
                   formatter={(value: any) => [value, t('Visitors', '访客数')]}
                   labelFormatter={(label: any) => String(label)}
                 />
-                <Bar dataKey="unique_visitors" fill="#B8864A" radius={[0, 4, 4, 0]} cursor="pointer" />
+                <Bar dataKey="unique_visitors" fill="#B8864A" radius={[0, 4, 4, 0]} cursor="pointer" barSize={16} />
               </BarChart>
             </ResponsiveContainer>
-            {/* City breakdown tags */}
-            <div className="mt-4 space-y-2">
-              {companies.filter((c) => c.cities && c.cities.length > 0).slice(0, 5).map((c) => (
-                <div key={c.slug} className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-medium text-[#2c2c2c] min-w-[140px] truncate">{c.company_name}</span>
-                  {c.cities.slice(0, 5).map((city, ci) => (
-                    <span key={ci} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 text-xs text-[#6b6b6b]">
-                      <MapPin className="w-3 h-3" />{city.city || t('Unknown', '未知')} ({city.visitors})
-                    </span>
-                  ))}
-                </div>
-              ))}
+            {/* Company list with visitor count + city breakdown inline */}
+            <div className="mt-4 space-y-3">
+              {companies.map((c) => {
+                const displayName = c.company_name.includes('-')
+                  ? c.company_name.replace(/-/g, ' ').replace(/\b\w/g, (ch: string) => ch.toUpperCase())
+                  : c.company_name;
+                return (
+                  <div key={c.slug}>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`/companies/${c.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-[#2c2c2c] hover:text-[#B8864A] hover:underline"
+                      >
+                        {displayName}
+                      </a>
+                      <span className="text-xs text-[#6b6b6b]">— {c.unique_visitors} {t('visitors', '访客')}</span>
+                    </div>
+                    {c.cities && c.cities.length > 0 && (
+                      <div className="ml-4 text-xs text-[#6b6b6b] mt-0.5">
+                        <MapPin className="w-3 h-3 inline mr-1" />
+                        {c.cities.slice(0, 6).map((city, ci) => (
+                          <span key={ci}>
+                            {ci > 0 && ' · '}
+                            {city.city || t('Unknown', '未知')} ({city.visitors})
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
@@ -519,7 +608,20 @@ function VisitorTab() {
                     <span className="text-xs text-[#6b6b6b] pl-1.5">{i + 1}</span>
                   )}
                 </td>
-                <td className="px-5 py-2.5 text-[#2c2c2c] font-mono text-xs truncate max-w-[400px]">{p.page_path}</td>
+                <td className="px-5 py-2.5 text-xs truncate max-w-[400px]">
+                  <a
+                    href={p.page_path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#2c2c2c] hover:text-[#B8864A] hover:underline"
+                    title={p.page_path}
+                  >
+                    {getPageDisplayName(p.page_path)}
+                  </a>
+                  {getPageDisplayName(p.page_path) !== p.page_path && (
+                    <span className="ml-1.5 text-stone-400 font-mono">{p.page_path}</span>
+                  )}
+                </td>
                 <td className="px-5 py-2.5 text-right font-medium text-[#2c2c2c]">{p.page_views.toLocaleString()}</td>
                 <td className="px-5 py-2.5 text-right font-medium text-[#6b6b6b]">{p.visitors.toLocaleString()}</td>
               </tr>
@@ -529,12 +631,22 @@ function VisitorTab() {
       </div>
 
       {/* Visitor IP List (paginated) */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+      <div id="visitor-ips" className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Visitor IPs', '访客 IP 列表')}</h2>
             <p className="text-xs text-[#6b6b6b] mt-0.5">{t(`${visitorTotal} total records`, `共 ${visitorTotal} 条记录`)}</p>
           </div>
+          <a
+            href="#visitor-ips"
+            className="text-xs text-[#B8864A] hover:underline"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('visitor-ips')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            {t('View All', '查看全部')} ↓
+          </a>
         </div>
         <table className="w-full text-sm">
           <thead>
@@ -610,9 +722,8 @@ function VisitorTab() {
 
 /* ─── Tab 1: Registration Data ─── */
 
-function RegistrationTab() {
+function RegistrationTab({ days }: { days: DaysOption }) {
   const { t } = useAdminT();
-  const [days, setDays] = useState<DaysOption>(30);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState<'bar' | 'area'>('bar');
@@ -664,25 +775,6 @@ function RegistrationTab() {
 
   return (
     <div className="space-y-6">
-      {/* Time range selector */}
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-1 bg-stone-100 rounded-2xl p-1">
-          {DAYS_OPTIONS.map((d) => (
-            <button
-              key={d}
-              onClick={() => setDays(d)}
-              className={`px-4 py-1.5 rounded-2xl text-xs font-medium transition-colors ${
-                days === d
-                  ? 'bg-white text-[#2c2c2c] shadow-sm'
-                  : 'text-[#6b6b6b] hover:text-[#2c2c2c]'
-              }`}
-            >
-              {t(`${d} days`, `${d}天`)}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <SummaryCard
