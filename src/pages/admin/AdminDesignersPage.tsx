@@ -27,7 +27,7 @@ export default function AdminDesignersPage() {
     const status = searchParams.get('status');
     return status === 'pending' || status === 'approved' || status === 'rejected' ? status : 'all';
   });
-  const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [search, _setSearch] = useState(() => searchParams.get('search') || '');
   const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>(() => {
     const deleted = searchParams.get('deleted');
     return deleted === 'deleted' || deleted === 'all' ? deleted : 'active';
@@ -397,15 +397,7 @@ export default function AdminDesignersPage() {
             { value: 'all', label: t('All', '全部') },
           ]}
         />
-        <div className="flex-1 min-w-[200px]">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder={t('Search by name, email, or city...', '按名称、邮箱或城市搜索...')}
-            className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-          />
-        </div>
+        {/* Search removed — use global search bar */}
       </div>
 
       {/* Batch action bar */}

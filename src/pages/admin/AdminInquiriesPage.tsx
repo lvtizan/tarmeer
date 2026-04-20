@@ -110,7 +110,7 @@ export default function AdminInquiriesPage() {
     const s = searchParams.get('status');
     return s === 'new' || s === 'contacted' || s === 'resolved' || s === 'archived' ? s : 'all';
   });
-  const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [search, _setSearch] = useState(() => searchParams.get('search') || '');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(() => {
     const t = searchParams.get('type');
     return t === 'homeowner' || t === 'company' ? t : 'homeowner';
@@ -282,14 +282,6 @@ export default function AdminInquiriesPage() {
             { value: 'resolved', label: t('Resolved', '已解决') },
             { value: 'archived', label: t('Archived', '已归档') },
           ]}
-        />
-
-        {/* Search */}
-        <input
-          type="text" value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder={t('Search name or phone...', '搜索姓名或电话...')}
-          className="h-9 flex-1 min-w-0 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
         />
 
         {/* Active / Deleted toggle */}

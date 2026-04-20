@@ -236,7 +236,7 @@ export default function AdminLayout() {
       {/* Sidebar - match DesignerLayout style */}
       <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-visible">
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-stone-200">
+        <div className="h-16 flex items-center px-6">
           <TarmeerLogo />
         </div>
 
@@ -308,7 +308,7 @@ export default function AdminLayout() {
         </nav>
 
         {/* User info - match designer: Avatar + Back to Home / Log out */}
-        <div className="p-4 border-t border-stone-200">
+        <div className="p-4">
           <div className="flex items-center gap-3 mb-3">
             <Avatar name={admin.fullName} size="md" />
             <div>
@@ -341,16 +341,16 @@ export default function AdminLayout() {
       <main className="flex-1 overflow-auto">
         <AdminLangContext.Provider value={{ lang, t }}>
           {/* Gmail-style top search bar */}
-          <div className="sticky top-0 z-30 bg-[#faf9f7] border-b border-stone-100 px-6 md:px-10 py-3">
-            <div ref={globalRef} className="relative max-w-2xl">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <div className="sticky top-0 z-30 bg-[#faf9f7] px-6 md:px-10 py-4 flex justify-center">
+            <div ref={globalRef} className="relative w-full max-w-xl">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
               <input
                 type="text"
                 value={globalQuery}
                 onChange={(e) => setGlobalQuery(e.target.value)}
                 onFocus={() => { if (globalResults) setGlobalOpen(true); }}
                 placeholder={t('Search homeowners, companies, inquiries...', '搜索业主、装企、询盘...')}
-                className="h-10 w-full pl-10 pr-10 rounded-2xl border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
+                className="h-11 w-full pl-11 pr-10 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
               />
               {globalQuery && (
                 <button onClick={() => { setGlobalQuery(''); setGlobalResults(null); setGlobalOpen(false); }} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">

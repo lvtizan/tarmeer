@@ -301,55 +301,34 @@ export default function AdminCompaniesPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-stone-800">{t('Companies', '公司')}</h1>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-stone-100 rounded-lg p-1 w-fit">
-        {([
-          ['companies', `${t('Companies', '公司')} (${profileBadgeTotal})`],
-          ['directory', `${t('Directory', '目录')} (${directoryBadgeTotal})`],
-          ['applications', `${t('Applications', '申请')} (${pendingBadgeTotal})`],
-        ] as [Tab, string][]).map(([tabKey, label]) => (
-          <button
-            key={tabKey}
-            onClick={() => {
-              setTab(tabKey);
-              if (tabKey === 'applications') {
-                adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
-              }
-            }}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === tabKey ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
-          >
-            <span className="relative inline-flex items-start">
-              {label}
-              {tabKey === 'applications' && hasNewApplications && (
-                <span className="absolute -top-0.5 -right-2.5 inline-block w-2 h-2 rounded-full bg-red-500" />
-              )}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Toolbar: search + filters */}
+      {/* Tabs + filter on same row */}
       <div className="flex items-center gap-2">
-        <div className="relative max-w-md flex-1">
-          <input
-            type="text" value={profileSearch}
-            onChange={(e) => {
-              const v = e.target.value;
-              setProfileSearch(v); setProfilePage(1);
-              setCompanySearch(v); setCompanyPage(1);
-              setPendingSearch(v); setPendingPage(1);
-            }}
-            placeholder={t('Search company name, email...', '搜索公司名称、邮箱...')}
-            className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
-          />
-          {profileSearch && (
-            <button onClick={() => {
-              setProfileSearch(''); setProfilePage(1);
-              setCompanySearch(''); setCompanyPage(1);
-              setPendingSearch(''); setPendingPage(1);
-            }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs">✕</button>
-          )}
+        <div className="flex gap-1 bg-stone-100 rounded-lg p-1">
+          {([
+            ['companies', `${t('Companies', '公司')} (${profileBadgeTotal})`],
+            ['directory', `${t('Directory', '目录')} (${directoryBadgeTotal})`],
+            ['applications', `${t('Applications', '申请')} (${pendingBadgeTotal})`],
+          ] as [Tab, string][]).map(([tabKey, label]) => (
+            <button
+              key={tabKey}
+              onClick={() => {
+                setTab(tabKey);
+                if (tabKey === 'applications') {
+                  adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
+                }
+              }}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === tabKey ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
+            >
+              <span className="relative inline-flex items-start">
+                {label}
+                {tabKey === 'applications' && hasNewApplications && (
+                  <span className="absolute -top-0.5 -right-2.5 inline-block w-2 h-2 rounded-full bg-red-500" />
+                )}
+              </span>
+            </button>
+          ))}
         </div>
+        <div className="flex-1" /> {/* spacer to push filter right */}
         {tab === 'companies' && (
           <AdminSelect
             className="!h-9 !px-3 !text-sm"
