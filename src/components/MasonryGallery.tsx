@@ -199,14 +199,14 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     aria-hidden
                     className="absolute inset-0 w-full h-full object-cover scale-110 blur-lg"
                   />
-                  {/* Thumb image */}
+                  {/* Main image — use medium variant for quality, blur as placeholder */}
                   <img
-                    src={resolveVariantUrl(item.url, 'thumb')}
+                    src={resolveVariantUrl(item.url, 'medium')}
                     alt={item.title || `${item.categoryName} project`}
                     loading="lazy"
                     className="w-full aspect-[4/3] object-cover transition-all duration-500 group-hover:scale-105 relative z-10"
                     onLoad={(e) => {
-                      // Hide blur placeholder once thumb loads
+                      // Hide blur placeholder once image loads
                       const blurEl = e.currentTarget.previousElementSibling as HTMLElement | null;
                       if (blurEl) blurEl.style.display = 'none';
 
@@ -223,7 +223,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                         return;
                       }
 
-                      if (w < 50 || h < 37) {
+                      if (w < 200 || h < 150) {
                         container.classList.add('hidden');
                         return;
                       }
@@ -246,7 +246,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     }}
                     onError={(e) => {
                       const current = e.currentTarget;
-                      // Fall back to original image if thumb doesn't exist
+                      // Fall back to original image if medium variant doesn't exist
                       if (!current.dataset.fallback) {
                         current.dataset.fallback = '1';
                         current.src = primarySrc;
