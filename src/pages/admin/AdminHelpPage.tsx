@@ -1,3 +1,5 @@
+import { useAdminT } from '../../hooks/useAdminLang';
+
 const steps = [
   {
     title: '1) 登录后台',
@@ -37,17 +39,18 @@ const faq = [
 ];
 
 export default function AdminHelpPage() {
+  const { t } = useAdminT();
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-stone-800">Help Center</h1>
+        <h1 className="text-2xl font-bold text-stone-800">{t('Help Center', '帮助中心')}</h1>
         <p className="mt-1 text-sm text-stone-500">
-          后台使用说明与标准操作流程。建议新同事先看“快速上手”。
+          {t('Admin usage guide and standard operating procedures. New team members should start with Quick Start.', '后台使用说明与标准操作流程。建议新同事先看快速上手。')}
         </p>
       </div>
 
       <section className="rounded-xl border border-stone-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-stone-800">快速上手</h2>
+        <h2 className="text-base font-semibold text-stone-800">{t('Quick Start', '快速上手')}</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {steps.map((item) => (
             <div key={item.title} className="rounded-lg border border-stone-100 bg-stone-50 p-4">
@@ -59,36 +62,36 @@ export default function AdminHelpPage() {
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-stone-800">核心页面说明</h2>
+        <h2 className="text-base font-semibold text-stone-800">{t('Core Pages', '核心页面说明')}</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-stone-200 text-left text-stone-500">
-                <th className="py-2 pr-4">菜单</th>
-                <th className="py-2 pr-4">用途</th>
-                <th className="py-2">常见操作</th>
+                <th className="py-2 pr-4">{t('Menu', '菜单')}</th>
+                <th className="py-2 pr-4">{t('Purpose', '用途')}</th>
+                <th className="py-2">{t('Common Actions', '常见操作')}</th>
               </tr>
             </thead>
             <tbody className="text-stone-700">
               <tr className="border-b border-stone-100">
-                <td className="py-3 pr-4 font-medium">Users</td>
-                <td className="py-3 pr-4">账号管理</td>
-                <td className="py-3">查看资料、调整状态与角色</td>
+                <td className="py-3 pr-4 font-medium">{t('Users', '用户')}</td>
+                <td className="py-3 pr-4">{t('Account Management', '账号管理')}</td>
+                <td className="py-3">{t('View profiles, adjust status and roles', '查看资料、调整状态与角色')}</td>
               </tr>
               <tr className="border-b border-stone-100">
-                <td className="py-3 pr-4 font-medium">Companies</td>
-                <td className="py-3 pr-4">公司实体管理</td>
-                <td className="py-3">审核、绑定、排序、查看公司详情</td>
+                <td className="py-3 pr-4 font-medium">{t('Companies', '公司')}</td>
+                <td className="py-3 pr-4">{t('Company Entity Management', '公司实体管理')}</td>
+                <td className="py-3">{t('Review, bind, sort, view company details', '审核、绑定、排序、查看公司详情')}</td>
               </tr>
               <tr className="border-b border-stone-100">
-                <td className="py-3 pr-4 font-medium">Inquiries</td>
-                <td className="py-3 pr-4">咨询线索</td>
-                <td className="py-3">跟进状态、写管理备注、导出</td>
+                <td className="py-3 pr-4 font-medium">{t('Inquiries', '询盘')}</td>
+                <td className="py-3 pr-4">{t('Inquiry Leads', '咨询线索')}</td>
+                <td className="py-3">{t('Follow up status, write admin notes, export', '跟进状态、写管理备注、导出')}</td>
               </tr>
               <tr>
-                <td className="py-3 pr-4 font-medium">Complaints</td>
-                <td className="py-3 pr-4">投诉举报</td>
-                <td className="py-3">处理状态更新（pending/reviewing/resolved）</td>
+                <td className="py-3 pr-4 font-medium">{t('Complaints', '投诉')}</td>
+                <td className="py-3 pr-4">{t('Complaints & Reports', '投诉举报')}</td>
+                <td className="py-3">{t('Update handling status (pending/reviewing/resolved)', '处理状态更新（pending/reviewing/resolved）')}</td>
               </tr>
             </tbody>
           </table>
@@ -96,7 +99,7 @@ export default function AdminHelpPage() {
       </section>
 
       <section className="rounded-xl border border-stone-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-stone-800">常见问题</h2>
+        <h2 className="text-base font-semibold text-stone-800">{t('FAQ', '常见问题')}</h2>
         <div className="mt-4 space-y-3">
           {faq.map((item) => (
             <div key={item.q} className="rounded-lg border border-stone-100 bg-stone-50 p-4">

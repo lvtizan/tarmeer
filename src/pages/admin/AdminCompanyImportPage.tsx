@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Download, Upload, Check, AlertCircle, FileText } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 type Step = 'upload' | 'preview' | 'done';
 
@@ -26,6 +27,7 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 export default function AdminCompanyImportPage() {
+  const { t } = useAdminT();
   const [step, setStep] = useState<Step>('upload');
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -110,9 +112,9 @@ export default function AdminCompanyImportPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-stone-900 mb-2">Import Company</h1>
+      <h1 className="text-2xl font-bold text-stone-900 mb-2">{t('Import Company', '导入公司')}</h1>
       <p className="text-sm text-stone-500 mb-8">
-        Download the Word template, send it to partner companies, then upload the filled document to import their info.
+        {t('Download the Word template, send it to partner companies, then upload the filled document to import their info.', '下载 Word 模板，发给合作公司填写，再上传已填写文档以导入其信息。')}
       </p>
 
       {error && (
@@ -127,24 +129,24 @@ export default function AdminCompanyImportPage() {
         <div className="space-y-6">
           {/* Download template */}
           <div className="bg-white rounded-xl border border-stone-200 p-6">
-            <h2 className="text-lg font-semibold text-stone-800 mb-2">Step 1: Download Template</h2>
+            <h2 className="text-lg font-semibold text-stone-800 mb-2">{t('Step 1: Download Template', '步骤 1：下载模板')}</h2>
             <p className="text-sm text-stone-500 mb-4">
-              Download the Word template and send it to the partner company to fill in.
+              {t('Download the Word template and send it to the partner company to fill in.', '下载 Word 模板并发给合作公司填写。')}
             </p>
             <button
               onClick={handleDownloadTemplate}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#b8864a] text-white rounded-lg text-sm font-medium hover:bg-[#a07540] transition"
             >
               <Download className="w-4 h-4" />
-              Download Template (.docx)
+              {t('Download Template (.docx)', '下载模板 (.docx)')}
             </button>
           </div>
 
           {/* Upload filled */}
           <div className="bg-white rounded-xl border border-stone-200 p-6">
-            <h2 className="text-lg font-semibold text-stone-800 mb-2">Step 2: Upload Filled Document</h2>
+            <h2 className="text-lg font-semibold text-stone-800 mb-2">{t('Step 2: Upload Filled Document', '步骤 2：上传已填写文档')}</h2>
             <p className="text-sm text-stone-500 mb-4">
-              Once the company fills out the template, upload it here.
+              {t('Once the company fills out the template, upload it here.', '公司填写完模板后，在此处上传。')}
             </p>
             <label className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition ${
               uploading ? 'bg-stone-200 text-stone-500' : 'bg-stone-900 text-white hover:bg-stone-800'
@@ -152,12 +154,12 @@ export default function AdminCompanyImportPage() {
               {uploading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Parsing...
+                  {t('Parsing...', '解析中...')}
                 </>
               ) : (
                 <>
                   <Upload className="w-4 h-4" />
-                  Upload Filled Template
+                  {t('Upload Filled Template', '上传已填写模板')}
                 </>
               )}
               <input
@@ -177,12 +179,12 @@ export default function AdminCompanyImportPage() {
         <div className="space-y-6">
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-stone-800">Preview & Edit</h2>
+              <h2 className="text-lg font-semibold text-stone-800">{t('Preview & Edit', '预览与编辑')}</h2>
               <button
                 onClick={() => { setStep('upload'); setParsed({}); }}
                 className="text-sm text-stone-500 hover:text-stone-700"
               >
-                Re-upload
+                {t('Re-upload', '重新上传')}
               </button>
             </div>
 
@@ -217,7 +219,7 @@ export default function AdminCompanyImportPage() {
               onClick={() => { setStep('upload'); setParsed({}); }}
               className="px-5 py-2.5 text-sm text-stone-600 hover:text-stone-800"
             >
-              Cancel
+              {t('Cancel', '取消')}
             </button>
             <button
               onClick={handleConfirmImport}
@@ -227,12 +229,12 @@ export default function AdminCompanyImportPage() {
               {importing ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Importing...
+                  {t('Importing...', '导入中...')}
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  Confirm Import
+                  {t('Confirm Import', '确认导入')}
                 </>
               )}
             </button>
@@ -246,14 +248,14 @@ export default function AdminCompanyImportPage() {
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-600" />
           </div>
-          <h2 className="text-xl font-semibold text-stone-900 mb-2">Import Successful</h2>
+          <h2 className="text-xl font-semibold text-stone-900 mb-2">{t('Import Successful', '导入成功')}</h2>
           <p className="text-sm text-stone-500 mb-6">{importedName}</p>
           <button
             onClick={() => { setStep('upload'); setParsed({}); setImportedName(''); }}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#b8864a] text-white rounded-lg text-sm font-medium hover:bg-[#a07540] transition"
           >
             <FileText className="w-4 h-4" />
-            Import Another
+            {t('Import Another', '导入下一个')}
           </button>
         </div>
       )}

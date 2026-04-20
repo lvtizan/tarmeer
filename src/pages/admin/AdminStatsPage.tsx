@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { adminApi } from '../../lib/adminApi';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface DetailItem {
   name: string;
@@ -39,6 +40,7 @@ type TooltipType = 'homeowners' | 'companies' | 'inquiries';
 interface TooltipData { x: number; y: number; type: TooltipType; items: DetailItem[]; date: string }
 
 function BarChart({ data, maxVal }: { data: DayRow[]; maxVal: number }) {
+  const { t } = useAdminT();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(800);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -51,7 +53,7 @@ function BarChart({ data, maxVal }: { data: DayRow[]; maxVal: number }) {
     return () => obs.disconnect();
   }, []);
 
-  if (data.length === 0) return <div ref={containerRef} className="flex items-center justify-center h-[260px] text-stone-400 text-sm">暂无数据</div>;
+  if (data.length === 0) return <div ref={containerRef} className="flex items-center justify-center h-[260px] text-stone-400 text-sm">{t('No data', '暂无数据')}</div>;
 
   const PL = 40;
   const chartW = containerW - PL - 16;
@@ -164,14 +166,14 @@ function BarChart({ data, maxVal }: { data: DayRow[]; maxVal: number }) {
           }}
         >
           <div className="font-semibold text-stone-700 mb-1.5 border-b border-stone-100 pb-1">
-            {tooltip.date} · {{ homeowners: '业主', companies: '装企', inquiries: '询盘' }[tooltip.type]}
+            {tooltip.date} · {{ homeowners: t('Homeowners', '业主'), companies: t('Companies', '装企'), inquiries: t('Inquiries', '询盘') }[tooltip.type]}
           </div>
           {tooltip.items.slice(0, 15).map((item, idx) => (
             <div key={idx} className="flex items-center gap-2 py-0.5 text-stone-600">
               <span className="truncate flex-1">{item.name}</span>
               {item.city && <span className="text-stone-400 shrink-0">{item.city}</span>}
               {tooltip.type === 'companies' && item.projects !== undefined && (
-                <span className="text-[#2c6e49] font-medium shrink-0">{item.projects} 项目</span>
+                <span className="text-[#2c6e49] font-medium shrink-0">{item.projects} {t('projects', '项目')}</span>
               )}
               {tooltip.type === 'inquiries' && item.phone && (
                 <span className="text-stone-400 shrink-0">{item.phone}</span>
@@ -188,6 +190,7 @@ function BarChart({ data, maxVal }: { data: DayRow[]; maxVal: number }) {
 }
 
 export default function AdminStatsPage() {
+  const { t } = useAdminT();
   const [days, setDays] = useState<DaysOption>(30);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -214,8 +217,8 @@ export default function AdminStatsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-stone-800">注册报表</h1>
-          <p className="text-xs text-stone-400 mt-0.5">数据每天迪拜深夜 02:00 自动统计一次，实时注册今日数据实时可见</p>
+          <h1 className="text-xl font-bold text-stone-800">{t('Registration Reports', '注册报表')}</h1>
+          <p className="text-xs text-stone-400 mt-0.5">{t('Data is automatically collected daily at 02:00 Dubai time. Today\'s registrations are visible in real-time.', '数据每天迪拜深夜 02:00 自动统计一次，实时注册今日数据实时可见')}</p>
         </div>
         <div className="flex items-center gap-1 bg-stone-100 rounded-lg p-1">
           {DAYS_OPTIONS.map((d) => (
@@ -228,7 +231,7 @@ export default function AdminStatsPage() {
                   : 'text-stone-500 hover:text-stone-700'
               }`}
             >
-              近{d}天
+              {t(`Last ${d} days`, `近${d}天`)}
             </button>
           ))}
         </div>
@@ -237,16 +240,16 @@ export default function AdminStatsPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: '新业主', value: totals.new_homeowners, color: COLORS.homeowners },
-          { label: '新装企', value: totals.new_companies, color: COLORS.companies },
-          { label: '新询盘', value: totals.new_inquiries, color: COLORS.inquiries },
+          { label: t('New Homeowners', '新业主'), value: totals.new_homeowners, color: COLORS.homeowners },
+          { label: t('New Companies', '新装企'), value: totals.new_companies, color: COLORS.companies },
+          { label: t('New Inquiries', '新询盘'), value: totals.new_inquiries, color: COLORS.inquiries },
         ].map((c) => (
           <div key={c.label} className="bg-white rounded-2xl border border-stone-200 p-5">
             <div className="text-xs font-medium text-stone-400 mb-1">{c.label}</div>
             <div className="text-3xl font-bold" style={{ color: c.color }}>
               {loading ? '—' : c.value.toLocaleString()}
             </div>
-            <div className="text-xs text-stone-400 mt-1">近{days}天合计</div>
+            <div className="text-xs text-stone-400 mt-1">{t(`Last ${days} days total`, `近${days}天合计`)}</div>
           </div>
         ))}
       </div>
@@ -255,9 +258,9 @@ export default function AdminStatsPage() {
       <div className="bg-white rounded-2xl border border-stone-200 p-6">
         <div className="flex items-center gap-5 mb-4 text-[11px]">
           {[
-            { label: '业主注册', color: COLORS.homeowners },
-            { label: '装企注册', color: COLORS.companies },
-            { label: '询盘', color: COLORS.inquiries },
+            { label: t('Homeowner Signups', '业主注册'), color: COLORS.homeowners },
+            { label: t('Company Signups', '装企注册'), color: COLORS.companies },
+            { label: t('Inquiries', '询盘'), color: COLORS.inquiries },
           ].map((l) => (
             <span key={l.label} className="flex items-center gap-1.5">
               <span className="inline-block w-3 h-3 rounded-sm" style={{ background: l.color, opacity: 0.85 }} />
@@ -267,7 +270,7 @@ export default function AdminStatsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-[260px] text-stone-400 text-sm">加载中...</div>
+          <div className="flex items-center justify-center h-[260px] text-stone-400 text-sm">{t('Loading...', '加载中...')}</div>
         ) : (
           <BarChart data={data} maxVal={maxVal} />
         )}
@@ -276,22 +279,22 @@ export default function AdminStatsPage() {
       {/* Recent data table */}
       <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-stone-100">
-          <span className="text-sm font-medium text-stone-700">近14天明细</span>
+          <span className="text-sm font-medium text-stone-700">{t('Last 14 Days Detail', '近14天明细')}</span>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs text-stone-400 border-b border-stone-100">
-              <th className="text-left px-5 py-2.5 font-medium">日期</th>
-              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.homeowners }}>新业主</th>
-              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.companies }}>新装企</th>
-              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.inquiries }}>询盘</th>
+              <th className="text-left px-5 py-2.5 font-medium">{t('Date', '日期')}</th>
+              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.homeowners }}>{t('New Homeowners', '新业主')}</th>
+              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.companies }}>{t('New Companies', '新装企')}</th>
+              <th className="text-right px-5 py-2.5 font-medium" style={{ color: COLORS.inquiries }}>{t('Inquiries', '询盘')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="text-center py-8 text-stone-400">加载中...</td></tr>
+              <tr><td colSpan={4} className="text-center py-8 text-stone-400">{t('Loading...', '加载中...')}</td></tr>
             ) : recentRows.length === 0 ? (
-              <tr><td colSpan={4} className="text-center py-8 text-stone-400">暂无数据</td></tr>
+              <tr><td colSpan={4} className="text-center py-8 text-stone-400">{t('No data', '暂无数据')}</td></tr>
             ) : recentRows.map((row) => (
               <tr key={row.date} className="border-b border-stone-50 hover:bg-stone-50/50 transition-colors">
                 <td className="px-5 py-2.5 text-stone-600 font-mono text-xs">{row.date}</td>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface EmailEntry {
   id: number;
@@ -12,6 +13,7 @@ interface EmailEntry {
 }
 
 export default function AdminNotificationEmailsPage() {
+  const { t } = useAdminT();
   const [emails, setEmails] = useState<EmailEntry[]>([]);
   const [newEmail, setNewEmail] = useState('');
   const [newLabel, setNewLabel] = useState('');
@@ -75,9 +77,9 @@ export default function AdminNotificationEmailsPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-stone-900 mb-2">Notification Emails</h1>
+      <h1 className="text-2xl font-bold text-stone-900 mb-2">{t('Notification Emails', '通知邮箱')}</h1>
       <p className="text-sm text-stone-500 mb-8">
-        Emails listed here will receive notifications when new inquiries or company registrations come in.
+        {t('Emails listed here will receive notifications when new inquiries or company registrations come in.', '此处列出的邮箱将在收到新询盘或公司注册时收到通知。')}
       </p>
 
       {error && (
@@ -97,7 +99,7 @@ export default function AdminNotificationEmailsPage() {
           type="text"
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
-          placeholder="Label (optional)"
+          placeholder={t('Label (optional)', '标签（可选）')}
           className="w-40 px-4 py-2.5 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
         />
         <button
@@ -106,7 +108,7 @@ export default function AdminNotificationEmailsPage() {
           className="flex items-center gap-1.5 px-4 py-2.5 bg-[#b8864a] text-white rounded-lg text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition"
         >
           <Plus className="w-4 h-4" />
-          Add
+          {t('Add', '添加')}
         </button>
       </div>
 
@@ -114,7 +116,7 @@ export default function AdminNotificationEmailsPage() {
       <div className="bg-white rounded-xl border border-stone-200 divide-y divide-stone-100">
         {emails.length === 0 ? (
           <div className="px-6 py-8 text-center text-sm text-stone-400">
-            No notification emails configured
+            {t('No notification emails configured', '暂未配置通知邮箱')}
           </div>
         ) : (
           emails.map((entry) => (
@@ -130,7 +132,7 @@ export default function AdminNotificationEmailsPage() {
               <button
                 onClick={() => handleToggle(entry)}
                 className="p-1 hover:bg-stone-100 rounded transition"
-                title={entry.is_active ? 'Disable' : 'Enable'}
+                title={entry.is_active ? t('Disable', '停用') : t('Enable', '启用')}
               >
                 {entry.is_active ? (
                   <ToggleRight className="w-6 h-6 text-green-600" />
@@ -141,7 +143,7 @@ export default function AdminNotificationEmailsPage() {
               <button
                 onClick={() => handleDelete(entry.id)}
                 className="p-1 hover:bg-red-50 rounded transition text-stone-400 hover:text-red-500"
-                title="Remove"
+                title={t('Remove', '移除')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>

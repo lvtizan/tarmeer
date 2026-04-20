@@ -6,6 +6,7 @@ import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface CompanyProfile {
   id: number;
@@ -58,6 +59,7 @@ function parseJsonArray(val: string | null | undefined): string[] {
 
 export default function AdminRegisteredCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useAdminT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { hasPermission } = useAdmin();
@@ -135,7 +137,7 @@ export default function AdminRegisteredCompanyDetailPage() {
 
   if (loading) return <PageSpinner />;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
-  if (!company) return <div className="p-6 text-stone-400">Company not found.</div>;
+  if (!company) return <div className="p-6 text-stone-400">{t('Company not found.', '公司未找到')}</div>;
 
   const services = parseJsonArray(company.services);
   const specialties = parseJsonArray(company.specialties);
@@ -148,7 +150,7 @@ export default function AdminRegisteredCompanyDetailPage() {
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        Back to Companies
+        {t('Back to Companies', '返回公司列表')}
       </button>
 
       {actionError && (
@@ -176,7 +178,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                   title="Edit company"
                 >
                   <Pencil size={14} />
-                  Edit
+                  {t('Edit', '编辑')}
                 </button>
                 <a
                   href={`/companies/${company.id}?admin_preview=1`}
@@ -186,7 +188,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                   title="Preview company page"
                 >
                   <ExternalLink size={14} />
-                  Preview
+                  {t('Preview', '预览')}
                 </a>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -209,41 +211,41 @@ export default function AdminRegisteredCompanyDetailPage() {
                   disabled={isSubmitting}
                   className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
                 >
-                  Approve
+                  {t('Approve', '通过')}
                 </button>
                 <button
                   onClick={() => setShowRejectModal(true)}
                   disabled={isSubmitting}
                   className="flex-1 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50"
                 >
-                  Reject
+                  {t('Reject', '拒绝')}
                 </button>
               </div>
             )}
             {company.admin_notes && (
               <div className="mt-2 text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
-                <span className="font-medium">Admin notes:</span> {company.admin_notes}
+                <span className="font-medium">{t('Admin notes:', '管理员备注:')}</span> {company.admin_notes}
               </div>
             )}
           </div>
 
           {/* Details card */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-2.5 text-sm">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Details</h2>
-            {company.contact_person && <InfoRow label="Contact" value={company.contact_person} />}
-            {company.phone && <InfoRow label="Phone" value={company.phone} />}
-            {company.city && <InfoRow label="City" value={company.city} />}
-            {company.address && <InfoRow label="Address" value={company.address} />}
-            {company.establishment_year && <InfoRow label="Est." value={String(company.establishment_year)} />}
-            {company.trade_license_number && <InfoRow label="License" value={company.trade_license_number} />}
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Details', '详情')}</h2>
+            {company.contact_person && <InfoRow label={t('Contact', '联系人')} value={company.contact_person} />}
+            {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
+            {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
+            {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
+            {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} />}
+            {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} />}
             {company.website && (
               <div className="flex gap-2">
-                <span className="text-stone-400 w-20 flex-shrink-0">Website</span>
+                <span className="text-stone-400 w-20 flex-shrink-0">{t('Website', '网站')}</span>
                 <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
               </div>
             )}
             <div className="pt-1 border-t border-stone-100">
-              <InfoRow label="Joined" value={new Date(company.created_at).toLocaleDateString()} />
+              <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleDateString()} />
             </div>
           </div>
 
@@ -252,7 +254,7 @@ export default function AdminRegisteredCompanyDetailPage() {
             <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
               {services.length > 0 && (
                 <div>
-                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Services</h2>
+                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Services', '服务')}</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {services.map((s, i) => (
                       <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">{s}</span>
@@ -262,7 +264,7 @@ export default function AdminRegisteredCompanyDetailPage() {
               )}
               {specialties.length > 0 && (
                 <div>
-                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Specialties</h2>
+                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Specialties', '专长')}</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {specialties.map((s, i) => (
                       <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-[#b8864a]/10 text-[#b8864a]">{s}</span>
@@ -275,7 +277,7 @@ export default function AdminRegisteredCompanyDetailPage() {
 
           {/* Owner account */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Owner Account</h2>
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Owner Account', '所有者账户')}</h2>
             <div className="font-medium text-stone-800">{company.user_name}</div>
             <div className="text-stone-500">{company.user_email}</div>
           </div>
@@ -285,13 +287,13 @@ export default function AdminRegisteredCompanyDetailPage() {
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-stone-800">
-              Portfolio <span className="text-stone-400 font-normal text-sm">({projects.length} projects)</span>
+              {t('Portfolio', '作品集')} <span className="text-stone-400 font-normal text-sm">({projects.length} {t('projects', '项目')})</span>
             </h2>
             <button
               onClick={() => navigate(`/admin/profile-companies/${id}/projects/new`)}
               className="btn-primary px-4 py-2 text-sm"
             >
-              + Add Project
+              + {t('Add Project', '添加项目')}
             </button>
           </div>
 
@@ -308,7 +310,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                       : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                   }`}
                 >
-                  {s === 'all' ? `All (${projects.length})` : s}
+                  {s === 'all' ? `${t('All', '全部')} (${projects.length})` : s}
                 </button>
               ))}
             </div>
@@ -317,7 +319,7 @@ export default function AdminRegisteredCompanyDetailPage() {
           {/* Project grid */}
           {visibleProjects.length === 0 ? (
             <div className="bg-white rounded-xl border border-stone-200 p-12 text-center text-stone-400">
-              No projects yet
+              {t('No projects yet', '暂无项目')}
             </div>
           ) : (
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
@@ -367,23 +369,23 @@ export default function AdminRegisteredCompanyDetailPage() {
       {showRejectModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
-            <h2 className="text-lg font-semibold">Reject Company</h2>
+            <h2 className="text-lg font-semibold">{t('Reject Company', '拒绝公司')}</h2>
             <p className="text-sm text-stone-500">{company.company_name}</p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Reason for rejection..."
+              placeholder={t('Reason for rejection...', '拒绝原因...')}
               rows={4}
               className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30 focus:border-[#b8864a]"
             />
             <div className="flex gap-3 justify-end">
-              <button onClick={() => { setShowRejectModal(false); setRejectReason(''); }} className="px-4 py-2 text-sm text-stone-600">Cancel</button>
+              <button onClick={() => { setShowRejectModal(false); setRejectReason(''); }} className="px-4 py-2 text-sm text-stone-600">{t('Cancel', '取消')}</button>
               <button
                 onClick={handleReject}
                 disabled={isSubmitting || !rejectReason.trim()}
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {isSubmitting ? 'Rejecting...' : 'Reject'}
+                {isSubmitting ? t('Rejecting...', '拒绝中...') : t('Reject', '拒绝')}
               </button>
             </div>
           </div>

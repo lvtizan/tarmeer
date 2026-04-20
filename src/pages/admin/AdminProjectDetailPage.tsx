@@ -5,6 +5,7 @@ import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
 import { showToast } from '../../components/ui/Toast';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 function reorder<T>(arr: T[], from: number, to: number): T[] {
   if (from === to) return arr;
@@ -42,6 +43,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminProjectDetailPage() {
   const { companyId, projectId } = useParams<{ companyId: string; projectId: string }>();
+  const { t } = useAdminT();
   const navigate = useNavigate();
 
   const isNew = projectId === 'new';
@@ -188,7 +190,7 @@ export default function AdminProjectDetailPage() {
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        Back to Company
+        {t('Back to Company', '返回公司')}
       </button>
 
       {/* Navigation bar: prev / title / next */}
@@ -199,11 +201,11 @@ export default function AdminProjectDetailPage() {
           className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-          Prev
+          {t('Prev', '上一个')}
         </button>
         <div className="text-center">
           <h1 className="text-xl font-bold text-stone-800">
-            {isNew ? 'New Project' : (title || 'Untitled')}
+            {isNew ? t('New Project', '新项目') : (title || t('Untitled', '未命名'))}
           </h1>
           <div className="flex items-center justify-center gap-2 mt-1 text-xs text-stone-400">
             {style && <span>{style}</span>}
@@ -221,7 +223,7 @@ export default function AdminProjectDetailPage() {
           disabled={!nextProject}
           className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          Next
+          {t('Next', '下一个')}
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
         </button>
       </div>
@@ -234,9 +236,9 @@ export default function AdminProjectDetailPage() {
       {/* Image Gallery — drag to reorder, lazy load */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-stone-500">Images ({images.length})</h2>
+          <h2 className="text-sm font-medium text-stone-500">{t('Images', '图片')} ({images.length})</h2>
           {images.length > 1 && (
-            <span className="text-xs text-stone-400">Drag to reorder · First image is the cover</span>
+            <span className="text-xs text-stone-400">{t('Drag to reorder · First image is the cover', '拖拽排序 · 第一张为封面')}</span>
           )}
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -264,7 +266,7 @@ export default function AdminProjectDetailPage() {
                 className="w-full h-full object-cover"
               />
               {idx === 0 && (
-                <span className="absolute left-2 top-2 rounded-md bg-[#b8864a] px-1.5 py-0.5 text-[10px] font-semibold text-white">Cover</span>
+                <span className="absolute left-2 top-2 rounded-md bg-[#b8864a] px-1.5 py-0.5 text-[10px] font-semibold text-white">{t('Cover', '封面')}</span>
               )}
               <button
                 onClick={() => handleRemoveImage(idx)}
@@ -281,7 +283,7 @@ export default function AdminProjectDetailPage() {
             className="aspect-video bg-stone-50 border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center text-stone-400 hover:text-stone-600 hover:border-stone-300 transition-colors"
           >
             <svg className="w-8 h-8 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            <span className="text-xs">Add Image</span>
+            <span className="text-xs">{t('Add Image', '添加图片')}</span>
           </button>
         </div>
         <input
@@ -296,25 +298,25 @@ export default function AdminProjectDetailPage() {
 
       {/* Form fields */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-4">
-        <h2 className="text-sm font-medium text-stone-500">Project Details</h2>
+        <h2 className="text-sm font-medium text-stone-500">{t('Project Details', '项目详情')}</h2>
 
         <div>
-          <label className="text-sm font-medium text-stone-500 block mb-1.5">Title</label>
+          <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Title', '标题')}</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Project title"
+            placeholder={t('Project title', '项目标题')}
             className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-stone-500 block mb-1.5">Description</label>
+          <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Description', '描述')}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Project description"
+            placeholder={t('Project description', '项目描述')}
             rows={4}
             className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white resize-y"
           />
@@ -322,7 +324,7 @@ export default function AdminProjectDetailPage() {
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="text-sm font-medium text-stone-500 block mb-1.5">Style</label>
+            <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Style', '风格')}</label>
             <input
               type="text"
               value={style}
@@ -332,7 +334,7 @@ export default function AdminProjectDetailPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-stone-500 block mb-1.5">Location</label>
+            <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Location', '位置')}</label>
             <input
               type="text"
               value={location}
@@ -342,7 +344,7 @@ export default function AdminProjectDetailPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-stone-500 block mb-1.5">Year</label>
+            <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Year', '年份')}</label>
             <input
               type="number"
               value={year}
@@ -362,7 +364,7 @@ export default function AdminProjectDetailPage() {
             className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm text-stone-400 hover:text-stone-600 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            Delete
+            {t('Delete', '删除')}
           </button>
         </div>
       )}
@@ -371,23 +373,23 @@ export default function AdminProjectDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-stone-800">Delete Project</h2>
+            <h2 className="text-lg font-semibold text-stone-800">{t('Delete Project', '删除项目')}</h2>
             <p className="text-sm text-stone-500">
-              Are you sure you want to delete "{title}"? This action cannot be undone.
+              {t(`Are you sure you want to delete "${title}"? This action cannot be undone.`, `确定要删除"${title}"吗？此操作无法撤销。`)}
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 text-sm text-stone-600 hover:text-stone-800"
               >
-                Cancel
+                {t('Cancel', '取消')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={saving}
                 className="px-4 py-2 text-sm bg-red-500 text-white rounded-2xl hover:bg-red-600 disabled:opacity-50"
               >
-                {saving ? 'Deleting...' : 'Delete'}
+                {saving ? t('Deleting...', '删除中...') : t('Delete', '删除')}
               </button>
             </div>
           </div>
@@ -401,7 +403,7 @@ export default function AdminProjectDetailPage() {
           disabled={saving || !title.trim()}
           className="btn-primary px-8 disabled:opacity-50"
         >
-          {saving ? 'Saving...' : isNew ? 'Create Project' : 'Save Changes'}
+          {saving ? t('Saving...', '保存中...') : isNew ? t('Create Project', '创建项目') : t('Save Changes', '保存更改')}
         </button>
       </div>
 

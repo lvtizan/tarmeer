@@ -7,9 +7,9 @@ import Avatar from '../ui/Avatar';
 import SidebarNavLink from '../ui/SidebarNavLink';
 import TarmeerLogo from '../TarmeerLogo';
 import ToastContainer from '../ui/Toast';
+import { AdminLangContext, type AdminLang } from '../../hooks/useAdminLang';
 
 const ADMIN_LANG_KEY = 'admin_lang';
-type AdminLang = 'en' | 'zh';
 
 const navItems = [
   // ── Core Business ──
@@ -291,9 +291,11 @@ export default function AdminLayout() {
 
       {/* Main content - same padding as designer */}
       <main className="flex-1 overflow-auto p-6 md:p-10">
-        <div className="w-full">
-          <Outlet />
-        </div>
+        <AdminLangContext.Provider value={{ lang, t }}>
+          <div className="w-full">
+            <Outlet />
+          </div>
+        </AdminLangContext.Provider>
       </main>
       <ToastContainer />
       {tooltip && (

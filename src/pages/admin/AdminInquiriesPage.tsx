@@ -4,6 +4,7 @@ import { Info, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 /* ── Floating Tooltip (portal-free, renders outside table overflow) ── */
 function FloatingTip({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
@@ -99,6 +100,7 @@ const CRM_LABEL: Record<string, string> = {
 };
 
 export default function AdminInquiriesPage() {
+  const { t } = useAdminT();
   const [searchParams, setSearchParams] = useSearchParams();
   const [inquiries, setInquiries] = useState<InquiryRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,9 +246,9 @@ export default function AdminInquiriesPage() {
     <div className="space-y-4">
       {/* Row 1: Title + Export */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-[#2c2c2c]">线索管理</h1>
+        <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Lead Management', '线索管理')}</h1>
         <button onClick={handleExport} className="btn-primary h-9 px-5 text-sm rounded-2xl">
-          导出 Excel
+          {t('Export Excel', '导出 Excel')}
         </button>
       </div>
 
@@ -257,13 +259,13 @@ export default function AdminInquiriesPage() {
           className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'homeowner'
             ? 'bg-[#b8864a] text-white'
             : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
-          业主询单 ({counts.homeowner})
+          {t('Homeowner Inquiries', '业主询单')} ({counts.homeowner})
         </button>
         <button onClick={() => { setTypeFilter('company'); setPage(1); }}
           className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'company'
             ? 'bg-[#b8864a] text-white'
             : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
-          公司线索 ({counts.company})
+          {t('Company Leads', '公司线索')} ({counts.company})
         </button>
 
         <div className="w-px h-5 bg-stone-200" />
@@ -274,11 +276,11 @@ export default function AdminInquiriesPage() {
           value={statusFilter}
           onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
           options={[
-            { value: 'all', label: '全部状态' },
-            { value: 'new', label: '新询单' },
-            { value: 'contacted', label: '已联系' },
-            { value: 'resolved', label: '已解决' },
-            { value: 'archived', label: '已归档' },
+            { value: 'all', label: t('All Status', '全部状态') },
+            { value: 'new', label: t('New', '新询单') },
+            { value: 'contacted', label: t('Contacted', '已联系') },
+            { value: 'resolved', label: t('Resolved', '已解决') },
+            { value: 'archived', label: t('Archived', '已归档') },
           ]}
         />
 
@@ -286,7 +288,7 @@ export default function AdminInquiriesPage() {
         <input
           type="text" value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder="搜索姓名或电话..."
+          placeholder={t('Search name or phone...', '搜索姓名或电话...')}
           className="h-9 flex-1 min-w-0 px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
         />
 
@@ -296,13 +298,13 @@ export default function AdminInquiriesPage() {
             className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'active'
               ? 'bg-white text-[#2c2c2c] shadow-sm'
               : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
-            有效
+            {t('Active', '有效')}
           </button>
           <button onClick={() => setViewMode('deleted')}
             className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'deleted'
               ? 'bg-white text-[#2c2c2c] shadow-sm'
               : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
-            已删除
+            {t('Deleted', '已删除')}
           </button>
         </div>
       </div>
@@ -312,20 +314,20 @@ export default function AdminInquiriesPage() {
       {/* Batch action bar */}
       {selected.size > 0 && (
         <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11">
-          <span className="text-sm text-stone-500">{selected.size} selected</span>
+          <span className="text-sm text-stone-500">{selected.size} {t('selected', '已选')}</span>
           {viewMode === 'active' ? (
             <button
               onClick={() => setDeleteModalOpen(true)}
               className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
             >
-              <Trash2 size={14} /> 删除 ({selected.size})
+              <Trash2 size={14} /> {t('Delete', '删除')} ({selected.size})
             </button>
           ) : (
             <button
               onClick={handleBatchRestore}
               className="h-8 px-4 text-sm text-white bg-[#b8864a] rounded-xl hover:bg-[#a07840] transition"
             >
-              恢复 ({selected.size})
+              {t('Restore', '恢复')} ({selected.size})
             </button>
           )}
         </div>
@@ -335,18 +337,18 @@ export default function AdminInquiriesPage() {
       {deleteModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-[400px]">
-            <h3 className="font-serif text-lg mb-4">Delete {selected.size} inquiry(s)</h3>
+            <h3 className="font-serif text-lg mb-4">{t(`Delete ${selected.size} inquiry(s)`, `删除 ${selected.size} 条询盘`)}</h3>
             <textarea
               className="w-full h-24 px-4 py-3 rounded-2xl border border-stone-200 text-[15px] mb-4"
-              placeholder="Enter deletion reason (required)"
+              placeholder={t('Enter deletion reason (required)', '请输入删除原因（必填）')}
               value={deleteReason}
               onChange={e => setDeleteReason(e.target.value)}
             />
             <div className="flex justify-end gap-3">
               <button onClick={() => { setDeleteModalOpen(false); setDeleteReason(''); }}
-                className="px-4 py-2 text-sm text-stone-600 border border-stone-200 rounded-2xl">Cancel</button>
+                className="px-4 py-2 text-sm text-stone-600 border border-stone-200 rounded-2xl">{t('Cancel', '取消')}</button>
               <button onClick={handleBatchDelete} disabled={!deleteReason.trim()}
-                className="px-4 py-2 text-sm text-white bg-[#8b2525] hover:bg-[#6b1d1d] rounded-2xl disabled:opacity-50 transition">Delete</button>
+                className="px-4 py-2 text-sm text-white bg-[#8b2525] hover:bg-[#6b1d1d] rounded-2xl disabled:opacity-50 transition">{t('Delete', '删除')}</button>
             </div>
           </div>
         </div>
@@ -359,21 +361,21 @@ export default function AdminInquiriesPage() {
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
                 <th className="px-4 py-3 w-10"><input type="checkbox" checked={allSelected} onChange={toggleAll} /></th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Phone</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Area</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Source</th>
-                {typeFilter !== 'company' && <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>}
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Name', '名称')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Phone', '电话')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('City', '城市')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Area', '面积')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Source', '来源')}</th>
+                {typeFilter !== 'company' && <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Status', '状态')}</th>}
                 <th className="text-left px-4 py-3 font-medium text-stone-600">CRM</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Date</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Date', '日期')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <TableSpinner colSpan={typeFilter === 'company' ? 8 : 9} />
               ) : inquiries.length === 0 ? (
-                <tr><td colSpan={typeFilter === 'company' ? 8 : 9} className="text-center py-12 text-stone-400">No inquiries found</td></tr>
+                <tr><td colSpan={typeFilter === 'company' ? 8 : 9} className="text-center py-12 text-stone-400">{t('No inquiries found', '未找到询盘')}</td></tr>
               ) : inquiries.map((inq) => (
                 <>
                   <tr
@@ -423,7 +425,7 @@ export default function AdminInquiriesPage() {
                           className="text-[#b8864a] font-medium hover:underline"
                         >{inq.source_company_name}</a>
                       ) : (
-                        <span className="text-stone-400">Homepage</span>
+                        <span className="text-stone-400">{t('Homepage', '首页')}</span>
                       )}
                     </td>
                     {typeFilter !== 'company' && (
@@ -521,10 +523,10 @@ export default function AdminInquiriesPage() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">Page {page} of {totalPages} ({total} total)</span>
+            <span className="text-xs text-stone-500">{t('Page', '页')} {page} / {totalPages} ({t('Total', '共')} {total})</span>
             <div className="flex gap-2">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
+              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Prev', '上一页')}</button>
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Next', '下一页')}</button>
             </div>
           </div>
         )}

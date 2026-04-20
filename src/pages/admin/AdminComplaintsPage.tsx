@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 type StatusFilter = 'all' | 'new' | 'processing' | 'resolved' | 'rejected';
 
@@ -30,6 +31,7 @@ function truncate(str: string | null, max: number): string {
 }
 
 export default function AdminComplaintsPage() {
+  const { t } = useAdminT();
   const [searchParams, setSearchParams] = useSearchParams();
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,30 +105,30 @@ export default function AdminComplaintsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-stone-800">Complaints</h1>
+      <h1 className="text-2xl font-bold text-stone-800">{t('Complaints', '投诉')}</h1>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div>
-          <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
+          <label className="block text-xs font-medium text-stone-500 mb-1">{t('Status', '状态')}</label>
           <AdminSelect
             value={statusFilter}
             onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
             options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'new', label: 'New' },
-              { value: 'processing', label: 'Processing' },
-              { value: 'resolved', label: 'Resolved' },
-              { value: 'rejected', label: 'Rejected' },
+              { value: 'all', label: t('All Status', '全部状态') },
+              { value: 'new', label: t('New', '新投诉') },
+              { value: 'processing', label: t('Processing', '处理中') },
+              { value: 'resolved', label: t('Resolved', '已解决') },
+              { value: 'rejected', label: t('Rejected', '已拒绝') },
             ]}
           />
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-stone-500 mb-1">Search</label>
+          <label className="block text-xs font-medium text-stone-500 mb-1">{t('Search', '搜索')}</label>
           <input
             type="text" value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Name or email..."
+            placeholder={t('Name or email...', '姓名或邮箱...')}
             className="h-9 w-full px-3 border border-stone-200 rounded-lg text-sm bg-white"
           />
         </div>
@@ -141,19 +143,19 @@ export default function AdminComplaintsPage() {
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
                 <th className="text-left px-4 py-3 font-medium text-stone-600">ID</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Email</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Content URL</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Description</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Date</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Name', '名称')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Email', '邮箱')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Content URL', '内容链接')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Description', '描述')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Status', '状态')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Date', '日期')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <TableSpinner colSpan={7} />
               ) : complaints.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400">No complaints found</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-stone-400">{t('No complaints found', '未找到投诉')}</td></tr>
               ) : complaints.map((c) => (
                 <>
                   <tr
@@ -195,7 +197,7 @@ export default function AdminComplaintsPage() {
                         <div className="space-y-3 max-w-2xl">
                           {c.content_url && (
                             <div>
-                              <span className="text-xs font-medium text-stone-500">Content URL:</span>
+                              <span className="text-xs font-medium text-stone-500">{t('Content URL:', '内容链接：')}</span>
                               <p className="text-sm text-stone-700 mt-1">
                                 <a
                                   href={c.content_url}
@@ -210,30 +212,30 @@ export default function AdminComplaintsPage() {
                           )}
                           {c.description && (
                             <div>
-                              <span className="text-xs font-medium text-stone-500">Description:</span>
+                              <span className="text-xs font-medium text-stone-500">{t('Description:', '描述：')}</span>
                               <p className="text-sm text-stone-700 mt-1 whitespace-pre-wrap">{c.description}</p>
                             </div>
                           )}
                           <div className="flex gap-4 items-end">
                             <div>
-                              <label className="block text-xs font-medium text-stone-500 mb-1">Status</label>
+                              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Status', '状态')}</label>
                               <AdminSelect
                                 value={editStatus}
                                 onChange={(val) => setEditStatus(val)}
                                 options={[
-                                  { value: 'new', label: 'New' },
-                                  { value: 'processing', label: 'Processing' },
-                                  { value: 'resolved', label: 'Resolved' },
-                                  { value: 'rejected', label: 'Rejected' },
+                                  { value: 'new', label: t('New', '新投诉') },
+                                  { value: 'processing', label: t('Processing', '处理中') },
+                                  { value: 'resolved', label: t('Resolved', '已解决') },
+                                  { value: 'rejected', label: t('Rejected', '已拒绝') },
                                 ]}
                               />
                             </div>
                             <div className="flex-1">
-                              <label className="block text-xs font-medium text-stone-500 mb-1">Admin Notes</label>
+                              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Admin Notes', '管理员备注')}</label>
                               <textarea
                                 value={editNotes}
                                 onChange={(e) => setEditNotes(e.target.value)}
-                                placeholder="Add notes..."
+                                placeholder={t('Add notes...', '添加备注...')}
                                 rows={2}
                                 className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white resize-y"
                               />
@@ -243,7 +245,7 @@ export default function AdminComplaintsPage() {
                               disabled={updating}
                               className="h-9 px-4 bg-[#b8864a] text-white text-sm rounded-lg hover:bg-[#a07840] disabled:opacity-50"
                             >
-                              {updating ? '...' : 'Save'}
+                              {updating ? '...' : t('Save', '保存')}
                             </button>
                           </div>
                         </div>
@@ -258,10 +260,10 @@ export default function AdminComplaintsPage() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">Page {page} of {totalPages} ({total} total)</span>
+            <span className="text-xs text-stone-500">{t('Page', '页')} {page} / {totalPages} ({t('Total', '共')} {total})</span>
             <div className="flex gap-2">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
+              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Prev', '上一页')}</button>
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Next', '下一页')}</button>
             </div>
           </div>
         )}

@@ -7,6 +7,7 @@ import { resolveImageUrl } from '../../lib/imageUrl';
 import AdminSelect from '../../components/ui/AdminSelect';
 import { formatCount } from '../../lib/formatNumber';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type DeletedFilter = 'active' | 'deleted' | 'all';
@@ -17,6 +18,7 @@ export default function AdminDesignersPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { hasPermission } = useAdmin();
+  const { t } = useAdminT();
   const [designers, setDesigners] = useState<Designer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -309,7 +311,7 @@ export default function AdminDesignersPage() {
     if (designer.deleted_at) {
       return (
         <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-stone-200 text-stone-700">
-          Deleted
+          {t('Deleted', '已删除')}
         </span>
       );
     }
@@ -339,7 +341,7 @@ export default function AdminDesignersPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#2c2c2c]">Designer Management</h1>
+        <h1 className="text-2xl font-bold text-[#2c2c2c]">{t('Designer Management', '设计师管理')}</h1>
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('list')}
@@ -349,7 +351,7 @@ export default function AdminDesignersPage() {
                 : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
             }`}
           >
-            List View
+            {t('List View', '列表视图')}
           </button>
           {canSort && (
             <button
@@ -360,7 +362,7 @@ export default function AdminDesignersPage() {
                   : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
               }`}
             >
-              Sort Order
+              {t('Sort Order', '排序')}
             </button>
           )}
         </div>
@@ -379,10 +381,10 @@ export default function AdminDesignersPage() {
           value={statusFilter}
           onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
           options={[
-            { value: 'all', label: 'All Status' },
-            { value: 'pending', label: 'Pending' },
-            { value: 'approved', label: 'Approved' },
-            { value: 'rejected', label: 'Rejected' },
+            { value: 'all', label: t('All Status', '全部状态') },
+            { value: 'pending', label: t('Pending', '待审核') },
+            { value: 'approved', label: t('Approved', '已通过') },
+            { value: 'rejected', label: t('Rejected', '已拒绝') },
           ]}
         />
         <AdminSelect
@@ -390,9 +392,9 @@ export default function AdminDesignersPage() {
           value={deletedFilter}
           onChange={(val) => { setDeletedFilter(val as DeletedFilter); setPage(1); }}
           options={[
-            { value: 'active', label: 'Active' },
-            { value: 'deleted', label: 'Deleted' },
-            { value: 'all', label: 'All' },
+            { value: 'active', label: t('Active', '活跃') },
+            { value: 'deleted', label: t('Deleted', '已删除') },
+            { value: 'all', label: t('All', '全部') },
           ]}
         />
         <div className="flex-1 min-w-[200px]">
@@ -400,7 +402,7 @@ export default function AdminDesignersPage() {
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search by name, email, or city..."
+            placeholder={t('Search by name, email, or city...', '按名称、邮箱或城市搜索...')}
             className="h-9 w-full px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
           />
         </div>
@@ -409,20 +411,20 @@ export default function AdminDesignersPage() {
       {/* Batch action bar */}
       {canApprove && selectedIds.length > 0 && viewMode === 'list' && (
         <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11 mb-6">
-          <span className="text-sm text-stone-500">{selectedIds.length} selected</span>
+          <span className="text-sm text-stone-500">{selectedIds.length} {t('selected', '已选')}</span>
           <button
             onClick={handleBulkApprove}
             disabled={isSubmitting || selectedPendingIds.length === 0}
             className="h-8 px-4 text-sm text-white bg-green-600 rounded-xl hover:bg-green-700 transition disabled:opacity-50"
           >
-            批准 ({selectedPendingIds.length})
+            {t('Approve', '批准')} ({selectedPendingIds.length})
           </button>
           <button
             onClick={() => setBulkDeleteModalOpen(true)}
             disabled={isSubmitting}
             className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition disabled:opacity-50"
           >
-            <Trash2 size={14} /> 删除 ({selectedIds.length})
+            <Trash2 size={14} /> {t('Delete', '删除')} ({selectedIds.length})
           </button>
         </div>
       )}
@@ -431,21 +433,21 @@ export default function AdminDesignersPage() {
       {viewMode === 'sort' && canSort && deletedFilter === 'active' && (
         <div className="mb-4">
           <p className="text-sm text-stone-500 mb-2">
-            Drag or use arrows to change the display order. Higher positions appear first on the homepage.
+            {t('Drag or use arrows to change the display order. Higher positions appear first on the homepage.', '拖拽或使用箭头调整展示顺序。数字越大越靠前。')}
           </p>
           <button
             onClick={handleSaveOrder}
             disabled={isSubmitting}
             className="px-4 py-2 bg-[#b8864a] text-white rounded-lg text-sm hover:bg-[#a67c47] disabled:opacity-50"
           >
-            Save Order
+            {t('Save Order', '保存排序')}
           </button>
         </div>
       )}
 
       {/* Results count */}
       <div className="text-sm text-stone-500 mb-4">
-        {total} designer{total !== 1 ? 's' : ''} found
+        {total} {t('designer', '位设计师')}{total !== 1 ? 's' : ''} {t('found', '')}
       </div>
 
       {/* Designer List */}
@@ -453,7 +455,7 @@ export default function AdminDesignersPage() {
         <PageSpinner />
       ) : designers.length === 0 ? (
         <div className="bg-white rounded-lg border border-stone-200 p-12 text-center">
-          <p className="text-stone-500">No designers found</p>
+          <p className="text-stone-500">{t('No designers found', '暂无设计师')}</p>
         </div>
       ) : viewMode === 'list' || !canSort ? (
         <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
@@ -470,16 +472,16 @@ export default function AdminDesignersPage() {
                     />
                   </th>
                 )}
-                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Designer</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Contact</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Status</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Designer', '设计师')}</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Contact', '联系方式')}</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Status', '状态')}</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">
                   <button
                     type="button"
                     onClick={() => toggleNumericSort('total_profile_views')}
                     className="inline-flex items-center gap-1.5 text-stone-500 hover:text-[#2c2c2c]"
                   >
-                    <span>Views</span>
+                    <span>{t('Views', '浏览量')}</span>
                     {getNumericSortIcon('total_profile_views')}
                   </button>
                 </th>
@@ -489,12 +491,12 @@ export default function AdminDesignersPage() {
                     onClick={() => toggleNumericSort('project_count')}
                     className="inline-flex items-center gap-1.5 text-stone-500 hover:text-[#2c2c2c]"
                   >
-                    <span>Projects</span>
+                    <span>{t('Projects', '项目')}</span>
                     {getNumericSortIcon('project_count')}
                   </button>
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Registered</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Actions</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Registered', '注册时间')}</th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">{t('Actions', '操作')}</th>
               </tr>
             </thead>
             <tbody>
@@ -535,13 +537,13 @@ export default function AdminDesignersPage() {
                         <Link to={`/admin/designers/${designer.id}`} className="font-medium text-[#2c2c2c] hover:text-[#b8864a]">
                           {designer.full_name}
                         </Link>
-                        <p className="text-sm text-stone-500">{designer.city || 'No city'}</p>
+                        <p className="text-sm text-stone-500">{designer.city || t('No city', '无城市')}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4">
                     <p className="text-sm text-[#2c2c2c]">{designer.email}</p>
-                    <p className="text-sm text-stone-500">{designer.phone || 'No phone'}</p>
+                    <p className="text-sm text-stone-500">{designer.phone || t('No phone', '无电话')}</p>
                   </td>
                   <td className="py-3 px-4">{getLifecycleBadge(designer)}</td>
                   <td className="py-3 px-4 text-right text-sm">
@@ -559,7 +561,7 @@ export default function AdminDesignersPage() {
                         to={`/admin/designers/${designer.id}`}
                         className="inline-flex h-9 items-center rounded-lg border border-[#b8864a]/35 px-3 text-sm font-semibold text-[#b8864a] hover:bg-[#b8864a]/10 hover:text-[#a67c47]"
                       >
-                        View details
+                        {t('View details', '查看详情')}
                       </Link>
                     {canApprove && !designer.deleted_at && designer.status === 'pending' && (
                       <div className="flex max-w-[220px] flex-wrap justify-end gap-2">
@@ -567,13 +569,13 @@ export default function AdminDesignersPage() {
                           onClick={() => handleApprove(designer.id)}
                           className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                         >
-                          Approve
+                          {t('Approve', '通过')}
                         </button>
                         <button
                           onClick={() => setRejectModal({ id: designer.id, name: designer.full_name })}
                           className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700"
                         >
-                          Reject
+                          {t('Reject', '拒绝')}
                         </button>
                       </div>
                     )}
@@ -583,7 +585,7 @@ export default function AdminDesignersPage() {
                         disabled={isSubmitting}
                         className="px-3 py-1.5 bg-stone-700 text-white text-sm rounded hover:bg-stone-800 disabled:opacity-50"
                       >
-                        Restore
+                        {t('Restore', '恢复')}
                       </button>
                     )}
                     {canApprove && !designer.deleted_at && (
@@ -592,17 +594,17 @@ export default function AdminDesignersPage() {
                         disabled={isSubmitting}
                         className="px-3 py-1.5 bg-stone-700 text-white text-sm rounded hover:bg-stone-800 disabled:opacity-50"
                       >
-                        Delete
+                        {t('Delete', '删除')}
                       </button>
                     )}
                     {designer.status === 'rejected' && designer.rejection_reason && (
                       <span className="block max-w-[220px] truncate text-right text-xs text-red-600 md:max-w-[320px] xl:max-w-[440px]" title={designer.rejection_reason}>
-                        Rejected: {designer.rejection_reason}
+                        {t('Rejected', '已拒绝')}: {designer.rejection_reason}
                       </span>
                     )}
                     {designer.deleted_at && designer.delete_reason && (
                       <span className="block max-w-[220px] truncate text-right text-xs text-stone-500 md:max-w-[320px] xl:max-w-[440px]" title={designer.delete_reason}>
-                        Delete reason: {designer.delete_reason}
+                        {t('Delete reason', '删除原因')}: {designer.delete_reason}
                       </span>
                     )}
                     </div>
@@ -645,7 +647,7 @@ export default function AdminDesignersPage() {
                 </button>
               </div>
               <div className="w-20">
-                <label className="block text-[10px] text-stone-500 mb-1">Order</label>
+                <label className="block text-[10px] text-stone-500 mb-1">{t('Order', '排序')}</label>
                 <input
                   type="number"
                   min={1}
@@ -668,8 +670,8 @@ export default function AdminDesignersPage() {
                 <p className="text-sm text-stone-500">{designer.city}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">{formatCount(designer.total_profile_views)} views</p>
-                <p className="text-xs text-stone-500">{formatCount(designer.project_count)} projects</p>
+                <p className="text-sm font-medium">{formatCount(designer.total_profile_views)} {t('views', '浏览')}</p>
+                <p className="text-xs text-stone-500">{formatCount(designer.project_count)} {t('projects', '项目')}</p>
               </div>
             </div>
           );
@@ -679,7 +681,7 @@ export default function AdminDesignersPage() {
             disabled={isSubmitting}
             className="mt-4 px-6 py-2.5 bg-[#b8864a] text-white rounded-lg font-medium hover:bg-[#a67c47] disabled:opacity-50"
           >
-            {isSubmitting ? 'Saving...' : 'Save Display Order'}
+            {isSubmitting ? t('Saving...', '保存中...') : t('Save Display Order', '保存展示顺序')}
           </button>
         </div>
       )}
@@ -692,17 +694,17 @@ export default function AdminDesignersPage() {
             disabled={page === 1}
             className="px-4 py-2 border border-stone-200 rounded-lg text-sm disabled:opacity-50"
           >
-            Previous
+            {t('Previous', '上一页')}
           </button>
           <span className="px-4 py-2 text-sm text-stone-600">
-            Page {page} of {Math.ceil(total / 20)}
+            {t('Page', '第')} {page} {t('of', '/')} {Math.ceil(total / 20)}
           </span>
           <button
             onClick={() => setPage(p => p + 1)}
             disabled={page >= Math.ceil(total / 20)}
             className="px-4 py-2 bg-white border border-stone-200 rounded-lg text-sm hover:bg-stone-50 disabled:opacity-50"
           >
-            Next
+            {t('Next', '下一页')}
           </button>
         </div>
       )}
@@ -712,21 +714,21 @@ export default function AdminDesignersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-[#2c2c2c] mb-2">
-              Reject Designer
+              {t('Reject Designer', '拒绝设计师')}
             </h3>
             <p className="text-sm text-stone-600 mb-4">
-              Rejecting: <strong>{rejectModal.name}</strong>
+              {t('Rejecting', '正在拒绝')}: <strong>{rejectModal.name}</strong>
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-stone-700 mb-1">
-                Rejection Reason *
+                {t('Rejection Reason', '拒绝原因')} *
               </label>
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
-                placeholder="Please explain why this designer is being rejected..."
+                placeholder={t('Please explain why this designer is being rejected...', '请说明拒绝该设计师的原因...')}
               />
             </div>
             <div className="flex gap-3 justify-end">
@@ -737,14 +739,14 @@ export default function AdminDesignersPage() {
                 }}
                 className="px-4 py-2 text-stone-600 hover:text-[#2c2c2c]"
               >
-                Cancel
+                {t('Cancel', '取消')}
               </button>
               <button
                 onClick={handleReject}
                 disabled={isSubmitting || !rejectReason.trim()}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {isSubmitting ? 'Rejecting...' : 'Reject Designer'}
+                {isSubmitting ? t('Rejecting...', '拒绝中...') : t('Reject Designer', '拒绝设计师')}
               </button>
             </div>
           </div>
@@ -755,21 +757,21 @@ export default function AdminDesignersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-[#2c2c2c] mb-2">
-              Delete Designer
+              {t('Delete Designer', '删除设计师')}
             </h3>
             <p className="text-sm text-stone-600 mb-4">
-              Deleting: <strong>{deleteModal.name}</strong>
+              {t('Deleting', '正在删除')}: <strong>{deleteModal.name}</strong>
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-stone-700 mb-1">
-                Delete Reason *
+                {t('Delete Reason', '删除原因')} *
               </label>
               <textarea
                 value={deleteReason}
                 onChange={(e) => setDeleteReason(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
-                placeholder="Please explain why this designer is being deleted..."
+                placeholder={t('Please explain why this designer is being deleted...', '请说明删除该设计师的原因...')}
               />
             </div>
             <div className="flex gap-3 justify-end">
@@ -780,14 +782,14 @@ export default function AdminDesignersPage() {
                 }}
                 className="px-4 py-2 text-stone-600 hover:text-[#2c2c2c]"
               >
-                Cancel
+                {t('Cancel', '取消')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isSubmitting || !deleteReason.trim()}
                 className="px-4 py-2 bg-stone-800 text-white rounded-lg hover:bg-black disabled:opacity-50"
               >
-                {isSubmitting ? 'Deleting...' : 'Delete Designer'}
+                {isSubmitting ? t('Deleting...', '删除中...') : t('Delete Designer', '删除设计师')}
               </button>
             </div>
           </div>
@@ -798,21 +800,21 @@ export default function AdminDesignersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-[#2c2c2c] mb-2">
-              Delete Selected Designers
+              {t('Delete Selected Designers', '删除已选设计师')}
             </h3>
             <p className="text-sm text-stone-600 mb-4">
-              You are deleting <strong>{selectedIds.length}</strong> selected designer(s).
+              {t('You are deleting', '您正在删除')} <strong>{selectedIds.length}</strong> {t('selected designer(s)', '位已选设计师')}.
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-stone-700 mb-1">
-                Delete Reason *
+                {t('Delete Reason', '删除原因')} *
               </label>
               <textarea
                 value={deleteReason}
                 onChange={(e) => setDeleteReason(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
-                placeholder="Please explain why these designers are being deleted..."
+                placeholder={t('Please explain why these designers are being deleted...', '请说明删除这些设计师的原因...')}
               />
             </div>
             <div className="flex gap-3 justify-end">
@@ -823,14 +825,14 @@ export default function AdminDesignersPage() {
                 }}
                 className="px-4 py-2 text-stone-600 hover:text-[#2c2c2c]"
               >
-                Cancel
+                {t('Cancel', '取消')}
               </button>
               <button
                 onClick={handleBulkDelete}
                 disabled={isSubmitting || !deleteReason.trim()}
                 className="px-4 py-2 bg-stone-800 text-white rounded-lg hover:bg-black disabled:opacity-50"
               >
-                {isSubmitting ? 'Deleting...' : `Delete ${selectedIds.length} Designers`}
+                {isSubmitting ? t('Deleting...', '删除中...') : `${t('Delete', '删除')} ${selectedIds.length} ${t('Designers', '位设计师')}`}
               </button>
             </div>
           </div>

@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { adminApi, VisitorRecord } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 const PAGE_SIZE = 50;
 
 export default function AdminVisitorsPage() {
+  const { t } = useAdminT();
   const { hasPermission } = useAdmin();
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -37,7 +39,7 @@ export default function AdminVisitorsPage() {
   }, [hasPermission, page]);
 
   if (!hasPermission('can_view_stats')) {
-    return <div className="text-stone-500">You do not have permission to view visitor statistics.</div>;
+    return <div className="text-stone-500">{t('You do not have permission to view visitor statistics.', '您没有查看访客统计的权限。')}</div>;
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -45,7 +47,7 @@ export default function AdminVisitorsPage() {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold text-[#2c2c2c]">Visitor Statistics</h1>
+        <h1 className="text-3xl font-bold text-[#2c2c2c]">{t('Visitor Statistics', '访客统计')}</h1>
         <a
           href="https://analytics.google.com/analytics/web/#/p488498498/reports/intelligenthome"
           target="_blank"
@@ -56,24 +58,24 @@ export default function AdminVisitorsPage() {
           Google Analytics
         </a>
       </div>
-      <p className="text-stone-500 text-sm mb-6">Unique visitor IP records and their most recent access location.</p>
+      <p className="text-stone-500 text-sm mb-6">{t('Unique visitor IP records and their most recent access location.', '独立访客 IP 记录及最近访问位置。')}</p>
 
       <div className="rounded-lg border border-stone-200 bg-white">
         {isLoading ? (
-          <PageSpinner text="Loading visitor records..." />
+          <PageSpinner text={t('Loading visitor records...', '加载访客记录...')} />
         ) : error ? (
           <div className="p-6 text-red-600">{error}</div>
         ) : rows.length === 0 ? (
-          <div className="p-6 text-stone-500">No visitor records yet.</div>
+          <div className="p-6 text-stone-500">{t('No visitor records yet.', '暂无访客记录。')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-stone-200">
                   <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">No.</th>
-                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">Visitor IP</th>
-                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">Location</th>
-                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">Last Visit</th>
+                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">{t('Visitor IP', '访客 IP')}</th>
+                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">{t('Location', '位置')}</th>
+                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">{t('Last Visit', '最近访问')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -81,7 +83,7 @@ export default function AdminVisitorsPage() {
                   <tr key={`${item.ip}-${index}`} className="border-b border-stone-100">
                     <td className="py-3 px-4 text-sm text-stone-600">{(page - 1) * PAGE_SIZE + index + 1}</td>
                     <td className="py-3 px-4 text-sm font-medium text-[#2c2c2c]">{item.ip}</td>
-                    <td className="py-3 px-4 text-sm text-stone-600">{item.location || 'Unknown'}</td>
+                    <td className="py-3 px-4 text-sm text-stone-600">{item.location || t('Unknown', '未知')}</td>
                     <td className="py-3 px-4 text-sm text-stone-500">
                       {item.lastVisitedAt ? new Date(item.lastVisitedAt).toLocaleString() : '-'}
                     </td>
@@ -94,7 +96,7 @@ export default function AdminVisitorsPage() {
       </div>
 
       <div className="mt-4 flex items-center justify-between text-sm">
-        <div className="text-stone-500">Total unique IPs: {total}</div>
+        <div className="text-stone-500">{t('Total unique IPs', '独立 IP 总数')}: {total}</div>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -102,7 +104,7 @@ export default function AdminVisitorsPage() {
             disabled={page <= 1 || isLoading}
             className="rounded border border-stone-200 px-3 py-1.5 text-stone-700 disabled:opacity-40"
           >
-            Previous
+            {t('Previous', '上一页')}
           </button>
           <span className="text-stone-600">{page} / {totalPages}</span>
           <button
@@ -111,7 +113,7 @@ export default function AdminVisitorsPage() {
             disabled={page >= totalPages || isLoading}
             className="rounded border border-stone-200 px-3 py-1.5 text-stone-700 disabled:opacity-40"
           >
-            Next
+            {t('Next', '下一页')}
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SmartImage from '../ui/SmartImage';
 import { TableSpinner } from '../ui/Spinner';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface CompanyRecord {
   id: number;
@@ -47,6 +48,7 @@ export default function AdminDirectoryTable({
   onSortToggle,
 }: AdminDirectoryTableProps) {
   const navigate = useNavigate();
+  const { t } = useAdminT();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{ msg: string; key: string } | null>(null);
@@ -98,24 +100,24 @@ export default function AdminDirectoryTable({
                 className="rounded"
               />
             </th>
-            <th className="text-left px-4 py-3 font-medium text-stone-600">Company</th>
-            <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
-            <th className="text-left px-4 py-3 font-medium text-stone-600">Owner</th>
+            <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Company', '公司')}</th>
+            <th className="text-left px-4 py-3 font-medium text-stone-600">{t('City', '城市')}</th>
+            <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Owner', '所有者')}</th>
             <th
               className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
               onClick={onSortToggle}
             >
-              Projects {sortActive ? (sortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
+              {t('Projects', '项目')} {sortActive ? (sortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
             </th>
-            <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
-            <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
+            <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Home Order', '首页排序')}</th>
+            <th className="text-left px-4 py-3 font-medium text-stone-600">{t('List Order', '列表排序')}</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <TableSpinner colSpan={7} />
           ) : companies.length === 0 ? (
-            <tr><td colSpan={7} className="text-center py-12 text-stone-400">No records</td></tr>
+            <tr><td colSpan={7} className="text-center py-12 text-stone-400">{t('No records', '暂无数据')}</td></tr>
           ) : companies.map((c) => (
             <tr
               key={c.id}
@@ -190,10 +192,10 @@ export default function AdminDirectoryTable({
       </table>
       {pages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-          <span className="text-xs text-stone-500">Page {page} of {pages}</span>
+          <span className="text-xs text-stone-500">{t('Page', '第')} {page} {t('of', '/')} {pages}</span>
           <div className="flex gap-2">
-            <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
-            <button onClick={() => onPageChange(Math.min(pages, page + 1))} disabled={page >= pages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
+            <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Prev', '上一页')}</button>
+            <button onClick={() => onPageChange(Math.min(pages, page + 1))} disabled={page >= pages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Next', '下一页')}</button>
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { ArrowLeft, FolderOpen, ExternalLink } from 'lucide-react';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 const ROLE_BADGE: Record<string, string> = {
   user: 'bg-stone-100 text-stone-700',
@@ -18,6 +19,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useAdminT();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,7 +30,7 @@ export default function AdminUserDetailPage() {
     setLoading(true);
     adminApi.getUserDetail(Number(id))
       .then(setData)
-      .catch((err: any) => setError(err.message || 'Failed to load user.'))
+      .catch((err: any) => setError(err.message || t('Failed to load user.', '加载用户失败')))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -41,7 +43,7 @@ export default function AdminUserDetailPage() {
       const refreshed = await adminApi.getUserDetail(Number(id));
       setData(refreshed);
     } catch (err: any) {
-      alert(err.message || 'Failed to update status');
+      alert(err.message || t('Failed to update status', '更新状态失败'));
     } finally {
       setActionLoading(false);
     }
@@ -55,9 +57,9 @@ export default function AdminUserDetailPage() {
     return (
       <div className="space-y-4">
         <Link to="/admin/users" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
-          <ArrowLeft className="w-4 h-4" /> Back to users
+          <ArrowLeft className="w-4 h-4" /> {t('Back to users', '返回用户列表')}
         </Link>
-        <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error || 'User not found.'}</div>
+        <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error || t('User not found.', '用户未找到')}</div>
       </div>
     );
   }
@@ -74,7 +76,7 @@ export default function AdminUserDetailPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Back link */}
       <Link to="/admin/users" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
-        <ArrowLeft className="w-4 h-4" /> Back to users
+        <ArrowLeft className="w-4 h-4" /> {t('Back to users', '返回用户列表')}
       </Link>
 
       {/* Header */}
@@ -88,7 +90,7 @@ export default function AdminUserDetailPage() {
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-stone-800">{user.full_name || 'Unnamed'}</h1>
+            <h1 className="text-2xl font-bold text-stone-800">{user.full_name || t('Unnamed', '未命名')}</h1>
             <p className="text-sm text-stone-500">{user.email}</p>
           </div>
         </div>
@@ -101,32 +103,32 @@ export default function AdminUserDetailPage() {
               : 'bg-green-50 text-green-600 hover:bg-green-100'
           } disabled:opacity-50`}
         >
-          {actionLoading ? '...' : user.status === 'active' ? 'Suspend User' : 'Activate User'}
+          {actionLoading ? '...' : user.status === 'active' ? t('Suspend User', '停用用户') : t('Activate User', '激活用户')}
         </button>
       </div>
 
       {/* Info card */}
       <div className="bg-white rounded-xl border border-stone-200 p-6">
-        <h2 className="text-lg font-semibold text-stone-800 mb-4">User Information</h2>
+        <h2 className="text-lg font-semibold text-stone-800 mb-4">{t('User Information', '用户信息')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
           <div>
-            <span className="text-stone-500">Full Name</span>
+            <span className="text-stone-500">{t('Full Name', '姓名')}</span>
             <p className="text-stone-800 font-medium mt-0.5">{user.full_name || '—'}</p>
           </div>
           <div>
-            <span className="text-stone-500">Email</span>
+            <span className="text-stone-500">{t('Email', '邮箱')}</span>
             <p className="text-stone-800 font-medium mt-0.5">{user.email}</p>
           </div>
           <div>
-            <span className="text-stone-500">Phone</span>
+            <span className="text-stone-500">{t('Phone', '电话')}</span>
             <p className="text-stone-800 font-medium mt-0.5">{user.phone || '—'}</p>
           </div>
           <div>
-            <span className="text-stone-500">City</span>
+            <span className="text-stone-500">{t('City', '城市')}</span>
             <p className="text-stone-800 font-medium mt-0.5">{user.city || '—'}</p>
           </div>
           <div>
-            <span className="text-stone-500">Role</span>
+            <span className="text-stone-500">{t('Role', '角色')}</span>
             <p className="mt-0.5">
               <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[user.role]}`}>
                 {user.role}
@@ -134,7 +136,7 @@ export default function AdminUserDetailPage() {
             </p>
           </div>
           <div>
-            <span className="text-stone-500">Status</span>
+            <span className="text-stone-500">{t('Status', '状态')}</span>
             <p className="mt-0.5">
               <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[user.status]}`}>
                 {user.status}
@@ -142,11 +144,11 @@ export default function AdminUserDetailPage() {
             </p>
           </div>
           <div>
-            <span className="text-stone-500">Email Verified</span>
-            <p className="text-stone-800 font-medium mt-0.5">{user.email_verified ? 'Yes' : 'No'}</p>
+            <span className="text-stone-500">{t('Email Verified', '邮箱已验证')}</span>
+            <p className="text-stone-800 font-medium mt-0.5">{user.email_verified ? t('Yes', '是') : t('No', '否')}</p>
           </div>
           <div>
-            <span className="text-stone-500">Registered</span>
+            <span className="text-stone-500">{t('Registered', '注册时间')}</span>
             <p className="text-stone-800 font-medium mt-0.5">{new Date(user.created_at).toLocaleString()}</p>
           </div>
         </div>
@@ -155,10 +157,10 @@ export default function AdminUserDetailPage() {
       {/* Linked Designer */}
       {designer && (
         <div className="bg-white rounded-xl border border-stone-200 p-6">
-          <h2 className="text-lg font-semibold text-stone-800 mb-4">Linked Designer</h2>
+          <h2 className="text-lg font-semibold text-stone-800 mb-4">{t('Linked Designer', '关联设计师')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <span className="text-stone-500">Designer ID</span>
+              <span className="text-stone-500">{t('Designer ID', '设计师 ID')}</span>
               <p className="text-stone-800 font-medium mt-0.5">
                 <Link to={`/admin/designers/${designer.id}`} className="text-[#b8864a] hover:underline">
                   #{designer.id}
@@ -166,7 +168,7 @@ export default function AdminUserDetailPage() {
               </p>
             </div>
             <div>
-              <span className="text-stone-500">Status</span>
+              <span className="text-stone-500">{t('Status', '状态')}</span>
               <p className="mt-0.5">
                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   designer.status === 'approved' ? 'bg-green-100 text-green-700'
@@ -178,8 +180,8 @@ export default function AdminUserDetailPage() {
               </p>
             </div>
             <div>
-              <span className="text-stone-500">Approved</span>
-              <p className="text-stone-800 font-medium mt-0.5">{designer.is_approved ? 'Yes' : 'No'}</p>
+              <span className="text-stone-500">{t('Approved', '已通过')}</span>
+              <p className="text-stone-800 font-medium mt-0.5">{designer.is_approved ? t('Yes', '是') : t('No', '否')}</p>
             </div>
           </div>
         </div>
@@ -188,18 +190,18 @@ export default function AdminUserDetailPage() {
       {/* Linked Company */}
       {company && (
         <div className="bg-white rounded-xl border border-stone-200 p-6">
-          <h2 className="text-lg font-semibold text-stone-800 mb-4">Linked Company</h2>
+          <h2 className="text-lg font-semibold text-stone-800 mb-4">{t('Linked Company', '关联公司')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <span className="text-stone-500">Company ID</span>
+              <span className="text-stone-500">{t('Company ID', '公司 ID')}</span>
               <p className="text-stone-800 font-medium mt-0.5">#{company.id}</p>
             </div>
             <div>
-              <span className="text-stone-500">Slug</span>
+              <span className="text-stone-500">{t('Slug', '链接标识')}</span>
               <p className="text-stone-800 font-medium mt-0.5">{company.slug}</p>
             </div>
             <div>
-              <span className="text-stone-500">City</span>
+              <span className="text-stone-500">{t('City', '城市')}</span>
               <p className="text-stone-800 font-medium mt-0.5">{company.city || '—'}</p>
             </div>
           </div>
@@ -209,7 +211,7 @@ export default function AdminUserDetailPage() {
       {/* Company Applications */}
       {companyApplications && companyApplications.length > 0 && (
         <div className="bg-white rounded-xl border border-stone-200 p-6">
-          <h2 className="text-lg font-semibold text-stone-800 mb-4">Company Applications</h2>
+          <h2 className="text-lg font-semibold text-stone-800 mb-4">{t('Company Applications', '公司申请')}</h2>
           <div className="space-y-3">
             {companyApplications.map((app: any) => (
               <div key={app.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg text-sm">
@@ -238,18 +240,18 @@ export default function AdminUserDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-stone-800 flex items-center gap-2">
               <FolderOpen className="w-5 h-5 text-stone-400" />
-              Portfolio ({projects?.length || 0} projects)
+              {t('Portfolio', '作品集')} ({projects?.length || 0} {t('projects', '项目')})
             </h2>
             <Link
               to={`/admin/designers/${designer.id}`}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-[#b8864a] hover:underline"
             >
-              Full designer page <ExternalLink className="w-3.5 h-3.5" />
+              {t('Full designer page', '设计师详情页')} <ExternalLink className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {!projects || projects.length === 0 ? (
-            <div className="text-center py-8 text-stone-400 text-sm">No projects uploaded yet.</div>
+            <div className="text-center py-8 text-stone-400 text-sm">{t('No projects uploaded yet.', '暂无上传项目')}</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {projects.map((p: any) => {
@@ -268,7 +270,7 @@ export default function AdminUserDetailPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-stone-300 text-sm">
-                          No image
+                          {t('No image', '无图片')}
                         </div>
                       )}
                     </div>
@@ -280,7 +282,7 @@ export default function AdminUserDetailPage() {
                         </span>
                       </div>
                       <p className="text-xs text-stone-500">
-                        {p.location}{p.year ? ` · ${p.year}` : ''} · {Array.isArray(p.images) ? p.images.length : 0} images
+                        {p.location}{p.year ? ` · ${p.year}` : ''} · {Array.isArray(p.images) ? p.images.length : 0} {t('images', '张图片')}
                       </p>
                       {p.rejection_reason && (
                         <p className="text-xs text-red-600 mt-1 line-clamp-2">{p.rejection_reason}</p>

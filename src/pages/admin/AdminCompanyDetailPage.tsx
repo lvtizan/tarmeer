@@ -5,6 +5,7 @@ import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface CompanyDetail {
   id: number;
@@ -53,6 +54,7 @@ function parseJsonArray(val: string | null | undefined): string[] {
 
 export default function AdminCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useAdminT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [company, setCompany] = useState<CompanyDetail | null>(null);
@@ -88,7 +90,7 @@ export default function AdminCompanyDetailPage() {
 
   if (loading) return <PageSpinner />;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
-  if (!company) return <div className="p-6 text-stone-400">Company not found.</div>;
+  if (!company) return <div className="p-6 text-stone-400">{t('Company not found.', '公司未找到')}</div>;
 
   const services = parseJsonArray(company.services);
   const specialties = parseJsonArray(company.specialties);
@@ -102,7 +104,7 @@ export default function AdminCompanyDetailPage() {
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        Back to Companies
+        {t('Back to Companies', '返回公司列表')}
       </button>
 
       <div className="flex gap-6 items-start">
@@ -126,7 +128,7 @@ export default function AdminCompanyDetailPage() {
                   title="Edit company"
                 >
                   <Pencil size={14} />
-                  Edit
+                  {t('Edit', '编辑')}
                 </button>
               </div>
               {company.name_ar && <p className="text-sm text-stone-500 mt-0.5" dir="rtl">{company.name_ar}</p>}
@@ -139,16 +141,16 @@ export default function AdminCompanyDetailPage() {
 
           {/* Details card */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-2.5 text-sm">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Details</h2>
-            {company.city && <InfoRow label="City" value={company.city} />}
-            {company.area && <InfoRow label="Area" value={company.area} />}
-            {company.address && <InfoRow label="Address" value={company.address} />}
-            {company.year_established && <InfoRow label="Est." value={String(company.year_established)} />}
-            {company.license_number && <InfoRow label="License" value={company.license_number} />}
-            {company.phone && <InfoRow label="Phone" value={company.phone} />}
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Details', '详情')}</h2>
+            {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
+            {company.area && <InfoRow label={t('Area', '区域')} value={company.area} />}
+            {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
+            {company.year_established && <InfoRow label={t('Est.', '成立')} value={String(company.year_established)} />}
+            {company.license_number && <InfoRow label={t('License', '执照')} value={company.license_number} />}
+            {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
             {company.whatsapp && <InfoRow label="WhatsApp" value={company.whatsapp} />}
-            {company.email && <InfoRow label="Email" value={company.email} />}
-            {company.website && <InfoRow label="Website" value={company.website} isLink />}
+            {company.email && <InfoRow label={t('Email', '邮箱')} value={company.email} />}
+            {company.website && <InfoRow label={t('Website', '网站')} value={company.website} isLink />}
             {company.instagram && <InfoRow label="Instagram" value={company.instagram} isLink />}
             {company.facebook && <InfoRow label="Facebook" value={company.facebook} isLink />}
             {company.linkedin && <InfoRow label="LinkedIn" value={company.linkedin} isLink />}
@@ -159,7 +161,7 @@ export default function AdminCompanyDetailPage() {
             <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
               {services.length > 0 && (
                 <div>
-                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Services</h2>
+                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Services', '服务')}</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {services.map((s, i) => (
                       <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">{s}</span>
@@ -169,7 +171,7 @@ export default function AdminCompanyDetailPage() {
               )}
               {specialties.length > 0 && (
                 <div>
-                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Specialties</h2>
+                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Specialties', '专长')}</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {specialties.map((s, i) => (
                       <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-[#b8864a]/10 text-[#b8864a]">{s}</span>
@@ -182,14 +184,14 @@ export default function AdminCompanyDetailPage() {
 
           {/* Owner */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">Owner Account</h2>
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Owner Account', '所有者账户')}</h2>
             {company.owner_user_id ? (
               <div className="space-y-1">
                 <div className="font-medium text-stone-800">{company.owner_name}</div>
                 <div className="text-stone-500">{company.owner_email}</div>
               </div>
             ) : (
-              <p className="text-stone-400 text-xs">Not claimed</p>
+              <p className="text-stone-400 text-xs">{t('Not claimed', '未认领')}</p>
             )}
           </div>
         </div>
@@ -197,7 +199,7 @@ export default function AdminCompanyDetailPage() {
         {/* ===== RIGHT: Portfolio ===== */}
         <div className="flex-1 min-w-0 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-stone-800">Portfolio <span className="text-stone-400 font-normal text-sm">({projects.length} projects)</span></h2>
+            <h2 className="text-lg font-bold text-stone-800">{t('Portfolio', '作品集')} <span className="text-stone-400 font-normal text-sm">({projects.length} {t('projects', '项目')})</span></h2>
           </div>
 
           {/* Style tabs */}
@@ -213,7 +215,7 @@ export default function AdminCompanyDetailPage() {
                       : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                   }`}
                 >
-                  {s === 'all' ? `All (${projects.length})` : s}
+                  {s === 'all' ? `${t('All', '全部')} (${projects.length})` : s}
                 </button>
               ))}
             </div>
@@ -222,7 +224,7 @@ export default function AdminCompanyDetailPage() {
           {/* Project grid */}
           {visibleProjects.length === 0 ? (
             <div className="bg-white rounded-xl border border-stone-200 p-12 text-center text-stone-400">
-              No projects yet
+              {t('No projects yet', '暂无项目')}
             </div>
           ) : (
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface Admin {
   id: number;
@@ -18,6 +19,7 @@ interface Admin {
 }
 
 export default function AdminAdminsPage() {
+  const { t } = useAdminT();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -146,7 +148,7 @@ export default function AdminAdminsPage() {
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Never';
+    if (!dateStr) return t('Never', '从未');
     return new Date(dateStr).toLocaleString();
   };
 
@@ -161,12 +163,12 @@ export default function AdminAdminsPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#2c2c2c]">Admin Users</h1>
+        <h1 className="text-2xl font-bold text-[#2c2c2c]">{t('Admin Users', '管理员用户')}</h1>
         <button
           onClick={() => setShowCreateModal(true)}
           className="px-4 py-2 bg-[#b8864a] text-white rounded-lg text-sm hover:bg-[#a67c47] transition-colors"
         >
-          Create Sub-Admin
+          {t('Create Sub-Admin', '创建子管理员')}
         </button>
       </div>
 
@@ -174,12 +176,12 @@ export default function AdminAdminsPage() {
         <table className="w-full">
           <thead className="bg-stone-50">
             <tr>
-              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Admin</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Role</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Permissions</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Status</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Last Login</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Actions</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Admin', '管理员')}</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Role', '角色')}</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Permissions', '权限')}</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Status', '状态')}</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Last Login', '最后登录')}</th>
+              <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">{t('Actions', '操作')}</th>
             </tr>
           </thead>
           <tbody>
@@ -197,32 +199,32 @@ export default function AdminAdminsPage() {
                       ? 'bg-purple-100 text-purple-700'
                       : 'bg-blue-100 text-blue-700'
                   }`}>
-                    {admin.role === 'super_admin' ? 'Super Admin' : 'Sub Admin'}
+                    {admin.role === 'super_admin' ? t('Super Admin', '超级管理员') : t('Sub Admin', '子管理员')}
                   </span>
                 </td>
                 <td className="py-4 px-4">
                   {admin.role === 'super_admin' ? (
-                    <span className="text-stone-400 text-sm">All permissions</span>
+                    <span className="text-stone-400 text-sm">{t('All permissions', '全部权限')}</span>
                   ) : (
                     <div className="flex items-center gap-2 flex-wrap">
                       {admin.permissions?.can_approve && (
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">Approve</span>
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">{t('Approve', '审批')}</span>
                       )}
                       {admin.permissions?.can_sort && (
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">Sort</span>
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">{t('Sort', '排序')}</span>
                       )}
                       {admin.permissions?.can_view_stats && (
-                        <span className="px-2 py-0.5 bg-stone-100 text-stone-700 text-xs rounded">Stats</span>
+                        <span className="px-2 py-0.5 bg-stone-100 text-stone-700 text-xs rounded">{t('Stats', '统计')}</span>
                       )}
                       {!admin.permissions?.can_approve && !admin.permissions?.can_sort && !admin.permissions?.can_view_stats && (
-                        <span className="text-stone-400 text-xs">No permissions</span>
+                        <span className="text-stone-400 text-xs">{t('No permissions', '无权限')}</span>
                       )}
                       <button
                         type="button"
                         onClick={() => openPermissions(admin)}
                         className="text-xs font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2"
                       >
-                        编辑权限
+                        {t('Edit Permissions', '编辑权限')}
                       </button>
                     </div>
                   )}
@@ -233,7 +235,7 @@ export default function AdminAdminsPage() {
                       ? 'bg-green-100 text-green-700'
                       : 'bg-red-100 text-red-700'
                   }`}>
-                    {admin.is_active ? 'Active' : 'Inactive'}
+                    {admin.is_active ? t('Active', '活跃') : t('Inactive', '已停用')}
                   </span>
                 </td>
                 <td className="py-4 px-4 text-sm text-stone-500">
@@ -250,13 +252,13 @@ export default function AdminAdminsPage() {
                             : 'bg-green-100 text-green-700 hover:bg-green-200'
                         }`}
                       >
-                        {admin.is_active ? 'Deactivate' : 'Activate'}
+                        {admin.is_active ? t('Deactivate', '停用') : t('Activate', '启用')}
                       </button>
                       <button
                         onClick={() => handleDelete(admin)}
                         className="px-3 py-1.5 bg-red-100 text-red-700 text-sm rounded hover:bg-red-200"
                       >
-                        Delete
+                        {t('Delete', '删除')}
                       </button>
                     </div>
                   )}
@@ -272,7 +274,7 @@ export default function AdminAdminsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-[#2c2c2c] mb-4">
-              Create Sub-Admin
+              {t('Create Sub-Admin', '创建子管理员')}
             </h3>
 
             {error && (
@@ -284,7 +286,7 @@ export default function AdminAdminsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Full Name
+                  {t('Full Name', '姓名')}
                 </label>
                 <input
                   type="text"
@@ -296,7 +298,7 @@ export default function AdminAdminsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Email
+                  {t('Email', '邮箱')}
                 </label>
                 <input
                   type="email"
@@ -308,20 +310,20 @@ export default function AdminAdminsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Password
+                  {t('Password', '密码')}
                 </label>
                 <input
                   type="password"
                   value={createData.password}
                   onChange={(e) => setCreateData({ ...createData, password: e.target.value })}
                   className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]/40 focus:border-[#b8864a]"
-                  placeholder="Minimum 8 characters"
+                  placeholder={t('Minimum 8 characters', '至少8个字符')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  Permissions
+                  {t('Permissions', '权限')}
                 </label>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2">
@@ -334,7 +336,7 @@ export default function AdminAdminsPage() {
                       })}
                       className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                     />
-                    <span className="text-sm">Can approve/reject designers</span>
+                    <span className="text-sm">{t('Can approve/reject designers', '可审批/拒绝设计师')}</span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -346,7 +348,7 @@ export default function AdminAdminsPage() {
                       })}
                       className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                     />
-                    <span className="text-sm">Can change display order</span>
+                    <span className="text-sm">{t('Can change display order', '可修改展示顺序')}</span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -358,7 +360,7 @@ export default function AdminAdminsPage() {
                       })}
                       className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                     />
-                    <span className="text-sm">Can view statistics</span>
+                    <span className="text-sm">{t('Can view statistics', '可查看统计')}</span>
                   </label>
                 </div>
               </div>
@@ -372,14 +374,14 @@ export default function AdminAdminsPage() {
                 }}
                 className="px-4 py-2 text-stone-600 hover:text-[#2c2c2c]"
               >
-                Cancel
+                {t('Cancel', '取消')}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-[#b8864a] text-white rounded-lg hover:bg-[#a67c47] disabled:opacity-50"
               >
-                {isSubmitting ? 'Creating...' : 'Create Admin'}
+                {isSubmitting ? t('Creating...', '创建中...') : t('Create Admin', '创建管理员')}
               </button>
             </div>
           </div>
@@ -396,7 +398,7 @@ export default function AdminAdminsPage() {
             className="bg-white rounded-2xl p-6 w-full max-w-md"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-[#2c2c2c] mb-1">编辑权限</h3>
+            <h3 className="text-lg font-semibold text-[#2c2c2c] mb-1">{t('Edit Permissions', '编辑权限')}</h3>
             <p className="text-sm text-stone-500 mb-5">
               {editPermissionsAdmin.full_name} · {editPermissionsAdmin.email}
             </p>
@@ -416,8 +418,8 @@ export default function AdminAdminsPage() {
                   className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                 />
                 <div>
-                  <div className="text-[15px] font-medium text-[#2c2c2c]">审批权限</div>
-                  <div className="text-[12px] text-stone-500">审批/拒绝设计师和公司申请</div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">{t('Approval Permission', '审批权限')}</div>
+                  <div className="text-[12px] text-stone-500">{t('Approve/reject designers and company applications', '审批/拒绝设计师和公司申请')}</div>
                 </div>
               </label>
               <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
@@ -428,8 +430,8 @@ export default function AdminAdminsPage() {
                   className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                 />
                 <div>
-                  <div className="text-[15px] font-medium text-[#2c2c2c]">排序权限</div>
-                  <div className="text-[12px] text-stone-500">修改首页和列表展示顺序</div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">{t('Sort Permission', '排序权限')}</div>
+                  <div className="text-[12px] text-stone-500">{t('Change homepage and list display order', '修改首页和列表展示顺序')}</div>
                 </div>
               </label>
               <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
@@ -440,8 +442,8 @@ export default function AdminAdminsPage() {
                   className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
                 />
                 <div>
-                  <div className="text-[15px] font-medium text-[#2c2c2c]">查看统计</div>
-                  <div className="text-[12px] text-stone-500">查看数据分析和报表页面</div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">{t('View Statistics', '查看统计')}</div>
+                  <div className="text-[12px] text-stone-500">{t('View analytics and report pages', '查看数据分析和报表页面')}</div>
                 </div>
               </label>
             </div>
@@ -451,14 +453,14 @@ export default function AdminAdminsPage() {
                 onClick={() => setEditPermissionsAdmin(null)}
                 className="h-11 px-4 text-stone-600 hover:text-[#2c2c2c] text-[15px]"
               >
-                取消
+                {t('Cancel', '取消')}
               </button>
               <button
                 onClick={savePermissions}
                 disabled={savingPermissions}
                 className="h-11 px-5 bg-[#b8864a] text-white rounded-xl hover:bg-[#a67c47] disabled:opacity-50 text-[15px] font-medium"
               >
-                {savingPermissions ? '保存中...' : '保存'}
+                {savingPermissions ? t('Saving...', '保存中...') : t('Save', '保存')}
               </button>
             </div>
           </div>

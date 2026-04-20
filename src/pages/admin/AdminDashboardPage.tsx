@@ -4,6 +4,7 @@ import { Clock, CheckCircle, Users, Globe } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { formatCount } from '../../lib/formatNumber';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 const PRIMARY = '#b8864a';
 
@@ -31,6 +32,7 @@ interface TopPage {
 }
 
 export default function AdminDashboardPage() {
+  const { t } = useAdminT();
   const { hasPermission } = useAdmin();
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
@@ -73,7 +75,7 @@ export default function AdminDashboardPage() {
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="text-stone-500">Loading dashboard...</div>
+        <div className="text-stone-500">{t('Loading dashboard...', '加载控制台...')}</div>
       </div>
     );
   }
@@ -81,10 +83,10 @@ export default function AdminDashboardPage() {
   if (!hasPermission('can_view_stats')) {
     return (
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">Dashboard</h1>
-        <p className="text-stone-500 text-sm mb-8">You do not have permission to view platform statistics.</p>
+        <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">{t('Dashboard', '控制台')}</h1>
+        <p className="text-stone-500 text-sm mb-8">{t('You do not have permission to view platform statistics.', '您没有查看平台统计数据的权限。')}</p>
         <Link to="/admin/designers" className="text-sm font-semibold" style={{ color: PRIMARY }}>
-          Go to designer management →
+          {t('Go to designer management →', '前往设计师管理 →')}
         </Link>
       </div>
     );
@@ -92,8 +94,8 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">Dashboard</h1>
-      <p className="text-stone-500 text-sm mb-8">Overview of designers and platform statistics.</p>
+      <h1 className="text-3xl font-bold text-[#2c2c2c] mb-2">{t('Dashboard', '控制台')}</h1>
+      <p className="text-stone-500 text-sm mb-8">{t('Overview of designers and platform statistics.', '设计师与平台数据概览。')}</p>
 
       {/* Overview Cards - match DesignerDashboardPage: icon + label + number */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -101,12 +103,12 @@ export default function AdminDashboardPage() {
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
           <div className="mb-3 flex items-center gap-3">
             <Clock className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Pending Designers</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">{t('Pending Designers', '待审核设计师')}</span>
           </div>
           <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.pending_count)}</p>
           {hasPermission('can_approve') && (
             <Link to="/admin/designers?status=pending" className="mt-3 inline-block text-sm font-semibold" style={{ color: PRIMARY }}>
-              Review pending designers →
+              {t('Review pending designers →', '审核待审设计师 →')}
             </Link>
           )}
         </div>
@@ -115,7 +117,7 @@ export default function AdminDashboardPage() {
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
           <div className="mb-3 flex items-center gap-3">
             <CheckCircle className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Approved Designers</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">{t('Approved Designers', '已通过设计师')}</span>
           </div>
           <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.approved_count)}</p>
         </div>
@@ -124,11 +126,11 @@ export default function AdminDashboardPage() {
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
           <div className="mb-3 flex items-center gap-3">
             <Globe className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Visitor IPs</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">{t('Visitor IPs', '访客 IP')}</span>
           </div>
           <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(visitorUniqueIpCount)}</p>
           <Link to="/admin/visitors" className="mt-3 inline-block text-sm font-semibold" style={{ color: PRIMARY }}>
-            View visitor list →
+            {t('View visitor list →', '查看访客列表 →')}
           </Link>
         </div>
 
@@ -136,7 +138,7 @@ export default function AdminDashboardPage() {
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#b8864a] via-[#d2ad77] to-[#f0dfbf]" />
           <div className="mb-3 flex items-center gap-3">
             <Users className="w-6 h-6" style={{ color: PRIMARY }} />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Total Designers</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">{t('Total Designers', '设计师总数')}</span>
           </div>
           <p className="text-4xl font-black tracking-tight text-[#2c2c2c] sm:text-5xl">{formatCount(overview?.total_count)}</p>
         </div>
@@ -145,7 +147,7 @@ export default function AdminDashboardPage() {
       {/* Charts Row - match designer card style */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
         <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Daily Profile Views (Last 30 Days)</h2>
+          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">{t('Daily Profile Views (Last 30 Days)', '每日档案浏览量（近30天）')}</h2>
           {dailyStats.length > 0 ? (
             <div className="space-y-2">
               {(() => {
@@ -165,12 +167,12 @@ export default function AdminDashboardPage() {
               })()}
             </div>
           ) : (
-            <p className="text-stone-500 text-center py-8">No data yet</p>
+            <p className="text-stone-500 text-center py-8">{t('No data yet', '暂无数据')}</p>
           )}
         </div>
 
         <div className="bg-white rounded-lg border border-stone-200 p-6">
-          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Top Companies by Views</h2>
+          <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">{t('Top Companies by Views', '浏览量最高的公司')}</h2>
           {topCompanies.length > 0 ? (
             <div className="space-y-2">
               {(() => {
@@ -190,7 +192,7 @@ export default function AdminDashboardPage() {
               })()}
             </div>
           ) : (
-            <p className="text-stone-500 text-center py-8">No data yet</p>
+            <p className="text-stone-500 text-center py-8">{t('No data yet', '暂无数据')}</p>
           )}
         </div>
       </div>
@@ -198,9 +200,9 @@ export default function AdminDashboardPage() {
       {/* Top Pages */}
       <div className="bg-white rounded-lg border border-stone-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#2c2c2c]">Top Pages by Views</h2>
+          <h2 className="text-lg font-bold text-[#2c2c2c]">{t('Top Pages by Views', '浏览量最高的页面')}</h2>
           <Link to="/admin/analytics" className="text-sm font-semibold" style={{ color: PRIMARY }}>
-            Full analytics →
+            {t('Full analytics →', '完整分析 →')}
           </Link>
         </div>
         {topPages.length > 0 ? (
@@ -208,10 +210,10 @@ export default function AdminDashboardPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-stone-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Rank</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">Page</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Views</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">Visitors</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Rank', '排名')}</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-stone-500">{t('Page', '页面')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">{t('Views', '浏览量')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-stone-500">{t('Visitors', '访客')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -235,7 +237,7 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         ) : (
-          <p className="text-stone-500 text-center py-8">No page view data yet</p>
+          <p className="text-stone-500 text-center py-8">{t('No page view data yet', '暂无页面浏览数据')}</p>
         )}
       </div>
     </div>

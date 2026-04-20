@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import SmartImage from '../ui/SmartImage';
 import { TableSpinner } from '../ui/Spinner';
 import { Trash2 } from 'lucide-react';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface CompanyProfileRecord {
   id: number;
@@ -43,6 +44,7 @@ export default function AdminApplicationsTable({
   onSortToggle,
 }: AdminApplicationsTableProps) {
   const navigate = useNavigate();
+  const { t } = useAdminT();
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const pages = Math.ceil(total / 20);
@@ -72,13 +74,13 @@ export default function AdminApplicationsTable({
     <div>
       {selected.size > 0 && (
         <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11 mb-3">
-          <span className="text-sm text-stone-500">{selected.size} selected</span>
+          <span className="text-sm text-stone-500">{selected.size} {t('selected', '已选')}</span>
           <button
             onClick={handleBatchDelete}
             className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
           >
             <Trash2 size={14} />
-            删除 ({selected.size})
+            {t('Delete', '删除')} ({selected.size})
           </button>
         </div>
       )}
@@ -95,24 +97,24 @@ export default function AdminApplicationsTable({
                   className="rounded"
                 />
               </th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">Company</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">Type</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">Owner</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Company', '公司')}</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Type', '类型')}</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('City', '城市')}</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Owner', '所有者')}</th>
               <th
                 className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
                 onClick={onSortToggle}
               >
-                Projects {sortActive ? (sortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
+                {t('Projects', '项目')} {sortActive ? (sortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
               </th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">Joined</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Joined', '加入时间')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <TableSpinner colSpan={7} />
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-12 text-stone-400">No records</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-stone-400">{t('No records', '暂无数据')}</td></tr>
             ) : profiles.map((c) => (
               <tr
                 key={c.id}
@@ -149,7 +151,7 @@ export default function AdminApplicationsTable({
                     : c.company_type === 'landscaping' ? 'bg-green-50 text-green-600'
                     : 'bg-blue-50 text-blue-600'
                   }`}>
-                    {{ design_studio: 'Studio', renovation_company: 'Renovation', general_contractor: 'Contractor', mep_contractor: 'MEP', maintenance_company: 'Maintenance', specialty_trade: 'Specialty', landscaping: 'Landscape', furnishing: 'Furnishing' }[c.company_type] || c.company_type}
+                    {{ design_studio: t('Studio', '设计工作室'), renovation_company: t('Renovation', '装修'), general_contractor: t('Contractor', '总承包'), mep_contractor: 'MEP', maintenance_company: t('Maintenance', '维保'), specialty_trade: t('Specialty', '专项'), landscaping: t('Landscape', '景观'), furnishing: t('Furnishing', '软装') }[c.company_type] || c.company_type}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>
@@ -165,10 +167,10 @@ export default function AdminApplicationsTable({
         </table>
         {pages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">Page {page} of {pages}</span>
+            <span className="text-xs text-stone-500">{t('Page', '第')} {page} {t('of', '/')} {pages}</span>
             <div className="flex gap-2">
-              <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
-              <button onClick={() => onPageChange(Math.min(pages, page + 1))} disabled={page >= pages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
+              <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Prev', '上一页')}</button>
+              <button onClick={() => onPageChange(Math.min(pages, page + 1))} disabled={page >= pages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Next', '下一页')}</button>
             </div>
           </div>
         )}

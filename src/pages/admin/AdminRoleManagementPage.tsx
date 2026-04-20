@@ -3,6 +3,7 @@ import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import AdminSelect from '../../components/ui/AdminSelect';
+import { useAdminT } from '../../hooks/useAdminLang';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 type RoleTab = 'homeowners' | 'companies';
@@ -86,6 +87,7 @@ const AssignDesignerModal: React.FC<AssignDesignerModalProps> = ({
   designers,
   isLoading,
 }) => {
+  const { t } = useAdminT();
   const [selectedDesignerId, setSelectedDesignerId] = useState<string>('');
 
   const approvedDesigners = designers.filter(d => d.status === 'approved');
@@ -103,18 +105,18 @@ const AssignDesignerModal: React.FC<AssignDesignerModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">
-          Assign Designer to {homeownerName}
+          {t('Assign Designer to', '分配设计师给')} {homeownerName}
         </h3>
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Select Designer
+            {t('Select Designer', '选择设计师')}
           </label>
           <AdminSelect
             value={selectedDesignerId}
             onChange={(val) => setSelectedDesignerId(val)}
             options={[
-              { value: '', label: 'Choose a designer...' },
+              { value: '', label: t('Choose a designer...', '请选择设计师...') },
               ...approvedDesigners.map((designer) => ({
                 value: designer.id,
                 label: `${designer.name} (${designer.city})`,
@@ -124,7 +126,7 @@ const AssignDesignerModal: React.FC<AssignDesignerModalProps> = ({
             className="w-full"
           />
           {approvedDesigners.length === 0 && (
-            <p className="mt-2 text-sm text-amber-600">No approved designers available</p>
+            <p className="mt-2 text-sm text-amber-600">{t('No approved designers available', '暂无已通过的设计师')}</p>
           )}
         </div>
 
@@ -134,14 +136,14 @@ const AssignDesignerModal: React.FC<AssignDesignerModalProps> = ({
             className="px-4 py-2 text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200 transition"
             disabled={isLoading}
           >
-            Cancel
+            {t('Cancel', '取消')}
           </button>
           <button
             onClick={handleAssign}
             disabled={!selectedDesignerId || isLoading}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Assigning...' : 'Assign'}
+            {isLoading ? t('Assigning...', '分配中...') : t('Assign', '分配')}
           </button>
         </div>
       </div>
@@ -157,6 +159,7 @@ const MergeModal: React.FC<MergeModalProps> = ({
   candidates,
   isLoading,
 }) => {
+  const { t } = useAdminT();
   const [selectedCandidate, setSelectedCandidate] = useState<UAECompany | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -180,16 +183,16 @@ const MergeModal: React.FC<MergeModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
         <h3 className="text-lg font-semibold text-slate-900 mb-2">
-          Merge {company.name}
+          {t('Merge', '合并')} {company.name}
         </h3>
         <p className="text-sm text-amber-600 mb-4">
-          Warning: Scraped data will override registered data
+          {t('Warning: Scraped data will override registered data', '警告：爬取的数据将覆盖注册数据')}
         </p>
 
         <div className="grid grid-cols-2 gap-6 mb-6">
           {/* Left side: Registered Company */}
           <div className="border border-slate-200 rounded-lg p-4">
-            <h4 className="font-semibold text-slate-900 mb-3">Registered Company</h4>
+            <h4 className="font-semibold text-slate-900 mb-3">{t('Registered Company', '已注册公司')}</h4>
             {company.logo && (
               <img
                 src={resolveImageUrl(company.logo)}
@@ -198,13 +201,13 @@ const MergeModal: React.FC<MergeModalProps> = ({
               />
             )}
             <div className="space-y-2 text-sm">
-              <p><span className="font-medium text-slate-700">Name:</span> {company.name}</p>
-              <p><span className="font-medium text-slate-700">Contact:</span> {company.contact}</p>
-              <p><span className="font-medium text-slate-700">Phone:</span> {company.phone}</p>
-              <p><span className="font-medium text-slate-700">City:</span> {company.city}</p>
+              <p><span className="font-medium text-slate-700">{t('Name', '名称')}:</span> {company.name}</p>
+              <p><span className="font-medium text-slate-700">{t('Contact', '联系人')}:</span> {company.contact}</p>
+              <p><span className="font-medium text-slate-700">{t('Phone', '电话')}:</span> {company.phone}</p>
+              <p><span className="font-medium text-slate-700">{t('City', '城市')}:</span> {company.city}</p>
               {company.services.length > 0 && (
                 <div>
-                  <p className="font-medium text-slate-700 mb-1">Services:</p>
+                  <p className="font-medium text-slate-700 mb-1">{t('Services', '服务')}:</p>
                   <div className="flex flex-wrap gap-1">
                     {company.services.map((service, idx) => (
                       <span
@@ -222,10 +225,10 @@ const MergeModal: React.FC<MergeModalProps> = ({
 
           {/* Right side: UAE Companies Search */}
           <div className="border border-slate-200 rounded-lg p-4">
-            <h4 className="font-semibold text-slate-900 mb-3">Select UAE Company</h4>
+            <h4 className="font-semibold text-slate-900 mb-3">{t('Select UAE Company', '选择 UAE 公司')}</h4>
             <input
               type="text"
-              placeholder="Search companies..."
+              placeholder={t('Search companies...', '搜索公司...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 text-sm"
@@ -253,7 +256,7 @@ const MergeModal: React.FC<MergeModalProps> = ({
                   </button>
                 ))
               ) : (
-                <p className="text-sm text-slate-500 text-center py-4">No companies found</p>
+                <p className="text-sm text-slate-500 text-center py-4">{t('No companies found', '未找到公司')}</p>
               )}
             </div>
           </div>
@@ -265,14 +268,14 @@ const MergeModal: React.FC<MergeModalProps> = ({
             className="px-4 py-2 text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200 transition"
             disabled={isLoading}
           >
-            Cancel
+            {t('Cancel', '取消')}
           </button>
           <button
             onClick={handleMerge}
             disabled={!selectedCandidate || isLoading}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Merging...' : 'Merge'}
+            {isLoading ? t('Merging...', '合并中...') : t('Merge', '合并')}
           </button>
         </div>
       </div>
@@ -281,6 +284,7 @@ const MergeModal: React.FC<MergeModalProps> = ({
 };
 
 export const AdminRoleManagementPage: React.FC = () => {
+  const { t } = useAdminT();
   const [activeTab, setActiveTab] = useState<RoleTab>('homeowners');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
@@ -553,8 +557,8 @@ export const AdminRoleManagementPage: React.FC = () => {
       <div className="px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Role Management</h1>
-          <p className="text-slate-600 mt-2">Manage homeowners, designers, and companies</p>
+          <h1 className="text-3xl font-bold text-slate-900">{t('Role Management', '角色管理')}</h1>
+          <p className="text-slate-600 mt-2">{t('Manage homeowners, designers, and companies', '管理业主、设计师和公司')}</p>
         </div>
 
         {/* Error Alert */}
@@ -569,8 +573,8 @@ export const AdminRoleManagementPage: React.FC = () => {
           <div className="border-b border-slate-200">
             <nav className="flex space-x-8 px-6" aria-label="Tabs">
               {[
-                { id: 'homeowners', label: '装修业主 (Homeowners)', count: counts.homeowners },
-                { id: 'companies', label: '装修公司 (Companies)', count: counts.companies },
+                { id: 'homeowners', label: t('Homeowners', '装修业主'), count: counts.homeowners },
+                { id: 'companies', label: t('Companies', '装修公司'), count: counts.companies },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -671,10 +675,11 @@ const HomeownersTab: React.FC<{
   homeowners: Homeowner[];
   onAssignClick: (homeowner: Homeowner) => void;
 }> = ({ homeowners, onAssignClick }) => {
+  const { t } = useAdminT();
   if (homeowners.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-slate-600">No homeowners found</p>
+        <p className="text-slate-600">{t('No homeowners found', '暂无业主')}</p>
       </div>
     );
   }
@@ -685,31 +690,31 @@ const HomeownersTab: React.FC<{
         <thead className="bg-slate-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Name
+              {t('Name', '名称')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Email
+              {t('Email', '邮箱')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              City
+              {t('City', '城市')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Area
+              {t('Area', '面积')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Budget
+              {t('Budget', '预算')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Stage
+              {t('Stage', '阶段')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Designer
+              {t('Designer', '设计师')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Date
+              {t('Date', '日期')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Action
+              {t('Action', '操作')}
             </th>
           </tr>
         </thead>
@@ -747,7 +752,7 @@ const HomeownersTab: React.FC<{
                   onClick={() => onAssignClick(homeowner)}
                   className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
                 >
-                  Assign Designer
+                  {t('Assign Designer', '分配设计师')}
                 </button>
               </td>
             </tr>
@@ -768,16 +773,18 @@ const CompaniesTab: React.FC<{
   onSetDisplayOrder: (companyId: string, order: number) => void;
   onMergeClick: (company: Company) => void;
   onEditClick: (companyId: string) => void;
-}> = ({
-  companies,
-  statusFilter,
-  onStatusFilterChange,
-  onApprove,
-  onReject,
-  onSetDisplayOrder,
-  onMergeClick,
-  onEditClick,
-}) => {
+}> = (props) => {
+  const { t } = useAdminT();
+  const {
+    companies,
+    statusFilter,
+    onStatusFilterChange,
+    onApprove,
+    onReject,
+    onSetDisplayOrder,
+    onMergeClick,
+    onEditClick,
+  } = props;
   return (
     <div>
       {/* Status Filter */}
@@ -799,7 +806,7 @@ const CompaniesTab: React.FC<{
 
       {companies.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-slate-600">No companies found</p>
+          <p className="text-slate-600">{t('No companies found', '未找到公司')}</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -807,31 +814,31 @@ const CompaniesTab: React.FC<{
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Company
+                  {t('Company', '公司')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Contact
+                  {t('Contact', '联系人')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Phone
+                  {t('Phone', '电话')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  City
+                  {t('City', '城市')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Type
+                  {t('Type', '类型')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Services
+                  {t('Services', '服务')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Status
+                  {t('Status', '状态')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Display Order
+                  {t('Display Order', '展示顺序')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Actions
+                  {t('Actions', '操作')}
                 </th>
               </tr>
             </thead>
@@ -862,7 +869,7 @@ const CompaniesTab: React.FC<{
                     {company.city}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {{ design_studio: 'Design Studio', renovation_company: 'Renovation', general_contractor: 'Contractor', mep_contractor: 'MEP', maintenance_company: 'Maintenance', specialty_trade: 'Specialty', landscaping: 'Landscaping', furnishing: 'Furnishing' }[company.company_type!] || '—'}
+                    {{ design_studio: t('Design Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包'), mep_contractor: 'MEP', maintenance_company: t('Maintenance', '维保'), specialty_trade: t('Specialty', '专项'), landscaping: t('Landscaping', '景观'), furnishing: t('Furnishing', '软装') }[company.company_type!] || '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
@@ -911,13 +918,13 @@ const CompaniesTab: React.FC<{
                           onClick={() => onApprove(company.id)}
                           className="px-3 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 transition"
                         >
-                          Approve
+                          {t('Approve', '通过')}
                         </button>
                         <button
                           onClick={() => onReject(company.id)}
                           className="px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition"
                         >
-                          Reject
+                          {t('Reject', '拒绝')}
                         </button>
                       </>
                     )}
@@ -925,14 +932,14 @@ const CompaniesTab: React.FC<{
                       onClick={() => onEditClick(company.id)}
                       className="px-3 py-1 bg-stone-100 text-stone-700 rounded text-xs font-medium hover:bg-stone-200 transition"
                     >
-                      Edit
+                      {t('Edit', '编辑')}
                     </button>
                     {!company.linkedUaeCompany && (
                       <button
                         onClick={() => onMergeClick(company)}
                         className="px-3 py-1 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700 transition"
                       >
-                        Merge
+                        {t('Merge', '合并')}
                       </button>
                     )}
                   </td>

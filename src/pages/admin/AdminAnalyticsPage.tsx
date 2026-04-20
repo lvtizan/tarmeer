@@ -4,6 +4,7 @@ import { adminApi, AnalyticsOverview, VisitorRecord } from '../../lib/adminApi';
 import { formatCount } from '../../lib/formatNumber';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 const PRIMARY = '#b8864a';
 
@@ -46,6 +47,7 @@ function slugToName(slug: string): string {
 }
 
 export default function AdminAnalyticsPage() {
+  const { t } = useAdminT();
   const { hasPermission } = useAdmin();
   const [overview, setOverview] = useState<AnalyticsOverview>(INITIAL_OVERVIEW);
   const [visitorIpCount, setVisitorIpCount] = useState(0);
@@ -100,11 +102,11 @@ export default function AdminAnalyticsPage() {
   };
 
   if (!hasPermission('can_view_stats')) {
-    return <div className="text-stone-500">You do not have permission to view analytics.</div>;
+    return <div className="text-stone-500">{t('You do not have permission to view analytics.', '您没有查看分析数据的权限。')}</div>;
   }
 
   if (loading) {
-    return <PageSpinner text="Loading analytics..." />;
+    return <PageSpinner text={t('Loading analytics...', '加载分析数据...')} />;
   }
 
   const visitorTotalPages = Math.max(1, Math.ceil(visitorTotal / VISITOR_PAGE_SIZE));
@@ -112,7 +114,7 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold text-[#2c2c2c]">Analytics</h1>
+        <h1 className="text-3xl font-bold text-[#2c2c2c]">{t('Analytics', '数据分析')}</h1>
         <a
           href={GOOGLE_ANALYTICS_URL}
           target="_blank"
@@ -123,25 +125,25 @@ export default function AdminAnalyticsPage() {
           Google Analytics
         </a>
       </div>
-      <p className="text-stone-500 text-sm mb-8">Platform traffic overview, company visitors, and visitor IP records.</p>
+      <p className="text-stone-500 text-sm mb-8">{t('Platform traffic overview, company visitors, and visitor IP records.', '平台流量概览、公司访客及访客 IP 记录。')}</p>
 
       {/* Top Row: 6 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-8">
-        <StatCard label="Total Events" value={formatCount(overview.total_events)} />
+        <StatCard label={t('Total Events', '总事件')} value={formatCount(overview.total_events)} />
         <div className="rounded-lg border border-stone-200 bg-white p-4">
           <p className="text-xs text-stone-500 uppercase tracking-wide flex items-center gap-1.5">
             <Globe className="w-3.5 h-3.5" />
-            Visitor IPs
+            {t('Visitor IPs', '访客 IP')}
           </p>
           <p className="text-xl font-bold text-[#2c2c2c] mt-1">{formatCount(visitorIpCount)}</p>
           <a href="#visitor-list" className="text-xs font-semibold mt-1 inline-block" style={{ color: PRIMARY }}>
-            View visitor list &rarr;
+            {t('View visitor list', '查看访客列表')} &rarr;
           </a>
         </div>
-        <StatCard label="Page Views" value={formatCount(overview.page_views)} />
-        <StatCard label="Apply Clicks" value={formatCount(overview.apply_clicks)} />
-        <StatCard label="WhatsApp Clicks" value={formatCount(overview.whatsapp_clicks)} />
-        <StatCard label="Contact Submits" value={formatCount(overview.contact_submits)} />
+        <StatCard label={t('Page Views', '页面浏览')} value={formatCount(overview.page_views)} />
+        <StatCard label={t('Apply Clicks', '申请点击')} value={formatCount(overview.apply_clicks)} />
+        <StatCard label={t('WhatsApp Clicks', 'WhatsApp 点击')} value={formatCount(overview.whatsapp_clicks)} />
+        <StatCard label={t('Contact Submits', '联系提交')} value={formatCount(overview.contact_submits)} />
       </div>
 
       {/* Daily Registrations Chart */}
@@ -153,22 +155,22 @@ export default function AdminAnalyticsPage() {
       {/* Visitor List */}
       <div id="visitor-list" className="rounded-lg border border-stone-200 bg-white overflow-hidden">
         <div className="px-4 py-3 border-b border-stone-200">
-          <h2 className="text-lg font-semibold text-[#2c2c2c]">Visitor IPs</h2>
-          <p className="text-xs text-stone-500">Unique visitor IP records and their most recent access location. Total: {visitorTotal}</p>
+          <h2 className="text-lg font-semibold text-[#2c2c2c]">{t('Visitor IPs', '访客 IP')}</h2>
+          <p className="text-xs text-stone-500">{t('Unique visitor IP records and their most recent access location.', '独立访客 IP 记录及最近访问位置。')} {t('Total', '共')}: {visitorTotal}</p>
         </div>
         {visitorsLoading ? (
-          <PageSpinner text="Loading visitor records..." />
+          <PageSpinner text={t('Loading visitor records...', '加载访客记录...')} />
         ) : visitors.length === 0 ? (
-          <div className="p-6 text-stone-500">No visitor records yet.</div>
+          <div className="p-6 text-stone-500">{t('No visitor records yet.', '暂无访客记录。')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-stone-200">
                   <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">No.</th>
-                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">Visitor IP</th>
-                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">Location</th>
-                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">Last Visit</th>
+                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">{t('Visitor IP', '访客 IP')}</th>
+                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">{t('Location', '位置')}</th>
+                  <th className="py-3 px-4 text-left text-sm font-medium text-stone-500">{t('Last Visit', '最近访问')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -176,7 +178,7 @@ export default function AdminAnalyticsPage() {
                   <tr key={`${item.ip}-${index}`} className="border-b border-stone-100">
                     <td className="py-3 px-4 text-sm text-stone-600">{(visitorPage - 1) * VISITOR_PAGE_SIZE + index + 1}</td>
                     <td className="py-3 px-4 text-sm font-medium text-[#2c2c2c]">{item.ip}</td>
-                    <td className="py-3 px-4 text-sm text-stone-600">{item.location || 'Unknown'}</td>
+                    <td className="py-3 px-4 text-sm text-stone-600">{item.location || t('Unknown', '未知')}</td>
                     <td className="py-3 px-4 text-sm text-stone-500">
                       {item.lastVisitedAt ? new Date(item.lastVisitedAt).toLocaleString() : '-'}
                     </td>
@@ -190,7 +192,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Visitor Pagination */}
       <div className="mt-4 flex items-center justify-between text-sm mb-8">
-        <div className="text-stone-500">Total unique IPs: {visitorTotal}</div>
+        <div className="text-stone-500">{t('Total unique IPs', '独立 IP 总数')}: {visitorTotal}</div>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -198,7 +200,7 @@ export default function AdminAnalyticsPage() {
             disabled={visitorPage <= 1 || visitorsLoading}
             className="rounded border border-stone-200 px-3 py-1.5 text-stone-700 disabled:opacity-40"
           >
-            Previous
+            {t('Previous', '上一页')}
           </button>
           <span className="text-stone-600">{visitorPage} / {visitorTotalPages}</span>
           <button
@@ -207,7 +209,7 @@ export default function AdminAnalyticsPage() {
             disabled={visitorPage >= visitorTotalPages || visitorsLoading}
             className="rounded border border-stone-200 px-3 py-1.5 text-stone-700 disabled:opacity-40"
           >
-            Next
+            {t('Next', '下一页')}
           </button>
         </div>
       </div>
@@ -231,6 +233,7 @@ interface WeightConfigEntry {
 }
 
 function WeightConfigCard() {
+  const { t } = useAdminT();
   const [configs, setConfigs] = useState<WeightConfigEntry[]>([]);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -288,8 +291,8 @@ function WeightConfigCard() {
     <div className="rounded-lg border border-stone-200 bg-white p-5 mb-8">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#2c2c2c]">Weight Configuration</h2>
-          <p className="text-xs text-stone-500">Configure how company sort weight is calculated.</p>
+          <h2 className="text-lg font-semibold text-[#2c2c2c]">{t('Weight Configuration', '权重配置')}</h2>
+          <p className="text-xs text-stone-500">{t('Configure how company sort weight is calculated.', '配置公司排序权重的计算方式。')}</p>
         </div>
         <button
           onClick={handleRecalculate}
@@ -297,7 +300,7 @@ function WeightConfigCard() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-stone-200 text-sm font-medium text-stone-700 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} />
-          {recalculating ? 'Recalculating...' : 'Recalculate Now'}
+          {recalculating ? t('Recalculating...', '重新计算中...') : t('Recalculate Now', '立即重新计算')}
         </button>
       </div>
 
@@ -306,7 +309,7 @@ function WeightConfigCard() {
       )}
 
       {configs.length === 0 ? (
-        <p className="text-sm text-stone-500">No weight config found. Backend may not have this feature enabled yet.</p>
+        <p className="text-sm text-stone-500">{t('No weight config found. Backend may not have this feature enabled yet.', '未找到权重配置。后端可能尚未启用此功能。')}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {configs.map((cfg) => (
@@ -327,7 +330,7 @@ function WeightConfigCard() {
                   <Save className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-stone-400 mt-1">Last updated: {cfg.updated_at ? new Date(cfg.updated_at).toLocaleString() : 'N/A'}</p>
+              <p className="text-xs text-stone-400 mt-1">{t('Last updated', '最后更新')}: {cfg.updated_at ? new Date(cfg.updated_at).toLocaleString() : 'N/A'}</p>
             </div>
           ))}
         </div>
@@ -346,6 +349,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 function DailyRegistrationsChart({ rows }: { rows: DailyRegistrationRow[] }) {
+  const { t } = useAdminT();
   const maxCount = rows.reduce(
     (max, r) => Math.max(max, Number(r.homeowner_count) || 0, Number(r.company_count) || 0),
     0
@@ -359,16 +363,16 @@ function DailyRegistrationsChart({ rows }: { rows: DailyRegistrationRow[] }) {
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-4 mb-6">
-      <h2 className="text-lg font-semibold text-[#2c2c2c] mb-1">Daily Registrations</h2>
-      <p className="text-xs text-stone-500 mb-4">Homeowner vs. Company signups per day</p>
+      <h2 className="text-lg font-semibold text-[#2c2c2c] mb-1">{t('Daily Registrations', '每日注册')}</h2>
+      <p className="text-xs text-stone-500 mb-4">{t('Homeowner vs. Company signups per day', '每日业主 vs. 公司注册量')}</p>
 
       <div className="flex items-center gap-4 text-xs text-stone-600 mb-3">
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-[#b8864a]" />Homeowner</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-[#6b6b6b]" />Company</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-[#b8864a]" />{t('Homeowner', '业主')}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-[#6b6b6b]" />{t('Company', '公司')}</span>
       </div>
 
       {rows.length === 0 ? (
-        <div className="text-sm text-stone-500 py-6">No registration data yet.</div>
+        <div className="text-sm text-stone-500 py-6">{t('No registration data yet.', '暂无注册数据。')}</div>
       ) : (
         <div className="overflow-x-auto">
           <div className="flex items-end gap-4 pt-8" style={{ minHeight: CHART_H + 48 }}>
@@ -401,15 +405,16 @@ function DailyRegistrationsChart({ rows }: { rows: DailyRegistrationRow[] }) {
 }
 
 function CompanyVisitorsChart({ rows }: { rows: CompanyVisitorRow[] }) {
+  const { t } = useAdminT();
   const maxVisitors = rows.reduce((max, row) => Math.max(max, Number(row.unique_visitors) || 0), 0);
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-4 mb-6">
-      <h2 className="text-lg font-semibold text-[#2c2c2c] mb-1">Company Visitors</h2>
-      <p className="text-xs text-stone-500 mb-4">Unique visitors by company (Top 10)</p>
+      <h2 className="text-lg font-semibold text-[#2c2c2c] mb-1">{t('Company Visitors', '公司访客')}</h2>
+      <p className="text-xs text-stone-500 mb-4">{t('Unique visitors by company (Top 10)', '按公司独立访客数（前10）')}</p>
 
       {rows.length === 0 ? (
-        <div className="text-sm text-stone-500 py-6">No company visitor data yet.</div>
+        <div className="text-sm text-stone-500 py-6">{t('No company visitor data yet.', '暂无公司访客数据。')}</div>
       ) : (
         <div className="space-y-4">
           {rows.map((row) => {
