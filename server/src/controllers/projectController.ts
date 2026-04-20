@@ -13,6 +13,7 @@ import {
 import { persistProjectImages } from '../lib/projectImageStorage';
 import { slugify } from '../lib/slugify';
 import { tagProjectImages } from '../services/visionTagging';
+import { logActivity, getClientIp } from '../lib/activityLogger';
 
 function normalizeProject(project: any) {
   return {
@@ -127,6 +128,15 @@ export async function createProject(req: any, res: any) {
       console.error('Project submission notification error:', notificationError);
     }
     
+    setImmediate(() => {
+      logActivity({
+        userId: req.user.userId, userName: '', userRole: 'company',
+        action: 'create', targetType: 'project', targetId: projectId, targetName: title || 'Untitled',
+        description: `上传了项目「${title || 'Untitled'}」`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     res.status(201).json({
       message: 'Project submitted successfully.',
       project: normalizeProject((project as any[])[0])
@@ -329,6 +339,15 @@ export async function updateProject(req: any, res: any) {
       [id]
     );
     
+    setImmediate(() => {
+      logActivity({
+        userId: req.user.userId, userName: '', userRole: 'company',
+        action: 'update', targetType: 'project', targetId: Number(req.params.id), targetName: title || 'Untitled',
+        description: `编辑了项目「${title || 'Untitled'}」`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     res.json({
       message: 'Updated successfully.',
       project: normalizeProject((updatedProject as any[])[0])
@@ -377,7 +396,16 @@ export async function deleteProject(req: any, res: any) {
       'DELETE FROM projects WHERE id = ?',
       [id]
     );
-    
+
+    setImmediate(() => {
+      logActivity({
+        userId: req.user.userId, userName: '', userRole: 'company',
+        action: 'delete', targetType: 'project', targetId: Number(req.params.id),
+        description: '删除了项目',
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     res.json({ message: 'Project deleted.' });
   } catch (error) {
     console.error('Delete project error:', error);

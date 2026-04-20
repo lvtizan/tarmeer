@@ -5,6 +5,7 @@ import { calculateAllWeights } from '../lib/weightCalculator';
 import { slugify } from '../lib/slugify';
 import fs from 'fs';
 import path from 'path';
+import { logActivity, getClientIp } from '../lib/activityLogger';
 
 // Runtime note:
 // - ts-node/dev: __dirname => server/src/controllers
@@ -533,6 +534,15 @@ export async function bindUserToCompany(req: any, res: any) {
       [companyId, userId]
     );
 
+    setImmediate(() => {
+      logActivity({
+        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
+        action: 'bind', targetType: 'uae_company', targetId: Number(companyId),
+        description: `绑定了用户到目录公司`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     res.json({ message: 'User bound to company successfully.' });
   } catch (error) {
     console.error('Bind user to company error:', error);
@@ -938,6 +948,15 @@ export async function createAdminProject(req: any, res: any) {
       const slug = slugify(title);
       await pool.execute('UPDATE projects SET slug = ? WHERE id = ?', [slug, newProjectId]);
     }
+
+    setImmediate(() => {
+      logActivity({
+        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
+        action: 'create', targetType: 'project', targetId: newProjectId, targetName: title,
+        description: `Admin 创建了项目「${title}」`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
 
     res.json({ id: newProjectId });
   } catch (error) {

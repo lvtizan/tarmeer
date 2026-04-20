@@ -6,6 +6,7 @@ import {
 } from '../lib/companyProfileDraft';
 import { slugify } from '../lib/slugify';
 import { parseJsonField } from '../lib/parseJsonField';
+import { logActivity, getClientIp } from '../lib/activityLogger';
 
 /**
  * POST /api/company/profile
@@ -100,6 +101,16 @@ export async function upsertProfile(req: any, res: any) {
     );
 
     const [rows] = await pool.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+
+    setImmediate(() => {
+      logActivity({
+        userId, userName: payload.company_name, userRole: 'company',
+        action: (existing as any[]).length > 0 ? 'update' : 'create', targetType: 'company_profile',
+        targetName: payload.company_name, description: (existing as any[]).length > 0 ? `编辑了公司资料「${payload.company_name}」` : `创建了公司资料「${payload.company_name}」`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     res.json({ profile: (rows as any[])[0] });
   } catch (error) {
     console.error('Upsert company profile error:', error);

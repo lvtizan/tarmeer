@@ -2,6 +2,7 @@ import pool from '../config/database';
 import * as XLSX from 'xlsx';
 import { notifyNewInquiry } from '../services/notificationService';
 import { pushLeadToCRM, type LeadPayload } from '../lib/crmPush';
+import { logActivity, getClientIp } from '../lib/activityLogger';
 
 // Build the LeadPayload from a design_inquiries DB row. Used by both initial
 // submit (fire-and-forget) and admin manual resend.
@@ -53,6 +54,15 @@ export async function submitInquiry(req: any, res: any) {
     );
 
     const inquiryId = (result as any).insertId;
+
+    setImmediate(() => {
+      logActivity({
+        userId: req.user?.userId || null, userName: req.body.name || 'Anonymous', userRole: 'homeowner',
+        action: 'create', targetType: 'inquiry', targetId: inquiryId,
+        targetName: req.body.source_company_name || '', description: `提交了询盘`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
 
     // Async notification (don't block response)
     const companyName = source_company_name || undefined;

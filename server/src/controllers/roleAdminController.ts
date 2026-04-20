@@ -1,5 +1,6 @@
 import pool from '../config/database';
 import { logActivity } from './adminController';
+import { logActivity as logActivityEvent, getClientIp } from '../lib/activityLogger';
 
 async function hasColumn(table: string, column: string) {
   const [rows] = await pool.execute(
@@ -173,6 +174,19 @@ export async function approveCompany(req: any, res: any) {
       `UPDATE projects SET status = 'published' WHERE company_profile_id = ? AND status IN ('pending', 'draft')`,
       [id]
     );
+
+    // Fetch profile name for logging
+    const [profileRows] = await pool.execute('SELECT company_name FROM company_profiles WHERE id = ? LIMIT 1', [id]);
+    const profile = (profileRows as any[])[0];
+
+    setImmediate(() => {
+      logActivityEvent({
+        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
+        action: 'approve', targetType: 'company_profile', targetId: Number(id),
+        targetName: profile?.company_name, description: `审批通过了装企「${profile?.company_name}」`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
 
     res.json({ message: 'Company approved.' });
   } catch (error) {
@@ -436,6 +450,15 @@ export async function deleteCompanyProfile(req: any, res: any) {
       await pool.execute('UPDATE uae_companies SET owner_user_id = NULL WHERE owner_user_id = ?', [userId]);
       await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
     }
+
+    setImmediate(() => {
+      logActivityEvent({
+        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
+        action: 'delete', targetType: 'company_profile', targetId: id,
+        targetName: profile.company_name, description: `删除了装企「${profile.company_name}」，原因: ${reason}`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
 
     res.json({ message: 'Company profile and all related data deleted successfully.' });
   } catch (error) {

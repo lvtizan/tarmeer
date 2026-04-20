@@ -6,6 +6,7 @@ import config from '../config';
 import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, sendAdminPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
 import { notifyUserRegistration } from '../services/notificationService';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
+import { logActivity, getClientIp } from '../lib/activityLogger';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email',
@@ -112,6 +113,15 @@ export async function register(req: any, res: any) {
     );
 
     const userId = (result as any).insertId;
+
+    setImmediate(() => {
+      logActivity({
+        userId, userName: name, userRole: assignRole || 'homeowner',
+        action: 'register', targetType: 'user', targetId: userId, description: '注册账号',
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     const frontendUrl = resolveFrontendUrl(req);
     const smtpConfigured = Boolean(config.smtp.user && config.smtp.pass);
 
@@ -318,6 +328,15 @@ export async function login(req: any, res: any) {
     recordAuthSuccess(req, res, () => {});
 
     const token = generateToken(user);
+
+    setImmediate(() => {
+      logActivity({
+        userId: user.id, userName: user.full_name || user.email, userRole: user.active_role || 'homeowner',
+        action: 'login', targetType: 'session', description: '登录系统',
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     const designer = await getLinkedDesignerPayload({
       id: user.id,
       email: user.email,
@@ -785,6 +804,15 @@ export async function oauthCallback(req: any, res: any) {
     }
 
     const token = generateToken(user);
+
+    setImmediate(() => {
+      logActivity({
+        userId: user.id, userName: user.full_name || user.email, userRole: user.active_role || 'homeowner',
+        action: 'login', targetType: 'session', description: 'Google OAuth 登录',
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
+
     const roleParam = assignRole ? `&role=${assignRole}` : '';
     res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=oauth${roleParam}`);
   } catch (error) {
