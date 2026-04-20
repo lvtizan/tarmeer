@@ -408,6 +408,14 @@ export async function getCompanyBySlug(req: any, res: any) {
     }
 
     if (!company) {
+      // Check if this slug was deleted/rejected — return 410 Gone so Google de-indexes it
+      const [deletedRows] = await pool.execute(
+        'SELECT id FROM company_profiles WHERE slug = ? AND (deleted_at IS NOT NULL OR status = ?) LIMIT 1',
+        [slug, 'rejected']
+      );
+      if ((deletedRows as any[]).length > 0) {
+        return res.status(410).json({ error: 'This company page has been removed.' });
+      }
       return res.status(404).json({ error: 'Company not found.' });
     }
 
