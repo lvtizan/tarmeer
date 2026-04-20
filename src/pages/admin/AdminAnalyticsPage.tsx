@@ -1,12 +1,15 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { Globe, RefreshCw, Save, Users, Building2, MessageSquare, ChevronDown, ChevronRight, BarChart3, AreaChart as AreaChartIcon } from 'lucide-react';
+import { Globe, RefreshCw, Save, Users, Building2, MessageSquare, ChevronDown, ChevronRight, BarChart3, AreaChart as AreaChartIcon, Eye, MousePointerClick, Phone, FileText, Hash, MapPin } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useAdminT } from '../../hooks/useAdminLang';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
+  ComposedChart, Line,
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
+import type { AnalyticsOverview, VisitorRecord } from '../../lib/adminApi';
 
 /* ─── Types ─── */
 
@@ -266,19 +269,341 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {activeTab === 'registration' && <RegistrationTab />}
-      {activeTab === 'visitor' && <VisitorTabPlaceholder />}
+      {activeTab === 'visitor' && <VisitorTab />}
     </div>
   );
 }
 
-/* ─── Tab 2 Placeholder ─── */
+/* ─── Tab 2: Visitor Data ─── */
 
-function VisitorTabPlaceholder() {
+interface CompanyVisitorRow {
+  page_path: string;
+  company_name: string;
+  slug: string;
+  unique_visitors: number;
+  total_views: number;
+  cities: Array<{ city: string; visitors: number }>;
+}
+
+interface TopPageRow {
+  page_path: string;
+  page_views: number;
+  visitors: number;
+}
+
+const VISITOR_PAGE_SIZE = 50;
+
+function VisitorTab() {
   const { t } = useAdminT();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
+  const [topPages, setTopPages] = useState<TopPageRow[]>([]);
+  const [companies, setCompanies] = useState<CompanyVisitorRow[]>([]);
+  const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
+  const [visitorPage, setVisitorPage] = useState(1);
+  const [visitorTotal, setVisitorTotal] = useState(0);
+  const [visitorPages, setVisitorPages] = useState(1);
+  const [visitorLoading, setVisitorLoading] = useState(false);
+  // TODO: Replace with actual daily visit data when backend provides /analytics/daily-visits endpoint
+  const [dailyData, setDailyData] = useState<Array<{ date: string; page_views: number; visitors: number }>>([]);
+  const [weightOpen, setWeightOpen] = useState(false);
+
+  // Lazy load: fetch data on mount (this component only mounts when tab is active)
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    Promise.all([
+      adminApi.getAnalyticsOverview(),
+      adminApi.getCompanyVisitors(),
+      adminApi.getDailyRegistrations(),
+    ])
+      .then(([analyticsRes, companyRes, dailyRes]) => {
+        if (cancelled) return;
+        setOverview(analyticsRes.overview);
+        setTopPages(analyticsRes.topPages || []);
+        setCompanies((companyRes.companies || []).slice(0, 10));
+        // Use daily registration data as placeholder for daily visit trend
+        // TODO: Replace with actual daily visit/pageview data from backend
+        const mapped = (dailyRes.dailyRegistrations || []).map((d) => ({
+          date: d.stat_date,
+          page_views: d.homeowner_count + d.company_count,
+          visitors: d.homeowner_count,
+        }));
+        setDailyData(mapped);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fetch visitors (paginated)
+  useEffect(() => {
+    setVisitorLoading(true);
+    adminApi.getVisitors({ page: visitorPage, limit: VISITOR_PAGE_SIZE })
+      .then((res) => {
+        setVisitors(res.visitors || []);
+        setVisitorTotal(res.pagination?.total || 0);
+        setVisitorPages(res.pagination?.pages || 1);
+      })
+      .catch(() => {})
+      .finally(() => setVisitorLoading(false));
+  }, [visitorPage]);
+
+  const RANK_BADGES = ['bg-amber-400 text-white', 'bg-stone-400 text-white', 'bg-amber-700 text-white'];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-[#6b6b6b] text-sm">
+        {t('Loading visitor data...', '加载访客数据中...')}
+      </div>
+    );
+  }
+
+  const ov = overview || { total_events: 0, unique_visitors: 0, page_views: 0, apply_clicks: 0, whatsapp_clicks: 0, contact_submits: 0 };
+
+  const summaryCards: Array<{ icon: React.ReactNode; color: string; label: string; value: number }> = [
+    { icon: <Hash className="w-5 h-5" />, color: '#6b6b6b', label: t('Total Events', '总事件数'), value: ov.total_events },
+    { icon: <Globe className="w-5 h-5" />, color: '#5b7fcb', label: t('Unique IPs', '独立 IP'), value: ov.unique_visitors },
+    { icon: <Eye className="w-5 h-5" />, color: '#2c6e49', label: t('Page Views', '页面浏览'), value: ov.page_views },
+    { icon: <MousePointerClick className="w-5 h-5" />, color: '#B8864A', label: t('Apply Clicks', 'Apply 点击'), value: ov.apply_clicks },
+    { icon: <Phone className="w-5 h-5" />, color: '#14b8a6', label: t('WhatsApp Clicks', 'WhatsApp 点击'), value: ov.whatsapp_clicks },
+    { icon: <FileText className="w-5 h-5" />, color: '#8b5cf6', label: t('Contact Submits', '联系表单提交'), value: ov.contact_submits },
+  ];
+
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-12 text-center">
-      <Globe className="w-12 h-12 mx-auto text-stone-300 mb-4" />
-      <p className="text-[15px] text-[#6b6b6b]">{t('Visitor data (coming soon)', '访客数据（开发中）')}</p>
+    <div className="space-y-6">
+      {/* 6 Summary Cards (2 rows of 3) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {summaryCards.map((card, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${card.color}15`, color: card.color }}>
+                {card.icon}
+              </div>
+              <span className="text-sm font-medium text-stone-500">{card.label}</span>
+            </div>
+            <div className="text-3xl font-bold text-[#2c2c2c]">{card.value.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Daily Visit Trend Chart */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Daily Visit Trend', '每日访问趋势')}</h2>
+          {/* TODO: Replace placeholder data with actual daily visit data from backend */}
+          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Page views (bars) & unique visitors (line)', '页面浏览量（柱状）& 独立访客（折线）')}</p>
+        </div>
+        {dailyData.length === 0 ? (
+          <div className="flex items-center justify-center h-[300px] text-[#6b6b6b] text-sm">{t('No data', '暂无数据')}</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={320}>
+            <ComposedChart data={dailyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5)} />
+              <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ borderRadius: 16, border: '1px solid #e7e5e4', fontSize: 12 }}
+                formatter={(value: any, name: any) => {
+                  const labelMap: Record<string, string> = {
+                    page_views: t('Page Views', '页面浏览'),
+                    visitors: t('Visitors', '访客数'),
+                  };
+                  return [value, labelMap[String(name)] || String(name)];
+                }}
+                labelFormatter={(label: any) => String(label)}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: 12 }}
+                formatter={(value: string) => {
+                  const map: Record<string, string> = {
+                    page_views: t('Page Views', '页面浏览'),
+                    visitors: t('Visitors', '访客数'),
+                  };
+                  return <span className="text-[#6b6b6b]">{map[value] || value}</span>;
+                }}
+              />
+              <Bar yAxisId="left" dataKey="page_views" fill="#B8864A" radius={[3, 3, 0, 0]} fillOpacity={0.7} />
+              <Line yAxisId="right" type="monotone" dataKey="visitors" stroke="#5b7fcb" strokeWidth={2} dot={{ r: 3, fill: '#5b7fcb' }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Top 10 Companies Horizontal Bar Chart */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Top 10 Visited Companies', '最受关注的10家公司')}</h2>
+          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Click a bar to view company detail', '点击柱状条查看公司详情')}</p>
+        </div>
+        {companies.length === 0 ? (
+          <div className="flex items-center justify-center h-[200px] text-[#6b6b6b] text-sm">{t('No data', '暂无数据')}</div>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={Math.max(companies.length * 48, 200)}>
+              <BarChart
+                data={companies}
+                layout="vertical"
+                margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
+                onClick={(state: any) => {
+                  if (state?.activePayload?.[0]?.payload?.slug) {
+                    navigate(`/admin/companies/${state.activePayload[0].payload.slug}`);
+                  }
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
+                <YAxis
+                  type="category"
+                  dataKey="company_name"
+                  width={160}
+                  tick={{ fontSize: 11, fill: '#6b6b6b' }}
+                  tickFormatter={(v: string) => v.length > 22 ? v.slice(0, 20) + '...' : v}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: 16, border: '1px solid #e7e5e4', fontSize: 12 }}
+                  formatter={(value: any) => [value, t('Visitors', '访客数')]}
+                  labelFormatter={(label: any) => String(label)}
+                />
+                <Bar dataKey="unique_visitors" fill="#B8864A" radius={[0, 4, 4, 0]} cursor="pointer" />
+              </BarChart>
+            </ResponsiveContainer>
+            {/* City breakdown tags */}
+            <div className="mt-4 space-y-2">
+              {companies.filter((c) => c.cities && c.cities.length > 0).slice(0, 5).map((c) => (
+                <div key={c.slug} className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium text-[#2c2c2c] min-w-[140px] truncate">{c.company_name}</span>
+                  {c.cities.slice(0, 5).map((city, ci) => (
+                    <span key={ci} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 text-xs text-[#6b6b6b]">
+                      <MapPin className="w-3 h-3" />{city.city || t('Unknown', '未知')} ({city.visitors})
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Top Pages Table */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-stone-100">
+          <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Top Pages', '热门页面')}</h2>
+          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Most visited pages', '访问量最高的页面')}</p>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-xs text-stone-400 border-b border-stone-100">
+              <th className="text-left px-5 py-2.5 font-medium w-16">{t('Rank', '排名')}</th>
+              <th className="text-left px-5 py-2.5 font-medium">{t('Page', '页面')}</th>
+              <th className="text-right px-5 py-2.5 font-medium">{t('Page Views', '浏览量')}</th>
+              <th className="text-right px-5 py-2.5 font-medium">{t('Visitors', '访客数')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {topPages.length === 0 ? (
+              <tr><td colSpan={4} className="text-center py-8 text-[#6b6b6b]">{t('No data', '暂无数据')}</td></tr>
+            ) : topPages.map((p, i) => (
+              <tr key={i} className="border-b border-stone-50 hover:bg-stone-50/50 transition-colors">
+                <td className="px-5 py-2.5">
+                  {i < 3 ? (
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${RANK_BADGES[i]}`}>
+                      {i + 1}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-[#6b6b6b] pl-1.5">{i + 1}</span>
+                  )}
+                </td>
+                <td className="px-5 py-2.5 text-[#2c2c2c] font-mono text-xs truncate max-w-[400px]">{p.page_path}</td>
+                <td className="px-5 py-2.5 text-right font-medium text-[#2c2c2c]">{p.page_views.toLocaleString()}</td>
+                <td className="px-5 py-2.5 text-right font-medium text-[#6b6b6b]">{p.visitors.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Visitor IP List (paginated) */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Visitor IPs', '访客 IP 列表')}</h2>
+            <p className="text-xs text-[#6b6b6b] mt-0.5">{t(`${visitorTotal} total records`, `共 ${visitorTotal} 条记录`)}</p>
+          </div>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-xs text-stone-400 border-b border-stone-100">
+              <th className="text-left px-5 py-2.5 font-medium">IP</th>
+              <th className="text-left px-5 py-2.5 font-medium">{t('Country / City', '国家/城市')}</th>
+              <th className="text-right px-5 py-2.5 font-medium">{t('Last Visit', '最后访问')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visitorLoading ? (
+              <tr><td colSpan={3} className="text-center py-8 text-[#6b6b6b]">{t('Loading...', '加载中...')}</td></tr>
+            ) : visitors.length === 0 ? (
+              <tr><td colSpan={3} className="text-center py-8 text-[#6b6b6b]">{t('No data', '暂无数据')}</td></tr>
+            ) : visitors.map((v, i) => (
+              <tr key={i} className="border-b border-stone-50 hover:bg-stone-50/50 transition-colors">
+                <td className="px-5 py-2.5 font-mono text-xs text-[#2c2c2c]">{v.ip}</td>
+                <td className="px-5 py-2.5 text-[#6b6b6b] text-xs">{v.location || '\u2014'}</td>
+                <td className="px-5 py-2.5 text-right text-xs text-[#6b6b6b]">
+                  {v.lastVisitedAt ? new Date(v.lastVisitedAt).toLocaleString() : '\u2014'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {/* Pagination controls */}
+        {visitorPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-stone-100">
+            <span className="text-xs text-[#6b6b6b]">
+              {t(`Page ${visitorPage} of ${visitorPages}`, `第 ${visitorPage} / ${visitorPages} 页`)}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setVisitorPage((p) => Math.max(1, p - 1))}
+                disabled={visitorPage <= 1}
+                className="px-3 py-1.5 rounded-2xl border border-stone-200 text-xs font-medium text-stone-600 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {t('Prev', '上一页')}
+              </button>
+              <button
+                onClick={() => setVisitorPage((p) => Math.min(visitorPages, p + 1))}
+                disabled={visitorPage >= visitorPages}
+                className="px-3 py-1.5 rounded-2xl border border-stone-200 text-xs font-medium text-stone-600 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {t('Next', '下一页')}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Weight Config (collapsible) */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+        <button
+          onClick={() => setWeightOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-stone-50/50 transition-colors"
+        >
+          <div>
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Weight Configuration', '权重配置')}</h2>
+            <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Company sort weight settings', '公司排序权重设置')}</p>
+          </div>
+          {weightOpen ? <ChevronDown className="w-4 h-4 text-stone-400" /> : <ChevronRight className="w-4 h-4 text-stone-400" />}
+        </button>
+        {weightOpen && (
+          <div className="px-5 pb-5">
+            <WeightConfigCard />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
