@@ -111,6 +111,30 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       INDEX idx_created_at (created_at)
     )`,
   },
+  {
+    name: 'activity_log',
+    sql: `CREATE TABLE IF NOT EXISTS activity_log (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT,
+      user_name VARCHAR(100),
+      user_role VARCHAR(20),
+      action VARCHAR(50) NOT NULL,
+      target_type VARCHAR(50),
+      target_id INT,
+      target_name VARCHAR(200),
+      description TEXT,
+      ip VARCHAR(45),
+      country VARCHAR(50),
+      city VARCHAR(50),
+      metadata JSON,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_user_id (user_id),
+      INDEX idx_user_role (user_role),
+      INDEX idx_action (action),
+      INDEX idx_created_at (created_at),
+      INDEX idx_target_type (target_type)
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
