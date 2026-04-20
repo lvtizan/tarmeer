@@ -240,16 +240,6 @@ export default function AdminLayout() {
           <TarmeerLogo />
         </div>
 
-        {/* Global Search Trigger */}
-        <button
-          onClick={() => setGlobalOpen(true)}
-          className="mx-4 mt-3 mb-1 flex items-center gap-2 h-9 px-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-sm text-stone-400 hover:border-[#b8864a]/30 hover:text-stone-500 transition"
-        >
-          <Search className="w-3.5 h-3.5" />
-          <span className="flex-1 text-left">{t('Search...', '搜索...')}</span>
-          <kbd className="hidden sm:inline text-[10px] text-stone-300 bg-stone-100 px-1.5 py-0.5 rounded">⌘K</kbd>
-        </button>
-
         {/* Navigation - active: left border + light bg like designer */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto overflow-x-visible">
           {filteredNavItems.map((item) => {
@@ -348,90 +338,95 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto p-6 md:p-10">
+      <main className="flex-1 overflow-auto">
         <AdminLangContext.Provider value={{ lang, t }}>
-          <div className="w-full">
+          {/* Gmail-style top search bar */}
+          <div className="sticky top-0 z-30 bg-[#faf9f7] border-b border-stone-100 px-6 md:px-10 py-3">
+            <div ref={globalRef} className="relative max-w-2xl">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                type="text"
+                value={globalQuery}
+                onChange={(e) => setGlobalQuery(e.target.value)}
+                onFocus={() => { if (globalResults) setGlobalOpen(true); }}
+                placeholder={t('Search homeowners, companies, inquiries...', '搜索业主、装企、询盘...')}
+                className="h-10 w-full pl-10 pr-10 rounded-2xl border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
+              />
+              {globalQuery && (
+                <button onClick={() => { setGlobalQuery(''); setGlobalResults(null); setGlobalOpen(false); }} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Dropdown results */}
+              {globalOpen && globalQuery && (
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-stone-200 rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto z-50">
+                  {globalSearching && <div className="p-4 text-sm text-stone-400 text-center">{t('Searching...', '搜索中...')}</div>}
+
+                  {!globalSearching && globalResults && globalResults.users.length === 0 && globalResults.companies.length === 0 && globalResults.inquiries.length === 0 && (
+                    <div className="p-6 text-sm text-stone-400 text-center">{t('No results found', '未找到结果')}</div>
+                  )}
+
+                  {globalResults?.users && globalResults.users.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 text-xs font-semibold text-stone-400 uppercase tracking-wider bg-stone-50/80 border-b border-stone-100">{t('Homeowners', '业主')}</div>
+                      {globalResults.users.map((u: any) => (
+                        <button key={`u-${u.id}`} onClick={() => { navigate(`/admin/users/${u.id}`); setGlobalOpen(false); setGlobalQuery(''); }} className="w-full text-left px-4 py-3 hover:bg-[#b8864a]/5 flex items-center gap-3 text-sm border-b border-stone-50 transition">
+                          <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-xs font-bold text-stone-500 shrink-0">{(u.full_name || u.email || '?')[0].toUpperCase()}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-[#1c1917] truncate">{u.full_name || 'Unnamed'}</div>
+                            <div className="text-stone-400 text-xs truncate">{u.email} · {u.phone || ''}</div>
+                          </div>
+                          <span className="text-xs text-stone-300 shrink-0">{u.role || 'homeowner'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {globalResults?.companies && globalResults.companies.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 text-xs font-semibold text-stone-400 uppercase tracking-wider bg-stone-50/80 border-b border-stone-100">{t('Companies', '装企')}</div>
+                      {globalResults.companies.map((c: any) => (
+                        <button key={`c-${c.id}`} onClick={() => { navigate(`/admin/profile-companies/${c.id}?tab=companies`); setGlobalOpen(false); setGlobalQuery(''); }} className="w-full text-left px-4 py-3 hover:bg-[#b8864a]/5 flex items-center gap-3 text-sm border-b border-stone-50 transition">
+                          <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-xs font-bold text-[#b8864a] shrink-0">{(c.company_name || '?')[0].toUpperCase()}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-[#1c1917] truncate">{c.company_name || 'Unnamed'}</div>
+                            <div className="text-stone-400 text-xs truncate">{c.user_email} · {c.city || ''} · {c.signup_source || ''}</div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {(c.project_count ?? 0) > 0 && <span className="text-xs text-stone-400">{c.project_count} {t('projects', '项目')}</span>}
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${c.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : c.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>{c.status}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {globalResults?.inquiries && globalResults.inquiries.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 text-xs font-semibold text-stone-400 uppercase tracking-wider bg-stone-50/80 border-b border-stone-100">{t('Inquiries', '询盘')}</div>
+                      {globalResults.inquiries.map((inq: any) => (
+                        <button key={`i-${inq.id}`} onClick={() => { navigate('/admin/inquiries'); setGlobalOpen(false); setGlobalQuery(''); }} className="w-full text-left px-4 py-3 hover:bg-[#b8864a]/5 flex items-center gap-3 text-sm border-b border-stone-50 transition">
+                          <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-xs font-bold text-blue-500 shrink-0">{(inq.name || inq.contact_name || '?')[0].toUpperCase()}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-[#1c1917] truncate">{inq.name || inq.contact_name || 'Anonymous'}</div>
+                            <div className="text-stone-400 text-xs truncate">{inq.phone || ''} · {inq.city || ''} · {inq.area_range ? inq.area_range + 'm²' : ''}</div>
+                          </div>
+                          <span className="text-xs text-stone-300 shrink-0">{inq.source || inq.type || ''}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full p-6 md:p-10">
             <Outlet />
           </div>
         </AdminLangContext.Provider>
       </main>
-
-      {/* Global Search Modal (Cmd+K / Ctrl+K) */}
-      {globalOpen && (
-        <div className="fixed inset-0 z-[200] bg-black/40 flex items-start justify-center pt-[15vh]" onMouseDown={() => { setGlobalOpen(false); setGlobalQuery(''); }}>
-          <div ref={globalRef} className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
-            <div className="relative border-b border-stone-100">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-              <input
-                type="text"
-                autoFocus
-                value={globalQuery}
-                onChange={(e) => setGlobalQuery(e.target.value)}
-                placeholder={t('Search homeowners, companies, inquiries...', '搜索业主、装企、询盘...')}
-                className="h-12 w-full pl-10 pr-10 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none"
-              />
-              {globalQuery && (
-                <button onClick={() => setGlobalQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="max-h-[50vh] overflow-y-auto">
-              {globalSearching && <div className="p-4 text-sm text-stone-400 text-center">{t('Searching...', '搜索中...')}</div>}
-
-              {!globalSearching && globalQuery && globalResults && globalResults.users.length === 0 && globalResults.companies.length === 0 && globalResults.inquiries.length === 0 && (
-                <div className="p-6 text-sm text-stone-400 text-center">{t('No results', '无结果')}</div>
-              )}
-
-              {!globalQuery && (
-                <div className="p-6 text-sm text-stone-400 text-center">{t('Type to search...', '输入关键词搜索...')}</div>
-              )}
-
-              {globalResults?.users && globalResults.users.length > 0 && (
-                <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-stone-400 uppercase tracking-wider bg-stone-50">{t('Homeowners', '业主')} ({globalResults.users.length})</div>
-                  {globalResults.users.map((u: any) => (
-                    <button key={`u-${u.id}`} onClick={() => { navigate(`/admin/users/${u.id}`); setGlobalOpen(false); setGlobalQuery(''); }} className="w-full text-left px-4 py-3 hover:bg-stone-50 flex items-center gap-3 text-sm border-b border-stone-50">
-                      <span className="font-medium text-[#1c1917]">{u.full_name || u.email}</span>
-                      <span className="text-stone-400 text-xs">{u.email}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {globalResults?.companies && globalResults.companies.length > 0 && (
-                <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-stone-400 uppercase tracking-wider bg-stone-50">{t('Companies', '装企')} ({globalResults.companies.length})</div>
-                  {globalResults.companies.map((c: any) => (
-                    <button key={`c-${c.id}`} onClick={() => { navigate(`/admin/companies?tab=companies&search=${encodeURIComponent(c.company_name || c.user_email)}`); setGlobalOpen(false); setGlobalQuery(''); }} className="w-full text-left px-4 py-3 hover:bg-stone-50 flex items-center gap-3 text-sm border-b border-stone-50">
-                      <span className="font-medium text-[#1c1917]">{c.company_name || 'Unnamed'}</span>
-                      <span className="text-stone-400 text-xs">{c.user_email} · {c.city || ''}</span>
-                      <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${c.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : c.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>{c.status}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {globalResults?.inquiries && globalResults.inquiries.length > 0 && (
-                <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-stone-400 uppercase tracking-wider bg-stone-50">{t('Inquiries', '询盘')} ({globalResults.inquiries.length})</div>
-                  {globalResults.inquiries.map((inq: any) => (
-                    <button key={`i-${inq.id}`} onClick={() => { navigate('/admin/inquiries'); setGlobalOpen(false); setGlobalQuery(''); }} className="w-full text-left px-4 py-3 hover:bg-stone-50 flex items-center gap-3 text-sm border-b border-stone-50">
-                      <span className="font-medium text-[#1c1917]">{inq.name || inq.contact_name || 'Anonymous'}</span>
-                      <span className="text-stone-400 text-xs">{inq.phone || inq.email || ''}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="px-4 py-2 border-t border-stone-100 text-xs text-stone-400 text-center">
-              ESC {t('to close', '关闭')} · ⌘K {t('to open', '打开')}
-            </div>
-          </div>
-        </div>
-      )}
       <ToastContainer />
       {tooltip && (
         <div

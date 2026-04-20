@@ -328,7 +328,7 @@ export default function AdminCompaniesPage() {
         ))}
       </div>
 
-      {/* Toolbar: search + filters in one row */}
+      {/* Toolbar: search + filters */}
       <div className="flex items-center gap-2">
         <div className="relative max-w-md flex-1">
           <input
