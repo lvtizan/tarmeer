@@ -31,17 +31,6 @@ export async function submitCompanyLead(req: any, res: any) {
 
     const leadId = (result as any).insertId;
 
-    // Compute short CRM page path (CRM truncates notes+page at ~150 chars)
-    let crmPage = '/for-companies';
-    if (sourcePage) {
-      try {
-        const u = new URL(sourcePage, 'https://www.tarmeer.com');
-        const src = u.searchParams.get('utm_source');
-        const content = u.searchParams.get('utm_content');
-        if (src) crmPage = `/for-companies?src=${src}${content ? `&ref=${content}` : ''}`;
-      } catch { /* keep default */ }
-    }
-
     // Mirror into design_inquiries so it appears in the admin Company inquiries tab
     const inquiryMessage = [
       `[Company Inquiry]`,
@@ -66,14 +55,14 @@ export async function submitCompanyLead(req: any, res: any) {
         phone,
         city: city || undefined,
         notes: `Company: ${companyName}${companyType ? ` | ${companyType}` : ''}`,
-        page: crmPage,
+        page: sourcePage || '/for-companies',
         company: companyName || undefined,
       }).catch(() => {});
     }
 
     // Fire-and-forget CRM push (company tenant)
     // notes field carries company_type so CRM sales team sees it
-    // Keep notes short — CRM concatenates notes+page and truncates at ~150 chars
+    // Send full info — CRM notes field supports 1500 chars
     const crmNotes = [
       companyType ? `Type: ${companyType}` : '',
       yearEstablished ? `Est. ${yearEstablished}` : '',
@@ -85,7 +74,7 @@ export async function submitCompanyLead(req: any, res: any) {
       phone: phone || undefined,
       city: city || undefined,
       licenseNumber: undefined,
-      page: crmPage,
+      page: sourcePage || '/for-companies',
       description: crmNotes,
     }).catch(() => {});
 
