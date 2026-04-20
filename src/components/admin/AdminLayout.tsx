@@ -19,9 +19,9 @@ const navItems = [
     infoZh: '分析流量与事件趋势、公司访客，并可跳转外部分析平台。',
   },
   {
-    to: '/admin/users', labelEn: 'Users', labelZh: '用户', icon: Users,
-    infoEn: 'Manage user accounts, role/status changes, and trace account-level operations.',
-    infoZh: '管理用户账号、角色与状态变更，并追踪账号操作记录。',
+    to: '/admin/users', labelEn: 'Homeowners', labelZh: '业主', icon: Users,
+    infoEn: 'Manage homeowner accounts, role/status changes, and trace account-level operations.',
+    infoZh: '管理业主账号、角色与状态变更，并追踪账号操作记录。',
   },
   {
     to: '/admin/companies', labelEn: 'Companies', labelZh: '公司', icon: Building2,

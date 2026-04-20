@@ -309,7 +309,7 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-800">{t('Users', '用户')}</h1>
+        <h1 className="text-2xl font-bold text-stone-800">{t('Homeowners', '业主')}</h1>
         <span className="text-sm text-stone-500">{t('Total', '共')} {total}</span>
       </div>
 
