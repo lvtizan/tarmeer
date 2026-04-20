@@ -63,7 +63,6 @@ const AdminInstallPage = lazy(() => import('./pages/admin/AdminInstallPage'));
 const AdminDesignersPage = lazy(() => import('./pages/admin/AdminDesignersPage'));
 const AdminAdminsPage = lazy(() => import('./pages/admin/AdminAdminsPage'));
 const AdminDesignerDetailPage = lazy(() => import('./pages/admin/AdminDesignerDetailPage'));
-const AdminVisitorsPage = lazy(() => import('./pages/admin/AdminVisitorsPage'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminUserDetailPage = lazy(() => import('./pages/admin/AdminUserDetailPage'));
@@ -76,7 +75,7 @@ const AdminCompanyImportPage = lazy(() => import('./pages/admin/AdminCompanyImpo
 const AdminCompanyDetailPage = lazy(() => import('./pages/admin/AdminCompanyDetailPage'));
 const AdminRegisteredCompanyDetailPage = lazy(() => import('./pages/admin/AdminRegisteredCompanyDetailPage'));
 const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'));
-const AdminStatsPage = lazy(() => import('./pages/admin/AdminStatsPage'));
+const AdminActivityLogPage = lazy(() => import('./pages/admin/AdminActivityLogPage'));
 const AdminProjectDetailPage = lazy(() => import('./pages/admin/AdminProjectDetailPage'));
 
 // Silently auto-reloads when lazy-loaded chunks fail (stale cache after deploy).
@@ -153,8 +152,7 @@ function App() {
             <Route index element={<AdminAnalyticsPage />} />
             <Route path="designers" element={<AdminDesignersPage />} />
             <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
-            <Route path="visitors" element={<AdminVisitorsPage />} />
-            <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="activity-log" element={<AdminActivityLogPage />} />
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="users/:id" element={<AdminUserDetailPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />
@@ -168,7 +166,6 @@ function App() {
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />
             <Route path="company-import" element={<AdminCompanyImportPage />} />
             <Route path="help" element={<AdminHelpPage />} />
-            <Route path="stats" element={<AdminStatsPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/forgot-password" element={<Layout navbarVariant="admin-auth"><AdminForgotPasswordPage /></Layout>} />

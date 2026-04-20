@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, BarChart2 } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -24,9 +24,9 @@ const navItems = [
     infoZh: '管理业主账号、角色与状态变更，并追踪账号操作记录。',
   },
   {
-    to: '/admin/companies', labelEn: 'Companies', labelZh: '公司', icon: Building2,
+    to: '/admin/companies', labelEn: 'Companies', labelZh: '装企', icon: Building2,
     infoEn: 'Manage Companies / Directory / Applications, including approval, sorting, and profile maintenance.',
-    infoZh: '管理 Companies / Directory / Applications，包含审批、排序与资料维护。',
+    infoZh: '管理装企 / 目录 / 申请，包含审批、排序与资料维护。',
   },
   {
     to: '/admin/inquiries', labelEn: 'Inquiries', labelZh: '询盘', icon: MessageSquare,
@@ -34,9 +34,9 @@ const navItems = [
     infoZh: '查看客户询盘、更新跟进状态，并同步转化备注。',
   },
   {
-    to: '/admin/stats', labelEn: 'Stats Report', labelZh: '数据报表', icon: BarChart2, permission: 'can_view_stats' as const,
-    infoEn: 'Daily registration trends for homeowners, companies, and inquiries.',
-    infoZh: '每日注册趋势报表，含业主、公司与询盘数据。',
+    to: '/admin/activity-log', labelEn: 'Activity Log', labelZh: '操作记录', icon: ClipboardList, permission: 'can_view_stats' as const,
+    infoEn: 'Track all user and admin operations with IP, location, and timestamps.',
+    infoZh: '追踪所有用户和管理员的操作记录，含 IP、地区和时间。',
   },
   // ── Tools ──
   {
