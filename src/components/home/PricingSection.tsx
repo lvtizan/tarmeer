@@ -30,12 +30,12 @@ const PACKAGES = [
 
 export default function PricingSection() {
   return (
-    <section id="pricing" className="relative overflow-hidden py-12 sm:py-16">
+    <section id="pricing" className="relative overflow-hidden py-12 sm:py-16" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 500px' }}>
       {/* Warm interior-style background */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
         style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1280&q=60&auto=format&fm=webp)`,
+          backgroundImage: `url(/images/hero/pricing-bg.webp)`,
         }}
       />
       <div className="absolute inset-0 bg-[#f5f0e8]/95" />

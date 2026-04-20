@@ -378,9 +378,34 @@ export async function getPublicProjectDetail(req: any, res: any) {
 export async function getCompanyBySlug(req: any, res: any) {
   try {
     const { slug } = req.params;
+
+    // 1. Try uae_companies (directory) first
     const query = buildPublicCompanyDetailQuery(slug);
     const [rows] = await pool.execute(query.sql, query.params);
-    const company = (rows as any[])[0];
+    let company = (rows as any[])[0];
+
+    // 2. Fallback to company_profiles (registered companies)
+    if (!company) {
+      const [cpRows] = await pool.execute(
+        `SELECT cp.id, cp.slug, cp.company_name AS name_en, cp.description, cp.city,
+                cp.phone, cp.website, cp.services, cp.specialties, cp.logo_url,
+                cp.status, cp.linked_uae_company_id,
+                u.email
+         FROM company_profiles cp
+         JOIN users u ON u.id = cp.user_id
+         WHERE cp.slug = ? AND cp.status = 'approved' AND cp.deleted_at IS NULL
+         LIMIT 1`,
+        [slug]
+      );
+      company = (cpRows as any[])[0];
+      if (company) {
+        // Normalize to same shape as uae_companies
+        company.owner_user_id = null;
+        company.is_signed = false;
+        company.portfolio_images = null;
+        company.portfolio_categories = null;
+      }
+    }
 
     if (!company) {
       return res.status(404).json({ error: 'Company not found.' });

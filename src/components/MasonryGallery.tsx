@@ -8,6 +8,8 @@ const ITEMS_PER_PAGE = 12;
 const THUMB_SIZE = 16; // canvas thumbnail size for fingerprinting
 const DARK_THRESHOLD = 45; // average brightness below this = too dark
 const SIMILARITY_THRESHOLD = 0.92; // above this = duplicate
+const MAX_ASPECT_RATIO = 3.5; // width/height above this = banner → hide
+const MIN_ASPECT_RATIO = 0.25; // width/height below this = narrow strip → hide
 
 /** Downscale image to tiny canvas and return pixel data + average brightness */
 function getImageFingerprint(img: HTMLImageElement): { pixels: number[]; brightness: number } | null {
@@ -169,7 +171,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="columns-1 sm:columns-2 lg:columns-3 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           >
             {visibleItems.map((item, i) => {
               const delay = Math.min(i * 0.04, 0.5);
@@ -181,7 +183,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay, ease: 'easeOut' }}
-                  className="break-inside-avoid mb-4 rounded-xl overflow-hidden group relative cursor-pointer"
+                  className="rounded-xl overflow-hidden group relative cursor-pointer"
                   onClick={() => {
                     if (externalWebsite) {
                       window.open(externalWebsite, '_blank', 'noopener,noreferrer');
@@ -202,7 +204,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     src={resolveVariantUrl(item.url, 'thumb')}
                     alt={item.title || `${item.categoryName} project`}
                     loading="lazy"
-                    className="w-full h-auto object-cover transition-all duration-500 group-hover:scale-105 relative z-10"
+                    className="w-full aspect-[4/3] object-cover transition-all duration-500 group-hover:scale-105 relative z-10"
                     onLoad={(e) => {
                       // Hide blur placeholder once thumb loads
                       const blurEl = e.currentTarget.previousElementSibling as HTMLElement | null;
@@ -211,8 +213,15 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                       const img = e.currentTarget;
                       const w = img.naturalWidth;
                       const h = img.naturalHeight;
-                      const container = img.closest('.break-inside-avoid') as HTMLElement | null;
+                      const container = img.closest('.rounded-xl.group') as HTMLElement | null;
                       if (!container) return;
+
+                      // Filter extreme aspect ratios (banners / narrow strips)
+                      const aspectRatio = w / h;
+                      if (aspectRatio > MAX_ASPECT_RATIO || aspectRatio < MIN_ASPECT_RATIO) {
+                        container.classList.add('hidden');
+                        return;
+                      }
 
                       if (w < 50 || h < 37) {
                         container.classList.add('hidden');
@@ -250,7 +259,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                         current.src = fallbackCandidates[nextRetry];
                         return;
                       }
-                      (current.closest('.break-inside-avoid') as HTMLElement | null)?.classList.add('hidden');
+                      (current.closest('.rounded-xl.group') as HTMLElement | null)?.classList.add('hidden');
                     }}
                   />
                   {/* Hover overlay */}
