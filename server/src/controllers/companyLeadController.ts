@@ -31,6 +31,17 @@ export async function submitCompanyLead(req: any, res: any) {
 
     const leadId = (result as any).insertId;
 
+    // Compute short CRM page path (CRM truncates notes+page at ~150 chars)
+    let crmPage = '/for-companies';
+    if (sourcePage) {
+      try {
+        const u = new URL(sourcePage, 'https://www.tarmeer.com');
+        const src = u.searchParams.get('utm_source');
+        const content = u.searchParams.get('utm_content');
+        if (src) crmPage = `/for-companies?src=${src}${content ? `&ref=${content}` : ''}`;
+      } catch { /* keep default */ }
+    }
+
     // Mirror into design_inquiries so it appears in the admin Company inquiries tab
     const inquiryMessage = [
       `[Company Inquiry]`,
@@ -54,14 +65,19 @@ export async function submitCompanyLead(req: any, res: any) {
         name: contactName || 'Anonymous',
         phone,
         city: city || undefined,
-        notes: `Company: ${companyName}${companyType ? ` | Type: ${companyType}` : ''}`,
-        page: sourcePage || '/join-as-company',
+        notes: `Company: ${companyName}${companyType ? ` | ${companyType}` : ''}`,
+        page: crmPage,
         company: companyName || undefined,
       }).catch(() => {});
     }
 
     // Fire-and-forget CRM push (company tenant)
     // notes field carries company_type so CRM sales team sees it
+    // Keep notes short — CRM concatenates notes+page and truncates at ~150 chars
+    const crmNotes = [
+      companyType ? `Type: ${companyType}` : '',
+      yearEstablished ? `Est. ${yearEstablished}` : '',
+    ].filter(Boolean).join(', ') || undefined;
     pushCompanyLeadToCRM({
       applicationId: leadId,
       contactName: contactName || undefined,
@@ -69,12 +85,8 @@ export async function submitCompanyLead(req: any, res: any) {
       phone: phone || undefined,
       city: city || undefined,
       licenseNumber: undefined,
-      page: sourcePage || undefined,
-      description: [
-        companyType ? `Type: ${companyType}` : '',
-        yearEstablished ? `Est. ${yearEstablished}` : '',
-        scopeOfBusiness ? `Scope: ${scopeOfBusiness}` : '',
-      ].filter(Boolean).join(', ') || undefined,
+      page: crmPage,
+      description: crmNotes,
     }).catch(() => {});
 
     const [lead] = await pool.execute(
