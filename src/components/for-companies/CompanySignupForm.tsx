@@ -117,6 +117,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           companyType,
           establishmentYear: establishmentYear || undefined,
           city,
+          sourcePage: window.location.href,
         }),
       });
 
