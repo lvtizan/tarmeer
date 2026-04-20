@@ -30,8 +30,10 @@ import {
   getActivityLogs,
   getRegistrationStats,
   getDailyStatsReport,
+  getRegistrationSources,
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
+import { getActivityLogs as getActivityLogList, getActivityLogStats, exportActivityLogs } from '../controllers/activityLogController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries, resendCrmSync } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts, markNotificationSeen } from '../controllers/complaintController';
@@ -107,6 +109,10 @@ router.get('/stats/overview', requirePermission('can_view_stats'), getStatsOverv
 router.get('/stats/registrations', getRegistrationStats);
 router.get('/stats/daily', requirePermission('can_view_stats'), getDailyStatsReport);
 router.get('/activity-logs', getActivityLogs);
+router.get('/activity-log', requirePermission('can_view_stats'), getActivityLogList);
+router.get('/activity-log/stats', requirePermission('can_view_stats'), getActivityLogStats);
+router.get('/activity-log/export', requirePermission('can_view_stats'), exportActivityLogs);
+router.get('/stats/registration-sources', requirePermission('can_view_stats'), getRegistrationSources);
 router.get('/visitors/overview', requirePermission('can_view_stats'), getVisitorOverview);
 router.get('/visitors', requirePermission('can_view_stats'), listVisitors);
 router.get('/analytics/overview', requirePermission('can_view_stats'), getAnalyticsOverview);

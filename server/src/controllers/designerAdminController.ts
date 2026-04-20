@@ -625,6 +625,26 @@ export async function rejectProject(req: any, res: Response) {
   }
 }
 
+// Registration source distribution + company type distribution
+export async function getRegistrationSources(_req: any, res: Response) {
+  try {
+    const [sources] = await pool.execute(
+      `SELECT COALESCE(signup_source, 'direct') as source, COUNT(*) as count
+       FROM users WHERE deleted_at IS NULL AND role IN ('company', 'homeowner')
+       GROUP BY COALESCE(signup_source, 'direct') ORDER BY count DESC`
+    );
+    const [types] = await pool.execute(
+      `SELECT COALESCE(company_type, 'unknown') as type, COUNT(*) as count
+       FROM company_profiles WHERE deleted_at IS NULL
+       GROUP BY COALESCE(company_type, 'unknown') ORDER BY count DESC`
+    );
+    res.json({ signup_sources: sources, company_types: types });
+  } catch (error) {
+    console.error('Get registration sources error:', error);
+    res.status(500).json({ error: 'Failed to get registration sources.' });
+  }
+}
+
 // Get designer stats overview
 export async function getStatsOverview(req: any, res: Response) {
   const { startDate, endDate } = req.query;
