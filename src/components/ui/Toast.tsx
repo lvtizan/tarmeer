@@ -16,9 +16,9 @@ export function showToast(text: string, type: ToastType = 'info') {
 }
 
 const TYPE_STYLES: Record<ToastType, string> = {
-  success: 'bg-emerald-600 text-white',
+  success: 'bg-[#b8864a] text-white',
   error: 'bg-red-600 text-white',
-  info: 'bg-[#1c1917] text-white',
+  info: 'bg-[#b8864a] text-white',
 };
 
 export default function ToastContainer() {

@@ -23,6 +23,11 @@ const COMPONENTS_DIR = join(ROOT, 'src/components');
 
 const RULES = [
   {
+    id: 'toast-brand-color',
+    desc: 'Toast uses black bg instead of brand color — must use bg-[#b8864a]',
+    test: (line) => /bg-\[#1c1917\].*text-white/.test(line) && /toast|Toast/i.test(line),
+  },
+  {
     id: 'no-inline-tooltip',
     desc: 'Inline group-hover tooltip inside table — use FloatingTip instead',
     test: (line) => /group-hover:block.*shadow-xl/.test(line) || /hidden\s+group-hover:block/.test(line),
@@ -128,6 +133,15 @@ function getAdminFiles(dir) {
     }
   }
   return files;
+}
+
+// Toast color rule (applied directly to Toast.tsx)
+const toastFile = readFileSync(join(ROOT, 'src/components/ui/Toast.tsx'), 'utf-8').split('\n');
+for (let i = 0; i < toastFile.length; i++) {
+  if (/bg-\[#1c1917\]/.test(toastFile[i])) {
+    console.log(`[toast-black-bg] src/components/ui/Toast.tsx:${i + 1} — Toast uses black bg, must use bg-[#b8864a] (brand color)`);
+    total++;
+  }
 }
 
 // Global rules (applied to components too)
