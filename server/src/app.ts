@@ -356,6 +356,51 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/company-leads', companyLeadRoutes);
 app.use('/api/articles', articleRoutes);
 
+// SEO: serve index.html with injected meta for search engine bots
+import { getPageMeta, injectMeta } from './lib/seoMetaInjector';
+
+const INDEX_HTML_PATH = '/tarmeer/tarmeer_web_portal/index.html';
+let indexHtmlCache: string | null = null;
+
+function getIndexHtml(): string {
+  if (!indexHtmlCache) {
+    try {
+      indexHtmlCache = fs.readFileSync(INDEX_HTML_PATH, 'utf-8');
+    } catch {
+      // Fallback for dev
+      const devPath = path.join(__dirname, '../../dist/index.html');
+      try { indexHtmlCache = fs.readFileSync(devPath, 'utf-8'); } catch { return ''; }
+    }
+  }
+  return indexHtmlCache;
+}
+
+// Clear cache on deploy (file change)
+if (fs.existsSync(INDEX_HTML_PATH)) {
+  fs.watchFile(INDEX_HTML_PATH, { interval: 5000 }, () => { indexHtmlCache = null; });
+}
+
+app.get('/api/seo-render', async (req, res) => {
+  const pathname = typeof req.query.path === 'string' ? req.query.path : '/';
+  const html = getIndexHtml();
+  if (!html) return res.status(500).send('index.html not found');
+
+  try {
+    const meta = await getPageMeta(pathname);
+    if (meta) {
+      res.set('Content-Type', 'text/html; charset=utf-8');
+      res.set('Cache-Control', 'public, max-age=3600');
+      return res.send(injectMeta(html, meta));
+    }
+  } catch (err) {
+    console.error('[SEO] Meta injection error:', err);
+  }
+
+  // Fallback: return original HTML
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
+});
+
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('Error:', err);
 
