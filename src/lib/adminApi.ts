@@ -798,6 +798,27 @@ class AdminApiClient {
   async triggerWeightRecalculation(): Promise<{ message: string; updated: number }> {
     return this.request('/weight-config/recalculate', { method: 'POST' });
   }
+
+  async getActivityLog(params: { page?: number; limit?: number; role?: string; action?: string; search?: string; start_date?: string; end_date?: string } = {}): Promise<{ logs: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)); });
+    return this.request(`/activity-log?${qs.toString()}`);
+  }
+
+  async getActivityLogStats(days?: number): Promise<{ today: any; action_distribution: any[]; daily_trend: any[] }> {
+    return this.request(`/activity-log/stats${days ? `?days=${days}` : ''}`);
+  }
+
+  getActivityLogExportUrl(params: { role?: string; action?: string; start_date?: string; end_date?: string } = {}): string {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)); });
+    const base = (import.meta as any).env?.VITE_API_URL || '/api';
+    return `${base}/admin/activity-log/export?${qs.toString()}`;
+  }
+
+  async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }> }> {
+    return this.request('/stats/registration-sources');
+  }
 }
 
 export const adminApi = new AdminApiClient();
