@@ -33,12 +33,31 @@ const serviceCategories = {
   ],
 };
 
-// portfolioCategories — kept for when /portfolio is re-enabled
-// const portfolioCategories = { ... };
+const portfolioCategories = {
+  'By Room': [
+    { label: 'Living Room', to: '/portfolio?tag=Living+Room' },
+    { label: 'Bedroom', to: '/portfolio?tag=Bedroom' },
+    { label: 'Kitchen', to: '/portfolio?tag=Kitchen' },
+    { label: 'Bathroom', to: '/portfolio?tag=Bathroom' },
+    { label: 'Dining Room', to: '/portfolio?tag=Dining+Room' },
+    { label: 'Office', to: '/portfolio?tag=Office' },
+    { label: 'Hallway', to: '/portfolio?tag=Hallway' },
+    { label: 'Outdoor', to: '/portfolio?tag=Outdoor' },
+  ],
+  'By Style': [
+    { label: 'Modern', to: '/portfolio?tag=Modern' },
+    { label: 'Luxury', to: '/portfolio?tag=Luxury' },
+    { label: 'Minimalist', to: '/portfolio?tag=Minimalist' },
+    { label: 'Classical', to: '/portfolio?tag=Classical' },
+    { label: 'Arabic', to: '/portfolio?tag=Arabic' },
+    { label: 'Industrial', to: '/portfolio?tag=Industrial' },
+    { label: 'Scandinavian', to: '/portfolio?tag=Scandinavian' },
+    { label: 'Art Deco', to: '/portfolio?tag=Art+Deco' },
+  ],
+};
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/portfolio', label: 'Portfolio' },
 ];
 
 type NavbarVariant = 'default' | 'admin-auth';
@@ -52,6 +71,7 @@ export default function Navbar({
 }) {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
@@ -91,6 +111,7 @@ export default function Navbar({
     handleNavClick(to);
     setOpen(false);
     setDropdownOpen(false);
+    setPortfolioDropdownOpen(false);
   };
 
   const renderNavLink = (to: string, label: string, extraClasses = '') => (
@@ -113,7 +134,65 @@ export default function Navbar({
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
 
-          {/* Portfolio Dropdown — temporarily hidden */}
+          {/* Portfolio Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setPortfolioDropdownOpen(true)}
+            onMouseLeave={() => setPortfolioDropdownOpen(false)}
+          >
+            <Link
+              to="/portfolio"
+              onClick={() => { setPortfolioDropdownOpen(false); handleClick('/portfolio'); }}
+              className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+            >
+              Portfolio
+              <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
+            </Link>
+
+            <AnimatePresence>
+              {portfolioDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full left-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50"
+                >
+                  <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
+                    {Object.entries(portfolioCategories).map(([category, items]) => (
+                      <div key={category}>
+                        <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">
+                          {category}
+                        </h3>
+                        <ul className="space-y-2">
+                          {items.map((item) => (
+                            <li key={item.to}>
+                              <Link
+                                to={item.to}
+                                onClick={() => handleClick(item.to)}
+                                className="text-sm text-stone-600 hover:text-[#b8864a] transition"
+                              >
+                                {item.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
+                    <Link
+                      to="/portfolio"
+                      onClick={() => handleClick('/portfolio')}
+                      className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition"
+                    >
+                      All Projects {'>'}
+                    </Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Find Company Dropdown */}
           <div
@@ -234,7 +313,57 @@ export default function Navbar({
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
 
-            {/* Portfolio link — temporarily hidden */}
+            {/* Mobile Portfolio Dropdown */}
+            <div className="py-2">
+              <button
+                onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)}
+                className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+              >
+                Portfolio
+                <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {portfolioDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="mt-3 pl-4 space-y-4"
+                  >
+                    {Object.entries(portfolioCategories).map(([category, items]) => (
+                      <div key={category}>
+                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">
+                          {category}
+                        </h3>
+                        <ul className="space-y-1">
+                          {items.map((item) => (
+                            <li key={item.to}>
+                              <Link
+                                to={item.to}
+                                onClick={() => handleClick(item.to)}
+                                className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1"
+                              >
+                                {item.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                    <div className="border-t border-stone-200 pt-2">
+                      <Link
+                        to="/portfolio"
+                        onClick={() => handleClick('/portfolio')}
+                        className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1"
+                      >
+                        All Projects {'>'}
+                      </Link>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Mobile Find Company Section */}
             <div className="py-2">

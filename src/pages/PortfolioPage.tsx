@@ -5,12 +5,8 @@ import { X } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 import { DEFAULT_RATIO } from '../lib/justifyRows';
-import { computeLayout, type LayoutMode } from '../lib/portfolioLayout';
 
 const MAX_IMAGES_PER_GROUP = 12;
-// Max height for grouped projects (used to truncate DP mode with "+N more").
-// Blocks mode produces a fixed-aspect container and ignores this cap.
-const MAX_GROUP_HEIGHT_DP = 640;
 
 /* ================================================================== */
 /*  Image preloader with RAF batching                                  */
@@ -138,116 +134,20 @@ function JustifiedGallery({
   onItemClick,
   renderOverlay,
   remainingCount,
-  maxHeight,
-  mode,
 }: {
   items: ImgMeta[];
   onItemClick: (index: number) => void;
   renderOverlay?: (index: number) => React.ReactNode;
   remainingCount?: number;
-  /** Optional pixel cap — cells with (y + h) above this are shown; others cut. Only applies to DP mode. */
-  maxHeight?: number;
-  mode: LayoutMode;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  // Initialize with a best-guess width so the FIRST render already produces
-  // the correct cell heights → document height is correct → scroll restore
-  // works without a clamped jump.
-  const [containerWidth, setContainerWidth] = useState(() => {
-    if (typeof window === 'undefined') return 1200;
-    // Page wrapper is max-w-[1400px] with px-4 (16px each side)
-    return Math.min(window.innerWidth - 32, 1400 - 32);
-  });
-
-  // Synchronous measurement before paint to correct any guess.
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const w = el.clientWidth;
-    if (w > 0 && w !== containerWidth) setContainerWidth(w);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Watch for resizes after mount.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => {
-      if (el.clientWidth > 0) setContainerWidth(el.clientWidth);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // Filter visible items, build ratios array
-  const visibleIndices = useMemo(() => {
-    const indices: number[] = [];
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].ratio > 0) indices.push(i);
-    }
-    return indices;
-  }, [items]);
-
-  const ratios = useMemo(
-    () => visibleIndices.map(i => items[i].loaded ? items[i].ratio : DEFAULT_RATIO),
-    [items, visibleIndices]
-  );
-
-  const fullLayout = useMemo(
-    () => computeLayout(mode, ratios, containerWidth),
-    [mode, ratios, containerWidth]
-  );
-
-  // Apply max height cap (DP mode only — blocks/mosaic are already sized)
-  const { cells, totalHeight, truncatedCount } = useMemo(() => {
-    if (mode !== 'dp' || !maxHeight || fullLayout.height <= maxHeight) {
-      return { cells: fullLayout.cells, totalHeight: fullLayout.height, truncatedCount: 0 };
-    }
-    // Keep cells whose top is within maxHeight; drop the rest
-    const kept = fullLayout.cells.filter(c => c.y + c.h <= maxHeight + 1);
-    const dropped = fullLayout.cells.length - kept.length;
-    const h = kept.reduce((m, c) => Math.max(m, c.y + c.h), 0);
-    return { cells: kept, totalHeight: h, truncatedCount: dropped };
-  }, [fullLayout, mode, maxHeight]);
-
-  const effectiveRemaining = (remainingCount || 0) + truncatedCount;
-
-  // Find the last rendered cell (bottom-right-most) for "+N more" overlay
-  const lastCellKey = useMemo(() => {
-    if (cells.length === 0 || effectiveRemaining <= 0) return -1;
-    let bestI = 0;
-    let bestScore = -Infinity;
-    for (let i = 0; i < cells.length; i++) {
-      const c = cells[i];
-      // Bottom-right priority: weigh y more than x
-      const score = c.y * 2 + c.x;
-      if (score > bestScore) { bestScore = score; bestI = i; }
-    }
-    return cells[bestI].idx;
-  }, [cells, effectiveRemaining]);
-
+  const visibleItems = items.filter(it => it.ratio > 0);
   return (
-    <div
-      ref={containerRef}
-      className="w-full relative"
-      style={{
-        height: containerWidth > 0 ? totalHeight : 280,
-      }}
-    >
-      {cells.map(cell => {
-        const visIdx = cell.idx;
-        const origIdx = visibleIndices[visIdx];
-        if (origIdx === undefined) return null;
-        const item = items[origIdx];
-        const isLastWithMore = cell.idx === lastCellKey;
-
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {visibleItems.map((item, vi) => {
+        const origIdx = items.indexOf(item);
+        const isLast = vi === visibleItems.length - 1 && (remainingCount || 0) > 0;
         return (
-          <div
-            key={origIdx}
-            className="absolute rounded-xl overflow-hidden cursor-pointer group"
-            style={{ left: cell.x, top: cell.y, width: cell.w, height: cell.h }}
-            onClick={() => onItemClick(origIdx)}
-          >
+          <div key={origIdx} className="relative rounded-xl overflow-hidden cursor-pointer group" onClick={() => onItemClick(origIdx)}>
             {/* Shimmer */}
             <div
               className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.loaded ? 'opacity-0 pointer-events-none' : ''}`}
@@ -257,11 +157,6 @@ function JustifiedGallery({
                 animation: 'shimmer 1.5s infinite',
               }}
             />
-
-            {/* Image — thumb variant is ~12KB vs medium ~45KB. If the thumb is
-                missing (older upload pre-variant-generation) fall back once to
-                the original; the dataset guard prevents an onError loop when
-                the original is also unreachable. */}
             <img
               src={resolveVariantUrl(item.src, 'thumb')}
               alt="Interior design project"
@@ -274,17 +169,15 @@ function JustifiedGallery({
                   img.src = resolveImageUrl(item.src);
                 }
               }}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
+              className={`w-full aspect-[4/3] object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
             />
-
             {/* Hover gradient + overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             {renderOverlay?.(origIdx)}
-
             {/* +N more */}
-            {isLastWithMore && (
+            {isLast && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                <span className="text-white text-lg font-semibold">+{effectiveRemaining} more</span>
+                <span className="text-white text-lg font-semibold">+{remainingCount} more</span>
               </div>
             )}
           </div>
@@ -304,14 +197,12 @@ function ProjectGroup({
   initialRatios,
   onRatios,
   onBeforeNavigate,
-  layoutMode,
 }: {
   project: PortfolioProject;
   maxImages: number;
   initialRatios?: number[];
   onRatios?: (ratios: number[]) => void;
   onBeforeNavigate?: (projectId: string, imageIdx: number) => void;
-  layoutMode: LayoutMode;
 }) {
   const navigate = useNavigate();
   const visibleImages = useMemo(() => project.images.slice(0, maxImages), [project.images, maxImages]);
@@ -373,8 +264,6 @@ function ProjectGroup({
         onItemClick={handleClick}
         renderOverlay={renderOverlay}
         remainingCount={remaining}
-        maxHeight={MAX_GROUP_HEIGHT_DP}
-        mode={layoutMode}
       />
     </section>
   );
@@ -434,9 +323,6 @@ export default function PortfolioPage() {
     const c = readCache();
     return c && c.activeTag === urlTag ? c : null;
   }, []); // Only read once on mount
-
-  // Layout mode is fixed to 'blocks' — the justified/dp mode is hidden.
-  const layoutMode: LayoutMode = 'blocks';
 
   const [projects, setProjects] = useState<PortfolioProject[]>(cached?.projects || []);
   const [page, setPage] = useState(cached?.page || 1);
@@ -823,7 +709,6 @@ export default function PortfolioPage() {
             initialRatios={ratiosCacheRef.current.get(String(project.id))}
             onRatios={rs => handleRatiosUpdate(String(project.id), rs)}
             onBeforeNavigate={handleBeforeNavigate}
-            layoutMode={layoutMode}
           />
         ))}
 
@@ -838,7 +723,6 @@ export default function PortfolioPage() {
               items={singlesItems}
               onItemClick={handleSingleClick}
               renderOverlay={renderSingleOverlay}
-              mode="dp"
             />
           </section>
         )}
