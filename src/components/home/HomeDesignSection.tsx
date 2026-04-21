@@ -5,12 +5,20 @@ import type { Company } from '../../lib/companyData';
 import { fetchPublicCompanies } from '../../lib/publicApi';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
 import { resolveImageUrl, resolveVariantUrl } from '../../lib/imageUrl';
+import { HERO_BLUR } from '../../lib/heroBlurMap';
 
 const HERO_IMAGES = [
-  '/images/uae-companies/portfolio/hba-hirsch-bedner/general/6.jpg',
-  '/images/uae-companies/portfolio/hba-hirsch-bedner/general/11.jpg',
-  '/images/uae-companies/portfolio/hba-hirsch-bedner/general/12.jpg',
-  '/images/uae-companies/portfolio/hba-hirsch-bedner/general/14.jpg',
+  '/images/hero/hero-living-1.jpg',
+  '/images/hero/hero-villa-1.jpg',
+  '/images/hero/hero-kitchen-1.jpg',
+  '/images/hero/hero-living-2.jpg',
+];
+
+const HERO_BLUR_MAP = [
+  HERO_BLUR['hero-living-1'],
+  HERO_BLUR['hero-villa-1'],
+  HERO_BLUR['hero-kitchen-1'],
+  HERO_BLUR['hero-living-2'],
 ];
 
 function StudioImage({ company, className }: { company: Company; className: string }) {
@@ -122,10 +130,23 @@ export default function HomeDesignSection() {
     <section className="bg-white py-10 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="relative mb-7 overflow-hidden rounded-[28px] border border-stone-200 bg-[#0f0f0d] min-h-[210px] sm:mb-8 sm:min-h-[240px]">
+          {/* Blur placeholder — inline base64, instant */}
+          {HERO_BLUR_MAP[heroImageIndex] && (
+            <img
+              src={HERO_BLUR_MAP[heroImageIndex]}
+              alt="" aria-hidden
+              className="absolute inset-0 w-full h-full object-cover scale-110"
+              style={{ filter: 'blur(20px)' }}
+            />
+          )}
+          {/* HD image with srcset */}
           <img
-            src={resolveImageUrl(HERO_IMAGES[heroImageIndex])}
+            src={HERO_IMAGES[heroImageIndex]}
+            srcSet={`${HERO_IMAGES[heroImageIndex].replace('.jpg', '-thumb.webp')} 600w, ${HERO_IMAGES[heroImageIndex].replace('.jpg', '-medium.webp')} 1200w, ${HERO_IMAGES[heroImageIndex]} 1920w`}
+            sizes="100vw"
             alt="Premium design and build spaces across the Middle East"
             className="absolute inset-0 h-full w-full object-cover"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,7,6,0.82)_0%,rgba(8,7,6,0.58)_34%,rgba(8,7,6,0.16)_68%,rgba(8,7,6,0.12)_100%)]" />
           <div className="relative z-10 flex min-h-[210px] items-end px-5 py-5 sm:min-h-[240px] sm:px-6 sm:py-6 lg:px-8 lg:py-7">
