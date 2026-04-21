@@ -386,6 +386,21 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               </div>
             ) : (
               <>
+                {/* Lead collected confirmation */}
+                <div className="flex items-start gap-3 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+                  <svg className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <div>
+                    <p className="text-[14px] font-semibold text-emerald-800">
+                      {lang === 'ar' ? 'تم استلام معلوماتك بنجاح!' : 'Your information has been received!'}
+                    </p>
+                    <p className="text-[13px] text-emerald-700/80 mt-0.5 leading-relaxed">
+                      {lang === 'ar'
+                        ? 'سيتواصل معك فريقنا قريبًا. في الأثناء، أنشئ حسابك لإدارة صفحة شركتك.'
+                        : 'Our team will be in touch shortly. Meanwhile, create your account to start managing your company page.'}
+                    </p>
+                  </div>
+                </div>
+
                 <h2 className="text-[18px] font-bold text-[#1c1917] leading-snug">
                   {lang === 'ar' ? 'إنشاء حسابك' : 'Create your account'}
                 </h2>
