@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { t, type Lang } from '../../i18n/forCompanies';
 import AdminSelect from '../ui/AdminSelect';
@@ -76,6 +76,38 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [regError, setRegError] = useState<string | null>(null);
   const [regSubmitting, setRegSubmitting] = useState(false);
   const [regSuccess, setRegSuccess] = useState<string | null>(null);
+
+  // Phone-already-submitted detection (real-time)
+  const [phoneAlreadySubmitted, setPhoneAlreadySubmitted] = useState(false);
+  const [phoneCheckResult, setPhoneCheckResult] = useState<{ hasAccount: boolean; hasCompanyProfile: boolean } | null>(null);
+  const phoneCheckTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const checkPhoneDebounced = useCallback((digits: string, regionCode: string) => {
+    clearTimeout(phoneCheckTimer.current);
+    setPhoneAlreadySubmitted(false);
+    setPhoneCheckResult(null);
+
+    if (!isPhoneComplete(digits, regionCode)) return;
+    const phoneValidation = validatePhone(digits, regionCode);
+    if (phoneValidation) return;
+
+    phoneCheckTimer.current = setTimeout(async () => {
+      try {
+        const fullPhone = `${regionCode}${digits}`;
+        const res = await fetch(`${API_BASE}/company-leads/check-phone?phone=${encodeURIComponent(fullPhone)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.exists) {
+          setPhoneAlreadySubmitted(true);
+          setPhoneCheckResult({ hasAccount: data.hasAccount, hasCompanyProfile: data.hasCompanyProfile });
+        }
+      } catch { /* ignore */ }
+    }, 500);
+  }, []);
+
+  useEffect(() => {
+    return () => clearTimeout(phoneCheckTimer.current);
+  }, []);
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
@@ -578,6 +610,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                     .replace(/\D/g, '')
                     .slice(0, phoneRegion.maxDigits);
                   setPhoneDigits(digits);
+                  checkPhoneDebounced(digits, phoneRegion.code);
                 }}
                 maxLength={phoneRegion.maxDigits}
                 placeholder={t(lang, 'phonePlaceholder')}
@@ -591,10 +624,20 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             {phoneError && (
               <p className="mt-1.5 text-[12px] text-red-600">{phoneError}</p>
             )}
+            {phoneAlreadySubmitted && !phoneError && (
+              <div className="mt-2 flex items-start gap-2.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5">
+                <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <p className="text-[13px] text-emerald-800 leading-relaxed">
+                  {phoneCheckResult?.hasAccount
+                    ? (lang === 'ar' ? 'هذا الرقم مسجّل بالفعل. سجّل الدخول للوصول إلى لوحة التحكم.' : 'This number is already registered. Sign in to access your dashboard.')
+                    : (lang === 'ar' ? 'معلوماتك موجودة لدينا بالفعل! سجّل حسابك لإدارة صفحة شركتك.' : 'Your info is already in our system! Register an account to manage your company page.')}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Company Name */}
-          <div>
+          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
             <label className={labelClass}>
               {t(lang, 'companyName')} <span className="text-red-500">*</span>
             </label>
@@ -603,12 +646,13 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder={t(lang, 'companyNamePlaceholder')}
+              disabled={phoneAlreadySubmitted}
               className={`${inputClass} ${tried && !companyName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
             />
           </div>
 
           {/* City */}
-          <div>
+          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
             <label className={labelClass}>
               {lang === 'ar' ? 'المدينة' : 'City'} <span className="text-red-500">*</span>
             </label>
@@ -625,7 +669,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           </div>
 
           {/* Company Type */}
-          <div>
+          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
             <label className={labelClass}>
               {t(lang, 'companyType')} <span className="text-red-500">*</span>
             </label>
@@ -643,7 +687,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           </div>
 
           {/* Year of Establishment */}
-          <div>
+          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
             <label className={labelClass}>{t(lang, 'yearEstablished')}</label>
             <input
               type="text"
@@ -651,6 +695,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               value={establishmentYear}
               onChange={(e) => setEstablishmentYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder={t(lang, 'yearPlaceholder')}
+              disabled={phoneAlreadySubmitted}
               className={inputClass}
             />
           </div>
@@ -662,21 +707,39 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             </p>
           )}
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
-                {t(lang, 'submitting')}
-              </>
-            ) : (
-              t(lang, 'submit')
-            )}
-          </button>
+          {/* Submit / Go to Register */}
+          {phoneAlreadySubmitted ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (phoneCheckResult?.hasAccount) {
+                  navigate('/auth?mode=login&role=company');
+                } else {
+                  setRegisterMode(true);
+                }
+              }}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47]"
+            >
+              {phoneCheckResult?.hasAccount
+                ? (lang === 'ar' ? 'تسجيل الدخول →' : 'Sign In →')
+                : (lang === 'ar' ? 'إنشاء حساب →' : 'Create Account →')}
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                  {t(lang, 'submitting')}
+                </>
+              ) : (
+                t(lang, 'submit')
+              )}
+            </button>
+          )}
         </form>
         </>
         )}

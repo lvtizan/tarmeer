@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { body, validationResult } from 'express-validator';
-import { submitCompanyLead, getCompanyLeads } from '../controllers/companyLeadController';
+import { submitCompanyLead, getCompanyLeads, checkPhoneExists } from '../controllers/companyLeadController';
 import { authenticateAdmin, requireAdmin } from '../middleware/adminAuth';
 
 const router = Router();
@@ -32,6 +32,9 @@ router.post('/',
   handleValidation,
   submitCompanyLead
 );
+
+// Public: check if phone already submitted
+router.get('/check-phone', checkPhoneExists);
 
 // Admin: list all company leads
 router.get('/', authenticateAdmin, requireAdmin, getCompanyLeads);

@@ -106,6 +106,38 @@ export async function submitCompanyLead(req: any, res: any) {
   }
 }
 
+export async function checkPhoneExists(req: any, res: any) {
+  try {
+    const phone = req.query.phone as string;
+    if (!phone) return res.status(400).json({ error: 'Phone is required' });
+
+    // Check company_leads table
+    const [leadRows] = await pool.execute(
+      'SELECT id FROM company_leads WHERE phone = ? LIMIT 1',
+      [phone]
+    );
+    const leadExists = (leadRows as any[]).length > 0;
+
+    // Check users table (already registered)
+    const [userRows] = await pool.execute(
+      `SELECT u.id,
+              (SELECT COUNT(*) FROM company_profiles cp WHERE cp.user_id = u.id LIMIT 1) AS has_company
+       FROM users u WHERE u.phone = ? AND u.deleted_at IS NULL LIMIT 1`,
+      [phone]
+    );
+    const existingUser = (userRows as any[])[0];
+
+    res.json({
+      exists: leadExists || !!existingUser,
+      hasAccount: !!existingUser,
+      hasCompanyProfile: existingUser ? existingUser.has_company > 0 : false,
+    });
+  } catch (error) {
+    console.error('Check phone exists error:', error);
+    res.status(500).json({ error: 'Check failed' });
+  }
+}
+
 export async function getCompanyLeads(req: any, res: any) {
   try {
     const page = parseInt(req.query.page) || 1;
