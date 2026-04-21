@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FolderOpen, ExternalLink } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -20,10 +20,14 @@ const STATUS_BADGE: Record<string, string> = {
 export default function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useAdminT();
+  const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -94,18 +98,82 @@ export default function AdminUserDetailPage() {
             <p className="text-sm text-stone-500">{user.email}</p>
           </div>
         </div>
-        <button
-          onClick={handleStatusToggle}
-          disabled={actionLoading}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-            user.status === 'active'
-              ? 'bg-red-50 text-red-600 hover:bg-red-100'
-              : 'bg-green-50 text-green-600 hover:bg-green-100'
-          } disabled:opacity-50`}
-        >
-          {actionLoading ? '...' : user.status === 'active' ? t('Suspend User', '停用用户') : t('Activate User', '激活用户')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleStatusToggle}
+            disabled={actionLoading}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              user.status === 'active'
+                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                : 'bg-green-50 text-green-600 hover:bg-green-100'
+            } disabled:opacity-50`}
+          >
+            {actionLoading ? '...' : user.status === 'active' ? t('Suspend User', '停用用户') : t('Activate User', '激活用户')}
+          </button>
+          <button
+            onClick={() => setDeleteModal(true)}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition flex items-center gap-1.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {t('Delete', '删除')}
+          </button>
+        </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-[200] bg-black/40 flex items-center justify-center" onClick={() => !deleteLoading && setDeleteModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-[#2c2c2c]">{t('Delete User', '删除用户')}</h3>
+            <p className="text-sm text-[#6b6b6b]">
+              {t(
+                `This will permanently delete "${user.full_name || user.email}" and all related data (company profile, projects, inquiries, etc). This cannot be undone.`,
+                `将永久删除「${user.full_name || user.email}」及所有关联数据（公司资料、项目、询盘等），不可恢复。`
+              )}
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-stone-500 mb-1.5">
+                {t('Delete reason', '删除原因')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder={t('Enter delete reason...', '请输入删除原因...')}
+                className="w-full h-[42px] px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 focus:bg-white"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => { setDeleteModal(false); setDeleteReason(''); }}
+                disabled={deleteLoading}
+                className="px-4 py-2 rounded-2xl text-sm text-stone-600 hover:bg-stone-100 transition"
+              >
+                {t('Cancel', '取消')}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!deleteReason.trim()) return;
+                  setDeleteLoading(true);
+                  try {
+                    await adminApi.deleteUser(Number(id), deleteReason.trim());
+                    navigate('/admin/users');
+                  } catch (err: any) {
+                    alert(err.message || t('Delete failed', '删除失败'));
+                  } finally {
+                    setDeleteLoading(false);
+                  }
+                }}
+                disabled={deleteLoading || !deleteReason.trim()}
+                className="px-4 py-2 rounded-2xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deleteLoading ? t('Deleting...', '删除中...') : t('Confirm Delete', '确认删除')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Info card */}
       <div className="bg-white rounded-xl border border-stone-200 p-6">
