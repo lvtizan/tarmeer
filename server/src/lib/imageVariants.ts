@@ -4,8 +4,8 @@ import { promises as fs } from 'fs';
 
 const VARIANTS = [
   { suffix: '-blur', maxLongEdge: 40, quality: 20 },
-  { suffix: '-thumb', maxLongEdge: 400, quality: 75 },
-  { suffix: '-medium', maxLongEdge: 1200, quality: 82 },
+  { suffix: '-thumb', maxLongEdge: 600, quality: 78 },    // mobile cards
+  { suffix: '-medium', maxLongEdge: 1200, quality: 85 },  // desktop grid / masonry
 ];
 
 /**

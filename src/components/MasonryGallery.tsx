@@ -199,9 +199,11 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     aria-hidden
                     className="absolute inset-0 w-full h-full object-cover scale-110 blur-lg"
                   />
-                  {/* Main image — use original for max quality, blur as placeholder */}
+                  {/* Main image — srcset for responsive quality + speed */}
                   <img
                     src={primarySrc}
+                    srcSet={`${resolveVariantUrl(item.url, 'thumb')} 600w, ${resolveVariantUrl(item.url, 'medium')} 1200w, ${primarySrc} 1600w`}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     alt={item.title || `${item.categoryName} project`}
                     loading="lazy"
                     className="w-full aspect-[4/3] object-cover transition-all duration-500 group-hover:scale-105 relative z-10"
