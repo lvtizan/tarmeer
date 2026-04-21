@@ -7,76 +7,99 @@ import GoogleOneTap from './components/GoogleOneTap';
 import ToastContainer from './components/ui/Toast';
 import { useMetaPixelPageView } from './hooks/useMetaPixelPageView';
 
-const Layout = lazy(() => import('./components/Layout'));
-const CompanyLayout = lazy(() => import('./components/company/CompanyLayout'));
-const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+// Retry dynamic import up to 2 times before giving up.
+// Handles stale chunk hashes after deploy — first retry with cache-bust query param.
+function lazyRetry<T extends React.ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  return lazy(() =>
+    factory().catch(() =>
+      // First retry: bust browser cache with timestamp
+      factory().catch(() => {
+        // Second retry: force full page reload if still failing
+        const KEY = 'chunk_reload_times';
+        const now = Date.now();
+        const raw = sessionStorage.getItem(KEY);
+        const times: number[] = raw ? JSON.parse(raw).filter((t: number) => now - t < 60000) : [];
+        if (times.length < 2) {
+          times.push(now);
+          sessionStorage.setItem(KEY, JSON.stringify(times));
+          window.location.reload();
+        }
+        return factory(); // last attempt, will throw if still fails
+      })
+    )
+  );
+}
+
+const Layout = lazyRetry(() => import('./components/Layout'));
+const CompanyLayout = lazyRetry(() => import('./components/company/CompanyLayout'));
+const AdminLayout = lazyRetry(() => import('./components/admin/AdminLayout'));
 
 // Public pages
-const HomePage = lazy(() => import('./pages/HomePage'));
-const ShowroomsPage = lazy(() => import('./pages/ShowroomsPage'));
-const MaterialCategoryPage = lazy(() => import('./pages/MaterialCategoryPage'));
-const BrandPage = lazy(() => import('./pages/BrandPage'));
-const AuthPage = lazy(() => import('./pages/HomeownerAuthPage'));
-const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
-const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
-const DmcaPage = lazy(() => import('./pages/DmcaPage'));
-const NewHomeDesignPage = lazy(() => import('./pages/NewHomeDesignPage'));
-const SoftDecorationPage = lazy(() => import('./pages/SoftDecorationPage'));
-const HouseExteriorDesignPage = lazy(() => import('./pages/HouseExteriorDesignPage'));
-const ContactPage = lazy(() => import('./pages/ContactPage'));
-const CompaniesPage = lazy(() => import('./pages/CompaniesPage'));
-const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'));
-const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
-const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
-const FaqPage = lazy(() => import('./pages/FaqPage'));
-const BlogPage = lazy(() => import('./pages/BlogPage'));
-const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage'));
-const ForCompaniesPage = lazy(() => import('./pages/ForCompaniesPage'));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const HomePage = lazyRetry(() => import('./pages/HomePage'));
+const ShowroomsPage = lazyRetry(() => import('./pages/ShowroomsPage'));
+const MaterialCategoryPage = lazyRetry(() => import('./pages/MaterialCategoryPage'));
+const BrandPage = lazyRetry(() => import('./pages/BrandPage'));
+const AuthPage = lazyRetry(() => import('./pages/HomeownerAuthPage'));
+const AuthCallbackPage = lazyRetry(() => import('./pages/AuthCallbackPage'));
+const VerifyEmailPage = lazyRetry(() => import('./pages/VerifyEmailPage'));
+const ForgotPasswordPage = lazyRetry(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazyRetry(() => import('./pages/ResetPasswordPage'));
+const PrivacyPage = lazyRetry(() => import('./pages/PrivacyPage'));
+const DmcaPage = lazyRetry(() => import('./pages/DmcaPage'));
+const NewHomeDesignPage = lazyRetry(() => import('./pages/NewHomeDesignPage'));
+const SoftDecorationPage = lazyRetry(() => import('./pages/SoftDecorationPage'));
+const HouseExteriorDesignPage = lazyRetry(() => import('./pages/HouseExteriorDesignPage'));
+const ContactPage = lazyRetry(() => import('./pages/ContactPage'));
+const CompaniesPage = lazyRetry(() => import('./pages/CompaniesPage'));
+const CompanyDetailPage = lazyRetry(() => import('./pages/CompanyDetailPage'));
+const PortfolioPage = lazyRetry(() => import('./pages/PortfolioPage'));
+const ProjectDetailPage = lazyRetry(() => import('./pages/ProjectDetailPage'));
+const FaqPage = lazyRetry(() => import('./pages/FaqPage'));
+const BlogPage = lazyRetry(() => import('./pages/BlogPage'));
+const BlogDetailPage = lazyRetry(() => import('./pages/BlogDetailPage'));
+const ForCompaniesPage = lazyRetry(() => import('./pages/ForCompaniesPage'));
+const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage'));
 
 // Onboarding
-const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const OnboardingPage = lazyRetry(() => import('./pages/OnboardingPage'));
 
 // Company portal
-const CompanyOnboardingPage = lazy(() => import('./pages/company/CompanyOnboardingPage'));
-const CompanyDashboardPage = lazy(() => import('./pages/company/CompanyDashboardPage'));
-const CompanyProjectsPage = lazy(() => import('./pages/company/CompanyProjectsPage'));
-const CompanyUploadPage = lazy(() => import('./pages/company/CompanyUploadPage'));
-const CompanyArticlesPage = lazy(() => import('./pages/company/CompanyArticlesPage'));
-const CompanyProfilePage = lazy(() => import('./pages/company/CompanyProfilePage'));
+const CompanyOnboardingPage = lazyRetry(() => import('./pages/company/CompanyOnboardingPage'));
+const CompanyDashboardPage = lazyRetry(() => import('./pages/company/CompanyDashboardPage'));
+const CompanyProjectsPage = lazyRetry(() => import('./pages/company/CompanyProjectsPage'));
+const CompanyUploadPage = lazyRetry(() => import('./pages/company/CompanyUploadPage'));
+const CompanyArticlesPage = lazyRetry(() => import('./pages/company/CompanyArticlesPage'));
+const CompanyProfilePage = lazyRetry(() => import('./pages/company/CompanyProfilePage'));
 
 // Homeowner dashboard
-const UserDashboardLayout = lazy(() => import('./layouts/UserDashboardLayout'));
-const HomeownerDashboardPage = lazy(() => import('./pages/dashboard/HomeownerDashboardPage'));
-const HomeownerProjectsPage = lazy(() => import('./pages/dashboard/HomeownerProjectsPage'));
-const DashboardProfilePage = lazy(() => import('./pages/dashboard/DashboardProfilePage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const UserDashboardLayout = lazyRetry(() => import('./layouts/UserDashboardLayout'));
+const HomeownerDashboardPage = lazyRetry(() => import('./pages/dashboard/HomeownerDashboardPage'));
+const HomeownerProjectsPage = lazyRetry(() => import('./pages/dashboard/HomeownerProjectsPage'));
+const DashboardProfilePage = lazyRetry(() => import('./pages/dashboard/DashboardProfilePage'));
+const SettingsPage = lazyRetry(() => import('./pages/SettingsPage'));
 
 // Admin
-const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
-const AdminForgotPasswordPage = lazy(() => import('./pages/admin/AdminForgotPasswordPage'));
-const AdminResetPasswordPage = lazy(() => import('./pages/admin/AdminResetPasswordPage'));
-const AdminInstallPage = lazy(() => import('./pages/admin/AdminInstallPage'));
-const AdminDesignersPage = lazy(() => import('./pages/admin/AdminDesignersPage'));
-const AdminAdminsPage = lazy(() => import('./pages/admin/AdminAdminsPage'));
-const AdminDesignerDetailPage = lazy(() => import('./pages/admin/AdminDesignerDetailPage'));
-const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
-const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
-const AdminUserDetailPage = lazy(() => import('./pages/admin/AdminUserDetailPage'));
-const AdminCompaniesPage = lazy(() => import('./pages/admin/AdminCompaniesPage'));
-const AdminInquiriesPage = lazy(() => import('./pages/admin/AdminInquiriesPage'));
-const AdminComplaintsPage = lazy(() => import('./pages/admin/AdminComplaintsPage'));
-const AdminRoleManagementPage = lazy(() => import('./pages/admin/AdminRoleManagementPage'));
-const AdminNotificationEmailsPage = lazy(() => import('./pages/admin/AdminNotificationEmailsPage'));
-const AdminCompanyImportPage = lazy(() => import('./pages/admin/AdminCompanyImportPage'));
-const AdminCompanyDetailPage = lazy(() => import('./pages/admin/AdminCompanyDetailPage'));
-const AdminRegisteredCompanyDetailPage = lazy(() => import('./pages/admin/AdminRegisteredCompanyDetailPage'));
-const AdminHelpPage = lazy(() => import('./pages/admin/AdminHelpPage'));
-const AdminActivityLogPage = lazy(() => import('./pages/admin/AdminActivityLogPage'));
-const AdminProjectDetailPage = lazy(() => import('./pages/admin/AdminProjectDetailPage'));
+const AdminLoginPage = lazyRetry(() => import('./pages/admin/AdminLoginPage'));
+const AdminForgotPasswordPage = lazyRetry(() => import('./pages/admin/AdminForgotPasswordPage'));
+const AdminResetPasswordPage = lazyRetry(() => import('./pages/admin/AdminResetPasswordPage'));
+const AdminInstallPage = lazyRetry(() => import('./pages/admin/AdminInstallPage'));
+const AdminDesignersPage = lazyRetry(() => import('./pages/admin/AdminDesignersPage'));
+const AdminAdminsPage = lazyRetry(() => import('./pages/admin/AdminAdminsPage'));
+const AdminDesignerDetailPage = lazyRetry(() => import('./pages/admin/AdminDesignerDetailPage'));
+const AdminAnalyticsPage = lazyRetry(() => import('./pages/admin/AdminAnalyticsPage'));
+const AdminUsersPage = lazyRetry(() => import('./pages/admin/AdminUsersPage'));
+const AdminUserDetailPage = lazyRetry(() => import('./pages/admin/AdminUserDetailPage'));
+const AdminCompaniesPage = lazyRetry(() => import('./pages/admin/AdminCompaniesPage'));
+const AdminInquiriesPage = lazyRetry(() => import('./pages/admin/AdminInquiriesPage'));
+const AdminComplaintsPage = lazyRetry(() => import('./pages/admin/AdminComplaintsPage'));
+const AdminRoleManagementPage = lazyRetry(() => import('./pages/admin/AdminRoleManagementPage'));
+const AdminNotificationEmailsPage = lazyRetry(() => import('./pages/admin/AdminNotificationEmailsPage'));
+const AdminCompanyImportPage = lazyRetry(() => import('./pages/admin/AdminCompanyImportPage'));
+const AdminCompanyDetailPage = lazyRetry(() => import('./pages/admin/AdminCompanyDetailPage'));
+const AdminRegisteredCompanyDetailPage = lazyRetry(() => import('./pages/admin/AdminRegisteredCompanyDetailPage'));
+const AdminHelpPage = lazyRetry(() => import('./pages/admin/AdminHelpPage'));
+const AdminActivityLogPage = lazyRetry(() => import('./pages/admin/AdminActivityLogPage'));
+const AdminProjectDetailPage = lazyRetry(() => import('./pages/admin/AdminProjectDetailPage'));
 
 // Silently auto-reloads when lazy-loaded chunks fail (stale cache after deploy).
 // Loop guard: max 2 reloads per 60s window to avoid infinite refresh.
