@@ -160,7 +160,7 @@ export default function AdminApplicationsTable({
                   <div className="text-xs text-stone-400">{c.user_email}</div>
                 </td>
                 <td className="px-4 py-3 text-stone-700 font-medium">{c.project_count}</td>
-                <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
               </tr>
             ))}
           </tbody>
