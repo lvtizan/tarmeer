@@ -123,7 +123,7 @@ export default function HomeDesignSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="relative mb-7 overflow-hidden rounded-[28px] border border-stone-200 bg-[#0f0f0d] min-h-[210px] sm:mb-8 sm:min-h-[240px]">
           <img
-            src={resolveVariantUrl(HERO_IMAGES[heroImageIndex], 'medium')}
+            src={resolveImageUrl(HERO_IMAGES[heroImageIndex])}
             alt="Premium design and build spaces across the Middle East"
             className="absolute inset-0 h-full w-full object-cover"
           />

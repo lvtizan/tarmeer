@@ -83,7 +83,7 @@ export default function Banner() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: 'url(/images/uae-companies/portfolio/hba-hirsch-bedner/general/6-medium.webp)',
+          backgroundImage: 'url(/images/uae-companies/portfolio/hba-hirsch-bedner/general/6.jpg)',
         }}
       />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.42)_0%,rgba(0,0,0,0.28)_38%,rgba(0,0,0,0.2)_100%)]" />
