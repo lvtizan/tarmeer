@@ -12,7 +12,7 @@ import { api } from '../lib/api';
  */
 export function useVerificationPoller(email: string | null, role?: string) {
   const navigate = useNavigate();
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const stoppedRef = useRef(false);
 
   useEffect(() => {

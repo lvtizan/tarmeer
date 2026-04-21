@@ -13,6 +13,7 @@ const GCC_PHONE_OPTIONS = [
 ];
 
 export default function Banner() {
+  const [name, setName] = useState('');
   const [area, setArea] = useState('');
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phone, setPhone] = useState('');
@@ -53,7 +54,7 @@ export default function Banner() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: 'Website Visitor',
+          name: name.trim() || '',
           phone: `${phoneRegion.code}${phone}`,
           city: 'Dubai',
           area_range: `${numericArea}m²`,
@@ -69,6 +70,7 @@ export default function Banner() {
       setSuccess('Submitted successfully. Our team will contact you soon.');
       trackContact({ content_name: 'Homepage Banner' });
       trackLead({ content_name: 'Homepage Banner' });
+      setName('');
       setArea('');
       setPhone('');
     } catch (submitError: any) {
@@ -86,17 +88,25 @@ export default function Banner() {
           backgroundImage: 'url(/images/hero/hero-living-1.jpg)',
         }}
       />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.42)_0%,rgba(0,0,0,0.28)_38%,rgba(0,0,0,0.2)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.55)_0%,rgba(0,0,0,0.45)_38%,rgba(0,0,0,0.35)_100%)]" />
 
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[340px_1fr] lg:gap-16">
         <form
           onSubmit={handleSubmit}
-          className="overflow-hidden rounded-[20px] border border-white/80 bg-white/94 shadow-[0_18px_44px_rgba(28,25,23,0.14)] backdrop-blur-sm"
+          className="rounded-[20px] border border-white/80 bg-white/94 shadow-[0_18px_44px_rgba(28,25,23,0.14)] backdrop-blur-sm"
         >
           <div className="space-y-3.5 px-6 py-5">
             <div>
               <h2 className="text-[22px] font-semibold tracking-tight text-[#1c1917]">Book a Design</h2>
             </div>
+
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="w-full h-[48px] px-5 rounded-[20px] border border-stone-200 bg-stone-50/70 text-[15px] text-[#1c1917] placeholder:text-stone-300 outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition"
+            />
 
             <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
               <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">Area</label>
