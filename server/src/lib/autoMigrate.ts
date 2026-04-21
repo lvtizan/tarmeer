@@ -135,6 +135,98 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       INDEX idx_target_type (target_type)
     )`,
   },
+  {
+    name: 'supplier_users',
+    sql: `CREATE TABLE IF NOT EXISTS supplier_users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password VARCHAR(255),
+      full_name VARCHAR(100),
+      phone VARCHAR(64),
+      google_id VARCHAR(255) UNIQUE,
+      avatar_url VARCHAR(500),
+      email_verified TINYINT(1) DEFAULT 0,
+      verification_token VARCHAR(255),
+      verification_expires DATETIME,
+      reset_token VARCHAR(255),
+      reset_expires DATETIME,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_email (email),
+      INDEX idx_google_id (google_id)
+    )`,
+  },
+  {
+    name: 'supplier_profiles',
+    sql: `CREATE TABLE IF NOT EXISTS supplier_profiles (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      supplier_user_id INT NOT NULL UNIQUE,
+      company_name VARCHAR(255) NOT NULL,
+      slug VARCHAR(255) NOT NULL UNIQUE,
+      description TEXT,
+      logo_url VARCHAR(500),
+      origin ENUM('china','dubai') NOT NULL DEFAULT 'china',
+      categories JSON,
+      has_physical_store TINYINT(1) DEFAULT 0,
+      store_address VARCHAR(500),
+      store_lat DECIMAL(10,8),
+      store_lng DECIMAL(11,8),
+      google_maps_url VARCHAR(500),
+      contact_phone VARCHAR(64),
+      whatsapp VARCHAR(64),
+      website VARCHAR(500),
+      status ENUM('pending','approved','rejected') DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_supplier_user (supplier_user_id),
+      INDEX idx_slug (slug),
+      INDEX idx_status (status),
+      INDEX idx_origin (origin)
+    )`,
+  },
+  {
+    name: 'supplier_products',
+    sql: `CREATE TABLE IF NOT EXISTS supplier_products (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      supplier_profile_id INT NOT NULL,
+      title VARCHAR(255),
+      description TEXT,
+      image_url VARCHAR(500) NOT NULL,
+      sort_order INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_supplier (supplier_profile_id)
+    )`,
+  },
+  {
+    name: 'supplier_catalogs',
+    sql: `CREATE TABLE IF NOT EXISTS supplier_catalogs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      supplier_profile_id INT NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      file_url VARCHAR(500) NOT NULL,
+      file_size INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_supplier (supplier_profile_id)
+    )`,
+  },
+  {
+    name: 'supplier_leads',
+    sql: `CREATE TABLE IF NOT EXISTS supplier_leads (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      contact_name VARCHAR(100) NOT NULL,
+      phone VARCHAR(64) NOT NULL,
+      company_name VARCHAR(200),
+      category VARCHAR(100),
+      origin ENUM('china','dubai'),
+      message TEXT,
+      source_page VARCHAR(200),
+      status ENUM('new','contacted','converted','rejected') DEFAULT 'new',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_status (status),
+      INDEX idx_created_at (created_at)
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
