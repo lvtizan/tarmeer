@@ -47,21 +47,15 @@ export async function submitCompanyLead(req: any, res: any) {
     ).catch(() => [{ insertId: 0 }]);
     const mirrorInquiryId = (mirrorResult as any).insertId;
 
-    // Sync the mirrored inquiry to CRM so it shows "已同步" in admin
+    // Mark mirrored inquiry as synced (it will be pushed via company tenant below, not homeowner tenant)
     if (mirrorInquiryId) {
-      pushLeadToCRM({
-        inquiryId: mirrorInquiryId,
-        externalId: `inquiry-${mirrorInquiryId}`,
-        name: contactName || 'Anonymous',
-        phone,
-        city: city || undefined,
-        notes: `Company: ${companyName}${companyType ? ` | ${companyType}` : ''}`,
-        page: sourcePage || '/for-companies',
-        company: companyName || undefined,
-      }).catch(() => {});
+      pool.execute(
+        "UPDATE design_inquiries SET crm_sync_status = 'synced', crm_synced_at = NOW() WHERE id = ?",
+        [mirrorInquiryId]
+      ).catch(() => {});
     }
 
-    // Fire-and-forget CRM push (company tenant)
+    // Fire-and-forget CRM push (company tenant ONLY — not homeowner tenant)
     // notes field carries company_type so CRM sales team sees it
     // Send full info — CRM notes field supports 1500 chars
     const crmNotes = [
