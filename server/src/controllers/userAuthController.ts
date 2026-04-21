@@ -387,6 +387,32 @@ export async function verifyEmail(req: any, res: any) {
   }
 }
 
+// Check if email has been verified (polling endpoint for registration page)
+export async function checkVerified(req: any, res: any) {
+  try {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ verified: false });
+
+    const [rows] = await pool.execute(
+      'SELECT id, email_verified, role, active_role, full_name FROM users WHERE email = ? LIMIT 1',
+      [email]
+    );
+    const user = (rows as any[])[0];
+    if (!user) return res.json({ verified: false });
+    if (!user.email_verified) return res.json({ verified: false });
+
+    // Verified — issue a login token so the polling page can auto-login
+    const token = generateToken(user);
+    res.json({
+      verified: true,
+      token,
+      user: { id: user.id, email, full_name: user.full_name, role: user.role, active_role: user.active_role },
+    });
+  } catch {
+    res.json({ verified: false });
+  }
+}
+
 // Resend verification email
 export async function resendVerification(req: any, res: any) {
   try {

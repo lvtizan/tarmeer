@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar';
 import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 import AuthCardShell from '../components/auth/AuthCardShell';
 import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '../components/auth/authCardStyles';
+import { useVerificationPoller } from '../hooks/useVerificationPoller';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 // Google Auth: enabled by default (backend is configured), disable explicitly with 'false'
@@ -47,6 +48,9 @@ export default function HomeownerAuthPage() {
 
   const [searchParams] = useSearchParams();
   const authRole = searchParams.get('role') === 'company' ? 'company' : 'homeowner';
+
+  // Poll for email verification — auto-login when user verifies in another tab/device
+  useVerificationPoller(step === 'done' ? email : null, authRole);
 
 
   // Pre-fill email from URL (from /join email continue)

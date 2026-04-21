@@ -8,6 +8,7 @@ import { MIN_PASSWORD_LENGTH } from '../lib/constants';
 import LoadingButton from '../components/ui/LoadingButton';
 import AuthCardShell from '../components/auth/AuthCardShell';
 import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '../components/auth/authCardStyles';
+import { useVerificationPoller } from '../hooks/useVerificationPoller';
 import {
   Check,
   Search,
@@ -39,6 +40,9 @@ function JoinAuthCard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Poll for email verification — auto-login when user verifies in another tab/device
+  useVerificationPoller(step === 'done' ? email : null, 'company');
 
   // Company signup data from /for-companies form
   const companySignupData = searchParams.get('company_name') ? {

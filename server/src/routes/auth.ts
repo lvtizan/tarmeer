@@ -63,6 +63,8 @@ router.post('/verify-email',
   userAuth.verifyEmail
 );
 
+router.get('/check-verified', userAuth.checkVerified);
+
 router.post('/resend-verification',
   verificationLimiter,
   [

@@ -4,6 +4,7 @@ import { t, type Lang } from '../../i18n/forCompanies';
 import AdminSelect from '../ui/AdminSelect';
 import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
 import { api } from '../../lib/api';
+import { useVerificationPoller } from '../../hooks/useVerificationPoller';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -76,6 +77,9 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [regError, setRegError] = useState<string | null>(null);
   const [regSubmitting, setRegSubmitting] = useState(false);
   const [regSuccess, setRegSuccess] = useState<string | null>(null);
+
+  // Poll for email verification — auto-login when user verifies in another tab/device
+  useVerificationPoller(regSuccess ? regEmail : null, 'company');
 
   // Phone-already-submitted detection (real-time)
   const [phoneAlreadySubmitted, setPhoneAlreadySubmitted] = useState(false);
