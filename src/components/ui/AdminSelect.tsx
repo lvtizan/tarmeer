@@ -1,4 +1,5 @@
 import { forwardRef, useState, useRef, useEffect, useImperativeHandle, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface AdminSelectProps {
   value: string;
@@ -113,26 +114,29 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
 
       {open && (
         <>
-          {/* Mobile: fixed centered modal */}
-          <div
-            className="sm:hidden fixed inset-0 z-[200] bg-black/40 flex items-center justify-center px-6"
-            onMouseDown={() => setOpen(false)}
-          >
+          {/* Mobile: portal modal to body */}
+          {createPortal(
             <div
-              className="w-full bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto"
-              onMouseDown={(e) => e.stopPropagation()}
+              className="sm:hidden fixed inset-0 z-[200] bg-black/40 flex items-center justify-center px-6"
+              onMouseDown={() => setOpen(false)}
             >
-              <div className="px-5 py-4 border-b border-stone-100">
-                <p className="text-sm font-semibold text-[#2c2c2c]">Select an option</p>
+              <div
+                className="w-full bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <div className="px-5 py-4 border-b border-stone-100">
+                  <p className="text-sm font-semibold text-[#2c2c2c]">Select an option</p>
+                </div>
+                <div className="divide-y divide-stone-100">
+                  {optionList}
+                </div>
               </div>
-              <div className="divide-y divide-stone-100">
-                {optionList}
-              </div>
-            </div>
-          </div>
+            </div>,
+            document.body
+          )}
 
-          {/* Desktop: fixed dropdown (escapes overflow-hidden containers) */}
-          {dropPos && (
+          {/* Desktop: portal dropdown to body (escapes all stacking contexts) */}
+          {dropPos && createPortal(
             <ul
               className={`hidden sm:block fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden ${options.length > 10 ? 'max-h-[70vh] overflow-y-auto' : ''}`}
               style={{ top: dropPos.top, left: dropPos.left, minWidth: Math.max(dropPos.width, 140), width: 'auto' }}
@@ -154,7 +158,8 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
                   </button>
                 </li>
               ))}
-            </ul>
+            </ul>,
+            document.body
           )}
         </>
       )}
