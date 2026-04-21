@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Globe, RefreshCw, Save, Users, Building2, MessageSquare, ChevronDown, ChevronRight, BarChart3, AreaChart as AreaChartIcon, Eye, MousePointerClick, Phone, FileText, Hash, MapPin } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
@@ -9,6 +9,12 @@ import {
   ComposedChart, Line,
 } from 'recharts';
 import type { AnalyticsOverview, VisitorRecord } from '../../lib/adminApi';
+
+function lazyRetry<T extends React.ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  return lazy(() => factory().catch(() => factory().catch(() => { window.location.reload(); return factory(); })));
+}
+
+const UAEDistributionMap = lazyRetry(() => import('../../components/admin/UAEDistributionMap'));
 
 /* ─── Types ─── */
 
@@ -372,6 +378,8 @@ function VisitorTab() {
   const [visitorLoading, setVisitorLoading] = useState(false);
   // TODO: Replace with actual daily visit data when backend provides /analytics/daily-visits endpoint
   const [dailyData, setDailyData] = useState<Array<{ date: string; page_views: number; visitors: number }>>([]);
+  const [companyCities, setCompanyCities] = useState<any[]>([]);
+  const [inquiryCities, setInquiryCities] = useState<any[]>([]);
   const [weightOpen, setWeightOpen] = useState(false);
 
   // Lazy load: fetch data on mount (this component only mounts when tab is active)
@@ -400,6 +408,13 @@ function VisitorTab() {
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
+
+    // Fetch city distribution data for UAE map
+    adminApi.getRegistrationSources().then(data => {
+      if (cancelled) return;
+      setCompanyCities(data.company_cities || []);
+      setInquiryCities(data.inquiry_cities || []);
+    }).catch(() => {});
 
     return () => { cancelled = true; };
   }, []);
@@ -578,6 +593,11 @@ function VisitorTab() {
           </>
         )}
       </div>
+
+      {/* UAE Distribution Map */}
+      <Suspense fallback={<div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 h-[420px] animate-pulse" />}>
+        <UAEDistributionMap companyCities={companyCities} inquiryCities={inquiryCities} />
+      </Suspense>
 
       {/* Top Pages Table */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">

@@ -816,7 +816,7 @@ class AdminApiClient {
     return `${base}/admin/activity-log/export?${qs.toString()}`;
   }
 
-  async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }> }> {
+  async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }>; company_cities?: Array<{ city: string; count: number }>; inquiry_cities?: Array<{ city: string; count: number }> }> {
     return this.request('/stats/registration-sources');
   }
 }

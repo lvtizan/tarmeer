@@ -638,7 +638,18 @@ export async function getRegistrationSources(_req: any, res: Response) {
        FROM company_profiles WHERE deleted_at IS NULL
        GROUP BY COALESCE(company_type, 'unknown') ORDER BY count DESC`
     );
-    res.json({ signup_sources: sources, company_types: types });
+    // City distribution for map
+    const [companyCities] = await pool.execute(
+      `SELECT COALESCE(city, 'Unknown') as city, COUNT(*) as count
+       FROM company_profiles WHERE deleted_at IS NULL AND city IS NOT NULL AND city != ''
+       GROUP BY city ORDER BY count DESC`
+    );
+    const [inquiryCities] = await pool.execute(
+      `SELECT COALESCE(city, 'Unknown') as city, COUNT(*) as count
+       FROM design_inquiries WHERE deleted_at IS NULL AND city IS NOT NULL AND city != ''
+       GROUP BY city ORDER BY count DESC`
+    );
+    res.json({ signup_sources: sources, company_types: types, company_cities: companyCities, inquiry_cities: inquiryCities });
   } catch (error) {
     console.error('Get registration sources error:', error);
     res.status(500).json({ error: 'Failed to get registration sources.' });
