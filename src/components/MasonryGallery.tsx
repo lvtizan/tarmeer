@@ -199,9 +199,9 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     aria-hidden
                     className="absolute inset-0 w-full h-full object-cover scale-110 blur-lg"
                   />
-                  {/* Main image — use medium variant for quality, blur as placeholder */}
+                  {/* Main image — use original for max quality, blur as placeholder */}
                   <img
-                    src={resolveVariantUrl(item.url, 'medium')}
+                    src={primarySrc}
                     alt={item.title || `${item.categoryName} project`}
                     loading="lazy"
                     className="w-full aspect-[4/3] object-cover transition-all duration-500 group-hover:scale-105 relative z-10"
@@ -246,12 +246,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     }}
                     onError={(e) => {
                       const current = e.currentTarget;
-                      // Fall back to original image if medium variant doesn't exist
-                      if (!current.dataset.fallback) {
-                        current.dataset.fallback = '1';
-                        current.src = primarySrc;
-                        return;
-                      }
+                      // Fall back through extension candidates (.jpg → .webp → .png etc.)
                       const retryIndex = Number(current.dataset.retryIndex || '0');
                       if (retryIndex < fallbackCandidates.length - 1) {
                         const nextRetry = retryIndex + 1;
