@@ -18,6 +18,8 @@ import notificationRoutes from './routes/notifications';
 import complaintRoutes from './routes/complaints';
 import companyLeadRoutes from './routes/companyLeads';
 import articleRoutes from './routes/articles';
+import supplierAuthRoutes from './routes/supplierAuth';
+import supplierRoutes from './routes/suppliers';
 import config from './config';
 import {
   isPayloadTooLargeError,
@@ -356,6 +358,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/company-leads', companyLeadRoutes);
 app.use('/api/articles', articleRoutes);
+app.use('/api/supplier/auth', supplierAuthRoutes);
+app.use('/api/suppliers', supplierRoutes);
 
 // SEO: serve index.html with injected meta for search engine bots
 import { getPageMeta, injectMeta } from './lib/seoMetaInjector';

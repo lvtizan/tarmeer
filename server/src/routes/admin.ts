@@ -69,6 +69,8 @@ import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
+import * as supplierAdmin from '../controllers/supplierAdminController';
+import { listLeads as listSupplierLeads } from '../controllers/supplierLeadController';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 import {
@@ -312,5 +314,13 @@ router.get('/admins', requireSuperAdmin, listAdmins);
 router.post('/admins', requireSuperAdmin, createSubAdmin);
 router.put('/admins/:id', requireSuperAdmin, updateAdmin);
 router.delete('/admins/:id', requireSuperAdmin, deleteAdmin);
+
+// ── Suppliers ──
+router.get('/suppliers', supplierAdmin.listSuppliers);
+router.get('/suppliers/:id', supplierAdmin.getSupplierDetail);
+router.put('/suppliers/:id', supplierAdmin.updateSupplier);
+router.put('/suppliers/:id/status', supplierAdmin.updateSupplierStatus);
+router.delete('/suppliers/:id', supplierAdmin.deleteSupplier);
+router.get('/supplier-leads', listSupplierLeads);
 
 export default router;
