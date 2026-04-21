@@ -74,6 +74,9 @@ export async function listApprovedCompanies(req: any, res: any) {
     const total = (countResult as any[])[0]?.total || 0;
 
     // Fetch companies
+    // NOTE: contact fields (contact_person, phone, website, email, address) are
+    // intentionally NOT selected here — self-registered company contact info is
+    // admin-only. Admin endpoints (companyAdminController) still return them.
     const listQuery = `
       SELECT
         cp.id,
@@ -81,9 +84,6 @@ export async function listApprovedCompanies(req: any, res: any) {
         cp.company_name,
         cp.company_type,
         cp.description,
-        cp.contact_person,
-        cp.phone,
-        cp.website,
         cp.city,
         cp.services,
         cp.logo_url,
@@ -91,10 +91,8 @@ export async function listApprovedCompanies(req: any, res: any) {
         cp.home_display_order,
         cp.list_display_order,
         cp.is_signed,
-        u.email,
         (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count
       FROM company_profiles cp
-      JOIN users u ON cp.user_id = u.id
       WHERE ${whereClause}
       ORDER BY cp.weight_score DESC, CASE WHEN cp.home_display_order > 0 THEN 0 ELSE 1 END, cp.home_display_order ASC, cp.display_order DESC, cp.created_at DESC
       LIMIT ${Number(limitNum)} OFFSET ${Number(offset)}
@@ -137,9 +135,6 @@ export async function listApprovedCompanies(req: any, res: any) {
         company_name: company.company_name,
         company_type: company.company_type,
         description: company.description,
-        contact_person: company.contact_person,
-        phone: company.phone,
-        website: company.website,
         city: company.city,
         services: services,
         logo_url: company.logo_url,
@@ -198,17 +193,15 @@ export async function getCompanyDetail(req: any, res: any) {
       ? JSON.parse(company.services)
       : company.services;
 
+    // NOTE: contact fields (contact_person, phone, website, email, address) are
+    // intentionally omitted — self-registered company contact info is admin-only.
     const formattedCompany = {
       id: company.id,
       slug: company.slug || '',
       company_name: company.company_name,
       company_type: company.company_type,
       description: company.description,
-      contact_person: company.contact_person,
-      phone: company.phone,
-      website: company.website,
       city: company.city,
-      address: company.address,
       services: services,
       logo_url: company.logo_url,
       display_order: company.display_order,

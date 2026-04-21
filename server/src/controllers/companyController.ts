@@ -220,11 +220,12 @@ export async function getPublicProjectDetail(req: any, res: any) {
       companySource = 'directory';
     }
 
-    // Try company_profiles
+    // Try company_profiles.
+    // NOTE: Do NOT select contact fields (address, phone, website, email) —
+    // self-registered company contact info is admin-only by policy.
     if (!company) {
       const [cpRows] = await pool.execute(
-        `SELECT id, company_name, slug, logo_url, city, address,
-                phone, website
+        `SELECT id, company_name, slug, logo_url, city
            FROM company_profiles
           WHERE slug = ? AND status = ? AND deleted_at IS NULL`,
         [companySlug, 'approved']
