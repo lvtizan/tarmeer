@@ -7,7 +7,7 @@ import { transporter, FROM_EMAIL, FROM_NAME, REPLY_TO_EMAIL, RETURN_PATH_EMAIL, 
 
 interface CreateNotification {
   userId?: number | null; // null = admin broadcast
-  type: 'inquiry' | 'company_registration' | 'user_registration' | 'system';
+  type: 'inquiry' | 'company_registration' | 'user_registration' | 'company_lead' | 'system';
   title: string;
   message: string;
   link?: string;
@@ -225,4 +225,47 @@ export async function notifyUserRegistration(user: UserData) {
   const text = `New ${roleLabel}: ${user.fullName || user.email}, ${user.phone || '—'}, ${user.city || '—'} | 渠道: ${sourceLabel}`;
 
   await sendGroupEmail(`[Tarmeer] New ${roleLabel} Registration`, html, text);
+}
+
+// ── Company Lead (for-companies form submission) ──
+
+interface CompanyLeadData {
+  contactName: string;
+  companyName: string;
+  phone: string;
+  city: string;
+  companyType: string;
+  sourcePage: string;
+}
+
+export async function notifyNewCompanyLead(lead: CompanyLeadData) {
+  const title = `New company lead: ${lead.companyName || lead.contactName}`;
+  const msg = `${lead.contactName} (${lead.phone}) — ${lead.companyName}, ${lead.city}`;
+
+  await createNotification({
+    type: 'company_lead',
+    title,
+    message: msg,
+    link: '/admin/inquiries?type=company',
+  });
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #b8864a;">🏢 New Company Lead</h2>
+      <p style="color: #6b6b6b;">A company submitted interest via the landing page.</p>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Contact:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${lead.contactName}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Company:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${lead.companyName || '—'}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${lead.phone}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>City:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${lead.city || '—'}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Type:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${lead.companyType || '—'}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Source:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #b8864a;"><strong>${lead.sourcePage}</strong></td></tr>
+        <tr><td style="padding: 8px 0;"><strong>Time:</strong></td><td style="padding: 8px 0;">${new Date().toLocaleString('en-US')}</td></tr>
+      </table>
+      <p style="margin-top: 16px;"><a href="https://admin.tarmeer.com/admin/inquiries?type=company" style="color: #b8864a;">View in Admin →</a></p>
+    </div>
+  `;
+  const text = `New Company Lead: ${lead.contactName}, ${lead.companyName}, ${lead.phone}, ${lead.city}`;
+
+  await sendGroupEmail('[Tarmeer] 🏢 New Company Lead', html, text);
 }

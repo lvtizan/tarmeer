@@ -869,7 +869,7 @@ const CompaniesTab: React.FC<{
                     {company.city}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {{ design_studio: t('Design Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包'), mep_contractor: 'MEP', maintenance_company: t('Maintenance', '维保'), specialty_trade: t('Specialty', '专项'), landscaping: t('Landscaping', '景观'), furnishing: t('Furnishing', '软装') }[company.company_type!] || '—'}
+                    {{ design_studio: t('Design Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包商'), mep_contractor: t('MEP', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty', '专项工程'), landscaping: t('Landscaping', '景观工程'), furnishing: t('Furnishing', '软装公司') }[company.company_type!] || '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">

@@ -173,8 +173,8 @@ export default function AdminRegisteredCompanyDetailPage() {
               />
             )}
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+              <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+              <div className="flex flex-wrap gap-2 mt-1.5">
                 <button
                   onClick={() => setShowEditModal(true)}
                   className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
@@ -204,7 +204,7 @@ export default function AdminRegisteredCompanyDetailPage() {
               </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
-                  {{ design_studio: 'Design Studio', renovation_company: 'Renovation & Fit-out', general_contractor: 'General Contractor', mep_contractor: 'MEP Contractor', maintenance_company: 'Maintenance Company', specialty_trade: 'Specialty Trade', landscaping: 'Landscaping & Pools', furnishing: 'Furnishing' }[company.company_type] || company.company_type}
+                  {{ design_studio: t('Design Studio', '设计工作室'), renovation_company: t('Renovation & Fit-out', '装修公司'), general_contractor: t('General Contractor', '总承包商'), mep_contractor: t('MEP Contractor', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty Trade', '专项工程'), landscaping: t('Landscaping & Pools', '景观工程'), furnishing: t('Furnishing', '软装公司') }[company.company_type] || company.company_type}
                 </span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>
                   {company.status}

@@ -1,5 +1,6 @@
 import pool from '../config/database';
 import { pushCompanyLeadToCRM, pushLeadToCRM } from '../lib/crmPush';
+import { notifyNewCompanyLead } from '../services/notificationService';
 
 export async function submitCompanyLead(req: any, res: any) {
   try {
@@ -82,6 +83,18 @@ export async function submitCompanyLead(req: any, res: any) {
       'SELECT * FROM company_leads WHERE id = ?',
       [leadId]
     );
+
+    // Notify admin via email (async, don't block response)
+    setImmediate(() => {
+      notifyNewCompanyLead({
+        contactName: contactName || 'Unknown',
+        companyName: companyName || '',
+        phone: phone || '',
+        city: city || '',
+        companyType: companyType || '',
+        sourcePage: sourcePage || '/for-companies',
+      }).catch((err) => console.error('[notify] Company lead email failed:', err));
+    });
 
     res.status(201).json({
       message: 'Submitted successfully. We will contact you soon.',

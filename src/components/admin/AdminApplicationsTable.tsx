@@ -151,7 +151,7 @@ export default function AdminApplicationsTable({
                     : c.company_type === 'landscaping' ? 'bg-green-50 text-green-600'
                     : 'bg-blue-50 text-blue-600'
                   }`}>
-                    {{ design_studio: t('Studio', '设计工作室'), renovation_company: t('Renovation', '装修'), general_contractor: t('Contractor', '总承包'), mep_contractor: 'MEP', maintenance_company: t('Maintenance', '维保'), specialty_trade: t('Specialty', '专项'), landscaping: t('Landscape', '景观'), furnishing: t('Furnishing', '软装') }[c.company_type] || c.company_type}
+                    {{ design_studio: t('Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包商'), mep_contractor: t('MEP', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty', '专项工程'), landscaping: t('Landscape', '景观工程'), furnishing: t('Furnishing', '软装公司') }[c.company_type] || c.company_type}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>
