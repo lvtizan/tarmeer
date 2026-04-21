@@ -300,7 +300,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       dir={dir}
       className="bg-white rounded-[20px] shadow-[0_18px_44px_rgba(28,25,23,0.14)] overflow-hidden"
     >
-      <div className="px-6 py-5 space-y-4">
+      <div className="px-7 py-7 space-y-5">
         {/* ── Phone-exists inline login panel ── */}
         {phoneExistsMode ? (
           <>
@@ -434,8 +434,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   {lang === 'ar' ? 'المتابعة مع Google' : 'Continue with Google'}
                 </button>
 
-                <div className="relative my-1">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-stone-100" /></div>
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-stone-200" /></div>
                   <div className="relative flex justify-center">
                     <span className="px-4 bg-white text-[10px] text-stone-400 font-medium tracking-[0.15em]">
                       {lang === 'ar' ? 'أو بالبريد الإلكتروني' : 'OR CONTINUE WITH EMAIL'}
