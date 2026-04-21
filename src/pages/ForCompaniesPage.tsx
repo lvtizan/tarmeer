@@ -221,23 +221,6 @@ export default function ForCompaniesPage() {
         </div>
       </section>
 
-      {/* ── 5. CTA — full-bleed dark band ── */}
-      <section className="bg-[#1c1917] py-14 lg:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <motion.h2 {...fadeUp} className="font-serif text-3xl lg:text-4xl font-bold text-white mb-5">
-            {t(lang, 'ctaTitle')}
-          </motion.h2>
-          <motion.div {...fadeUp}>
-            <Link
-              to="/join"
-              className="inline-block bg-[#b8864a] text-white font-semibold px-10 py-3.5 rounded-[20px] hover:bg-[#a4763f] transition shadow-[0_8px_24px_rgba(184,134,74,0.3)]"
-            >
-              {t(lang, 'ctaButton')}
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
       {/* ── 6. Mini Footer ── */}
       <footer className="bg-[#1c1917] py-6 border-t border-white/10">
         <div className="flex gap-6 items-center justify-center">
