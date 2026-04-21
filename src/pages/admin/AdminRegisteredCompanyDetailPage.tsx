@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ExternalLink, Pencil } from 'lucide-react';
+import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -75,6 +75,9 @@ export default function AdminRegisteredCompanyDetailPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const loadDetail = () => {
     if (!id) return;
@@ -190,6 +193,14 @@ export default function AdminRegisteredCompanyDetailPage() {
                   <ExternalLink size={14} />
                   {t('Preview', '预览')}
                 </a>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete company"
+                >
+                  <Trash2 size={14} />
+                  {t('Delete', '删除')}
+                </button>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
@@ -386,6 +397,62 @@ export default function AdminRegisteredCompanyDetailPage() {
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {isSubmitting ? t('Rejecting...', '拒绝中...') : t('Reject', '拒绝')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !deleteLoading && setShowDeleteModal(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-[#2c2c2c]">{t('Delete Company', '删除装企')}</h2>
+            <p className="text-sm text-[#6b6b6b]">
+              {t(
+                `This will permanently delete "${company.company_name}" and the owner account, including all projects, inquiries, and related data. This cannot be undone.`,
+                `将永久删除「${company.company_name}」及其所有者账号，包括所有项目、询盘和关联数据，不可恢复。`
+              )}
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-stone-500 mb-1.5">
+                {t('Delete reason', '删除原因')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder={t('Enter delete reason...', '请输入删除原因...')}
+                className="w-full h-[42px] px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 focus:bg-white"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}
+                disabled={deleteLoading}
+                className="px-4 py-2 rounded-2xl text-sm text-stone-600 hover:bg-stone-100 transition"
+              >
+                {t('Cancel', '取消')}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!deleteReason.trim()) return;
+                  setDeleteLoading(true);
+                  try {
+                    await adminApi.deleteCompanyProfile(Number(id), deleteReason.trim());
+                    navigate('/admin/companies');
+                  } catch (err: any) {
+                    setActionError(err.message || t('Delete failed', '删除失败'));
+                  } finally {
+                    setDeleteLoading(false);
+                    setShowDeleteModal(false);
+                  }
+                }}
+                disabled={deleteLoading || !deleteReason.trim()}
+                className="px-4 py-2 rounded-2xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deleteLoading ? t('Deleting...', '删除中...') : t('Confirm Delete', '确认删除')}
               </button>
             </div>
           </div>
