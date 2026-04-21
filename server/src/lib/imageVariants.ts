@@ -5,7 +5,7 @@ import { promises as fs } from 'fs';
 const VARIANTS = [
   { suffix: '-blur', maxLongEdge: 40, quality: 20 },
   { suffix: '-thumb', maxLongEdge: 400, quality: 75 },
-  { suffix: '-medium', maxLongEdge: 800, quality: 80 },
+  { suffix: '-medium', maxLongEdge: 1200, quality: 82 },
 ];
 
 /**

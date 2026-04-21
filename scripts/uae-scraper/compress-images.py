@@ -23,9 +23,9 @@ except ImportError:
     sys.exit(1)
 
 PORTFOLIO_DIR = Path(__file__).parent.parent.parent / "public" / "images" / "uae-companies" / "portfolio"
-MAX_WIDTH = 800
-MAX_HEIGHT = 800
-QUALITY = 75
+MAX_WIDTH = 1600
+MAX_HEIGHT = 1600
+QUALITY = 85
 MIN_SIZE_KB = 50  # don't touch files already under 50KB
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.webp'}
 

@@ -158,7 +158,7 @@ if (mode === 'fix') {
           pipeline = img.resize(400, null, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 });
           break;
         case 'medium':
-          pipeline = img.resize(800, null, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 });
+          pipeline = img.resize(1200, null, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 });
           break;
       }
 
