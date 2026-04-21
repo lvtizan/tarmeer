@@ -3121,212 +3121,258 @@
     "logo_url": "",
     "source_platform": "web_search",
     "portfolio_categories": {
-      "Serene-versante": [
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/5.jpg",
-          "title": "serene-versante 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/10.jpg",
-          "title": "serene-versante 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/11.jpg",
-          "title": "serene-versante 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/12.jpg",
-          "title": "serene-versante 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/13.jpg",
-          "title": "serene-versante 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/14.jpg",
-          "title": "serene-versante 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/15.jpg",
-          "title": "serene-versante 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/16.jpg",
-          "title": "serene-versante 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/17.jpg",
-          "title": "serene-versante 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/18.jpg",
-          "title": "serene-versante 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/19.jpg",
-          "title": "serene-versante 19"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/20.jpg",
-          "title": "serene-versante 20"
-        }
-      ],
-      "Villa-19": [
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/5.jpg",
-          "title": "villa-19 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/10.jpg",
-          "title": "villa-19 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/11.jpg",
-          "title": "villa-19 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/12.jpg",
-          "title": "villa-19 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/13.jpg",
-          "title": "villa-19 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/14.jpg",
-          "title": "villa-19 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/15.jpg",
-          "title": "villa-19 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/16.jpg",
-          "title": "villa-19 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/17.jpg",
-          "title": "villa-19 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/18.jpg",
-          "title": "villa-19 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-19/19.jpg",
-          "title": "villa-19 19"
-        }
-      ],
-      "L-olive-restaurant": [
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/3.jpg",
-          "title": "l-olive-restaurant 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/8.jpg",
-          "title": "l-olive-restaurant 8"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/10.jpg",
-          "title": "l-olive-restaurant 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/11.jpg",
-          "title": "l-olive-restaurant 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/12.jpg",
-          "title": "l-olive-restaurant 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/l-olive-restaurant/13.jpg",
-          "title": "l-olive-restaurant 13"
-        }
-      ],
-      "Villa-noveau": [
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/10.jpg",
-          "title": "villa-noveau 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/11.jpg",
-          "title": "villa-noveau 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/12.jpg",
-          "title": "villa-noveau 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/13.jpg",
-          "title": "villa-noveau 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/14.jpg",
-          "title": "villa-noveau 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/15.jpg",
-          "title": "villa-noveau 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/16.jpg",
-          "title": "villa-noveau 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/17.jpg",
-          "title": "villa-noveau 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/18.jpg",
-          "title": "villa-noveau 18"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/villa-noveau/19.jpg",
-          "title": "villa-noveau 19"
-        }
-      ],
-      "First-motors": [
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/5.jpg",
-          "title": "first-motors 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/10.jpg",
-          "title": "first-motors 10"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/11.jpg",
-          "title": "first-motors 11"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/12.jpg",
-          "title": "first-motors 12"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/13.jpg",
-          "title": "first-motors 13"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/14.jpg",
-          "title": "first-motors 14"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/15.jpg",
-          "title": "first-motors 15"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/16.jpg",
-          "title": "first-motors 16"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/17.jpg",
-          "title": "first-motors 17"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/ck-architecture/first-motors/18.jpg",
-          "title": "first-motors 18"
-        }
-      ]
+      "Casa-Vibrante": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/1.jpg",
+            "title": "August 2024"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/2.png",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/3.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/4.png",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/5.png",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/6.png",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/7.png",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/8.png",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/9.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/10.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/11.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/12.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/13.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/14.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/casa-vibrante/15.png",
+            "title": ""
+          }
+        ],
+        "description": "A bold and highly curated residence in Jumeirah Bay Island, where expressive interiors, sculptural detailing, and layered natural influences come together in one immersive design experience.",
+        "year": 2026,
+        "location": "Jumeirah",
+        "sourceUrl": "https://ckarchitecture.com/projects/casa-vibrante"
+      },
+      "Serene-Versante": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/1.jpg",
+            "title": "September 2022"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/2.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/3.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/4.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/5.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/6.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/7.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/8.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/9.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/10.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/11.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/12.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/13.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/14.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/15.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/16.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/serene-versante/17.jpg",
+            "title": ""
+          }
+        ],
+        "description": "A contemporary waterfront residence in Palm Jumeirah defined by sculptural calm, refined materiality, and a seamless relationship between architecture, interiors, and the surrounding seascape.",
+        "year": 2026,
+        "location": "Palm Jumeirah",
+        "sourceUrl": "https://ckarchitecture.com/projects/serene-versante"
+      },
+      "Burj115": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/1.jpg",
+            "title": "November 2025"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/2.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/3.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/4.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/5.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/6.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/7.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/8.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/9.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/10.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/11.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/12.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/13.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/burj115/14.jpg",
+            "title": ""
+          }
+        ],
+        "description": "A sophisticated workplace set high within the Burj Khalifa, BK115 is a contemporary office environment that blends executive elegance with spatial fluidity, curated materials, and panoramic city views. Designed for an end-user client, the project delivers a refined corporate setting that feels both prestigious and deeply human in experience.",
+        "year": 2026,
+        "location": "Dubai",
+        "sourceUrl": "https://ckarchitecture.com/projects/burj115"
+      },
+      "Sur-Dubai": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/1.jpg",
+            "title": "February 2025"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/2.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/3.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/4.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/5.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/6.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/7.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/8.jpg",
+            "title": ""
+          },
+          {
+            "url": "/images/uae-companies/portfolio/ck-architecture/sur-dubai/9.jpg",
+            "title": ""
+          }
+        ],
+        "description": "Sur. Dubai is a refined seafood dining destination designed to blend coastal elegance with a vibrant urban setting. Located in Uptown Dubai, the project brings together sculptural forms, soft textures, and a fresh material palette to create an immersive hospitality experience that feels both sophisticated and welcoming.",
+        "year": 2026,
+        "location": "Dubai",
+        "sourceUrl": "https://ckarchitecture.com/projects/sur-dubai"
+      }
     }
   },
   {
@@ -6880,152 +6926,218 @@
     "logo_local": "",
     "portfolio_local": [],
     "portfolio_categories": {
-      "Mei": [
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mei/2.jpg",
-          "title": "mei 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mei/3.jpg",
-          "title": "mei 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mei/4.jpg",
-          "title": "mei 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mei/6.jpg",
-          "title": "mei 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mei/7.jpg",
-          "title": "mei 7"
-        }
-      ],
-      "Mausam": [
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/1.jpg",
-          "title": "mausam 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/2.jpg",
-          "title": "mausam 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/3.jpg",
-          "title": "mausam 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/4.jpg",
-          "title": "mausam 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/5.jpg",
-          "title": "mausam 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/6.jpg",
-          "title": "mausam 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/7.jpg",
-          "title": "mausam 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/mausam/8.jpg",
-          "title": "mausam 8"
-        }
-      ],
-      "The-matcha-tokyo": [
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/1.jpg",
-          "title": "the-matcha-tokyo 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/2.jpg",
-          "title": "the-matcha-tokyo 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/3.jpg",
-          "title": "the-matcha-tokyo 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/4.jpg",
-          "title": "the-matcha-tokyo 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/5.jpg",
-          "title": "the-matcha-tokyo 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/6.jpg",
-          "title": "the-matcha-tokyo 6"
-        }
-      ],
-      "Officex": [
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/officex/1.jpg",
-          "title": "officex 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/officex/2.jpg",
-          "title": "officex 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/officex/3.jpg",
-          "title": "officex 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/officex/4.jpg",
-          "title": "officex 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/officex/5.jpg",
-          "title": "officex 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/officex/6.jpg",
-          "title": "officex 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/officex/7.jpg",
-          "title": "officex 7"
-        }
-      ],
-      "Shamiana": [
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/1.jpg",
-          "title": "shamiana 1"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/2.jpg",
-          "title": "shamiana 2"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/3.jpg",
-          "title": "shamiana 3"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/4.jpg",
-          "title": "shamiana 4"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/5.jpg",
-          "title": "shamiana 5"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/6.jpg",
-          "title": "shamiana 6"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/7.jpg",
-          "title": "shamiana 7"
-        },
-        {
-          "url": "/images/uae-companies/portfolio/4space-design/shamiana/8.jpg",
-          "title": "shamiana 8"
-        }
-      ]
+      "Mei": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mei/1.jpg",
+            "title": "MEI"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mei/2.jpg",
+            "title": "MEI"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mei/3.jpg",
+            "title": "MEI"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mei/4.jpg",
+            "title": "MEI"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mei/5.jpg",
+            "title": "MEI"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mei/6.jpg",
+            "title": "MEI"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mei/7.jpg",
+            "title": "MEI"
+          }
+        ],
+        "description": "Home Projects Services About Our Story Media & Awards Blog Contacts العربية Get in Touch Project Inquiry Join Our Team Be a Partner MEI Location: Jumeirah Mina Al Salam, Dubai Client: SHI Hospitality Group Design by: 4SPACE",
+        "year": null,
+        "location": "Jumeirah",
+        "sourceUrl": "https://4space.ae/portfolio/mei/"
+      },
+      "Mausam": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/1.jpg",
+            "title": "MAUSAM"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/2.jpg",
+            "title": "MAUSAM"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/3.jpg",
+            "title": "MAUSAM"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/4.jpg",
+            "title": "MAUSAM"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/5.jpg",
+            "title": "MAUSAM"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/6.jpg",
+            "title": "MAUSAM"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/7.jpg",
+            "title": "MAUSAM"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/mausam/8.jpg",
+            "title": "MAUSAM"
+          }
+        ],
+        "description": "Mausam Restaurant features a unique and immersive interior created by 4SPACE. See how we transformed dining into an art form.",
+        "year": null,
+        "location": "Abu Dhabi",
+        "sourceUrl": "https://4space.ae/portfolio/mausam/"
+      },
+      "The-Matcha-Tokyo": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/1.jpg",
+            "title": "The Matcha Tokyo"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/2.jpg",
+            "title": "The Matcha Tokyo"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/3.jpg",
+            "title": "The Matcha Tokyo"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/4.jpg",
+            "title": "The Matcha Tokyo"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/5.jpg",
+            "title": "The Matcha Tokyo"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/the-matcha-tokyo/6.jpg",
+            "title": "The Matcha Tokyo"
+          }
+        ],
+        "description": "Home Projects Services About Our Story Media & Awards Blog Contacts العربية Get in Touch Project Inquiry Join Our Team Be a Partner The Matcha Tokyo Location: Yas Mall, Abu Dhabi Client: The Matcha Tokyo Design by: 4SPACE",
+        "year": null,
+        "location": "Abu Dhabi",
+        "sourceUrl": "https://4space.ae/portfolio/the-matcha-tokyo/"
+      },
+      "Officex": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/officex/1.jpg",
+            "title": "Office X"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/officex/2.jpg",
+            "title": "Office X"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/officex/3.jpg",
+            "title": "Office X"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/officex/4.jpg",
+            "title": "Office X"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/officex/5.jpg",
+            "title": "Office X"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/officex/6.jpg",
+            "title": "Office X"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/officex/7.jpg",
+            "title": "Office X"
+          }
+        ],
+        "description": "Award-winning design studio 4SPACE has completed its latest workplace masterpiece: Office X — a 985-square-meter headquarters designed for a private client, 4SPACE redefined identity through experience, crafting a workplace that speaks volumes without saying a word.",
+        "year": null,
+        "location": "Abu Dhabi",
+        "sourceUrl": "https://4space.ae/portfolio/officex/"
+      },
+      "Shamiana": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/1.jpg",
+            "title": "Shamiana"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/2.jpg",
+            "title": "Shamiana"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/3.jpg",
+            "title": "Shamiana"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/4.jpg",
+            "title": "Shamiana"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/5.jpg",
+            "title": "Shamiana"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/6.jpg",
+            "title": "Shamiana"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/7.jpg",
+            "title": "Shamiana"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/shamiana/8.jpg",
+            "title": "Shamiana"
+          }
+        ],
+        "description": "Home Projects Services About Our Story Media & Awards Blog Contacts العربية Get in Touch Project Inquiry Join Our Team Be a Partner Shamiana Shamiana – TAJ JLT Shamiana at TAJ Jumeirah Lakes Towers is a signature Indian restaurant in Dubai that redefines the all-day dining experience . Set in the heart of JLT, Shamiana seamlessly transitions throughout the day. In the morning and afternoon, guests are welcomed with an abundant buffet spread for breakfast and lunch in Dubai . As evening approaches, the buffet is concealed behind bronze-toned curtains, transforming the space into an elegant fine-dining Indian restaurant in JLT . This adaptive design ensures Shamiana never feels transitional, but instead remains vibrant, purposeful, and timeless.",
+        "year": null,
+        "location": "JLT",
+        "sourceUrl": "https://4space.ae/portfolio/shamiana/"
+      },
+      "Tjs-Gastro-Pub": {
+        "items": [
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/tjs-gastro-pub/1.jpg",
+            "title": "TJ’s Gastro Pub"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/tjs-gastro-pub/2.jpg",
+            "title": "TJ’s Gastro Pub"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/tjs-gastro-pub/3.jpg",
+            "title": "TJ’s Gastro Pub"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/tjs-gastro-pub/4.jpg",
+            "title": "TJ’s Gastro Pub"
+          },
+          {
+            "url": "/images/uae-companies/portfolio/4space-design/tjs-gastro-pub/5.jpg",
+            "title": "TJ’s Gastro Pub"
+          }
+        ],
+        "description": "Home Projects Services About Our Story Media & Awards Blog Contacts العربية Get in Touch Project Inquiry Join Our Team Be a Partner TJ’s Gastro Pub TJ’s – A Modern Gastro Pub Reimagined – Interior Architecture & Design by 4SPACE Located within the iconic TAJ Hotel in Jumeirah Lake Towers, TJ’s redefines the traditional pub experience with elevated simplicity and refined comfort. Conceived and designed by 4SPACE, TJ’s departs from the dim and heavy ambiance of the classic pub, offering instead a contemporary, light-filled social hub that blends charm, flexibility, and a cosmopolitan aesthetic reflective of Dubai’s evolving spirit.",
+        "year": null,
+        "location": "Dubai Marina",
+        "sourceUrl": "https://4space.ae/portfolio/tjs-gastro-pub/"
+      }
     }
   },
   {
