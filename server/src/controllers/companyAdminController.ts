@@ -50,10 +50,12 @@ function toStringArray(value: any): string[] {
     if (Array.isArray(node)) return node.flatMap((item) => collect(item));
     if (typeof node === 'object') {
       const direct = [node.url, node.src, node.imageUrl]
-        .filter((v) => typeof v === 'string')
+        .filter((v) => typeof v === 'string' && v.length > 0)
         .map((v) => normalizeLegacyImageUrl(String(v)));
+      // If we found a direct URL field, don't recurse into other fields (ai_tags etc.)
+      if (direct.length > 0) return direct;
       const nested = Object.values(node).flatMap((item) => collect(item));
-      return [...direct, ...nested];
+      return nested;
     }
     return [];
   };
