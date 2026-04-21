@@ -95,6 +95,13 @@ export function trackLead(params: { content_name?: string; content_id?: string }
   });
 }
 
+/** Meta Pixel: SubmitApplication */
+export function trackFbSubmitApplication() {
+  if (typeof window !== 'undefined') {
+    window.fbq?.('track', 'SubmitApplication');
+  }
+}
+
 /** 点击重要按钮 */
 export function trackClickButton(params: { content_name?: string }) {
   ttqTrack('ClickButton', {

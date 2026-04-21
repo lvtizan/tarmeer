@@ -256,7 +256,7 @@ export default function AdminRegisteredCompanyDetailPage() {
               </div>
             )}
             <div className="pt-1 border-t border-stone-100">
-              <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleDateString()} />
+              <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} />
             </div>
           </div>
 

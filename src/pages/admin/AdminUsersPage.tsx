@@ -387,7 +387,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3 text-stone-600">{user.email}</td>
                   <td className="px-4 py-3 text-stone-600 text-sm">{user.phone || <span className="text-stone-300">—</span>}</td>
                   <td className="relative px-4 py-3 text-stone-500 text-xs">
-                    <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                    <span>{new Date(user.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                     <HoverDeleteIconButton
                       title={t('Delete user', '删除用户')}
                       loading={deleteLoadingId === user.id}

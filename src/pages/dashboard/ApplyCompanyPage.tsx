@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
+import { trackFbSubmitApplication } from '../../lib/analytics';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -49,6 +50,7 @@ export default function ApplyCompanyPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setStatus({ applied: true, status: 'pending', companyName });
+      trackFbSubmitApplication();
     } catch (err: any) {
       setError(err.message);
     } finally {
