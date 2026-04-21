@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Info, Trash2 } from 'lucide-react';
+import { Info, Trash2, Download } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
@@ -44,7 +44,7 @@ const CRM_STATUS_TOOLTIP = {
   pending: '尚未同步到 CRM',
 };
 
-type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
+type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived' | 'active' | 'deleted';
 type TypeFilter = 'homeowner' | 'company';
 
 interface InquiryRecord {
@@ -244,12 +244,9 @@ export default function AdminInquiriesPage() {
 
   return (
     <div className="space-y-4">
-      {/* Row 1: Title + Export */}
+      {/* Row 1: Title */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Lead Management', '线索管理')}</h1>
-        <button onClick={handleExport} className="btn-primary h-9 px-5 text-sm rounded-2xl">
-          {t('Export Excel', '导出 Excel')}
-        </button>
       </div>
 
       {/* Row 2: Type tabs | Status + Search | Active/Deleted toggle — uniform h-9, gap-2 */}
@@ -274,31 +271,31 @@ export default function AdminInquiriesPage() {
         <AdminSelect
           className="!h-9 !px-3 !text-sm"
           value={statusFilter}
-          onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+          onChange={(val) => {
+            const v = val as StatusFilter;
+            if (v === 'active') { setViewMode('active'); setStatusFilter('all'); }
+            else if (v === 'deleted') { setViewMode('deleted'); setStatusFilter('all'); }
+            else { setViewMode('active'); setStatusFilter(v); }
+            setPage(1);
+          }}
           options={[
             { value: 'all', label: t('All Status', '全部状态') },
             { value: 'new', label: t('New', '新询单') },
             { value: 'contacted', label: t('Contacted', '已联系') },
             { value: 'resolved', label: t('Resolved', '已解决') },
             { value: 'archived', label: t('Archived', '已归档') },
+            { value: 'active', label: t('Active', '有效') },
+            { value: 'deleted', label: t('Deleted', '已删除') },
           ]}
         />
 
-        {/* Active / Deleted toggle */}
-        <div className="flex items-center gap-0.5 h-9 bg-stone-100 rounded-2xl px-0.5">
-          <button onClick={() => setViewMode('active')}
-            className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'active'
-              ? 'bg-white text-[#2c2c2c] shadow-sm'
-              : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
-            {t('Active', '有效')}
-          </button>
-          <button onClick={() => setViewMode('deleted')}
-            className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'deleted'
-              ? 'bg-white text-[#2c2c2c] shadow-sm'
-              : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
-            {t('Deleted', '已删除')}
-          </button>
-        </div>
+        <div className="flex-1" />
+
+        {/* Export */}
+        <button onClick={handleExport} className="flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-[#b8864a] border border-[#b8864a]/30 rounded-2xl hover:bg-[#b8864a]/5 transition">
+          <Download className="w-4 h-4" />
+          {t('Export', '导出')}
+        </button>
       </div>
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}

@@ -86,6 +86,11 @@ const RULES = [
     },
   },
   {
+    id: 'no-page-search-box',
+    desc: 'Page has its own search input — use global search in AdminLayout instead',
+    test: (line) => /placeholder.*[Ss]earch|placeholder.*搜索|placeholder.*姓名/.test(line) && /input/.test(line),
+  },
+  {
     id: 'no-native-dialog',
     desc: 'Native browser dialog (alert/prompt/confirm) — use Toast or custom Modal instead',
     test: (line) => {

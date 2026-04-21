@@ -341,7 +341,7 @@ export default function AdminLayout() {
       <main className="flex-1 overflow-auto">
         <AdminLangContext.Provider value={{ lang, t }}>
           {/* Gmail-style top search bar */}
-          <div className="sticky top-0 z-30 bg-[#faf9f7] px-6 md:px-10 py-4 flex justify-center">
+          <div className="sticky top-0 z-30 bg-[#faf9f7] px-6 md:px-10 py-2 flex justify-center">
             <div ref={globalRef} className="relative w-full max-w-xl">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
               <input
@@ -349,7 +349,7 @@ export default function AdminLayout() {
                 value={globalQuery}
                 onChange={(e) => setGlobalQuery(e.target.value)}
                 onFocus={() => { if (globalResults) setGlobalOpen(true); }}
-                placeholder={t('Search homeowners, companies, inquiries...', '搜索业主、装企、询盘...')}
+                placeholder={t('Search by name, email, phone...', '按姓名、邮箱、电话搜索...')}
                 className="h-11 w-full pl-11 pr-10 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
               />
               {globalQuery && (
@@ -422,7 +422,7 @@ export default function AdminLayout() {
             </div>
           </div>
 
-          <div className="w-full p-6 md:p-10">
+          <div className="w-full p-4 md:p-6">
             <Outlet />
           </div>
         </AdminLangContext.Provider>
