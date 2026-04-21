@@ -182,8 +182,12 @@ export async function getPortfolioFeed(req: any, res: any) {
     `);
     const registeredTotal = (countResult as any[])[0]?.total || 0;
 
+    // Apply pagination to merged results (registered are already paginated,
+    // but directory projects are added in bulk — cap the final output)
+    const paginatedProjects = allProjects.slice(0, limit);
+
     res.json({
-      projects: allProjects,
+      projects: paginatedProjects,
       pagination: {
         page,
         limit,
