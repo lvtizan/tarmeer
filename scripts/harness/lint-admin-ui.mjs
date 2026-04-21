@@ -91,6 +91,21 @@ const RULES = [
     test: (line) => /placeholder.*[Ss]earch|placeholder.*搜索|placeholder.*姓名/.test(line) && /input/.test(line),
   },
   {
+    id: 'no-hardcoded-chinese-in-jsx',
+    desc: 'Hardcoded Chinese in JSX — must use t() for i18n',
+    test: (line) => {
+      // Skip comments, imports, type definitions
+      if (/^\s*(\/\/|\/\*|\*|import |type |interface |const \w+:)/.test(line)) return false;
+      // Skip t() calls (already i18n'd)
+      if (/t\(/.test(line)) return false;
+      // Skip string assignments/objects (translation maps, etc.)
+      if (/^\s*("|')/.test(line.trim())) return false;
+      // Detect Chinese characters in JSX text or className strings
+      if (/[\u4e00-\u9fff]/.test(line) && (/>[\u4e00-\u9fff]|className=/.test(line) || /\{['"][\u4e00-\u9fff]/.test(line))) return true;
+      return false;
+    },
+  },
+  {
     id: 'no-native-dialog',
     desc: 'Native browser dialog (alert/prompt/confirm) — use Toast or custom Modal instead',
     test: (line) => {
