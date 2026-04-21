@@ -72,6 +72,12 @@ export async function getPageMeta(pathname: string): Promise<PageMeta | null> {
       canonical: `${BASE_URL}/for-companies`,
       ogImage: DEFAULT_IMAGE,
     },
+    '/for-homeowners': {
+      title: 'Find Renovation Companies in UAE | Free Quotes | Tarmeer',
+      description: 'Compare verified renovation companies, browse real portfolios, and get free quotes. Transform your home with Tarmeer.',
+      canonical: `${BASE_URL}/for-homeowners`,
+      ogImage: DEFAULT_IMAGE,
+    },
   };
 
   if (staticMeta[pathname]) return staticMeta[pathname];
