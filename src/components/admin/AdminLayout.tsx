@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Search, X } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Search, X, Package } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -27,6 +27,11 @@ const navItems = [
     to: '/admin/companies', labelEn: 'Companies', labelZh: '装企', icon: Building2,
     infoEn: 'Manage Companies / Directory / Applications, including approval, sorting, and profile maintenance.',
     infoZh: '管理装企 / 目录 / 申请，包含审批、排序与资料维护。',
+  },
+  {
+    to: '/admin/suppliers', labelEn: 'Suppliers', labelZh: '供应商', icon: Package,
+    infoEn: 'Manage building material suppliers, review applications, and track supplier leads.',
+    infoZh: '管理建材供应商、审核入驻申请、跟踪供应商线索。',
   },
   {
     to: '/admin/inquiries', labelEn: 'Inquiries', labelZh: '询盘', icon: MessageSquare,

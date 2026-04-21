@@ -1,345 +1,247 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
-import { brandsList } from '../data/brands';
 import { WHATSAPP_LINK, GOOGLE_MAPS_URL } from '../lib/constants';
-import { MapPin, Clock, Palette, Building2, Package, Megaphone, Store, MessageCircle } from 'lucide-react';
+import { MapPin, Clock, Store, Package, Filter } from 'lucide-react';
+import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 
 const PRIMARY = '#b8864a';
+const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
-const EXPERIENCE_ITEMS = [
-  {
-    title: 'Tactile Material Testing',
-    text: 'Touch and feel our exclusive range of marbles, timbers, and high-performance synthetics.',
-    icon: Palette,
-  },
-  {
-    title: 'Design Consultation',
-    text: 'Work directly with our expert interior designers to map out your space and material needs.',
-    icon: Building2,
-  },
-  {
-    title: 'Personalized Sourcing',
-    text: 'Direct access to our premium Chinese supply chain, customized for your specific project requirements.',
-    icon: Package,
-  },
+const CATEGORY_OPTIONS = [
+  { value: '', label: 'All Categories' },
+  { value: 'furniture', label: 'Furniture' },
+  { value: 'stone', label: 'Stone & Marble' },
+  { value: 'lighting', label: 'Lighting' },
+  { value: 'plants', label: 'Plants & Landscaping' },
+  { value: 'flooring', label: 'Flooring' },
+  { value: 'kitchen', label: 'Kitchen & Bath' },
+  { value: 'curtains', label: 'Curtains & Textiles' },
+  { value: 'paint', label: 'Paint & Coatings' },
+  { value: 'hardware', label: 'Hardware & Fittings' },
+  { value: 'other', label: 'Other' },
 ];
 
-const ALLIANCE_ITEMS = [
-  {
-    title: 'Social Media Exposure',
-    text: 'Promote your brand through Tarmeer’s established content and social channels.',
-    icon: Megaphone,
-  },
-  {
-    title: 'Physical Showroom Presence',
-    text: 'Showcase your products in real spaces where customers can explore materials and solutions.',
-    icon: Store,
-  },
-  {
-    title: 'Qualified Daily Inquiries',
-    text: 'Benefit from consistent inbound interest generated through our online ecosystem.',
-    icon: MessageCircle,
-  },
-];
+interface Supplier {
+  id: number;
+  company_name: string;
+  slug: string;
+  description: string;
+  logo_url: string | null;
+  origin: 'china' | 'dubai';
+  categories: string[] | string | null;
+  has_physical_store: number;
+  store_address: string | null;
+  google_maps_url: string | null;
+  contact_phone: string | null;
+}
 
 export default function MaterialsPage() {
-  const navigate = useNavigate();
-  const handleBack = () => {
-    if (window.history.length > 1) navigate(-1);
-    else navigate('/');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [originFilter, setOriginFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (originFilter) params.set('origin', originFilter);
+    if (categoryFilter) params.set('category', categoryFilter);
+    params.set('limit', '50');
+
+    fetch(`${API_BASE}/suppliers?${params}`)
+      .then(r => r.json())
+      .then(data => setSuppliers(data.suppliers || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [originFilter, categoryFilter]);
+
+  const parseCategories = (cats: string[] | string | null): string[] => {
+    if (!cats) return [];
+    if (Array.isArray(cats)) return cats;
+    try { return JSON.parse(cats); } catch { return []; }
   };
-  const scrollToLocations = () => {
-    document.getElementById('locations')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const scrollToSuppliers = () => {
+    document.getElementById('suppliers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <Helmet>
-        <title>Showrooms & Building Materials - Tarmeer UAE</title>
-        <meta name="description" content="Visit Tarmeer's showroom in Sharjah to explore premium building materials — marble, timber, and high-performance synthetics. Expert design consultations available." />
-        <meta property="og:title" content="Showrooms & Building Materials - Tarmeer UAE" />
-        <meta property="og:description" content="Explore Tarmeer's Sharjah showroom for premium interior materials, design consultation, and personalized sourcing from our supply chain." />
+        <title>Showrooms & Suppliers - Tarmeer UAE</title>
+        <meta name="description" content="Visit Tarmeer's showroom in Sharjah and discover trusted building material suppliers from China and Dubai for your renovation project." />
+        <meta property="og:title" content="Showrooms & Suppliers - Tarmeer UAE" />
+        <meta property="og:description" content="Explore Tarmeer's Sharjah showroom and trusted suppliers for premium building materials." />
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
-        <meta property="og:url" content="https://www.tarmeer.com/showrooms" />
+        <meta property="og:url" content="https://www.tarmeer.com/materials" />
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Tarmeer" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Showrooms & Building Materials - Tarmeer UAE" />
-        <meta name="twitter:description" content="Explore Tarmeer's Sharjah showroom for premium interior materials, design consultation, and personalized sourcing from our supply chain." />
-        <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
-        <meta name="keywords" content="showroom, building materials, marble, timber, UAE, Tarmeer, interior design, Sharjah, renovation materials" />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://www.tarmeer.com/showrooms" />
-        <script type="application/ld+json">{JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'ItemList',
-          name: 'Showrooms & Building Materials in UAE',
-          description: 'Partner showrooms and building material brands available through Tarmeer in the UAE.',
-          itemListElement: [
-            {
-              '@type': 'ListItem',
-              position: 1,
-              item: {
-                '@type': 'Store',
-                name: 'Tarmeer Showroom - Sharjah',
-                address: {
-                  '@type': 'PostalAddress',
-                  streetAddress: 'Industrial Area 2',
-                  addressLocality: 'Sharjah',
-                  addressCountry: 'AE',
-                },
-              },
-            },
-          ],
-        })}</script>
+        <link rel="canonical" href="https://www.tarmeer.com/materials" />
       </Helmet>
-      <section className="relative h-[500px] sm:h-[600px] flex items-center overflow-hidden">
+
+      {/* Hero */}
+      <section className="relative h-[420px] sm:h-[500px] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10" />
-          <img
-            src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1600&q=80"
-            alt=""
-            className="w-full h-full object-cover"
-          />
+          <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1600&q=80" alt="" className="w-full h-full object-cover" />
         </div>
         <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 w-full">
           <div className="max-w-2xl">
-            <span
-              className="inline-block px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest text-white mb-6"
-              style={{ backgroundColor: PRIMARY }}
-            >
-              Physical Showrooms
+            <span className="inline-block px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest text-white mb-5" style={{ backgroundColor: PRIMARY }}>
+              Showroom & Suppliers
             </span>
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 tracking-tight">
-              Experience Excellence <br />
-              <span className="italic font-light" style={{ color: PRIMARY }}>
-                In Person.
-              </span>
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-5 tracking-tight">
+              Premium Materials,<br />
+              <span className="italic font-light" style={{ color: PRIMARY }}>Trusted Suppliers.</span>
             </h1>
-            <p className="text-lg lg:text-xl text-slate-200 mb-10 leading-relaxed font-light">
-              Step into tactile world of Tarmeer. Discover beauty of premium materials in our curated showroom in Sharjah.
+            <p className="text-lg text-slate-200 mb-8 leading-relaxed font-light">
+              Visit our Sharjah showroom and discover building material suppliers from China and Dubai.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <button
-                type="button"
-                onClick={scrollToLocations}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold transition-transform hover:scale-105 text-white shadow-xl"
-                style={{ backgroundColor: PRIMARY }}
-              >
-                Explore Locations
-              </button>
-            </div>
+            <button type="button" onClick={scrollToSuppliers}
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg font-bold text-white shadow-xl transition-transform hover:scale-105"
+              style={{ backgroundColor: PRIMARY }}>
+              Browse Suppliers
+            </button>
           </div>
         </div>
       </section>
 
-      <PageContainer className="py-12 sm:py-16">
-        <button onClick={handleBack} className="text-[#c6a065] hover:underline text-sm mb-8 inline-block">
-          ← Back
-        </button>
-
-        <div className="space-y-12 sm:space-y-16">
-          <section id="locations">
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-6 text-center">
-              Our Location — Sharjah
-            </h2>
-            <div className="rounded-lg overflow-hidden border border-stone-200 bg-white shadow-sm">
-              <div className="w-full bg-stone-100">
-                <img
-                  src="/images/showroom-sharjah-panorama.jpg"
-                  alt="Tarmeer showroom Sharjah"
-                  className="w-full h-auto object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/materials-banner.jpg';
-                  }}
-                />
+      <PageContainer className="py-10 sm:py-14">
+        {/* Showroom Location */}
+        <section className="mb-12">
+          <h2 className="font-serif text-2xl font-bold text-[#2c2c2c] mb-5">Our Showroom — Sharjah</h2>
+          <div className="rounded-2xl overflow-hidden border border-stone-200 bg-white shadow-sm">
+            <div className="w-full bg-stone-100">
+              <img src="/images/showroom-sharjah-panorama.jpg" alt="Tarmeer showroom Sharjah" className="w-full h-auto object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).src = '/images/materials-banner.jpg'; }} />
+            </div>
+            <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-6 text-sm text-[#6b6b6b]">
+                <span className="flex items-center gap-2"><MapPin className="w-4 h-4" style={{ color: PRIMARY }} /> Industrial Area 2, Sharjah</span>
+                <span className="flex items-center gap-2"><Clock className="w-4 h-4" style={{ color: PRIMARY }} /> 9 AM – 8 PM (Sat–Thu)</span>
               </div>
-              <div className="p-6 sm:p-8">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-start gap-3 text-[#6b6b6b]">
-                    <MapPin className="w-5 h-5 shrink-0 mt-0.5" style={{ color: PRIMARY }} />
-                    <span className="text-sm">1 - 2a 147 street - Al Sajaa - Sharjah - United Arab Emirates</span>
-                  </div>
-                  <div className="flex items-start gap-3 text-[#6b6b6b]">
-                    <Clock className="w-5 h-5 shrink-0 mt-0.5" style={{ color: PRIMARY }} />
-                    <span className="text-sm">9:00 AM - 8:00 PM (Sat - Thu)</span>
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3 mt-6">
-                  <a
-                    href={GOOGLE_MAPS_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-3 px-6 sm:px-8 rounded-lg border border-stone-200 bg-stone-50 text-[#2c2c2c] font-bold text-center hover:bg-[#b8864a]/10 transition"
-                  >
-                    View on Map
-                  </a>
-                </div>
+              <a href={GOOGLE_MAPS_URL} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-[#2c2c2c] text-sm font-semibold hover:bg-[#b8864a]/10 transition">
+                <MapPin className="w-4 h-4" /> View on Map
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Suppliers Section */}
+        <section id="suppliers">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h2 className="font-serif text-2xl font-bold text-[#2c2c2c]">Suppliers</h2>
+            <div className="flex items-center gap-3">
+              <Filter className="w-4 h-4 text-stone-400" />
+              <div className="flex gap-1.5">
+                {[
+                  { value: '', label: 'All' },
+                  { value: 'china', label: '🇨🇳 China' },
+                  { value: 'dubai', label: '🇦🇪 Dubai' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => setOriginFilter(opt.value)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
+                      originFilter === opt.value
+                        ? 'bg-[#b8864a] text-white'
+                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    }`}>
+                    {opt.label}
+                  </button>
+                ))}
               </div>
+              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                className="h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs text-stone-600 focus:outline-none focus:ring-1 focus:ring-[#b8864a]/30">
+                {CATEGORY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
-          </section>
+          </div>
 
-          <section>
-            <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-6 text-center">
-              Partner Brands
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-              {brandsList.map((brand) => (
-                <Link
-                  key={brand.slug}
-                  to={`/materials/brands/${brand.slug}`}
-                  className="group flex flex-col bg-white rounded-lg border border-stone-100 overflow-hidden hover:border-[#c6a065]/40 hover:shadow-lg transition"
-                >
-                  <div className="aspect-video w-full flex items-center justify-center bg-stone-50 overflow-hidden">
-                    <img
-                      src={brand.logo}
-                      alt={brand.nameEn}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        // Logo加载失败时显示品牌名称
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-stone-400 text-sm font-medium p-4 text-center">${brand.nameEn}</div>`;
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="p-4 text-center">
-                    <h4 className="font-semibold text-[#2c2c2c] group-hover:text-[#b8864a] transition">
-                      {brand.nameEn}
-                    </h4>
-                    <p className="text-xs text-[#6b6b6b] mt-1">{brand.tagline}</p>
-                  </div>
-                </Link>
-              ))}
+          {loading ? (
+            <div className="py-20 text-center text-stone-400">Loading suppliers...</div>
+          ) : suppliers.length === 0 ? (
+            <div className="py-16 text-center">
+              <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+              <p className="text-stone-500 text-[15px]">No suppliers found.</p>
             </div>
-          </section>
-
-          <section>
-            <div className="text-center mb-12">
-              <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#2c2c2c] mb-4 tracking-tight">
-                The Showroom Experience
-              </h2>
-              <div className="w-20 h-1.5 rounded-full mx-auto" style={{ backgroundColor: PRIMARY }} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {EXPERIENCE_ITEMS.map((item) => {
-                const Icon = item.icon;
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {suppliers.map(s => {
+                const cats = parseCategories(s.categories);
                 return (
-                  <div
-                    key={item.title}
-                    className="flex flex-col items-center text-center p-8 rounded-lg border border-stone-200 bg-white hover:border-[#b8864a]/40 transition-colors"
-                  >
-                    <div
-                      className="size-16 rounded-full flex items-center justify-center mb-6"
-                      style={{ backgroundColor: `${PRIMARY}20` }}
-                    >
-                      <Icon className="w-8 h-8" style={{ color: PRIMARY }} />
+                  <Link key={s.id} to={`/materials/suppliers/${s.slug}`}
+                    className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:border-[#b8864a]/40 hover:shadow-md transition">
+                    {/* Logo */}
+                    <div className="h-32 flex items-center justify-center bg-stone-50 border-b border-stone-100 p-4">
+                      {s.logo_url ? (
+                        <img src={s.logo_url} alt={s.company_name} className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <span className="text-2xl font-bold text-stone-300">{s.company_name[0]}</span>
+                      )}
                     </div>
-                    <h3 className="text-xl font-bold text-[#2c2c2c] mb-3">{item.title}</h3>
-                    <p className="text-[#6b6b6b] leading-relaxed">{item.text}</p>
-                  </div>
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <h3 className="text-[15px] font-semibold text-[#2c2c2c] group-hover:text-[#b8864a] transition truncate">{s.company_name}</h3>
+                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          s.origin === 'china' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                        }`}>
+                          {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
+                        </span>
+                      </div>
+                      {s.description && (
+                        <p className="text-xs text-stone-500 line-clamp-2 mb-2.5 leading-relaxed">{s.description}</p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {cats.slice(0, 3).map(c => (
+                          <span key={c} className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">{c}</span>
+                        ))}
+                        {s.has_physical_store ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 flex items-center gap-1">
+                            <Store className="w-3 h-3" /> Store
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </Link>
                 );
               })}
             </div>
-          </section>
+          )}
+        </section>
 
-          <section aria-labelledby="showroom-alliance-title">
-            <div className="rounded-[22px] border border-stone-200 bg-white p-6 shadow-[0_14px_42px_rgba(28,18,8,0.05)] sm:p-8 lg:p-10">
-              <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-                <div>
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">
-                    Partnership Opportunity
-                  </p>
-                  <h2
-                    id="showroom-alliance-title"
-                    className="font-serif text-3xl font-bold leading-tight text-[#2c2c2c] sm:text-[2.1rem]"
-                  >
-                    Join Our Showroom Alliance
-                  </h2>
-                  <p className="mt-4 max-w-[60ch] text-[15px] leading-7 text-stone-600">
-                    Grow your brand through Tarmeer’s showroom network, social media ecosystem, and daily customer inquiries. We help partners increase visibility both online and offline.
-                  </p>
+        {/* Supplier CTA */}
+        <section className="mt-14">
+          <div className="rounded-2xl p-8 sm:p-10 text-white text-center" style={{ backgroundColor: PRIMARY }}>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3">Are you a supplier?</h2>
+            <p className="text-white/80 text-[15px] mb-6 max-w-lg mx-auto">
+              Join Tarmeer's supplier network to showcase your products to thousands of homeowners and renovation companies in the UAE.
+            </p>
+            <button type="button" onClick={() => setLeadModalOpen(true)}
+              className="inline-flex items-center gap-2 bg-white text-[#b8864a] font-bold px-8 py-3.5 rounded-xl hover:bg-stone-50 transition shadow-lg">
+              Apply to Join
+            </button>
+          </div>
+        </section>
 
-                  <div className="mt-6 space-y-3.5">
-                    {ALLIANCE_ITEMS.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <div key={item.title} className="flex items-start gap-3 rounded-xl border border-stone-100 bg-stone-50/70 p-3.5">
-                          <div
-                            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                            style={{ backgroundColor: `${PRIMARY}18` }}
-                          >
-                            <Icon className="h-4.5 w-4.5" style={{ color: PRIMARY }} />
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-semibold text-[#2c2c2c]">{item.title}</h3>
-                            <p className="mt-1 text-sm leading-6 text-stone-600">{item.text}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-6 flex flex-col items-start gap-2">
-                    <Link
-                      to="/contact"
-                      className="inline-flex h-11 items-center justify-center rounded-xl px-6 text-sm font-bold text-white shadow-[0_10px_24px_rgba(184,134,74,0.24)] transition-transform hover:-translate-y-0.5"
-                      style={{ backgroundColor: PRIMARY }}
-                    >
-                      Become a Partner
-                    </Link>
-                    <p className="text-xs text-stone-500">
-                      Ideal for brands, suppliers, and showroom partners looking to grow in the UAE.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-[18px] border border-stone-200 bg-stone-100">
-                  <img
-                    src="/images/showroom-sharjah-panorama.jpg"
-                    alt="Tarmeer showroom and material display environment"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?w=1200&q=80';
-                    }}
-                  />
-                </div>
-              </div>
+        {/* WhatsApp CTA */}
+        <section className="mt-10">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 rounded-2xl border border-stone-200 bg-white p-6 sm:p-8">
+            <div>
+              <h3 className="text-lg font-bold text-[#2c2c2c]">Ready to start your project?</h3>
+              <p className="text-sm text-stone-500 mt-1">Visit our showroom or contact us for a consultation.</p>
             </div>
-          </section>
-
-          <section>
-              <div
-                className="relative rounded-lg p-10 lg:p-16 overflow-hidden text-white flex flex-col lg:flex-row items-center-center justify-between gap-8 lg:gap-10"
-                style={{ backgroundColor: PRIMARY }}
-              >
-              <div className="relative z-10 max-w-xl">
-                <h2 className="text-3xl lg:text-4xl font-bold mb-3 leading-tight text-white">
-                  Ready to start your project?
-                </h2>
-                <p className="text-lg font-medium text-white/90">
-                  Visit our Sharjah showroom for a bespoke design consultation and material curation, or contact us to get started.
-                </p>
-              </div>
-              <div className="relative z-10 shrink-0">
-                <a
-                  href={WHATSAPP_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block bg-[#1c1917] text-white text-lg font-bold px-10 py-4 rounded-2xl hover:bg-stone-800 transition shadow-xl"
-                >
-                  Contact Us
-                </a>
-              </div>
-            </div>
-          </section>
-        </div>
+            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#1c1917] text-white font-bold hover:bg-stone-800 transition">
+              Contact Us
+            </a>
+          </div>
+        </section>
       </PageContainer>
+
+      <SupplierLeadModal open={leadModalOpen} onClose={() => setLeadModalOpen(false)} />
     </div>
   );
 }

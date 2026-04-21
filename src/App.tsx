@@ -37,8 +37,9 @@ const AdminLayout = lazyRetry(() => import('./components/admin/AdminLayout'));
 // Public pages
 const HomePage = lazyRetry(() => import('./pages/HomePage'));
 const ShowroomsPage = lazyRetry(() => import('./pages/ShowroomsPage'));
-const MaterialCategoryPage = lazyRetry(() => import('./pages/MaterialCategoryPage'));
-const BrandPage = lazyRetry(() => import('./pages/BrandPage'));
+const SupplierDetailPage = lazyRetry(() => import('./pages/SupplierDetailPage'));
+const SupplierAuthPage = lazyRetry(() => import('./pages/supplier/SupplierAuthPage'));
+const SupplierDashboardPage = lazyRetry(() => import('./pages/supplier/SupplierDashboardPage'));
 const AuthPage = lazyRetry(() => import('./pages/HomeownerAuthPage'));
 const AuthCallbackPage = lazyRetry(() => import('./pages/AuthCallbackPage'));
 const VerifyEmailPage = lazyRetry(() => import('./pages/VerifyEmailPage'));
@@ -100,6 +101,8 @@ const AdminCompanyDetailPage = lazyRetry(() => import('./pages/admin/AdminCompan
 const AdminRegisteredCompanyDetailPage = lazyRetry(() => import('./pages/admin/AdminRegisteredCompanyDetailPage'));
 const AdminHelpPage = lazyRetry(() => import('./pages/admin/AdminHelpPage'));
 const AdminActivityLogPage = lazyRetry(() => import('./pages/admin/AdminActivityLogPage'));
+const AdminSuppliersPage = lazyRetry(() => import('./pages/admin/AdminSuppliersPage'));
+const AdminSupplierDetailPage = lazyRetry(() => import('./pages/admin/AdminSupplierDetailPage'));
 const AdminProjectDetailPage = lazyRetry(() => import('./pages/admin/AdminProjectDetailPage'));
 
 // Silently auto-reloads when lazy-loaded chunks fail (stale cache after deploy).
@@ -190,6 +193,8 @@ function App() {
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />
             <Route path="company-import" element={<AdminCompanyImportPage />} />
             <Route path="help" element={<AdminHelpPage />} />
+            <Route path="suppliers" element={<AdminSuppliersPage />} />
+            <Route path="suppliers/:id" element={<AdminSupplierDetailPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/forgot-password" element={<Layout navbarVariant="admin-auth"><AdminForgotPasswordPage /></Layout>} />
@@ -248,8 +253,10 @@ function App() {
                 <Route path="/login" element={<Navigate to="/auth" replace />} />
                 <Route path="/register" element={<Navigate to="/auth" replace />} />
                 <Route path="/materials" element={<ShowroomsPage />} />
-                <Route path="/materials/brands/:slug" element={<BrandPage />} />
-                <Route path="/materials/:category" element={<MaterialCategoryPage />} />
+                <Route path="/materials/suppliers/:slug" element={<SupplierDetailPage />} />
+                <Route path="/supplier/auth" element={<SupplierAuthPage />} />
+                <Route path="/supplier/auth/callback" element={<SupplierAuthPage />} />
+                <Route path="/supplier/dashboard" element={<SupplierDashboardPage />} />
                 <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
                 <Route path="/services/house-exterior" element={<HouseExteriorDesignPage />} />
