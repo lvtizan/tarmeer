@@ -89,7 +89,7 @@ export default function ForCompaniesPage() {
       </section>
 
       {/* ── Features ── */}
-      <section className="bg-[#181614] py-14 lg:py-20">
+      <section className="bg-[#f5f0e8] py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {([
@@ -97,20 +97,20 @@ export default function ForCompaniesPage() {
               { icon: Camera, tag: 'feature2Tag', title: 'feature2Title', desc: 'feature2Desc', checks: ['feature2Check1', 'feature2Check2', 'feature2Check3'] },
               { icon: Phone, tag: 'feature3Tag', title: 'feature3Title', desc: 'feature3Desc', checks: ['feature3Check1', 'feature3Check2', 'feature3Check3'] },
             ] as const).map((feat) => (
-              <div key={feat.tag} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-7 sm:p-8 hover:border-[#b8864a]/20 transition-colors">
+              <div key={feat.tag} className="rounded-2xl bg-white border border-stone-200/60 p-7 sm:p-8 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#b8864a]/10 mb-5">
-                  <feat.icon className="w-6 h-6 text-[#c6a065]" />
+                  <feat.icon className="w-6 h-6 text-[#b8864a]" />
                 </div>
-                <p className="text-[10px] font-bold text-[#c6a065] uppercase tracking-[0.2em] mb-2">
+                <p className="text-[10px] font-bold text-[#b8864a] uppercase tracking-[0.2em] mb-2">
                   {t(lang, feat.tag)}
                 </p>
-                <h3 className="font-serif text-[22px] font-bold text-white leading-snug">{t(lang, feat.title)}</h3>
-                <p className="text-[14px] text-white/45 leading-relaxed mt-3">{t(lang, feat.desc)}</p>
+                <h3 className="font-serif text-[22px] font-bold text-[#1c1917] leading-snug">{t(lang, feat.title)}</h3>
+                <p className="text-[14px] text-[#6b6b6b] leading-relaxed mt-3">{t(lang, feat.desc)}</p>
                 <div className="mt-5 space-y-2.5">
                   {feat.checks.map((key) => (
                     <div key={key} className="flex items-center gap-2.5">
-                      <Check className="w-4 h-4 text-[#c6a065] flex-shrink-0" />
-                      <span className="text-[14px] text-white/70">{t(lang, key)}</span>
+                      <Check className="w-4 h-4 text-[#b8864a] flex-shrink-0" />
+                      <span className="text-[14px] text-[#2c2c2c]">{t(lang, key)}</span>
                     </div>
                   ))}
                 </div>
