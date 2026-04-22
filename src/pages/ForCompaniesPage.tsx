@@ -55,7 +55,7 @@ export default function ForCompaniesPage() {
             <div className="flex flex-wrap gap-6 mt-8">
               <div><span className="text-2xl font-bold text-white">100+</span><p className="text-xs text-white/50 mt-0.5">{lang === 'ar' ? 'شركة مسجلة' : 'Companies'}</p></div>
               <div><span className="text-2xl font-bold text-white">2,000+</span><p className="text-xs text-white/50 mt-0.5">{lang === 'ar' ? 'صورة مشروع' : 'Project Photos'}</p></div>
-              <div><span className="text-2xl font-bold text-[#c6a065]">FREE</span><p className="text-xs text-white/50 mt-0.5">{lang === 'ar' ? 'مجاني للأبد' : 'Forever'}</p></div>
+              <div><span className="text-2xl font-bold text-white">7</span><p className="text-xs text-white/50 mt-0.5">{lang === 'ar' ? 'إمارات' : 'Emirates'}</p></div>
             </div>
           </div>
         </div>
