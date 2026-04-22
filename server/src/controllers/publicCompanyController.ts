@@ -139,7 +139,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         description: company.description,
         contact_person: null, // Hide for registered companies
         phone: null,          // Hide — registered companies pay for leads
-        website: company.website,
+        website: null,          // Hide for registered companies
         city: company.city,
         services: services,
         logo_url: company.logo_url,
@@ -207,7 +207,7 @@ export async function getCompanyDetail(req: any, res: any) {
       description: company.description,
       contact_person: null, // Hide for registered companies
       phone: null,          // Hide — registered companies pay for leads
-      website: company.website,
+      website: null,          // Hide for registered companies
       city: company.city,
       address: company.address,
       services: services,

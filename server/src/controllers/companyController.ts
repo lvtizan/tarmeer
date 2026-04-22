@@ -412,6 +412,7 @@ export async function getCompanyBySlug(req: any, res: any) {
         // registered companies pay for leads, showing contact lets homeowners bypass platform
         company.phone = null;
         company.email = null;
+        company.website = null;
         company.is_registered = true;
       }
     }
