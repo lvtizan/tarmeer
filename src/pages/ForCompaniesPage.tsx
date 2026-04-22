@@ -121,20 +121,25 @@ export default function ForCompaniesPage() {
       </section>
 
       {/* ── Why Join ── */}
-      <section className="bg-[#f5f0e8] py-12 lg:py-16">
+      <section className="bg-white py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <h2 className="font-serif text-2xl lg:text-3xl font-bold text-[#1c1917] text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="h-[2px] w-8 bg-[#b8864a]" />
+            <p className="text-[10px] font-bold text-[#b8864a] uppercase tracking-[0.25em]">WHY TARMEER</p>
+            <div className="h-[2px] w-8 bg-[#b8864a]" />
+          </div>
+          <h2 className="font-serif text-[1.8rem] lg:text-[2.2rem] font-bold text-[#1c1917] text-center mb-10">
             {t(lang, 'gridTitle')}
           </h2>
-          <div className="grid sm:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-3 gap-6">
             {[
               { icon: Gift, title: 'grid1Title' as const, desc: 'grid1Desc' as const },
               { icon: Shield, title: 'grid2Title' as const, desc: 'grid2Desc' as const },
               { icon: Users, title: 'grid3Title' as const, desc: 'grid3Desc' as const },
             ].map((card, i) => (
-              <div key={i} className="rounded-2xl bg-white p-6 shadow-sm">
-                <div className="w-11 h-11 rounded-xl bg-[#b8864a]/10 flex items-center justify-center mb-4">
-                  <card.icon className="w-5 h-5 text-[#b8864a]" />
+              <div key={i} className="rounded-2xl border border-stone-100 bg-[#faf9f7] p-7 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-[#b8864a]/10 flex items-center justify-center mb-5 mx-auto">
+                  <card.icon className="w-6 h-6 text-[#b8864a]" />
                 </div>
                 <h3 className="text-[16px] font-semibold text-[#1c1917] mb-2">{t(lang, card.title)}</h3>
                 <p className="text-[14px] text-[#6b6b6b] leading-relaxed">{t(lang, card.desc)}</p>
