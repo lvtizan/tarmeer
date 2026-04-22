@@ -85,14 +85,14 @@ export default function ForCompaniesPage() {
         {/* Subtle gold accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8864a]/40 to-transparent" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:py-24 grid lg:grid-cols-[1fr_420px] gap-12 lg:gap-16 items-center">
+        <div className="relative max-w-6xl mx-auto px-6 sm:px-8 lg:px-6 py-12 lg:py-24 grid lg:grid-cols-[1fr_420px] gap-12 lg:gap-16 items-center">
           {/* Form first on mobile */}
           <div className="order-1 lg:order-2">
             <CompanySignupForm lang={lang} />
           </div>
-          <div className="order-2 lg:order-1">
+          <div className="order-2 lg:order-1 text-center lg:text-left">
             {/* Tagline with gold bar */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center justify-center lg:justify-start gap-3 mb-6">
               <div className="h-[2px] w-8 bg-[#b8864a]" />
               <p className="text-[11px] font-bold text-[#c6a065] uppercase tracking-[0.25em]">
                 {t(lang, 'tagline')}
@@ -107,27 +107,10 @@ export default function ForCompaniesPage() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-[17px] text-white/55 mt-6 max-w-[420px] leading-[1.7]">
+            <p className="text-[17px] text-white/55 mt-6 max-w-[420px] mx-auto lg:mx-0 leading-[1.7]">
               {t(lang, 'subtitle')}
             </p>
 
-            {/* Trust numbers — big and separated */}
-            <div className="flex items-center gap-0 mt-10">
-              <div className="pr-7">
-                <span className="text-[2.5rem] font-bold text-white leading-none">100<span className="text-[#c6a065]">+</span></span>
-                <p className="text-[11px] uppercase tracking-wider text-white/40 mt-1.5">{lang === 'ar' ? 'شركة مسجلة' : 'Companies'}</p>
-              </div>
-              <div className="h-10 w-px bg-white/10" />
-              <div className="px-7">
-                <span className="text-[2.5rem] font-bold text-white leading-none">2K<span className="text-[#c6a065]">+</span></span>
-                <p className="text-[11px] uppercase tracking-wider text-white/40 mt-1.5">{lang === 'ar' ? 'صورة مشروع' : 'Projects'}</p>
-              </div>
-              <div className="h-10 w-px bg-white/10" />
-              <div className="pl-7">
-                <span className="text-[2.5rem] font-bold text-white leading-none">7</span>
-                <p className="text-[11px] uppercase tracking-wider text-white/40 mt-1.5">{lang === 'ar' ? 'إمارات' : 'Emirates'}</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
