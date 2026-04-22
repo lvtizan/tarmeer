@@ -403,10 +403,25 @@ export async function getCompanyBySlug(req: any, res: any) {
       );
       company = (cpRows as any[])[0];
       if (company) {
+        // Fetch project images for portfolio display
+        const [projRows] = await pool.execute(
+          `SELECT images FROM projects WHERE company_profile_id = ? AND status = 'published' AND deleted_at IS NULL ORDER BY created_at DESC`,
+          [company.id]
+        );
+        const allImages: string[] = [];
+        for (const row of projRows as any[]) {
+          const parsed = typeof row.images === 'string' ? JSON.parse(row.images) : row.images;
+          if (Array.isArray(parsed)) {
+            for (const img of parsed) {
+              const url = typeof img === 'string' ? img : img?.url;
+              if (url) allImages.push(url);
+            }
+          }
+        }
         // Normalize to same shape as uae_companies
         company.owner_user_id = null;
         company.is_signed = false;
-        company.portfolio_images = null;
+        company.portfolio_images = JSON.stringify(allImages);
         company.portfolio_categories = null;
         // Hide contact info for registered companies — business rule:
         // registered companies pay for leads, showing contact lets homeowners bypass platform
