@@ -254,7 +254,7 @@ export default function Navbar({
             </AnimatePresence>
           </div>
 
-          {renderNavLink('/materials', 'Showrooms')}
+          {renderNavLink('/materials', 'Materials')}
 
           {showUserEntry ? (
             <div className="flex items-center gap-3">
@@ -417,7 +417,7 @@ export default function Navbar({
               </AnimatePresence>
             </div>
 
-            {renderNavLink('/materials', 'Showrooms', 'py-2')}
+            {renderNavLink('/materials', 'Materials', 'py-2')}
 
             {isLoggedIn ? (
               <Link
