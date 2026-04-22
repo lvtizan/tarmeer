@@ -33,59 +33,84 @@ export default function ForCompaniesPage() {
         </div>
       </header>
 
-      {/* ── Hero: no image, pure CSS gradient, instant load ── */}
-      <section className="bg-[#1c1917] relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(184,134,74,0.15)_0%,transparent_60%)]" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-10 lg:py-20 grid lg:grid-cols-2 gap-10 items-start">
+      {/* ── Hero ── */}
+      <section className="bg-[#141211] relative overflow-hidden">
+        {/* Layered gradients for depth */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_10%_20%,rgba(184,134,74,0.12)_0%,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_90%_80%,rgba(184,134,74,0.06)_0%,transparent_60%)]" />
+        {/* Subtle gold accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8864a]/40 to-transparent" />
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:py-24 grid lg:grid-cols-[1fr_420px] gap-12 lg:gap-16 items-center">
           {/* Form first on mobile */}
           <div className="order-1 lg:order-2">
             <CompanySignupForm lang={lang} />
           </div>
           <div className="order-2 lg:order-1">
-            <p className="text-xs font-semibold text-[#c6a065] uppercase tracking-[0.2em]">
-              {t(lang, 'tagline')}
-            </p>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mt-3">
-              {t(lang, 'headline')}
+            {/* Tagline with gold bar */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-[2px] w-8 bg-[#b8864a]" />
+              <p className="text-[11px] font-bold text-[#c6a065] uppercase tracking-[0.25em]">
+                {t(lang, 'tagline')}
+              </p>
+            </div>
+
+            {/* Big title */}
+            <h1 className="font-serif text-[2.5rem] sm:text-[3.2rem] lg:text-[3.8rem] font-bold text-white leading-[1.1] tracking-tight">
+              {lang === 'ar' ? t(lang, 'headline') : (
+                <>Homeowners Are<br />Looking <span className="text-[#c6a065]">for You</span></>
+              )}
             </h1>
-            <p className="text-base sm:text-lg text-white/65 mt-4 max-w-md leading-relaxed">
+
+            {/* Subtitle */}
+            <p className="text-[17px] text-white/55 mt-6 max-w-[420px] leading-[1.7]">
               {t(lang, 'subtitle')}
             </p>
-            {/* Trust numbers */}
-            <div className="flex flex-wrap gap-6 mt-8">
-              <div><span className="text-2xl font-bold text-white">100+</span><p className="text-xs text-white/50 mt-0.5">{lang === 'ar' ? 'شركة مسجلة' : 'Companies'}</p></div>
-              <div><span className="text-2xl font-bold text-white">2,000+</span><p className="text-xs text-white/50 mt-0.5">{lang === 'ar' ? 'صورة مشروع' : 'Project Photos'}</p></div>
-              <div><span className="text-2xl font-bold text-white">7</span><p className="text-xs text-white/50 mt-0.5">{lang === 'ar' ? 'إمارات' : 'Emirates'}</p></div>
+
+            {/* Trust numbers — big and separated */}
+            <div className="flex items-center gap-0 mt-10">
+              <div className="pr-7">
+                <span className="text-[2.5rem] font-bold text-white leading-none">100<span className="text-[#c6a065]">+</span></span>
+                <p className="text-[11px] uppercase tracking-wider text-white/40 mt-1.5">{lang === 'ar' ? 'شركة مسجلة' : 'Companies'}</p>
+              </div>
+              <div className="h-10 w-px bg-white/10" />
+              <div className="px-7">
+                <span className="text-[2.5rem] font-bold text-white leading-none">2K<span className="text-[#c6a065]">+</span></span>
+                <p className="text-[11px] uppercase tracking-wider text-white/40 mt-1.5">{lang === 'ar' ? 'صورة مشروع' : 'Projects'}</p>
+              </div>
+              <div className="h-10 w-px bg-white/10" />
+              <div className="pl-7">
+                <span className="text-[2.5rem] font-bold text-white leading-none">7</span>
+                <p className="text-[11px] uppercase tracking-wider text-white/40 mt-1.5">{lang === 'ar' ? 'إمارات' : 'Emirates'}</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Features: results-focused, no jargon ── */}
-      <section className="bg-[#1c1917] border-t border-white/5 py-12 lg:py-16">
+      {/* ── Features ── */}
+      <section className="bg-[#181614] py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {([
               { icon: Search, tag: 'feature1Tag', title: 'feature1Title', desc: 'feature1Desc', checks: ['feature1Check1', 'feature1Check2', 'feature1Check3'] },
               { icon: Camera, tag: 'feature2Tag', title: 'feature2Title', desc: 'feature2Desc', checks: ['feature2Check1', 'feature2Check2', 'feature2Check3'] },
               { icon: Phone, tag: 'feature3Tag', title: 'feature3Title', desc: 'feature3Desc', checks: ['feature3Check1', 'feature3Check2', 'feature3Check3'] },
             ] as const).map((feat) => (
-              <div key={feat.tag} className="bg-[#1c1917] p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b8864a]/15">
-                    <feat.icon className="w-5 h-5 text-[#c6a065]" />
-                  </div>
-                  <p className="text-[11px] font-semibold text-[#c6a065] uppercase tracking-wider">
-                    {t(lang, feat.tag)}
-                  </p>
+              <div key={feat.tag} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-7 sm:p-8 hover:border-[#b8864a]/20 transition-colors">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#b8864a]/10 mb-5">
+                  <feat.icon className="w-6 h-6 text-[#c6a065]" />
                 </div>
-                <h3 className="font-serif text-xl font-bold text-white">{t(lang, feat.title)}</h3>
-                <p className="text-[14px] text-white/55 leading-relaxed mt-2">{t(lang, feat.desc)}</p>
-                <div className="mt-4 space-y-2">
+                <p className="text-[10px] font-bold text-[#c6a065] uppercase tracking-[0.2em] mb-2">
+                  {t(lang, feat.tag)}
+                </p>
+                <h3 className="font-serif text-[22px] font-bold text-white leading-snug">{t(lang, feat.title)}</h3>
+                <p className="text-[14px] text-white/45 leading-relaxed mt-3">{t(lang, feat.desc)}</p>
+                <div className="mt-5 space-y-2.5">
                   {feat.checks.map((key) => (
-                    <div key={key} className="flex items-center gap-2">
+                    <div key={key} className="flex items-center gap-2.5">
                       <Check className="w-4 h-4 text-[#c6a065] flex-shrink-0" />
-                      <span className="text-[14px] text-white/80">{t(lang, key)}</span>
+                      <span className="text-[14px] text-white/70">{t(lang, key)}</span>
                     </div>
                   ))}
                 </div>

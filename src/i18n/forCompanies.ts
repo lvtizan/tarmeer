@@ -9,7 +9,7 @@ const translations = {
     headline: 'Homeowners Are Looking for You',
     subtitle: 'Register your company on Tarmeer. We connect you with homeowners who need renovation services across UAE.',
     // Form
-    formTitle: 'Get Your Free Company Page',
+    formTitle: 'Register Your Company',
     contactName: 'Contact Name',
     contactNamePlaceholder: 'Your name',
     phone: 'Phone Number',
@@ -97,7 +97,7 @@ const translations = {
     tagline: 'منصة التجديد في الإمارات',
     headline: 'أصحاب المنازل يبحثون عنك',
     subtitle: 'سجّل شركتك في ترمير. نربطك بأصحاب المنازل الذين يحتاجون خدمات التجديد في الإمارات.',
-    formTitle: 'احصل على صفحة شركتك المجانية',
+    formTitle: 'سجّل شركتك',
     contactName: '\u0627\u0633\u0645 \u0627\u0644\u062a\u0648\u0627\u0635\u0644',
     contactNamePlaceholder: '\u0627\u0633\u0645\u0643',
     phone: '\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641',
