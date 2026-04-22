@@ -408,6 +408,11 @@ export async function getCompanyBySlug(req: any, res: any) {
         company.is_signed = false;
         company.portfolio_images = null;
         company.portfolio_categories = null;
+        // Hide contact info for registered companies — business rule:
+        // registered companies pay for leads, showing contact lets homeowners bypass platform
+        company.phone = null;
+        company.email = null;
+        company.is_registered = true;
       }
     }
 

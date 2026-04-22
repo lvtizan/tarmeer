@@ -137,8 +137,8 @@ export async function listApprovedCompanies(req: any, res: any) {
         company_name: company.company_name,
         company_type: company.company_type,
         description: company.description,
-        contact_person: company.contact_person,
-        phone: company.phone,
+        contact_person: null, // Hide for registered companies
+        phone: null,          // Hide — registered companies pay for leads
         website: company.website,
         city: company.city,
         services: services,
@@ -149,6 +149,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         project_count: company.project_count || 0,
         portfolio_images: imageMap[company.id] || [],
         is_signed: !!(company.is_signed),
+        is_registered: true,
       };
     });
 
@@ -204,8 +205,8 @@ export async function getCompanyDetail(req: any, res: any) {
       company_name: company.company_name,
       company_type: company.company_type,
       description: company.description,
-      contact_person: company.contact_person,
-      phone: company.phone,
+      contact_person: null, // Hide for registered companies
+      phone: null,          // Hide — registered companies pay for leads
       website: company.website,
       city: company.city,
       address: company.address,
@@ -214,8 +215,9 @@ export async function getCompanyDetail(req: any, res: any) {
       display_order: company.display_order,
       created_at: company.created_at,
       projects: projects,
-      is_claimed: true, // 注册公司永远是 claimed（用户自己创建的）
+      is_claimed: true,
       is_signed: !!(company.is_signed),
+      is_registered: true,
     };
 
     res.json({ company: formattedCompany });
