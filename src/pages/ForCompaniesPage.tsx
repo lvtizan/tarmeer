@@ -160,7 +160,7 @@ export default function ForCompaniesPage() {
 
           {/* Form -- first on mobile, right on desktop */}
           <div className="order-1 lg:order-2">
-            <CompanySignupForm lang={lang} compact />
+            <CompanySignupForm lang={lang} />
           </div>
         </div>
       </section>
