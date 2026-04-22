@@ -165,6 +165,7 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       slug VARCHAR(255) NOT NULL UNIQUE,
       description TEXT,
       logo_url VARCHAR(500),
+      cover_image_url VARCHAR(500),
       origin ENUM('china','dubai') NOT NULL DEFAULT 'china',
       categories JSON,
       has_physical_store TINYINT(1) DEFAULT 0,

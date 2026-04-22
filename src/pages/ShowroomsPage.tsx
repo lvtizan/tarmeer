@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
 import { WHATSAPP_LINK, GOOGLE_MAPS_URL } from '../lib/constants';
-import { MapPin, Clock, Store, Package, Filter } from 'lucide-react';
+import { MapPin, Clock, Store, Package } from 'lucide-react';
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 
 const PRIMARY = '#b8864a';
@@ -29,6 +29,7 @@ interface Supplier {
   slug: string;
   description: string;
   logo_url: string | null;
+  cover_image_url: string | null;
   origin: 'china' | 'dubai';
   categories: string[] | string | null;
   has_physical_store: number;
@@ -134,20 +135,24 @@ export default function MaterialsPage() {
         {/* Suppliers Section */}
         <section id="suppliers">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <h2 className="font-serif text-2xl font-bold text-[#2c2c2c]">Suppliers</h2>
+            <div>
+              <h2 className="font-serif text-2xl font-bold text-[#2c2c2c]">Trusted Suppliers</h2>
+              {!loading && suppliers.length > 0 && (
+                <p className="text-sm text-stone-500 mt-1">{suppliers.length} verified suppliers across China and Dubai</p>
+              )}
+            </div>
             <div className="flex items-center gap-3">
-              <Filter className="w-4 h-4 text-stone-400" />
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 bg-stone-100 rounded-full p-1">
                 {[
                   { value: '', label: 'All' },
                   { value: 'china', label: '🇨🇳 China' },
                   { value: 'dubai', label: '🇦🇪 Dubai' },
                 ].map(opt => (
                   <button key={opt.value} onClick={() => setOriginFilter(opt.value)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition ${
                       originFilter === opt.value
-                        ? 'bg-[#b8864a] text-white'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        ? 'bg-white text-[#2c2c2c] shadow-sm'
+                        : 'text-stone-500 hover:text-stone-700'
                     }`}>
                     {opt.label}
                   </button>
@@ -173,36 +178,46 @@ export default function MaterialsPage() {
                 const cats = parseCategories(s.categories);
                 return (
                   <Link key={s.id} to={`/materials/suppliers/${s.slug}`}
-                    className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:border-[#b8864a]/40 hover:shadow-md transition">
-                    {/* Logo */}
-                    <div className="h-32 flex items-center justify-center bg-stone-50 border-b border-stone-100 p-4">
-                      {s.logo_url ? (
-                        <img src={s.logo_url} alt={s.company_name} className="max-h-full max-w-full object-contain" />
-                      ) : (
-                        <span className="text-2xl font-bold text-stone-300">{s.company_name[0]}</span>
+                    className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:border-[#b8864a]/30 hover:shadow-lg transition-all duration-300">
+                    {/* Cover image */}
+                    <div className="relative h-44 overflow-hidden">
+                      <img
+                        src={s.cover_image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
+                        alt={s.company_name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                      {/* Origin badge */}
+                      <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm ${
+                        s.origin === 'china'
+                          ? 'bg-red-500/90 text-white'
+                          : 'bg-emerald-500/90 text-white'
+                      }`}>
+                        {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
+                      </span>
+                      {/* Store badge */}
+                      {s.has_physical_store ? (
+                        <span className="absolute top-3 left-3 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-white/90 text-blue-600 backdrop-blur-sm flex items-center gap-1">
+                          <Store className="w-3 h-3" /> Showroom
+                        </span>
+                      ) : null}
+                      {/* Logo overlay */}
+                      {s.logo_url && (
+                        <div className="absolute bottom-3 left-3 w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center p-1 overflow-hidden">
+                          <img src={s.logo_url} alt="" className="w-full h-full object-contain"
+                            onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
+                        </div>
                       )}
                     </div>
                     <div className="p-4">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <h3 className="text-[15px] font-semibold text-[#2c2c2c] group-hover:text-[#b8864a] transition truncate">{s.company_name}</h3>
-                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          s.origin === 'china' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
-                        }`}>
-                          {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
-                        </span>
-                      </div>
+                      <h3 className="text-[15px] font-bold text-[#2c2c2c] group-hover:text-[#b8864a] transition mb-1">{s.company_name}</h3>
                       {s.description && (
-                        <p className="text-xs text-stone-500 line-clamp-2 mb-2.5 leading-relaxed">{s.description}</p>
+                        <p className="text-[12px] text-stone-500 line-clamp-2 mb-3 leading-relaxed">{s.description}</p>
                       )}
                       <div className="flex flex-wrap gap-1.5">
                         {cats.slice(0, 3).map(c => (
-                          <span key={c} className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">{c}</span>
+                          <span key={c} className="text-[10px] px-2.5 py-0.5 rounded-full border border-stone-200 text-stone-500 capitalize">{c}</span>
                         ))}
-                        {s.has_physical_store ? (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 flex items-center gap-1">
-                            <Store className="w-3 h-3" /> Store
-                          </span>
-                        ) : null}
                       </div>
                     </div>
                   </Link>

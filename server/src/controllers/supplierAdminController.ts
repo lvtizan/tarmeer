@@ -90,7 +90,7 @@ export async function updateSupplier(req: any, res: any) {
     const allowed = [
       'company_name', 'description', 'origin', 'categories', 'has_physical_store',
       'store_address', 'store_lat', 'store_lng', 'google_maps_url',
-      'contact_phone', 'whatsapp', 'website', 'status', 'logo_url',
+      'contact_phone', 'whatsapp', 'website', 'status', 'logo_url', 'cover_image_url',
     ];
     const sets: string[] = [];
     const values: any[] = [];
