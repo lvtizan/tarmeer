@@ -25,7 +25,7 @@ const companyLeadLimiter = rateLimit({
 router.post('/',
   companyLeadLimiter,
   [
-    body('contactName').notEmpty().withMessage('Contact name is required'),
+    body('contactName').optional(),
     body('phone').notEmpty().withMessage('Phone is required'),
     body('companyName').notEmpty().withMessage('Company name is required'),
   ],

@@ -4,8 +4,15 @@ import { notifyNewCompanyLead } from '../services/notificationService';
 
 export async function submitCompanyLead(req: any, res: any) {
   try {
-    const { contactName, phone, companyName, city, companyType, yearEstablished, scopeOfBusiness, lang, sourcePage: bodySourcePage } = req.body;
-    const sourcePage = bodySourcePage || req.headers.referer || null;
+    const { contactName: rawContactName, phone, companyName: rawCompanyName, city: rawCity, companyType: rawCompanyType, yearEstablished, scopeOfBusiness: rawScope, lang, sourcePage: bodySourcePage } = req.body;
+    // Truncate all string fields to DB column limits to prevent ER_DATA_TOO_LONG
+    const contactName = rawContactName ? String(rawContactName).slice(0, 100) : rawContactName;
+    const companyName = rawCompanyName ? String(rawCompanyName).slice(0, 200) : rawCompanyName;
+    const city = rawCity ? String(rawCity).slice(0, 100) : rawCity;
+    const companyType = rawCompanyType ? String(rawCompanyType).slice(0, 100) : rawCompanyType;
+    const scopeOfBusiness = rawScope ? String(rawScope).slice(0, 500) : rawScope;
+    const rawSourcePage = bodySourcePage || req.headers.referer || null;
+    const sourcePage = rawSourcePage ? String(rawSourcePage).slice(0, 500) : null;
 
     // Check if phone number already registered
     if (phone) {
@@ -27,7 +34,7 @@ export async function submitCompanyLead(req: any, res: any) {
     const [result] = await pool.execute(
       `INSERT INTO company_leads (contact_name, phone, company_name, company_type, city, year_established, scope_of_business, lang, source_page)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [contactName, phone, companyName, companyType || null, city || null, yearEstablished || null, scopeOfBusiness || null, lang || 'en', sourcePage]
+      [contactName || companyName || '', phone, companyName, companyType || null, city || null, yearEstablished || null, scopeOfBusiness || null, lang || 'en', sourcePage]
     );
 
     const leadId = (result as any).insertId;
