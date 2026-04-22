@@ -38,12 +38,50 @@ export default function ForCompaniesPage() {
         {/* Layered gradients for depth */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_10%_20%,rgba(184,134,74,0.12)_0%,transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_90%_80%,rgba(184,134,74,0.06)_0%,transparent_60%)]" />
-        {/* Geometric decoration — large gold arc (bottom-left) */}
-        <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full border border-[#b8864a]/[0.07] hidden lg:block" />
-        <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full border border-[#b8864a]/[0.05] hidden lg:block" />
-        {/* Diamond shape (top-right, behind form) */}
-        <div className="absolute top-16 right-[10%] w-[200px] h-[200px] border border-[#b8864a]/[0.06] rotate-45 hidden lg:block" />
-        <div className="absolute top-24 right-[12%] w-[140px] h-[140px] border border-[#b8864a]/[0.04] rotate-45 hidden lg:block" />
+        {/* Animated flowing curves — gold SVG */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 1440 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M-100 500 C200 350, 500 650, 800 400 S1200 200, 1540 350" stroke="url(#gold1)" strokeWidth="1" opacity="0.12">
+            <animate attributeName="d" dur="12s" repeatCount="indefinite" values="
+              M-100 500 C200 350, 500 650, 800 400 S1200 200, 1540 350;
+              M-100 450 C200 400, 500 550, 800 350 S1200 250, 1540 400;
+              M-100 500 C200 350, 500 650, 800 400 S1200 200, 1540 350
+            "/>
+          </path>
+          <path d="M-100 550 C300 400, 600 700, 900 450 S1300 250, 1540 400" stroke="url(#gold1)" strokeWidth="0.8" opacity="0.08">
+            <animate attributeName="d" dur="15s" repeatCount="indefinite" values="
+              M-100 550 C300 400, 600 700, 900 450 S1300 250, 1540 400;
+              M-100 500 C300 450, 600 600, 900 400 S1300 300, 1540 450;
+              M-100 550 C300 400, 600 700, 900 450 S1300 250, 1540 400
+            "/>
+          </path>
+          <path d="M-100 600 C400 450, 700 750, 1000 500 S1400 300, 1540 450" stroke="url(#gold2)" strokeWidth="0.6" opacity="0.06">
+            <animate attributeName="d" dur="18s" repeatCount="indefinite" values="
+              M-100 600 C400 450, 700 750, 1000 500 S1400 300, 1540 450;
+              M-100 550 C400 500, 700 650, 1000 450 S1400 350, 1540 500;
+              M-100 600 C400 450, 700 750, 1000 500 S1400 300, 1540 450
+            "/>
+          </path>
+          <path d="M-50 200 C300 100, 700 350, 1100 150 S1400 50, 1540 200" stroke="url(#gold2)" strokeWidth="0.7" opacity="0.07">
+            <animate attributeName="d" dur="20s" repeatCount="indefinite" values="
+              M-50 200 C300 100, 700 350, 1100 150 S1400 50, 1540 200;
+              M-50 250 C300 150, 700 300, 1100 200 S1400 100, 1540 250;
+              M-50 200 C300 100, 700 350, 1100 150 S1400 50, 1540 200
+            "/>
+          </path>
+          <defs>
+            <linearGradient id="gold1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#b8864a" stopOpacity="0" />
+              <stop offset="30%" stopColor="#b8864a" stopOpacity="1" />
+              <stop offset="70%" stopColor="#c6a065" stopOpacity="1" />
+              <stop offset="100%" stopColor="#b8864a" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="gold2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#c6a065" stopOpacity="0" />
+              <stop offset="50%" stopColor="#b8864a" stopOpacity="1" />
+              <stop offset="100%" stopColor="#c6a065" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
         {/* Subtle gold accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8864a]/40 to-transparent" />
 
