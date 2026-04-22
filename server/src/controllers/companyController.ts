@@ -393,7 +393,7 @@ export async function getCompanyBySlug(req: any, res: any) {
       const [cpRows] = await pool.execute(
         `SELECT cp.id, cp.slug, cp.company_name AS name_en, cp.description, cp.city,
                 cp.phone, cp.website, cp.services, cp.specialties, cp.logo_url,
-                cp.status, cp.linked_uae_company_id,
+                cp.status, cp.linked_uae_company_id, cp.is_signed,
                 u.email
          FROM company_profiles cp
          JOIN users u ON u.id = cp.user_id
@@ -420,7 +420,7 @@ export async function getCompanyBySlug(req: any, res: any) {
         }
         // Normalize to same shape as uae_companies
         company.owner_user_id = null;
-        company.is_signed = false;
+        company.is_signed = !!(company.is_signed);
         company.portfolio_images = JSON.stringify(allImages);
         company.portfolio_categories = null;
         // Hide contact info for registered companies — business rule:
