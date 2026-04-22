@@ -32,10 +32,9 @@ const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 interface CompanySignupFormProps {
   lang: Lang;
-  compact?: boolean;
 }
 
-export default function CompanySignupForm({ lang, compact }: CompanySignupFormProps) {
+export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const navigate = useNavigate();
 
   // Form fields
@@ -127,17 +126,17 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
     setTried(true);
     setError(null);
 
-    if (!compact && !contactName.trim()) { setError('Please fill in all required fields'); return; }
+    if (!contactName.trim()) { setError('Please fill in all required fields'); return; }
     if (!phoneDigits.trim() || !isPhoneComplete(phoneDigits, phoneRegion.code)) { setError('Please fill in all required fields'); return; }
     if (phoneError) { setError(phoneError); return; }
     if (!companyName.trim()) { setError('Please fill in all required fields'); return; }
     if (!city) { setError('Please fill in all required fields'); return; }
-    if (!compact && !companyType) {
+    if (!companyType) {
       setCompanyTypeError(true);
       setError('Please fill in all required fields');
       return;
     }
-    if (!compact && establishmentYear) {
+    if (establishmentYear) {
       const yr = Number(establishmentYear);
       if (yr < 1900 || yr > 2026) { setError('Year must be between 1900 and 2026'); return; }
     }
@@ -148,11 +147,11 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contactName: compact ? '' : contactName.trim(),
+          contactName: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           companyName: companyName.trim(),
-          companyType: compact ? 'renovation_company' : companyType,
-          establishmentYear: compact ? undefined : (establishmentYear || undefined),
+          companyType,
+          establishmentYear: establishmentYear || undefined,
           city,
           sourcePage: window.location.href,
         }),
@@ -167,11 +166,11 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
             // Save form data so profile page can prefill after login
             sessionStorage.setItem('company_signup_prefill', JSON.stringify({
               company_name: companyName.trim(),
-              contact_person: compact ? '' : contactName.trim(),
+              contact_person: contactName.trim(),
               phone: `${phoneRegion.code}${phoneDigits}`,
               city,
-              company_type: compact ? 'renovation_company' : companyType,
-              establishment_year: compact ? null : (establishmentYear || null),
+              company_type: companyType,
+              establishment_year: establishmentYear || null,
             }));
           }
           setPhoneExistsMode(true);
@@ -214,11 +213,11 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
       if (!existingHasProfile) {
         await api.post('/auth/company/profile', {
           company_name: companyName.trim(),
-          contact_person: compact ? '' : contactName.trim(),
+          contact_person: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           city,
-          company_type: compact ? 'renovation_company' : companyType,
-          establishment_year: compact ? null : (establishmentYear ? Number(establishmentYear) : null),
+          company_type: companyType,
+          establishment_year: establishmentYear ? Number(establishmentYear) : null,
           description: '',
           services: ['Interior Design'],
         }).catch(() => {});
@@ -273,11 +272,11 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
       company_name: companyName.trim(),
       phone: `${phoneRegion.code}${phoneDigits}`,
       city,
-      contact_person: compact ? '' : contactName.trim(),
+      contact_person: contactName.trim(),
       description: '',
       services: ['Interior Design'],
-      company_type: compact ? 'renovation_company' : companyType,
-      establishment_year: compact ? null : (establishmentYear ? Number(establishmentYear) : null),
+      company_type: companyType,
+      establishment_year: establishmentYear ? Number(establishmentYear) : null,
       signup_source: source,
     };
 
@@ -287,7 +286,7 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
         await api.post('/auth/register', {
           email: regEmail.trim(),
           password: regPassword,
-          full_name: compact ? '' : contactName.trim(),
+          full_name: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           city,
           role: 'company',
@@ -449,11 +448,11 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
                     const apiBase = import.meta.env.VITE_API_URL || '/api';
                     sessionStorage.setItem('pending_company_profile', JSON.stringify({
                       company_name: companyName.trim(),
-                      contact_person: compact ? '' : contactName.trim(),
+                      contact_person: contactName.trim(),
                       phone: `${phoneRegion.code}${phoneDigits}`,
                       city,
-                      company_type: compact ? 'renovation_company' : companyType,
-                      establishment_year: compact ? null : (establishmentYear || null),
+                      company_type: companyType,
+                      establishment_year: establishmentYear || null,
                       services: ['Interior Design'],
                       signup_source: 'for-companies-landing',
                     }));
@@ -572,12 +571,11 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
         ) : (
         <>
         <h2 className="text-[18px] font-bold text-[#1c1917] leading-snug">
-          {compact ? t(lang, 'formTitleCompact') : t(lang, 'formTitle')}
+          {t(lang, 'formTitle')}
         </h2>
 
         <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
-          {/* Contact Name — hidden in compact mode */}
-          {!compact && (
+          {/* Contact Name */}
           <div>
             <label className={labelClass}>
               {t(lang, 'contactName')} <span className="text-red-500">*</span>
@@ -590,12 +588,11 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
               className={`${inputClass} ${tried && !contactName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
             />
           </div>
-          )}
 
           {/* Phone Number */}
           <div>
             <label className={labelClass}>
-              {compact ? t(lang, 'phoneCompact') : t(lang, 'phone')} <span className="text-red-500">*</span>
+              {t(lang, 'phone')} <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
               <AdminSelect
@@ -675,8 +672,7 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
             />
           </div>
 
-          {/* Company Type — hidden in compact mode */}
-          {!compact && (
+          {/* Company Type */}
           <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
             <label className={labelClass}>
               {t(lang, 'companyType')} <span className="text-red-500">*</span>
@@ -693,10 +689,8 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
               error={companyTypeError || (tried && !companyType)}
             />
           </div>
-          )}
 
-          {/* Year of Establishment — hidden in compact mode */}
-          {!compact && (
+          {/* Year of Establishment */}
           <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
             <label className={labelClass}>{t(lang, 'yearEstablished')}</label>
             <input
@@ -709,7 +703,6 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
               className={inputClass}
             />
           </div>
-          )}
 
           {/* Error */}
           {error && (
@@ -750,13 +743,6 @@ export default function CompanySignupForm({ lang, compact }: CompanySignupFormPr
                 t(lang, 'submit')
               )}
             </button>
-          )}
-
-          {/* Trust badges — shown in compact mode */}
-          {compact && (
-            <p className="text-center text-xs text-stone-400 pt-1">
-              {t(lang, 'trustBadges')}
-            </p>
           )}
         </form>
         </>
