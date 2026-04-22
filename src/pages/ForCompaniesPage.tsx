@@ -71,10 +71,8 @@ export default function ForCompaniesPage() {
             },
           })}
         </script>
-        {/* Preload hero image for instant paint */}
-        {/* Preload responsive hero image */}
-        <link rel="preload" as="image" fetchPriority="high" href="/images/hero/hero-renovation-md.webp" media="(max-width: 1024px)" />
-        <link rel="preload" as="image" fetchPriority="high" href="/images/hero/hero-renovation-lg.webp" media="(min-width: 1025px)" />
+        {/* Preload hero image — desktop only, mobile uses solid bg */}
+        <link rel="preload" as="image" fetchPriority="high" href="/images/hero/hero-renovation-lg.webp" media="(min-width: 769px)" />
       </Helmet>
 
       {/* ── 1. Mini Header (sticky) ── */}
@@ -107,15 +105,13 @@ export default function ForCompaniesPage() {
       </header>
 
       {/* ── 2. Hero Section ── */}
-      <section className="min-h-[600px] relative overflow-hidden">
-        {/* Blur placeholder — instant paint */}
+      <section className="min-h-[600px] relative overflow-hidden bg-[#1c1917]">
+        {/* Desktop only: blur placeholder + real hero image */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden md:block"
           style={{ backgroundImage: 'url(/images/hero/hero-renovation-blur.webp)', filter: 'blur(20px)', transform: 'scale(1.1)' }}
         />
-        {/* Real hero image — responsive */}
-        <picture className="absolute inset-0">
-          <source media="(max-width: 640px)" srcSet="/images/hero/hero-renovation-sm.webp" />
+        <picture className="absolute inset-0 hidden md:block">
           <source media="(max-width: 1024px)" srcSet="/images/hero/hero-renovation-md.webp" />
           <source media="(max-width: 1600px)" srcSet="/images/hero/hero-renovation-lg.webp" />
           <img
@@ -126,7 +122,7 @@ export default function ForCompaniesPage() {
             fetchPriority="high"
           />
         </picture>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.88)_0%,rgba(28,25,23,0.75)_50%,rgba(28,25,23,0.6)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.88)_0%,rgba(28,25,23,0.75)_50%,rgba(28,25,23,0.6)_100%)] hidden md:block" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <p className="text-sm font-semibold text-[#b8864a] uppercase tracking-wider">
