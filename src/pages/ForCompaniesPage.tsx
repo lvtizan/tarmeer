@@ -38,6 +38,12 @@ export default function ForCompaniesPage() {
         {/* Layered gradients for depth */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_10%_20%,rgba(184,134,74,0.12)_0%,transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_90%_80%,rgba(184,134,74,0.06)_0%,transparent_60%)]" />
+        {/* Geometric decoration — large gold arc (bottom-left) */}
+        <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full border border-[#b8864a]/[0.07] hidden lg:block" />
+        <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full border border-[#b8864a]/[0.05] hidden lg:block" />
+        {/* Diamond shape (top-right, behind form) */}
+        <div className="absolute top-16 right-[10%] w-[200px] h-[200px] border border-[#b8864a]/[0.06] rotate-45 hidden lg:block" />
+        <div className="absolute top-24 right-[12%] w-[140px] h-[140px] border border-[#b8864a]/[0.04] rotate-45 hidden lg:block" />
         {/* Subtle gold accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#b8864a]/40 to-transparent" />
 
@@ -91,13 +97,23 @@ export default function ForCompaniesPage() {
       {/* ── Features ── */}
       <section className="bg-[#f5f0e8] py-14 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Step flow: cards with step numbers and connecting arrows */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+            {/* Connecting arrows between cards (desktop only) */}
+            <div className="hidden md:flex absolute top-14 left-[33.33%] -translate-x-1/2 w-8 items-center justify-center z-10">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 5l7 7-7 7" stroke="#b8864a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/></svg>
+            </div>
+            <div className="hidden md:flex absolute top-14 left-[66.66%] -translate-x-1/2 w-8 items-center justify-center z-10">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 5l7 7-7 7" stroke="#b8864a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/></svg>
+            </div>
             {([
-              { icon: Search, tag: 'feature1Tag', title: 'feature1Title', desc: 'feature1Desc', checks: ['feature1Check1', 'feature1Check2', 'feature1Check3'] },
-              { icon: Camera, tag: 'feature2Tag', title: 'feature2Title', desc: 'feature2Desc', checks: ['feature2Check1', 'feature2Check2', 'feature2Check3'] },
-              { icon: Phone, tag: 'feature3Tag', title: 'feature3Title', desc: 'feature3Desc', checks: ['feature3Check1', 'feature3Check2', 'feature3Check3'] },
+              { icon: Search, step: '01', tag: 'feature1Tag', title: 'feature1Title', desc: 'feature1Desc', checks: ['feature1Check1', 'feature1Check2', 'feature1Check3'] },
+              { icon: Camera, step: '02', tag: 'feature2Tag', title: 'feature2Title', desc: 'feature2Desc', checks: ['feature2Check1', 'feature2Check2', 'feature2Check3'] },
+              { icon: Phone, step: '03', tag: 'feature3Tag', title: 'feature3Title', desc: 'feature3Desc', checks: ['feature3Check1', 'feature3Check2', 'feature3Check3'] },
             ] as const).map((feat) => (
-              <div key={feat.tag} className="rounded-2xl bg-white border border-stone-200/60 p-7 sm:p-8 shadow-sm hover:shadow-md transition-shadow">
+              <div key={feat.tag} className="rounded-2xl bg-white border border-stone-200/60 p-7 sm:p-8 shadow-sm hover:shadow-md transition-shadow relative">
+                {/* Large step number watermark */}
+                <span className="absolute top-4 right-5 text-[3.5rem] font-bold text-[#b8864a]/[0.06] leading-none select-none">{feat.step}</span>
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#b8864a]/10 mb-5">
                   <feat.icon className="w-6 h-6 text-[#b8864a]" />
                 </div>
