@@ -244,7 +244,11 @@ function toCompany(company: PublicCompanyRecord): Company {
   }
 
   // Fallback: profile detail returns projects[]; extract categorized images from projects
-  let portfolioCategoriesByProject: PortfolioCategories = {};
+  // Also: if portfolio_categories already has project-title keys (registered companies),
+  // use them directly as portfolioCategoriesByProject so "project mode" tab works.
+  let portfolioCategoriesByProject: PortfolioCategories =
+    Object.keys(portfolioCategories).length > 1 ? portfolioCategories : {};
+
   if (projectImages.length === 0 && Array.isArray(company.projects) && company.projects.length > 0) {
     const byStyle: PortfolioCategories = {};
     const byProject: PortfolioCategories = {};
