@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // used in Task 2/3
 import { Helmet } from 'react-helmet-async';
 import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox (Task 2)
-import AdminSelect from '../components/ui/AdminSelect';
-import { MapPin, Clock, Store, Package } from 'lucide-react'; // used in Task 2/3
+import { MapPin, Clock } from 'lucide-react';
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 
-const PRIMARY = '#b8864a';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 const CATEGORY_OPTIONS = [
@@ -63,8 +60,8 @@ function FilterOption({
 }
 
 export default function ShowroomsPage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [_loading, setLoading] = useState(true);
   const [originFilter, setOriginFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [leadModalOpen, setLeadModalOpen] = useState(false);
@@ -83,11 +80,6 @@ export default function ShowroomsPage() {
       .finally(() => setLoading(false));
   }, [originFilter, categoryFilter]);
 
-  const parseCategories = (cats: string[] | string | null): string[] => {
-    if (!cats) return [];
-    if (Array.isArray(cats)) return cats;
-    try { return JSON.parse(cats); } catch { return []; }
-  };
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
