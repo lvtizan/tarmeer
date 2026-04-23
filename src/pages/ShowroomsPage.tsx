@@ -179,7 +179,7 @@ export default function ShowroomsPage() {
           <button
             type="button"
             onClick={() => setLeadModalOpen(true)}
-            className="shrink-0 hidden sm:inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#b8864a] hover:bg-[#a67c47] text-white font-semibold text-sm transition"
+            className="btn-primary shrink-0 hidden sm:inline-flex items-center gap-2"
           >
             Apply to Join
           </button>
