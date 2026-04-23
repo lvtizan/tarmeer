@@ -403,23 +403,27 @@ export async function getCompanyBySlug(req: any, res: any) {
       );
       company = (cpRows as any[])[0];
       if (company) {
-        // Fetch projects with title/metadata so each project becomes its own category
+        // Fetch projects with full metadata for both portfolio_images and the projects[] array
         const [projRows] = await pool.execute(
-          `SELECT id, title, description, style, location, year, images
+          `SELECT id, title, slug, description, style, location, year, images
            FROM projects WHERE company_profile_id = ? AND status = 'published' AND deleted_at IS NULL
            ORDER BY created_at DESC`,
           [company.id]
         );
-        // Build object-format portfolio_images: { projectTitle: { items, description, year, location } }
-        // This lets extractPortfolioData preserve per-project structure instead of collapsing to one "Projects" group
+
+        // Build object-format portfolio_images for the masonry/style-tab fallback
         const categoriesObj: Record<string, any> = {};
+        // Build projects[] array so CompanyDetailPage shows one card per project
+        const registeredProjects: any[] = [];
+
         for (const row of projRows as any[]) {
           const parsed = typeof row.images === 'string' ? JSON.parse(row.images) : row.images;
+          const imageUrls: string[] = [];
           const items: { url: string; title: string }[] = [];
           if (Array.isArray(parsed)) {
             for (const img of parsed) {
               const url = typeof img === 'string' ? img : img?.url;
-              if (url) items.push({ url, title: '' });
+              if (url) { imageUrls.push(url); items.push({ url, title: '' }); }
             }
           }
           if (items.length > 0) {
@@ -432,8 +436,18 @@ export async function getCompanyBySlug(req: any, res: any) {
               sourceUrl: '',
             };
           }
+          if (imageUrls.length > 0) {
+            registeredProjects.push({
+              title: row.title || '',
+              slug: row.slug || `project-${row.id}`,
+              description: row.description || '',
+              style: row.style || '',
+              location: row.location || '',
+              images: imageUrls,
+            });
+          }
         }
-        // Normalize to same shape as uae_companies
+
         company.owner_user_id = null;
         company.is_signed = !!(company.is_signed);
         company.portfolio_images = JSON.stringify(categoriesObj);
@@ -444,6 +458,7 @@ export async function getCompanyBySlug(req: any, res: any) {
         company.email = null;
         company.website = null;
         company.is_registered = true;
+        company._registeredProjects = registeredProjects;
       }
     }
 
@@ -459,8 +474,16 @@ export async function getCompanyBySlug(req: any, res: any) {
       return res.status(404).json({ error: 'Company not found.' });
     }
 
+    const sanitized = sanitizePublicCompany(company);
     res.json({
-      company: sanitizePublicCompany(company),
+      company: {
+        ...sanitized,
+        // Registered companies: expose projects[] for card-per-project view + set is_claimed=true
+        ...(company.is_registered && {
+          is_claimed: true,
+          projects: company._registeredProjects || [],
+        }),
+      },
     });
   } catch (error) {
     console.error('Get company detail error:', error);
