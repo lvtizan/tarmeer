@@ -209,6 +209,17 @@ app.get('/api/sitemap.xml', async (req, res) => {
       }
     }
 
+    // Supplier detail pages
+    const [supplierRows] = await pool.execute(
+      "SELECT slug, updated_at FROM supplier_profiles WHERE status = 'active' AND slug IS NOT NULL ORDER BY updated_at DESC"
+    );
+    for (const sup of supplierRows as any[]) {
+      if (sup.slug) {
+        const lastmod = sup.updated_at ? new Date(sup.updated_at).toISOString().slice(0, 10) : today;
+        xml += `  <url><loc>${baseUrl}/materials/suppliers/${sup.slug}</loc><changefreq>weekly</changefreq><priority>0.7</priority><lastmod>${lastmod}</lastmod></url>\n`;
+      }
+    }
+
     // Article pages
     const [articleRows] = await pool.execute(
       "SELECT slug, updated_at FROM articles WHERE status = 'published' AND slug IS NOT NULL ORDER BY created_at DESC"
