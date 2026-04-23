@@ -32,7 +32,18 @@ interface Product {
   title: string | null;
   description: string | null;
   image_url: string;
+  category: string | null;
   sort_order: number;
+}
+
+interface Project {
+  id: number;
+  title: string;
+  description: string | null;
+  location: string | null;
+  year: string | null;
+  images: string[] | string | null;
+  materials?: Product[];
 }
 
 interface Catalog {
@@ -50,9 +61,11 @@ export default function SupplierDetailPage() {
   const navigate = useNavigate();
   const [supplier, setSupplier] = useState<SupplierProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [productCatFilter, setProductCatFilter] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('products');
 
   useEffect(() => {
@@ -63,11 +76,17 @@ export default function SupplierDetailPage() {
         setSupplier(data.supplier);
         const prods = data.products || [];
         const cats = data.catalogs || [];
+        const projs = (data.projects || []).map((p: any) => ({
+          ...p,
+          images: typeof p.images === 'string' ? JSON.parse(p.images) : (p.images || []),
+        }));
         setProducts(prods);
         setCatalogs(cats);
-        // Default tab: products if available, otherwise projects
+        setProjects(projs);
+        // Default tab: products if available, then projects, then catalogs
         if (prods.length > 0) setActiveTab('products');
-        else setActiveTab('projects');
+        else if (projs.length > 0) setActiveTab('projects');
+        else setActiveTab('catalogs');
       })
       .catch(() => setSupplier(null))
       .finally(() => setLoading(false));
@@ -105,25 +124,61 @@ export default function SupplierDetailPage() {
 
   const statItems: { label: string; count: number }[] = [];
   if (products.length > 0) statItems.push({ label: 'Products', count: products.length });
-  // Projects placeholder for future
-  statItems.push({ label: 'Projects', count: 0 });
+  if (projects.length > 0) statItems.push({ label: 'Projects', count: projects.length });
   if (catalogs.length > 0) statItems.push({ label: 'Catalogs', count: catalogs.length });
+
+  // Product categories for sub-filter
+  const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode; count: number }[] = [
     { key: 'products', label: 'Products', icon: <Package className="w-4 h-4" />, count: products.length },
-    { key: 'projects', label: 'Projects', icon: <Layers className="w-4 h-4" />, count: 0 },
+    { key: 'projects', label: 'Projects', icon: <Layers className="w-4 h-4" />, count: projects.length },
     { key: 'catalogs', label: 'Catalogs', icon: <FolderOpen className="w-4 h-4" />, count: catalogs.length },
   ];
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <Helmet>
-        <title>{supplier.company_name} - Supplier - Tarmeer UAE</title>
-        <meta name="description" content={supplier.description?.slice(0, 300) || `${supplier.company_name} — building material supplier on Tarmeer UAE`} />
+        <title>{supplier.company_name} — Material Supplier UAE | Tarmeer</title>
+        <meta name="description" content={
+          (supplier.description?.slice(0, 155) || `${supplier.company_name} — building material supplier in UAE`) + ' | Tarmeer'
+        } />
         <link rel="canonical" href={`https://www.tarmeer.com/materials/suppliers/${slug}`} />
-        <meta property="og:title" content={`${supplier.company_name} - Supplier - Tarmeer UAE`} />
-        <meta property="og:description" content={supplier.description?.slice(0, 300) || `${supplier.company_name} — building material supplier on Tarmeer UAE`} />
+        <meta property="og:title" content={`${supplier.company_name} — Material Supplier UAE | Tarmeer`} />
+        <meta property="og:description" content={supplier.description?.slice(0, 200) || `${supplier.company_name} — building material supplier on Tarmeer UAE`} />
+        <meta property="og:url" content={`https://www.tarmeer.com/materials/suppliers/${slug}`} />
+        <meta property="og:type" content="website" />
         {heroImage && <meta property="og:image" content={heroImage} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${supplier.company_name} | Tarmeer`} />
+        <meta name="twitter:description" content={supplier.description?.slice(0, 160) || ''} />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com' },
+            { '@type': 'ListItem', position: 2, name: 'Materials', item: 'https://www.tarmeer.com/materials' },
+            { '@type': 'ListItem', position: 3, name: supplier.company_name, item: `https://www.tarmeer.com/materials/suppliers/${slug}` },
+          ],
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': supplier.has_physical_store ? 'LocalBusiness' : 'Organization',
+          name: supplier.company_name,
+          ...(supplier.description && { description: supplier.description.slice(0, 300) }),
+          url: `https://www.tarmeer.com/materials/suppliers/${slug}`,
+          ...(heroImage && { image: heroImage }),
+          ...(supplier.logo_url && { logo: supplier.logo_url }),
+          ...(supplier.website && { sameAs: [supplier.website] }),
+          ...(supplier.has_physical_store && supplier.store_address && {
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: supplier.store_address,
+              addressCountry: 'AE',
+            },
+          }),
+        })}</script>
       </Helmet>
 
       {/* ========== Hero Section ========== */}
@@ -268,25 +323,46 @@ export default function SupplierDetailPage() {
             {activeTab === 'products' && (
               <div>
                 {products.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {products.map((p, i) => (
-                      <div key={p.id} className="group cursor-pointer" onClick={() => setLightboxIdx(i)}>
-                        <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
-                          <img
-                            src={p.image_url}
-                            alt={p.title || ''}
-                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                          />
-                        </div>
-                        {p.title && (
-                          <p className="text-[15px] font-medium text-[#2c2c2c] mt-2 truncate">{p.title}</p>
-                        )}
-                        {p.description && (
-                          <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>
-                        )}
+                  <>
+                    {/* Category filter pills */}
+                    {productCategories.length > 1 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <button
+                          onClick={() => setProductCatFilter(null)}
+                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
+                        >All</button>
+                        {productCategories.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => setProductCatFilter(cat)}
+                            className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
+                          >{cat}</button>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
+                        <div key={p.id} className="group cursor-pointer" onClick={() => setLightboxIdx(products.indexOf(p))}>
+                          <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
+                            <img
+                              src={p.image_url}
+                              alt={p.title || ''}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            />
+                          </div>
+                          {p.category && (
+                            <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>
+                          )}
+                          {p.title && (
+                            <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>
+                          )}
+                          {p.description && (
+                            <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <EmptyState
                     icon={<Package className="w-8 h-8 text-stone-300" />}
@@ -299,11 +375,67 @@ export default function SupplierDetailPage() {
 
             {/* Projects Tab */}
             {activeTab === 'projects' && (
-              <EmptyState
-                icon={<Layers className="w-8 h-8 text-stone-300" />}
-                title="Projects coming soon"
-                description="This supplier's project portfolio is being prepared. Check back soon for installation photos and case studies."
-              />
+              <div>
+                {projects.length > 0 ? (
+                  <div className="space-y-6">
+                    {projects.map(proj => {
+                      const imgs = Array.isArray(proj.images) ? proj.images : [];
+                      const materials = Array.isArray(proj.materials) ? proj.materials : [];
+                      return (
+                        <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+                          {imgs.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                              {imgs.map((img, i) => (
+                                <img key={i} src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+                              ))}
+                            </div>
+                          )}
+                          <div className="p-5">
+                            <h3 className="text-[15px] font-semibold text-[#2c2c2c]">{proj.title}</h3>
+                            {proj.description && <p className="text-sm text-stone-500 mt-1 leading-relaxed">{proj.description}</p>}
+                            <div className="flex gap-4 mt-2 text-xs text-stone-400">
+                              {proj.location && <span>{proj.location}</span>}
+                              {proj.year && <span>{proj.year}</span>}
+                            </div>
+
+                            {materials.length > 0 && (
+                              <div className="mt-5 pt-4 border-t border-stone-100">
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-3">
+                                  Materials Used In This Project
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                  {materials.slice(0, 6).map((m) => (
+                                    <div key={m.id} className="rounded-xl border border-stone-200 overflow-hidden bg-stone-50/40">
+                                      <div className="aspect-[4/3] bg-stone-100">
+                                        <img src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                                      </div>
+                                      <div className="p-2.5">
+                                        {m.category && (
+                                          <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>
+                                        )}
+                                        <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
+                                        {m.description && (
+                                          <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={<Layers className="w-8 h-8 text-stone-300" />}
+                    title="No projects yet"
+                    description="This supplier hasn't uploaded any project photos yet."
+                  />
+                )}
+              </div>
             )}
 
             {/* Catalogs Tab */}
