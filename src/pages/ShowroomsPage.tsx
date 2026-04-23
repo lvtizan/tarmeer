@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'; // used in Task 2/3
 import { Helmet } from 'react-helmet-async';
-import { GOOGLE_MAPS_URL } from '../lib/constants';
+import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox (Task 2)
 import AdminSelect from '../components/ui/AdminSelect';
-import { MapPin, Clock, Store, Package } from 'lucide-react';
+import { MapPin, Clock, Store, Package } from 'lucide-react'; // used in Task 2/3
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 
 const PRIMARY = '#b8864a';
@@ -38,7 +38,7 @@ interface Supplier {
   contact_phone: string | null;
 }
 
-export default function MaterialsPage() {
+export default function ShowroomsPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [originFilter, setOriginFilter] = useState('');
