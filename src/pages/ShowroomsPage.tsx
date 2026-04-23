@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox (Task 2)
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, Store, Package } from 'lucide-react';
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
@@ -35,6 +36,73 @@ interface Supplier {
   contact_phone: string | null;
 }
 
+function parseCategories(c: Supplier['categories']): string[] {
+  if (!c) return [];
+  if (Array.isArray(c)) return c;
+  try { const p = JSON.parse(c); return Array.isArray(p) ? p : [c]; } catch { return [c]; }
+}
+
+function SupplierCard({ s }: { s: Supplier }) {
+  const cats = parseCategories(s.categories);
+  return (
+    <Link
+      to={`/materials/suppliers/${s.slug}`}
+      className="group flex border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 py-5 gap-5"
+    >
+      {/* Cover image */}
+      <div className="w-[220px] sm:w-[280px] h-[160px] sm:h-[180px] flex-shrink-0 overflow-hidden rounded-2xl bg-stone-100">
+        <img
+          src={s.cover_image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
+          alt={s.company_name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
+              {s.company_name}
+            </h3>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              s.origin === 'china'
+                ? 'bg-red-50 text-red-600'
+                : 'bg-emerald-50 text-emerald-700'
+            }`}>
+              {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
+            </span>
+            {s.has_physical_store ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 flex items-center gap-1">
+                <Store className="w-3 h-3" /> Showroom
+              </span>
+            ) : null}
+          </div>
+          {s.description && (
+            <p className="text-stone-500 text-[13px] leading-relaxed line-clamp-2 mb-2.5">
+              {s.description}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {cats.slice(0, 4).map(c => (
+              <span key={c} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded-2xl capitalize">
+                {c}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="hidden sm:flex flex-col items-center justify-center flex-shrink-0 w-[140px] pl-4 border-l border-stone-100">
+        <span className="w-full flex items-center justify-center px-4 py-2.5 rounded-2xl border border-[#b8864a] text-[#b8864a] font-semibold text-sm group-hover:bg-[#b8864a] group-hover:text-white transition-colors duration-200">
+          View Profile
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 function FilterOption({
   selected, onClick, children,
 }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -60,8 +128,8 @@ function FilterOption({
 }
 
 export default function ShowroomsPage() {
-  const [_suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [_loading, setLoading] = useState(true);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
   const [originFilter, setOriginFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [leadModalOpen, setLeadModalOpen] = useState(false);
@@ -180,8 +248,58 @@ export default function ShowroomsPage() {
 
         {/* Right Content */}
         <div className="flex-1 min-w-0">
-          {/* Mobile origin filter — filled in Task 3 */}
-          {/* Supplier list — filled in Task 3 */}
+          {/* Mobile origin filter */}
+          <div className="lg:hidden flex gap-1.5 bg-stone-100 rounded-full p-1 mb-5 w-fit">
+            {[
+              { value: '', label: 'All' },
+              { value: 'china', label: '🇨🇳 China' },
+              { value: 'dubai', label: '🇦🇪 Dubai' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setOriginFilter(opt.value)}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition ${
+                  originFilter === opt.value
+                    ? 'bg-white text-[#2c2c2c] shadow-sm'
+                    : 'text-stone-500 hover:text-stone-700'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Result count */}
+          {!loading && suppliers.length > 0 && (
+            <p className="text-sm text-stone-500 mb-4">
+              {suppliers.length} verified supplier{suppliers.length !== 1 ? 's' : ''}
+              {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}`}
+              {categoryFilter && ` · ${CATEGORY_OPTIONS.find(o => o.value === categoryFilter)?.label}`}
+            </p>
+          )}
+
+          {/* List */}
+          {loading ? (
+            <div className="py-20 text-center text-stone-400">Loading suppliers...</div>
+          ) : suppliers.length === 0 ? (
+            <div className="py-16 text-center">
+              <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+              <p className="text-stone-500 text-[15px]">No suppliers found.</p>
+            </div>
+          ) : (
+            <div>
+              {suppliers.map(s => (
+                <SupplierCard key={s.id} s={s} />
+              ))}
+            </div>
+          )}
+
+          {/* Mobile Apply CTA */}
+          <div className="mt-10 sm:hidden">
+            <button type="button" onClick={() => setLeadModalOpen(true)} className="btn-primary w-full py-3.5 text-[15px]">
+              Apply to Join as Supplier
+            </button>
+          </div>
         </div>
       </div>
 
