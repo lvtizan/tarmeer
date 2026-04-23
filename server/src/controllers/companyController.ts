@@ -403,25 +403,40 @@ export async function getCompanyBySlug(req: any, res: any) {
       );
       company = (cpRows as any[])[0];
       if (company) {
-        // Fetch project images for portfolio display
+        // Fetch projects with title/metadata so each project becomes its own category
         const [projRows] = await pool.execute(
-          `SELECT images FROM projects WHERE company_profile_id = ? AND status = 'published' AND deleted_at IS NULL ORDER BY created_at DESC`,
+          `SELECT id, title, description, style, location, year, images
+           FROM projects WHERE company_profile_id = ? AND status = 'published' AND deleted_at IS NULL
+           ORDER BY created_at DESC`,
           [company.id]
         );
-        const allImages: string[] = [];
+        // Build object-format portfolio_images: { projectTitle: { items, description, year, location } }
+        // This lets extractPortfolioData preserve per-project structure instead of collapsing to one "Projects" group
+        const categoriesObj: Record<string, any> = {};
         for (const row of projRows as any[]) {
           const parsed = typeof row.images === 'string' ? JSON.parse(row.images) : row.images;
+          const items: { url: string; title: string }[] = [];
           if (Array.isArray(parsed)) {
             for (const img of parsed) {
               const url = typeof img === 'string' ? img : img?.url;
-              if (url) allImages.push(url);
+              if (url) items.push({ url, title: '' });
             }
+          }
+          if (items.length > 0) {
+            const key = String(row.title || `Project ${row.id}`);
+            categoriesObj[key] = {
+              items,
+              description: row.description || '',
+              year: row.year ? parseInt(String(row.year), 10) : null,
+              location: row.location || '',
+              sourceUrl: '',
+            };
           }
         }
         // Normalize to same shape as uae_companies
         company.owner_user_id = null;
         company.is_signed = !!(company.is_signed);
-        company.portfolio_images = JSON.stringify(allImages);
+        company.portfolio_images = JSON.stringify(categoriesObj);
         company.portfolio_categories = null;
         // Hide contact info for registered companies — business rule:
         // registered companies pay for leads, showing contact lets homeowners bypass platform
