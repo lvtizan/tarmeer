@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
 import {
-  ArrowLeft, MapPin, Phone, Globe, Store, FileText,
+  ArrowLeft, Phone, Globe, FileText,
   Download, ExternalLink, Package, Layers, FolderOpen,
-  MessageCircle, Info,
+  MessageCircle,
 } from 'lucide-react';
 import InquiryForm from '../components/InquiryForm';
 
@@ -54,8 +54,6 @@ interface Catalog {
   created_at: string;
 }
 
-type TabKey = 'products' | 'projects' | 'catalogs';
-
 export default function SupplierDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -66,7 +64,15 @@ export default function SupplierDetailPage() {
   const [loading, setLoading] = useState(true);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [productCatFilter, setProductCatFilter] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>('products');
+
+  const productsRef = useRef<HTMLDivElement>(null);
+  const projectsRef = useRef<HTMLDivElement>(null);
+  const catalogsRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState<'products' | 'projects' | 'catalogs'>('products');
+
+  const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -83,14 +89,32 @@ export default function SupplierDetailPage() {
         setProducts(prods);
         setCatalogs(cats);
         setProjects(projs);
-        // Default tab: products if available, then projects, then catalogs
-        if (prods.length > 0) setActiveTab('products');
-        else if (projs.length > 0) setActiveTab('projects');
-        else setActiveTab('catalogs');
       })
       .catch(() => setSupplier(null))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!supplier) return;
+    const sections = [
+      { ref: productsRef, key: 'products' as const },
+      { ref: projectsRef, key: 'projects' as const },
+      { ref: catalogsRef, key: 'catalogs' as const },
+    ];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const found = sections.find(s => s.ref.current === entry.target);
+            if (found) setActiveSection(found.key);
+          }
+        }
+      },
+      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+    );
+    sections.forEach(s => { if (s.ref.current) observer.observe(s.ref.current); });
+    return () => observer.disconnect();
+  }, [supplier]);
 
   const handleBack = () => {
     if (window.history.length > 1) navigate(-1);
@@ -129,12 +153,6 @@ export default function SupplierDetailPage() {
 
   // Product categories for sub-filter
   const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
-
-  const tabs: { key: TabKey; label: string; icon: React.ReactNode; count: number }[] = [
-    { key: 'products', label: 'Products', icon: <Package className="w-4 h-4" />, count: products.length },
-    { key: 'projects', label: 'Projects', icon: <Layers className="w-4 h-4" />, count: projects.length },
-    { key: 'catalogs', label: 'Catalogs', icon: <FolderOpen className="w-4 h-4" />, count: catalogs.length },
-  ];
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
@@ -285,282 +303,177 @@ export default function SupplierDetailPage() {
         </PageContainer>
       </div>
 
-      {/* ========== Tab Navigation ========== */}
-      <div className="border-b border-stone-200 bg-white sticky top-0 z-20">
-        <PageContainer>
-          <div className="flex gap-1 -mb-px overflow-x-auto">
-            {tabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${
-                  activeTab === tab.key
-                    ? 'border-[#b8864a] text-[#b8864a]'
-                    : 'border-transparent text-stone-500 hover:text-[#2c2c2c] hover:border-stone-300'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-                {tab.count > 0 && (
-                  <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                    activeTab === tab.key ? 'bg-[#b8864a]/10 text-[#b8864a]' : 'bg-stone-100 text-stone-400'
-                  }`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </PageContainer>
-      </div>
-
       {/* ========== Main Content + Sidebar ========== */}
       <PageContainer className="py-8 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Content area */}
-          <div className="lg:col-span-2">
-            {/* Products Tab */}
-            {activeTab === 'products' && (
-              <div>
-                {products.length > 0 ? (
-                  <>
-                    {/* Category filter pills */}
-                    {productCategories.length > 1 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <button
-                          onClick={() => setProductCatFilter(null)}
-                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
-                        >All</button>
-                        {productCategories.map(cat => (
-                          <button
-                            key={cat}
-                            onClick={() => setProductCatFilter(cat)}
-                            className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
-                          >{cat}</button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
-                        <div key={p.id} className="group cursor-pointer" onClick={() => setLightboxIdx(products.indexOf(p))}>
-                          <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
-                            <img
-                              src={p.image_url}
-                              alt={p.title || ''}
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                            />
-                          </div>
-                          {p.category && (
-                            <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>
-                          )}
-                          {p.title && (
-                            <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>
-                          )}
-                          {p.description && (
-                            <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>
-                          )}
-                        </div>
+          <div className="lg:col-span-2 space-y-10">
+            {/* Products section */}
+            <div ref={productsRef} id="section-products">
+              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
+                <Package className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+                Products
+                {products.length > 0 && <span className="text-sm font-normal text-stone-400">({products.length})</span>}
+              </h2>
+              {products.length > 0 ? (
+                <>
+                  {productCategories.length > 1 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <button onClick={() => setProductCatFilter(null)}
+                        className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>All</button>
+                      {productCategories.map(cat => (
+                        <button key={cat} onClick={() => setProductCatFilter(cat)}
+                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{cat}</button>
                       ))}
                     </div>
-                  </>
-                ) : (
-                  <EmptyState
-                    icon={<Package className="w-8 h-8 text-stone-300" />}
-                    title="No products yet"
-                    description="This supplier hasn't uploaded any products. Check back later or send them an inquiry."
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Projects Tab */}
-            {activeTab === 'projects' && (
-              <div>
-                {projects.length > 0 ? (
-                  <div className="space-y-6">
-                    {projects.map(proj => {
-                      const imgs = Array.isArray(proj.images) ? proj.images : [];
-                      const materials = Array.isArray(proj.materials) ? proj.materials : [];
-                      return (
-                        <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-                          {imgs.length > 0 && (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                              {imgs.map((img, i) => (
-                                <img key={i} src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
-                              ))}
-                            </div>
-                          )}
-                          <div className="p-5">
-                            <h3 className="text-[15px] font-semibold text-[#2c2c2c]">{proj.title}</h3>
-                            {proj.description && <p className="text-sm text-stone-500 mt-1 leading-relaxed">{proj.description}</p>}
-                            <div className="flex gap-4 mt-2 text-xs text-stone-400">
-                              {proj.location && <span>{proj.location}</span>}
-                              {proj.year && <span>{proj.year}</span>}
-                            </div>
-
-                            {materials.length > 0 && (
-                              <div className="mt-5 pt-4 border-t border-stone-100">
-                                <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-3">
-                                  Materials Used In This Project
-                                </p>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                  {materials.slice(0, 6).map((m) => (
-                                    <div key={m.id} className="rounded-xl border border-stone-200 overflow-hidden bg-stone-50/40">
-                                      <div className="aspect-[4/3] bg-stone-100">
-                                        <img src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
-                                      </div>
-                                      <div className="p-2.5">
-                                        {m.category && (
-                                          <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>
-                                        )}
-                                        <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
-                                        {m.description && (
-                                          <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                  )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
+                      <div key={p.id} className="group cursor-pointer" onClick={() => setLightboxIdx(products.indexOf(p))}>
+                        <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
+                          <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={<Layers className="w-8 h-8 text-stone-300" />}
-                    title="No projects yet"
-                    description="This supplier hasn't uploaded any project photos yet."
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Catalogs Tab */}
-            {activeTab === 'catalogs' && (
-              <div>
-                {catalogs.length > 0 ? (
-                  <div className="space-y-3">
-                    {catalogs.map(c => (
-                      <a
-                        key={c.id}
-                        href={c.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
-                          <FileText className="w-6 h-6 text-red-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
-                          {c.file_size && (
-                            <p className="text-xs text-[#6b6b6b] mt-0.5">
-                              {c.file_size > 1048576
-                                ? `${(c.file_size / 1048576).toFixed(1)} MB`
-                                : `${(c.file_size / 1024).toFixed(0)} KB`}
-                            </p>
-                          )}
-                        </div>
-                        <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-50 text-sm font-medium text-[#2c2c2c] group-hover:bg-[#b8864a] group-hover:text-white transition">
-                          <Download className="w-4 h-4" /> Download
-                        </div>
-                      </a>
+                        {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
+                        {p.title && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>}
+                        {p.description && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>}
+                      </div>
                     ))}
                   </div>
-                ) : (
-                  <EmptyState
-                    icon={<FolderOpen className="w-8 h-8 text-stone-300" />}
-                    title="No catalogs uploaded yet"
-                    description="This supplier hasn't uploaded any catalogs or brochures. Send them an inquiry to request one."
-                  />
-                )}
-              </div>
-            )}
+                </>
+              ) : (
+                <EmptyState icon={<Package className="w-8 h-8 text-stone-300" />} title="No products yet" description="This supplier hasn't uploaded any products." />
+              )}
+            </div>
+
+            {/* Projects section */}
+            <div ref={projectsRef} id="section-projects">
+              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
+                <Layers className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+                Projects
+                {projects.length > 0 && <span className="text-sm font-normal text-stone-400">({projects.length})</span>}
+              </h2>
+              {projects.length > 0 ? (
+                <div className="space-y-6">
+                  {projects.map(proj => {
+                    const imgs = Array.isArray(proj.images) ? proj.images : [];
+                    const materials = Array.isArray(proj.materials) ? proj.materials : [];
+                    return (
+                      <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+                        {imgs.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                            {imgs.map((img, i) => (
+                              <img key={i} src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+                            ))}
+                          </div>
+                        )}
+                        <div className="p-5">
+                          <h3 className="text-[15px] font-semibold text-[#2c2c2c]">{proj.title}</h3>
+                          {proj.description && <p className="text-sm text-stone-500 mt-1 leading-relaxed">{proj.description}</p>}
+                          <div className="flex gap-4 mt-2 text-xs text-stone-400">
+                            {proj.location && <span>{proj.location}</span>}
+                            {proj.year && <span>{proj.year}</span>}
+                          </div>
+                          {materials.length > 0 && (
+                            <div className="mt-5 pt-4 border-t border-stone-100">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-3">Materials Used In This Project</p>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {materials.slice(0, 6).map((m) => (
+                                  <div key={m.id} className="rounded-2xl border border-stone-200 overflow-hidden bg-stone-50/40">
+                                    <div className="aspect-[4/3] bg-stone-100">
+                                      <img src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                                    </div>
+                                    <div className="p-2.5">
+                                      {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>}
+                                      <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
+                                      {m.description && <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState icon={<Layers className="w-8 h-8 text-stone-300" />} title="No projects yet" description="This supplier hasn't uploaded any project photos yet." />
+              )}
+            </div>
+
+            {/* Catalogs section */}
+            <div ref={catalogsRef} id="section-catalogs">
+              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
+                <FolderOpen className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+                Catalogs
+                {catalogs.length > 0 && <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>}
+              </h2>
+              {catalogs.length > 0 ? (
+                <div className="space-y-3">
+                  {catalogs.map(c => (
+                    <a key={c.id} href={c.file_url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
+                      <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
+                        <FileText className="w-6 h-6 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
+                        {c.file_size && (
+                          <p className="text-xs text-[#6b6b6b] mt-0.5">
+                            {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-stone-50 text-sm font-medium text-[#2c2c2c] group-hover:bg-[#b8864a] group-hover:text-white transition">
+                        <Download className="w-4 h-4" /> Download
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState icon={<FolderOpen className="w-8 h-8 text-stone-300" />} title="No catalogs uploaded yet" description="This supplier hasn't uploaded any catalogs." />
+              )}
+            </div>
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-[60px] space-y-5">
+            <div className="sticky top-6 space-y-5">
+              {/* Section Nav */}
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
+                <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">On This Page</h4>
+                <div className="space-y-1">
+                  {[
+                    { key: 'products' as const, label: 'Products', icon: Package, count: products.length },
+                    { key: 'projects' as const, label: 'Projects', icon: Layers, count: projects.length },
+                    { key: 'catalogs' as const, label: 'Catalogs', icon: FolderOpen, count: catalogs.length },
+                  ].map(({ key, label, icon: Icon, count }) => (
+                    <button
+                      key={key}
+                      onClick={() => scrollTo(key === 'products' ? productsRef : key === 'projects' ? projectsRef : catalogsRef)}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${
+                        activeSection === key
+                          ? 'bg-[#f5f0e8] text-[#1c1917] font-medium'
+                          : 'text-stone-500 hover:bg-stone-50'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Icon className="w-4 h-4" style={{ color: activeSection === key ? 'var(--color-tarmeer-primary)' : undefined }} />
+                        {label}
+                      </span>
+                      {count > 0 && (
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                          activeSection === key ? 'bg-[#b8864a]/10 text-[#b8864a]' : 'bg-stone-100 text-stone-400'
+                        }`}>{count}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Inquiry Form */}
               <InquiryForm recipientName={supplier.company_name} companyId={supplier.id} />
-
-              {/* Catalogs quick download (sidebar) */}
-              {catalogs.length > 0 && activeTab !== 'catalogs' && (
-                <div className="bg-white rounded-2xl border border-stone-200 p-5">
-                  <h3 className="text-sm font-semibold text-[#2c2c2c] mb-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#b8864a]" /> Catalogs
-                  </h3>
-                  <div className="space-y-2">
-                    {catalogs.slice(0, 3).map(c => (
-                      <a
-                        key={c.id}
-                        href={c.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-stone-50 transition group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                          <FileText className="w-4 h-4 text-red-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#2c2c2c] truncate">{c.title}</p>
-                          {c.file_size && (
-                            <p className="text-[11px] text-[#6b6b6b]">
-                              {c.file_size > 1048576
-                                ? `${(c.file_size / 1048576).toFixed(1)} MB`
-                                : `${(c.file_size / 1024).toFixed(0)} KB`}
-                            </p>
-                          )}
-                        </div>
-                        <Download className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#b8864a] transition" />
-                      </a>
-                    ))}
-                  </div>
-                  {catalogs.length > 3 && (
-                    <button
-                      onClick={() => setActiveTab('catalogs')}
-                      className="w-full mt-3 text-sm text-[#b8864a] hover:underline text-center"
-                    >
-                      View all {catalogs.length} catalogs
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* About card (sidebar) */}
-              {supplier.description && (
-                <div className="bg-white rounded-2xl border border-stone-200 p-5">
-                  <h3 className="text-sm font-semibold text-[#2c2c2c] mb-3 flex items-center gap-2">
-                    <Info className="w-4 h-4 text-[#b8864a]" /> About
-                  </h3>
-                  <p className="text-sm text-[#6b6b6b] leading-relaxed line-clamp-6 whitespace-pre-line">
-                    {supplier.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Physical store card */}
-              {!!supplier.has_physical_store && supplier.store_address && (
-                <div className="bg-white rounded-2xl border border-stone-200 p-5">
-                  <h3 className="text-sm font-semibold text-[#2c2c2c] mb-3 flex items-center gap-2">
-                    <Store className="w-4 h-4 text-[#b8864a]" /> Physical Store
-                  </h3>
-                  <p className="text-sm text-[#6b6b6b] leading-relaxed">{supplier.store_address}</p>
-                  {supplier.google_maps_url && (
-                    <a
-                      href={supplier.google_maps_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a0743e] transition"
-                    >
-                      <MapPin className="w-3.5 h-3.5" /> Open in Maps
-                    </a>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>

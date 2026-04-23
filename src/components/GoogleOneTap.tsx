@@ -33,7 +33,12 @@ export default function GoogleOneTap() {
     // SDK 已加载过，只需重新 prompt（不重复 initialize）
     if (gsiInitialized) {
       if ((window as any).google?.accounts?.id) {
-        (window as any).google.accounts.id.prompt();
+        (window as any).google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            // FedCM unavailable or user dismissed — silence the error
+            return;
+          }
+        });
       }
       return;
     }
@@ -59,7 +64,12 @@ export default function GoogleOneTap() {
         // 保持默认（false），GSI 自动选择最合适的弹窗机制
       });
 
-      (window as any).google.accounts.id.prompt();
+      (window as any).google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // FedCM unavailable or user dismissed — silence the error
+          return;
+        }
+      });
     };
 
     document.head.appendChild(script);
