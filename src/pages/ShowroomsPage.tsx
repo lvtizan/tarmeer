@@ -159,8 +159,36 @@ export default function ShowroomsPage() {
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta property="og:url" content="https://www.tarmeer.com/materials" />
         <meta property="og:type" content="website" />
-        <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.tarmeer.com/materials" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Material Suppliers in UAE — Tarmeer',
+          description: 'Verified building material suppliers from China and Dubai for renovation projects in the UAE.',
+          url: 'https://www.tarmeer.com/materials',
+          publisher: {
+            '@type': 'Organization',
+            name: 'Tarmeer',
+            url: 'https://www.tarmeer.com',
+            logo: { '@type': 'ImageObject', url: 'https://www.tarmeer.com/images/tarmeer_logo.svg' },
+          },
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Material Suppliers in UAE',
+          numberOfItems: suppliers.length,
+          itemListElement: suppliers.slice(0, 20).map((s, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            item: {
+              '@type': 'Organization',
+              name: s.company_name,
+              url: `https://www.tarmeer.com/materials/suppliers/${s.slug}`,
+            },
+          })),
+        })}</script>
       </Helmet>
 
       {/* Header */}
