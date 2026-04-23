@@ -38,6 +38,30 @@ interface Supplier {
   contact_phone: string | null;
 }
 
+function FilterOption({
+  selected, onClick, children,
+}: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-all ${
+        selected
+          ? 'bg-[#f5f0e8] border border-[#d4c4a8] text-[#1c1917]'
+          : 'text-stone-500 hover:bg-stone-50'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+          selected ? 'border-[#b8864a] bg-white' : 'border-stone-300'
+        }`}>
+          {selected && <span className="w-2 h-2 rounded-sm bg-[#b8864a] block" />}
+        </div>
+        {children}
+      </div>
+    </button>
+  );
+}
+
 export default function ShowroomsPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,8 +130,59 @@ export default function ShowroomsPage() {
         {/* Left Sidebar */}
         <aside className="w-60 flex-shrink-0 hidden lg:block">
           <div className="lg:sticky lg:top-24">
-            {/* Filters — filled in Task 2 */}
-            {/* Showroom infobox — filled in Task 2 */}
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-6">
+              {/* Origin */}
+              <div>
+                <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Origin</h4>
+                <div className="space-y-1">
+                  <FilterOption selected={originFilter === ''} onClick={() => setOriginFilter('')}>All Origins</FilterOption>
+                  <FilterOption selected={originFilter === 'china'} onClick={() => setOriginFilter('china')}>🇨🇳 China</FilterOption>
+                  <FilterOption selected={originFilter === 'dubai'} onClick={() => setOriginFilter('dubai')}>🇦🇪 Dubai</FilterOption>
+                </div>
+              </div>
+
+              <hr className="border-stone-100" />
+
+              {/* Category */}
+              <div>
+                <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Category</h4>
+                <div className="space-y-1">
+                  {CATEGORY_OPTIONS.map(opt => (
+                    <FilterOption
+                      key={opt.value}
+                      selected={categoryFilter === opt.value}
+                      onClick={() => setCategoryFilter(opt.value)}
+                    >
+                      {opt.label}
+                    </FilterOption>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Showroom Infobox */}
+            <div className="mt-4 bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-3">
+              <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider">Our Showroom</h4>
+              <div className="space-y-2 text-xs text-stone-500">
+                <span className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+                  Industrial Area 2, Sharjah
+                </span>
+                <span className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+                  9 AM – 8 PM (Sat–Thu)
+                </span>
+              </div>
+              <a
+                href={GOOGLE_MAPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
+                style={{ color: 'var(--color-tarmeer-primary)' }}
+              >
+                <MapPin className="w-3 h-3" /> View on Map
+              </a>
+            </div>
           </div>
         </aside>
 
