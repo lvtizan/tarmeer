@@ -78,6 +78,12 @@ export async function getPageMeta(pathname: string): Promise<PageMeta | null> {
       canonical: `${BASE_URL}/for-homeowners`,
       ogImage: DEFAULT_IMAGE,
     },
+    '/materials': {
+      title: 'Material Suppliers in UAE — Furniture, Stone, Lighting | Tarmeer',
+      description: 'Browse verified building material suppliers from China and Dubai. Furniture, marble, lighting, flooring and more for UAE renovation projects.',
+      canonical: `${BASE_URL}/materials`,
+      ogImage: DEFAULT_IMAGE,
+    },
   };
 
   if (staticMeta[pathname]) return staticMeta[pathname];
@@ -160,6 +166,39 @@ export async function getPageMeta(pathname: string): Promise<PageMeta | null> {
           url: `${BASE_URL}/companies/${companySlug}/${projectSlug}`,
           image,
           author: { '@type': 'Organization', name: company },
+        },
+      };
+    }
+  }
+
+  // Supplier detail: /materials/suppliers/:slug
+  const supplierMatch = pathname.match(/^\/materials\/suppliers\/([a-z0-9-]+)$/);
+  if (supplierMatch) {
+    const slug = supplierMatch[1];
+    const [rows] = await pool.execute(
+      "SELECT company_name, description, logo_url, origin, store_address, has_physical_store FROM supplier_profiles WHERE slug = ? AND status = 'active' LIMIT 1",
+      [slug]
+    );
+    const sup = (rows as any[])[0];
+    if (sup) {
+      const name = sup.company_name || slug;
+      const desc = (sup.description || '').slice(0, 160) || `${name} — building material supplier in UAE`;
+      const image = sup.logo_url ? `${BASE_URL}${sup.logo_url}` : DEFAULT_IMAGE;
+      return {
+        title: `${name} — Material Supplier UAE | Tarmeer`,
+        description: desc,
+        canonical: `${BASE_URL}/materials/suppliers/${slug}`,
+        ogImage: image,
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': sup.has_physical_store ? 'LocalBusiness' : 'Organization',
+          name,
+          description: desc,
+          url: `${BASE_URL}/materials/suppliers/${slug}`,
+          image,
+          ...(sup.store_address && {
+            address: { '@type': 'PostalAddress', streetAddress: sup.store_address, addressCountry: 'AE' },
+          }),
         },
       };
     }
