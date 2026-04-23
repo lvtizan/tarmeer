@@ -55,7 +55,8 @@ export default function GoogleOneTap() {
         cancel_on_tap_outside: true,
         context: 'signin',
         itp_support: true,
-        use_fedcm_for_prompt: true, // opt-in FedCM，消除 deprecation 警告
+        // use_fedcm_for_prompt 不设置 true：FedCM 被用户禁用时会 NetworkError 且无回退
+        // 保持默认（false），GSI 自动选择最合适的弹窗机制
       });
 
       (window as any).google.accounts.id.prompt();
