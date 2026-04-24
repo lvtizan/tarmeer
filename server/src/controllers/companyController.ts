@@ -448,7 +448,6 @@ export async function getCompanyBySlug(req: any, res: any) {
           }
         }
 
-        company.owner_user_id = null;
         company.is_signed = !!(company.is_signed);
         company.portfolio_images = JSON.stringify(categoriesObj);
         company.portfolio_categories = null;

@@ -140,6 +140,101 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 
 ---
 
+## Frozen Contracts (改前必须获得用户明确许可)
+
+以下行为是已定好的功能规范。**任何涉及这些文件的改动，必须先确认不会破坏对应契约，否则需要用户明确指示"这次允许改"。**
+
+改完后必须运行：`node scripts/harness/test-frozen-contracts.mjs`
+
+---
+
+### A. API 契约
+
+#### A1. 目录装企详情 `GET /api/companies/:slug`
+- 文件：`server/src/controllers/companyController.ts`
+- **注册装企分支（owner_user_id 有值）必须返回**：
+  - `is_claimed: true`
+  - `projects[]` 非空数组，每项含 `title`、`slug`、`images[]`
+- `sanitizePublicCompany()` 中 `is_claimed = !!(owner_user_id)`，**不得在响应路径中将 owner_user_id 设为 null**
+- 文件：`server/src/lib/publicCompaniesSerialization.ts`
+
+#### A2. 注册装企详情 `GET /api/public/companies/:id`
+- 文件：`server/src/controllers/publicCompanyController.ts`
+- 必须返回：`contact_person: null`、`phone: null`、`website: null`（注册装企付费获客，联系方式不公开）
+- 必须返回：`is_claimed: true`、`is_registered: true`
+
+#### A3. 注册装企列表 `GET /api/public/companies`
+- 文件：`server/src/controllers/publicCompanyController.ts`
+- `phone: null`、`contact_person: null`、`website: null` — 同 A2
+
+#### A4. 目录装企（uae_companies）
+- 文件：`server/src/lib/publicCompaniesSerialization.ts`
+- `sanitizePublicCompany()` 必须正常返回 `phone`、`email`（目录公司联系方式公开）
+- `is_claimed` 基于 `owner_user_id` 计算，不得硬编码
+
+#### A5. CRM 推送隔离
+- 文件：`server/src/controllers/companyLeadController.ts`
+- 装企线索 → 只能调用 `pushCompanyLeadToCRM()`（company tenant）
+- 业主线索 → 只能调用 `pushLeadToCRM()`（homeowner tenant）
+- mirror inquiry → 只打 DB 标记（`crm_sync_status = 'synced'`），**绝不调用任何 CRM 推送函数**
+- 两个函数的 tenantId 不得混用
+
+---
+
+### B. 前端 UI 契约
+
+#### B1. 公司详情页 — 项目展示触发条件
+- 文件：`src/pages/CompanyDetailPage.tsx` 约 line 480
+- 触发条件：`company.isClaimed && company.projects && company.projects.length > 0`
+- `portfolioMode` 初始值必须是 `'project'`（line 56）
+- **不得删除或弱化这个条件**
+
+#### B2. 公司详情页 — 项目卡片展示样式
+- 文件：`src/pages/CompanyDetailPage.tsx`
+- 布局：2 列网格（`grid-cols-1 sm:grid-cols-2`），卡片为 16:9 比例（`aspect-video`）
+- 卡片内容：封面图 + 项目标题 + 地点（或描述摘要）+ 多图时显示图片数量角标
+- 当 `portfolioMode === 'project'` 且 `hasProjectCategories` 为 true 时，使用项目分类视图
+- 否则退回到 `portfolioMode === 'style'` 的 MasonryGallery 展示
+
+#### B3. 公司详情页 — 图片点击行为
+- 文件：`src/pages/CompanyDetailPage.tsx` 约 line 153
+- isClaimed + projects 有数据时：点击图片 → 跳转 `/companies/${id}/${projectSlug}`
+- 其他情况：点击图片 → 打开 Lightbox
+
+#### B4. 公司详情页 — 联系方式展示
+- 注册装企（`isClaimed = true`）：不显示 phone / email / website / contact_person
+- 目录装企（`isClaimed = false`）：正常显示
+
+#### B5. 公司列表数据合并顺序
+- 文件：`src/lib/publicApi.ts`，函数 `fetchPublicCompanies()`
+- 目录公司（`/api/companies`）排在前
+- 注册装企（`/api/public/companies`）排在后
+- 按公司名（toLowerCase）去重，目录公司优先保留
+
+#### B6. Google One Tap 排除路径
+- 文件：`src/components/GoogleOneTap.tsx`
+- 不弹窗的路径前缀（`EXCLUDED_PATHS`）：`/auth`、`/login`、`/register`、`/designer/`、`/for-companies`、`/join`、`/admin`、`/verify-email`
+- 不得缩减此列表
+
+---
+
+### C. 基础设施契约
+
+#### C1. CORS 生产白名单
+- 文件：`server/src/lib/corsOrigins.ts`
+- 当前白名单：`https://www.tarmeer.com`、`https://tarmeer.com`、`https://admin.tarmeer.com`
+- 新增子域名必须同步添加，否则跨域请求被拦截
+
+#### C2. DB 字段写入截断
+- 文件：`server/src/controllers/companyLeadController.ts`
+- 所有字符串字段写入前必须 slice：`sourcePage` ≤ 500，`companyName` ≤ 200，`contactName` ≤ 100，`city` ≤ 100，`companyType` ≤ 100，`scopeOfBusiness` ≤ 500
+
+#### C3. 级联删除顺序
+- 装企删除顺序：`projects` → `designers` → `articles` → `company_applications` → `notifications` → `design_inquiries` → `company_profiles` → `users`
+- 业主删除顺序：`notifications` → `design_inquiries` → `homeowner_profiles` → `users`
+
+---
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill
