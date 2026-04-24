@@ -5,6 +5,7 @@ import * as profile from '../controllers/supplierProfileController';
 import * as products from '../controllers/supplierProductController';
 import * as catalogs from '../controllers/supplierCatalogController';
 import * as leads from '../controllers/supplierLeadController';
+import * as projects from '../controllers/supplierProjectController';
 
 const router = Router();
 
@@ -30,5 +31,8 @@ router.delete('/me/products/:id', authenticateSupplier, products.deleteProduct);
 router.put('/me/products-reorder', authenticateSupplier, products.reorderProducts);
 router.post('/me/catalogs', authenticateSupplier, catalogs.uploadCatalog);
 router.delete('/me/catalogs/:id', authenticateSupplier, catalogs.deleteCatalog);
+router.get('/me/projects', authenticateSupplier, projects.listMyProjects);
+router.post('/me/projects', authenticateSupplier, projects.addProject);
+router.delete('/me/projects/:id', authenticateSupplier, projects.deleteProject);
 
 export default router;

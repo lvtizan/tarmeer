@@ -39,7 +39,11 @@ const HomePage = lazyRetry(() => import('./pages/HomePage'));
 const ShowroomsPage = lazyRetry(() => import('./pages/ShowroomsPage'));
 const SupplierDetailPage = lazyRetry(() => import('./pages/SupplierDetailPage'));
 const SupplierAuthPage = lazyRetry(() => import('./pages/supplier/SupplierAuthPage'));
+const SupplierLayout = lazyRetry(() => import('./components/supplier/SupplierLayout'));
 const SupplierDashboardPage = lazyRetry(() => import('./pages/supplier/SupplierDashboardPage'));
+const SupplierProductsPage = lazyRetry(() => import('./pages/supplier/SupplierProductsPage'));
+const SupplierProjectsPage = lazyRetry(() => import('./pages/supplier/SupplierProjectsPage'));
+const SupplierCatalogsPage = lazyRetry(() => import('./pages/supplier/SupplierCatalogsPage'));
 const AuthPage = lazyRetry(() => import('./pages/HomeownerAuthPage'));
 const AuthCallbackPage = lazyRetry(() => import('./pages/AuthCallbackPage'));
 const VerifyEmailPage = lazyRetry(() => import('./pages/VerifyEmailPage'));
@@ -256,7 +260,13 @@ function App() {
                 <Route path="/materials/suppliers/:slug" element={<SupplierDetailPage />} />
                 <Route path="/supplier/auth" element={<SupplierAuthPage />} />
                 <Route path="/supplier/auth/callback" element={<SupplierAuthPage />} />
-                <Route path="/supplier/dashboard" element={<SupplierDashboardPage />} />
+                <Route path="/supplier" element={<SupplierLayout />}>
+                  <Route index element={<Navigate to="dashboard" replace />} />
+                  <Route path="dashboard" element={<SupplierDashboardPage />} />
+                  <Route path="products" element={<SupplierProductsPage />} />
+                  <Route path="projects" element={<SupplierProjectsPage />} />
+                  <Route path="catalogs" element={<SupplierCatalogsPage />} />
+                </Route>
                 <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
                 <Route path="/services/house-exterior" element={<HouseExteriorDesignPage />} />

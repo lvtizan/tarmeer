@@ -1,0 +1,194 @@
+import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { Plus, Trash2, FileText, Download, FolderOpen, X } from 'lucide-react';
+
+const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
+function getToken() { return localStorage.getItem('supplier_token'); }
+function authHeaders() { return { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }; }
+
+const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
+const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
+
+export default function SupplierCatalogsPage() {
+  const [catalogs, setCatalogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [title, setTitle] = useState('');
+  const [fileUrl, setFileUrl] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [tried, setTried] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
+      .then(r => r.json())
+      .then(data => {
+        const slug = data.profile?.slug;
+        if (!slug) { setLoading(false); return; }
+        return fetch(`${API_BASE}/suppliers/detail/${slug}/catalogs`).then(r => r.json());
+      })
+      .then(data => { if (data?.catalogs) setCatalogs(data.catalogs); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleAdd = async () => {
+    setTried(true);
+    if (!title.trim() || !fileUrl.trim()) { setMsg('Title and PDF URL are required.'); return; }
+    setSaving(true); setMsg('');
+    try {
+      const res = await fetch(`${API_BASE}/suppliers/me/catalogs`, {
+        method: 'POST',
+        headers: authHeaders() as any,
+        body: JSON.stringify({ title: title.trim(), file_url: fileUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setCatalogs(prev => [...prev, data.catalog]);
+      setTitle(''); setFileUrl(''); setAdding(false); setTried(false);
+    } catch (err: any) {
+      setMsg(err.message || 'Failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    await fetch(`${API_BASE}/suppliers/me/catalogs/${id}`, { method: 'DELETE', headers: authHeaders() as any });
+    setCatalogs(prev => prev.filter(c => c.id !== id));
+  };
+
+  const cancelAdd = () => { setAdding(false); setTitle(''); setFileUrl(''); setMsg(''); setTried(false); };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <>
+      <Helmet><title>Catalogs — Supplier Dashboard | Tarmeer</title></Helmet>
+
+      <div className="max-w-2xl space-y-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-[#2c2c2c]">Catalogs & Brochures</h1>
+            <p className="text-sm text-stone-500 mt-1">{catalogs.length} file{catalogs.length !== 1 ? 's' : ''} uploaded</p>
+          </div>
+          {!adding && (
+            <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Add Catalog
+            </button>
+          )}
+        </div>
+
+        {/* Add form */}
+        {adding && (
+          <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[15px] font-semibold text-[#2c2c2c]">New Catalog</h2>
+              <button onClick={cancelAdd} className="text-stone-400 hover:text-stone-600 transition p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div>
+              <label className={labelCls}>Catalog Title *</label>
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. Product Catalogue 2024"
+                className={`${inputCls} ${tried && !title.trim() ? '!border-red-400' : ''}`}
+              />
+              {tried && !title.trim() && <p className="text-xs text-red-500 mt-1">Title is required</p>}
+            </div>
+
+            <div>
+              <label className={labelCls}>PDF URL *</label>
+              <input
+                type="url"
+                value={fileUrl}
+                onChange={e => setFileUrl(e.target.value)}
+                placeholder="https://..."
+                className={`${inputCls} ${tried && !fileUrl.trim() ? '!border-red-400' : ''}`}
+              />
+              {tried && !fileUrl.trim() && <p className="text-xs text-red-500 mt-1">PDF URL is required</p>}
+              <p className="text-xs text-stone-400 mt-1">Upload your PDF to Google Drive, Dropbox, or similar, then paste the public link.</p>
+            </div>
+
+            {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-2xl">{msg}</p>}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleAdd}
+                disabled={saving}
+                className="btn-primary flex items-center gap-2 disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Add Catalog'}
+              </button>
+              <button
+                onClick={cancelAdd}
+                className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Catalog list */}
+        {catalogs.length > 0 ? (
+          <div className="space-y-3">
+            {catalogs.map(c => (
+              <div key={c.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 group">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+                  <FileText className="w-6 h-6 text-red-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
+                  {c.file_size && (
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      {c.file_size > 1048576
+                        ? `${(c.file_size / 1048576).toFixed(1)} MB`
+                        : `${(c.file_size / 1024).toFixed(0)} KB`}
+                    </p>
+                  )}
+                </div>
+                <a
+                  href={c.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-sm font-medium text-stone-600 hover:bg-[#b8864a] hover:text-white hover:border-[#b8864a] transition"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">View</span>
+                </a>
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  className="shrink-0 w-9 h-9 rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition opacity-0 group-hover:opacity-100"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : !adding ? (
+          <div className="bg-white rounded-2xl border border-stone-200 flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mb-4">
+              <FolderOpen className="w-8 h-8 text-stone-300" />
+            </div>
+            <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">No catalogs yet</h3>
+            <p className="text-sm text-stone-500 mb-5">Upload product catalogues and brochures for buyers to download.</p>
+            <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Add Catalog
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+}

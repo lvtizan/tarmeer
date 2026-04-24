@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import PageContainer from '../components/PageContainer';
 import {
-  ArrowLeft, Phone, Globe, FileText,
-  Download, ExternalLink, Package, Layers, FolderOpen,
-  MessageCircle,
+  ArrowLeft, ArrowUp, FileText,
+  Download, Package, Layers, FolderOpen, MapPin, ExternalLink,
+  Maximize2, Banknote,
 } from 'lucide-react';
-import InquiryForm from '../components/InquiryForm';
+import SmartImage from '../components/ui/SmartImage';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -22,9 +22,6 @@ interface SupplierProfile {
   has_physical_store: number;
   store_address: string | null;
   google_maps_url: string | null;
-  contact_phone: string | null;
-  whatsapp: string | null;
-  website: string | null;
 }
 
 interface Product {
@@ -42,6 +39,8 @@ interface Project {
   description: string | null;
   location: string | null;
   year: string | null;
+  area_sqm: number | null;
+  budget: string | null;
   images: string[] | string | null;
   materials?: Product[];
 }
@@ -62,8 +61,19 @@ export default function SupplierDetailPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    images: string[];
+    labels?: (string | null)[];
+    idx: number;
+    projectMeta?: { title: string; location?: string | null; area_sqm?: number | null; budget?: string | null; year?: string | null };
+  } | null>(null);
+  const openLightbox = (images: string[], idx: number, labels?: (string | null)[]) =>
+    setLightbox({ images, labels, idx });
+  const openProjectLightbox = (proj: Project, idx: number) =>
+    setLightbox({ images: Array.isArray(proj.images) ? proj.images : [], idx, projectMeta: { title: proj.title, location: proj.location, area_sqm: proj.area_sqm, budget: proj.budget, year: proj.year } });
+  const closeLightbox = () => setLightbox(null);
   const [productCatFilter, setProductCatFilter] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
 
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
@@ -151,8 +161,13 @@ export default function SupplierDetailPage() {
   if (projects.length > 0) statItems.push({ label: 'Projects', count: projects.length });
   if (catalogs.length > 0) statItems.push({ label: 'Catalogs', count: catalogs.length });
 
-  // Product categories for sub-filter
   const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
+
+  const tabItems = [
+    { key: 'products' as const, label: 'Products', icon: Package, count: products.length, ref: productsRef },
+    { key: 'projects' as const, label: 'Projects', icon: Layers, count: projects.length, ref: projectsRef },
+    { key: 'catalogs' as const, label: 'Catalogs', icon: FolderOpen, count: catalogs.length, ref: catalogsRef },
+  ];
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
@@ -188,7 +203,6 @@ export default function SupplierDetailPage() {
           url: `https://www.tarmeer.com/materials/suppliers/${slug}`,
           ...(heroImage && { image: heroImage }),
           ...(supplier.logo_url && { logo: supplier.logo_url }),
-          ...(supplier.website && { sameAs: [supplier.website] }),
           ...(supplier.has_physical_store && supplier.store_address && {
             address: {
               '@type': 'PostalAddress',
@@ -199,15 +213,13 @@ export default function SupplierDetailPage() {
         })}</script>
       </Helmet>
 
-      {/* ========== Hero Section ========== */}
+      {/* ========== Hero ========== */}
       <div className="relative overflow-hidden">
         {heroImage ? (
-          <>
-            <div className="absolute inset-0">
-              <img src={heroImage} alt="" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1c1917]/90 via-[#1c1917]/75 to-[#1c1917]/60" />
-            </div>
-          </>
+          <div className="absolute inset-0">
+            <SmartImage src={heroImage} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#1c1917]/90 via-[#1c1917]/75 to-[#1c1917]/60" />
+          </div>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-[#1c1917] via-[#2c2520] to-[#3d3028]" />
         )}
@@ -222,11 +234,12 @@ export default function SupplierDetailPage() {
 
           <div className="flex items-start gap-5 sm:gap-6">
             {/* Logo */}
-            {supplier.logo_url ? (
-              <img
+            {supplier.logo_url && !logoError ? (
+              <SmartImage
                 src={supplier.logo_url}
                 alt={supplier.company_name}
                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain border border-white/10 bg-white/10 backdrop-blur-sm p-2 shrink-0"
+                onError={() => setLogoError(true)}
               />
             ) : (
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white/80 shrink-0">
@@ -235,7 +248,6 @@ export default function SupplierDetailPage() {
             )}
 
             <div className="flex-1 min-w-0">
-              {/* Name + Origin */}
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold text-white">{supplier.company_name}</h1>
                 <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${
@@ -247,7 +259,6 @@ export default function SupplierDetailPage() {
                 </span>
               </div>
 
-              {/* Category tags */}
               {categoryList.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {categoryList.map(c => (
@@ -257,39 +268,9 @@ export default function SupplierDetailPage() {
                   ))}
                 </div>
               )}
-
-              {/* Contact row */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4">
-                {supplier.contact_phone && (
-                  <a href={`tel:${supplier.contact_phone}`} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition">
-                    <Phone className="w-3.5 h-3.5" /> {supplier.contact_phone}
-                  </a>
-                )}
-                {supplier.whatsapp && (
-                  <a
-                    href={`https://wa.me/${supplier.whatsapp.replace(/[^0-9]/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
-                  </a>
-                )}
-                {supplier.website && (
-                  <a
-                    href={supplier.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition"
-                  >
-                    <Globe className="w-3.5 h-3.5" /> Website <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
             </div>
           </div>
 
-          {/* Stats bar */}
           {statItems.length > 0 && (
             <div className="flex items-center gap-6 mt-8 pt-6 border-t border-white/10">
               {statItems.map((s, i) => (
@@ -303,223 +284,274 @@ export default function SupplierDetailPage() {
         </PageContainer>
       </div>
 
-      {/* ========== Main Content + Sidebar ========== */}
-      <PageContainer className="py-8 sm:py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Content area */}
-          <div className="lg:col-span-2 space-y-10">
-            {/* Products section */}
-            <div ref={productsRef} id="section-products">
-              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
-                Products
-                {products.length > 0 && <span className="text-sm font-normal text-stone-400">({products.length})</span>}
-              </h2>
-              {products.length > 0 ? (
-                <>
-                  {productCategories.length > 1 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <button onClick={() => setProductCatFilter(null)}
-                        className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>All</button>
-                      {productCategories.map(cat => (
-                        <button key={cat} onClick={() => setProductCatFilter(cat)}
-                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{cat}</button>
-                      ))}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
-                      <div key={p.id} className="group cursor-pointer" onClick={() => setLightboxIdx(products.indexOf(p))}>
-                        <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
-                          <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />
-                        </div>
-                        {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
-                        {p.title && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>}
-                        {p.description && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <EmptyState icon={<Package className="w-8 h-8 text-stone-300" />} title="No products yet" description="This supplier hasn't uploaded any products." />
-              )}
-            </div>
-
-            {/* Projects section */}
-            <div ref={projectsRef} id="section-projects">
-              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
-                <Layers className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
-                Projects
-                {projects.length > 0 && <span className="text-sm font-normal text-stone-400">({projects.length})</span>}
-              </h2>
-              {projects.length > 0 ? (
-                <div className="space-y-6">
-                  {projects.map(proj => {
-                    const imgs = Array.isArray(proj.images) ? proj.images : [];
-                    const materials = Array.isArray(proj.materials) ? proj.materials : [];
-                    return (
-                      <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-                        {imgs.length > 0 && (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                            {imgs.map((img, i) => (
-                              <img key={i} src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
-                            ))}
-                          </div>
-                        )}
-                        <div className="p-5">
-                          <h3 className="text-[15px] font-semibold text-[#2c2c2c]">{proj.title}</h3>
-                          {proj.description && <p className="text-sm text-stone-500 mt-1 leading-relaxed">{proj.description}</p>}
-                          <div className="flex gap-4 mt-2 text-xs text-stone-400">
-                            {proj.location && <span>{proj.location}</span>}
-                            {proj.year && <span>{proj.year}</span>}
-                          </div>
-                          {materials.length > 0 && (
-                            <div className="mt-5 pt-4 border-t border-stone-100">
-                              <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-3">Materials Used In This Project</p>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {materials.slice(0, 6).map((m) => (
-                                  <div key={m.id} className="rounded-2xl border border-stone-200 overflow-hidden bg-stone-50/40">
-                                    <div className="aspect-[4/3] bg-stone-100">
-                                      <img src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
-                                    </div>
-                                    <div className="p-2.5">
-                                      {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>}
-                                      <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
-                                      {m.description && <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <EmptyState icon={<Layers className="w-8 h-8 text-stone-300" />} title="No projects yet" description="This supplier hasn't uploaded any project photos yet." />
-              )}
-            </div>
-
-            {/* Catalogs section */}
-            <div ref={catalogsRef} id="section-catalogs">
-              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
-                <FolderOpen className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
-                Catalogs
-                {catalogs.length > 0 && <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>}
-              </h2>
-              {catalogs.length > 0 ? (
-                <div className="space-y-3">
-                  {catalogs.map(c => (
-                    <a key={c.id} href={c.file_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
-                      <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
-                        <FileText className="w-6 h-6 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
-                        {c.file_size && (
-                          <p className="text-xs text-[#6b6b6b] mt-0.5">
-                            {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
-                          </p>
-                        )}
-                      </div>
-                      <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-stone-50 text-sm font-medium text-[#2c2c2c] group-hover:bg-[#b8864a] group-hover:text-white transition">
-                        <Download className="w-4 h-4" /> Download
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState icon={<FolderOpen className="w-8 h-8 text-stone-300" />} title="No catalogs uploaded yet" description="This supplier hasn't uploaded any catalogs." />
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-6 space-y-5">
-              {/* Section Nav */}
-              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4">
-                <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">On This Page</h4>
-                <div className="space-y-1">
-                  {[
-                    { key: 'products' as const, label: 'Products', icon: Package, count: products.length },
-                    { key: 'projects' as const, label: 'Projects', icon: Layers, count: projects.length },
-                    { key: 'catalogs' as const, label: 'Catalogs', icon: FolderOpen, count: catalogs.length },
-                  ].map(({ key, label, icon: Icon, count }) => (
-                    <button
-                      key={key}
-                      onClick={() => scrollTo(key === 'products' ? productsRef : key === 'projects' ? projectsRef : catalogsRef)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${
-                        activeSection === key
-                          ? 'bg-[#f5f0e8] text-[#1c1917] font-medium'
-                          : 'text-stone-500 hover:bg-stone-50'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <Icon className="w-4 h-4" style={{ color: activeSection === key ? 'var(--color-tarmeer-primary)' : undefined }} />
-                        {label}
-                      </span>
-                      {count > 0 && (
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
-                          activeSection === key ? 'bg-[#b8864a]/10 text-[#b8864a]' : 'bg-stone-100 text-stone-400'
-                        }`}>{count}</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+      {/* ========== About (below hero, full width) ========== */}
+      {supplier.description && (
+        <div className="bg-white border-b border-stone-200">
+          <PageContainer className="py-6">
+            <p className="text-[15px] text-[#2c2c2c] leading-relaxed">{supplier.description}</p>
+            {supplier.has_physical_store && supplier.store_address && (
+              <div className="flex items-start gap-2 mt-4 pt-4 border-t border-stone-100 text-sm text-[#6b6b6b]">
+                <MapPin className="w-4 h-4 text-[#b8864a] mt-0.5 shrink-0" />
+                <span>{supplier.store_address}</span>
+                {supplier.google_maps_url && (
+                  <a
+                    href={supplier.google_maps_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 inline-flex items-center gap-1 text-[#b8864a] hover:underline shrink-0"
+                  >
+                    地图 <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
               </div>
-
-              {/* Inquiry Form */}
-              <InquiryForm recipientName={supplier.company_name} companyId={supplier.id} />
-            </div>
-          </div>
-        </div>
-      </PageContainer>
-
-      {/* ========== About Section (full width, below grid) ========== */}
-      {supplier.description && supplier.description.length > 200 && (
-        <div className="border-t border-stone-200">
-          <PageContainer className="py-10">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8">
-              <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">About {supplier.company_name}</h2>
-              <p className="text-[15px] text-[#2c2c2c] leading-relaxed whitespace-pre-line">{supplier.description}</p>
-            </div>
+            )}
           </PageContainer>
         </div>
       )}
 
+      {/* ========== Sticky Tab Strip ========== */}
+      {/* top-14/top-16 = navbar height (h-14 mobile / h-16 desktop). z-40 keeps us above content
+          but below the z-50 navbar. overflow-x-auto on the sticky element itself avoids creating
+          a nested scroll context that breaks sticky on iOS Safari. */}
+      <div className="sticky top-14 sm:top-16 z-40 bg-[#faf9f7]/95 backdrop-blur-sm border-b border-stone-200 overflow-x-auto scrollbar-none">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-1">
+          {tabItems.map(({ key, label, icon: Icon, count, ref }) => (
+            <button
+              key={key}
+              onClick={() => scrollTo(ref)}
+              className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${
+                activeSection === key
+                  ? 'border-[#b8864a] text-[#b8864a]'
+                  : 'border-transparent text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+              {count > 0 && (
+                <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                  activeSection === key ? 'bg-[#b8864a]/10 text-[#b8864a]' : 'bg-stone-100 text-stone-400'
+                }`}>{count}</span>
+              )}
+            </button>
+          ))}
+
+          {/* Back to top */}
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="ml-auto p-2 rounded-full text-stone-400 hover:text-[#b8864a] hover:bg-stone-100 transition shrink-0"
+            aria-label="Back to top"
+          >
+            <ArrowUp className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* ========== Main Content ========== */}
+      <PageContainer className="py-8 sm:py-10">
+        <div className="space-y-10">
+          {/* Products section */}
+          <div ref={productsRef} id="section-products" className="scroll-mt-28">
+            <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+              Products
+              {products.length > 0 && <span className="text-sm font-normal text-stone-400">({products.length})</span>}
+            </h2>
+            {products.length > 0 ? (
+              <>
+                {productCategories.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button onClick={() => setProductCatFilter(null)}
+                      className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>All</button>
+                    {productCategories.map(cat => (
+                      <button key={cat} onClick={() => setProductCatFilter(cat)}
+                        className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{cat}</button>
+                    ))}
+                  </div>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
+                    <div key={p.id} className="group cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
+                      <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
+                        <SmartImage src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />
+                      </div>
+                      {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
+                      {p.title && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>}
+                      {p.description && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <EmptyState icon={<Package className="w-8 h-8 text-stone-300" />} title="No products yet" description="This supplier hasn't uploaded any products." />
+            )}
+          </div>
+
+          {/* Projects section */}
+          <div ref={projectsRef} id="section-projects" className="scroll-mt-28">
+            <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
+              <Layers className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+              Projects
+              {projects.length > 0 && <span className="text-sm font-normal text-stone-400">({projects.length})</span>}
+            </h2>
+            {projects.length > 0 ? (
+              <div className="space-y-6">
+                {projects.map(proj => {
+                  const imgs = Array.isArray(proj.images) ? proj.images : [];
+                  const materials = Array.isArray(proj.materials) ? proj.materials : [];
+                  return (
+                    <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+                      {imgs.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                          {imgs.map((img, i) => (
+                            <div key={i} className="cursor-pointer group" onClick={() => openProjectLightbox(proj, i)}>
+                              <SmartImage src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover group-hover:brightness-90 transition duration-200" loading="lazy" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <h3 className="text-[15px] font-semibold text-[#2c2c2c]">{proj.title}</h3>
+                        {proj.description && <p className="text-sm text-stone-500 mt-1 leading-relaxed">{proj.description}</p>}
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          {proj.location && (
+                            <span className="inline-flex items-center gap-1 text-xs text-stone-500">
+                              <MapPin className="w-3.5 h-3.5 text-[#b8864a] shrink-0" />{proj.location}
+                            </span>
+                          )}
+                          {proj.area_sqm && (
+                            <span className="inline-flex items-center gap-1 text-xs text-stone-500">
+                              <Maximize2 className="w-3.5 h-3.5 text-[#b8864a] shrink-0" />{proj.area_sqm} m²
+                            </span>
+                          )}
+                          {proj.budget && (
+                            <span className="inline-flex items-center gap-1 text-xs text-stone-500">
+                              <Banknote className="w-3.5 h-3.5 text-[#b8864a] shrink-0" />{proj.budget}
+                            </span>
+                          )}
+                          {proj.year && (
+                            <span className="text-xs text-stone-400">{proj.year}</span>
+                          )}
+                        </div>
+                        {materials.length > 0 && (
+                          <div className="mt-5 pt-4 border-t border-stone-100">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-3">Materials Used In This Project</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {materials.slice(0, 6).map((m) => (
+                                <div key={m.id} className="rounded-2xl border border-stone-200 overflow-hidden bg-stone-50/40">
+                                  <div className="aspect-[4/3] bg-stone-100">
+                                    <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                                  </div>
+                                  <div className="p-2.5">
+                                    {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>}
+                                    <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
+                                    {m.description && <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <EmptyState icon={<Layers className="w-8 h-8 text-stone-300" />} title="No projects yet" description="This supplier hasn't uploaded any project photos yet." />
+            )}
+          </div>
+
+          {/* Catalogs section */}
+          <div ref={catalogsRef} id="section-catalogs" className="scroll-mt-28">
+            <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
+              <FolderOpen className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+              Catalogs
+              {catalogs.length > 0 && <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>}
+            </h2>
+            {catalogs.length > 0 ? (
+              <div className="space-y-3">
+                {catalogs.map(c => (
+                  <a key={c.id} href={c.file_url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
+                      <FileText className="w-6 h-6 text-red-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
+                      {c.file_size && (
+                        <p className="text-xs text-[#6b6b6b] mt-0.5">
+                          {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-stone-50 text-sm font-medium text-[#2c2c2c] group-hover:bg-[#b8864a] group-hover:text-white transition">
+                      <Download className="w-4 h-4" /> Download
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={<FolderOpen className="w-8 h-8 text-stone-300" />} title="No catalogs uploaded yet" description="This supplier hasn't uploaded any catalogs." />
+            )}
+          </div>
+        </div>
+      </PageContainer>
+
       {/* ========== Lightbox ========== */}
-      {lightboxIdx !== null && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxIdx(null)}>
-          <button className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl z-10" onClick={() => setLightboxIdx(null)}>
+      {lightbox !== null && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4" onClick={closeLightbox}>
+          <button className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl z-10" onClick={closeLightbox}>
             ×
           </button>
-          <img
-            src={products[lightboxIdx].image_url}
-            alt={products[lightboxIdx].title || ''}
-            className="max-w-full max-h-[85vh] object-contain rounded-lg"
-            onClick={e => e.stopPropagation()}
-          />
-          {products[lightboxIdx].title && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl text-sm font-medium">
-              {products[lightboxIdx].title}
-            </div>
-          )}
-          {lightboxIdx > 0 && (
+          <div className="flex flex-col items-center gap-3 max-w-full" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <SmartImage
+              src={lightbox.images[lightbox.idx]}
+              alt={lightbox.labels?.[lightbox.idx] || lightbox.projectMeta?.title || ''}
+              className="max-w-full max-h-[75vh] object-contain rounded-lg"
+            />
+            {/* Project metadata bar */}
+            {lightbox.projectMeta && (
+              <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-5 py-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/90 w-full max-w-2xl">
+                <span className="font-semibold text-white">{lightbox.projectMeta.title}</span>
+                {lightbox.projectMeta.location && (
+                  <span className="inline-flex items-center gap-1.5 text-white/70">
+                    <MapPin className="w-3.5 h-3.5 text-[#e5b97a] shrink-0" />{lightbox.projectMeta.location}
+                  </span>
+                )}
+                {lightbox.projectMeta.area_sqm && (
+                  <span className="inline-flex items-center gap-1.5 text-white/70">
+                    <Maximize2 className="w-3.5 h-3.5 text-[#e5b97a] shrink-0" />{lightbox.projectMeta.area_sqm} m²
+                  </span>
+                )}
+                {lightbox.projectMeta.budget && (
+                  <span className="inline-flex items-center gap-1.5 text-white/70">
+                    <Banknote className="w-3.5 h-3.5 text-[#e5b97a] shrink-0" />{lightbox.projectMeta.budget}
+                  </span>
+                )}
+                {lightbox.projectMeta.year && (
+                  <span className="text-white/50">{lightbox.projectMeta.year}</span>
+                )}
+              </div>
+            )}
+            {/* Label for product lightbox */}
+            {!lightbox.projectMeta && lightbox.labels?.[lightbox.idx] && (
+              <div className="bg-black/60 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl text-sm font-medium">
+                {lightbox.labels[lightbox.idx]}
+              </div>
+            )}
+          </div>
+          {lightbox.idx > 0 && (
             <button
               className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition"
-              onClick={e => { e.stopPropagation(); setLightboxIdx(lightboxIdx - 1); }}
+              onClick={e => { e.stopPropagation(); setLightbox(lb => lb && ({ ...lb, idx: lb.idx - 1 })); }}
             >
               ‹
             </button>
           )}
-          {lightboxIdx < products.length - 1 && (
+          {lightbox.idx < lightbox.images.length - 1 && (
             <button
               className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition"
-              onClick={e => { e.stopPropagation(); setLightboxIdx(lightboxIdx + 1); }}
+              onClick={e => { e.stopPropagation(); setLightbox(lb => lb && ({ ...lb, idx: lb.idx + 1 })); }}
             >
               ›
             </button>
@@ -530,7 +562,6 @@ export default function SupplierDetailPage() {
   );
 }
 
-/* ========== Empty State Component ========== */
 function EmptyState({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">

@@ -89,6 +89,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
   const [menuCounts, setMenuCounts] = useState<Record<string, number>>({});
+  const [todayNew, setTodayNew] = useState<{ homeowners: number; companies: number; suppliers: number }>({ homeowners: 0, companies: 0, suppliers: 0 });
   const [lang, setLang] = useState<AdminLang>(() => {
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_LANG_KEY) : null;
     return saved === 'zh' ? 'zh' : 'en';
@@ -154,17 +155,25 @@ export default function AdminLayout() {
 
   const fetchMenuCounts = useCallback(async () => {
     try {
-      const [usersRes, companiesRes, homeownerInqRes, companyInqRes] = await Promise.all([
+      const [usersRes, companiesRes, homeownerInqRes, companyInqRes, todayRes] = await Promise.all([
         adminApi.getUsers({ page: 1, limit: 1 }),
         adminApi.getRegisteredCompanies({ page: 1, limit: 1 }),
         adminApi.getInquiries({ page: 1, limit: 1, type: 'homeowner' }),
         adminApi.getInquiries({ page: 1, limit: 1, type: 'company' }),
+        adminApi.request('/stats/today-new').catch(() => null),
       ]);
       setMenuCounts({
         '/admin/users': usersRes?.pagination?.total ?? 0,
         '/admin/companies': companiesRes?.total ?? companiesRes?.pagination?.total ?? 0,
         '/admin/inquiries': (homeownerInqRes?.pagination?.total ?? 0) + (companyInqRes?.pagination?.total ?? 0),
       });
+      if (todayRes) {
+        setTodayNew({
+          homeowners: todayRes.homeowners ?? 0,
+          companies: todayRes.companies ?? 0,
+          suppliers: todayRes.suppliers ?? 0,
+        });
+      }
     } catch { /* ignore */ }
   }, []);
 
@@ -251,6 +260,10 @@ export default function AdminLayout() {
             const Icon = item.icon;
             const notifKey = NOTIFICATION_MAP[item.to];
             const hasNotif = notifKey && (notifCounts[notifKey] ?? 0) > 0;
+            const todayCount =
+              item.to === '/admin/users' ? todayNew.homeowners :
+              item.to === '/admin/companies' ? todayNew.companies :
+              item.to === '/admin/suppliers' ? todayNew.suppliers : 0;
             return (
               <SidebarNavLink
                 key={item.to}
@@ -263,6 +276,11 @@ export default function AdminLayout() {
                   <span>{t(item.labelEn, item.labelZh)}</span>
                   {menuCounts[item.to] != null && menuCounts[item.to] > 0 && (
                     <span className="text-[11px] text-stone-400 font-normal">{menuCounts[item.to]}</span>
+                  )}
+                  {todayCount > 0 && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#b8864a] text-white leading-none">
+                      +{todayCount}
+                    </span>
                   )}
                   <span
                     className="relative inline-flex items-center"

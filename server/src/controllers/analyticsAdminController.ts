@@ -298,3 +298,27 @@ export async function getDailyRegistrations(req: Request<{}, {}, {}, AnalyticsQu
     res.status(500).json({ error: 'Failed to load registration stats.' });
   }
 }
+
+export async function getTodayNew(_req: any, res: any): Promise<void> {
+  try {
+    const [[homeowners], [companies], [suppliers]] = await Promise.all([
+      pool.execute(
+        "SELECT COUNT(*) AS n FROM users WHERE DATE(created_at) = CURDATE() AND role = 'homeowner'"
+      ) as Promise<any[]>,
+      pool.execute(
+        'SELECT COUNT(*) AS n FROM company_profiles WHERE DATE(created_at) = CURDATE()'
+      ) as Promise<any[]>,
+      pool.execute(
+        'SELECT COUNT(*) AS n FROM supplier_profiles WHERE DATE(created_at) = CURDATE()'
+      ) as Promise<any[]>,
+    ]);
+    res.json({
+      homeowners: Number((homeowners as any[])[0]?.n ?? 0),
+      companies: Number((companies as any[])[0]?.n ?? 0),
+      suppliers: Number((suppliers as any[])[0]?.n ?? 0),
+    });
+  } catch (error) {
+    console.error('Today new stats error:', error);
+    res.status(500).json({ error: 'Failed to get stats.' });
+  }
+}
