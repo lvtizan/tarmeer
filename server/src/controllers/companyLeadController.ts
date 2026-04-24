@@ -1,18 +1,10 @@
 import pool from '../config/database';
-import { pushCompanyLeadToCRM, pushLeadToCRM } from '../lib/crmPush';
-import { notifyNewCompanyLead } from '../services/notificationService';
+import { pushCompanyLeadToCRM } from '../lib/crmPush';
 
 export async function submitCompanyLead(req: any, res: any) {
   try {
-    const { contactName: rawContactName, phone, companyName: rawCompanyName, city: rawCity, companyType: rawCompanyType, yearEstablished, scopeOfBusiness: rawScope, lang, sourcePage: bodySourcePage } = req.body;
-    // Truncate all string fields to DB column limits to prevent ER_DATA_TOO_LONG
-    const contactName = rawContactName ? String(rawContactName).slice(0, 100) : rawContactName;
-    const companyName = rawCompanyName ? String(rawCompanyName).slice(0, 200) : rawCompanyName;
-    const city = rawCity ? String(rawCity).slice(0, 100) : rawCity;
-    const companyType = rawCompanyType ? String(rawCompanyType).slice(0, 100) : rawCompanyType;
-    const scopeOfBusiness = rawScope ? String(rawScope).slice(0, 500) : rawScope;
-    const rawSourcePage = bodySourcePage || req.headers.referer || null;
-    const sourcePage = rawSourcePage ? String(rawSourcePage).slice(0, 500) : null;
+    const { contactName, phone, companyName, city, companyType, yearEstablished, scopeOfBusiness, lang } = req.body;
+    const sourcePage = req.headers.referer || null;
 
     // Check if phone number already registered
     if (phone) {
@@ -34,7 +26,7 @@ export async function submitCompanyLead(req: any, res: any) {
     const [result] = await pool.execute(
       `INSERT INTO company_leads (contact_name, phone, company_name, company_type, city, year_established, scope_of_business, lang, source_page)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [contactName || companyName || '', phone, companyName, companyType || null, city || null, yearEstablished || null, scopeOfBusiness || null, lang || 'en', sourcePage]
+      [contactName, phone, companyName, companyType || null, city || null, yearEstablished || null, scopeOfBusiness || null, lang || 'en', sourcePage]
     );
 
     const leadId = (result as any).insertId;
@@ -47,28 +39,14 @@ export async function submitCompanyLead(req: any, res: any) {
       yearEstablished ? `Est. ${yearEstablished}` : '',
     ].filter(Boolean).join(' | ');
 
-    const [mirrorResult] = await pool.execute(
-      `INSERT INTO design_inquiries (name, phone, city, area_range, message, source_company_name)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+    pool.execute(
+      `INSERT INTO design_inquiries (name, phone, city, area_range, message, source_company_name, crm_sync_status)
+       VALUES (?, ?, ?, ?, ?, ?, 'synced')`,
       [contactName, phone, city || null, companyType || 'company-lead', inquiryMessage, companyName]
-    ).catch(() => [{ insertId: 0 }]);
-    const mirrorInquiryId = (mirrorResult as any).insertId;
+    ).catch(() => {});
 
-    // Mark mirrored inquiry as synced (it will be pushed via company tenant below, not homeowner tenant)
-    if (mirrorInquiryId) {
-      pool.execute(
-        "UPDATE design_inquiries SET crm_sync_status = 'synced', crm_synced_at = NOW() WHERE id = ?",
-        [mirrorInquiryId]
-      ).catch(() => {});
-    }
-
-    // Fire-and-forget CRM push (company tenant ONLY — not homeowner tenant)
+    // Fire-and-forget CRM push (company tenant)
     // notes field carries company_type so CRM sales team sees it
-    // Send full info — CRM notes field supports 1500 chars
-    const crmNotes = [
-      companyType ? `Type: ${companyType}` : '',
-      yearEstablished ? `Est. ${yearEstablished}` : '',
-    ].filter(Boolean).join(', ') || undefined;
     pushCompanyLeadToCRM({
       applicationId: leadId,
       contactName: contactName || undefined,
@@ -76,26 +54,18 @@ export async function submitCompanyLead(req: any, res: any) {
       phone: phone || undefined,
       city: city || undefined,
       licenseNumber: undefined,
-      page: sourcePage || '/for-companies',
-      description: crmNotes,
+      page: sourcePage || undefined,
+      description: [
+        companyType ? `Type: ${companyType}` : '',
+        yearEstablished ? `Est. ${yearEstablished}` : '',
+        scopeOfBusiness ? `Scope: ${scopeOfBusiness}` : '',
+      ].filter(Boolean).join(', ') || undefined,
     }).catch(() => {});
 
     const [lead] = await pool.execute(
       'SELECT * FROM company_leads WHERE id = ?',
       [leadId]
     );
-
-    // Notify admin via email (async, don't block response)
-    setImmediate(() => {
-      notifyNewCompanyLead({
-        contactName: contactName || 'Unknown',
-        companyName: companyName || '',
-        phone: phone || '',
-        city: city || '',
-        companyType: companyType || '',
-        sourcePage: sourcePage || '/for-companies',
-      }).catch((err) => console.error('[notify] Company lead email failed:', err));
-    });
 
     res.status(201).json({
       message: 'Submitted successfully. We will contact you soon.',
@@ -104,38 +74,6 @@ export async function submitCompanyLead(req: any, res: any) {
   } catch (error) {
     console.error('Submit company lead error:', error);
     res.status(500).json({ error: 'Submission failed. Please try again.' });
-  }
-}
-
-export async function checkPhoneExists(req: any, res: any) {
-  try {
-    const phone = req.query.phone as string;
-    if (!phone) return res.status(400).json({ error: 'Phone is required' });
-
-    // Check company_leads table
-    const [leadRows] = await pool.execute(
-      'SELECT id FROM company_leads WHERE phone = ? LIMIT 1',
-      [phone]
-    );
-    const leadExists = (leadRows as any[]).length > 0;
-
-    // Check users table (already registered)
-    const [userRows] = await pool.execute(
-      `SELECT u.id,
-              (SELECT COUNT(*) FROM company_profiles cp WHERE cp.user_id = u.id LIMIT 1) AS has_company
-       FROM users u WHERE u.phone = ? AND u.deleted_at IS NULL LIMIT 1`,
-      [phone]
-    );
-    const existingUser = (userRows as any[])[0];
-
-    res.json({
-      exists: leadExists || !!existingUser,
-      hasAccount: !!existingUser,
-      hasCompanyProfile: existingUser ? existingUser.has_company > 0 : false,
-    });
-  } catch (error) {
-    console.error('Check phone exists error:', error);
-    res.status(500).json({ error: 'Check failed' });
   }
 }
 

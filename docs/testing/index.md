@@ -16,6 +16,7 @@
 | Full Site | [full-site.md](full-site.md) | All roles (anonymous, user, homeowner, company, admin), 50+ cases |
 | Staging | [staging-flows.md](staging-flows.md) | Email reg, OAuth, profile, upload on staging env |
 | Site Config | [site-config.md](site-config.md) | Fixed business config (address, maps, WhatsApp, Instagram) |
+| For-Companies | [for-companies-registration.md](for-companies-registration.md) | Company signup, CRM routing, no homeowner CRM push |
 
 ---
 
@@ -26,7 +27,8 @@
 | Auth changes (login, register, OAuth, tokens) | auth-profile.md | Required |
 | Any UI changes | full-site.md (smoke) | Required |
 | Pre-deploy (any deploy) | full-site.md | Mandatory |
-| New company features | full-site.md company section | Required |
+| New company features | full-site.md company section + for-companies-registration.md | Required |
+| CRM push / company lead flow | for-companies-registration.md TC-FC-03 + `node scripts/harness/test-crm-routing.mjs` | Required |
 | Staging promotion | staging-flows.md | Required |
 | Business config changes (address, contact) | site-config.md | Required |
 | Image/avatar changes | auth-profile.md TC-04 + full-site.md TC-X.5 | Required |

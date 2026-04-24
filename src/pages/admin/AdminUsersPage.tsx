@@ -3,9 +3,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Pencil, Shield, X, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
+import CopyButton from '../../components/ui/CopyButton';
 import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
 import UserEditModal from '../../components/admin/UserEditModal';
-import { useAdminT } from '../../hooks/useAdminLang';
 
 interface UserRecord {
   id: number;
@@ -39,7 +39,6 @@ interface PermissionModalProps {
 }
 
 function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
-  const { t } = useAdminT();
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -85,7 +84,7 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Shield size={18} className="text-[#b8864a]" />
-              <h2 className="text-xl font-bold text-stone-800">{t('Permissions', '权限')}</h2>
+              <h2 className="text-xl font-bold text-stone-800">Permissions</h2>
             </div>
             <div className="flex items-center gap-2 text-sm text-stone-500">
               <span className="font-medium text-stone-700">{user.full_name}</span>
@@ -103,7 +102,7 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
         {/* Body */}
         <div className="px-6 py-4 space-y-3 max-h-[55vh] overflow-y-auto">
           {loading ? (
-            <div className="text-center py-8 text-stone-400 text-sm">{t('Loading…', '加载中...')}</div>
+            <div className="text-center py-8 text-stone-400 text-sm">Loading…</div>
           ) : (
             AVAILABLE_PERMISSIONS.map(({ key, label, desc }) => (
               <label
@@ -134,14 +133,14 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
             onClick={onClose}
             className="flex-1 h-10 rounded-2xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition"
           >
-            {t('Cancel', '取消')}
+            Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || loading}
             className="flex-1 h-10 rounded-2xl bg-[#b8864a] hover:bg-[#a07540] text-white text-sm font-medium transition disabled:opacity-50"
           >
-            {saving ? t('Saving…', '保存中...') : t('Save', '保存')}
+            {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
       </div>
@@ -159,7 +158,6 @@ interface DeleteReasonModalProps {
 }
 
 function DeleteReasonModal({ names, onConfirm, onCancel, loading }: DeleteReasonModalProps) {
-  const { t } = useAdminT();
   const [reason, setReason] = useState('');
 
   return (
@@ -170,7 +168,7 @@ function DeleteReasonModal({ names, onConfirm, onCancel, loading }: DeleteReason
             <div className="flex items-center gap-2 mb-1">
               <Trash2 size={18} className="text-red-500" />
               <h2 className="text-xl font-bold text-stone-800">
-                {t('Delete', '删除')} {names.length === 1 ? t('User', '用户') : `${names.length} ${t('Users', '用户')}`}
+                Delete {names.length === 1 ? 'User' : `${names.length} Users`}
               </h2>
             </div>
             <p className="text-sm text-stone-500">
@@ -186,12 +184,12 @@ function DeleteReasonModal({ names, onConfirm, onCancel, loading }: DeleteReason
 
         <div className="px-6 py-4 space-y-3">
           <label className="block text-sm font-medium text-stone-600">
-            {t('Delete reason', '删除原因')} <span className="text-red-500">*</span>
+            Delete reason <span className="text-red-500">*</span>
           </label>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder={t('Enter delete reason...', '请输入删除原因...')}
+            placeholder="请输入删除原因..."
             rows={3}
             className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a] resize-none"
             autoFocus
@@ -203,14 +201,14 @@ function DeleteReasonModal({ names, onConfirm, onCancel, loading }: DeleteReason
             onClick={onCancel}
             className="flex-1 h-10 rounded-2xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition"
           >
-            {t('Cancel', '取消')}
+            Cancel
           </button>
           <button
             onClick={() => onConfirm(reason.trim())}
             disabled={!reason.trim() || loading}
             className="flex-1 h-10 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition disabled:opacity-50"
           >
-            {loading ? t('Deleting…', '删除中...') : t('Delete', '删除')}
+            {loading ? 'Deleting…' : 'Delete'}
           </button>
         </div>
       </div>
@@ -219,14 +217,13 @@ function DeleteReasonModal({ names, onConfirm, onCancel, loading }: DeleteReason
 }
 
 export default function AdminUsersPage() {
-  const { t } = useAdminT();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page') || '1')));
-  const [search, _setSearch] = useState(() => searchParams.get('search') || '');
+  const [search] = useState(() => searchParams.get('search') || '');
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
@@ -309,19 +306,21 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-stone-800">{t('Homeowners', '业主')}</h1>
-        <span className="text-sm text-stone-500">{t('Total', '共')} {total}</span>
+        <h1 className="text-2xl font-bold text-stone-800">Users</h1>
+        <span className="text-sm text-stone-500">{total} total</span>
       </div>
+
+      {/* Filters — search removed, use global search bar above */}
 
       {/* Batch action bar */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11">
-          <span className="text-sm text-stone-500">{selectedIds.size} {t('selected', '已选')}</span>
+          <span className="text-sm text-stone-500">{selectedIds.size} selected</span>
           <button
             onClick={handleBulkDeleteClick}
             className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
           >
-            <Trash2 size={14} /> {t('Delete', '删除')} ({selectedIds.size})
+            <Trash2 size={14} /> 删除 ({selectedIds.size})
           </button>
         </div>
       )}
@@ -348,18 +347,18 @@ export default function AdminUsersPage() {
                     className="h-4 w-4 rounded border-stone-300 accent-[#b8864a] cursor-pointer"
                   />
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Name', '名称')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Email', '邮箱')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Phone', '电话')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Registered', '注册时间')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Actions', '操作')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Email</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Phone</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Registered</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <TableSpinner colSpan={6} />
               ) : users.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-stone-400">{t('No users found', '未找到用户')}</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-stone-400">No users found</td></tr>
               ) : users.map((user) => (
                 <tr
                   key={user.id}
@@ -381,15 +380,18 @@ export default function AdminUsersPage() {
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-stone-800">{user.full_name}</div>
+                    <div className="flex items-center gap-1 font-medium text-stone-800">
+                      <span>{user.full_name}</span>
+                      <CopyButton text={user.full_name} />
+                    </div>
                     {user.city && <div className="text-xs text-stone-400">{user.city}</div>}
                   </td>
                   <td className="px-4 py-3 text-stone-600">{user.email}</td>
                   <td className="px-4 py-3 text-stone-600 text-sm">{user.phone || <span className="text-stone-300">—</span>}</td>
                   <td className="relative px-4 py-3 text-stone-500 text-xs">
-                    <span>{new Date(user.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>{new Date(user.created_at).toLocaleDateString()}</span>
                     <HoverDeleteIconButton
-                      title={t('Delete user', '删除用户')}
+                      title="Delete user"
                       loading={deleteLoadingId === user.id}
                       disabled={deleteLoadingId === user.id}
                       onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
@@ -400,14 +402,14 @@ export default function AdminUsersPage() {
                       onClick={(e) => { e.stopPropagation(); setEditUserId(user.id); }}
                       className="text-xs px-3 py-1 rounded-lg font-medium transition bg-stone-50 text-stone-600 hover:bg-stone-100 flex items-center gap-1"
                     >
-                      <Pencil size={12} /> {t('Edit', '编辑')}
+                      <Pencil size={12} /> Edit
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setPermissionUser(user); }}
                       className="text-xs px-3 py-1 rounded-lg font-medium transition bg-stone-50 text-stone-600 hover:bg-stone-100 flex items-center gap-1"
-                      title={t('Manage permissions', '管理权限')}
+                      title="Manage permissions"
                     >
-                      <Shield size={12} /> {t('Permissions', '权限')}
+                      <Shield size={12} /> Permissions
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleStatusToggle(user); }}
@@ -418,7 +420,7 @@ export default function AdminUsersPage() {
                           : 'bg-green-50 text-green-600 hover:bg-green-100'
                       } disabled:opacity-50`}
                     >
-                      {actionLoading === user.id ? '...' : user.status === 'active' ? t('Suspend', '停用') : t('Activate', '启用')}
+                      {actionLoading === user.id ? '...' : user.status === 'active' ? 'Suspend' : 'Activate'}
                     </button>
                   </td>
                 </tr>
@@ -430,21 +432,21 @@ export default function AdminUsersPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">{t('Page', '页')} {page} / {totalPages}</span>
+            <span className="text-xs text-stone-500">Page {page} of {totalPages}</span>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page <= 1}
                 className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30"
               >
-                {t('Prev', '上一页')}
+                Prev
               </button>
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page >= totalPages}
                 className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30"
               >
-                {t('Next', '下一页')}
+                Next
               </button>
             </div>
           </div>

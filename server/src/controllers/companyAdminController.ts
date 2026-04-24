@@ -5,7 +5,6 @@ import { calculateAllWeights } from '../lib/weightCalculator';
 import { slugify } from '../lib/slugify';
 import fs from 'fs';
 import path from 'path';
-import { logActivity, getClientIp } from '../lib/activityLogger';
 
 // Runtime note:
 // - ts-node/dev: __dirname => server/src/controllers
@@ -50,12 +49,10 @@ function toStringArray(value: any): string[] {
     if (Array.isArray(node)) return node.flatMap((item) => collect(item));
     if (typeof node === 'object') {
       const direct = [node.url, node.src, node.imageUrl]
-        .filter((v) => typeof v === 'string' && v.length > 0)
+        .filter((v) => typeof v === 'string' && v)
         .map((v) => normalizeLegacyImageUrl(String(v)));
-      // If we found a direct URL field, don't recurse into other fields (ai_tags etc.)
       if (direct.length > 0) return direct;
-      const nested = Object.values(node).flatMap((item) => collect(item));
-      return nested;
+      return Object.values(node).flatMap((item) => collect(item));
     }
     return [];
   };
@@ -536,15 +533,6 @@ export async function bindUserToCompany(req: any, res: any) {
       [companyId, userId]
     );
 
-    setImmediate(() => {
-      logActivity({
-        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
-        action: 'bind', targetType: 'uae_company', targetId: Number(companyId),
-        description: `绑定了用户到目录公司`,
-        ip: getClientIp(req),
-      }).catch(() => {});
-    });
-
     res.json({ message: 'User bound to company successfully.' });
   } catch (error) {
     console.error('Bind user to company error:', error);
@@ -869,13 +857,30 @@ export async function updateAdminProject(req: any, res: any) {
     }
 
     // Handle base64 images
-    let persistedImages: string[] | undefined;
+    let finalImages: any[] | undefined;
     if (Array.isArray(images)) {
       const designerId = await resolveDesignerIdForProfile(Number(companyId));
-      persistedImages = await persistProjectImages(images, {
+      const persistedUrls = await persistProjectImages(images, {
         designerId,
         projectId: Number(projectId),
       });
+
+      // Preserve AI tag metadata for existing images
+      const [currentRows] = await pool.execute(
+        'SELECT images FROM projects WHERE id = ? AND company_profile_id = ?',
+        [projectId, companyId]
+      );
+      const currentRaw = (currentRows as any[])[0]?.images;
+      const currentParsed = parseJsonField(currentRaw);
+      const currentArray = Array.isArray(currentParsed) ? currentParsed : [];
+      const metaByUrl = new Map<string, any>();
+      for (const item of currentArray) {
+        if (item && typeof item === 'object' && typeof item.url === 'string') {
+          metaByUrl.set(item.url, item);
+        }
+      }
+
+      finalImages = persistedUrls.map((url) => metaByUrl.get(url) ?? url);
     }
 
     await pool.execute(
@@ -889,7 +894,7 @@ export async function updateAdminProject(req: any, res: any) {
         style ?? null,
         location ?? null,
         year ?? null,
-        JSON.stringify(persistedImages ?? []),
+        JSON.stringify(finalImages ?? []),
         JSON.stringify(tags ?? []),
         projectId,
         companyId,
@@ -950,15 +955,6 @@ export async function createAdminProject(req: any, res: any) {
       const slug = slugify(title);
       await pool.execute('UPDATE projects SET slug = ? WHERE id = ?', [slug, newProjectId]);
     }
-
-    setImmediate(() => {
-      logActivity({
-        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
-        action: 'create', targetType: 'project', targetId: newProjectId, targetName: title,
-        description: `Admin 创建了项目「${title}」`,
-        ip: getClientIp(req),
-      }).catch(() => {});
-    });
 
     res.json({ id: newProjectId });
   } catch (error) {

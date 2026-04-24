@@ -6,7 +6,6 @@ import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTa
 import AdminDirectoryTable from '../../components/admin/AdminDirectoryTable';
 import AdminApplicationsTable from '../../components/admin/AdminApplicationsTable';
 import AdminSelect from '../../components/ui/AdminSelect';
-import { useAdminT } from '../../hooks/useAdminLang';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -45,7 +44,6 @@ interface CompanyProfileRecord {
 }
 
 export default function AdminCompaniesPage() {
-  const { t } = useAdminT();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>(() => {
     const t = searchParams.get('tab');
@@ -59,7 +57,7 @@ export default function AdminCompaniesPage() {
   const [profileTotal, setProfileTotal] = useState(0);
   const [profilePage, setProfilePage] = useState(1);
   const [profileStatusFilter, setProfileStatusFilter] = useState<ProfileStatusFilter>('all');
-  const [profileSearch, setProfileSearch] = useState('');
+  const [profileSearch, setProfileSearch] = useState(() => searchParams.get('search') || '');
   const [profileLoading, setProfileLoading] = useState(false);
   const [orderSavingId, setOrderSavingId] = useState<number | null>(null);
   const [directoryOrderSavingKey, setDirectoryOrderSavingKey] = useState<string | null>(null);
@@ -74,7 +72,7 @@ export default function AdminCompaniesPage() {
   const [pendingTotal, setPendingTotal] = useState(0);
   const [pendingPage, setPendingPage] = useState(1);
   const [pendingStatusFilter, setPendingStatusFilter] = useState<ProfileStatusFilter>('pending');
-  const [pendingSearch, setPendingSearch] = useState('');
+  const [pendingSearch, setPendingSearch] = useState(() => searchParams.get('search') || '');
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingBadgeTotal, setPendingBadgeTotal] = useState(0);
   const [pendingSortDir, setPendingSortDir] = useState<SortDir>('desc');
@@ -85,7 +83,7 @@ export default function AdminCompaniesPage() {
   const [companyTotal, setCompanyTotal] = useState(0);
   const [companyPage, setCompanyPage] = useState(1);
   const [claimedFilter, setClaimedFilter] = useState<ClaimedFilter>('all');
-  const [companySearch, setCompanySearch] = useState('');
+  const [companySearch, setCompanySearch] = useState(() => searchParams.get('search') || '');
   const [companyLoading, setCompanyLoading] = useState(false);
   const directoryLoaded = useRef(false);
   const [directoryBadgeTotal, setDirectoryBadgeTotal] = useState(0);
@@ -299,82 +297,85 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-stone-800">{t('Companies', '公司')}</h1>
+      <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
 
-      {/* Tabs + filter on same row */}
-      <div className="flex items-center gap-2">
+      {/* Tabs + inline filters */}
+      <div className="flex items-center gap-3">
         <div className="flex gap-1 bg-stone-100 rounded-lg p-1">
           {([
-            ['companies', `${t('Companies', '公司')} (${profileBadgeTotal})`],
-            ['directory', `${t('Directory', '目录')} (${directoryBadgeTotal})`],
-            ['applications', `${t('Applications', '申请')} (${pendingBadgeTotal})`],
-          ] as [Tab, string][]).map(([tabKey, label]) => (
+            ['companies', `Companies (${profileBadgeTotal})`],
+            ['directory', `Directory (${directoryBadgeTotal})`],
+            ['applications', `Applications (${pendingBadgeTotal})`],
+          ] as [Tab, string][]).map(([t, label]) => (
             <button
-              key={tabKey}
+              key={t}
               onClick={() => {
-                setTab(tabKey);
-                if (tabKey === 'applications') {
+                setTab(t);
+                if (t === 'applications') {
                   adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
                 }
               }}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === tabKey ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === t ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
             >
               <span className="relative inline-flex items-start">
                 {label}
-                {tabKey === 'applications' && hasNewApplications && (
+                {t === 'applications' && hasNewApplications && (
                   <span className="absolute -top-0.5 -right-2.5 inline-block w-2 h-2 rounded-full bg-red-500" />
                 )}
               </span>
             </button>
           ))}
         </div>
-        <div className="flex-1" /> {/* spacer to push filter right */}
-        {tab === 'companies' && (
-          <AdminSelect
-            className="!h-9 !px-3 !text-sm"
-            value={profileStatusFilter}
-            onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
-            options={[
-              { value: 'all', label: t('All', '全部') },
-              { value: 'pending', label: t('Pending', '待审核') },
-              { value: 'approved', label: t('Approved', '已通过') },
-              { value: 'rejected', label: t('Rejected', '已拒绝') },
-            ]}
-          />
-        )}
-        {tab === 'directory' && (
-          <AdminSelect
-            className="!h-9 !px-3 !text-sm"
-            value={claimedFilter}
-            onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
-            options={[
-              { value: 'all', label: t('All', '全部') },
-              { value: 'claimed', label: t('Claimed', '已认领') },
-              { value: 'unclaimed', label: t('Unclaimed', '未认领') },
-            ]}
-          />
-        )}
-        {tab === 'applications' && (
-          <AdminSelect
-            className="!h-9 !px-3 !text-sm"
-            value={pendingStatusFilter}
-            onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
-            options={[
-              { value: 'pending', label: t('Pending', '待审核') },
-              { value: 'approved', label: t('Approved', '已通过') },
-              { value: 'rejected', label: t('Rejected', '已拒绝') },
-              { value: 'all', label: t('All', '全部') },
-            ]}
-          />
-        )}
+
+        <div className="ml-auto w-36">
+          {tab === 'companies' && (
+            <AdminSelect
+              className="!h-9 !px-3 !text-sm !rounded-lg"
+              value={profileStatusFilter}
+              onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' },
+              ]}
+            />
+          )}
+          {tab === 'directory' && (
+            <AdminSelect
+              className="!h-9 !px-3 !text-sm !rounded-lg"
+              value={claimedFilter}
+              onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'claimed', label: 'Claimed' },
+                { value: 'unclaimed', label: 'Unclaimed' },
+              ]}
+            />
+          )}
+          {tab === 'applications' && (
+            <AdminSelect
+              className="!h-9 !px-3 !text-sm !rounded-lg"
+              value={pendingStatusFilter}
+              onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' },
+                { value: 'all', label: 'All' },
+              ]}
+            />
+          )}
+        </div>
       </div>
+
+      {/* Search removed — use global search bar at top */}
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
       {/* ── Companies Tab ── */}
       {tab === 'companies' && (
         <>
-
           <AdminCompaniesTableTab
             profiles={profiles}
             loading={profileLoading}
@@ -470,7 +471,7 @@ export default function AdminCompaniesPage() {
       {bindCompanyId !== null && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setBindCompanyId(null)}>
           <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold">{t('Bind User to Company', '绑定用户到公司')}</h2>
+            <h2 className="text-lg font-semibold">Bind User to Company</h2>
             <p className="text-sm text-stone-500">
               #{bindCompanyId} — {companies.find(c => c.id === bindCompanyId)?.name_en}
             </p>
@@ -478,16 +479,16 @@ export default function AdminCompaniesPage() {
               type="number"
               value={bindUserId}
               onChange={(e) => setBindUserId(e.target.value)}
-              placeholder={t('User ID', '用户 ID')}
+              placeholder="User ID"
               className="w-full h-10 px-3 border border-stone-200 rounded-lg text-sm"
             />
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setBindCompanyId(null)} className="px-4 py-2 text-sm text-stone-600">{t('Cancel', '取消')}</button>
+              <button onClick={() => setBindCompanyId(null)} className="px-4 py-2 text-sm text-stone-600">Cancel</button>
               <button
                 onClick={handleBind}
                 disabled={!bindUserId || bindSubmitting}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >{t('Bind', '绑定')}</button>
+              >Bind</button>
             </div>
           </div>
         </div>

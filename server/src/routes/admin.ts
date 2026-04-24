@@ -30,10 +30,8 @@ import {
   getActivityLogs,
   getRegistrationStats,
   getDailyStatsReport,
-  getRegistrationSources,
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
-import { getActivityLogs as getActivityLogList, getActivityLogStats, exportActivityLogs } from '../controllers/activityLogController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries, resendCrmSync } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts, markNotificationSeen } from '../controllers/complaintController';
@@ -64,13 +62,12 @@ import {
   updateWeightConfig,
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
-import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getTodayNew } from '../controllers/analyticsAdminController';
+import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations } from '../controllers/analyticsAdminController';
+import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
-import * as supplierAdmin from '../controllers/supplierAdminController';
-import { listLeads as listSupplierLeads } from '../controllers/supplierLeadController';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 import {
@@ -104,6 +101,7 @@ router.use(requireAdmin);
 
 // Profile
 router.get('/profile', getProfile);
+router.get('/search', globalSearch);
 router.put('/password', changePassword);
 
 // Stats (requires can_view_stats permission)
@@ -111,17 +109,12 @@ router.get('/stats/overview', requirePermission('can_view_stats'), getStatsOverv
 router.get('/stats/registrations', getRegistrationStats);
 router.get('/stats/daily', requirePermission('can_view_stats'), getDailyStatsReport);
 router.get('/activity-logs', getActivityLogs);
-router.get('/activity-log', requirePermission('can_view_stats'), getActivityLogList);
-router.get('/activity-log/stats', requirePermission('can_view_stats'), getActivityLogStats);
-router.get('/activity-log/export', requirePermission('can_view_stats'), exportActivityLogs);
-router.get('/stats/registration-sources', requirePermission('can_view_stats'), getRegistrationSources);
 router.get('/visitors/overview', requirePermission('can_view_stats'), getVisitorOverview);
 router.get('/visitors', requirePermission('can_view_stats'), listVisitors);
 router.get('/analytics/overview', requirePermission('can_view_stats'), getAnalyticsOverview);
 router.get('/analytics/company-visitors', requirePermission('can_view_stats'), getCompanyVisitors);
 router.get('/analytics/events', requirePermission('can_view_stats'), listAnalyticsEvents);
 router.get('/analytics/daily-registrations', requirePermission('can_view_stats'), getDailyRegistrations);
-router.get('/stats/today-new', getTodayNew);
 
 // Designer management
 router.get('/designers', getDesignersForAdmin);
@@ -315,13 +308,5 @@ router.get('/admins', requireSuperAdmin, listAdmins);
 router.post('/admins', requireSuperAdmin, createSubAdmin);
 router.put('/admins/:id', requireSuperAdmin, updateAdmin);
 router.delete('/admins/:id', requireSuperAdmin, deleteAdmin);
-
-// ── Suppliers ──
-router.get('/suppliers', supplierAdmin.listSuppliers);
-router.get('/suppliers/:id', supplierAdmin.getSupplierDetail);
-router.put('/suppliers/:id', supplierAdmin.updateSupplier);
-router.put('/suppliers/:id/status', supplierAdmin.updateSupplierStatus);
-router.delete('/suppliers/:id', supplierAdmin.deleteSupplier);
-router.get('/supplier-leads', listSupplierLeads);
 
 export default router;

@@ -443,37 +443,40 @@ export default function CompanyDetailPage() {
               </section>
             )}
 
-            {/* Contact Info (visible on mobile, hidden on desktop - shown in sidebar) */}
-            <section className="py-6 border-b border-stone-100 lg:hidden">
-              <h2 className="text-lg font-semibold text-[#1c1917] mb-3">Contact</h2>
-              <div className="space-y-2.5 text-sm">
-                {company.phone && (
-                  <a href={`tel:${company.phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a]">
-                    <Phone className="w-4 h-4 text-[#c6a065]" /> {company.phone}
-                  </a>
-                )}
-                {company.email && (
-                  <a href={`mailto:${company.email}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a]">
-                    <Mail className="w-4 h-4 text-[#c6a065]" /> {company.email}
-                  </a>
-                )}
-                {company.website && (
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-[#b8864a] hover:underline">
-                    <Globe className="w-4 h-4" /> Visit website <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-                {company.instagram && (
-                  <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-[#b8864a] hover:underline">
-                    <Instagram className="w-4 h-4" /> {instagramLabel ? `@${instagramLabel}` : 'Instagram'}
-                  </a>
-                )}
-                {company.address && (
-                  <div className="flex items-start gap-2.5 text-stone-600 pt-2 border-t border-stone-100">
-                    <MapPin className="w-4 h-4 text-[#c6a065] mt-0.5 flex-shrink-0" /> {company.address}
-                  </div>
-                )}
-              </div>
-            </section>
+            {/* Contact Info (visible on mobile, hidden on desktop - shown in sidebar)
+                Hidden entirely for self-registered companies (no contact fields in API response). */}
+            {(company.phone || company.email || company.website || company.instagram || company.address) && (
+              <section className="py-6 border-b border-stone-100 lg:hidden">
+                <h2 className="text-lg font-semibold text-[#1c1917] mb-3">Contact</h2>
+                <div className="space-y-2.5 text-sm">
+                  {company.phone && (
+                    <a href={`tel:${company.phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a]">
+                      <Phone className="w-4 h-4 text-[#c6a065]" /> {company.phone}
+                    </a>
+                  )}
+                  {company.email && (
+                    <a href={`mailto:${company.email}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a]">
+                      <Mail className="w-4 h-4 text-[#c6a065]" /> {company.email}
+                    </a>
+                  )}
+                  {company.website && (
+                    <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-[#b8864a] hover:underline">
+                      <Globe className="w-4 h-4" /> Visit website <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  {company.instagram && (
+                    <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-[#b8864a] hover:underline">
+                      <Instagram className="w-4 h-4" /> {instagramLabel ? `@${instagramLabel}` : 'Instagram'}
+                    </a>
+                  )}
+                  {company.address && (
+                    <div className="flex items-start gap-2.5 text-stone-600 pt-2 border-t border-stone-100">
+                      <MapPin className="w-4 h-4 text-[#c6a065] mt-0.5 flex-shrink-0" /> {company.address}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* ===== Projects Section (inside left column so sidebar stays sticky alongside) ===== */}
             <div className="mt-2">
@@ -563,38 +566,40 @@ export default function CompanyDetailPage() {
             <div className="sticky top-20 space-y-4">
               <ServiceInquiryCard title={`Get in touch with ${company.name}`} companyName={company.name} companySlug={company.id} />
 
-              {/* Contact Info Card */}
-              <div className="border border-stone-200 rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Contact Info</h3>
-                <div className="space-y-2.5 text-sm">
-                  {company.phone && (
-                    <a href={`tel:${company.phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
-                      <Phone className="w-4 h-4 text-stone-400" /> {company.phone}
-                    </a>
-                  )}
-                  {company.email && (
-                    <a href={`mailto:${company.email}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
-                      <Mail className="w-4 h-4 text-stone-400" /> {company.email}
-                    </a>
-                  )}
-                  {company.website && (
-                    <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
-                      <Globe className="w-4 h-4 text-stone-400" /> Website <ExternalLink className="w-3 h-3 text-stone-300" />
-                    </a>
-                  )}
-                  {company.instagram && (
-                    <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
-                      <Instagram className="w-4 h-4 text-stone-400" /> {instagramLabel ? `@${instagramLabel}` : 'Instagram'}
-                    </a>
-                  )}
-                  {company.address && (
-                    <div className="flex items-start gap-2.5 text-stone-500 pt-2 border-t border-stone-100">
-                      <MapPin className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs leading-relaxed">{company.address}</span>
-                    </div>
-                  )}
+              {/* Contact Info Card — hidden for self-registered companies (no contact fields in API response) */}
+              {(company.phone || company.email || company.website || company.instagram || company.address) && (
+                <div className="border border-stone-200 rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Contact Info</h3>
+                  <div className="space-y-2.5 text-sm">
+                    {company.phone && (
+                      <a href={`tel:${company.phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
+                        <Phone className="w-4 h-4 text-stone-400" /> {company.phone}
+                      </a>
+                    )}
+                    {company.email && (
+                      <a href={`mailto:${company.email}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
+                        <Mail className="w-4 h-4 text-stone-400" /> {company.email}
+                      </a>
+                    )}
+                    {company.website && (
+                      <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
+                        <Globe className="w-4 h-4 text-stone-400" /> Website <ExternalLink className="w-3 h-3 text-stone-300" />
+                      </a>
+                    )}
+                    {company.instagram && (
+                      <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
+                        <Instagram className="w-4 h-4 text-stone-400" /> {instagramLabel ? `@${instagramLabel}` : 'Instagram'}
+                      </a>
+                    )}
+                    {company.address && (
+                      <div className="flex items-start gap-2.5 text-stone-500 pt-2 border-t border-stone-100">
+                        <MapPin className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-xs leading-relaxed">{company.address}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Business Details */}
               <div className="border border-stone-200 rounded-xl p-5">

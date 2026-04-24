@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import SmartImage from '../ui/SmartImage';
 import { TableSpinner } from '../ui/Spinner';
 import { Trash2 } from 'lucide-react';
-import { useAdminT } from '../../hooks/useAdminLang';
+import CopyButton from '../ui/CopyButton';
 
 interface CompanyProfileRecord {
   id: number;
@@ -67,7 +67,6 @@ export default function AdminCompaniesTableTab({
   onUpdatedSortToggle,
 }: AdminCompaniesTableTabProps) {
   const navigate = useNavigate();
-  const { t } = useAdminT();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{ msg: string; key: string } | null>(null);
@@ -126,7 +125,7 @@ export default function AdminCompaniesTableTab({
               onClick={() => { onBulkUnapprove([...selected]); setSelected(new Set()); }}
               className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors text-sm font-medium"
             >
-              {t('Unapprove', '取消通过')} {selected.size}
+              Unapprove {selected.size}
             </button>
           )}
           <button
@@ -134,7 +133,7 @@ export default function AdminCompaniesTableTab({
             className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             <Trash2 size={16} />
-            {t('Delete', '删除')} {selected.size}
+            Delete {selected.size}
           </button>
         </div>
       )}
@@ -151,25 +150,25 @@ export default function AdminCompaniesTableTab({
                   className="rounded"
                 />
               </th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Company', '公司')}</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('City', '城市')}</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Owner', '所有者')}</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">Company</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">Owner</th>
               <th
                 className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
                 onClick={onSortToggle}
               >
-                {t('Projects', '项目')} {sortActive ? (sortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
+                Projects {sortActive ? (sortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
               </th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Home Order', '首页排序')}</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('List Order', '列表排序')}</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Signed', '已签约')}</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Weight', '权重')}</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Joined', '加入时间')}</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">已签约</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">Weight</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">Joined</th>
               <th
                 className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
                 onClick={onUpdatedSortToggle}
               >
-                {t('Updated', '更新时间')} {updatedSortActive ? (updatedSortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
+                更新时间 {updatedSortActive ? (updatedSortDir === 'desc' ? '↓' : '↑') : <span className="text-stone-300">↕</span>}
               </th>
             </tr>
           </thead>
@@ -177,7 +176,7 @@ export default function AdminCompaniesTableTab({
             {loading ? (
               <TableSpinner colSpan={11} />
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={11} className="text-center py-12 text-stone-400">{t('No records', '暂无数据')}</td></tr>
+              <tr><td colSpan={11} className="text-center py-12 text-stone-400">No records</td></tr>
             ) : profiles.map((c) => (
               <tr
                 key={c.id}
@@ -202,6 +201,7 @@ export default function AdminCompaniesTableTab({
                       </div>
                     )}
                     <span className="font-medium text-stone-800">{c.company_name}</span>
+                    <CopyButton text={c.company_name} />
                   </div>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>
@@ -256,18 +256,18 @@ export default function AdminCompaniesTableTab({
                   </button>
                 </td>
                 <td className="px-4 py-3 text-stone-600 text-xs font-mono">{c.weight_score ?? '—'}</td>
-                <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-                <td className="px-4 py-3 text-stone-500 text-xs">{c.updated_at ? new Date(c.updated_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-stone-500 text-xs">{c.updated_at ? new Date(c.updated_at).toLocaleDateString() : '—'}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {pages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">{t('Page', '第')} {page} {t('of', '/')} {pages}</span>
+            <span className="text-xs text-stone-500">Page {page} of {pages}</span>
             <div className="flex gap-2">
-              <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Prev', '上一页')}</button>
-              <button onClick={() => onPageChange(Math.min(pages, page + 1))} disabled={page >= pages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Next', '下一页')}</button>
+              <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
+              <button onClick={() => onPageChange(Math.min(pages, page + 1))} disabled={page >= pages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
             </div>
           </div>
         )}

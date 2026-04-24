@@ -8,6 +8,7 @@ import SidebarNavLink from '../ui/SidebarNavLink';
 import TarmeerLogo from '../TarmeerLogo';
 import ToastContainer from '../ui/Toast';
 import { AdminLangContext, type AdminLang } from '../../hooks/useAdminLang';
+import AdminGlobalSearch from './AdminGlobalSearch';
 
 const ADMIN_LANG_KEY = 'admin_lang';
 
@@ -34,9 +35,9 @@ const navItems = [
     infoZh: '管理建材供应商、审核入驻申请、跟踪供应商线索。',
   },
   {
-    to: '/admin/inquiries', labelEn: 'Inquiries', labelZh: '询盘', icon: MessageSquare,
+    to: '/admin/inquiries', labelEn: 'Leads', labelZh: '线索', icon: MessageSquare,
     infoEn: 'Review customer leads, update follow-up status, and keep conversion notes synchronized.',
-    infoZh: '查看客户询盘、更新跟进状态，并同步转化备注。',
+    infoZh: '查看客户线索、更新跟进状态，并同步转化备注。',
   },
   {
     to: '/admin/activity-log', labelEn: 'Activity Log', labelZh: '操作记录', icon: ClipboardList, permission: 'can_view_stats' as const,
@@ -246,14 +247,19 @@ export default function AdminLayout() {
   const hideTooltip = () => setTooltip(null);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] flex">
-      {/* Sidebar - match DesignerLayout style */}
-      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-screen overflow-visible">
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6">
-          <TarmeerLogo />
+    <div className="min-h-screen bg-[#faf9f7] flex flex-col">
+      {/* Top header — Logo | Search (centered) | spacer */}
+      <header className="h-16 bg-white border-b border-stone-200 grid grid-cols-[16rem_1fr_16rem] items-center px-6 sticky top-0 z-30 shrink-0">
+        <TarmeerLogo />
+        <div className="flex justify-center">
+          <AdminGlobalSearch />
         </div>
+        <div />
+      </header>
 
+      <div className="flex flex-1 overflow-hidden">
+      {/* Sidebar - match DesignerLayout style */}
+      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-[calc(100vh-4rem)] overflow-visible">
         {/* Navigation - active: left border + light bg like designer */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto overflow-x-visible">
           {filteredNavItems.map((item) => {
@@ -450,6 +456,7 @@ export default function AdminLayout() {
           </div>
         </AdminLangContext.Provider>
       </main>
+      </div>
       <ToastContainer />
       {tooltip && (
         <div
