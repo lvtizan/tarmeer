@@ -16,6 +16,7 @@
 | Incident log             | `docs/incident-log/`                  |
 | Superpowers (skills)     | `docs/superpowers/`                   |
 | Harness tools            | `scripts/harness/README.md`           |
+| **Component inventory**  | **`docs/admin-components.md`**        |
 
 ---
 
@@ -27,17 +28,27 @@
 4. **Images**: NEVER store base64 in DB — see Image Storage Rules below.
 5. **Test**: MUST run related test cases before deploy — see `docs/testing/`.
 6. **Frontend + Backend must match**: if frontend calls a new API, backend must be deployed first.
-7. **SEO**: all public-facing pages MUST have `<Helmet>` with title, description, og:title, og:description, og:image, canonical. Detail pages MUST include JSON-LD structured data. Run `node scripts/harness/lint-seo.mjs` to verify — see `docs/SEO.md`.
-8. **Feature completion workflow**: MUST follow the 5-step workflow below before notifying user.
-9. **替换已有功能时**：必须同时删除旧实现（state、hooks、JSX、import），不能只加新代码。完成后跑 `npx tsc --noEmit` 确认无未使用变量。
-10. **PC 端与移动端逻辑必须一致**：任何涉及表单、上传、数据提交、页面路由的功能，写代码前必须同时阅读 PC 端和移动端的现有实现，确认以下三点完全一致：（1）交互逻辑（触发条件、校验规则、跳转行为）；（2）数据传输逻辑（API endpoint、payload 结构、字段名）；（3）组件/页面路由（移动端底部导航指向的页面必须与 PC 端侧边栏指向的页面使用相同组件）。如果发现不一致，必须在本次改动中同步修复，不得遗留分叉。
-11. **改完代码后的自动流程**：Stop hook 会在每次 Claude 停止时自动运行 tsc 检查（仅当本次 session 修改了 src/ 或 server/src/ 中的 TS/TSX/JS 文件时触发）。tsc 通过后，Claude 必须：（1）运行相关 harness 测试用例；（2）提供本地测试地址（`http://localhost:5173/` 对应路径）；（3）告知用户改了什么 + 测试结果；（4）等用户确认后才能部署。**tsc 失败时 Claude 会被自动唤醒修复，不需要用户介入。**
+7. **New page (any kind)**: MUST read `docs/admin-components.md` BEFORE writing any JSX. Map every UI element to existing components. New entity list → extend `AdminGlobalSearch`. New controller function → wire route immediately.
+8. **SEO**: all public-facing pages MUST have `<Helmet>` with title, description, og:title, og:description, og:image, canonical. Detail pages MUST include JSON-LD structured data. Run `node scripts/harness/lint-seo.mjs` to verify — see `docs/SEO.md`.
+9. **Feature completion workflow**: MUST follow the 5-step workflow below before notifying user.
+10. **替换已有功能时**：必须同时删除旧实现（state、hooks、JSX、import），不能只加新代码。完成后跑 `npx tsc --noEmit` 确认无未使用变量。
+11. **PC 端与移动端逻辑必须一致**：任何涉及表单、上传、数据提交、页面路由的功能，写代码前必须同时阅读 PC 端和移动端的现有实现，确认以下三点完全一致：（1）交互逻辑（触发条件、校验规则、跳转行为）；（2）数据传输逻辑（API endpoint、payload 结构、字段名）；（3）组件/页面路由（移动端底部导航指向的页面必须与 PC 端侧边栏指向的页面使用相同组件）。如果发现不一致，必须在本次改动中同步修复，不得遗留分叉。
+12. **改完代码后的自动流程**：Stop hook 会在每次 Claude 停止时自动运行 tsc 检查（仅当本次 session 修改了 src/ 或 server/src/ 中的 TS/TSX/JS 文件时触发）。tsc 通过后，Claude 必须：（1）运行相关 harness 测试用例；（2）提供本地测试地址（`http://localhost:5173/` 对应路径）；（3）告知用户改了什么 + 测试结果；（4）等用户确认后才能部署。**tsc 失败时 Claude 会被自动唤醒修复，不需要用户介入。**
 
 ---
 
 ## Feature Completion Workflow (MUST FOLLOW)
 
 Every feature MUST go through these steps before notifying the user. No exceptions.
+
+### Step 0: Component Inventory Check (before any code)
+**ALWAYS run this for any new page or UI feature — admin or public-facing.**
+1. Run `node scripts/harness/lint-admin-ui.mjs --guide` — prints full component catalog
+2. List every UI element the page needs (dropdowns, search, tooltips, modals, notifications, logo, phone, forms)
+3. Map each element to the existing component from `docs/admin-components.md`
+4. **Search**: decide if entity needs to be added to `AdminGlobalSearch` (any new admin list page → yes)
+5. **Backend**: if new controller functions → open the routes file and add `router.*` NOW, before writing controller code
+6. Only after this mapping is complete, start coding
 
 ### Step 1: Database Walk-through
 - List ALL tables touched by this feature
@@ -139,7 +150,6 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 7. NEVER use raw `<select>` — use `<AdminSelect />`
 8. NEVER create new phone input without `phoneValidation.ts` validation
 9. NEVER duplicate form logic — new lead/inquiry forms MUST use the shared `<LeadForm />` component (when built), or at minimum reuse `phoneValidation.ts` and `AdminSelect`
-7. NEVER use raw `<select>` — use `<AdminSelect />`
 
 ---
 
@@ -245,6 +255,7 @@ tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
 The skill has specialized workflows that produce better results than ad-hoc answers.
 
 Key routing rules:
+- **New page / new feature** → MUST invoke brainstorming FIRST. Brainstorming must include Step 0 component inventory scan before any code is written.
 - **Feature complete** → MUST invoke feature-done BEFORE notifying user (auto-trigger: DB walk, pitfall check, tests, commit)
 - Product ideas, "is this worth building", brainstorming → invoke office-hours
 - Bugs, errors, "why is this broken", 500 errors → invoke investigate

@@ -17,6 +17,17 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative } from 'path';
 
+// --guide mode: print component catalog before coding, then exit
+if (process.argv.includes('--guide')) {
+  const docPath = join(new URL('../../', import.meta.url).pathname.replace(/\/$/, ''), 'docs/admin-components.md');
+  try {
+    console.log(readFileSync(docPath, 'utf-8'));
+  } catch {
+    console.log('docs/admin-components.md not found. Run from project root.');
+  }
+  process.exit(0);
+}
+
 const ROOT = new URL('../../', import.meta.url).pathname.replace(/\/$/, '');
 const ADMIN_DIR = join(ROOT, 'src/pages/admin');
 const COMPONENTS_DIR = join(ROOT, 'src/components');
