@@ -27,17 +27,32 @@ const ROOT = path.resolve(path.dirname(__filename), '..', '..');
 // detail=true means JSON-LD structured data is required.
 
 const PUBLIC_PAGES = [
+  // Core discovery pages
   { file: 'src/pages/HomePage.tsx', label: 'Home', detail: false },
   { file: 'src/pages/CompaniesPage.tsx', label: 'Companies', detail: false },
   { file: 'src/pages/CompanyDetailPage.tsx', label: 'Company Detail', detail: true },
   { file: 'src/pages/ProjectDetailPage.tsx', label: 'Project Detail', detail: true },
   { file: 'src/pages/PortfolioPage.tsx', label: 'Portfolio', detail: false },
-  { file: 'src/pages/ShowroomsPage.tsx', label: 'Showrooms', detail: false },
   { file: 'src/pages/ContactPage.tsx', label: 'Contact', detail: false },
-  { file: 'src/pages/BrandPage.tsx', label: 'Brand Detail', detail: true },
-  { file: 'src/pages/MaterialCategoryPage.tsx', label: 'Material Category', detail: false },
   { file: 'src/pages/FaqPage.tsx', label: 'FAQ', detail: false },
+  // Materials / Suppliers
+  { file: 'src/pages/ShowroomsPage.tsx', label: 'Materials (Showrooms)', detail: false },
+  { file: 'src/pages/SupplierDetailPage.tsx', label: 'Supplier Detail', detail: true },
+  { file: 'src/pages/SupplierProjectDetailPage.tsx', label: 'Supplier Project Detail', detail: true },
+  // Blog
   { file: 'src/pages/BlogPage.tsx', label: 'Blog', detail: false },
+  { file: 'src/pages/BlogDetailPage.tsx', label: 'Blog Article', detail: true },
+  // Marketing / Landing
+  { file: 'src/pages/ForCompaniesPage.tsx', label: 'For Companies', detail: false },
+  { file: 'src/pages/ForHomeownersPage.tsx', label: 'For Homeowners', detail: false },
+  // Interior design category pages
+  { file: 'src/pages/HouseExteriorDesignPage.tsx', label: 'House Exterior Design', detail: false },
+  { file: 'src/pages/SoftDecorationPage.tsx', label: 'Soft Decoration', detail: false },
+  { file: 'src/pages/NewHomeDesignPage.tsx', label: 'New Home Design', detail: false },
+  // ── ADD NEW PUBLIC PAGES HERE ──
+  // When you add a new public-facing page, add an entry above this line.
+  // detail: true  → also checks for JSON-LD structured data
+  // detail: false → only checks basic meta tags
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────

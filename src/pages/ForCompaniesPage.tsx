@@ -19,6 +19,8 @@ export default function ForCompaniesPage() {
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta property="og:url" content="https://www.tarmeer.com/for-companies" />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="keywords" content="join Tarmeer, renovation company UAE, get homeowner leads, renovation platform Dubai, free contractor listing" />
         <link rel="canonical" href="https://www.tarmeer.com/for-companies" />
       </Helmet>
 

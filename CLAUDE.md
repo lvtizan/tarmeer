@@ -28,7 +28,7 @@
 4. **Images**: NEVER store base64 in DB — see Image Storage Rules below.
 5. **Test**: MUST run related test cases before deploy — see `docs/testing/`.
 6. **Frontend + Backend must match**: if frontend calls a new API, backend must be deployed first.
-7. **New page (any kind)**: MUST read `docs/admin-components.md` BEFORE writing any JSX. Map every UI element to existing components. New entity list → extend `AdminGlobalSearch`. New controller function → wire route immediately.
+7. **New page (any kind)**: MUST read `docs/admin-components.md` BEFORE writing any JSX. Map every UI element to existing components. New entity list → extend `AdminGlobalSearch`. New controller function → wire route immediately. Public-facing page → full `<Helmet>` SEO block required + add to `lint-seo.mjs` PUBLIC_PAGES + run `node scripts/harness/lint-seo.mjs`.
 8. **SEO**: all public-facing pages MUST have `<Helmet>` with title, description, og:title, og:description, og:image, canonical. Detail pages MUST include JSON-LD structured data. Run `node scripts/harness/lint-seo.mjs` to verify — see `docs/SEO.md`.
 9. **Feature completion workflow**: MUST follow the 5-step workflow below before notifying user.
 10. **替换已有功能时**：必须同时删除旧实现（state、hooks、JSX、import），不能只加新代码。完成后跑 `npx tsc --noEmit` 确认无未使用变量。

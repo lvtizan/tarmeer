@@ -124,7 +124,10 @@ export default function SupplierProjectDetailPage() {
         <link rel="canonical" href={`https://www.tarmeer.com/materials/suppliers/${slug}/projects/${projectId}`} />
         <meta property="og:title" content={`${project.title} — ${supplier.company_name} | Tarmeer`} />
         <meta property="og:description" content={project.description?.slice(0, 200) || `${project.title} by ${supplier.company_name}`} />
+        <meta property="og:type" content="article" />
         {currentImage && <meta property="og:image" content={currentImage} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="keywords" content={`${project.title}, ${supplier.company_name}, building materials UAE, supplier project, Tarmeer`} />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',

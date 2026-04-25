@@ -120,11 +120,41 @@ Two kinds of search — they are NOT interchangeable:
 
 ---
 
-## New Admin Page Checklist (run through before writing code)
+## SEO Requirements — Every New Public-Facing Page
+
+All of the following must be inside `<Helmet>`:
+
+```tsx
+<Helmet>
+  <title>{pageTitle} | Tarmeer</title>
+  <meta name="description" content="..." />            {/* ≤155 chars */}
+  <meta name="keywords" content="..." />
+  <meta property="og:title" content="..." />
+  <meta property="og:description" content="..." />
+  <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+  <meta property="og:url" content="https://www.tarmeer.com/YOUR-PATH" />
+  <meta property="og:type" content="website" />        {/* "article" for detail pages */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://www.tarmeer.com/YOUR-PATH" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+  {/* Detail pages: also add JSON-LD structured data (BreadcrumbList + entity type) */}
+</Helmet>
+```
+
+After adding the page:
+1. Add entry to `PUBLIC_PAGES` in `scripts/harness/lint-seo.mjs` (`detail: true` if JSON-LD needed)
+2. Run `node scripts/harness/lint-seo.mjs` — must pass zero warnings
+
+---
+
+## New Page Checklist (admin or public — run before writing any code)
 
 - [ ] List every UI element needed: dropdowns, search, tooltips, modals, loading, notifications, logo, phone inputs, forms
 - [ ] Map each element to existing component in catalog above
 - [ ] If filterable list → plan page filter input (uses `useSearchParams`)
 - [ ] If new entity → add to `AdminGlobalSearch` + `globalSearchController.ts`
 - [ ] If new backend controller functions → open the routes file NOW and add `router.get/post/put/delete` before forgetting
-- [ ] Run `node scripts/harness/lint-admin-ui.mjs` after writing to catch violations
+- [ ] If public-facing → add full `<Helmet>` SEO block (see template above)
+- [ ] If public-facing → add entry to `lint-seo.mjs` PUBLIC_PAGES
+- [ ] Run `node scripts/harness/lint-admin-ui.mjs` after writing (admin pages)
+- [ ] Run `node scripts/harness/lint-seo.mjs` after writing (public pages)

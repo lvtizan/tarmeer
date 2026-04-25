@@ -149,6 +149,8 @@ export default function SoftDecorationPage() {
         <meta property="og:title" content="Soft Decoration & Furniture Design | Tarmeer" />
         <meta property="og:description" content="Furniture, color schemes, lighting, and styling for your home in the UAE." />
         <meta property="og:image" content="https://www.tarmeer.com/og-default.jpg" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.tarmeer.com/services/soft-decoration" />
         <link rel="canonical" href="https://www.tarmeer.com/services/soft-decoration" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="keywords" content="soft decoration UAE, furniture design, interior styling, color scheme, lighting plan, Tarmeer" />

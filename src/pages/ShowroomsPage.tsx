@@ -159,6 +159,8 @@ export default function ShowroomsPage() {
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta property="og:url" content="https://www.tarmeer.com/materials" />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="keywords" content="building materials UAE, suppliers Dubai Sharjah, furniture stone lighting flooring, renovation materials, Tarmeer showroom" />
         <link rel="canonical" href="https://www.tarmeer.com/materials" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
         <script type="application/ld+json">{JSON.stringify({

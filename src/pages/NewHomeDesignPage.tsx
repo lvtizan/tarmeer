@@ -222,6 +222,8 @@ export default function NewHomeDesignPage() {
         <meta property="og:title" content="New Home Design Service | Tarmeer" />
         <meta property="og:description" content="Floor plans, 3D renderings, and construction drawings for your new home in the UAE." />
         <meta property="og:image" content="https://www.tarmeer.com/og-default.jpg" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.tarmeer.com/services/new-home-design" />
         <link rel="canonical" href="https://www.tarmeer.com/services/new-home-design" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="keywords" content="new home design UAE, interior design service, floor plan, 3D rendering, construction drawings, Tarmeer" />

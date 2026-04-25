@@ -39,6 +39,8 @@ export default function HouseExteriorDesignPage() {
         <meta property="og:title" content="House Exterior Design Service | Tarmeer" />
         <meta property="og:description" content="Facade design, material selection, and construction documentation for UAE homes." />
         <meta property="og:image" content="https://www.tarmeer.com/og-default.jpg" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.tarmeer.com/services/house-exterior" />
         <link rel="canonical" href="https://www.tarmeer.com/services/house-exterior" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="keywords" content="house exterior design UAE, facade design, villa exterior, landscape design, construction drawings, Tarmeer" />

@@ -97,6 +97,8 @@ export default function ForHomeownersPage() {
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta property="og:url" content="https://www.tarmeer.com/for-homeowners" />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="keywords" content="find renovation companies UAE, home renovation Dubai, interior design quotes, renovation platform, Tarmeer homeowners" />
         <link rel="canonical" href="https://www.tarmeer.com/for-homeowners" />
         <script type="application/ld+json">
           {JSON.stringify({

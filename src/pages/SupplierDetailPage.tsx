@@ -191,6 +191,7 @@ export default function SupplierDetailPage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${supplier.company_name} | Tarmeer`} />
         <meta name="twitter:description" content={supplier.description?.slice(0, 160) || ''} />
+        <meta name="keywords" content={`${supplier.company_name}, building materials UAE, material supplier Dubai, renovation supplies, Tarmeer`} />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
