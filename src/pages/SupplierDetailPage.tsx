@@ -176,7 +176,7 @@ export default function SupplierDetailPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#faf9f7]">
+    <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
       <Helmet>
         <title>{supplier.company_name} — Material Supplier UAE | Tarmeer</title>
         <meta name="description" content={
@@ -317,10 +317,10 @@ export default function SupplierDetailPage() {
       )}
 
       {/* ========== Sticky Tab Strip ========== */}
-      {/* top-14/top-16 = navbar height (h-14 mobile / h-16 desktop). z-40 keeps us above content
-          but below the z-50 navbar. overflow-x-auto on the sticky element itself avoids creating
-          a nested scroll context that breaks sticky on iOS Safari. */}
-      <div className="sticky top-14 sm:top-16 z-40 bg-[#faf9f7]/95 backdrop-blur-sm border-b border-stone-200 overflow-x-auto scrollbar-none">
+      {/* top-14/top-16 = navbar height. overflow-x-auto is on the inner div, NOT the sticky
+          element — putting overflow on sticky itself breaks sticky in some browsers. */}
+      <div className="sticky top-14 sm:top-16 z-40 bg-[#faf9f7]/95 backdrop-blur-sm">
+        <div className="overflow-x-auto scrollbar-none">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-1">
           {tabItems.map(({ key, label, icon: Icon, count, ref }) => (
             <button
@@ -351,22 +351,13 @@ export default function SupplierDetailPage() {
             <ArrowUp className="w-4 h-4" />
           </button>
         </div>
+        </div>
       </div>
 
       {/* ========== Main Content ========== */}
-      {/* paddingLeft mirrors PageContainer (max-w-6xl mx-auto px-6) so left edge aligns with tab strip.
-          The sidebar extends into the right margin — it does NOT shift the content left. */}
-      <div
-        className="py-8 sm:py-10"
-        style={{
-          paddingLeft: 'max(16px, calc((100vw - 1152px) / 2 + 24px))',
-          paddingRight: '24px',
-        }}
-      >
-        {/* items-stretch (default) is critical: makes the sidebar column as tall as the left
-            content column, giving sticky enough scroll distance to work correctly */}
-        <div className="flex gap-8">
-          <div className="min-w-0 flex-1 space-y-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <div className="min-[1700px]:flex">
+          <div className="min-w-0 min-[1700px]:flex-1 space-y-10">
           {/* Products section */}
           <div ref={productsRef} id="section-products" className="scroll-mt-28">
             <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
@@ -386,7 +377,7 @@ export default function SupplierDetailPage() {
                     ))}
                   </div>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
                     <div key={p.id} className="group cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
                       <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
@@ -518,8 +509,8 @@ export default function SupplierDetailPage() {
             )}
           </div>
 
-          {/* Inline inquiry form — shown on screens < 1280px where no sidebar */}
-          <div ref={mobileFormRef} className="min-[1280px]:hidden">
+          {/* Inline inquiry form — shown on screens < 1700px where no sidebar */}
+          <div ref={mobileFormRef} className="min-[1700px]:hidden">
             <ServiceInquiryCard
               title={`Contact ${supplier.company_name}`}
               companyName={supplier.company_name}
@@ -529,9 +520,9 @@ export default function SupplierDetailPage() {
           </div>
         </div>
 
-        {/* Sticky sidebar — 1280px+, sticks just below the tab strip as user scrolls */}
-        <div className="hidden min-[1280px]:block w-72 shrink-0">
-          <div className="sticky top-[80px]">
+        {/* Sticky sidebar — 1700px+, floats outside the max-w-6xl container on the right */}
+        <div className="hidden min-[1700px]:block w-72 shrink-0 ml-8" style={{ marginRight: '-320px' }}>
+          <div className="sticky top-[112px]">
             <ServiceInquiryCard
               title={`Contact ${supplier.company_name}`}
               companyName={supplier.company_name}
@@ -551,7 +542,7 @@ export default function SupplierDetailPage() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="min-[1280px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
+            className="min-[1700px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
           >
             <button
               className="btn-primary flex-1 py-3 text-[15px]"

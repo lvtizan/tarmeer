@@ -252,40 +252,33 @@ export default function AdminInquiriesPage() {
 
         <div className="w-px h-5 bg-stone-200" />
 
-        {/* Status dropdown — company leads only have new/all */}
+        {/* Status dropdown */}
         <AdminSelect
           className="!h-9 !px-3 !text-sm"
-          value={statusFilter}
-          onChange={(val) => { setStatusFilter(val as StatusFilter); setPage(1); }}
+          value={viewMode === 'deleted' ? 'deleted' : statusFilter}
+          onChange={(val) => {
+            if (val === 'deleted') {
+              setViewMode('deleted');
+              setStatusFilter('all');
+            } else {
+              setViewMode('active');
+              setStatusFilter(val as StatusFilter);
+            }
+            setPage(1);
+          }}
           options={typeFilter === 'company' ? [
             { value: 'all', label: '全部状态' },
             { value: 'new', label: '新询单' },
+            { value: 'deleted', label: '已删除' },
           ] : [
             { value: 'all', label: '全部状态' },
             { value: 'new', label: '新询单' },
             { value: 'contacted', label: '已联系' },
             { value: 'resolved', label: '已解决' },
             { value: 'archived', label: '已归档' },
+            { value: 'deleted', label: '已删除' },
           ]}
         />
-
-        {/* Search removed — use global search bar at top */}
-
-        {/* Active / Deleted toggle */}
-        <div className="flex items-center gap-0.5 h-9 bg-stone-100 rounded-2xl px-0.5">
-          <button onClick={() => setViewMode('active')}
-            className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'active'
-              ? 'bg-white text-[#2c2c2c] shadow-sm'
-              : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
-            有效
-          </button>
-          <button onClick={() => setViewMode('deleted')}
-            className={`h-8 rounded-[14px] px-3 text-sm font-medium transition ${viewMode === 'deleted'
-              ? 'bg-white text-[#2c2c2c] shadow-sm'
-              : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}>
-            已删除
-          </button>
-        </div>
       </div>
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
