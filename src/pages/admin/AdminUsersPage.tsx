@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Pencil, Shield, X, Trash2 } from 'lucide-react';
+import { Pencil, Shield, X, Trash2, Ban, CircleCheck } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import CopyButton from '../../components/ui/CopyButton';
-import HoverDeleteIconButton from '../../components/ui/HoverDeleteIconButton';
 import UserEditModal from '../../components/admin/UserEditModal';
+import DeleteReasonModal from '../../components/admin/DeleteReasonModal';
+import AdminRowActions from '../../components/admin/AdminRowActions';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface UserRecord {
   id: number;
@@ -32,13 +34,7 @@ const AVAILABLE_PERMISSIONS = [
 
 // ── Permission Modal ────────────────────────────────────────────────────────
 
-interface PermissionModalProps {
-  user: UserRecord;
-  onClose: () => void;
-  onSaved: () => void;
-}
-
-function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
+function PermissionModal({ user, onClose, onSaved }: { user: UserRecord; onClose: () => void; onSaved: () => void }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -79,7 +75,6 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-stone-100">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -91,24 +86,16 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
               <span>{roleLabel}</span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-stone-400 hover:text-stone-600 transition mt-0.5"
-          >
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition mt-0.5">
             <X size={20} />
           </button>
         </div>
-
-        {/* Body */}
         <div className="px-6 py-4 space-y-3 max-h-[55vh] overflow-y-auto">
           {loading ? (
             <div className="text-center py-8 text-stone-400 text-sm">Loading…</div>
           ) : (
             AVAILABLE_PERMISSIONS.map(({ key, label, desc }) => (
-              <label
-                key={key}
-                className="flex items-start gap-3 cursor-pointer group"
-              >
+              <label key={key} className="flex items-start gap-3 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={checked.has(key)}
@@ -116,9 +103,7 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
                   className="mt-0.5 h-4 w-4 rounded border-stone-300 accent-[#b8864a] cursor-pointer"
                 />
                 <span className="flex-1">
-                  <span className="block text-[15px] font-medium text-stone-800 group-hover:text-[#b8864a] transition">
-                    {label}
-                  </span>
+                  <span className="block text-[15px] font-medium text-stone-800 group-hover:text-[#b8864a] transition">{label}</span>
                   <span className="block text-xs text-stone-400">{desc}</span>
                 </span>
               </label>
@@ -126,20 +111,12 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
           )}
           {error && <div className="text-red-600 bg-red-50 px-3 py-2 rounded-lg text-sm">{error}</div>}
         </div>
-
-        {/* Footer */}
         <div className="flex gap-3 px-6 pb-6 pt-4 border-t border-stone-100">
-          <button
-            onClick={onClose}
-            className="flex-1 h-10 rounded-2xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition"
-          >
+          <button onClick={onClose} className="flex-1 h-10 rounded-2xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition">
             Cancel
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="flex-1 h-10 rounded-2xl bg-[#b8864a] hover:bg-[#a07540] text-white text-sm font-medium transition disabled:opacity-50"
-          >
+          <button onClick={handleSave} disabled={saving || loading}
+            className="flex-1 h-10 rounded-2xl bg-[#b8864a] hover:bg-[#a07540] text-white text-sm font-medium transition disabled:opacity-50">
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
@@ -148,75 +125,10 @@ function PermissionModal({ user, onClose, onSaved }: PermissionModalProps) {
   );
 }
 
-// ── Delete Reason Modal ─────────────────────────────────────────────────────
-
-interface DeleteReasonModalProps {
-  names: string[];
-  onConfirm: (reason: string) => void;
-  onCancel: () => void;
-  loading: boolean;
-}
-
-function DeleteReasonModal({ names, onConfirm, onCancel, loading }: DeleteReasonModalProps) {
-  const [reason, setReason] = useState('');
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-stone-100">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Trash2 size={18} className="text-red-500" />
-              <h2 className="text-xl font-bold text-stone-800">
-                Delete {names.length === 1 ? 'User' : `${names.length} Users`}
-              </h2>
-            </div>
-            <p className="text-sm text-stone-500">
-              {names.length === 1
-                ? names[0]
-                : names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : '')}
-            </p>
-          </div>
-          <button onClick={onCancel} className="text-stone-400 hover:text-stone-600 transition mt-0.5">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="px-6 py-4 space-y-3">
-          <label className="block text-sm font-medium text-stone-600">
-            Delete reason <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="请输入删除原因..."
-            rows={3}
-            className="w-full px-3 py-2 border border-stone-200 rounded-xl text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a] resize-none"
-            autoFocus
-          />
-        </div>
-
-        <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-stone-100">
-          <button
-            onClick={onCancel}
-            className="flex-1 h-10 rounded-2xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onConfirm(reason.trim())}
-            disabled={!reason.trim() || loading}
-            className="flex-1 h-10 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition disabled:opacity-50"
-          >
-            {loading ? 'Deleting…' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ── Page ────────────────────────────────────────────────────────────────────
 
 export default function AdminUsersPage() {
+  const { t } = useAdminT();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -232,16 +144,13 @@ export default function AdminUsersPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [deleteModal, setDeleteModal] = useState<{ ids: number[]; names: string[] } | null>(null);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [registeredSort, setRegisteredSort] = useState<'asc' | 'desc' | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const result = await adminApi.getUsers({
-        page,
-        limit: 20,
-        search: search || undefined,
-      });
+      const result = await adminApi.getUsers({ page, limit: 20, search: search || undefined });
       setUsers(result.users);
       setTotal(result.pagination.total);
     } catch (err: any) {
@@ -303,6 +212,13 @@ export default function AdminUsersPage() {
     }
   };
 
+  const sortedUsers = registeredSort
+    ? [...users].sort((a, b) => {
+        const d = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        return registeredSort === 'asc' ? d : -d;
+      })
+    : users;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -310,9 +226,6 @@ export default function AdminUsersPage() {
         <span className="text-sm text-stone-500">{total} total</span>
       </div>
 
-      {/* Filters — search removed, use global search bar above */}
-
-      {/* Batch action bar */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 h-11">
           <span className="text-sm text-stone-500">{selectedIds.size} selected</span>
@@ -320,52 +233,54 @@ export default function AdminUsersPage() {
             onClick={handleBulkDeleteClick}
             className="flex items-center gap-1.5 h-8 px-3 rounded-xl border border-red-200 bg-white text-red-600 text-sm font-medium hover:bg-red-50 transition"
           >
-            <Trash2 size={14} /> 删除 ({selectedIds.size})
+            <Trash2 size={14} /> Delete ({selectedIds.size})
           </button>
         </div>
       )}
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-[15px]">
             <thead>
-              <tr className="bg-stone-50 border-b border-stone-200">
+              <tr className="bg-stone-50 border-b border-stone-200 text-sm">
                 <th className="px-4 py-3 w-10">
                   <input
                     type="checkbox"
                     checked={users.length > 0 && users.every((u) => selectedIds.has(u.id))}
                     onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedIds(new Set(users.map((u) => u.id)));
-                      } else {
-                        setSelectedIds(new Set());
-                      }
+                      if (e.target.checked) setSelectedIds(new Set(users.map((u) => u.id)));
+                      else setSelectedIds(new Set());
                     }}
                     className="h-4 w-4 rounded border-stone-300 accent-[#b8864a] cursor-pointer"
                   />
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600">City</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Email</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">Phone</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Registered</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">Actions</th>
+                <th
+                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
+                  onClick={() => setRegisteredSort(s => s === 'desc' ? 'asc' : 'desc')}
+                >
+                  Registered {registeredSort === 'asc' ? '↑' : registeredSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
+                </th>
+                <th className="px-4 py-3 w-32"></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <TableSpinner colSpan={6} />
+                <TableSpinner colSpan={7} />
               ) : users.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-stone-400">No users found</td></tr>
-              ) : users.map((user) => (
+                <tr><td colSpan={7} className="text-center py-12 text-stone-400">No users found</td></tr>
+              ) : sortedUsers.map((user) => (
                 <tr
                   key={user.id}
-                  className={`group border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition ${selectedIds.has(user.id) ? 'bg-amber-50/40' : ''}`}
+                  className={`border-b border-stone-100 hover:bg-stone-50 cursor-pointer transition ${selectedIds.has(user.id) ? 'bg-amber-50/40' : ''}`}
                   onClick={() => navigate(`/admin/users/${user.id}`)}
                 >
-                  <td className="px-4 py-3 w-10" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3.5 w-10" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selectedIds.has(user.id)}
@@ -379,49 +294,48 @@ export default function AdminUsersPage() {
                       className="h-4 w-4 rounded border-stone-300 accent-[#b8864a] cursor-pointer"
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1 font-medium text-stone-800">
                       <span>{user.full_name}</span>
                       <CopyButton text={user.full_name} />
                     </div>
-                    {user.city && <div className="text-xs text-stone-400">{user.city}</div>}
                   </td>
-                  <td className="px-4 py-3 text-stone-600">{user.email}</td>
-                  <td className="px-4 py-3 text-stone-600 text-sm">{user.phone || <span className="text-stone-300">—</span>}</td>
-                  <td className="relative px-4 py-3 text-stone-500 text-xs">
-                    <span>{new Date(user.created_at).toLocaleDateString()}</span>
-                    <HoverDeleteIconButton
-                      title="Delete user"
-                      loading={deleteLoadingId === user.id}
-                      disabled={deleteLoadingId === user.id}
-                      onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
-                    />
+                  <td className="px-4 py-3.5 text-stone-500">{user.city || <span className="text-stone-300">—</span>}</td>
+                  <td className="px-4 py-3.5 text-stone-600">{user.email}</td>
+                  <td className="px-4 py-3.5 text-stone-600">{user.phone || <span className="text-stone-300">—</span>}</td>
+                  <td className="px-4 py-3.5 text-stone-500 text-sm">
+                    <div>{new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                    <div className="text-xs text-stone-400 mt-0.5">
+                      {new Date(user.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </td>
-                  <td className="px-4 py-3 flex gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditUserId(user.id); }}
-                      className="text-xs px-3 py-1 rounded-lg font-medium transition bg-stone-50 text-stone-600 hover:bg-stone-100 flex items-center gap-1"
-                    >
-                      <Pencil size={12} /> Edit
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setPermissionUser(user); }}
-                      className="text-xs px-3 py-1 rounded-lg font-medium transition bg-stone-50 text-stone-600 hover:bg-stone-100 flex items-center gap-1"
-                      title="Manage permissions"
-                    >
-                      <Shield size={12} /> Permissions
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleStatusToggle(user); }}
-                      disabled={actionLoading === user.id}
-                      className={`text-xs px-3 py-1 rounded-lg font-medium transition ${
-                        user.status === 'active'
-                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                          : 'bg-green-50 text-green-600 hover:bg-green-100'
-                      } disabled:opacity-50`}
-                    >
-                      {actionLoading === user.id ? '...' : user.status === 'active' ? 'Suspend' : 'Activate'}
-                    </button>
+                  <td className="px-2 py-3.5">
+                    <AdminRowActions actions={[
+                      {
+                        icon: <Pencil size={14} />,
+                        label: t('Edit', '编辑'),
+                        onClick: (e) => { e.stopPropagation(); setEditUserId(user.id); },
+                      },
+                      {
+                        icon: <Shield size={14} />,
+                        label: t('Permissions', '权限'),
+                        onClick: (e) => { e.stopPropagation(); setPermissionUser(user); },
+                      },
+                      {
+                        icon: user.status === 'active' ? <Ban size={14} /> : <CircleCheck size={14} />,
+                        label: user.status === 'active' ? t('Suspend', '停用') : t('Activate', '启用'),
+                        variant: user.status === 'active' ? 'warning' : 'success',
+                        disabled: actionLoading === user.id,
+                        onClick: (e) => { e.stopPropagation(); handleStatusToggle(user); },
+                      },
+                      {
+                        icon: <Trash2 size={14} />,
+                        label: t('Delete', '删除'),
+                        variant: 'danger',
+                        disabled: deleteLoadingId === user.id,
+                        onClick: (e) => { e.stopPropagation(); handleDeleteUser(user); },
+                      },
+                    ]} />
                   </td>
                 </tr>
               ))}
@@ -429,44 +343,25 @@ export default function AdminUsersPage() {
           </table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
             <span className="text-xs text-stone-500">Page {page} of {totalPages}</span>
             <div className="flex gap-2">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page <= 1}
-                className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30"
-              >
-                Prev
-              </button>
-              <button
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page >= totalPages}
-                className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30"
-              >
-                Next
-              </button>
+              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1}
+                className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
+              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}
+                className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
             </div>
           </div>
         )}
       </div>
 
       {editUserId && (
-        <UserEditModal
-          id={editUserId}
-          onClose={() => setEditUserId(null)}
-          onSaved={() => loadUsers()}
-        />
+        <UserEditModal id={editUserId} onClose={() => setEditUserId(null)} onSaved={() => loadUsers()} />
       )}
 
       {permissionUser && (
-        <PermissionModal
-          user={permissionUser}
-          onClose={() => setPermissionUser(null)}
-          onSaved={() => loadUsers()}
-        />
+        <PermissionModal user={permissionUser} onClose={() => setPermissionUser(null)} onSaved={() => loadUsers()} />
       )}
 
       {deleteModal && (

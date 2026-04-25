@@ -60,8 +60,11 @@ export async function getSupplierDetail(req: any, res: any) {
     const [catalogs] = await pool.execute(
       'SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [id]
     );
+    const [projects] = await pool.execute(
+      'SELECT * FROM supplier_projects WHERE supplier_profile_id = ? ORDER BY sort_order ASC, id DESC', [id]
+    );
 
-    res.json({ supplier, products, catalogs });
+    res.json({ supplier, products, catalogs, projects });
   } catch (error) {
     console.error('Admin get supplier detail error:', error);
     res.status(500).json({ error: 'Failed to load supplier.' });
