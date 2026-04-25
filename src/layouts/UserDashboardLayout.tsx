@@ -1,4 +1,4 @@
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, NavLink } from 'react-router-dom';
 import {
   Home, User, FolderOpen, Settings,
 } from 'lucide-react';
@@ -57,10 +57,34 @@ export default function UserDashboardLayout() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-6 md:ml-64 md:p-10">
+        <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6 md:ml-64 md:p-10">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 z-20 flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)]">
+        <NavLink to="/dashboard" end className={({ isActive }) =>
+          `flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+          <Home className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Home</span>
+        </NavLink>
+        <NavLink to="/dashboard/projects" className={({ isActive }) =>
+          `flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+          <FolderOpen className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Projects</span>
+        </NavLink>
+        <NavLink to="/dashboard/profile" className={({ isActive }) =>
+          `flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+          <User className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Profile</span>
+        </NavLink>
+        <NavLink to="/dashboard/settings" className={({ isActive }) =>
+          `flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+          <Settings className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Settings</span>
+        </NavLink>
+      </nav>
     </div>
   );
 }

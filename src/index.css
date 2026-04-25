@@ -30,6 +30,10 @@
   box-sizing: border-box;
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 /*
  * NOTE: do NOT set `scroll-behavior: smooth` globally.
  * It animates every programmatic scroll — including the browser's own

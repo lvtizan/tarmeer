@@ -47,10 +47,10 @@ function SupplierCard({ s }: { s: Supplier }) {
   return (
     <Link
       to={`/materials/suppliers/${s.slug}`}
-      className="group flex border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 py-5 gap-5"
+      className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 py-5 gap-4 sm:gap-5"
     >
       {/* Cover image */}
-      <div className="w-[220px] sm:w-[280px] h-[160px] sm:h-[180px] flex-shrink-0 overflow-hidden rounded-2xl bg-stone-100">
+      <div className="w-full sm:w-[220px] md:w-[280px] h-[180px] flex-shrink-0 overflow-hidden rounded-2xl bg-stone-100">
         <img
           src={s.cover_image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
           alt={s.company_name}
@@ -277,7 +277,7 @@ export default function ShowroomsPage() {
         {/* Right Content */}
         <div className="flex-1 min-w-0">
           {/* Mobile origin filter */}
-          <div className="lg:hidden flex gap-1.5 bg-stone-100 rounded-full p-1 mb-5 w-fit">
+          <div className="lg:hidden flex gap-1.5 bg-stone-100 rounded-full p-1 mb-3 w-fit">
             {[
               { value: '', label: 'All' },
               { value: 'china', label: '🇨🇳 China' },
@@ -295,6 +295,19 @@ export default function ShowroomsPage() {
                 {opt.label}
               </button>
             ))}
+          </div>
+
+          {/* Mobile category filter */}
+          <div className="lg:hidden mb-4">
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full h-11 px-4 rounded-xl border border-stone-200 bg-white text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+            >
+              {CATEGORY_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Result count */}

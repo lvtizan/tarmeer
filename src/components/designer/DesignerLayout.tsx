@@ -153,10 +153,33 @@ export default function DesignerLayout() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-10">
+        <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-10 md:p-10">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 z-20 flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)]">
+        <NavLink to="/dashboard" end className={({ isActive }) =>
+          `flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Dashboard</span>
+        </NavLink>
+        <NavLink to="/designer/projects" className={({ isActive }) =>
+          `flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+          <FolderOpen className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Projects</span>
+        </NavLink>
+        <NavLink to="/designer/profile" className={({ isActive }) =>
+          `flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}>
+          <User className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Profile</span>
+        </NavLink>
+        <button onClick={handleLogout} className="flex flex-col items-center gap-1 py-2 px-3 text-stone-400">
+          <LogOut className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Log out</span>
+        </button>
+      </nav>
     </div>
   );
 }

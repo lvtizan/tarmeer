@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { AnimatePresence, motion } from 'framer-motion';
 import PageContainer from '../components/PageContainer';
 import {
-  ArrowLeft, ArrowUp, FileText,
+  ArrowLeft, ArrowUp, FileText, X,
   Download, Package, Layers, FolderOpen, MapPin, ExternalLink,
   Maximize2, Banknote,
 } from 'lucide-react';
 import SmartImage from '../components/ui/SmartImage';
+import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -65,16 +67,16 @@ export default function SupplierDetailPage() {
     images: string[];
     labels?: (string | null)[];
     idx: number;
-    projectMeta?: { title: string; location?: string | null; area_sqm?: number | null; budget?: string | null; year?: string | null };
   } | null>(null);
   const openLightbox = (images: string[], idx: number, labels?: (string | null)[]) =>
     setLightbox({ images, labels, idx });
-  const openProjectLightbox = (proj: Project, idx: number) =>
-    setLightbox({ images: Array.isArray(proj.images) ? proj.images : [], idx, projectMeta: { title: proj.title, location: proj.location, area_sqm: proj.area_sqm, budget: proj.budget, year: proj.year } });
   const closeLightbox = () => setLightbox(null);
   const [productCatFilter, setProductCatFilter] = useState<string | null>(null);
   const [logoError, setLogoError] = useState(false);
 
+  const [showFloatingForm, setShowFloatingForm] = useState(false);
+  const [floatingFormDismissed, setFloatingFormDismissed] = useState(false);
+  const mobileFormRef = useRef<HTMLDivElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
   const catalogsRef = useRef<HTMLDivElement>(null);
@@ -86,23 +88,30 @@ export default function SupplierDetailPage() {
 
   useEffect(() => {
     if (!slug) return;
-    fetch(`${API_BASE}/suppliers/detail/${slug}`)
-      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(data => {
-        setSupplier(data.supplier);
-        const prods = data.products || [];
-        const cats = data.catalogs || [];
-        const projs = (data.projects || []).map((p: any) => ({
+    Promise.all([
+      fetch(`${API_BASE}/suppliers/detail/${slug}`).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+      fetch(`${API_BASE}/suppliers/detail/${slug}/projects`).then(r => r.ok ? r.json() : { projects: [] }),
+    ])
+      .then(([detail, projData]) => {
+        setSupplier(detail.supplier);
+        setProducts(detail.products || []);
+        setCatalogs(detail.catalogs || []);
+        setProjects((projData.projects || []).map((p: any) => ({
           ...p,
           images: typeof p.images === 'string' ? JSON.parse(p.images) : (p.images || []),
-        }));
-        setProducts(prods);
-        setCatalogs(cats);
-        setProjects(projs);
+        })));
       })
       .catch(() => setSupplier(null))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!floatingFormDismissed) setShowFloatingForm(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [floatingFormDismissed]);
 
   useEffect(() => {
     if (!supplier) return;
@@ -126,10 +135,7 @@ export default function SupplierDetailPage() {
     return () => observer.disconnect();
   }, [supplier]);
 
-  const handleBack = () => {
-    if (window.history.length > 1) navigate(-1);
-    else navigate('/materials');
-  };
+  const handleBack = () => navigate('/materials');
 
   const parseCategories = (cats: string[] | string | null): string[] => {
     if (!cats) return [];
@@ -289,7 +295,7 @@ export default function SupplierDetailPage() {
         <div className="bg-white border-b border-stone-200">
           <PageContainer className="py-6">
             <p className="text-[15px] text-[#2c2c2c] leading-relaxed">{supplier.description}</p>
-            {supplier.has_physical_store && supplier.store_address && (
+            {!!supplier.has_physical_store && supplier.store_address && (
               <div className="flex items-start gap-2 mt-4 pt-4 border-t border-stone-100 text-sm text-[#6b6b6b]">
                 <MapPin className="w-4 h-4 text-[#b8864a] mt-0.5 shrink-0" />
                 <span>{supplier.store_address}</span>
@@ -300,7 +306,7 @@ export default function SupplierDetailPage() {
                     rel="noopener noreferrer"
                     className="ml-1 inline-flex items-center gap-1 text-[#b8864a] hover:underline shrink-0"
                   >
-                    地图 <ExternalLink className="w-3 h-3" />
+                    View on Map <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
@@ -347,8 +353,19 @@ export default function SupplierDetailPage() {
       </div>
 
       {/* ========== Main Content ========== */}
-      <PageContainer className="py-8 sm:py-10">
-        <div className="space-y-10">
+      {/* paddingLeft mirrors PageContainer (max-w-6xl mx-auto px-6) so left edge aligns with tab strip.
+          The sidebar extends into the right margin — it does NOT shift the content left. */}
+      <div
+        className="py-8 sm:py-10"
+        style={{
+          paddingLeft: 'max(16px, calc((100vw - 1152px) / 2 + 24px))',
+          paddingRight: '24px',
+        }}
+      >
+        {/* items-stretch (default) is critical: makes the sidebar column as tall as the left
+            content column, giving sticky enough scroll distance to work correctly */}
+        <div className="flex gap-8">
+          <div className="min-w-0 flex-1 space-y-10">
           {/* Products section */}
           <div ref={productsRef} id="section-products" className="scroll-mt-28">
             <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
@@ -403,8 +420,13 @@ export default function SupplierDetailPage() {
                       {imgs.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                           {imgs.map((img, i) => (
-                            <div key={i} className="cursor-pointer group" onClick={() => openProjectLightbox(proj, i)}>
+                            <div key={i} className="cursor-pointer group relative" onClick={() => navigate(`/materials/suppliers/${slug}/projects/${proj.id}?photo=${i}`)}>
                               <SmartImage src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover group-hover:brightness-90 transition duration-200" loading="lazy" />
+                              {i === imgs.length - 1 && imgs.length > 6 && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">
+                                  +{imgs.length - 6} more
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -494,8 +516,58 @@ export default function SupplierDetailPage() {
               <EmptyState icon={<FolderOpen className="w-8 h-8 text-stone-300" />} title="No catalogs uploaded yet" description="This supplier hasn't uploaded any catalogs." />
             )}
           </div>
+
+          {/* Inline inquiry form — shown on screens < 1280px where no sidebar */}
+          <div ref={mobileFormRef} className="min-[1280px]:hidden">
+            <ServiceInquiryCard
+              title={`Contact ${supplier.company_name}`}
+              companyName={supplier.company_name}
+              companySlug={supplier.slug}
+              companyId={supplier.id}
+            />
+          </div>
         </div>
-      </PageContainer>
+
+        {/* Sticky sidebar — 1280px+, sticks just below the tab strip as user scrolls */}
+        <div className="hidden min-[1280px]:block w-72 shrink-0">
+          <div className="sticky top-[80px]">
+            <ServiceInquiryCard
+              title={`Contact ${supplier.company_name}`}
+              companyName={supplier.company_name}
+              companySlug={supplier.slug}
+              companyId={supplier.id}
+            />
+          </div>
+        </div>
+      </div>
+      </div>
+
+      {/* ========== Floating CTA (< 1280px, shown after scrolling past hero) ========== */}
+      <AnimatePresence>
+        {showFloatingForm && !floatingFormDismissed && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="min-[1280px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
+          >
+            <button
+              className="btn-primary flex-1 py-3 text-[15px]"
+              onClick={() => mobileFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              Send Inquiry
+            </button>
+            <button
+              onClick={() => setFloatingFormDismissed(true)}
+              className="w-11 h-11 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 hover:text-stone-600 transition shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ========== Lightbox ========== */}
       {lightbox !== null && (
@@ -506,35 +578,10 @@ export default function SupplierDetailPage() {
           <div className="flex flex-col items-center gap-3 max-w-full" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <SmartImage
               src={lightbox.images[lightbox.idx]}
-              alt={lightbox.labels?.[lightbox.idx] || lightbox.projectMeta?.title || ''}
+              alt={lightbox.labels?.[lightbox.idx] || ''}
               className="max-w-full max-h-[75vh] object-contain rounded-lg"
             />
-            {/* Project metadata bar */}
-            {lightbox.projectMeta && (
-              <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-5 py-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/90 w-full max-w-2xl">
-                <span className="font-semibold text-white">{lightbox.projectMeta.title}</span>
-                {lightbox.projectMeta.location && (
-                  <span className="inline-flex items-center gap-1.5 text-white/70">
-                    <MapPin className="w-3.5 h-3.5 text-[#e5b97a] shrink-0" />{lightbox.projectMeta.location}
-                  </span>
-                )}
-                {lightbox.projectMeta.area_sqm && (
-                  <span className="inline-flex items-center gap-1.5 text-white/70">
-                    <Maximize2 className="w-3.5 h-3.5 text-[#e5b97a] shrink-0" />{lightbox.projectMeta.area_sqm} m²
-                  </span>
-                )}
-                {lightbox.projectMeta.budget && (
-                  <span className="inline-flex items-center gap-1.5 text-white/70">
-                    <Banknote className="w-3.5 h-3.5 text-[#e5b97a] shrink-0" />{lightbox.projectMeta.budget}
-                  </span>
-                )}
-                {lightbox.projectMeta.year && (
-                  <span className="text-white/50">{lightbox.projectMeta.year}</span>
-                )}
-              </div>
-            )}
-            {/* Label for product lightbox */}
-            {!lightbox.projectMeta && lightbox.labels?.[lightbox.idx] && (
+            {lightbox.labels?.[lightbox.idx] && (
               <div className="bg-black/60 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl text-sm font-medium">
                 {lightbox.labels[lightbox.idx]}
               </div>

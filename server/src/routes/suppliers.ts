@@ -20,6 +20,8 @@ router.get('/', profile.listPublicSuppliers);
 router.get('/detail/:slug', profile.getPublicProfile);
 router.get('/detail/:slug/products', products.listProducts);
 router.get('/detail/:slug/catalogs', catalogs.listCatalogs);
+router.get('/detail/:slug/projects', projects.listPublicProjects);
+router.get('/detail/:slug/projects/:id', projects.getPublicProject);
 router.post('/leads', leadLimiter, leads.submitLead);
 
 // ── Authenticated supplier ──

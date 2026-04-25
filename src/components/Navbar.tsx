@@ -1,7 +1,6 @@
 import { Fragment, useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, User, Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { safeGetJSON } from '../lib/storage';
 import Avatar from './ui/Avatar';
@@ -149,15 +148,9 @@ export default function Navbar({
               <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
             </Link>
 
-            <AnimatePresence>
-              {portfolioDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50"
-                >
+            <div
+                className={`absolute top-full left-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50 transition-all duration-150 ${portfolioDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              >
                   <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
                     {Object.entries(portfolioCategories).map(([category, items]) => (
                       <div key={category}>
@@ -189,9 +182,7 @@ export default function Navbar({
                       All Projects {'>'}
                     </Link>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
           </div>
 
           {/* Find Company Dropdown */}
@@ -209,15 +200,9 @@ export default function Navbar({
               <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </Link>
 
-            <AnimatePresence>
-              {dropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full right-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50"
-                >
+            <div
+                className={`absolute top-full right-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              >
                   <div className="p-6 grid grid-cols-4 gap-8 min-w-max">
                     {Object.entries(serviceCategories).map(([category, services]) => (
                       <div key={category}>
@@ -249,9 +234,7 @@ export default function Navbar({
                       All Companies {'>'}
                     </Link>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
           </div>
 
           {/* {renderNavLink('/materials', 'Materials')} — hidden temporarily */}
@@ -322,14 +305,8 @@ export default function Navbar({
                 Portfolio
                 <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-              <AnimatePresence>
-                {portfolioDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="mt-3 pl-4 space-y-4"
+              {portfolioDropdownOpen && (
+                  <div className="mt-3 pl-4 space-y-4"
                   >
                     {Object.entries(portfolioCategories).map(([category, items]) => (
                       <div key={category}>
@@ -360,28 +337,29 @@ export default function Navbar({
                         All Projects {'>'}
                       </Link>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
             </div>
 
             {/* Mobile Find Company Section */}
             <div className="py-2">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-              >
-                Find Company
-                <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="mt-3 pl-4 space-y-4"
+              <div className="flex items-center justify-between">
+                <Link
+                  to="/companies"
+                  onClick={() => handleClick('/companies')}
+                  className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+                >
+                  Find Company
+                </Link>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="p-1 text-[#2c2c2c]/60 hover:text-[#2c2c2c] transition"
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              {dropdownOpen && (
+                  <div className="mt-3 pl-4 space-y-4"
                   >
                     {Object.entries(serviceCategories).map(([category, services]) => (
                       <div key={category}>
@@ -412,9 +390,8 @@ export default function Navbar({
                         All Companies {'>'}
                       </Link>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
             </div>
 
             {/* {renderNavLink('/materials', 'Materials', 'py-2')} — hidden temporarily */}

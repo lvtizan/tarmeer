@@ -95,7 +95,7 @@ export default function CompanyLayout() {
           <FolderOpen className="w-5 h-5" />
           Projects
         </NavLink>
-        <NavLink to="/company/upload" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
+        <NavLink to="/company/projects" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
           <ImagePlus className="w-5 h-5" />
           Upload
         </NavLink>

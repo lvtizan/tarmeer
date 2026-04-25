@@ -11,6 +11,8 @@ export default function TarmeerLogo({ to = '/', className = '' }: TarmeerLogoPro
       <img
         src="/images/tarmeer_logo.svg"
         alt=""
+        width="36"
+        height="36"
         className="h-8 sm:h-9 w-auto"
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />

@@ -9,6 +9,56 @@ async function getProfile(supplierUserId: number): Promise<{ id: number; slug: s
   return (rows as any[])[0] || null;
 }
 
+export async function listPublicProjects(req: any, res: any) {
+  try {
+    const { slug } = req.params;
+    const [profiles] = await pool.execute(
+      "SELECT id FROM supplier_profiles WHERE slug = ? AND status = 'approved'",
+      [slug]
+    );
+    const profile = (profiles as any[])[0];
+    if (!profile) return res.status(404).json({ error: 'Supplier not found.' });
+
+    const [projects] = await pool.execute(
+      'SELECT * FROM supplier_projects WHERE supplier_profile_id = ? ORDER BY sort_order ASC, id DESC',
+      [profile.id]
+    );
+    res.json({ projects });
+  } catch (error) {
+    console.error('List public projects error:', error);
+    res.status(500).json({ error: 'Failed to load projects.' });
+  }
+}
+
+export async function getPublicProject(req: any, res: any) {
+  try {
+    const { slug, id } = req.params;
+    const [profiles] = await pool.execute(
+      "SELECT id, company_name, slug, logo_url FROM supplier_profiles WHERE slug = ? AND status = 'approved'",
+      [slug]
+    );
+    const profile = (profiles as any[])[0];
+    if (!profile) return res.status(404).json({ error: 'Supplier not found.' });
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?',
+      [id, profile.id]
+    );
+    const project = (rows as any[])[0];
+    if (!project) return res.status(404).json({ error: 'Project not found.' });
+
+    const [allProjects] = await pool.execute(
+      'SELECT id, title, images FROM supplier_projects WHERE supplier_profile_id = ? ORDER BY sort_order ASC, id DESC',
+      [profile.id]
+    );
+
+    res.json({ project, supplier: profile, allProjects });
+  } catch (error) {
+    console.error('Get public project error:', error);
+    res.status(500).json({ error: 'Failed to load project.' });
+  }
+}
+
 export async function listMyProjects(req: any, res: any) {
   try {
     const profile = await getProfile(req.supplierUser.id);

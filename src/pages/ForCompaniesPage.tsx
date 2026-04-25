@@ -141,7 +141,7 @@ export default function ForCompaniesPage() {
                 <p className="text-[10px] font-bold text-[#b8864a] uppercase tracking-[0.2em] mb-2">
                   {t(lang, feat.tag)}
                 </p>
-                <h3 className="font-serif text-[22px] font-bold text-[#1c1917] leading-snug">{t(lang, feat.title)}</h3>
+                <h2 className="font-serif text-[22px] font-bold text-[#1c1917] leading-snug">{t(lang, feat.title)}</h2>
                 <p className="text-[14px] text-[#6b6b6b] leading-relaxed mt-3">{t(lang, feat.desc)}</p>
                 <div className="mt-5 space-y-2.5">
                   {feat.checks.map((key) => (

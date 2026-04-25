@@ -29,6 +29,9 @@
 6. **Frontend + Backend must match**: if frontend calls a new API, backend must be deployed first.
 7. **SEO**: all public-facing pages MUST have `<Helmet>` with title, description, og:title, og:description, og:image, canonical. Detail pages MUST include JSON-LD structured data. Run `node scripts/harness/lint-seo.mjs` to verify — see `docs/SEO.md`.
 8. **Feature completion workflow**: MUST follow the 5-step workflow below before notifying user.
+9. **替换已有功能时**：必须同时删除旧实现（state、hooks、JSX、import），不能只加新代码。完成后跑 `npx tsc --noEmit` 确认无未使用变量。
+10. **PC 端与移动端逻辑必须一致**：任何涉及表单、上传、数据提交、页面路由的功能，写代码前必须同时阅读 PC 端和移动端的现有实现，确认以下三点完全一致：（1）交互逻辑（触发条件、校验规则、跳转行为）；（2）数据传输逻辑（API endpoint、payload 结构、字段名）；（3）组件/页面路由（移动端底部导航指向的页面必须与 PC 端侧边栏指向的页面使用相同组件）。如果发现不一致，必须在本次改动中同步修复，不得遗留分叉。
+11. **改完代码后的自动流程**：Stop hook 会在每次 Claude 停止时自动运行 tsc 检查（仅当本次 session 修改了 src/ 或 server/src/ 中的 TS/TSX/JS 文件时触发）。tsc 通过后，Claude 必须：（1）运行相关 harness 测试用例；（2）提供本地测试地址（`http://localhost:5173/` 对应路径）；（3）告知用户改了什么 + 测试结果；（4）等用户确认后才能部署。**tsc 失败时 Claude 会被自动唤醒修复，不需要用户介入。**
 
 ---
 

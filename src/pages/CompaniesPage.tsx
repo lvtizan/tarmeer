@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck } from 'lucide-react';
+import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck, SlidersHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import type { Company } from '../lib/companyData';
@@ -94,10 +94,10 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
   return (
     <div
       onClick={onClick}
-      className="group flex border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 cursor-pointer py-5 gap-5"
+      className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 cursor-pointer py-4 gap-3 sm:gap-5"
     >
       {/* Left - Project Image */}
-      <div className="w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100">
+      <div className="w-full sm:w-[280px] md:w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100 rounded-xl sm:rounded-none">
         {currentSrc ? (
           <img
             src={displaySrc}
@@ -164,21 +164,23 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
         </div>
 
         {/* Bottom row: contact hints */}
-        <div className="flex items-center gap-4 mt-3 text-xs text-stone-400">
-          {company.phone && (
-            <span className="flex items-center gap-1">
-              <Phone className="w-3 h-3" /> {company.phone}
-            </span>
-          )}
-          {company.website && (
-            <span className="flex items-center gap-1">
-              <Globe className="w-3 h-3" /> Website
-            </span>
-          )}
-        </div>
+        {(company.phone || company.website) && (
+          <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
+            {company.phone && (
+              <span className="flex items-center gap-1">
+                <Phone className="w-3 h-3" /> {company.phone}
+              </span>
+            )}
+            {company.website && (
+              <span className="flex items-center gap-1">
+                <Globe className="w-3 h-3" /> Website
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Mobile: Send Message & Location (stacked below on small screens) */}
-        <div className="flex sm:hidden items-center gap-3 mt-3 pt-3 border-t border-stone-100">
+        <div className="flex sm:hidden items-center gap-3 mt-3">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -231,6 +233,7 @@ export default function CompaniesPage() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>('');
   const [foundedRange, setFoundedRange] = useState<string>('');
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -313,6 +316,94 @@ export default function CompaniesPage() {
     return labels[range] || range;
   };
 
+  const renderFilters = () => (
+    <>
+      {/* City */}
+      <div>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">City</h4>
+        <div className="space-y-1">
+          <FilterOption selected={!selectedCity} onClick={() => setSelectedCity('')}>All Cities</FilterOption>
+          {cityOptions.map((city) => (
+            <FilterOption key={city} selected={selectedCity === city} onClick={() => setSelectedCity(city)}>
+              {city}
+            </FilterOption>
+          ))}
+        </div>
+      </div>
+
+      <hr className="border-stone-100" />
+
+      {/* Company Type */}
+      {typeOptions.length > 0 && (
+        <>
+          <div>
+            <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Company Type</h4>
+            <div className="space-y-1">
+              <FilterOption selected={!selectedType} onClick={() => setSelectedType('')}>All Types</FilterOption>
+              {typeOptions.map((type) => (
+                <FilterOption key={type} selected={selectedType === type} onClick={() => setSelectedType(type)}>
+                  {getCompanyTypeLabel(type)}
+                </FilterOption>
+              ))}
+            </div>
+          </div>
+          <hr className="border-stone-100" />
+        </>
+      )}
+
+      {/* Founded */}
+      <div>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Founded</h4>
+        <div className="space-y-1">
+          <FilterOption selected={!foundedRange} onClick={() => setFoundedRange('')}>Any</FilterOption>
+          <FilterOption selected={foundedRange === '2015-2026'} onClick={() => setFoundedRange('2015-2026')}>10+ years</FilterOption>
+          <FilterOption selected={foundedRange === '2010-2014'} onClick={() => setFoundedRange('2010-2014')}>15+ years</FilterOption>
+          <FilterOption selected={foundedRange === '2000-2009'} onClick={() => setFoundedRange('2000-2009')}>25+ years</FilterOption>
+        </div>
+      </div>
+
+      <hr className="border-stone-100" />
+
+      {/* Style */}
+      <div>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Style</h4>
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+          {styleOptions.map((style) => (
+            <FilterOption
+              key={style}
+              selected={selectedStyles.includes(style)}
+              onClick={() => setSelectedStyles((prev) =>
+                prev.includes(style) ? prev.filter((v) => v !== style) : [...prev, style]
+              )}
+            >
+              {style}
+            </FilterOption>
+          ))}
+        </div>
+      </div>
+
+      <hr className="border-stone-100" />
+
+      {/* Services */}
+      <div>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Services</h4>
+        <div className="space-y-1 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+          {serviceOptions.map((service) => (
+            <FilterOption
+              key={service}
+              selected={selectedServices.includes(service)}
+              onClick={() => setSelectedServices((prev) =>
+                prev.includes(service) ? prev.filter((v) => v !== service) : [...prev, service]
+              )}
+            >
+              {service}
+            </FilterOption>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <Helmet>
@@ -365,22 +456,22 @@ export default function CompaniesPage() {
           </h1>
 
           {/* 3-Step Flow */}
-          <div className="flex items-center justify-center gap-0 mb-10">
+          <div className="grid grid-cols-3 mb-10 max-w-xs sm:max-w-sm mx-auto">
             {[
               { icon: ClipboardList, label: 'Tell us about your project' },
               { icon: Users, label: 'Get matched with local professionals' },
               { icon: Handshake, label: 'Hire the right pro with confidence' },
             ].map((step, i) => (
-              <div key={i} className="flex items-center">
-                {i > 0 && <div className="w-16 sm:w-24 h-px bg-white/25" />}
-                <div className="flex flex-col items-center gap-2.5">
-                  <div className="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center">
-                    <step.icon className="w-5 h-5 text-white/80" />
-                  </div>
-                  <p className="text-white/70 text-xs sm:text-sm leading-snug text-center max-w-[140px]">
-                    {step.label}
-                  </p>
+              <div key={i} className="relative flex flex-col items-center">
+                {i > 0 && (
+                  <div className="absolute top-6 left-[-50%] right-1/2 h-px bg-white/25" />
+                )}
+                <div className="relative z-10 w-12 h-12 rounded-full border border-white/30 bg-[#2c2620] flex items-center justify-center">
+                  <step.icon className="w-5 h-5 text-white/80" />
                 </div>
+                <p className="text-white/70 text-xs sm:text-sm leading-snug text-center mt-2.5 px-1">
+                  {step.label}
+                </p>
               </div>
             ))}
           </div>
@@ -432,95 +523,52 @@ export default function CompaniesPage() {
       )}
 
       {/* Main Content - Two Column (Sidebar + List) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-8">
+
+        {/* Mobile filter button */}
+        <div className="lg:hidden mb-3">
+          <button
+            onClick={() => setFilterDrawerOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-stone-200 bg-white text-sm font-medium text-stone-600 hover:bg-stone-50 transition"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#b8864a]" />}
+          </button>
+        </div>
+
+        {/* Mobile filter drawer */}
+        {filterDrawerOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setFilterDrawerOpen(false)} />
+            <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-sm bg-white overflow-y-auto">
+              <div className="flex items-center justify-between p-4 border-b border-stone-200 sticky top-0 bg-white z-10">
+                <h3 className="text-base font-semibold text-[#1c1917]">Filters</h3>
+                <button onClick={() => setFilterDrawerOpen(false)} className="p-2 rounded-lg hover:bg-stone-100">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-5 space-y-6">{renderFilters()}</div>
+              {hasActiveFilters && (
+                <div className="sticky bottom-0 bg-white border-t border-stone-200 p-4">
+                  <button
+                    onClick={() => { clearAllFilters(); setFilterDrawerOpen(false); }}
+                    className="w-full py-2.5 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-8">
           {/* Left Sidebar - Filters */}
           <aside className="w-60 flex-shrink-0 hidden lg:block">
             <div className="lg:sticky lg:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto custom-scrollbar">
               <div className="bg-white rounded-[22px] border border-stone-100 p-5 shadow-sm shadow-stone-100/50 space-y-6">
-                {/* City */}
-                <div>
-                  <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">City</h4>
-                  <div className="space-y-1">
-                    <FilterOption selected={!selectedCity} onClick={() => setSelectedCity('')}>All Cities</FilterOption>
-                    {cityOptions.map((city) => (
-                      <FilterOption key={city} selected={selectedCity === city} onClick={() => setSelectedCity(city)}>
-                        {city}
-                      </FilterOption>
-                    ))}
-                  </div>
-                </div>
-
-                <hr className="border-stone-100" />
-
-                {/* Company Type */}
-                {typeOptions.length > 0 && (
-                  <>
-                    <div>
-                      <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Company Type</h4>
-                      <div className="space-y-1">
-                        <FilterOption selected={!selectedType} onClick={() => setSelectedType('')}>All Types</FilterOption>
-                        {typeOptions.map((type) => (
-                          <FilterOption key={type} selected={selectedType === type} onClick={() => setSelectedType(type)}>
-                            {getCompanyTypeLabel(type)}
-                          </FilterOption>
-                        ))}
-                      </div>
-                    </div>
-                    <hr className="border-stone-100" />
-                  </>
-                )}
-
-                {/* Founded */}
-                <div>
-                  <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Founded</h4>
-                  <div className="space-y-1">
-                    <FilterOption selected={!foundedRange} onClick={() => setFoundedRange('')}>Any</FilterOption>
-                    <FilterOption selected={foundedRange === '2015-2026'} onClick={() => setFoundedRange('2015-2026')}>10+ years</FilterOption>
-                    <FilterOption selected={foundedRange === '2010-2014'} onClick={() => setFoundedRange('2010-2014')}>15+ years</FilterOption>
-                    <FilterOption selected={foundedRange === '2000-2009'} onClick={() => setFoundedRange('2000-2009')}>25+ years</FilterOption>
-                  </div>
-                </div>
-
-                <hr className="border-stone-100" />
-
-                {/* Style */}
-                <div>
-                  <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Style</h4>
-                  <div className="space-y-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                    {styleOptions.map((style) => (
-                      <FilterOption
-                        key={style}
-                        selected={selectedStyles.includes(style)}
-                        onClick={() => setSelectedStyles((prev) =>
-                          prev.includes(style) ? prev.filter((v) => v !== style) : [...prev, style]
-                        )}
-                      >
-                        {style}
-                      </FilterOption>
-                    ))}
-                  </div>
-                </div>
-
-                <hr className="border-stone-100" />
-
-                {/* Services */}
-                <div>
-                  <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Services</h4>
-                  <div className="space-y-1 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-                    {serviceOptions.map((service) => (
-                      <FilterOption
-                        key={service}
-                        selected={selectedServices.includes(service)}
-                        onClick={() => setSelectedServices((prev) =>
-                          prev.includes(service) ? prev.filter((v) => v !== service) : [...prev, service]
-                        )}
-                      >
-                        {service}
-                      </FilterOption>
-                    ))}
-                  </div>
-                </div>
+                {renderFilters()}
               </div>
             </div>
           </aside>
@@ -538,7 +586,7 @@ export default function CompaniesPage() {
                 <p className="text-stone-400">{loadError}</p>
               </div>
             ) : filteredCompanies.length > 0 ? (
-              <div className="space-y-5">
+              <div>
                 {filteredCompanies.map((company) => (
                   <div
                     key={company.id}
@@ -565,6 +613,9 @@ export default function CompaniesPage() {
 
       {/* Custom scrollbar + hover animation styles */}
       <style>{`
+        .custom-scrollbar {
+          scrollbar-width: none;
+        }
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
@@ -572,10 +623,17 @@ export default function CompaniesPage() {
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #d6d3d1;
+          background: transparent;
           border-radius: 2px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        .custom-scrollbar:hover {
+          scrollbar-width: thin;
+          scrollbar-color: #d6d3d1 transparent;
+        }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+          background: #d6d3d1;
+        }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
           background: #a8a29e;
         }
         @keyframes fadeIn {
