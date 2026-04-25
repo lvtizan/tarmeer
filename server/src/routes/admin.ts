@@ -62,7 +62,8 @@ import {
   updateWeightConfig,
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
-import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations } from '../controllers/analyticsAdminController';
+import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getTodayNew } from '../controllers/analyticsAdminController';
+import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -108,6 +109,7 @@ router.put('/password', changePassword);
 router.get('/stats/overview', requirePermission('can_view_stats'), getStatsOverview);
 router.get('/stats/registrations', getRegistrationStats);
 router.get('/stats/daily', requirePermission('can_view_stats'), getDailyStatsReport);
+router.get('/stats/today-new', getTodayNew);
 router.get('/activity-logs', getActivityLogs);
 router.get('/visitors/overview', requirePermission('can_view_stats'), getVisitorOverview);
 router.get('/visitors', requirePermission('can_view_stats'), listVisitors);
@@ -302,6 +304,13 @@ router.put('/system-config', requireSuperAdmin, async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to update config.' });
   }
 });
+
+// Supplier management
+router.get('/suppliers', listSuppliers);
+router.get('/suppliers/:id', getSupplierDetail);
+router.put('/suppliers/:id/status', requirePermission('can_approve'), updateSupplierStatus);
+router.put('/suppliers/:id', updateSupplier);
+router.delete('/suppliers/:id', requirePermission('can_approve'), deleteSupplier);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);
