@@ -330,7 +330,7 @@ export default function AdminCompaniesPage() {
         <div className="ml-auto w-36">
           {tab === 'companies' && (
             <AdminSelect
-              className="!h-9 !px-3 !text-sm !rounded-lg"
+              size="sm"
               value={profileStatusFilter}
               onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
               options={[
@@ -343,7 +343,7 @@ export default function AdminCompaniesPage() {
           )}
           {tab === 'directory' && (
             <AdminSelect
-              className="!h-9 !px-3 !text-sm !rounded-lg"
+              size="sm"
               value={claimedFilter}
               onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
               options={[
@@ -355,7 +355,7 @@ export default function AdminCompaniesPage() {
           )}
           {tab === 'applications' && (
             <AdminSelect
-              className="!h-9 !px-3 !text-sm !rounded-lg"
+              size="sm"
               value={pendingStatusFilter}
               onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
               options={[

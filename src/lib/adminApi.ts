@@ -294,6 +294,7 @@ class AdminApiClient {
     users: Array<{ id: number; name: string; phone: string; email: string; role: string; status: string; source: string; createdAt: string }>;
     registeredCompanies: Array<{ id: number; name: string; phone: string; city: string; status: string; email: string; type: 'registered' }>;
     directoryCompanies: Array<{ id: number; name: string; phone: string; city: string; type: 'directory' }>;
+    suppliers: Array<{ id: number; name: string; email: string; origin: string; status: string }>;
   }> {
     const params = new URLSearchParams({ q });
     return this.request(`/search?${params}`);

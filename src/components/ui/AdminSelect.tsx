@@ -8,9 +8,11 @@ interface AdminSelectProps {
   className?: string;
   disabled?: boolean;
   error?: boolean;
+  /** 'sm' = compact filter bar style (h-9, rounded-lg); 'lg' = form input style (h-[50px], rounded-2xl). Default: 'lg' */
+  size?: 'sm' | 'lg';
 }
 
-const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, onChange, options, className = '', disabled, error }, ref) => {
+const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, onChange, options, className = '', disabled, error, size = 'lg' }, ref) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const internalSelectRef = useRef<HTMLSelectElement>(null);
@@ -99,7 +101,11 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className={`flex items-center justify-between w-full h-[50px] px-5 rounded-2xl border bg-stone-50/80 text-[15px] text-left cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`flex items-center justify-between w-full border bg-stone-50/80 text-left cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+          size === 'sm'
+            ? 'h-9 px-3 rounded-lg text-sm'
+            : 'h-[50px] px-5 rounded-2xl text-[15px]'
+        } ${
           error ? 'border-red-400 ring-2 ring-red-200/30' : 'border-stone-200'
         } ${!value ? 'text-stone-400' : 'text-[#1c1917]'} ${className}`}
       >
@@ -146,7 +152,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
                   <button
                     type="button"
                     onClick={() => { onChange(opt.value); setOpen(false); }}
-                    className={`w-full text-left px-5 py-3 text-[15px] transition hover:bg-stone-50 ${
+                    className={`w-full text-left transition hover:bg-stone-50 ${size === 'sm' ? 'px-3 py-2 text-sm' : 'px-5 py-3 text-[15px]'} ${
                       opt.value === value
                         ? 'text-[#b8864a] font-medium bg-[#b8864a]/5'
                         : opt.value === ''

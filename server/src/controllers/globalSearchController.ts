@@ -25,7 +25,7 @@ export async function globalSearch(req: any, res: any) {
   const like = `%${q}%`;
 
   try {
-    const [hlRows, clRows, userRows, cpRows, ucRows] = await Promise.all([
+    const [hlRows, clRows, userRows, cpRows, ucRows, spRows] = await Promise.all([
       // Homeowner leads
       pool.execute(
         `SELECT di.id, di.name, di.phone, di.city, di.source_company_name, di.crm_sync_status, di.crm_action, di.created_at
@@ -74,6 +74,15 @@ export async function globalSearch(req: any, res: any) {
          FROM uae_companies
          WHERE name_en LIKE ? OR phone LIKE ?
          ORDER BY name_en LIMIT 5`,
+        [like, like]
+      ),
+      // Suppliers
+      pool.execute(
+        `SELECT sp.id, sp.company_name AS name, su.email, sp.origin, sp.status
+         FROM supplier_profiles sp
+         JOIN supplier_users su ON su.id = sp.supplier_user_id
+         WHERE sp.company_name LIKE ? OR su.email LIKE ?
+         ORDER BY sp.created_at DESC LIMIT 5`,
         [like, like]
       ),
     ]);
@@ -131,7 +140,15 @@ export async function globalSearch(req: any, res: any) {
       type: 'directory' as const,
     }));
 
-    res.json({ homeownerLeads, companyLeads, users, registeredCompanies, directoryCompanies });
+    const suppliers = (spRows as any[][])[0].map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      origin: r.origin,
+      status: r.status,
+    }));
+
+    res.json({ homeownerLeads, companyLeads, users, registeredCompanies, directoryCompanies, suppliers });
   } catch (err: any) {
     console.error('[GlobalSearch]', err);
     res.status(500).json({ error: 'Search failed' });

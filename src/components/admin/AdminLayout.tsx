@@ -76,6 +76,13 @@ const adminItems = [
   },
 ];
 
+// Map nav paths to todayNew keys (for badge clear on visit)
+const TODAY_NEW_PAGE_MAP: Record<string, keyof { homeowners: number; companies: number; suppliers: number }> = {
+  '/admin/users': 'homeowners',
+  '/admin/companies': 'companies',
+  '/admin/suppliers': 'suppliers',
+};
+
 // Map nav paths to notification keys
 const NOTIFICATION_MAP: Record<string, string> = {
   '/admin/complaints': 'newComplaints',
@@ -158,6 +165,12 @@ export default function AdminLayout() {
     } else {
       fetchNotificationCounts();
     }
+    // Clear todayNew badge for this page
+    const todayNewKey = TODAY_NEW_PAGE_MAP[location.pathname] ??
+      (Object.entries(TODAY_NEW_PAGE_MAP).find(([p]) => location.pathname.startsWith(p))?.[1] as keyof typeof todayNew | undefined);
+    if (todayNewKey) {
+      setTodayNew(prev => ({ ...prev, [todayNewKey]: 0 }));
+    }
   }, [location.pathname, fetchNotificationCounts]);
 
   if (isLoading) {
@@ -200,7 +213,7 @@ export default function AdminLayout() {
   const hideTooltip = () => setTooltip(null);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] flex flex-col">
+    <div className="h-screen bg-[#faf9f7] flex flex-col overflow-hidden">
       {/* Top header — Logo | Search (centered) | spacer */}
       <header className="h-16 bg-white border-b border-stone-200 grid grid-cols-[16rem_1fr_16rem] items-center px-6 sticky top-0 z-30 shrink-0">
         <TarmeerLogo />

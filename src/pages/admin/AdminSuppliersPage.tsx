@@ -29,7 +29,6 @@ export default function AdminSuppliersPage() {
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
@@ -41,7 +40,6 @@ export default function AdminSuppliersPage() {
     setLoading(true);
     try {
       const params: Record<string, string> = { limit: '50' };
-      if (search) params.search = search;
       if (originFilter) params.origin = originFilter;
       if (statusFilter) params.status = statusFilter;
       const qs = new URLSearchParams(params).toString();
@@ -49,7 +47,7 @@ export default function AdminSuppliersPage() {
       setSuppliers(data.suppliers || []);
     } catch {}
     setLoading(false);
-  }, [search, originFilter, statusFilter]);
+  }, [originFilter, statusFilter]);
 
   useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
 
@@ -96,18 +94,11 @@ export default function AdminSuppliersPage() {
         <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Suppliers', '供应商')}</h1>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder={t('Search...', '搜索...')}
-          className="h-9 flex-1 min-w-0 px-3 rounded-lg border border-stone-200 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#b8864a]/30"
-        />
+      <div className="flex items-center justify-end gap-2 mb-4">
         <AdminSelect
+          size="sm"
           value={originFilter}
           onChange={setOriginFilter}
-          className="h-9"
           options={[
             { value: '', label: t('All Origins', '全部产地') },
             { value: 'china', label: '🇨🇳 China' },
@@ -115,9 +106,9 @@ export default function AdminSuppliersPage() {
           ]}
         />
         <AdminSelect
+          size="sm"
           value={statusFilter}
           onChange={setStatusFilter}
-          className="h-9"
           options={[
             { value: '', label: t('All Status', '全部状态') },
             { value: 'pending', label: t('Pending', '待审核') },

@@ -32,7 +32,8 @@
 8. **SEO**: all public-facing pages MUST have `<Helmet>` with title, description, og:title, og:description, og:image, canonical. Detail pages MUST include JSON-LD structured data. Run `node scripts/harness/lint-seo.mjs` to verify — see `docs/SEO.md`.
 9. **Feature completion workflow**: MUST follow the 5-step workflow below before notifying user.
 10. **替换已有功能时**：必须同时删除旧实现（state、hooks、JSX、import），不能只加新代码。完成后跑 `npx tsc --noEmit` 确认无未使用变量。
-11. **PC 端与移动端逻辑必须一致**：任何涉及表单、上传、数据提交、页面路由的功能，写代码前必须同时阅读 PC 端和移动端的现有实现，确认以下三点完全一致：（1）交互逻辑（触发条件、校验规则、跳转行为）；（2）数据传输逻辑（API endpoint、payload 结构、字段名）；（3）组件/页面路由（移动端底部导航指向的页面必须与 PC 端侧边栏指向的页面使用相同组件）。如果发现不一致，必须在本次改动中同步修复，不得遗留分叉。
+11. **相似页面必须复用结构**：开始写任何新页面或改版前，先找最相似的已有页面，直接复用其布局骨架、组件结构和交互模式，只替换数据层。禁止从零重写已有相似结构。
+12. **PC 端与移动端逻辑必须一致**：任何涉及表单、上传、数据提交、页面路由的功能，写代码前必须同时阅读 PC 端和移动端的现有实现，确认以下三点完全一致：（1）交互逻辑（触发条件、校验规则、跳转行为）；（2）数据传输逻辑（API endpoint、payload 结构、字段名）；（3）组件/页面路由（移动端底部导航指向的页面必须与 PC 端侧边栏指向的页面使用相同组件）。如果发现不一致，必须在本次改动中同步修复，不得遗留分叉。
 12. **改完代码后的自动流程**：Stop hook 会在每次 Claude 停止时自动运行 tsc 检查（仅当本次 session 修改了 src/ 或 server/src/ 中的 TS/TSX/JS 文件时触发）。tsc 通过后，Claude 必须：（1）运行相关 harness 测试用例；（2）提供本地测试地址（`http://localhost:5173/` 对应路径）；（3）告知用户改了什么 + 测试结果；（4）等用户确认后才能部署。**tsc 失败时 Claude 会被自动唤醒修复，不需要用户介入。**
 
 ---
@@ -150,6 +151,17 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 7. NEVER use raw `<select>` — use `<AdminSelect />`
 8. NEVER create new phone input without `phoneValidation.ts` validation
 9. NEVER duplicate form logic — new lead/inquiry forms MUST use the shared `<LeadForm />` component (when built), or at minimum reuse `phoneValidation.ts` and `AdminSelect`
+
+---
+
+## Admin Layout 规则（MUST FOLLOW）
+
+**AdminLayout root 必须用 `h-screen overflow-hidden flex flex-col`，禁止用 `min-h-screen`。**
+
+- `min-h-screen` → root 随内容增高超过 100vh → body 滚动 → header/sidebar 随页面滚动（布局崩坏）
+- `h-screen overflow-hidden` → root 固定 100vh → 只有 `<main className="flex-1 overflow-auto">` 内部滚动
+- 改动 `AdminLayout.tsx` 时，第一件事检查 root div 是否为 `h-screen overflow-hidden`
+- 正确结构：`<div className="h-screen overflow-hidden flex flex-col">` → `<header shrink-0>` → `<div className="flex flex-1 overflow-hidden">` → `<aside>` + `<main className="flex-1 overflow-auto">`
 
 ---
 
