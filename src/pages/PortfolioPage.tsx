@@ -330,8 +330,6 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!cached);
   const [activeTag, setActiveTag] = useState(urlTag);
-  const [fixedBarHeight, setFixedBarHeight] = useState(88); // initial estimate; corrected by ResizeObserver
-  const fixedBarRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(!!cached); // skip initial load if we have cache
   const seedRef = useRef(cached?.seed || Math.floor(Math.random() * 1000000));
@@ -431,14 +429,6 @@ export default function PortfolioPage() {
   // Sync tag from URL
   useEffect(() => { if (urlTag !== activeTag) setActiveTag(urlTag); }, [urlTag]);
 
-  // Measure the fixed filter bar's actual height so padding-top stays accurate
-  useEffect(() => {
-    const el = fixedBarRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setFixedBarHeight(el.offsetHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
 
   const selectTag = useCallback((tag: string) => {
@@ -593,9 +583,8 @@ export default function PortfolioPage() {
         <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
 
-      {/* Fixed filter bar — appears when in-page bar scrolls past navbar */}
-      {/* Filter bar — always fixed below Navbar; content padded down by its measured height */}
-      <div ref={fixedBarRef} className="fixed top-14 sm:top-16 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
+      {/* Sticky filter bar — sticks just below the Navbar as the user scrolls */}
+      <div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
         <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
@@ -623,8 +612,7 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Content — padded down so it starts below Navbar + fixed filter bar */}
-      <div style={{ paddingTop: fixedBarHeight }} className="max-w-[1400px] mx-auto px-4 py-8">
+      <div className="max-w-[1400px] mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
           <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
