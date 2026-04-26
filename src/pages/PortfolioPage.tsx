@@ -330,8 +330,8 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!cached);
   const [activeTag, setActiveTag] = useState(urlTag);
-  const [filterBarFixed, setFilterBarFixed] = useState(false);
-  const inPageFilterRef = useRef<HTMLDivElement>(null);
+  const [fixedBarHeight, setFixedBarHeight] = useState(88); // initial estimate; corrected by ResizeObserver
+  const fixedBarRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(!!cached); // skip initial load if we have cache
   const seedRef = useRef(cached?.seed || Math.floor(Math.random() * 1000000));
@@ -431,16 +431,13 @@ export default function PortfolioPage() {
   // Sync tag from URL
   useEffect(() => { if (urlTag !== activeTag) setActiveTag(urlTag); }, [urlTag]);
 
-  // Show fixed filter bar when in-page bar scrolls past the navbar
+  // Measure the fixed filter bar's actual height so padding-top stays accurate
   useEffect(() => {
-    const el = inPageFilterRef.current;
+    const el = fixedBarRef.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setFilterBarFixed(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+    const ro = new ResizeObserver(() => setFixedBarHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
 
@@ -597,71 +594,42 @@ export default function PortfolioPage() {
       </Helmet>
 
       {/* Fixed filter bar — appears when in-page bar scrolls past navbar */}
-      {filterBarFixed && (
-        <div className="fixed top-14 sm:top-16 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
-          <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
-              {ROOM_FILTERS.map(tag => (
-                <button key={tag} onClick={() => selectTag(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                  {tag}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
-              {STYLE_FILTERS.map(tag => (
-                <button key={tag} onClick={() => selectTag(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                  {tag}
-                </button>
-              ))}
-              {activeTag && (
-                <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
-                  <X className="w-3.5 h-3.5" /> Clear
-                </button>
-              )}
-            </div>
+      {/* Filter bar — always fixed below Navbar; content padded down by its measured height */}
+      <div ref={fixedBarRef} className="fixed top-14 sm:top-16 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
+            {ROOM_FILTERS.map(tag => (
+              <button key={tag} onClick={() => selectTag(tag)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
+                {tag}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
+            {STYLE_FILTERS.map(tag => (
+              <button key={tag} onClick={() => selectTag(tag)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
+                {tag}
+              </button>
+            ))}
+            {activeTag && (
+              <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
+                <X className="w-3.5 h-3.5" /> Clear
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 py-8">
-        {/* Page title */}
+      {/* Content — padded down so it starts below Navbar + fixed filter bar */}
+      <div style={{ paddingTop: fixedBarHeight }} className="max-w-[1400px] mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
           <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
         </div>
 
-        {/* In-page filter bar — always in DOM; invisible (keeps height) when fixed bar is shown */}
-        <div ref={inPageFilterRef} className={`mb-8 border-b border-stone-100 pb-3 ${filterBarFixed ? 'invisible' : ''}`}>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
-              {ROOM_FILTERS.map(tag => (
-                <button key={tag} onClick={() => selectTag(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                  {tag}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
-              {STYLE_FILTERS.map(tag => (
-                <button key={tag} onClick={() => selectTag(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                  {tag}
-                </button>
-              ))}
-              {activeTag && (
-                <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
-                  <X className="w-3.5 h-3.5" /> Clear
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
         {initialLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="w-10 h-10 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
