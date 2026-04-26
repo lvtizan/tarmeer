@@ -582,14 +582,15 @@ export default function PortfolioPage() {
         <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
 
-      <div className="max-w-[1400px] mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
-          <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
-        </div>
+      {/* Page title */}
+      <div className="max-w-[1400px] mx-auto px-4 pt-8 pb-4">
+        <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
+        <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
+      </div>
 
-        {/* Filter bar — sticky below the top Navbar so it never overlays content */}
-        <div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm -mx-4 px-4 py-2.5 mb-8 flex flex-col gap-1.5">
+      {/* Filter bar — direct child of scroll root so sticky works reliably */}
+      <div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
             {ROOM_FILTERS.map(tag => (
@@ -628,7 +629,9 @@ export default function PortfolioPage() {
             )}
           </div>
         </div>
+      </div>
 
+      <div className="max-w-[1400px] mx-auto px-4 py-8">
         {initialLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="w-10 h-10 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />

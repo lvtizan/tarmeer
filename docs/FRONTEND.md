@@ -474,7 +474,7 @@ Viewport (user scrolled):
 Rules:
 1. `sticky top-14 sm:top-16` — always offset by Navbar height so it lands directly below Navbar
 2. Never duplicate a filter bar (one static + one fixed). One sticky element handles both states.
-3. `-mx-4 px-4` — cancel the parent's padding so the bar extends edge-to-edge
+3. **The sticky element MUST be a direct child of the scroll root** (the `min-h-screen` div or `<body>`). Placing it inside a `max-w-[...]` container + using `-mx-4 px-4` to fake full-width causes `sticky` to silently fail in Chromium. Move the sticky bar out; put a centered inner `max-w` div inside it instead.
 4. If you must use `fixed` for some reason, also add `scroll-padding-top` equal to the bar height on the scroll container.
 
 ### 8. Testing Checklist (before deploy)
