@@ -360,6 +360,10 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!cached);
   const [activeTag, setActiveTag] = useState(urlTag);
+  const [isFilterSticky, setIsFilterSticky] = useState(false);
+  const [filterBarHeight, setFilterBarHeight] = useState(88);
+  const headingRef = useRef<HTMLDivElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(!!cached); // skip initial load if we have cache
   const seedRef = useRef(cached?.seed || Math.floor(Math.random() * 1000000));
@@ -459,7 +463,27 @@ export default function PortfolioPage() {
   // Sync tag from URL
   useEffect(() => { if (urlTag !== activeTag) setActiveTag(urlTag); }, [urlTag]);
 
+  // Measure filter bar height (for spacer when fixed)
+  useLayoutEffect(() => {
+    const el = filterBarRef.current;
+    if (!el) return;
+    setFilterBarHeight(el.offsetHeight);
+    const ro = new ResizeObserver(() => setFilterBarHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
+  // Sticky filter bar: watch when heading scrolls past navbar bottom
+  useEffect(() => {
+    const check = () => {
+      if (!headingRef.current) return;
+      const navH = window.innerWidth >= 640 ? 64 : 56;
+      setIsFilterSticky(headingRef.current.getBoundingClientRect().bottom <= navH);
+    };
+    window.addEventListener('scroll', check, { passive: true });
+    check();
+    return () => window.removeEventListener('scroll', check);
+  }, []);
 
   const selectTag = useCallback((tag: string) => {
     const newTag = tag === activeTag ? '' : tag;
@@ -613,14 +637,20 @@ export default function PortfolioPage() {
         <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
 
-      {/* Page heading — visible when at top, scrolls away naturally */}
-      <div className="max-w-[1400px] mx-auto px-4 pt-8 pb-5">
+      {/* Page heading — visible at top, scrolls away; ref triggers sticky */}
+      <div ref={headingRef} className="max-w-[1400px] mx-auto px-4 pt-8 pb-5">
         <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-1">Portfolio</h1>
         <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
       </div>
 
-      {/* Filter bar — sticks below Navbar once the heading scrolls out of view */}
-      <div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
+      {/* Spacer: preserves filter bar height in document flow when it goes fixed */}
+      {isFilterSticky && <div style={{ height: filterBarHeight }} />}
+
+      {/* Filter bar — fixed below Navbar once heading scrolls away; relative otherwise */}
+      <div
+        ref={filterBarRef}
+        className={`${isFilterSticky ? 'fixed top-14 sm:top-16 left-0 right-0 z-30' : 'relative'} bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm`}
+      >
         <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
