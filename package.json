@@ -1,7 +1,7 @@
 {
   "name": "tarmeer-5.0",
   "private": true,
-  "version": "5.0.83",
+  "version": "5.0.84",
   "type": "module",
   "scripts": {
     "dev": "vite",
