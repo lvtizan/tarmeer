@@ -31,7 +31,10 @@
 }
 
 html, body {
-  overflow-x: hidden;
+  /* clip: clips horizontal overflow without creating a scroll container.
+     hidden would make html/body a scroll container, breaking position:sticky
+     on the Navbar (sticky looks for nearest scroll-container ancestor). */
+  overflow-x: clip;
 }
 
 /*
