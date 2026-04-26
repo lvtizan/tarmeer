@@ -471,11 +471,46 @@ Viewport (user scrolled):
 </div>
 ```
 
-Rules:
-1. `sticky top-14 sm:top-16` — always offset by Navbar height so it lands directly below Navbar
-2. Never duplicate a filter bar (one static + one fixed). One sticky element handles both states.
-3. **The sticky element MUST be a direct child of the scroll root** (the `min-h-screen` div or `<body>`). Placing it inside a `max-w-[...]` container + using `-mx-4 px-4` to fake full-width causes `sticky` to silently fail in Chromium. Move the sticky bar out; put a centered inner `max-w` div inside it instead.
-4. If you must use `fixed` for some reason, also add `scroll-padding-top` equal to the bar height on the scroll container.
+**Why `sticky` often silently fails inside the Tarmeer Layout:**
+
+`Layout.tsx` wraps pages in `<main className="flex-1">`. In Chromium, `position: sticky` inside a `flex: 1` item whose height is not intrinsically determined (height comes from flex algorithm, not content) will NOT stick. This is a known browser behaviour — `sticky` requires a deterministic containing-block height derived from the content, not from flex growth.
+
+**Correct pattern — IntersectionObserver + fixed + invisible placeholder:**
+
+```tsx
+// 1. Ref on the in-page bar to observe
+const inPageFilterRef = useRef<HTMLDivElement>(null);
+const [filterBarFixed, setFilterBarFixed] = useState(false);
+
+useEffect(() => {
+  const el = inPageFilterRef.current;
+  if (!el) return;
+  const obs = new IntersectionObserver(
+    ([entry]) => setFilterBarFixed(!entry.isIntersecting),
+    { threshold: 0 }
+  );
+  obs.observe(el);
+  return () => obs.disconnect();
+}, []);
+
+// 2. Fixed bar (only rendered when in-page bar is off-screen)
+{filterBarFixed && (
+  <div className="fixed top-14 sm:top-16 left-0 right-0 z-30 bg-white/95 ...">
+    <FilterBarContent />
+  </div>
+)}
+
+// 3. In-page bar — always in DOM; invisible (keeps height) when fixed bar is shown
+<div ref={inPageFilterRef} className={filterBarFixed ? 'invisible' : ''}>
+  <FilterBarContent />
+</div>
+```
+
+Key rules:
+1. `fixed top-14 sm:top-16` — offset matches Navbar height (56px mobile / 64px sm+)
+2. In-page bar uses `invisible` (NOT `hidden`): keeps its layout height so content below doesn't jump
+3. Both bars render the same JSX — the fixed bar is hidden by the in-page bar when at top
+4. **Never use `sticky` inside `<main className="flex-1">` — it will silently not work**
 
 ### 8. Testing Checklist (before deploy)
 
