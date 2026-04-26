@@ -646,10 +646,18 @@ export default function PortfolioPage() {
       {/* Spacer: preserves filter bar height in document flow when it goes fixed */}
       {isFilterSticky && <div style={{ height: filterBarHeight }} />}
 
+      {/* Nav cover: fills the navbar slot (0–56/64px) when filter bar is sticky,
+          so if the navbar itself scrolls away (overflow-x:hidden sticky quirk),
+          content doesn't bleed into that gap. Navbar (z-50) paints over this
+          when it IS sticky, so this is a silent fallback. */}
+      {isFilterSticky && (
+        <div className="fixed top-0 left-0 right-0 h-14 sm:h-16 z-40 bg-white/95 backdrop-blur-sm border-b border-stone-200" />
+      )}
+
       {/* Filter bar — fixed below Navbar once heading scrolls away; relative otherwise */}
       <div
         ref={filterBarRef}
-        className={`${isFilterSticky ? 'fixed top-14 sm:top-16 left-0 right-0 z-30' : 'relative'} bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm`}
+        className={`${isFilterSticky ? 'fixed top-14 sm:top-16 left-0 right-0 z-40' : 'relative'} bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm`}
       >
         <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
