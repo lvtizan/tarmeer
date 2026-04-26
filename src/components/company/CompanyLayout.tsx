@@ -45,13 +45,13 @@ export default function CompanyLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="h-screen bg-stone-50 flex flex-col overflow-hidden">
       <PhoneRequiredModal blocking />
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-[57px] bottom-0 left-0 z-10 overflow-y-auto">
+        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-14 sm:top-16 bottom-0 left-0 z-10 overflow-y-auto">
           <div className="p-6">
             <nav className="flex flex-col gap-1">
               <NavLink to="/company/dashboard" end className={navCls}>

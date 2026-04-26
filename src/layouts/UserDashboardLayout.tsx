@@ -27,14 +27,14 @@ export default function UserDashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#faf9f7]">
+    <div className="h-screen flex flex-col overflow-hidden bg-[#faf9f7]">
       <PhoneRequiredModal blocking />
       {/* Top navbar — same as homepage */}
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-[57px] bottom-0 left-0 z-10 overflow-y-auto">
+        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-14 sm:top-16 bottom-0 left-0 z-10 overflow-y-auto">
           <div className="flex-1 p-6">
             <nav className="flex flex-col gap-1">
               <SidebarNavLink to="/dashboard" end>

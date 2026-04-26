@@ -389,6 +389,52 @@ These rules apply to all pages. Violations should be fixed whenever a page is to
 - Section gaps: `space-y-4` on mobile, `space-y-6` on desktop where needed.
 - Horizontal overflow: avoid any `whitespace-nowrap` on text that could exceed 320px.
 
+### 7a. Dashboard/Panel Layout Rules (sticky navbar + fixed sidebar)
+
+**CRITICAL**: Any layout that combines a sticky Navbar with a fixed sidebar MUST follow these rules, or the sidebar/navbar will scroll away.
+
+#### Outer container: `h-screen` NOT `min-h-screen`
+
+```tsx
+// WRONG — min-h-screen allows the container to grow beyond 100vh.
+// The window then scrolls, and sticky/fixed positioning breaks.
+<div className="min-h-screen flex flex-col">
+
+// CORRECT — h-screen locks the container to exactly 100vh.
+// Only <main> scrolls internally; Navbar and sidebar never move.
+<div className="h-screen flex flex-col overflow-hidden">
+```
+
+#### Sidebar `top` value must match actual Navbar height
+
+The Navbar renders at `h-14` (56px) on mobile and `sm:h-16` (64px) on sm+. The sidebar is only shown at `md:` (768px+), where the Navbar is always 64px tall.
+
+```tsx
+// WRONG — hardcoded 57px matches neither mobile (56px) nor desktop (64px)
+<aside className="fixed top-[57px] ...">
+
+// CORRECT — responsive, matches the actual rendered Navbar height
+<aside className="fixed top-14 sm:top-16 ...">
+```
+
+#### Why this matters
+
+- `min-h-screen` + `overflow-y-auto` on `<main>`: the outer container can grow, so `<main>` never actually scrolls — the window does instead.
+- When the window scrolls, `position: sticky` on the Navbar can fail in some browsers, making the Navbar disappear on scroll.
+- A fixed sidebar with wrong `top` value creates a gap or overlap with the Navbar.
+
+#### Correct pattern (CompanyLayout / UserDashboardLayout)
+
+```tsx
+<div className="h-screen flex flex-col overflow-hidden">  {/* viewport-locked */}
+  <Navbar />                                              {/* sticky top-0, ~56/64px */}
+  <div className="flex flex-1 overflow-hidden">           {/* fills remaining height */}
+    <aside className="fixed top-14 sm:top-16 bottom-0 left-0 w-64 overflow-y-auto" />
+    <main className="flex-1 overflow-y-auto md:ml-64" /> {/* scrolls here only */}
+  </div>
+</div>
+```
+
 ### 8. Testing Checklist (before deploy)
 
 When touching a page with UI components, verify on 375px viewport:
