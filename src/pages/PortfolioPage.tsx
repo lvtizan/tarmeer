@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
-import { DEFAULT_RATIO } from '../lib/justifyRows';
+import { DEFAULT_RATIO, GAP, TARGET_ROW_HEIGHT, justifyRows } from '../lib/justifyRows';
 
 const MAX_IMAGES_PER_GROUP = 12;
 
@@ -140,49 +140,79 @@ function JustifiedGallery({
   renderOverlay?: (index: number) => React.ReactNode;
   remainingCount?: number;
 }) {
-  const visibleItems = items.filter(it => it.ratio > 0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerWidth(el.offsetWidth);
+    const ro = new ResizeObserver(() => setContainerWidth(el.offsetWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const visibleItems = useMemo(() => items.filter(it => it.ratio > 0), [items]);
+  const ratios = useMemo(() => visibleItems.map(it => it.ratio), [visibleItems]);
+  const rows = useMemo(
+    () => containerWidth > 0 ? justifyRows(ratios, containerWidth, TARGET_ROW_HEIGHT) : [],
+    [ratios, containerWidth],
+  );
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      {visibleItems.map((item, vi) => {
-        const origIdx = items.indexOf(item);
-        const isLast = vi === visibleItems.length - 1 && (remainingCount || 0) > 0;
-        return (
-          <div key={origIdx} className="relative rounded-xl overflow-hidden cursor-pointer group" onClick={() => onItemClick(origIdx)}>
-            {/* Shimmer */}
-            <div
-              className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${item.loaded ? 'opacity-0 pointer-events-none' : ''}`}
-              style={{
-                backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 1.5s infinite',
-              }}
-            />
-            <img
-              src={resolveVariantUrl(item.src, 'thumb')}
-              alt="Interior design project"
-              loading="lazy"
-              decoding="async"
-              onError={(e) => {
-                const img = e.currentTarget as HTMLImageElement;
-                if (img.dataset.fallback !== '1') {
-                  img.dataset.fallback = '1';
-                  img.src = resolveImageUrl(item.src);
-                }
-              }}
-              className={`w-full aspect-[4/3] object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
-            />
-            {/* Hover gradient + overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            {renderOverlay?.(origIdx)}
-            {/* +N more */}
-            {isLast && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                <span className="text-white text-lg font-semibold">+{remainingCount} more</span>
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: `${GAP}px` }}>
+      {rows.map((row, ri) => (
+        <div key={ri} style={{ display: 'flex', gap: `${GAP}px` }}>
+          {Array.from({ length: row.count }, (_, wi) => {
+            const vi = row.startIdx + wi;
+            const item = visibleItems[vi];
+            if (!item) return null;
+            const origIdx = items.indexOf(item);
+            const isLast = vi === visibleItems.length - 1 && (remainingCount || 0) > 0;
+
+            return (
+              <div
+                key={wi}
+                className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
+                style={{ width: row.widths[wi], height: row.height }}
+                onClick={() => onItemClick(origIdx)}
+              >
+                {!item.loaded && (
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.5s infinite',
+                    }}
+                  />
+                )}
+                <img
+                  src={resolveVariantUrl(item.src, 'thumb')}
+                  alt="Interior design project"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    const img = e.currentTarget as HTMLImageElement;
+                    if (img.dataset.fallback !== '1') {
+                      img.dataset.fallback = '1';
+                      img.src = resolveImageUrl(item.src);
+                    }
+                  }}
+                  className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${item.loaded ? 'opacity-100' : 'opacity-0'}`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {renderOverlay?.(origIdx)}
+                {isLast && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
+                    <span className="text-white text-lg font-semibold">+{remainingCount} more</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
@@ -583,7 +613,13 @@ export default function PortfolioPage() {
         <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
 
-      {/* Sticky filter bar — sticks just below the Navbar as the user scrolls */}
+      {/* Page heading — visible when at top, scrolls away naturally */}
+      <div className="max-w-[1400px] mx-auto px-4 pt-8 pb-5">
+        <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-1">Portfolio</h1>
+        <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
+      </div>
+
+      {/* Filter bar — sticks below Navbar once the heading scrolls out of view */}
       <div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
         <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -612,11 +648,7 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
-          <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
-        </div>
+      <div className="max-w-[1400px] mx-auto px-4 pt-6 pb-8">
 
         {initialLoading && (
           <div className="flex items-center justify-center py-20">
