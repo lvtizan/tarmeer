@@ -114,6 +114,9 @@ export function extractPortfolioData(rawField: unknown): {
 
 export function sanitizePublicCompany(company: any) {
   const { portfolio_images, portfolio_categories, portfolio_metadata } = extractPortfolioData(company.portfolio_images);
+  // Claimed companies (registered or claimed directory) hide contact info — they acquire
+  // leads through the platform, showing contact lets homeowners bypass it.
+  const isClaimed = !!(company.owner_user_id);
 
   return {
     id: company.id,
@@ -123,10 +126,10 @@ export function sanitizePublicCompany(company: any) {
     city: toPublicString(company.city),
     address: toPublicString(company.address),
     year_established: toPublicString(company.year_established),
-    website: toPublicString(company.website),
+    website: isClaimed ? '' : toPublicString(company.website),
     instagram: toPublicString(company.instagram),
-    phone: toPublicString(company.phone),
-    email: toPublicString(company.email),
+    phone: isClaimed ? '' : toPublicString(company.phone),
+    email: isClaimed ? '' : toPublicString(company.email),
     services: parseJsonField(company.services) || [],
     specialties: parseJsonField(company.specialties) || [],
     logo_url: sanitizeCompanyImage(company.logo_url),
@@ -134,7 +137,7 @@ export function sanitizePublicCompany(company: any) {
     portfolio_categories,
     portfolio_metadata,
     project_count: portfolio_images.length,
-    is_claimed: !!(company.owner_user_id),
+    is_claimed: isClaimed,
     is_signed: !!(company.is_signed),
   };
 }

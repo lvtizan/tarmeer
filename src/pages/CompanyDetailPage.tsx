@@ -444,8 +444,8 @@ export default function CompanyDetailPage() {
             )}
 
             {/* Contact Info (visible on mobile, hidden on desktop - shown in sidebar)
-                Hidden entirely for self-registered companies (no contact fields in API response). */}
-            {(company.phone || company.email || company.website || company.instagram || company.address) && (
+                Hidden for claimed/registered companies — they acquire leads through the platform. */}
+            {!company.isClaimed && (company.phone || company.email || company.website || company.instagram || company.address) && (
               <section className="py-6 border-b border-stone-100 lg:hidden">
                 <h2 className="text-lg font-semibold text-[#1c1917] mb-3">Contact</h2>
                 <div className="space-y-2.5 text-sm">
@@ -566,8 +566,8 @@ export default function CompanyDetailPage() {
             <div className="sticky top-20 space-y-4">
               <ServiceInquiryCard title={`Get in touch with ${company.name}`} companyName={company.name} companySlug={company.id} />
 
-              {/* Contact Info Card — hidden for self-registered companies (no contact fields in API response) */}
-              {(company.phone || company.email || company.website || company.instagram || company.address) && (
+              {/* Contact Info Card — hidden for claimed/registered companies */}
+              {!company.isClaimed && (company.phone || company.email || company.website || company.instagram || company.address) && (
                 <div className="border border-stone-200 rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Contact Info</h3>
                   <div className="space-y-2.5 text-sm">

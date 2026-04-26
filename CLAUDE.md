@@ -84,6 +84,7 @@ Every feature MUST go through these steps before notifying the user. No exceptio
 - JSON fields: use `Array.isArray()` not `.split()`
 - `pool.execute` LIMIT/OFFSET → use `pool.query` with integer concatenation
 - nginx legacy URL rules must not conflict with valid routes
+- **uploads 路径不可混淆**：用户上传文件由后端保存在 `/tarmeer/tarmeer_api/public/uploads/`，nginx 的 `/uploads/` location 必须 alias 到此路径。禁止改成 `tarmeer_web_portal/public/uploads/`（前端静态目录，无上传文件）。
 
 ### Step 5: Notify User
 - Report: what was done, test results, ready to deploy or not
@@ -194,8 +195,10 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 
 #### A4. 目录装企（uae_companies）
 - 文件：`server/src/lib/publicCompaniesSerialization.ts`
-- `sanitizePublicCompany()` 必须正常返回 `phone`、`email`（目录公司联系方式公开）
+- `sanitizePublicCompany()` 对**未认领**目录公司（`owner_user_id IS NULL`）正常返回 `phone`、`email`
+- **已认领**目录公司（`owner_user_id` 有值，即 `isClaimed = true`）必须隐藏 `phone`、`email`、`website`（同注册装企）
 - `is_claimed` 基于 `owner_user_id` 计算，不得硬编码
+- **已知返祖风险**：认领后目录公司的 slug 仍走 `/api/companies/:slug` → `sanitizePublicCompany()`，若不在此处过滤，phone 会穿透到前端
 
 #### A5. CRM 推送隔离
 - 文件：`server/src/controllers/companyLeadController.ts`
@@ -227,8 +230,10 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 - 其他情况：点击图片 → 打开 Lightbox
 
 #### B4. 公司详情页 — 联系方式展示
-- 注册装企（`isClaimed = true`）：不显示 phone / email / website / contact_person
-- 目录装企（`isClaimed = false`）：正常显示
+- 注册装企或已认领装企（`isClaimed = true`）：不显示 phone / email / website / contact_person
+- 目录装企（`isClaimed = false`，未被认领）：正常显示
+- **双重防线**：后端 `sanitizePublicCompany()` 对 `isClaimed` 公司返回空字符串；前端 `!company.isClaimed &&` 条件守卫联系块，两处必须同时存在
+- **已知返祖风险**：若仅依赖 API 不返回 phone（旧方案），认领目录公司的 phone 会穿透；必须在 `sanitizePublicCompany` 中主动过滤
 
 #### B5. 公司列表数据合并顺序
 - 文件：`src/lib/publicApi.ts`，函数 `fetchPublicCompanies()`
