@@ -330,8 +330,6 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!cached);
   const [activeTag, setActiveTag] = useState(urlTag);
-  const [scrolledPastHeader, setScrolledPastHeader] = useState(false);
-  const headerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(!!cached); // skip initial load if we have cache
   const seedRef = useRef(cached?.seed || Math.floor(Math.random() * 1000000));
@@ -431,17 +429,6 @@ export default function PortfolioPage() {
   // Sync tag from URL
   useEffect(() => { if (urlTag !== activeTag) setActiveTag(urlTag); }, [urlTag]);
 
-  // Track scroll past header for sticky bar
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setScrolledPastHeader(!entry.isIntersecting),
-      { threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   const selectTag = useCallback((tag: string) => {
     const newTag = tag === activeTag ? '' : tag;
@@ -595,61 +582,14 @@ export default function PortfolioPage() {
         <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
 
-      {/* ── Sticky filter bar (appears when scrolled past header) ── */}
-      {scrolledPastHeader && (
-        <div className="fixed top-[64px] left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm">
-          <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
-            {/* By Room row */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
-              {ROOM_FILTERS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => selectTag(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
-                    activeTag === tag
-                      ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
-                      : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-            {/* By Style row */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
-              {STYLE_FILTERS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => selectTag(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
-                    activeTag === tag
-                      ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
-                      : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-              {activeTag && (
-                <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
-                  <X className="w-3.5 h-3.5" /> Clear
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="max-w-[1400px] mx-auto px-4 py-8">
-        <div ref={headerRef} className="mb-6">
+        <div className="mb-6">
           <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-2">Portfolio</h1>
           <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
         </div>
 
-        {/* Persistent filter bar at top of page */}
-        <div className="mb-8 flex flex-col gap-2">
+        {/* Filter bar — sticky below the top Navbar so it never overlays content */}
+        <div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm -mx-4 px-4 py-2.5 mb-8 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
             {ROOM_FILTERS.map(tag => (

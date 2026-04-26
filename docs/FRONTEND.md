@@ -435,6 +435,48 @@ The Navbar renders at `h-14` (56px) on mobile and `sm:h-16` (64px) on sm+. The s
 </div>
 ```
 
+### 7b. Sticky Sub-bars (filter bars, tab bars, secondary navs)
+
+**NEVER use `position: fixed` for sub-navigation bars that appear on scroll.** Use `position: sticky` instead.
+
+#### Why `fixed` breaks content
+
+A `fixed` element is removed from the document flow entirely. Content below it has no awareness of it and does NOT move. When a `fixed` filter bar appears over the page, it overlays images/content — creating a "cut" or "split" visual:
+
+```
+Viewport (user scrolled):
+┌─────────────────────────────────────┐
+│ [top of image partially visible]    │  ← image "above" the bar
+│─────────────────────────────────────│
+│  BY ROOM  Living Room  Bedroom ...  │  ← fixed bar overlays
+│─────────────────────────────────────│
+│ [same image continues behind bar]   │  ← image "split" by bar
+└─────────────────────────────────────┘
+```
+
+#### Correct pattern: `sticky`
+
+```tsx
+// WRONG — fixed overlay cuts content; scroll-padding/padding needed to compensate
+{scrolledPastHeader && (
+  <div className="fixed top-[64px] z-30 ...">
+    <FilterBar />
+  </div>
+)}
+// ...and a separate in-flow FilterBar duplicate
+
+// CORRECT — single sticky bar, stays in document flow, never cuts content
+<div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-200 -mx-4 px-4 py-2.5">
+  <FilterBar />
+</div>
+```
+
+Rules:
+1. `sticky top-14 sm:top-16` — always offset by Navbar height so it lands directly below Navbar
+2. Never duplicate a filter bar (one static + one fixed). One sticky element handles both states.
+3. `-mx-4 px-4` — cancel the parent's padding so the bar extends edge-to-edge
+4. If you must use `fixed` for some reason, also add `scroll-padding-top` equal to the bar height on the scroll container.
+
 ### 8. Testing Checklist (before deploy)
 
 When touching a page with UI components, verify on 375px viewport:
