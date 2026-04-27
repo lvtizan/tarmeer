@@ -73,14 +73,15 @@ export async function getAnalyticsOverview(req: Request<{}, {}, {}, AnalyticsQue
       [start, end]
     );
 
+    const raw = (overviewRows as any[])[0] || {};
     res.json({
-      overview: (overviewRows as any[])[0] || {
-        total_events: 0,
-        unique_visitors: 0,
-        page_views: 0,
-        apply_clicks: 0,
-        whatsapp_clicks: 0,
-        contact_submits: 0,
+      overview: {
+        total_events:    Number(raw.total_events    ?? 0),
+        unique_visitors: Number(raw.unique_visitors ?? 0),
+        page_views:      Number(raw.page_views      ?? 0),
+        apply_clicks:    Number(raw.apply_clicks    ?? 0),
+        whatsapp_clicks: Number(raw.whatsapp_clicks ?? 0),
+        contact_submits: Number(raw.contact_submits ?? 0),
       },
       topPages: topPagesRows,
       dateRange: { start, end },
@@ -296,6 +297,39 @@ export async function getDailyRegistrations(req: Request<{}, {}, {}, AnalyticsQu
   } catch (error) {
     console.error('Error getting daily registrations:', error);
     res.status(500).json({ error: 'Failed to load registration stats.' });
+  }
+}
+
+export async function getDailyVisits(req: Request<{}, {}, {}, AnalyticsQueryParams>, res: Response): Promise<void> {
+  const end = toDateString(req.query.endDate) || new Date().toISOString().slice(0, 10);
+  const start = toDateString(req.query.startDate) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  try {
+    await ensureAnalyticsEventsTable();
+
+    const [rows] = await pool.execute(
+      `SELECT DATE(created_at) AS stat_date,
+              COUNT(*) AS page_views,
+              COUNT(DISTINCT CASE
+                WHEN viewer_ip IS NOT NULL
+                 AND viewer_ip <> ''
+                 AND viewer_ip <> 'unknown'
+                 AND viewer_ip <> '127.0.0.1'
+                 AND viewer_ip <> '::1'
+                 AND viewer_ip <> '::ffff:127.0.0.1'
+                THEN viewer_ip
+              END) AS unique_visitors
+         FROM analytics_events
+        WHERE event_name = 'page_view'
+          AND DATE(created_at) BETWEEN ? AND ?
+        GROUP BY DATE(created_at)
+        ORDER BY stat_date ASC`,
+      [start, end]
+    );
+    res.json({ dailyVisits: rows, dateRange: { start, end } });
+  } catch (error) {
+    console.error('Error getting daily visits:', error);
+    res.status(500).json({ error: 'Failed to get daily visits.' });
   }
 }
 

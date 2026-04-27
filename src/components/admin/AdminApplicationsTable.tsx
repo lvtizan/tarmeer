@@ -86,9 +86,9 @@ export default function AdminApplicationsTable({
       )}
 
       <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-[15px]">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
+            <tr className="bg-stone-50 border-b border-stone-200 text-sm">
               <th className="px-4 py-3 text-left">
                 <input
                   type="checkbox"

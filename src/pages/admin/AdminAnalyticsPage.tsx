@@ -1,20 +1,20 @@
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Globe, RefreshCw, Save, Users, Building2, MessageSquare, ChevronDown, ChevronRight, BarChart3, AreaChart as AreaChartIcon, Eye, MousePointerClick, Phone, FileText, Hash, MapPin } from 'lucide-react';
+import { Globe, RefreshCw, Save, Users, Building2, MessageSquare, ChevronDown, ChevronRight, BarChart3, AreaChart as AreaChartIcon, Eye, MousePointerClick, Phone, FileText } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useAdminT } from '../../hooks/useAdminLang';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
-  ComposedChart, Line,
+  ComposedChart, Line, LineChart,
 } from 'recharts';
-import type { AnalyticsOverview, VisitorRecord } from '../../lib/adminApi';
+import type { AnalyticsOverview } from '../../lib/adminApi';
 
 function lazyRetry<T extends React.ComponentType<any>>(factory: () => Promise<{ default: T }>) {
   return lazy(() => factory().catch(() => factory().catch(() => { window.location.reload(); return factory(); })));
 }
 
-const UAEDistributionMap = lazyRetry(() => import('../../components/admin/UAEDistributionMap'));
+const UAEMapSVG = lazyRetry(() => import('../../components/admin/UAEMapSVG'));
 
 /* ─── Types ─── */
 
@@ -177,21 +177,6 @@ const COLOR_INQUIRY = '#6b6b6b';
 
 const PIE_COLORS = ['#B8864A', '#5b7fcb', '#6b6b6b', '#2c6e49', '#e0a86e', '#8b5cf6', '#14b8a6', '#f59e0b'];
 
-/* ─── Page path → readable name ─── */
-function getPageDisplayName(path: string): string {
-  if (path === '/') return '首页';
-  if (path === '/companies') return '装企列表';
-  if (path === '/portfolio') return '作品集';
-  if (path === '/for-companies') return '装企注册';
-  if (path === '/contact') return '联系我们';
-  if (path === '/faq') return 'FAQ';
-  if (path.startsWith('/companies/')) {
-    const slug = path.replace('/companies/', '');
-    return slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-  if (path.startsWith('/projects/')) return '项目详情';
-  return path;
-}
 
 /* ─── Custom Recharts Tooltip ─── */
 
@@ -356,33 +341,21 @@ interface CompanyVisitorRow {
   cities: Array<{ city: string; visitors: number }>;
 }
 
-interface TopPageRow {
-  page_path: string;
-  page_views: number;
-  visitors: number;
-}
-
-const VISITOR_PAGE_SIZE = 50;
 
 function VisitorTab() {
   const { t } = useAdminT();
 
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
-  const [topPages, setTopPages] = useState<TopPageRow[]>([]);
+  const [visitorOverview, setVisitorOverview] = useState<{ totalVisits: number; uniqueIpCount: number } | null>(null);
   const [companies, setCompanies] = useState<CompanyVisitorRow[]>([]);
-  const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
-  const [visitorPage, setVisitorPage] = useState(1);
-  const [visitorTotal, setVisitorTotal] = useState(0);
-  const [visitorPages, setVisitorPages] = useState(1);
-  const [visitorLoading, setVisitorLoading] = useState(false);
-  // TODO: Replace with actual daily visit data when backend provides /analytics/daily-visits endpoint
-  const [dailyData, setDailyData] = useState<Array<{ date: string; page_views: number; visitors: number }>>([]);
+  const [dailyData, setDailyData] = useState<Array<{ stat_date: string; page_views: number; unique_visitors: number }>>([]);
   const [companyCities, setCompanyCities] = useState<any[]>([]);
   const [inquiryCities, setInquiryCities] = useState<any[]>([]);
+  const [visitorCities, setVisitorCities] = useState<any[]>([]);
+  const [companyTypeCities, setCompanyTypeCities] = useState<Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }>>([]);
   const [weightOpen, setWeightOpen] = useState(false);
 
-  // Lazy load: fetch data on mount (this component only mounts when tab is active)
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -390,49 +363,29 @@ function VisitorTab() {
     Promise.all([
       adminApi.getAnalyticsOverview(),
       adminApi.getCompanyVisitors(),
-      adminApi.getDailyRegistrations(),
+      adminApi.getDailyVisits(),
+      adminApi.getVisitorOverview(),
     ])
-      .then(([analyticsRes, companyRes, dailyRes]) => {
+      .then(([analyticsRes, companyRes, dailyRes, visitorRes]) => {
         if (cancelled) return;
         setOverview(analyticsRes.overview);
-        setTopPages(analyticsRes.topPages || []);
         setCompanies((companyRes.companies || []).slice(0, 10));
-        // Use daily registration data as placeholder for daily visit trend
-        // TODO: Replace with actual daily visit/pageview data from backend
-        const mapped = (dailyRes.dailyRegistrations || []).map((d) => ({
-          date: d.stat_date,
-          page_views: d.homeowner_count + d.company_count,
-          visitors: d.homeowner_count,
-        }));
-        setDailyData(mapped);
+        setDailyData(dailyRes.dailyVisits || []);
+        setVisitorOverview(visitorRes);
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
 
-    // Fetch city distribution data for UAE map
     adminApi.getRegistrationSources().then(data => {
       if (cancelled) return;
       setCompanyCities(data.company_cities || []);
       setInquiryCities(data.inquiry_cities || []);
+      setVisitorCities(data.visitor_cities || []);
+      setCompanyTypeCities(data.company_type_cities || []);
     }).catch(() => {});
 
     return () => { cancelled = true; };
   }, []);
-
-  // Fetch visitors (paginated)
-  useEffect(() => {
-    setVisitorLoading(true);
-    adminApi.getVisitors({ page: visitorPage, limit: VISITOR_PAGE_SIZE })
-      .then((res) => {
-        setVisitors(res.visitors || []);
-        setVisitorTotal(res.pagination?.total || 0);
-        setVisitorPages(res.pagination?.pages || 1);
-      })
-      .catch(() => {})
-      .finally(() => setVisitorLoading(false));
-  }, [visitorPage]);
-
-  const RANK_BADGES = ['bg-amber-400 text-white', 'bg-stone-400 text-white', 'bg-amber-700 text-white'];
 
   if (loading) {
     return (
@@ -443,280 +396,191 @@ function VisitorTab() {
   }
 
   const ov = overview || { total_events: 0, unique_visitors: 0, page_views: 0, apply_clicks: 0, whatsapp_clicks: 0, contact_submits: 0 };
+  const uniqueIps = visitorOverview?.uniqueIpCount ?? ov.unique_visitors;
 
-  const summaryCards: Array<{ icon: React.ReactNode; color: string; label: string; value: number }> = [
-    { icon: <Hash className="w-5 h-5" />, color: '#6b6b6b', label: t('Total Events', '总事件数'), value: ov.total_events },
-    { icon: <Globe className="w-5 h-5" />, color: '#5b7fcb', label: t('Unique IPs', '独立 IP'), value: ov.unique_visitors },
-    { icon: <Eye className="w-5 h-5" />, color: '#2c6e49', label: t('Page Views', '页面浏览'), value: ov.page_views },
-    { icon: <MousePointerClick className="w-5 h-5" />, color: '#B8864A', label: t('Apply Clicks', 'Apply 点击'), value: ov.apply_clicks },
-    { icon: <Phone className="w-5 h-5" />, color: '#14b8a6', label: t('WhatsApp Clicks', 'WhatsApp 点击'), value: ov.whatsapp_clicks },
-    { icon: <FileText className="w-5 h-5" />, color: '#8b5cf6', label: t('Contact Submits', '联系表单提交'), value: ov.contact_submits },
+  // Conversion funnel rates (relative to page views)
+  const funnelBase = ov.page_views || 1;
+  const funnelSteps = [
+    { label: t('Page Views', '页面浏览'), value: ov.page_views, pct: 100, color: '#B8864A' },
+    { label: t('Apply Clicks', 'Apply 点击'), value: ov.apply_clicks, pct: Math.round((ov.apply_clicks / funnelBase) * 100 * 10) / 10, color: '#C88B5A' },
+    { label: t('WhatsApp', 'WhatsApp'), value: ov.whatsapp_clicks, pct: Math.round((ov.whatsapp_clicks / funnelBase) * 100 * 10) / 10, color: '#6B9BB8' },
+    { label: t('Contact Form', '联系表单'), value: ov.contact_submits, pct: Math.round((ov.contact_submits / funnelBase) * 100 * 10) / 10, color: '#7B9E7A' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* 6 Summary Cards (2 rows of 3) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {summaryCards.map((card, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${card.color}15`, color: card.color }}>
-                {card.icon}
+      {/* KPI Horizontal Strip */}
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-stone-100">
+          {[
+            { icon: <Globe className="w-4 h-4" />, label: t('Unique Visitors', '独立访客'), value: uniqueIps, sub: t('from visitor logs', 'visitor_logs'), color: '#5b7fcb' },
+            { icon: <Eye className="w-4 h-4" />, label: t('Page Views', '页面浏览'), value: ov.page_views, sub: t('last 30 days', '近30天'), color: '#2c6e49' },
+            { icon: <MousePointerClick className="w-4 h-4" />, label: t('Apply Clicks', 'Apply 点击'), value: ov.apply_clicks, sub: `${funnelSteps[1].pct}% ${t('of views', '转化率')}`, color: '#B8864A' },
+            { icon: <Phone className="w-4 h-4" />, label: t('WhatsApp', 'WhatsApp'), value: ov.whatsapp_clicks, sub: `${funnelSteps[2].pct}% ${t('of views', '转化率')}`, color: '#14b8a6' },
+            { icon: <FileText className="w-4 h-4" />, label: t('Contact Submits', '联系提交'), value: ov.contact_submits, sub: `${funnelSteps[3].pct}% ${t('of views', '转化率')}`, color: '#8b5cf6' },
+          ].map((kpi, i) => (
+            <div key={i} className="px-5 py-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: `${kpi.color}18`, color: kpi.color }}>
+                  {kpi.icon}
+                </div>
+                <span className="text-xs font-medium text-stone-500 leading-tight">{kpi.label}</span>
               </div>
-              <span className="text-sm font-medium text-stone-500">{card.label}</span>
+              <div className="text-2xl font-bold text-[#2c2c2c] leading-none mb-1">{kpi.value.toLocaleString()}</div>
+              <div className="text-[10px] text-stone-400">{kpi.sub}</div>
             </div>
-            <div className="text-3xl font-bold text-[#2c2c2c]">{card.value.toLocaleString()}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Daily Visit Trend Chart */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-        <div className="mb-4">
-          <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Daily Visit Trend', '每日访问趋势')}</h2>
-          {/* TODO: Replace placeholder data with actual daily visit data from backend */}
-          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Page views (bars) & unique visitors (line)', '页面浏览量（柱状）& 独立访客（折线）')}</p>
+          ))}
         </div>
-        {dailyData.length === 0 ? (
-          <div className="flex items-center justify-center h-[300px] text-[#6b6b6b] text-sm">{t('No data', '暂无数据')}</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={dailyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5)} />
-              <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ borderRadius: 16, border: '1px solid #e7e5e4', fontSize: 12 }}
-                formatter={(value: any, name: any) => {
-                  const labelMap: Record<string, string> = {
-                    page_views: t('Page Views', '页面浏览'),
-                    visitors: t('Visitors', '访客数'),
-                  };
-                  return [value, labelMap[String(name)] || String(name)];
-                }}
-                labelFormatter={(label: any) => String(label)}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 12 }}
-                formatter={(value: string) => {
-                  const map: Record<string, string> = {
-                    page_views: t('Page Views', '页面浏览'),
-                    visitors: t('Visitors', '访客数'),
-                  };
-                  return <span className="text-[#6b6b6b]">{map[value] || value}</span>;
-                }}
-              />
-              <Bar yAxisId="left" dataKey="page_views" fill="#B8864A" radius={[3, 3, 0, 0]} fillOpacity={0.7} />
-              <Line yAxisId="right" type="monotone" dataKey="visitors" stroke="#5b7fcb" strokeWidth={2} dot={{ r: 3, fill: '#5b7fcb' }} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        )}
       </div>
 
-      {/* Top 10 Companies Horizontal Bar Chart */}
+      {/* Daily Visit Trend + Conversion Funnel side-by-side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Daily Visit Trend (takes 2/3) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
+          <div className="mb-4">
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Daily Visit Trend', '每日访问趋势')}</h2>
+            <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Page views (bars) & unique visitors (line)', '页面浏览量（柱）& 独立访客（线）')}</p>
+          </div>
+          {dailyData.length === 0 ? (
+            <div className="flex items-center justify-center h-[240px] text-[#6b6b6b] text-sm">{t('No data', '暂无数据')}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart data={dailyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="pvBarGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#C8975A" stopOpacity={0.92} />
+                    <stop offset="100%" stopColor="#B8864A" stopOpacity={0.72} />
+                  </linearGradient>
+                  <linearGradient id="uvAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#5b7fcb" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#5b7fcb" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0ede9" vertical={false} />
+                <XAxis dataKey="stat_date" tick={{ fontSize: 10, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5, 10)} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#a8a29e' }} allowDecimals={false} axisLine={false} tickLine={false} width={36} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#a8a29e' }} allowDecimals={false} axisLine={false} tickLine={false} width={28} />
+                <Tooltip
+                  contentStyle={{ borderRadius: 16, border: '1px solid #e7e5e4', fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                  formatter={(value: any, name: any) => {
+                    const labelMap: Record<string, string> = {
+                      page_views: t('Page Views', '页面浏览'),
+                      unique_visitors: t('Unique Visitors', '独立访客'),
+                    };
+                    return [value, labelMap[String(name)] || String(name)];
+                  }}
+                  labelFormatter={(label: any) => String(label)}
+                />
+                <Bar yAxisId="left" dataKey="page_views" fill="url(#pvBarGrad)" radius={[4, 4, 0, 0]} />
+                <Area yAxisId="right" type="monotone" dataKey="unique_visitors" fill="url(#uvAreaGrad)" stroke="#5b7fcb" strokeWidth={2} dot={{ r: 2.5, fill: '#5b7fcb', strokeWidth: 0 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Conversion Funnel (takes 1/3) */}
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
+          <div className="mb-4">
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Conversion Funnel', '转化漏斗')}</h2>
+            <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Visitor intent signals', '访客意向信号')}</p>
+          </div>
+          <div className="space-y-3 mt-6">
+            {funnelSteps.map((step, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-[#2c2c2c]">{step.label}</span>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-[#2c2c2c]">{step.value.toLocaleString()}</span>
+                    {i > 0 && (
+                      <span className="text-[10px] text-[#6b6b6b] ml-1.5">{step.pct}%</span>
+                    )}
+                  </div>
+                </div>
+                <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${step.pct}%`, backgroundColor: step.color }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Conversion rate summary */}
+          <div className="mt-5 pt-4 border-t border-stone-100">
+            <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-2">{t('Overall Conversion', '综合转化')}</div>
+            <div className="text-2xl font-bold text-[#B8864A]">
+              {ov.page_views > 0
+                ? `${Math.round(((ov.apply_clicks + ov.whatsapp_clicks + ov.contact_submits) / ov.page_views) * 100 * 10) / 10}%`
+                : '—'
+              }
+            </div>
+            <div className="text-[10px] text-[#6b6b6b] mt-0.5">{t('actions / page views', '互动 / 浏览量')}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Top 10 Companies */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-        <div className="mb-4">
+        <div className="mb-5">
           <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Top 10 Visited Companies', '最受关注的10家公司')}</h2>
-          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Click a bar to view company detail', '点击柱状条查看公司详情')}</p>
+          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Unique visitors · click name to view detail', '独立访客数 · 点击公司名查看详情')}</p>
         </div>
         {companies.length === 0 ? (
           <div className="flex items-center justify-center h-[200px] text-[#6b6b6b] text-sm">{t('No data', '暂无数据')}</div>
-        ) : (
-          <>
-            <ResponsiveContainer width="100%" height={Math.max(companies.length * 48, 200)}>
-              <BarChart
-                data={companies}
-                layout="vertical"
-                margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
-                onClick={(state: any) => {
-                  if (state?.activePayload?.[0]?.payload?.slug) {
-                    window.open(`/companies/${state.activePayload[0].payload.slug}`, '_blank');
-                  }
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
-                <YAxis
-                  type="category"
-                  dataKey="company_name"
-                  width={200}
-                  tick={{ fontSize: 11, fill: '#6b6b6b' }}
-                  tickFormatter={(v: string) => {
-                    // Convert slug-like names to readable: replace hyphens, capitalize words
-                    const readable = v.includes('-') ? v.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : v;
-                    return readable;
-                  }}
-                />
-                <Tooltip
-                  contentStyle={{ borderRadius: 16, border: '1px solid #e7e5e4', fontSize: 12 }}
-                  formatter={(value: any) => [value, t('Visitors', '访客数')]}
-                  labelFormatter={(label: any) => String(label)}
-                />
-                <Bar dataKey="unique_visitors" fill="#B8864A" radius={[0, 4, 4, 0]} cursor="pointer" barSize={16} />
-              </BarChart>
-            </ResponsiveContainer>
-            {/* Company list with visitor count + city breakdown inline */}
-            <div className="mt-4 space-y-3">
+        ) : (() => {
+          const maxV = companies[0]?.unique_visitors || 1;
+          return (
+            <div className="space-y-2">
               {companies.map((c) => {
                 const displayName = c.company_name.includes('-')
                   ? c.company_name.replace(/-/g, ' ').replace(/\b\w/g, (ch: string) => ch.toUpperCase())
                   : c.company_name;
+                const pct = Math.max(8, Math.round((c.unique_visitors / maxV) * 100));
+                const cityText = c.cities && c.cities.length > 0
+                  ? c.cities.slice(0, 4).map((city) => `${city.city || '—'} (${city.visitors})`).join('  ·  ')
+                  : '';
                 return (
-                  <div key={c.slug}>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={`/companies/${c.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-[#2c2c2c] hover:text-[#B8864A] hover:underline"
-                      >
-                        {displayName}
-                      </a>
-                      <span className="text-xs text-[#6b6b6b]">— {c.unique_visitors} {t('visitors', '访客')}</span>
-                    </div>
-                    {c.cities && c.cities.length > 0 && (
-                      <div className="ml-4 text-xs text-[#6b6b6b] mt-0.5">
-                        <MapPin className="w-3 h-3 inline mr-1" />
-                        {c.cities.slice(0, 6).map((city, ci) => (
-                          <span key={ci}>
-                            {ci > 0 && ' · '}
-                            {city.city || t('Unknown', '未知')} ({city.visitors})
-                          </span>
-                        ))}
+                  <div key={c.slug} className="relative h-[54px] rounded-xl overflow-hidden" style={{ background: '#B8864A12' }}>
+                    {/* Gold fill */}
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
+                      style={{ width: `${pct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
+                    />
+                    {/* Content overlay — always full width */}
+                    <div className="absolute inset-0 flex flex-col justify-center px-4 gap-0.5">
+                      <div className="flex items-center justify-between">
+                        <a
+                          href={`/companies/${c.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="truncate max-w-[78%] hover:underline"
+                          style={{ fontSize: 16, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
+                        >
+                          {displayName}
+                        </a>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)', whiteSpace: 'nowrap', marginLeft: 8 }}>
+                          {c.unique_visitors}
+                        </span>
                       </div>
-                    )}
+                      {cityText && (
+                        <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                          {cityText}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </>
-        )}
+          );
+        })()}
       </div>
 
-      {/* UAE Distribution Map */}
-      <Suspense fallback={<div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 h-[420px] animate-pulse" />}>
-        <UAEDistributionMap companyCities={companyCities} inquiryCities={inquiryCities} />
+      {/* UAE SVG Map */}
+      <Suspense fallback={<div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 h-[380px] animate-pulse" />}>
+        <UAEMapSVG companyCities={companyCities} inquiryCities={inquiryCities} visitorCities={visitorCities} companyTypeCities={companyTypeCities} />
       </Suspense>
-
-      {/* Top Pages Table */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-stone-100">
-          <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Top Pages', '热门页面')}</h2>
-          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Most visited pages', '访问量最高的页面')}</p>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-stone-400 border-b border-stone-100">
-              <th className="text-left px-5 py-2.5 font-medium w-16">{t('Rank', '排名')}</th>
-              <th className="text-left px-5 py-2.5 font-medium">{t('Page', '页面')}</th>
-              <th className="text-right px-5 py-2.5 font-medium">{t('Page Views', '浏览量')}</th>
-              <th className="text-right px-5 py-2.5 font-medium">{t('Visitors', '访客数')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topPages.length === 0 ? (
-              <tr><td colSpan={4} className="text-center py-8 text-[#6b6b6b]">{t('No data', '暂无数据')}</td></tr>
-            ) : topPages.map((p, i) => (
-              <tr key={i} className="border-b border-stone-50 hover:bg-stone-50/50 transition-colors">
-                <td className="px-5 py-2.5">
-                  {i < 3 ? (
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${RANK_BADGES[i]}`}>
-                      {i + 1}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-[#6b6b6b] pl-1.5">{i + 1}</span>
-                  )}
-                </td>
-                <td className="px-5 py-2.5 text-xs truncate max-w-[400px]">
-                  <a
-                    href={p.page_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#2c2c2c] hover:text-[#B8864A] hover:underline"
-                    title={p.page_path}
-                  >
-                    {getPageDisplayName(p.page_path)}
-                  </a>
-                  {getPageDisplayName(p.page_path) !== p.page_path && (
-                    <span className="ml-1.5 text-stone-400 font-mono">{p.page_path}</span>
-                  )}
-                </td>
-                <td className="px-5 py-2.5 text-right font-medium text-[#2c2c2c]">{p.page_views.toLocaleString()}</td>
-                <td className="px-5 py-2.5 text-right font-medium text-[#6b6b6b]">{p.visitors.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Visitor IP List (paginated) */}
-      <div id="visitor-ips" className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Visitor IPs', '访客 IP 列表')}</h2>
-            <p className="text-xs text-[#6b6b6b] mt-0.5">{t(`${visitorTotal} total records`, `共 ${visitorTotal} 条记录`)}</p>
-          </div>
-          <a
-            href="#visitor-ips"
-            className="text-xs text-[#B8864A] hover:underline"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById('visitor-ips')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            {t('View All', '查看全部')} ↓
-          </a>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-stone-400 border-b border-stone-100">
-              <th className="text-left px-5 py-2.5 font-medium">IP</th>
-              <th className="text-left px-5 py-2.5 font-medium">{t('Country / City', '国家/城市')}</th>
-              <th className="text-right px-5 py-2.5 font-medium">{t('Last Visit', '最后访问')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visitorLoading ? (
-              <tr><td colSpan={3} className="text-center py-8 text-[#6b6b6b]">{t('Loading...', '加载中...')}</td></tr>
-            ) : visitors.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-8 text-[#6b6b6b]">{t('No data', '暂无数据')}</td></tr>
-            ) : visitors.map((v, i) => (
-              <tr key={i} className="border-b border-stone-50 hover:bg-stone-50/50 transition-colors">
-                <td className="px-5 py-2.5 font-mono text-xs text-[#2c2c2c]">{v.ip}</td>
-                <td className="px-5 py-2.5 text-[#6b6b6b] text-xs">{v.location || '\u2014'}</td>
-                <td className="px-5 py-2.5 text-right text-xs text-[#6b6b6b]">
-                  {v.lastVisitedAt ? new Date(v.lastVisitedAt).toLocaleString() : '\u2014'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {/* Pagination controls */}
-        {visitorPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-stone-100">
-            <span className="text-xs text-[#6b6b6b]">
-              {t(`Page ${visitorPage} of ${visitorPages}`, `第 ${visitorPage} / ${visitorPages} 页`)}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setVisitorPage((p) => Math.max(1, p - 1))}
-                disabled={visitorPage <= 1}
-                className="px-3 py-1.5 rounded-2xl border border-stone-200 text-xs font-medium text-stone-600 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t('Prev', '上一页')}
-              </button>
-              <button
-                onClick={() => setVisitorPage((p) => Math.min(visitorPages, p + 1))}
-                disabled={visitorPage >= visitorPages}
-                className="px-3 py-1.5 rounded-2xl border border-stone-200 text-xs font-medium text-stone-600 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t('Next', '下一页')}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* Weight Config (collapsible) */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
@@ -784,6 +648,10 @@ function RegistrationTab({ days }: { days: DaysOption }) {
 
   const recentRows = useMemo(() => [...data].reverse().slice(0, 14), [data]);
 
+  const homeownerSpark = useMemo(() => data.map((d) => d.new_homeowners), [data]);
+  const companySpark   = useMemo(() => data.map((d) => d.new_companies),  [data]);
+  const inquirySpark   = useMemo(() => data.map((d) => d.new_inquiries),  [data]);
+
   const toggleRow = (date: string) => {
     setExpandedRows((prev) => {
       const next = new Set(prev);
@@ -805,6 +673,7 @@ function RegistrationTab({ days }: { days: DaysOption }) {
           change={comparison.homeowners}
           loading={loading}
           days={days}
+          sparkData={homeownerSpark}
         />
         <SummaryCard
           icon={<Building2 className="w-5 h-5" />}
@@ -814,6 +683,7 @@ function RegistrationTab({ days }: { days: DaysOption }) {
           change={comparison.companies}
           loading={loading}
           days={days}
+          sparkData={companySpark}
         />
         <SummaryCard
           icon={<MessageSquare className="w-5 h-5" />}
@@ -823,6 +693,7 @@ function RegistrationTab({ days }: { days: DaysOption }) {
           change={comparison.inquiries}
           loading={loading}
           days={days}
+          sparkData={inquirySpark}
         />
       </div>
 
@@ -860,7 +731,7 @@ function RegistrationTab({ days }: { days: DaysOption }) {
             {chartType === 'bar' ? (
               <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5)} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5, 10)} />
                 <YAxis tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Legend
@@ -881,7 +752,7 @@ function RegistrationTab({ days }: { days: DaysOption }) {
             ) : (
               <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5)} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5, 10)} />
                 <YAxis tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Legend
@@ -1011,7 +882,7 @@ function RegistrationTab({ days }: { days: DaysOption }) {
 /* ─── Summary Card ─── */
 
 function SummaryCard({
-  icon, iconColor, label, value, change, loading, days,
+  icon, iconColor, label, value, change, loading, days, sparkData,
 }: {
   icon: React.ReactNode;
   iconColor: string;
@@ -1020,27 +891,40 @@ function SummaryCard({
   change: number;
   loading: boolean;
   days: number;
+  sparkData?: number[];
 }) {
   const { t } = useAdminT();
+  const chartData = (sparkData || []).map((v) => ({ v }));
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${iconColor}15`, color: iconColor }}>
-          {icon}
+    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 flex items-center gap-4">
+      {/* Left: text */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2.5 mb-2.5">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${iconColor}15`, color: iconColor }}>
+            {icon}
+          </div>
+          <span className="text-sm font-medium text-stone-500 truncate">{label}</span>
         </div>
-        <span className="text-sm font-medium text-stone-500">{label}</span>
+        <div className="text-[28px] font-bold text-[#2c2c2c] leading-none">
+          {loading ? '...' : value.toLocaleString()}
+        </div>
+        <div className="flex items-center gap-2 mt-1.5">
+          {change !== 0 && (
+            <span className={`text-xs font-medium ${change > 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {change > 0 ? '+' : ''}{change}%
+            </span>
+          )}
+          <span className="text-xs text-[#6b6b6b]">{t(`Last ${days} days`, `近${days}天`)}</span>
+        </div>
       </div>
-      <div className="text-3xl font-bold text-[#2c2c2c]">
-        {loading ? '...' : value.toLocaleString()}
-      </div>
-      <div className="flex items-center gap-2 mt-1">
-        {change !== 0 && (
-          <span className={`text-xs font-medium ${change > 0 ? 'text-green-600' : 'text-red-500'}`}>
-            {change > 0 ? '+' : ''}{change}%
-          </span>
-        )}
-        <span className="text-xs text-[#6b6b6b]">{t(`Last ${days} days`, `近${days}天`)}</span>
-      </div>
+      {/* Right: sparkline */}
+      {chartData.length > 1 && !loading && (
+        <div className="flex-shrink-0">
+          <LineChart width={110} height={56} data={chartData}>
+            <Line type="monotone" dataKey="v" stroke={iconColor} strokeWidth={1.8} dot={false} strokeOpacity={0.85} />
+          </LineChart>
+        </div>
+      )}
     </div>
   );
 }

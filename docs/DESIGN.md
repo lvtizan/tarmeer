@@ -48,6 +48,36 @@ Additional Tailwind utility colors used by convention:
 | Small / meta | `text-xs` | 12px |
 | Tab count | `text-xs opacity-70` | 12px, dimmed |
 
+### Admin Table Typography (MUST FOLLOW)
+
+All admin list tables (Homeowners, Companies, Suppliers, etc.) must follow this standard:
+
+| Element | Classes | Size | Notes |
+|---|---|---|---|
+| Table root | `text-[15px]` | 15px | Sets default for all body cells |
+| Header row `<tr>` | `text-sm` | 14px | Overrides table base for labels |
+| Header cell `<th>` | `font-medium text-stone-600` | — | No bold, stone-600 color |
+| Body cell `<td>` | `text-stone-600` or `text-stone-700` | inherits 16px | No `font-medium` unless name/primary field |
+| Sub-info (email, city under name) | `text-xs text-stone-400` | 12px | Secondary metadata only |
+| Numeric column header | add `cursor-pointer select-none hover:text-stone-800` + click handler | — | All numeric columns must support ↑↓ sort |
+| Sort indicator | `↑` / `↓` active, `↕` in `text-stone-300` when inactive | — | Toggle asc→desc→asc |
+
+**Implementation pattern:**
+```tsx
+<table className="w-full text-[15px]">
+  <thead>
+    <tr className="bg-stone-50 border-b border-stone-200 text-sm">
+      <th className="text-left px-4 py-3 font-medium text-stone-600">Name</th>
+      <th
+        className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
+        onClick={() => setSort(s => s === 'desc' ? 'asc' : 'desc')}
+      >
+        Count {sort === 'asc' ? '↑' : sort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
+      </th>
+    </tr>
+  </thead>
+```
+
 ---
 
 ## Text Contrast

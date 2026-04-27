@@ -29,6 +29,7 @@ import {
   getStatsOverview,
   getActivityLogs,
   getRegistrationStats,
+  getRegistrationSources,
   getDailyStatsReport,
 } from '../controllers/designerAdminController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
@@ -62,7 +63,7 @@ import {
   updateWeightConfig,
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
-import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getTodayNew } from '../controllers/analyticsAdminController';
+import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
 import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
@@ -108,6 +109,7 @@ router.put('/password', changePassword);
 // Stats (requires can_view_stats permission)
 router.get('/stats/overview', requirePermission('can_view_stats'), getStatsOverview);
 router.get('/stats/registrations', getRegistrationStats);
+router.get('/stats/registration-sources', requirePermission('can_view_stats'), getRegistrationSources);
 router.get('/stats/daily', requirePermission('can_view_stats'), getDailyStatsReport);
 router.get('/stats/today-new', getTodayNew);
 router.get('/activity-logs', getActivityLogs);
@@ -117,6 +119,7 @@ router.get('/analytics/overview', requirePermission('can_view_stats'), getAnalyt
 router.get('/analytics/company-visitors', requirePermission('can_view_stats'), getCompanyVisitors);
 router.get('/analytics/events', requirePermission('can_view_stats'), listAnalyticsEvents);
 router.get('/analytics/daily-registrations', requirePermission('can_view_stats'), getDailyRegistrations);
+router.get('/analytics/daily-visits', requirePermission('can_view_stats'), getDailyVisits);
 
 // Designer management
 router.get('/designers', getDesignersForAdmin);

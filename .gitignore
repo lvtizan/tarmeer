@@ -16,3 +16,5 @@ test-screenshots-images/
 tmp-project-sources/
 crawl-manifest.json
 .gstack/
+# Added by code-review-graph
+.code-review-graph/

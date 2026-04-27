@@ -649,7 +649,37 @@ export async function getRegistrationSources(_req: any, res: Response) {
        FROM design_inquiries WHERE deleted_at IS NULL AND city IS NOT NULL AND city != ''
        GROUP BY city ORDER BY count DESC`
     );
-    res.json({ signup_sources: sources, company_types: types, company_cities: companyCities, inquiry_cities: inquiryCities });
+    const [visitorCities] = await pool.execute(
+      `SELECT COALESCE(location_label, 'Unknown') as city, COUNT(DISTINCT viewer_ip) as count
+       FROM visitor_logs WHERE location_label IS NOT NULL AND location_label != ''
+       GROUP BY location_label ORDER BY count DESC LIMIT 30`
+    );
+    // Company type × city matrix (top cities per type)
+    const [typeCityRows] = await pool.execute(
+      `SELECT COALESCE(company_type, 'unknown') as type,
+              COALESCE(city, 'Unknown') as city,
+              COUNT(*) as count
+       FROM company_profiles
+       WHERE deleted_at IS NULL
+         AND company_type IS NOT NULL AND company_type != ''
+         AND city IS NOT NULL AND city != ''
+       GROUP BY company_type, city
+       ORDER BY company_type, count DESC`
+    );
+    // Aggregate: top 3 cities per type + total count per type
+    const typeMap: Record<string, { total: number; cities: Array<{ city: string; count: number }> }> = {};
+    for (const row of typeCityRows as Array<{ type: string; city: string; count: number }>) {
+      if (!typeMap[row.type]) typeMap[row.type] = { total: 0, cities: [] };
+      typeMap[row.type].total += Number(row.count);
+      if (typeMap[row.type].cities.length < 3) {
+        typeMap[row.type].cities.push({ city: row.city, count: Number(row.count) });
+      }
+    }
+    const companyTypeCities = Object.entries(typeMap)
+      .map(([type, d]) => ({ type, count: d.total, topCities: d.cities }))
+      .sort((a, b) => b.count - a.count);
+
+    res.json({ signup_sources: sources, company_types: types, company_cities: companyCities, inquiry_cities: inquiryCities, visitor_cities: visitorCities, company_type_cities: companyTypeCities });
   } catch (error) {
     console.error('Get registration sources error:', error);
     res.status(500).json({ error: 'Failed to get registration sources.' });
