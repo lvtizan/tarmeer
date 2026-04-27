@@ -29,8 +29,9 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(({ value, on
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    // Use 'click' not 'mousedown' — mousedown closes the portal before the option's click fires
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
   }, [open]);
 
   // Lock body scroll while mobile modal is open (desktop doesn't need it)

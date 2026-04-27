@@ -44,6 +44,23 @@ interface StatsData {
   days: number;
 }
 
+/* ─── Company Type Labels (中英双语，DB key → display) ─── */
+// IMPORTANT: Keep in sync with UAEMapSVG.tsx and server-side VALID_COMPANY_TYPES.
+// Rule: always show zh when admin lang=zh, en when lang=en.
+export const COMPANY_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
+  renovation_company:  { zh: '装修公司',   en: 'Renovation Co.'    },
+  design_studio:       { zh: '设计工作室', en: 'Design Studio'      },
+  maintenance_company: { zh: '维修公司',   en: 'Maintenance Co.'   },
+  mep_contractor:      { zh: 'MEP 承包商', en: 'MEP Contractor'     },
+  general_contractor:  { zh: '总承包商',   en: 'General Contractor' },
+  landscaping:         { zh: '园林绿化',   en: 'Landscaping'        },
+  specialty_trade:     { zh: '专项工程',   en: 'Specialty Trade'    },
+  furnishing:          { zh: '软装供应商', en: 'Furnishing'         },
+};
+export function labelCompanyType(type: string, lang: 'zh' | 'en' = 'zh'): string {
+  return COMPANY_TYPE_LABELS[type]?.[lang] ?? type;
+}
+
 /* ─── Weight Config (preserved for Tab 2) ─── */
 
 const WEIGHT_CONFIG_LABELS: Record<string, string> = {
@@ -607,7 +624,7 @@ function VisitorTab() {
 /* ─── Tab 1: Registration Data ─── */
 
 function RegistrationTab({ days }: { days: DaysOption }) {
-  const { t } = useAdminT();
+  const { t, lang } = useAdminT();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState<'bar' | 'area'>('bar');
@@ -820,7 +837,7 @@ function RegistrationTab({ days }: { days: DaysOption }) {
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
-                    data={sources.company_types.map((s) => ({ name: s.type || t('Unknown', '未知'), value: s.count }))}
+                    data={sources.company_types.map((s) => ({ name: labelCompanyType(s.type || '', lang === 'en' ? 'en' : 'zh') || t('Unknown', '未知'), value: s.count }))}
                     cx="50%"
                     cy="50%"
                     outerRadius={90}

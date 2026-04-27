@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { labelCompanyType } from '../../pages/admin/AdminAnalyticsPage';
+import { useAdminT } from '../../hooks/useAdminLang';
 
 interface CityData {
   city: string;
@@ -139,6 +141,7 @@ function aggregateCities(cities: CityData[]): Partial<Record<Emirate, number>> {
 
 export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities, companyTypeCities = [] }: UAEMapSVGProps) {
   const [hovered, setHovered] = useState<Emirate | null>(null);
+  const { lang } = useAdminT();
 
   const companyMap = aggregateCities(companyCities);
   const inquiryMap = aggregateCities(inquiryCities);
@@ -308,7 +311,7 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
                   return (
                     <div key={tc.type}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-medium text-[#2c2c2c] truncate max-w-[130px]">{tc.type}</span>
+                        <span className="text-[11px] font-medium text-[#2c2c2c] truncate max-w-[130px]">{labelCompanyType(tc.type, lang === 'en' ? 'en' : 'zh')}</span>
                         <span className="text-[11px] font-bold text-[#B8864A] ml-2">{tc.count}</span>
                       </div>
                       <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden mb-1">
