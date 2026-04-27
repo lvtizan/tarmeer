@@ -79,6 +79,16 @@ const CAT_IMAGES = {
     'https://images.unsplash.com/photo-1555041469-d7f5cc9d0b67?w=800&q=80', // decor piece
     'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=800&q=80', // wall art
   ],
+  wardrobe: [
+    'https://images.unsplash.com/photo-1558618047-f4e60d9c2c89?w=800&q=80', // walk-in closet
+    'https://images.unsplash.com/photo-1594222082006-77e8fff5ead9?w=800&q=80', // fitted wardrobe
+    'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80', // wardrobe system
+  ],
+  doors_windows: [
+    'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&q=80', // pivot door
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80', // sliding door
+    'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=800&q=80', // window light
+  ],
 };
 
 // Hero (project cover) images — confirmed interior design photos
@@ -142,50 +152,64 @@ const PRODUCTS = {
     ['Decor Mirror Set', 'Reflecto',   'RM-Set',    '3 pcs',      'Bronze Tint',  'Feature Wall', 'AED 380–680/set'],
     ['Wall Art Frame',   'ArtHive',    'AH-Canvas', '1200×800mm', 'Abstract',     'Living Room',  'AED 450–900/piece'],
   ],
+  wardrobe: [
+    ['Walk-in Wardrobe System', '索菲亚', 'SF-WIC', 'Custom size', 'Pearl White',    'Master Bedroom', 'AED 8k–20k/set'],
+    ['Sliding Door Wardrobe',   '索菲亚', 'SF-SLD', 'Custom size', 'Champagne Gold', 'Bedroom',        'AED 3.5k–8k'],
+    ['Full-wall Dressing Unit',  '索菲亚', 'SF-DRS', 'Custom size', 'Ash Grey',       'Walk-in Closet', 'AED 5k–12k'],
+  ],
+  doors_windows: [
+    ['Thermal Break Casement Window', '怡发', 'YF-CW70', 'Custom', 'White/Champagne',  'Living Room',   'AED 280–480/m²'],
+    ['Aluminum Sliding Door',          '怡发', 'YF-SD90', 'Custom', 'Matte Black',      'Balcony',       'AED 650–1100/m²'],
+    ['French Pivot Entry Door',        '怡发', 'YF-PD',   '2400mm', 'Bronze',           'Main Entrance', 'AED 2.5k–4.5k/set'],
+  ],
 };
 
 // ── 5 China + 5 Dubai suppliers ───────────────────────────────────────────────
 const SUPPLIERS = [
-  // China
+  // China — 4 companies
   {
-    slug: 'urbanfurni-house',
-    name: 'UrbanFurni House',
+    slug: 'huasheng-materials',
+    name: '华盛',
+    origin: 'china',
+    type: 'specialty_trade',
+    categories: ['stone', 'flooring', 'hardware'],
+    desc: '华盛建材深耕建筑装饰材料出口二十余年，主营天然石材、工程地板与精密五金，已参与迪拜、阿布扎比多个豪华住宅及酒店项目的材料供应。支持定制规格与工程批量采购。',
+    phone: '+86 755 8800 1234',
+    address: 'Shenzhen, Guangdong, China',
+    maps: 'https://maps.google.com/?q=Shenzhen+Building+Materials+Market',
+  },
+  {
+    slug: 'chunlei-decor',
+    name: '春蕾',
     origin: 'china',
     type: 'furnishing',
-    categories: ['furniture', 'curtains', 'lighting'],
-    desc: '专注高性价比家居软装，覆盖沙发、窗帘、灯具全品类，支持定制生产与海运直送。',
+    categories: ['curtains', 'furniture', 'paint'],
+    desc: '春蕾软装专注中高端家居软装一站式配套，涵盖定制窗帘布艺、布艺家具及墙面涂装材料，为中东地区设计师和装修公司提供样品寄送、快速打样及工程配套服务。',
+    phone: '+86 571 8800 5678',
+    address: 'Hangzhou, Zhejiang, China',
+    maps: 'https://maps.google.com/?q=Hangzhou+Decoration+Market',
   },
   {
-    slug: 'glowline-lighting',
-    name: 'GlowLine Lighting',
+    slug: 'sophia-custom',
+    name: '索菲亚',
+    origin: 'china',
+    type: 'furnishing',
+    categories: ['wardrobe', 'kitchen', 'hardware'],
+    desc: '索菲亚定制家居（Suofeiya），中国领先全屋定制品牌，专注衣柜、橱柜、书柜及全屋系统定制，提供从量尺设计、工厂生产到现场安装的全流程服务，已进驻 UAE 多个高端社区项目。',
+    phone: '+86 20 3900 8888',
+    address: 'Guangzhou, Guangdong, China',
+    maps: 'https://maps.google.com/?q=Suofeiya+Guangzhou',
+  },
+  {
+    slug: 'yifa-windows-doors',
+    name: '怡发门窗',
     origin: 'china',
     type: 'specialty_trade',
-    categories: ['lighting', 'hardware', 'other'],
-    desc: '中国领先磁吸轨道灯与线性灯厂商，产品通过 CE/UL 认证，覆盖商业与住宅照明场景。',
-  },
-  {
-    slug: 'stonecraft-pro',
-    name: 'StoneCraft Pro',
-    origin: 'china',
-    type: 'specialty_trade',
-    categories: ['stone', 'kitchen', 'flooring'],
-    desc: '石材加工与岩板出口商，主营卡拉卡塔大理石、洞石、石英石台面，支持定制规格与厚度。',
-  },
-  {
-    slug: 'eastbridge-fitout',
-    name: 'EastBridge Fitout',
-    origin: 'china',
-    type: 'renovation_company',
-    categories: ['kitchen', 'flooring', 'paint'],
-    desc: '专业厨柜与地板工程供应商，为 UAE 地区装修公司提供整柜、SPC 地板及施工辅材批发服务。',
-  },
-  {
-    slug: 'jadeform-studio',
-    name: 'JadeForm Studio',
-    origin: 'china',
-    type: 'design_studio',
-    categories: ['furniture', 'lighting', 'curtains'],
-    desc: '中国高端设计工作室，专注中东市场软装设计方案，提供成套家具、窗帘与灯具搭配采购服务。',
+    categories: ['doors_windows', 'hardware', 'other'],
+    desc: '怡发门窗专注高性能断桥铝合金门窗系统，产品线覆盖系统窗、推拉门、折叠门、大旋转门，符合 UAE ESMA 建筑标准，支持 RAL 色卡定制及工程项目整批供货。',
+    phone: '+86 757 8800 9999',
+    address: 'Foshan, Guangdong, China',
+    maps: 'https://maps.google.com/?q=Foshan+Aluminum+Windows+Doors',
   },
 
   // Dubai
@@ -326,10 +350,10 @@ async function cleanSeedData() {
 
 async function upsertSupplier(base, index, passwordHash) {
   const email = `${base.slug}${SEED_DOMAIN}`;
-  const phone = base.origin === 'china' ? '+86 139 0000 1234' : '+971 50 123 4567';
-  const maps = base.origin === 'china'
+  const phone = base.phone || (base.origin === 'china' ? '+86 139 0000 1234' : '+971 50 123 4567');
+  const maps = base.maps || (base.origin === 'china'
     ? 'https://maps.google.com/?q=Yiwu+International+Trade+City'
-    : 'https://maps.google.com/?q=Business+Bay+Dubai';
+    : 'https://maps.google.com/?q=Business+Bay+Dubai');
 
   let userId;
   const [users] = await pool.execute('SELECT id FROM supplier_users WHERE email=? LIMIT 1', [email]);
@@ -357,7 +381,7 @@ async function upsertSupplier(base, index, passwordHash) {
          google_maps_url=?, contact_phone=?, whatsapp=?, website=?, status='approved' WHERE id=?`,
       [base.name, base.slug, base.desc, heroLogo, heroCover,
        base.origin, JSON.stringify(base.categories),
-       base.origin === 'china' ? 'Yiwu, Zhejiang, China' : 'Business Bay, Dubai, UAE',
+       base.address || (base.origin === 'china' ? 'Yiwu, Zhejiang, China' : 'Business Bay, Dubai, UAE'),
        maps, phone, phone, `https://www.${base.slug}.example.com`, profileId]);
   } else {
     const [p] = await pool.execute(
@@ -368,7 +392,7 @@ async function upsertSupplier(base, index, passwordHash) {
        VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?,'approved')`,
       [userId, base.name, base.slug, base.desc, heroLogo, heroCover,
        base.origin, JSON.stringify(base.categories),
-       base.origin === 'china' ? 'Yiwu, Zhejiang, China' : 'Business Bay, Dubai, UAE',
+       base.address || (base.origin === 'china' ? 'Yiwu, Zhejiang, China' : 'Business Bay, Dubai, UAE'),
        maps, phone, phone, `https://www.${base.slug}.example.com`]);
     profileId = p.insertId;
   }
