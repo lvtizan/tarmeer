@@ -17,26 +17,35 @@ const GCC_PHONE_OPTIONS = [
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
+const COMPANY_TYPE_GROUPS: Record<string, string> = {
+  design_studio: 'Design',
+  renovation_company: 'Construction', general_contractor: 'Construction', fitout_contractor: 'Construction',
+  mep_contractor: 'Systems & MEP', fire_fighting: 'Systems & MEP', smart_home: 'Systems & MEP', waterproofing: 'Systems & MEP',
+  glass_aluminium: 'Specialty Trade', carpentry_joinery: 'Specialty Trade', stone_marble: 'Specialty Trade', steel_fabrication: 'Specialty Trade', specialty_trade: 'Specialty Trade',
+  maintenance_company: 'Services', cleaning_services: 'Services', manpower_supply: 'Services', landscaping: 'Services', swimming_pool: 'Services',
+  furnishing: 'Furnishing',
+};
+
 const COMPANY_TYPES = [
   { value: 'design_studio', labelKey: 'typeDesignStudio' as const },
   { value: 'renovation_company', labelKey: 'typeRenovation' as const },
   { value: 'general_contractor', labelKey: 'typeGeneralContractor' as const },
-  { value: 'mep_contractor', labelKey: 'typeMepContractor' as const },
-  { value: 'maintenance_company', labelKey: 'typeMaintenanceCompany' as const },
-  { value: 'specialty_trade', labelKey: 'typeSpecialtyTrade' as const },
-  { value: 'landscaping', labelKey: 'typeLandscaping' as const },
-  { value: 'furnishing', labelKey: 'typeFurnishing' as const },
   { value: 'fitout_contractor', labelKey: 'typeFitoutContractor' as const },
-  { value: 'glass_aluminium', labelKey: 'typeGlassAluminium' as const },
-  { value: 'waterproofing', labelKey: 'typeWaterproofing' as const },
-  { value: 'smart_home', labelKey: 'typeSmartHome' as const },
+  { value: 'mep_contractor', labelKey: 'typeMepContractor' as const },
   { value: 'fire_fighting', labelKey: 'typeFireFighting' as const },
+  { value: 'smart_home', labelKey: 'typeSmartHome' as const },
+  { value: 'waterproofing', labelKey: 'typeWaterproofing' as const },
+  { value: 'glass_aluminium', labelKey: 'typeGlassAluminium' as const },
   { value: 'carpentry_joinery', labelKey: 'typeCarpentryJoinery' as const },
   { value: 'stone_marble', labelKey: 'typeStoneMarble' as const },
   { value: 'steel_fabrication', labelKey: 'typeSteelFabrication' as const },
+  { value: 'specialty_trade', labelKey: 'typeSpecialtyTrade' as const },
+  { value: 'maintenance_company', labelKey: 'typeMaintenanceCompany' as const },
   { value: 'cleaning_services', labelKey: 'typeCleaningServices' as const },
   { value: 'manpower_supply', labelKey: 'typeManpowerSupply' as const },
+  { value: 'landscaping', labelKey: 'typeLandscaping' as const },
   { value: 'swimming_pool', labelKey: 'typeSwimmingPool' as const },
+  { value: 'furnishing', labelKey: 'typeFurnishing' as const },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
@@ -694,8 +703,9 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               onChange={(v) => { setCompanyType(v); if (v) setCompanyTypeError(false); }}
               options={[
                 { value: '', label: t(lang, 'companyTypePlaceholder') },
-                ...COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey) })),
+                ...COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey), group: COMPANY_TYPE_GROUPS[ct.value] })),
               ]}
+              searchable
               className="w-full"
               error={companyTypeError || (tried && !companyType)}
             />
