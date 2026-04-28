@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox (Task 2)
 import { MapPin, Clock, Store, Package } from 'lucide-react';
@@ -70,7 +70,7 @@ function SupplierCard({ s }: { s: Supplier }) {
                 ? 'bg-red-50 text-red-600'
                 : 'bg-emerald-50 text-emerald-700'
             }`}>
-              {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
+              {s.origin === 'china' ? '🇨🇳 跨境' : '🇦🇪 Dubai'}
             </span>
             {s.has_physical_store ? (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 flex items-center gap-1">
@@ -130,9 +130,27 @@ function FilterOption({
 export default function ShowroomsPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [originFilter, setOriginFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
   const [leadModalOpen, setLeadModalOpen] = useState(false);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const originFilter = searchParams.get('origin') || '';
+  const categoryFilter = searchParams.get('category') || '';
+
+  function setOriginFilter(val: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set('origin', val); else next.delete('origin');
+      return next;
+    }, { replace: true });
+  }
+
+  function setCategoryFilter(val: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set('category', val); else next.delete('category');
+      return next;
+    }, { replace: true });
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -226,8 +244,8 @@ export default function ShowroomsPage() {
                 <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Origin</h4>
                 <div className="space-y-1">
                   <FilterOption selected={originFilter === ''} onClick={() => setOriginFilter('')}>All Origins</FilterOption>
-                  <FilterOption selected={originFilter === 'china'} onClick={() => setOriginFilter('china')}>🇨🇳 China</FilterOption>
                   <FilterOption selected={originFilter === 'dubai'} onClick={() => setOriginFilter('dubai')}>🇦🇪 Dubai</FilterOption>
+                  <FilterOption selected={originFilter === 'china'} onClick={() => setOriginFilter('china')}>🇨🇳 跨境</FilterOption>
                 </div>
               </div>
 
@@ -282,8 +300,8 @@ export default function ShowroomsPage() {
           <div className="lg:hidden flex gap-1.5 bg-stone-100 rounded-full p-1 mb-3 w-fit">
             {[
               { value: '', label: 'All' },
-              { value: 'china', label: '🇨🇳 China' },
               { value: 'dubai', label: '🇦🇪 Dubai' },
+              { value: 'china', label: '🇨🇳 跨境' },
             ].map(opt => (
               <button
                 key={opt.value}
@@ -316,7 +334,7 @@ export default function ShowroomsPage() {
           {!loading && suppliers.length > 0 && (
             <p className="text-sm text-stone-500 mb-4">
               {suppliers.length} verified supplier{suppliers.length !== 1 ? 's' : ''}
-              {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}`}
+              {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 跨境' : '🇦🇪 Dubai'}`}
               {categoryFilter && ` · ${CATEGORY_OPTIONS.find(o => o.value === categoryFilter)?.label}`}
             </p>
           )}

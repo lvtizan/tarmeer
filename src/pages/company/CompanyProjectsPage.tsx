@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import {
   ImagePlus, Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight,
-  Link2, Loader2, FolderOpen, Image, Pencil,
+  Link2, Loader2, FolderOpen, Image, Pencil, AlertCircle,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { showToast } from '../../components/ui/Toast';
@@ -268,6 +268,20 @@ export default function CompanyProjectsPage() {
     return (
       <div className="w-full">
           <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
+          {/* Rejected projects banner */}
+          {projects.filter(p => p.status === 'rejected').length > 0 && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900">
+                  {projects.filter(p => p.status === 'rejected').length === 1
+                    ? `"${projects.find(p => p.status === 'rejected')?.title}" was not approved`
+                    : `${projects.filter(p => p.status === 'rejected').length} projects need your attention`}
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">Review the reason below and resubmit after making changes.</p>
+              </div>
+            </div>
+          )}
           {/* Ranking tip banner */}
           <div className="mb-6 flex items-center gap-3 rounded-xl bg-[#b8864a]/8 border border-[#b8864a]/20 px-4 py-3">
             <span className="text-base">🏆</span>
@@ -316,6 +330,11 @@ export default function CompanyProjectsPage() {
                     <div className="p-4">
                       <h3 className="truncate font-semibold text-[#2c2c2c]">{p.title || 'Untitled'}</h3>
                       <p className="mt-1 text-xs text-stone-500">{[p.style, p.location].filter(Boolean).join(' · ') || 'No details'}</p>
+                      {p.status === 'rejected' && p.rejection_reason && (
+                        <p className="mt-2 text-xs text-red-700 bg-red-50 rounded-lg px-2.5 py-1.5 leading-relaxed">
+                          <span className="font-semibold">Reason: </span>{p.rejection_reason}
+                        </p>
+                      )}
                       <div className="mt-3 flex items-center gap-2">
                         <button
                           type="button"
@@ -442,7 +461,7 @@ export default function CompanyProjectsPage() {
                 <div className="flex h-11 items-center rounded-lg border border-stone-200 bg-stone-50 px-4"><input type="text" value={form.area} onChange={e=>setForm(p=>({...p,area:e.target.value}))} placeholder="e.g. 450" inputMode="decimal" className="h-full w-full bg-transparent text-[#2c2c2c] outline-none"/><span className="text-xs text-stone-500">sqm</span></div>
               </div>
               <div className="md:col-span-2">
-                <label className={labelCls}>Renovation Tags</label>
+                <label className={labelCls}>Project Tags</label>
                 <p className="mb-2 text-xs text-stone-500">Select tags to classify this project (optional).</p>
                 <div className="flex flex-wrap gap-2">{TAGS.map(t=>{const on=tags.includes(t);return<button key={t} type="button" onClick={()=>setTags(p=>on?p.filter(x=>x!==t):[...p,t])} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on?tagOn:tagOff}`}>{t}</button>})}</div>
               </div>
