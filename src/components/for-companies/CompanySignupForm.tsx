@@ -56,7 +56,7 @@ const COMPANY_TYPES = [
   { value: 'steel_fabrication', labelKey: 'typeSteelFabrication' as const },
   { value: 'cleaning_services', labelKey: 'typeCleaningServices' as const },
   { value: 'manpower_supply', labelKey: 'typeManpowerSupply' as const },
-  { value: 'swimming_pool', labelKey: 'typeSwimmingPoolContractor' as const },
+  { value: 'swimming_pool', labelKey: 'typeSwimmingPool' as const },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
