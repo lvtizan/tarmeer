@@ -135,7 +135,10 @@ export default function SupplierDetailPage() {
     return () => observer.disconnect();
   }, [supplier]);
 
-  const handleBack = () => navigate('/materials');
+  const handleBack = () => {
+    const qs = supplier?.origin === 'china' ? '?origin=china' : supplier?.origin === 'dubai' ? '?origin=dubai' : '';
+    navigate(`/materials${qs}`);
+  };
 
   const parseCategories = (cats: string[] | string | null): string[] => {
     if (!cats) return [];
@@ -356,8 +359,8 @@ export default function SupplierDetailPage() {
 
       {/* ========== Main Content ========== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="min-[1700px]:flex">
-          <div className="min-w-0 min-[1700px]:flex-1 space-y-10">
+        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8 lg:items-start">
+          <div className="min-w-0 space-y-10">
           {/* Products section */}
           <div ref={productsRef} id="section-products" className="scroll-mt-28">
             <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
@@ -509,8 +512,8 @@ export default function SupplierDetailPage() {
             )}
           </div>
 
-          {/* Inline inquiry form — shown on screens < 1700px where no sidebar */}
-          <div ref={mobileFormRef} className="min-[1700px]:hidden">
+          {/* Inline inquiry form — shown on mobile (below lg) */}
+          <div ref={mobileFormRef} className="lg:hidden">
             <ServiceInquiryCard
               title={`Contact ${supplier.company_name}`}
               companyName={supplier.company_name}
@@ -520,8 +523,8 @@ export default function SupplierDetailPage() {
           </div>
         </div>
 
-        {/* Sticky sidebar — 1700px+, floats outside the max-w-6xl container on the right */}
-        <div className="hidden min-[1700px]:block w-72 shrink-0 ml-8" style={{ marginRight: '-320px' }}>
+        {/* Sticky sidebar — lg+ */}
+        <div className="hidden lg:block">
           <div className="sticky top-[112px]">
             <ServiceInquiryCard
               title={`Contact ${supplier.company_name}`}
@@ -542,7 +545,7 @@ export default function SupplierDetailPage() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="min-[1700px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
           >
             <button
               className="btn-primary flex-1 py-3 text-[15px]"
