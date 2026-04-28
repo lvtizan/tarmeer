@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox (Task 2)
-import { MapPin, Clock, Store, Package } from 'lucide-react';
+import { MapPin, Clock, Package } from 'lucide-react';
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
@@ -72,11 +72,6 @@ function SupplierCard({ s }: { s: Supplier }) {
             }`}>
               {s.origin === 'china' ? '🇨🇳 跨境' : '🇦🇪 Dubai'}
             </span>
-            {s.has_physical_store ? (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 flex items-center gap-1">
-                <Store className="w-3 h-3" /> Showroom
-              </span>
-            ) : null}
           </div>
           {s.description && (
             <p className="text-stone-500 text-[13px] leading-relaxed line-clamp-2 mb-2.5">
@@ -233,6 +228,15 @@ export default function ShowroomsPage() {
           </button>
         </div>
       </section>
+
+      {/* Breadcrumb */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-0">
+        <nav className="flex items-center gap-1.5 text-xs text-stone-400">
+          <Link to="/" className="hover:text-[#b8864a] transition-colors">Home</Link>
+          <span>/</span>
+          <span className="text-stone-600 font-medium">Materials</span>
+        </nav>
+      </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex gap-8 items-start">
         {/* Left Sidebar */}
