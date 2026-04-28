@@ -3,8 +3,10 @@ import { pushCompanyLeadToCRM } from '../lib/crmPush';
 
 export async function submitCompanyLead(req: any, res: any) {
   try {
-    const { contactName, phone, companyName, city, companyType, yearEstablished, scopeOfBusiness, lang } = req.body;
-    const sourcePage = req.headers.referer || null;
+    const { contactName: _contactName, phone, companyName: _companyName, city, companyType, yearEstablished, scopeOfBusiness, lang } = req.body;
+    const contactName = _contactName?.slice(0, 100) || _contactName;
+    const companyName = _companyName?.slice(0, 200) || _companyName;
+    const sourcePage = (req.headers.referer || null)?.slice(0, 500) || null;
 
     // Check if phone number already registered
     if (phone) {

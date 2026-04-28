@@ -53,7 +53,7 @@ export async function listApprovedCompanies(req: any, res: any) {
     }
 
     if (company_type) {
-      const validTypes = ['design_studio', 'renovation_company', 'general_contractor', 'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping'];
+      const validTypes = ['design_studio', 'renovation_company', 'general_contractor', 'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping', 'swimming_pool', 'furnishing'];
       if (!validTypes.includes(company_type)) {
         return res.status(400).json({ error: `Invalid company_type. Must be one of: ${validTypes.join(', ')}` });
       }
@@ -143,6 +143,8 @@ export async function listApprovedCompanies(req: any, res: any) {
         list_display_order: company.list_display_order || 0,
         project_count: company.project_count || 0,
         portfolio_images: imageMap[company.id] || [],
+        is_claimed: true,
+        is_registered: true,
         is_signed: !!(company.is_signed),
       };
     });
@@ -207,7 +209,8 @@ export async function getCompanyDetail(req: any, res: any) {
       display_order: company.display_order,
       created_at: company.created_at,
       projects: projects,
-      is_claimed: true, // 注册公司永远是 claimed（用户自己创建的）
+      is_claimed: true,
+      is_registered: true,
       is_signed: !!(company.is_signed),
     };
 
