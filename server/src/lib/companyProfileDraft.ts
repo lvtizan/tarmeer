@@ -1,6 +1,9 @@
 const VALID_COMPANY_TYPES = [
   'design_studio', 'renovation_company', 'general_contractor',
   'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping', 'furnishing',
+  'fitout_contractor', 'glass_aluminium', 'waterproofing', 'smart_home', 'fire_fighting',
+  'carpentry_joinery', 'stone_marble', 'steel_fabrication', 'cleaning_services',
+  'manpower_supply', 'swimming_pool',
 ];
 
 const VALID_SERVICES = [
@@ -8,6 +11,9 @@ const VALID_SERVICES = [
   'Furniture', 'Joinery', 'MEP', 'Project Management', 'Design & Build', 'Turnkey Solutions', 'Maintenance',
   'Glass & Aluminium', 'Painting & Finishing', 'Flooring & Tiling', 'Demolition',
   'Steel & Fabrication', 'Curtains & Blinds', 'Cleaning Services', 'Pools',
+  'HVAC & Ducting', 'Fire Fighting', 'Smart Home & Automation', 'Waterproofing',
+  'Solar Systems', 'Epoxy & PU Flooring', 'Scaffolding', 'Lighting Installation',
+  'Stone & Marble Fixing', 'Gypsum & Partitions', 'Deep Cleaning',
 ];
 
 const VALID_SPECIALTIES = [
