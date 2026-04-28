@@ -28,7 +28,15 @@ function parsePhone(full: string): { dialCode: string; local: string } {
 }
 
 /* ── Constants ── */
-export const SERVICES = ['Interior Design','Architecture','Fit-Out','Renovation','Construction','Landscape','Furniture','Joinery','MEP','Project Management','Design & Build','Turnkey Solutions','Maintenance','Glass & Aluminium','Painting & Finishing','Flooring & Tiling','Demolition','Steel & Fabrication','Curtains & Blinds','Cleaning Services','Pools'];
+export const SERVICES = [
+  'Interior Design','Architecture','Fit-Out','Renovation','Construction','Landscape',
+  'Furniture','Joinery','MEP','Project Management','Design & Build','Turnkey Solutions','Maintenance',
+  'Glass & Aluminium','Painting & Finishing','Flooring & Tiling','Demolition',
+  'Steel & Fabrication','Curtains & Blinds','Cleaning Services','Pools',
+  'HVAC & Ducting','Fire Fighting','Smart Home & Automation','Waterproofing',
+  'Solar Systems','Epoxy & PU Flooring','Scaffolding','Lighting Installation',
+  'Stone & Marble Fixing','Gypsum & Partitions','Deep Cleaning',
+];
 export const SPECIALTIES = ['Residential','Villa','Commercial','Hospitality','Retail','Office','Education','Healthcare','F&B','Luxury Residential','Mixed-Use'];
 export const EMIRATES = ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain'];
 export const TYPE_OPTIONS = [
@@ -40,6 +48,17 @@ export const TYPE_OPTIONS = [
   { value:'specialty_trade', label:'Specialty Trade' },
   { value:'landscaping', label:'Landscaping & Pools' },
   { value:'furnishing', label:'Furnishing' },
+  { value:'fitout_contractor', label:'Fit-Out Contractor' },
+  { value:'glass_aluminium', label:'Glass & Aluminium' },
+  { value:'waterproofing', label:'Waterproofing' },
+  { value:'smart_home', label:'Smart Home & IT' },
+  { value:'fire_fighting', label:'Fire Fighting & Safety' },
+  { value:'carpentry_joinery', label:'Carpentry & Joinery' },
+  { value:'stone_marble', label:'Stone, Marble & Tile' },
+  { value:'steel_fabrication', label:'Steel & Metal Works' },
+  { value:'cleaning_services', label:'Cleaning Services' },
+  { value:'manpower_supply', label:'Manpower Supply' },
+  { value:'swimming_pool', label:'Swimming Pool Contractor' },
 ];
 
 export interface ProfileData {
