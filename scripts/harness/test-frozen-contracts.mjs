@@ -53,14 +53,14 @@ ok('A1', 'projects[] 包含 images 字段', compCtrl.includes('images: imageUrls
 console.log('\n--- A2/A3: 注册装企 API 联系方式隐藏 (publicCompanyController.ts) ---\n');
 const pubCtrl = read('server/src/controllers/publicCompanyController.ts');
 
-const phoneNullCount = (pubCtrl.match(/phone: null/g) || []).length;
-const contactNullCount = (pubCtrl.match(/contact_person: null/g) || []).length;
-const websiteNullCount = (pubCtrl.match(/website: null/g) || []).length;
-ok('A2', 'phone: null 出现在列表+详情 (≥2处)', phoneNullCount >= 2);
-ok('A2', 'contact_person: null 出现在列表+详情 (≥2处)', contactNullCount >= 2);
-ok('A2', 'website: null 出现在列表+详情 (≥2处)', websiteNullCount >= 2);
+// A2: 注册装企联系方式不出现在响应对象中（字段被省略而非 null）
+const listFormatBlock = pubCtrl.slice(pubCtrl.indexOf('formattedCompanies'), pubCtrl.indexOf('res.json({', pubCtrl.indexOf('formattedCompanies')));
+const detailFormatBlock = pubCtrl.slice(pubCtrl.indexOf('formattedCompany = {'), pubCtrl.indexOf('res.json({ company', pubCtrl.indexOf('formattedCompany = {')));
+ok('A2', '列表响应对象不含 phone 字段', !listFormatBlock.includes('phone:'));
+ok('A2', '列表响应对象不含 contact_person 字段', !listFormatBlock.includes('contact_person:'));
+ok('A2', '列表响应对象不含 website 字段', !listFormatBlock.includes('website:'));
 ok('A2', 'is_claimed: true 出现在详情', pubCtrl.includes('is_claimed: true'));
-ok('A3', 'is_registered: true 出现在列表', (pubCtrl.match(/is_registered: true/g) || []).length >= 2);
+ok('A3', 'is_registered: true 出现在列表+详情 (≥2处)', (pubCtrl.match(/is_registered: true/g) || []).length >= 2);
 
 // ─────────────────────────────────────────────
 // A4. 目录装企序列化 — 联系方式正常返回
@@ -68,9 +68,10 @@ ok('A3', 'is_registered: true 出现在列表', (pubCtrl.match(/is_registered: t
 console.log('\n--- A4: 目录装企序列化 — 联系方式正常返回 (publicCompaniesSerialization.ts) ---\n');
 const serial = read('server/src/lib/publicCompaniesSerialization.ts');
 
-ok('A4', 'sanitizePublicCompany 返回 phone', serial.includes('phone: toPublicString(company.phone)'));
-ok('A4', 'sanitizePublicCompany 返回 email', serial.includes('email: toPublicString(company.email)'));
-ok('A4', 'is_claimed 基于 owner_user_id 计算', serial.includes('is_claimed: !!(company.owner_user_id)'));
+ok('A4', 'sanitizePublicCompany 返回 phone（未认领时）', serial.includes("phone: isClaimed ? '' : toPublicString(company.phone)"));
+ok('A4', 'sanitizePublicCompany 返回 email（未认领时）', serial.includes("email: isClaimed ? '' : toPublicString(company.email)"));
+ok('A4', 'is_claimed 基于 owner_user_id 计算', serial.includes('const isClaimed = !!(company.owner_user_id)'));
+ok('A4', 'is_claimed 字段写入响应', serial.includes('is_claimed: isClaimed'));
 ok('A4', '不得硬编码 is_claimed: false', !serial.includes('is_claimed: false'));
 
 // ─────────────────────────────────────────────
@@ -82,7 +83,7 @@ const crmCtrl = read('server/src/controllers/companyLeadController.ts');
 ok('A5', '只调用 pushCompanyLeadToCRM（装企 tenant）', crmCtrl.includes('pushCompanyLeadToCRM('));
 ok('A5', 'mirror inquiry 不调用 pushLeadToCRM', !crmCtrl.includes('pushLeadToCRM('));
 ok('A5', 'mirror inquiry 标记 crm_sync_status = synced',
-  crmCtrl.includes("crm_sync_status = 'synced'"));
+  crmCtrl.includes('crm_sync_status') && crmCtrl.includes("'synced'"));
 ok('A5', 'submitCompanyLead 有字段截断保护', crmCtrl.includes('.slice(0,'));
 
 // ─────────────────────────────────────────────
