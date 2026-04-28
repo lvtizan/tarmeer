@@ -123,7 +123,7 @@ logo_url            VARCHAR(500)
 website             VARCHAR(500)
 whatsapp            VARCHAR(20)
 city                VARCHAR(50)
-services            JSON                   -- ["Interior Design", "Renovation", ...]
+services            JSON                   -- 32种服务标签数组，见 VALID_SERVICES in companyProfileDraft.ts
 specialties         JSON
 portfolio_images    JSON                   -- 分类图片 { category: [...urls] }
 portfolio_categories JSON

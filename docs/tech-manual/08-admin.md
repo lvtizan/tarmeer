@@ -16,7 +16,7 @@
 | AdminInquiriesPage | `/admin/inquiries` | 询盘管理：状态、CRM、导出、批量操作 |
 | AdminProjectDetailPage | `/admin/projects/:id` | 项目详情：审核、编辑 |
 | AdminComplaintsPage | `/admin/complaints` | DMCA/版权投诉处理 |
-| AdminAnalyticsPage | `/admin/analytics` | 分析看板：访客、事件、趋势 |
+| AdminAnalyticsPage | `/admin/analytics` | 分析看板：访客、事件、[[知识库/概念/趋势|趋势]] |
 | AdminRoleManagementPage | `/admin/roles` | 子管理员 + 权限管理 |
 | AdminNotificationEmailsPage | `/admin/notification-emails` | 通知邮箱配置 |
 | AdminAdminsPage | `/admin/admins` | Admin 账号管理 |
@@ -153,14 +153,46 @@ Step 3: 确认导入 → 同时写入 company_profiles + uae_companies 两张表
 |------|------|------|
 | company_name | 是 | Algedra Interior Design |
 | company_name_ar | 否 | الكيدرا للتصميم الداخلي |
-| company_type | 是 | Design Studio / Renovation Company |
+| company_type | 是 | 19种类型之一（见下方枚举） |
 | contact_person | 是 | Ahmed Ali |
 | phone | 是 | +971 50 123 4567 |
 | city | 是 | Dubai |
 | description | 是 | Brief description... |
-| services | 是 | Interior Design, Fit-Out, Furniture |
+| services | 是 | 逗号分隔，32种服务之一（见下方枚举） |
 | email / website / whatsapp | 否 | — |
 | address / year / license / specialties / social URLs | 否 | — |
+
+#### company_type 枚举（19种）
+
+| 分组 | 值 | 中文说明 |
+|------|----|---------|
+| Design | `design_studio` | 设计公司 |
+| Construction | `renovation_company` | 装修公司 |
+| Construction | `general_contractor` | 总承包商 |
+| Construction | `fitout_contractor` | 精装承包商 |
+| Systems & MEP | `mep_contractor` | 机电承包商 |
+| Systems & MEP | `fire_fighting` | 消防工程 |
+| Systems & MEP | `smart_home` | 智能家居 |
+| Systems & MEP | `waterproofing` | 防水工程 |
+| Specialty Trade | `glass_aluminium` | 玻璃铝材 |
+| Specialty Trade | `carpentry_joinery` | 木工细木工 |
+| Specialty Trade | `stone_marble` | 石材大理石 |
+| Specialty Trade | `steel_fabrication` | 钢结构 |
+| Specialty Trade | `specialty_trade` | 其他专项 |
+| Services | `maintenance_company` | 维保公司 |
+| Services | `cleaning_services` | 清洁服务 |
+| Services | `manpower_supply` | 劳务供应 |
+| Services | `landscaping` | 园林景观 |
+| Services | `swimming_pool` | 游泳池承包商 |
+| Furnishing | `furnishing` | 家具软装 |
+
+#### services 枚举（32种）
+
+**设计类：** Interior Design · Architecture · Design & Build  
+**施工类：** Fit-Out · Renovation · Construction · MEP  
+**家具类：** Furniture · Joinery · Turnkey Solutions  
+**服务类：** Project Management · Landscape · Maintenance  
+**专项类：** Glass & Aluminium · Painting & Finishing · Flooring & Tiling · Demolition · Steel & Fabrication · Curtains & Blinds · Cleaning Services · Pools · HVAC & Ducting · Fire Fighting · Smart Home & Automation · Waterproofing · Solar Systems · Epoxy & PU Flooring · Scaffolding · Lighting Installation · Stone & Marble Fixing · Gypsum & Partitions · Deep Cleaning
 
 ---
 
