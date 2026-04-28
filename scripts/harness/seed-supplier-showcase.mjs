@@ -34,6 +34,11 @@ const CAT_IMAGES = {
     'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=800&q=80', // armchair set
     'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80', // dining table
   ],
+  office: [
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80', // conference room
+    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&q=80', // open plan office
+    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80', // executive desk set
+  ],
   stone: [
     'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80', // marble countertop
     'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80', // marble slab
@@ -65,9 +70,9 @@ const CAT_IMAGES = {
     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80', // sliding rail
   ],
   plants: [
-    'https://images.unsplash.com/photo-1493552879544-d75929570ab4?w=800&q=80', // indoor plant
-    'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80', // ficus in corner
-    'https://images.unsplash.com/photo-1509423350716-97f0f8c25122?w=800&q=80', // potted plants shelf
+    'https://images.unsplash.com/photo-1502759683299-cdcd6974244f?w=800&q=80', // palm tree silhouettes at sunset
+    'https://images.unsplash.com/photo-1567225557594-88d73e55f2cb?w=800&q=80', // indoor tropical plants
+    'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=80', // garden path with hedges
   ],
   paint: [
     'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=800&q=80', // paint bucket & roller
@@ -107,6 +112,11 @@ const PRODUCTS = {
     ['Walnut Coffee Table', 'NordicForm', 'W-01',        '1200×700mm', 'Walnut',        'Living Room', 'AED 1.8k–3k'],
     ['Dining Chair Set',    'StudioOak',  'Dine-6',      '6-seat',     'Oatmeal',       'Dining',      'AED 2.5k–4k'],
   ],
+  office: [
+    ['Executive Conference Table', '华盛家具', 'HWS-CT2400', '3600×1200mm', 'Walnut Veneer', 'Board Room',         'AED 4k–12k/set'],
+    ['Open-plan Workstation',      '华盛家具', 'HWS-WS',     'Custom',      'White/Grey',    'Staff Office Area',  'AED 800–2k/unit'],
+    ['Government Reception Desk',  '华盛家具', 'HWS-RD',     'Custom',      'Champagne Oak', 'Public Service Hall','AED 6k–18k/set'],
+  ],
   stone: [
     ['Calacatta Marble Slab',  'StoneCraft', 'Calacatta Gold', '20mm',      'White/Gold',   'Feature Wall', 'AED 550–850/m²'],
     ['Travertine Tile',         'AsterStone', 'T-Prime',        '600×1200mm','Cream',         'Flooring',     'AED 220–380/m²'],
@@ -138,9 +148,9 @@ const PRODUCTS = {
     ['Sliding Door Rail',  'RailPro',    'SR-80',   '2m set',    'Satin Silver',  'Partitions',  'AED 260–480/set'],
   ],
   plants: [
-    ['Ficus Lyrata Set',      'OasisGrow',  'Ficus Pack', '1.6m height', 'Natural Green', 'Living Room',    'AED 600–1100/set'],
-    ['Zamia Planter Kit',     'PalmLeaf',   'ZK-3',       '3 pots',      'Olive Green',   'Indoor Corners', 'AED 350–650/set'],
-    ['Vertical Green Panel',  'GreenScape', 'VG-02',      '1m×2m',       'Mixed Green',   'Entrance Wall',  'AED 900–1500/panel'],
+    ['Artificial King Coconut Palm (大王椰)', '春蕾绿茵', '大王椰系列', 'H:6–10m (custom)', 'Natural Green', 'Hotel Lobby / Outdoor',   'AED 3k–8k/unit'],
+    ['Artificial Cherry Blossom Tree',        '春蕾绿茵', '樱花树系列', 'H:3–4.5m (custom)','Pink/White',    'Commercial Atrium',        'AED 1.8k–4k/unit'],
+    ['Artificial Bamboo Screen',              '春蕾绿茵', '仿真竹系列', 'H:1–3m (custom)',  'Natural',       'Interior Divider / Patio', 'AED 800–2k/section'],
   ],
   paint: [
     ['Low-VOC Emulsion',       'ColorWise',   'Eco Silk',  '18L',  'Off White',    'Walls',      'AED 280–450/bucket'],
@@ -168,26 +178,54 @@ const PRODUCTS = {
 const SUPPLIERS = [
   // China — 4 companies
   {
-    slug: 'huasheng-materials',
-    name: '华盛',
-    origin: 'china',
-    type: 'specialty_trade',
-    categories: ['stone', 'flooring', 'hardware'],
-    desc: '华盛建材深耕建筑装饰材料出口二十余年，主营天然石材、工程地板与精密五金，已参与迪拜、阿布扎比多个豪华住宅及酒店项目的材料供应。支持定制规格与工程批量采购。',
-    phone: '+86 755 8800 1234',
-    address: 'Shenzhen, Guangdong, China',
-    maps: 'https://maps.google.com/?q=Shenzhen+Building+Materials+Market',
-  },
-  {
-    slug: 'chunlei-decor',
-    name: '春蕾',
+    slug: 'huasheng-furniture',
+    name: '华盛家具集团',
     origin: 'china',
     type: 'furnishing',
-    categories: ['curtains', 'furniture', 'paint'],
-    desc: '春蕾软装专注中高端家居软装一站式配套，涵盖定制窗帘布艺、布艺家具及墙面涂装材料，为中东地区设计师和装修公司提供样品寄送、快速打样及工程配套服务。',
+    categories: ['office', 'other'],
+    desc: '广东华盛家具集团专注高品质工程办公家具二十余年，服务对象涵盖政府机关、金融机构及文化艺术中心等大型公共空间。标杆项目包括苏州市政务中心、招商证券深圳总部、成都天府文化艺术中心等，支持定制规格与工程批量采购，可对接 UAE 工程项目需求。',
+    phone: '+86 755 8800 1234',
+    address: 'Shenzhen, Guangdong, China',
+    maps: 'https://maps.google.com/?q=Guangdong+Huasheng+Furniture+Group',
+    logo:  'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&q=80',
+    cover: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+    projectImages: [
+      'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80', // conference room
+      'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1400&q=80', // glass-wall meeting room
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80', // open plan office
+      'https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=1400&q=80', // glass meeting room dark
+    ],
+    projectTemplates: [
+      { title: '苏州市政务中心办公家具配套', location: '江苏省苏州市', year: '2018' },
+      { title: '招商证券深圳总部工程家具',   location: '广东省深圳市', year: '2018' },
+      { title: '成都天府文化艺术中心',       location: '四川省成都市', year: '2021' },
+      { title: '甘南文旅会展中心',           location: '甘肃省甘南藏族自治州', year: '2018' },
+    ],
+  },
+  {
+    slug: 'chunlei-plants',
+    name: '春蕾绿化工程',
+    origin: 'china',
+    type: 'landscaping',
+    categories: ['plants', 'other'],
+    desc: '春蕾绿化工程（绿茵品牌）专注仿真植物工程化定制，产品涵盖仿真棕榈树、大王椰、樱花树、银杏树、竹子等百余个品种，高度可达10米，适用于酒店大堂、主题乐园、商业中庭及别墅景观。已为北京蟹岛度假村、西安乐华欢乐世界等知名项目提供仿真绿化整体解决方案。',
     phone: '+86 571 8800 5678',
     address: 'Hangzhou, Zhejiang, China',
-    maps: 'https://maps.google.com/?q=Hangzhou+Decoration+Market',
+    maps: 'https://maps.google.com/?q=Hangzhou+Artificial+Plants',
+    logo:  'https://images.unsplash.com/photo-1502759683299-cdcd6974244f?w=800&q=80',  // palm sunset silhouettes
+    cover: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=80',  // garden path with hedges
+    projectImages: [
+      'https://images.unsplash.com/photo-1502759683299-cdcd6974244f?w=1400&q=80', // palm sunset silhouettes
+      'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=1400&q=80', // garden path with hedges
+      'https://images.unsplash.com/photo-1567225557594-88d73e55f2cb?w=1400&q=80', // indoor tropical plants
+      'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=1400&q=80', // green plant
+    ],
+    projectTemplates: [
+      { title: '北京朝阳区蟹岛度假村仿真棕榈工程', location: '北京市朝阳区', year: '2023' },
+      { title: '西安乐华欢乐世界大王椰景观',       location: '陕西省西安市',   year: '2022' },
+      { title: '马来西亚度假酒店棕榈树装置',       location: 'Malaysia',        year: '2021' },
+      { title: '河北邯郸文化产业园仿真竹林',       location: '河北省邯郸市',   year: '2020' },
+    ],
   },
   {
     slug: 'sophia-custom',
@@ -199,6 +237,14 @@ const SUPPLIERS = [
     phone: '+86 20 3900 8888',
     address: 'Guangzhou, Guangdong, China',
     maps: 'https://maps.google.com/?q=Suofeiya+Guangzhou',
+    logo:  'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80',
+    cover: 'https://images.unsplash.com/photo-1594222082006-77e8fff5ead9?w=800&q=80',
+    projectImages: [
+      'https://images.unsplash.com/photo-1594222082006-77e8fff5ead9?w=1400&q=80',
+      'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1400&q=80',
+      'https://images.unsplash.com/photo-1558618047-f4e60d9c2c89?w=1400&q=80',
+      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1400&q=80',
+    ],
   },
   {
     slug: 'yifa-windows-doors',
@@ -210,6 +256,14 @@ const SUPPLIERS = [
     phone: '+86 757 8800 9999',
     address: 'Foshan, Guangdong, China',
     maps: 'https://maps.google.com/?q=Foshan+Aluminum+Windows+Doors',
+    logo:  'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&q=80',  // modern house exterior with large windows
+    cover: 'https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=800&q=80',  // tall windows in living room
+    projectImages: [
+      'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1400&q=80', // modern house exterior with large windows
+      'https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=1400&q=80', // tall windows in living room
+      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1400&q=80', // dark house exterior wooden door
+      'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=1400&q=80', // interior hallway sliding door
+    ],
   },
 
   // Dubai
@@ -280,12 +334,14 @@ function buildProducts(categoryKeys, seedIndex) {
 }
 
 function buildProjects(supplier, seedIndex) {
-  const t1 = PROJECT_TEMPLATES[seedIndex % 4];
-  const t2 = PROJECT_TEMPLATES[(seedIndex + 1) % 4];
-  const h1 = pickHero(seedIndex);
-  const h2 = pickHero(seedIndex + 1);
-  const g1 = [h1, pickHero(seedIndex + 2), pickHero(seedIndex + 3)];
-  const g2 = [h2, pickHero(seedIndex + 1), pickHero(seedIndex + 2)];
+  const templates = supplier.projectTemplates || PROJECT_TEMPLATES;
+  const imgs = supplier.projectImages || HERO;
+  const t1 = templates[seedIndex % templates.length];
+  const t2 = templates[(seedIndex + 1) % templates.length];
+  const h1 = imgs[seedIndex % imgs.length];
+  const h2 = imgs[(seedIndex + 1) % imgs.length];
+  const g1 = [h1, imgs[(seedIndex + 2) % imgs.length], imgs[(seedIndex + 3) % imgs.length]];
+  const g2 = [h2, imgs[(seedIndex + 1) % imgs.length], imgs[(seedIndex + 2) % imgs.length]];
   return [
     { title: `${supplier.name} – ${t1.title}`, location: t1.location, year: t1.year, hero: h1, gallery: g1, products: buildProducts(supplier.categories, seedIndex) },
     { title: `${supplier.name} – ${t2.title}`, location: t2.location, year: t2.year, hero: h2, gallery: g2, products: buildProducts([...supplier.categories].reverse(), seedIndex + 2) },
@@ -368,8 +424,8 @@ async function upsertSupplier(base, index, passwordHash) {
     userId = u.insertId;
   }
 
-  const heroLogo = pickHero(index);
-  const heroCover = pickHero(index + 1);
+  const heroLogo = base.logo || pickHero(index);
+  const heroCover = base.cover || pickHero(index + 1);
 
   let profileId;
   const [profiles] = await pool.execute('SELECT id FROM supplier_profiles WHERE supplier_user_id=? LIMIT 1', [userId]);
@@ -441,7 +497,7 @@ async function upsertSupplier(base, index, passwordHash) {
 }
 
 async function main() {
-  console.log('\n══ Supplier Showcase Seed (5 China + 5 Dubai) ══');
+  console.log('\n══ Supplier Showcase Seed (4 China + 5 Dubai) ══');
   console.log(`DB: ${process.env.DB_NAME || 'tarmeer'} @ ${process.env.DB_HOST || '127.0.0.1'}`);
   await ensureTables();
   if (RESET) {
