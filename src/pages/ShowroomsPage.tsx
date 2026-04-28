@@ -70,7 +70,7 @@ function SupplierCard({ s }: { s: Supplier }) {
                 ? 'bg-red-50 text-red-600'
                 : 'bg-emerald-50 text-emerald-700'
             }`}>
-              {s.origin === 'china' ? '🇨🇳 跨境' : '🇦🇪 Dubai'}
+              {s.origin === 'china' ? '🇨🇳 Cross-border' : '🇦🇪 Dubai'}
             </span>
           </div>
           {s.description && (
@@ -249,7 +249,7 @@ export default function ShowroomsPage() {
                 <div className="space-y-1">
                   <FilterOption selected={originFilter === ''} onClick={() => setOriginFilter('')}>All Origins</FilterOption>
                   <FilterOption selected={originFilter === 'dubai'} onClick={() => setOriginFilter('dubai')}>🇦🇪 Dubai</FilterOption>
-                  <FilterOption selected={originFilter === 'china'} onClick={() => setOriginFilter('china')}>🇨🇳 跨境</FilterOption>
+                  <FilterOption selected={originFilter === 'china'} onClick={() => setOriginFilter('china')}>🇨🇳 Cross-border</FilterOption>
                 </div>
               </div>
 
@@ -305,7 +305,7 @@ export default function ShowroomsPage() {
             {[
               { value: '', label: 'All' },
               { value: 'dubai', label: '🇦🇪 Dubai' },
-              { value: 'china', label: '🇨🇳 跨境' },
+              { value: 'china', label: '🇨🇳 Cross-border' },
             ].map(opt => (
               <button
                 key={opt.value}
@@ -338,7 +338,7 @@ export default function ShowroomsPage() {
           {!loading && suppliers.length > 0 && (
             <p className="text-sm text-stone-500 mb-4">
               {suppliers.length} verified supplier{suppliers.length !== 1 ? 's' : ''}
-              {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 跨境' : '🇦🇪 Dubai'}`}
+              {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 Cross-border' : '🇦🇪 Dubai'}`}
               {categoryFilter && ` · ${CATEGORY_OPTIONS.find(o => o.value === categoryFilter)?.label}`}
             </p>
           )}

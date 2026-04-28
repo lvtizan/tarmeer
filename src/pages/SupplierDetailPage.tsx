@@ -265,7 +265,7 @@ export default function SupplierDetailPage() {
                     ? 'bg-red-500/20 text-red-200 border border-red-400/20'
                     : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/20'
                 }`}>
-                  {supplier.origin === 'china' ? 'China' : 'Dubai'}
+                  {supplier.origin === 'china' ? '🇨🇳 Cross-border' : '🇦🇪 Dubai'}
                 </span>
               </div>
 
@@ -358,9 +358,18 @@ export default function SupplierDetailPage() {
       </div>
 
       {/* ========== Main Content ========== */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8 lg:items-start">
-          <div className="min-w-0 space-y-10">
+      {/* paddingLeft mirrors PageContainer (max-w-6xl mx-auto px-6) so left edge aligns with tab strip.
+          The sidebar extends into the right margin — it does NOT shift the content left. */}
+      <div
+        className="py-8 sm:py-10"
+        style={{
+          paddingLeft: 'max(16px, calc((100vw - 1152px) / 2 + 24px))',
+          paddingRight: '24px',
+        }}
+      >
+        {/* items-stretch (default) makes sidebar column as tall as content column */}
+        <div className="flex gap-8">
+          <div className="min-w-0 flex-1 space-y-10">
           {/* Products section */}
           <div ref={productsRef} id="section-products" className="scroll-mt-28">
             <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
@@ -512,8 +521,8 @@ export default function SupplierDetailPage() {
             )}
           </div>
 
-          {/* Inline inquiry form — shown on mobile (below lg) */}
-          <div ref={mobileFormRef} className="lg:hidden">
+          {/* Inline inquiry form — shown on screens < 1280px where no sidebar */}
+          <div ref={mobileFormRef} className="min-[1280px]:hidden">
             <ServiceInquiryCard
               title={`Contact ${supplier.company_name}`}
               companyName={supplier.company_name}
@@ -523,9 +532,9 @@ export default function SupplierDetailPage() {
           </div>
         </div>
 
-        {/* Sticky sidebar — lg+ */}
-        <div className="hidden lg:block">
-          <div className="sticky top-[112px]">
+        {/* Sticky sidebar — 1280px+, sticks just below the tab strip as user scrolls */}
+        <div className="hidden min-[1280px]:block w-72 shrink-0">
+          <div className="sticky top-[80px]">
             <ServiceInquiryCard
               title={`Contact ${supplier.company_name}`}
               companyName={supplier.company_name}
@@ -545,7 +554,7 @@ export default function SupplierDetailPage() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
+            className="min-[1280px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
           >
             <button
               className="btn-primary flex-1 py-3 text-[15px]"
