@@ -47,6 +47,17 @@ export const COMPANY_TYPE_LABELS: Record<string, string> = {
   specialty_trade: 'Specialty Trade',
   landscaping: 'Landscaping & Pools',
   furnishing: 'Furnishing',
+  fitout_contractor: 'Fit-Out Contractor',
+  glass_aluminium: 'Glass & Aluminium',
+  waterproofing: 'Waterproofing',
+  smart_home: 'Smart Home & IT',
+  fire_fighting: 'Fire Fighting & Safety',
+  carpentry_joinery: 'Carpentry & Joinery',
+  stone_marble: 'Stone, Marble & Tile',
+  steel_fabrication: 'Steel & Metal Works',
+  cleaning_services: 'Cleaning Services',
+  manpower_supply: 'Manpower Supply',
+  swimming_pool: 'Swimming Pool Contractor',
 };
 
 export function getCompanyTypeLabel(type?: string): string {
