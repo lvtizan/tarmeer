@@ -151,29 +151,6 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
       );
     }
 
-    const SearchBox = ({ id }: { id: string }) => (
-      <div className="flex-shrink-0 px-3 py-2.5 border-b border-stone-100">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-          </svg>
-          <input
-            ref={id === 'search-main' ? searchRef : undefined}
-            id={id}
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search…"
-            className="w-full h-9 pl-8 pr-3 text-sm border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#b8864a] focus:bg-white transition"
-          />
-        </div>
-        {q && filtered.length === 0 && (
-          <p className="text-xs text-stone-400 text-center py-2">No results</p>
-        )}
-      </div>
-    );
-
     return (
       <div ref={containerRef} className={`relative ${className}`}>
         {/* Hidden native select for form compatibility */}
@@ -218,7 +195,27 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
             className="flex flex-col fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden"
             style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: '70vh' }}
           >
-            {searchable && <SearchBox id="search-main" />}
+            {searchable && (
+              <div className="flex-shrink-0 px-3 py-2.5 border-b border-stone-100">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search…"
+                    className="w-full h-9 pl-8 pr-3 text-sm border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#b8864a] focus:bg-white transition"
+                  />
+                </div>
+                {q && filtered.length === 0 && (
+                  <p className="text-xs text-stone-400 text-center py-2">No results</p>
+                )}
+              </div>
+            )}
             <ul className="overflow-y-auto flex-1">
               {renderOptions(filtered, `${size === 'sm' ? 'px-3 py-2 text-sm' : 'px-5 py-3 text-[15px]'}`)}
             </ul>
