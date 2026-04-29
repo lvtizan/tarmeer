@@ -76,8 +76,8 @@ async function persistSingleImageDataUrl(dataUrl: string, designerId: unknown, p
   const absoluteFilePath = path.join(absoluteDir, fileName);
   const relativeUrl = `${PROJECT_UPLOADS_RELATIVE_DIR}/${subDirs.join('/')}/${fileName}`;
 
-  await fs.mkdir(absoluteDir, { recursive: true });
-  await fs.writeFile(absoluteFilePath, buffer);
+  await fs.mkdir(absoluteDir, { recursive: true, mode: 0o755 });
+  await fs.writeFile(absoluteFilePath, buffer, { mode: 0o644 });
   // Generate thumbnail variants (blur, thumb, medium)
   generateVariants(absoluteFilePath).catch(() => {});
   return relativeUrl;

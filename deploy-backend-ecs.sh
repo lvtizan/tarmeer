@@ -50,6 +50,12 @@ ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "cd ${BACKEND_PATH} && \
     echo 'Started with nohup (no pm2). PID:' \$!; \
   fi"
 
+echo "Fixing uploads directory permissions (prevent nginx 403)..."
+ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "\
+  find ${BACKEND_PATH}/public/uploads -type d -exec chmod a+x {} \; 2>/dev/null || true; \
+  find ${BACKEND_PATH}/public/uploads -type f -exec chmod a+r {} \; 2>/dev/null || true; \
+  chmod o+x ${BACKEND_PATH} 2>/dev/null || true"
+
 echo ""
 echo "Done. Backend should be listening on port ${API_PORT}."
 echo "Your backend colleague should point Nginx /api to http://127.0.0.1:${API_PORT} (no AI nginx changes from this repo)."

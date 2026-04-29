@@ -28,7 +28,7 @@ const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'avatars');
 // 确保上传目录存在
 async function ensureUploadDir() {
   try {
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    await fs.mkdir(UPLOAD_DIR, { recursive: true, mode: 0o755 });
   } catch (error) {
     console.error('Failed to create upload directory:', error);
   }
@@ -59,7 +59,7 @@ export async function downloadAvatar(
       maxRedirects: 3,
       maxContentLength: 5 * 1024 * 1024, // 5MB max
     });
-    await fs.writeFile(filepath, Buffer.from(response.data));
+    await fs.writeFile(filepath, Buffer.from(response.data), { mode: 0o644 });
     console.log('[avatar] Saved to:', filepath);
 
     return `/uploads/avatars/${filename}`;

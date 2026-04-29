@@ -70,21 +70,25 @@ input:disabled,
   cursor: not-allowed;
 }
 
-/* 全站主按钮：暗金色底、白色字 */
-.btn-primary {
-  display: inline-block;
-  background-color: var(--color-tarmeer-primary-btn);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 16px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  text-align: center;
-  text-decoration: none;
-}
-.btn-primary:hover {
-  background-color: var(--color-tarmeer-primary-btn-hover);
-  color: white;
+/* 全站主按钮：暗金色底、白色字
+   IMPORTANT: must be inside @layer components so Tailwind utilities (hidden, sm:hidden, etc.)
+   can override display. Defining this outside a layer wins the cascade and breaks responsive show/hide. */
+@layer components {
+  .btn-primary {
+    display: inline-block;
+    background-color: var(--color-tarmeer-primary-btn);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    text-align: center;
+    text-decoration: none;
+  }
+  .btn-primary:hover {
+    background-color: var(--color-tarmeer-primary-btn-hover);
+    color: white;
+  }
 }
 
 /* Focus: primary color only — no browser-default blue */

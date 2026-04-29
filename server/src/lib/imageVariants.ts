@@ -48,6 +48,7 @@ export async function generateVariants(imagePath: string): Promise<string[]> {
         .resize(targetW, targetH, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality: variant.quality })
         .toFile(outPath);
+      await fs.chmod(outPath, 0o644);
       generated.push(outPath);
     } catch {
       // skip this variant on error

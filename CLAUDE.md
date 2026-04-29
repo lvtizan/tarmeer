@@ -62,6 +62,8 @@ Every feature MUST go through these steps before notifying the user. No exceptio
 - Check each pitfall against current feature for relevance
 - Key pitfalls: image permissions (chmod), JSON field parsing (Array.isArray), prepared statement LIMIT/OFFSET, nginx route conflicts
 - **Admin page changes**: MUST run `node scripts/harness/lint-admin-ui.mjs` before AND after coding
+- **涉及图片/文件写入**：`fs.writeFile` 必须传 `{ mode: 0o644 }`，`fs.mkdir` 必须传 `{ mode: 0o755 }`，sharp `.toFile()` 后必须加 `fs.chmod(outPath, 0o644)`，否则文件 600 权限 → nginx 403
+- **涉及 CSS 全局样式**：修改 `src/index.css` 前检查 `.btn-primary` 是否在 `@layer components {}` 内；在 `@layer` 外的组件样式会覆盖 Tailwind utilities（hidden/sm:hidden），导致移动端响应式失效
 
 ### Step 2: Write Test Cases
 - Create/update test case doc in `docs/testing/`
@@ -85,6 +87,8 @@ Every feature MUST go through these steps before notifying the user. No exceptio
 - `pool.execute` LIMIT/OFFSET → use `pool.query` with integer concatenation
 - nginx legacy URL rules must not conflict with valid routes
 - **uploads 路径不可混淆**：用户上传文件由后端保存在 `/tarmeer/tarmeer_api/public/uploads/`，nginx 的 `/uploads/` location 必须 alias 到此路径。禁止改成 `tarmeer_web_portal/public/uploads/`（前端静态目录，无上传文件）。
+- **手动 rsync supplier 图片**：rsync 到 `/tarmeer/tarmeer_api/public/uploads/suppliers/` 时必须加 `--chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r`，否则 macOS 600 权限触发 403（服务器已有 default ACL + cron 兜底，但 rsync 本身加 --chmod 是第一道防线）
+- **新建 uploads 子目录**：新的供应商/类型目录需要手动运行 `setfacl -R -d -m o::rx <新目录路径>` 使其继承 default ACL
 
 ### Step 5: Notify User
 - Report: what was done, test results, ready to deploy or not
@@ -152,6 +156,10 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 7. NEVER use raw `<select>` — use `<AdminSelect />`
 8. NEVER create new phone input without `phoneValidation.ts` validation
 9. NEVER duplicate form logic — new lead/inquiry forms MUST use the shared `<LeadForm />` component (when built), or at minimum reuse `phoneValidation.ts` and `AdminSelect`
+10. **移动端按钮与卡片必须适配移动端布局**：任何按钮或卡片在移动端（< sm/640px）必须满足以下要求：
+    - 按钮：在 hero 或固定区域内，移动端不可见的按钮用 `hidden sm:inline-flex`；移动端底部单独提供全宽 CTA（`w-full sm:hidden`）；绝不在小屏幕上让按钮与标题文字并排挤压
+    - 卡片：移动端单列（`grid-cols-1 sm:grid-cols-2`），内边距适当缩小（`p-4 sm:p-6`），图片高度用 `aspect-ratio` 而非固定高度
+    - `btn-primary` 必须保持在 `@layer components` 内（`src/index.css`），否则 `hidden`/`sm:hidden` 等 Tailwind utilities 无法覆盖其 display，导致移动端按钮显示错误
 
 ---
 
