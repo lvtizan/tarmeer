@@ -65,6 +65,7 @@ const BlogPage = lazyRetry(() => import('./pages/BlogPage'));
 const BlogDetailPage = lazyRetry(() => import('./pages/BlogDetailPage'));
 const ForCompaniesPage = lazyRetry(() => import('./pages/ForCompaniesPage'));
 const ForHomeownersPage = lazyRetry(() => import('./pages/ForHomeownersPage'));
+const StartGuidePage = lazyRetry(() => import('./pages/StartGuidePage'));
 const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage'));
 
 // Onboarding
@@ -249,6 +250,7 @@ function App() {
           <Route path="/designers/:slug" element={<Navigate to="/companies" replace />} />
 
           {/* ====== Independent landing pages ====== */}
+          <Route path="/start" element={<StartGuidePage />} />
           <Route path="/for-companies" element={<ForCompaniesPage />} />
           <Route path="/for-homeowners" element={<ForHomeownersPage />} />
           <Route path="/join" element={<Navigate to="/for-companies" replace />} />
