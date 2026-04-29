@@ -44,6 +44,13 @@ export default function CompanyDetailPage() {
       navigate('/companies');
     }
   };
+  // Canonicalize URL: /companies/:slug → /@:slug
+  useEffect(() => {
+    if (id && window.location.pathname.startsWith('/companies/')) {
+      navigate(`/@${id}`, { replace: true });
+    }
+  }, [id, navigate]);
+
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');

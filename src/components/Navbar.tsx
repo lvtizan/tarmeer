@@ -149,8 +149,9 @@ export default function Navbar({
             </Link>
 
             <div
-                className={`absolute top-full left-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50 transition-all duration-150 ${portfolioDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+                className={`absolute top-full left-0 pt-2 w-max z-50 transition-all duration-150 ${portfolioDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
               >
+              <div className="bg-white shadow-xl rounded-lg border border-stone-200">
                   <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
                     {Object.entries(portfolioCategories).map(([category, items]) => (
                       <div key={category}>
@@ -183,6 +184,7 @@ export default function Navbar({
                     </Link>
                   </div>
                 </div>
+              </div>
           </div>
 
           {/* Find Company Dropdown */}
@@ -201,8 +203,9 @@ export default function Navbar({
             </Link>
 
             <div
-                className={`absolute top-full right-0 mt-2 w-max bg-white shadow-xl rounded-lg border border-stone-200 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+                className={`absolute top-full right-0 pt-2 w-max z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
               >
+              <div className="bg-white shadow-xl rounded-lg border border-stone-200">
                   <div className="p-6 grid grid-cols-4 gap-8 min-w-max">
                     {Object.entries(serviceCategories).map(([category, services]) => (
                       <div key={category}>
@@ -235,6 +238,7 @@ export default function Navbar({
                     </Link>
                   </div>
                 </div>
+              </div>
           </div>
 
           {renderNavLink('/materials', 'Materials')}
