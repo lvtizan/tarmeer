@@ -15,6 +15,12 @@ import { logActivity, getClientIp } from '../lib/activityLogger';
 export async function upsertProfile(req: any, res: any) {
   try {
     const userId = req.user.userId;
+
+    // Only company-role users may create/update a company profile
+    if (req.user.role !== 'company' && req.user.active_role !== 'company') {
+      return res.status(403).json({ error: 'Only company accounts can create a company profile.' });
+    }
+
     const payload = normalizeCompanyProfilePayload(req.body);
     const validationError = validateCompanyProfilePayload(payload);
     if (validationError) {

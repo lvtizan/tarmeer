@@ -102,6 +102,14 @@ export async function register(req: any, res: any) {
       return res.status(400).json({ error: 'This email is already registered.' });
     }
 
+    // Check if phone already exists (only when provided)
+    if (phone) {
+      const [phoneExisting] = await pool.execute('SELECT id FROM users WHERE phone = ? LIMIT 1', [phone]);
+      if ((phoneExisting as any[]).length > 0) {
+        return res.status(400).json({ error: 'This phone number is already linked to an existing account. Please log in or use a different number.' });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const { token: verificationToken, expires: verificationExpires } = generateVerificationToken();
 
