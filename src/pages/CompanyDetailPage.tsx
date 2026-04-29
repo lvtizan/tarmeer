@@ -380,7 +380,7 @@ export default function CompanyDetailPage() {
               <div className="flex-1 min-w-0">
                 <h1 className="font-serif text-2xl font-semibold text-[#1c1917]">
                   {company.isSigned && (
-                    <span className="inline-flex items-center mr-2 px-2 py-[3px] rounded bg-gradient-to-b from-[#d4a853] to-[#b8864a] text-white text-[12px] font-bold tracking-wider leading-none shrink-0 align-middle">VIP</span>
+                    <span className="inline-flex items-center mr-2 px-2 py-[3px] rounded bg-gradient-to-b from-[#d4a853] to-[#b8864a] text-white text-[12px] font-bold tracking-wider leading-none shrink-0 align-middle">Gold</span>
                   )}
                   {company.name}
                   {!company.isSigned && company.isClaimed && (

@@ -123,7 +123,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
             )}
             <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">
               {company.isSigned && (
-                <span className="inline-flex items-center mr-1.5 px-1.5 py-[2px] rounded bg-gradient-to-b from-[#d4a853] to-[#b8864a] text-white text-[10px] font-bold tracking-wider leading-none shrink-0 align-middle">VIP</span>
+                <span className="inline-flex items-center mr-1.5 px-1.5 py-[2px] rounded bg-gradient-to-b from-[#d4a853] to-[#b8864a] text-white text-[10px] font-bold tracking-wider leading-none shrink-0 align-middle">Gold</span>
               )}
               {company.name}
               {!company.isSigned && company.isClaimed && (
