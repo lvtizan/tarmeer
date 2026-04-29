@@ -11,9 +11,10 @@ function useProjectImages(count: number): string[] {
   useEffect(() => {
     fetch(`${API_BASE}/companies?limit=40`)
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then((data: any[]) => {
+      .then((data: any) => {
+        const companies: any[] = Array.isArray(data) ? data : (data.companies || []);
         const imgs: string[] = [];
-        for (const c of data) {
+        for (const c of companies) {
           const raw = c.portfolio_images;
           if (!raw) continue;
           try {
