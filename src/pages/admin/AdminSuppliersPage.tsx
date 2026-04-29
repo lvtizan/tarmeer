@@ -173,7 +173,7 @@ export default function AdminSuppliersPage() {
                     <span className={`text-[15px] font-medium px-2.5 py-0.5 rounded-full ${
                       s.origin === 'china' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
                     }`}>
-                      {s.origin === 'china' ? '🇨🇳' : '🇦🇪'} {s.origin}
+                      {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
                     </span>
                   </td>
 
