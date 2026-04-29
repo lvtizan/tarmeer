@@ -20,12 +20,12 @@ function parseChannel(sourcePageUrl?: string | null): string {
 
 export async function globalSearch(req: any, res: any) {
   const q = (req.query.q as string || '').trim();
-  if (q.length < 2) return res.json({ homeownerLeads: [], companyLeads: [], users: [], registeredCompanies: [], directoryCompanies: [] });
+  if (q.length < 2) return res.json({ homeownerLeads: [], companyLeads: [], users: [], registeredCompanies: [], directoryCompanies: [], suppliers: [] });
 
   const like = `%${q}%`;
 
   try {
-    const [hlRows, clRows, userRows, cpRows, ucRows, spRows] = await Promise.all([
+    const settled = await Promise.allSettled([
       // Homeowner leads
       pool.execute(
         `SELECT di.id, di.name, di.phone, di.city, di.source_company_name, di.crm_sync_status, di.crm_action, di.created_at
@@ -86,6 +86,8 @@ export async function globalSearch(req: any, res: any) {
         [like, like]
       ),
     ]);
+    const pick = (i: number) => settled[i].status === 'fulfilled' ? (settled[i] as any).value : [[], []];
+    const [hlRows, clRows, userRows, cpRows, ucRows, spRows] = settled.map((_, i) => pick(i));
 
     const homeownerLeads = (hlRows as any[][])[0].map((r: any) => ({
       id: r.id,
