@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (admin) {
-      navigate('/admin');
+      navigate(admin.role === 'field_staff' ? '/field/survey' : '/admin');
     }
   }, [admin, navigate]);
 
@@ -37,8 +37,8 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/admin');
+      const result = await login(email, password);
+      navigate(result?.admin?.role === 'field_staff' ? '/field/survey' : '/admin');
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

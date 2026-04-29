@@ -20,6 +20,22 @@
 
 ---
 
+## Language Rule (ABSOLUTE)
+
+**NO CHINESE ON THE PUBLIC-FACING FRONTEND.** This applies to all pages visible to end users (everything outside `/admin`). Specifically:
+
+- All UI text, labels, button copy, tooltips, error messages, placeholders, and headings must be in English.
+- All hardcoded strings in `.tsx`/`.ts` frontend files under `src/` (excluding `src/pages/admin/`, `src/components/admin/`) must be English-only.
+- When writing new data (supplier names, descriptions, company entries) to the database via scripts, all user-visible content must be English-only.
+- Chinese is allowed **only** in `src/pages/admin/` and `src/components/admin/` (the internal admin panel used by Chinese-speaking staff).
+
+Violation examples (forbidden in public pages):
+- `"保存中..."` → must be `"Saving..."`
+- `"供应商名称"` → must be `"Supplier Name"`
+- `"(春蕾绿茵)"` in a supplier description → must be removed
+
+---
+
 ## Critical Rules (never skip)
 
 1. **Deploy**: MUST read `docs/operations/deploy-runbook.md` before ANY deploy.

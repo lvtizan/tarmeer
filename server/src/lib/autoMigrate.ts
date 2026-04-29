@@ -228,6 +228,31 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       INDEX idx_created_at (created_at)
     )`,
   },
+  {
+    name: 'company_interviews',
+    sql: `CREATE TABLE IF NOT EXISTS company_interviews (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      interviewer_id INT NOT NULL,
+      company_ref_id INT NULL,
+      company_name VARCHAR(200) NOT NULL DEFAULT '',
+      status ENUM('draft', 'submitted') NOT NULL DEFAULT 'draft',
+      section_1 JSON NULL,
+      section_2 JSON NULL,
+      section_3 JSON NULL,
+      section_4 JSON NULL,
+      section_5 JSON NULL,
+      section_6 JSON NULL,
+      section_7 JSON NULL,
+      section_8 JSON NULL,
+      section_9 JSON NULL,
+      submitted_at DATETIME NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_interviewer (interviewer_id),
+      INDEX idx_status (status),
+      INDEX idx_company_ref (company_ref_id)
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
@@ -295,6 +320,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
 
   // Company onboarding wizard step tracker
   { table: 'company_profiles', column: 'onboarding_step', type: 'TINYINT DEFAULT 0' },
+
+  // Supplier display order (lower = earlier in public listing)
+  { table: 'supplier_profiles', column: 'sort_order', type: 'INT NOT NULL DEFAULT 0' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）
@@ -413,6 +441,9 @@ export async function runAutoMigrate(): Promise<void> {
       );
     } catch { /* table may not exist yet */ }
 
+    // 6. Add field_staff role to admin_users ENUM
+    await addFieldStaffRole();
+
     if (changes === 0) {
       console.log(`${TAG} Schema is up to date`);
     } else {
@@ -421,5 +452,26 @@ export async function runAutoMigrate(): Promise<void> {
   } catch (error) {
     // 迁移失败不阻止服务启动
     console.error(`${TAG} Migration error (non-fatal):`, error);
+  }
+}
+
+async function addFieldStaffRole() {
+  try {
+    const [cols] = await pool.execute(`
+      SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'admin_users'
+        AND COLUMN_NAME = 'role'
+    `);
+    const colType = (cols as any[])[0]?.COLUMN_TYPE || '';
+    if (!colType.includes('field_staff')) {
+      await pool.execute(`
+        ALTER TABLE admin_users
+        MODIFY COLUMN role ENUM('super_admin','sub_admin','field_staff') NOT NULL DEFAULT 'super_admin'
+      `);
+      console.log(`${TAG} Added field_staff to admin_users.role ENUM`);
+    }
+  } catch (e) {
+    console.error(`${TAG} Failed to add field_staff role:`, e);
   }
 }

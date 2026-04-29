@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package, MapPin, UserCheck } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -64,6 +64,16 @@ const navItems = [
 ];
 
 const adminItems = [
+  {
+    to: '/admin/visit-records', labelEn: 'Visit Records', labelZh: '访谈记录', icon: MapPin, superAdminOnly: true,
+    infoEn: 'View all field visit records submitted by field staff.',
+    infoZh: '查看外勤人员提交的所有公司访谈记录。',
+  },
+  {
+    to: '/admin/staff', labelEn: 'Field Staff', labelZh: '外勤人员', icon: UserCheck, superAdminOnly: true,
+    infoEn: 'Manage field staff accounts — create, activate, or deactivate.',
+    infoZh: '管理外勤账号，包括新建、启用和停用。',
+  },
   {
     to: '/admin/admins', labelEn: 'Admin Users', labelZh: '管理员', icon: UserCog, superAdminOnly: true,
     infoEn: 'Manage administrator accounts, permissions, and privileged access boundaries.',

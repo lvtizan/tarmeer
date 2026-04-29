@@ -15,6 +15,10 @@ import {
   changePassword
 } from '../controllers/adminController';
 import {
+  listInterviews, getInterview, editInterview,
+  listStaff, createStaff, toggleStaff,
+} from '../controllers/fieldAdminController';
+import {
   getDesignersForAdmin,
   getDesignerDetails,
   approveDesigner,
@@ -320,5 +324,15 @@ router.get('/admins', requireSuperAdmin, listAdmins);
 router.post('/admins', requireSuperAdmin, createSubAdmin);
 router.put('/admins/:id', requireSuperAdmin, updateAdmin);
 router.delete('/admins/:id', requireSuperAdmin, deleteAdmin);
+
+// Field interviews (super_admin only)
+router.get('/interviews', requireSuperAdmin, listInterviews);
+router.get('/interviews/:id', requireSuperAdmin, getInterview);
+router.patch('/interviews/:id', requireSuperAdmin, editInterview);
+
+// Field staff management (super_admin only)
+router.get('/staff', requireSuperAdmin, listStaff);
+router.post('/staff', requireSuperAdmin, createStaff);
+router.patch('/staff/:id', requireSuperAdmin, toggleStaff);
 
 export default router;

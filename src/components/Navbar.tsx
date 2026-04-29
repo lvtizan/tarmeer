@@ -237,7 +237,7 @@ export default function Navbar({
                 </div>
           </div>
 
-          {/* {renderNavLink('/materials', 'Materials')} — hidden temporarily */}
+          {renderNavLink('/materials', 'Materials')}
 
           {showUserEntry ? (
             <div className="flex items-center gap-3">
@@ -394,7 +394,7 @@ export default function Navbar({
                 )}
             </div>
 
-            {/* {renderNavLink('/materials', 'Materials', 'py-2')} — hidden temporarily */}
+            {renderNavLink('/materials', 'Materials', 'py-2')}
 
             {isLoggedIn ? (
               <Link

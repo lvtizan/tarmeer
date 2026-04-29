@@ -109,6 +109,12 @@ const AdminActivityLogPage = lazyRetry(() => import('./pages/admin/AdminActivity
 const AdminSuppliersPage = lazyRetry(() => import('./pages/admin/AdminSuppliersPage'));
 const AdminSupplierDetailPage = lazyRetry(() => import('./pages/admin/AdminSupplierDetailPage'));
 const AdminProjectDetailPage = lazyRetry(() => import('./pages/admin/AdminProjectDetailPage'));
+const AdminVisitRecordsPage = lazyRetry(() => import('./pages/admin/AdminVisitRecordsPage'));
+const AdminStaffPage = lazyRetry(() => import('./pages/admin/AdminStaffPage'));
+
+// Field
+const FieldSurveyPage = lazyRetry(() => import('./pages/field/FieldSurveyPage'));
+const FieldAuthGuard = lazyRetry(() => import('./components/field/FieldAuthGuard'));
 
 // Silently auto-reloads when lazy-loaded chunks fail (stale cache after deploy).
 // Loop guard: max 2 reloads per 60s window to avoid infinite refresh.
@@ -200,11 +206,16 @@ function App() {
             <Route path="help" element={<AdminHelpPage />} />
             <Route path="suppliers" element={<AdminSuppliersPage />} />
             <Route path="suppliers/:id" element={<AdminSupplierDetailPage />} />
+            <Route path="visit-records" element={<AdminVisitRecordsPage />} />
+            <Route path="staff" element={<AdminStaffPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/forgot-password" element={<Layout navbarVariant="admin-auth"><AdminForgotPasswordPage /></Layout>} />
           <Route path="/admin/reset-password" element={<Layout navbarVariant="admin-auth"><AdminResetPasswordPage /></Layout>} />
           <Route path="/admin/install" element={<AdminProvider><AdminInstallPage /></AdminProvider>} />
+
+          {/* ====== Field Survey ====== */}
+          <Route path="/field/survey" element={<AdminProvider><FieldAuthGuard><FieldSurveyPage /></FieldAuthGuard></AdminProvider>} />
 
           {/* ====== Onboarding ====== */}
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />

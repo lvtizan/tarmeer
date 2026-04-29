@@ -6,7 +6,7 @@ export interface AdminUser {
   id: number;
   email: string;
   full_name: string;
-  role: 'super_admin' | 'sub_admin';
+  role: 'super_admin' | 'sub_admin' | 'field_staff';
   permissions: {
     can_approve?: boolean;
     can_sort?: boolean;
@@ -82,6 +82,25 @@ export function requireSuperAdmin(req: any, res: any, next: any) {
     return res.status(403).json({ error: 'Super admin privileges required.' });
   }
   
+  next();
+}
+
+/** Allows field_staff OR super_admin. Blocks sub_admin. */
+export function requireFieldOrSuperAdmin(req: any, res: any, next: any) {
+  if (!req.admin) {
+    return res.status(401).json({ error: 'Admin not authenticated.' });
+  }
+  if (req.admin.role !== 'super_admin' && req.admin.role !== 'field_staff') {
+    return res.status(403).json({ error: 'Field staff or super admin access required.' });
+  }
+  next();
+}
+
+/** Blocks field_staff from accessing super admin routes. */
+export function blockFieldStaff(req: any, res: any, next: any) {
+  if (req.admin?.role === 'field_staff') {
+    return res.status(403).json({ error: 'Field staff cannot access this endpoint.' });
+  }
   next();
 }
 

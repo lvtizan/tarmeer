@@ -13,12 +13,13 @@ interface AdminContextType {
   admin: AdminUser | null;
   isLoading: boolean;
   isInstalled: boolean | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ admin: { role: string } }>;
   logout: () => void;
   install: (email: string, password: string, fullName: string) => Promise<void>;
   checkInstallation: () => Promise<void>;
   hasPermission: (permission: 'can_approve' | 'can_sort' | 'can_view_stats') => boolean;
   isSuperAdmin: boolean;
+  isFieldStaff: boolean;
 }
 
 const AdminContext = createContext<AdminContextType | null>(null);
@@ -82,6 +83,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       role: result.admin.role as AdminUser['role'],
       permissions: result.admin.permissions,
     });
+    return result;
   };
 
   const logout = () => {
@@ -111,6 +113,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   );
 
   const isSuperAdmin = admin?.role === 'super_admin';
+  const isFieldStaff = admin?.role === 'field_staff';
 
   return (
     <AdminContext.Provider
@@ -124,6 +127,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         checkInstallation,
         hasPermission,
         isSuperAdmin,
+        isFieldStaff,
       }}
     >
       {children}

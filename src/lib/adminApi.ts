@@ -13,7 +13,7 @@ export interface AdminUser {
   id: number;
   email: string;
   fullName: string;
-  role: 'super_admin' | 'sub_admin';
+  role: 'super_admin' | 'sub_admin' | 'field_staff';
   permissions: {
     can_approve?: boolean;
     can_sort?: boolean;
@@ -841,6 +841,58 @@ class AdminApiClient {
   async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }>; company_cities?: Array<{ city: string; count: number }>; inquiry_cities?: Array<{ city: string; count: number }>; visitor_cities?: Array<{ city: string; count: number }>; company_type_cities?: Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }> }> {
     return this.request('/stats/registration-sources');
   }
+
+  // Field interviews (admin view)
+  async getInterviews() {
+    return this.request('/admin/interviews');
+  }
+  async getInterview(id: number) {
+    return this.request(`/admin/interviews/${id}`);
+  }
+  async updateInterview(id: number, data: Record<string, any>) {
+    return this.request(`/admin/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  // Field staff management
+  async getStaff() {
+    return this.request('/admin/staff');
+  }
+  async createStaff(data: { email: string; password: string; fullName: string }) {
+    return this.request('/admin/staff', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async toggleStaff(id: number, is_active: boolean) {
+    return this.request(`/admin/staff/${id}`, { method: 'PATCH', body: JSON.stringify({ is_active }) });
+  }
 }
 
 export const adminApi = new AdminApiClient();
+
+const FIELD_API_BASE = '/api/field';
+
+async function fieldRequest(path: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('admin_token');
+  const res = await fetch(`${FIELD_API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).error || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export const fieldApi = {
+  createDraft: () => fieldRequest('/interviews', { method: 'POST' }),
+  getDraft: () => fieldRequest('/interviews/draft'),
+  saveDraft: (id: number, data: Record<string, any>) =>
+    fieldRequest(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  submit: (id: number) =>
+    fieldRequest(`/interviews/${id}/submit`, { method: 'POST' }),
+  searchCompanies: (q: string) =>
+    fieldRequest(`/companies/search?q=${encodeURIComponent(q)}`),
+};
