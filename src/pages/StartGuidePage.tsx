@@ -161,30 +161,30 @@ function Step3Image({ images }: { images: string[] }) {
 // ── Step 4: Upload interface — 3 project thumbnails ──────────────────────────
 function Step4Image({ images }: { images: string[] }) {
   return (
-    <div className="h-full bg-[#faf9f7] overflow-hidden flex items-start justify-center pt-3">
-      <div style={{ transform: 'scale(0.68)', transformOrigin: 'top center', width: '100%' }}>
+    <div className="h-full bg-[#faf9f7] overflow-hidden flex items-start justify-center pt-4">
+      <div style={{ transform: 'scale(0.76)', transformOrigin: 'top center', width: '100%' }}>
         <div className="mx-4">
           {/* Upload drop zone */}
-          <div className="border-2 border-dashed border-[#b8864a]/50 rounded-2xl bg-[#fdf8f2] p-4 mb-3 text-center">
-            <div className="w-11 h-11 rounded-xl bg-[#f5ede0] flex items-center justify-center mx-auto mb-2">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b8864a" strokeWidth="2" strokeLinecap="round">
+          <div className="border-2 border-dashed border-[#b8864a]/50 rounded-2xl bg-[#fdf8f2] p-5 mb-4 text-center">
+            <div className="w-12 h-12 rounded-xl bg-[#f5ede0] flex items-center justify-center mx-auto mb-2.5">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8864a" strokeWidth="2" strokeLinecap="round">
                 <rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
               </svg>
             </div>
-            <div className="text-[14px] font-semibold text-[#1a1410] mb-1">Drop photos here or tap to upload</div>
-            <div className="text-[12px] text-stone-400">JPG or PNG · 3–8 photos per project</div>
+            <div className="text-[15px] font-semibold text-[#1a1410] mb-1">Drop photos here or tap to upload</div>
+            <div className="text-[13px] text-stone-400">JPG or PNG · 3–8 photos per project</div>
           </div>
 
           {/* 3 project thumbnails: 1 landscape (2fr) + 2 squares (1fr each) */}
-          <div className="grid gap-2 mb-3" style={{ gridTemplateColumns: '2fr 1fr 1fr', height: '80px' }}>
+          <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: '2fr 1fr 1fr', height: '96px' }}>
             {/* Project 1 — landscape cover */}
             <div className="rounded-xl overflow-hidden relative">
               {images[0]
                 ? <img src={images[0]} alt="" className="w-full h-full object-cover" loading="lazy" />
                 : <div className="w-full h-full" style={{ background: FALLBACK_GRADS[0] }} />}
-              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#b8864a] flex items-center justify-center">
-                <span className="text-[7px] text-white font-bold">✓</span>
+              <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#b8864a] flex items-center justify-center">
+                <span className="text-[9px] text-white font-bold">✓</span>
               </div>
             </div>
             {/* Project 2 — square */}
@@ -192,8 +192,8 @@ function Step4Image({ images }: { images: string[] }) {
               {images[1]
                 ? <img src={images[1]} alt="" className="w-full h-full object-cover" loading="lazy" />
                 : <div className="w-full h-full" style={{ background: FALLBACK_GRADS[1] }} />}
-              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#b8864a] flex items-center justify-center">
-                <span className="text-[7px] text-white font-bold">✓</span>
+              <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#b8864a] flex items-center justify-center">
+                <span className="text-[9px] text-white font-bold">✓</span>
               </div>
             </div>
             {/* Project 3 — square */}
@@ -201,8 +201,8 @@ function Step4Image({ images }: { images: string[] }) {
               {images[2]
                 ? <img src={images[2]} alt="" className="w-full h-full object-cover" loading="lazy" />
                 : <div className="w-full h-full" style={{ background: FALLBACK_GRADS[2] }} />}
-              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#b8864a] flex items-center justify-center">
-                <span className="text-[7px] text-white font-bold">✓</span>
+              <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#b8864a] flex items-center justify-center">
+                <span className="text-[9px] text-white font-bold">✓</span>
               </div>
             </div>
           </div>
@@ -212,18 +212,13 @@ function Step4Image({ images }: { images: string[] }) {
             { label: 'Project Title', placeholder: 'Modern Villa Renovation, Dubai' },
             { label: 'Location', placeholder: 'Dubai Marina' },
           ].map(f => (
-            <div key={f.label} className="mb-2.5">
-              <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">{f.label}</div>
-              <div className="h-10 rounded-xl bg-white border border-stone-200 flex items-center px-3">
-                <span className="text-[12px] text-stone-300">{f.placeholder}</span>
+            <div key={f.label} className="mb-3">
+              <div className="text-[12px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">{f.label}</div>
+              <div className="h-11 rounded-xl bg-white border border-stone-200 flex items-center px-3">
+                <span className="text-[13px] text-stone-300">{f.placeholder}</span>
               </div>
             </div>
           ))}
-
-          <div className="mt-3 h-11 rounded-xl flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #b8864a 0%, #d4a96a 100%)' }}>
-            <span className="text-white font-semibold text-[14px]">Upload Project</span>
-          </div>
         </div>
       </div>
     </div>
