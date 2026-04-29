@@ -38,7 +38,7 @@ export async function listPublicSuppliers(req: any, res: any) {
        FROM supplier_profiles sp
        JOIN supplier_users su ON su.id = sp.supplier_user_id
        ${where}
-       ORDER BY sp.created_at DESC
+       ORDER BY sp.sort_order ASC, sp.created_at DESC
        LIMIT ${limit} OFFSET ${offset}`,
       params
     );
