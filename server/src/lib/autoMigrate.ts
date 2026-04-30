@@ -253,6 +253,18 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       INDEX idx_company_ref (company_ref_id)
     )`,
   },
+  {
+    name: 'rejection_templates',
+    sql: `CREATE TABLE IF NOT EXISTS rejection_templates (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      admin_id INT NOT NULL,
+      text TEXT NOT NULL,
+      use_count INT NOT NULL DEFAULT 1,
+      last_used_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_admin_text (admin_id, text(500))
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
