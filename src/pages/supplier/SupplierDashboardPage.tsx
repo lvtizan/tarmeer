@@ -1,92 +1,67 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Save } from 'lucide-react';
+import { CheckCircle2, ExternalLink, AlertTriangle, Clock, Package, Layers, FolderOpen, User, FileText } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 function getToken() { return localStorage.getItem('supplier_token'); }
-function authHeaders(extra?: Record<string, string>) {
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...extra };
+function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
+
+interface Profile {
+  company_name: string;
+  description: string;
+  categories: string[] | string | null;
+  license_url: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes: string | null;
+  slug: string;
 }
 
-const CATEGORY_OPTIONS = [
-  'furniture', 'stone', 'lighting', 'plants', 'flooring',
-  'kitchen', 'curtains', 'paint', 'hardware', 'other',
-];
-
-const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
-const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
+interface Step {
+  label: string;
+  hint: string;
+  icon: React.ElementType;
+  done: boolean;
+  to: string;
+  cta: string;
+}
 
 export default function SupplierDashboardPage() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [productCount, setProductCount] = useState(0);
+  const [projectCount, setProjectCount] = useState(0);
+  const [catalogCount, setCatalogCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
-
-  const [companyName, setCompanyName] = useState('');
-  const [description, setDescription] = useState('');
-  const [origin, setOrigin] = useState<'china' | 'dubai'>('china');
-  const [categories, setCategories] = useState<string[]>([]);
-  const [hasStore, setHasStore] = useState(false);
-  const [storeAddress, setStoreAddress] = useState('');
-  const [googleMapsUrl, setGoogleMapsUrl] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [website, setWebsite] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
-      .then(r => r.json())
-      .then(data => {
-        const p = data.profile;
-        if (!p) return;
-        setCompanyName(p.company_name || '');
-        setDescription(p.description || '');
-        setOrigin(p.origin || 'china');
-        const cats = typeof p.categories === 'string'
-          ? JSON.parse(p.categories || '[]') : (p.categories || []);
-        setCategories(cats);
-        setHasStore(!!p.has_physical_store);
-        setStoreAddress(p.store_address || '');
-        setGoogleMapsUrl(p.google_maps_url || '');
-        setContactPhone(p.contact_phone || '');
-        setWhatsapp(p.whatsapp || '');
-        setWebsite(p.website || '');
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const h = authHeaders() as any;
+
+    Promise.allSettled([
+      fetch(`${API_BASE}/suppliers/me/profile`, { headers: h }).then(r => r.json()),
+      fetch(`${API_BASE}/suppliers/me/products`, { headers: h }).then(r => r.json()),
+      fetch(`${API_BASE}/suppliers/me/projects`, { headers: h }).then(r => r.json()),
+      fetch(`${API_BASE}/suppliers/me/catalogs`, { headers: h }).then(r => r.json()),
+    ]).then(([profileRes, productsRes, projectsRes, catalogsRes]) => {
+      if (profileRes.status === 'fulfilled') {
+        const p = profileRes.value?.profile;
+        if (p) {
+          const cats = typeof p.categories === 'string'
+            ? (() => { try { return JSON.parse(p.categories); } catch { return []; } })()
+            : (p.categories || []);
+          setProfile({ ...p, categories: cats });
+        }
+      }
+      if (productsRes.status === 'fulfilled') {
+        setProductCount((productsRes.value?.products || []).length);
+      }
+      if (projectsRes.status === 'fulfilled') {
+        setProjectCount((projectsRes.value?.projects || []).length);
+      }
+      if (catalogsRes.status === 'fulfilled') {
+        setCatalogCount((catalogsRes.value?.catalogs || []).length);
+      }
+    }).finally(() => setLoading(false));
   }, []);
-
-  const handleSave = async () => {
-    setSaving(true);
-    setMsg('');
-    try {
-      const res = await fetch(`${API_BASE}/suppliers/me/profile`, {
-        method: 'POST',
-        headers: authHeaders() as any,
-        body: JSON.stringify({
-          company_name: companyName,
-          description,
-          origin,
-          categories,
-          has_physical_store: hasStore,
-          store_address: storeAddress || null,
-          google_maps_url: googleMapsUrl || null,
-          contact_phone: contactPhone || null,
-          whatsapp: whatsapp || null,
-          website: website || null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setMsg('Profile saved!');
-    } catch (err: any) {
-      setMsg(err.message || 'Failed to save.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleCategory = (c: string) =>
-    setCategories(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -94,176 +69,193 @@ export default function SupplierDashboardPage() {
     </div>
   );
 
+  const cats = Array.isArray(profile?.categories) ? profile!.categories : [];
+  const profileDone = !!(profile?.company_name && profile?.description && cats.length > 0);
+  const licenseDone = !!profile?.license_url;
+
+  const steps: Step[] = [
+    {
+      label: '公司介绍',
+      hint: 'Company name, description, origin and categories',
+      icon: User,
+      done: profileDone,
+      to: '/supplier/profile',
+      cta: profileDone ? 'Edit Profile' : 'Fill Profile',
+    },
+    {
+      label: '营业执照',
+      hint: 'Upload your trade license document',
+      icon: FileText,
+      done: licenseDone,
+      to: '/supplier/profile',
+      cta: licenseDone ? 'View License' : 'Upload License',
+    },
+    {
+      label: '产品目录',
+      hint: 'Upload PDF catalogs and brochures',
+      icon: FolderOpen,
+      done: catalogCount > 0,
+      to: '/supplier/catalogs',
+      cta: catalogCount > 0 ? `${catalogCount} uploaded` : 'Add Catalog',
+    },
+    {
+      label: '产品图',
+      hint: 'Add product photos with descriptions',
+      icon: Package,
+      done: productCount > 0,
+      to: '/supplier/products',
+      cta: productCount > 0 ? `${productCount} products` : 'Add Products',
+    },
+    {
+      label: '项目图',
+      hint: 'Showcase your project case studies',
+      icon: Layers,
+      done: projectCount > 0,
+      to: '/supplier/projects',
+      cta: projectCount > 0 ? `${projectCount} projects` : 'Add Projects',
+    },
+  ];
+
+  const completedSteps = steps.filter(s => s.done).length;
+  const allDone = completedSteps === steps.length;
+  const status = profile?.status || 'pending';
+
   return (
     <>
-      <Helmet><title>Profile — Supplier Dashboard | Tarmeer</title></Helmet>
+      <Helmet><title>Dashboard — Supplier Portal | Tarmeer</title></Helmet>
 
-      <div className="max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-xl font-bold text-[#2c2c2c]">Company Profile</h1>
-          <p className="text-sm text-stone-500 mt-1">Fill in your company details. Submitted for admin review after save.</p>
-        </div>
+      <div className="max-w-[860px] space-y-6">
 
-        {/* Basic info */}
-        <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
-          <h2 className="text-[15px] font-semibold text-[#2c2c2c]">Basic Information</h2>
-
-          <div>
-            <label className={labelCls}>Company Name *</label>
-            <input
-              type="text"
-              value={companyName}
-              onChange={e => setCompanyName(e.target.value)}
-              placeholder="Your company name"
-              className={inputCls}
-            />
-          </div>
-
-          <div>
-            <label className={labelCls}>Description</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows={4}
-              placeholder="What does your company specialise in?"
-              className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none"
-            />
-          </div>
-
-          <div>
-            <label className={labelCls}>Origin</label>
-            <div className="flex gap-2">
-              {(['china', 'dubai'] as const).map(o => (
-                <button
-                  key={o}
-                  type="button"
-                  onClick={() => setOrigin(o)}
-                  className={`flex-1 h-[50px] rounded-2xl text-[15px] font-medium transition ${
-                    origin === o
-                      ? 'bg-[#b8864a] text-white'
-                      : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}
-                >
-                  {o === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className={labelCls}>Categories</label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => toggleCategory(c)}
-                  className={`px-3 py-1.5 rounded-2xl text-sm font-medium transition ${
-                    categories.includes(c)
-                      ? 'bg-[#b8864a] text-white'
-                      : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Contact */}
-        <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
-          <h2 className="text-[15px] font-semibold text-[#2c2c2c]">Contact</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Status banner */}
+        {status === 'pending' && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-start gap-3">
+            <Clock className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
             <div>
-              <label className={labelCls}>Contact Phone</label>
-              <input
-                type="tel"
-                value={contactPhone}
-                onChange={e => setContactPhone(e.target.value)}
-                placeholder="+971..."
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>WhatsApp</label>
-              <input
-                type="tel"
-                value={whatsapp}
-                onChange={e => setWhatsapp(e.target.value)}
-                placeholder="+971..."
-                className={inputCls}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className={labelCls}>Website</label>
-              <input
-                type="url"
-                value={website}
-                onChange={e => setWebsite(e.target.value)}
-                placeholder="https://..."
-                className={inputCls}
-              />
+              <p className="text-sm font-semibold text-amber-800">Under Review</p>
+              <p className="text-sm text-amber-700 mt-0.5">
+                Your application is being reviewed by our team. Complete the steps below while you wait — approval typically takes 1–2 business days.
+              </p>
             </div>
           </div>
-        </div>
-
-        {/* Physical store */}
-        <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="hasStore"
-              checked={hasStore}
-              onChange={e => setHasStore(e.target.checked)}
-              className="w-4 h-4 rounded accent-[#b8864a]"
-            />
-            <label htmlFor="hasStore" className="text-[15px] text-[#2c2c2c] cursor-pointer">
-              We have a physical showroom / store
-            </label>
-          </div>
-          {hasStore && (
-            <div className="space-y-4">
-              <div>
-                <label className={labelCls}>Store Address</label>
-                <input
-                  type="text"
-                  value={storeAddress}
-                  onChange={e => setStoreAddress(e.target.value)}
-                  placeholder="Full address"
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Google Maps URL</label>
-                <input
-                  type="url"
-                  value={googleMapsUrl}
-                  onChange={e => setGoogleMapsUrl(e.target.value)}
-                  placeholder="https://maps.google.com/..."
-                  className={inputCls}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {msg && (
-          <p className={`text-sm px-4 py-3 rounded-2xl ${
-            msg.includes('saved') || msg.includes('!') && !msg.includes('Failed')
-              ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-red-50 text-red-600'
-          }`}>{msg}</p>
         )}
 
-        <button
-          onClick={handleSave}
-          disabled={saving || !companyName.trim()}
-          className="btn-primary flex items-center gap-2 disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" />
-          {saving ? 'Saving...' : 'Save Profile'}
-        </button>
+        {status === 'rejected' && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-800">Application Not Approved</p>
+              {profile?.admin_notes && (
+                <p className="text-sm text-red-700 mt-0.5">{profile.admin_notes}</p>
+              )}
+              <p className="text-sm text-red-600 mt-1">Please update your profile and contact support if needed.</p>
+            </div>
+          </div>
+        )}
+
+        {status === 'approved' && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-800">You're Live!</p>
+                <p className="text-sm text-emerald-700 mt-0.5">Your showroom is visible to renovation companies and interior designers.</p>
+              </div>
+            </div>
+            {profile?.slug && (
+              <a
+                href={`/materials/suppliers/${profile.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:underline shrink-0"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View Page
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Header */}
+        <div>
+          <h1 className="text-xl font-bold text-[#2c2c2c]">
+            {profile?.company_name ? `Welcome, ${profile.company_name}` : 'Set Up Your Showroom'}
+          </h1>
+          <p className="text-sm text-stone-500 mt-1">
+            {allDone
+              ? 'All steps completed. Your profile is ready for review.'
+              : `${completedSteps} of ${steps.length} steps completed`}
+          </p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#b8864a] rounded-full transition-all duration-500"
+            style={{ width: `${(completedSteps / steps.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Onboarding steps */}
+        <div className="space-y-3">
+          {steps.map((step, i) => (
+            <div
+              key={step.label}
+              className={`bg-white rounded-2xl border px-5 py-4 flex items-center gap-4 transition ${
+                step.done ? 'border-stone-200' : 'border-stone-200 hover:border-[#b8864a]/30'
+              }`}
+            >
+              {/* Step number / check */}
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                step.done ? 'bg-emerald-100' : 'bg-stone-100'
+              }`}>
+                {step.done
+                  ? <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  : <span className="text-sm font-bold text-stone-400">{i + 1}</span>
+                }
+              </div>
+
+              {/* Icon + text */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <step.icon className="w-4 h-4 text-stone-400 shrink-0" />
+                  <span className={`text-[15px] font-semibold ${step.done ? 'text-stone-400 line-through' : 'text-[#1c1917]'}`}>
+                    {step.label}
+                  </span>
+                </div>
+                <p className="text-sm text-stone-400 mt-0.5 hidden sm:block">{step.hint}</p>
+              </div>
+
+              {/* CTA */}
+              <Link
+                to={step.to}
+                className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  step.done
+                    ? 'text-stone-400 hover:text-stone-600'
+                    : 'bg-[#b8864a] text-white hover:bg-[#a3780a]'
+                }`}
+              >
+                {step.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Products', count: productCount, icon: Package, to: '/supplier/products' },
+            { label: 'Projects', count: projectCount, icon: Layers, to: '/supplier/projects' },
+            { label: 'Catalogs', count: catalogCount, icon: FolderOpen, to: '/supplier/catalogs' },
+          ].map(({ label, count, icon: Icon, to }) => (
+            <Link key={label} to={to}
+              className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 flex flex-col items-center gap-1 hover:border-[#b8864a]/40 transition">
+              <Icon className="w-5 h-5 text-stone-400 mb-1" />
+              <span className="text-2xl font-bold text-[#1c1917]">{count}</span>
+              <span className="text-xs text-stone-400">{label}</span>
+            </Link>
+          ))}
+        </div>
+
       </div>
     </>
   );

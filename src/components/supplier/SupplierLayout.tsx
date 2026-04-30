@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Package, Layers, FolderOpen, LogOut, ExternalLink, User } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, FolderOpen, LogOut, ExternalLink, User } from 'lucide-react';
 import TarmeerLogo from '../TarmeerLogo';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
@@ -113,7 +113,11 @@ export default function SupplierLayout() {
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex items-center justify-around px-2 py-2">
         <NavLink to="/supplier/dashboard" end className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
-          <Building2 className="w-5 h-5" />
+          <LayoutDashboard className="w-5 h-5" />
+          Overview
+        </NavLink>
+        <NavLink to="/supplier/profile" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
+          <User className="w-5 h-5" />
           Profile
         </NavLink>
         <NavLink to="/supplier/products" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
