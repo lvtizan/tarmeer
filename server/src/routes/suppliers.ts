@@ -27,10 +27,12 @@ router.post('/leads', leadLimiter, leads.submitLead);
 // ── Authenticated supplier ──
 router.get('/me/profile', authenticateSupplier, profile.getMyProfile);
 router.post('/me/profile', authenticateSupplier, profile.upsertProfile);
+router.get('/me/products', authenticateSupplier, products.listMyProducts);
 router.post('/me/products', authenticateSupplier, products.addProduct);
 router.put('/me/products/:id', authenticateSupplier, products.updateProduct);
 router.delete('/me/products/:id', authenticateSupplier, products.deleteProduct);
 router.put('/me/products-reorder', authenticateSupplier, products.reorderProducts);
+router.get('/me/catalogs', authenticateSupplier, catalogs.listMyCatalogs);
 router.post('/me/catalogs', authenticateSupplier, catalogs.uploadCatalog);
 router.delete('/me/catalogs/:id', authenticateSupplier, catalogs.deleteCatalog);
 router.get('/me/projects', authenticateSupplier, projects.listMyProjects);

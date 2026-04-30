@@ -336,8 +336,8 @@ export default function AdminRegisteredCompanyDetailPage() {
 
           {/* ── Card 3: Details + Owner ── */}
           <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
-            <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">{t('Details', '详情')}</h2>
-            <div className="space-y-2.5 text-sm">
+            <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-4">{t('Details', '详情')}</h2>
+            <div className="space-y-3 text-sm">
               {company.contact_person && <InfoRow label={t('Contact', '联系人')} value={company.contact_person} />}
               {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
               {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
@@ -350,12 +350,14 @@ export default function AdminRegisteredCompanyDetailPage() {
                   <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
                 </div>
               )}
-              <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleDateString()} />
             </div>
-            <div className="mt-4 pt-3 border-t border-stone-100 space-y-2.5 text-sm">
-              <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide">{t('Owner Account', '所有者账户')}</h2>
-              <InfoRow label={t('Name', '姓名')} value={company.user_name} />
-              <InfoRow label={t('Email', '邮箱')} value={company.user_email} />
+            <div className="mt-4 pt-4 border-t border-stone-100 text-sm">
+              <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} />
+            </div>
+            <div className="mt-4 pt-4 border-t border-stone-100">
+              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">{t('Owner Account', '所有者账户')}</p>
+              <p className="text-sm font-medium text-stone-800">{company.user_name}</p>
+              <p className="mt-1 text-sm text-stone-500">{company.user_email}</p>
             </div>
           </div>
 
@@ -381,6 +383,7 @@ export default function AdminRegisteredCompanyDetailPage() {
             </div>
           )}
         </div>
+
 
       {/* Reject modal */}
       {showRejectModal && (

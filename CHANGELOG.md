@@ -4,6 +4,23 @@
 
 ---
 
+
+## [5.0.99] - 2026-04-30
+
+### Added
+- **Supplier Portal** — Full supplier onboarding flow: email verification, profile setup, product/catalogue uploads, and approval dashboard
+- **For Suppliers Page** — Redesigned landing page with AI-generated hero image, updated copy positioning Tarmeer as UAE's renovation supply chain platform
+- **Supplier Dashboard** — Onboarding progress tracker with 5 completion steps, live product/project/catalogue counts, and approval status banner
+- **Supplier Constants** — Centralised `ORIGIN_LABEL` and `ORIGIN_BADGE_CLASS` for consistent China/Dubai badge display across showrooms and detail pages
+- **Supplier Dashboard Harness** — 21-case automated test suite covering auth guards, empty lists, pending-status access, and count validation
+- **Field Staff & Interviews** — Admin-side field visit records and staff management (super_admin only)
+- **Types & Services Enums** — Admin UI to manage company type slugs and service names; seed data included in auto-migrate
+
+### Changed
+- **For Suppliers Page** — Replaced "showroom/展厅" messaging with "listing/products/supplier"; feature cards rewritten to reflect supply chain integration model; duplicate footer removed
+- **Showrooms Page** — Origin badges use centralised `supplierConstants` for consistent English labels
+- **Admin Layout** — Added Types & Services nav item; merged imports from both branches
+
 ## [待发布] - 2025-03-28
 
 ### 新增功能

@@ -101,7 +101,7 @@ export async function upsertProfile(req: any, res: any) {
   try {
     const userId = req.supplierUser.id;
     const {
-      company_name, description, origin, categories, cover_image_url,
+      company_name, description, origin, categories, cover_image_url, license_url,
       has_physical_store, store_address, store_lat, store_lng, google_maps_url,
       contact_phone, whatsapp, website,
     } = req.body;
@@ -119,12 +119,12 @@ export async function upsertProfile(req: any, res: any) {
     if (existingProfile) {
       await pool.execute(
         `UPDATE supplier_profiles SET
-          company_name=?, description=?, origin=?, categories=?, cover_image_url=?,
+          company_name=?, description=?, origin=?, categories=?, cover_image_url=?, license_url=?,
           has_physical_store=?, store_address=?, store_lat=?, store_lng=?, google_maps_url=?,
           contact_phone=?, whatsapp=?, website=?
          WHERE id=?`,
         [
-          company_name, description || '', origin || 'china', cats, cover_image_url || null,
+          company_name, description || '', origin || 'china', cats, cover_image_url || null, license_url || null,
           has_physical_store ? 1 : 0, store_address || null, store_lat || null, store_lng || null, google_maps_url || null,
           contact_phone || null, whatsapp || null, website || null,
           existingProfile.id,
@@ -140,12 +140,12 @@ export async function upsertProfile(req: any, res: any) {
 
       await pool.execute(
         `INSERT INTO supplier_profiles
-          (supplier_user_id, company_name, slug, description, origin, categories, cover_image_url,
+          (supplier_user_id, company_name, slug, description, origin, categories, cover_image_url, license_url,
            has_physical_store, store_address, store_lat, store_lng, google_maps_url,
            contact_phone, whatsapp, website)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          userId, company_name, slug, description || '', origin || 'china', cats, cover_image_url || null,
+          userId, company_name, slug, description || '', origin || 'china', cats, cover_image_url || null, license_url || null,
           has_physical_store ? 1 : 0, store_address || null, store_lat || null, store_lng || null, google_maps_url || null,
           contact_phone || null, whatsapp || null, website || null,
         ]

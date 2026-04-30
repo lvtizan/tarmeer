@@ -29,6 +29,21 @@ export async function listProducts(req: any, res: any) {
   }
 }
 
+export async function listMyProducts(req: any, res: any) {
+  try {
+    const profileId = await getProfileId(req.supplierUser.id);
+    if (!profileId) return res.json({ products: [] });
+    const [products] = await pool.execute(
+      'SELECT * FROM supplier_products WHERE supplier_profile_id = ? ORDER BY sort_order, id',
+      [profileId]
+    );
+    res.json({ products });
+  } catch (error) {
+    console.error('List my products error:', error);
+    res.status(500).json({ error: 'Failed to load products.' });
+  }
+}
+
 export async function addProduct(req: any, res: any) {
   try {
     const profileId = await getProfileId(req.supplierUser.id);

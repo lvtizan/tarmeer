@@ -43,6 +43,7 @@ const SupplierAuthPage = lazyRetry(() => import('./pages/supplier/SupplierAuthPa
 const ForSuppliersPage = lazyRetry(() => import('./pages/ForSuppliersPage'));
 const SupplierLayout = lazyRetry(() => import('./components/supplier/SupplierLayout'));
 const SupplierDashboardPage = lazyRetry(() => import('./pages/supplier/SupplierDashboardPage'));
+const SupplierProfilePage = lazyRetry(() => import('./pages/supplier/SupplierProfilePage'));
 const SupplierProductsPage = lazyRetry(() => import('./pages/supplier/SupplierProductsPage'));
 const SupplierProjectsPage = lazyRetry(() => import('./pages/supplier/SupplierProjectsPage'));
 const SupplierCatalogsPage = lazyRetry(() => import('./pages/supplier/SupplierCatalogsPage'));
@@ -296,6 +297,7 @@ function App() {
                 <Route path="/supplier" element={<SupplierLayout />}>
                   <Route index element={<Navigate to="dashboard" replace />} />
                   <Route path="dashboard" element={<SupplierDashboardPage />} />
+                  <Route path="profile" element={<SupplierProfilePage />} />
                   <Route path="products" element={<SupplierProductsPage />} />
                   <Route path="projects" element={<SupplierProjectsPage />} />
                   <Route path="catalogs" element={<SupplierCatalogsPage />} />

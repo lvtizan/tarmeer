@@ -29,6 +29,21 @@ export async function listCatalogs(req: any, res: any) {
   }
 }
 
+export async function listMyCatalogs(req: any, res: any) {
+  try {
+    const profileId = await getProfileId(req.supplierUser.id);
+    if (!profileId) return res.json({ catalogs: [] });
+    const [catalogs] = await pool.execute(
+      'SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC',
+      [profileId]
+    );
+    res.json({ catalogs });
+  } catch (error) {
+    console.error('List my catalogs error:', error);
+    res.status(500).json({ error: 'Failed to load catalogs.' });
+  }
+}
+
 export async function uploadCatalog(req: any, res: any) {
   try {
     const profileId = await getProfileId(req.supplierUser.id);
