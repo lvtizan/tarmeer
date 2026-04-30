@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -19,7 +19,9 @@ import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
 import SmartImage from '../components/ui/SmartImage';
 
 export default function CompanyDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: _paramId } = useParams<{ id?: string }>();
+  const _loc = useLocation();
+  const id = _paramId ?? (_loc.pathname.startsWith('/@') ? _loc.pathname.slice(2) : undefined);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const previewMode = searchParams.get('preview') === '1';

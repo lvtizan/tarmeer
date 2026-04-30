@@ -1,5 +1,5 @@
 import { Suspense, lazy, type ReactNode, Component, type ErrorInfo } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AdminProvider } from './contexts/AdminContext';
 import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
@@ -180,6 +180,15 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+
+// React Router v6 does not support partial dynamic segments like /@:id.
+// This fallback handles /@slug paths via useLocation.
+function AtSlugOrNotFound() {
+  const location = useLocation();
+  const m = location.pathname.match(/^\/@([^/?#]+)$/);
+  if (m) return <CompanyDetailPage />;
+  return <NotFoundPage />;
+}
 function App() {
   useMetaPixelPageView();
   return (
@@ -299,8 +308,8 @@ function App() {
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:companySlug/:projectSlug" element={<ProjectDetailPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />
-                <Route path="/@:id" element={<CompanyDetailPage />} />
-                <Route path="*" element={<NotFoundPage />} />
+                
+                <Route path="*" element={<AtSlugOrNotFound />} />
               </Routes>
             </Layout>
           } />
