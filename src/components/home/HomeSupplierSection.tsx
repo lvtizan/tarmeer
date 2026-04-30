@@ -27,7 +27,7 @@ export default function HomeSupplierSection() {
         setSuppliers(list.slice(0, 4));
       })
       .catch(() => {});
-    return () => { active = active && false; };
+    return () => { active = false; };
   }, []);
 
   if (suppliers.length === 0) return null;
@@ -57,7 +57,7 @@ export default function HomeSupplierSection() {
           {suppliers.map((s) => (
             <Link
               key={s.id}
-              to={`/materials/suppliers/${s.slug}`}
+              to={`/materials/${s.slug}`}
               className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_12px_32px_rgba(28,25,23,0.08)]"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
@@ -75,7 +75,7 @@ export default function HomeSupplierSection() {
                 )}
                 {s.origin === 'china' && (
                   <span className="absolute top-2.5 left-2.5 rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white/90 backdrop-blur-sm">
-                    Cross-border
+                    中国
                   </span>
                 )}
               </div>

@@ -228,6 +228,25 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       INDEX idx_created_at (created_at)
     )`,
   },
+  {
+    name: 'company_types',
+    sql: `CREATE TABLE IF NOT EXISTS company_types (
+      slug VARCHAR(50) NOT NULL PRIMARY KEY,
+      label VARCHAR(100) NOT NULL,
+      sort_order INT DEFAULT 0,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  {
+    name: 'company_services',
+    sql: `CREATE TABLE IF NOT EXISTS company_services (
+      name VARCHAR(100) NOT NULL PRIMARY KEY,
+      sort_order INT DEFAULT 0,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
 ];
 
 // 需要确保存在的字段
@@ -410,6 +429,71 @@ export async function runAutoMigrate(): Promise<void> {
           ('base_profile_score', 50, '基础资料填完得分'),
           ('per_project_score', 10, '每个项目得分'),
           ('signed_score', 500, '签约公司加分')`
+      );
+    } catch { /* table may not exist yet */ }
+
+    // 6. Seed company_types from hardcoded list
+    try {
+      await pool.execute(
+        `INSERT IGNORE INTO company_types (slug, label, sort_order) VALUES
+          ('design_studio',      'Design Studio',        1),
+          ('renovation_company', 'Renovation Company',   2),
+          ('general_contractor', 'General Contractor',   3),
+          ('fitout_contractor',  'Fit-Out Contractor',   4),
+          ('mep_contractor',     'MEP Contractor',       5),
+          ('maintenance_company','Maintenance Company',  6),
+          ('specialty_trade',    'Specialty Trade',      7),
+          ('landscaping',        'Landscaping',          8),
+          ('furnishing',         'Furnishing',           9),
+          ('glass_aluminium',    'Glass & Aluminium',   10),
+          ('waterproofing',      'Waterproofing',       11),
+          ('smart_home',         'Smart Home',          12),
+          ('fire_fighting',      'Fire Fighting',       13),
+          ('carpentry_joinery',  'Carpentry & Joinery', 14),
+          ('stone_marble',       'Stone & Marble',      15),
+          ('steel_fabrication',  'Steel Fabrication',   16),
+          ('cleaning_services',  'Cleaning Services',   17),
+          ('manpower_supply',    'Manpower Supply',     18),
+          ('swimming_pool',      'Swimming Pool',       19)`
+      );
+    } catch { /* table may not exist yet */ }
+
+    // 7. Seed company_services from hardcoded list
+    try {
+      await pool.execute(
+        `INSERT IGNORE INTO company_services (name, sort_order) VALUES
+          ('Interior Design',          1),
+          ('Architecture',             2),
+          ('Fit-Out',                  3),
+          ('Renovation',               4),
+          ('Construction',             5),
+          ('Landscape',                6),
+          ('Furniture',                7),
+          ('Joinery',                  8),
+          ('MEP',                      9),
+          ('Project Management',      10),
+          ('Design & Build',          11),
+          ('Turnkey Solutions',        12),
+          ('Maintenance',             13),
+          ('Glass & Aluminium',       14),
+          ('Painting & Finishing',    15),
+          ('Flooring & Tiling',       16),
+          ('Demolition',              17),
+          ('Steel & Fabrication',     18),
+          ('Curtains & Blinds',       19),
+          ('Cleaning Services',       20),
+          ('Pools',                   21),
+          ('HVAC & Ducting',          22),
+          ('Fire Fighting',           23),
+          ('Smart Home & Automation', 24),
+          ('Waterproofing',           25),
+          ('Solar Systems',           26),
+          ('Epoxy & PU Flooring',     27),
+          ('Scaffolding',             28),
+          ('Lighting Installation',   29),
+          ('Stone & Marble Fixing',   30),
+          ('Gypsum & Partitions',     31),
+          ('Deep Cleaning',           32)`
       );
     } catch { /* table may not exist yet */ }
 

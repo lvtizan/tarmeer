@@ -1,20 +1,4 @@
-const VALID_COMPANY_TYPES = [
-  'design_studio', 'renovation_company', 'general_contractor',
-  'mep_contractor', 'maintenance_company', 'specialty_trade', 'landscaping', 'furnishing',
-  'fitout_contractor', 'glass_aluminium', 'waterproofing', 'smart_home', 'fire_fighting',
-  'carpentry_joinery', 'stone_marble', 'steel_fabrication', 'cleaning_services',
-  'manpower_supply', 'swimming_pool',
-];
-
-const VALID_SERVICES = [
-  'Interior Design', 'Architecture', 'Fit-Out', 'Renovation', 'Construction', 'Landscape',
-  'Furniture', 'Joinery', 'MEP', 'Project Management', 'Design & Build', 'Turnkey Solutions', 'Maintenance',
-  'Glass & Aluminium', 'Painting & Finishing', 'Flooring & Tiling', 'Demolition',
-  'Steel & Fabrication', 'Curtains & Blinds', 'Cleaning Services', 'Pools',
-  'HVAC & Ducting', 'Fire Fighting', 'Smart Home & Automation', 'Waterproofing',
-  'Solar Systems', 'Epoxy & PU Flooring', 'Scaffolding', 'Lighting Installation',
-  'Stone & Marble Fixing', 'Gypsum & Partitions', 'Deep Cleaning',
-];
+import { getValidTypes, getValidServices } from './enumCache';
 
 const VALID_SPECIALTIES = [
   'Residential', 'Villa', 'Commercial', 'Hospitality', 'Retail', 'Office',
@@ -87,16 +71,18 @@ export function normalizeCompanyProfilePayload(body: any): CompanyProfilePayload
   };
 }
 
-export function validateCompanyProfilePayload(payload: CompanyProfilePayload) {
+export async function validateCompanyProfilePayload(payload: CompanyProfilePayload): Promise<string | null> {
   if (!payload.company_name) {
     return 'Company name is required to save your profile.';
   }
 
-  if (!VALID_COMPANY_TYPES.includes(payload.company_type)) {
-    return `Company type must be one of: ${VALID_COMPANY_TYPES.join(', ')}`;
+  const validTypes = await getValidTypes();
+  if (!validTypes.includes(payload.company_type)) {
+    return `Company type must be one of: ${validTypes.join(', ')}`;
   }
 
-  const invalidServices = payload.services.filter((service) => !VALID_SERVICES.includes(service));
+  const validServices = await getValidServices();
+  const invalidServices = payload.services.filter((service) => !validServices.includes(service));
   if (invalidServices.length > 0) {
     return `Invalid services: ${invalidServices.join(', ')}`;
   }

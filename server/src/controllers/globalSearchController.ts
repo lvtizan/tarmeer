@@ -25,7 +25,7 @@ export async function globalSearch(req: any, res: any) {
   const like = `%${q}%`;
 
   try {
-    const [hlRows, clRows, userRows, cpRows, ucRows, spRows] = await Promise.all([
+    const settled = await Promise.allSettled([
       // Homeowner leads
       pool.execute(
         `SELECT di.id, di.name, di.phone, di.city, di.source_company_name, di.crm_sync_status, di.crm_action, di.created_at
@@ -86,6 +86,8 @@ export async function globalSearch(req: any, res: any) {
         [like, like]
       ),
     ]);
+    const pick = (i: number) => settled[i].status === 'fulfilled' ? (settled[i] as any).value : [[], []];
+    const [hlRows, clRows, userRows, cpRows, ucRows, spRows] = settled.map((_, i) => pick(i));
 
     const homeownerLeads = (hlRows as any[][])[0].map((r: any) => ({
       id: r.id,

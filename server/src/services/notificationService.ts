@@ -155,7 +155,7 @@ export async function notifyCompanyRegistration(company: CompanyData) {
     design_studio: 'Design Studio', renovation_company: 'Renovation & Fit-out',
     general_contractor: 'General Contractor', mep_contractor: 'MEP Contractor',
     maintenance_company: 'Maintenance Company', specialty_trade: 'Specialty Trade',
-    landscaping: 'Landscaping & Pools', furnishing: 'Furnishing',
+    landscaping: 'Landscaping', swimming_pool: 'Swimming Pool', furnishing: 'Furnishing',
   };
   const typeLabel = typeLabels[company.companyType] || company.companyType;
   const sourceLabel = company.signupSource ? (SOURCE_LABELS[company.signupSource] || company.signupSource) : '未知';

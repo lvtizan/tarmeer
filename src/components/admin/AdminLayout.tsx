@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package, Tags } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -64,6 +64,11 @@ const navItems = [
 ];
 
 const adminItems = [
+  {
+    to: '/admin/enums', labelEn: 'Types & Services', labelZh: '类型与服务', icon: Tags,
+    infoEn: 'Manage company type slugs and service names used in registration and filtering.',
+    infoZh: '管理公司类型和服务分类，用于注册表单和筛选器。',
+  },
   {
     to: '/admin/admins', labelEn: 'Admin Users', labelZh: '管理员', icon: UserCog, superAdminOnly: true,
     infoEn: 'Manage administrator accounts, permissions, and privileged access boundaries.',

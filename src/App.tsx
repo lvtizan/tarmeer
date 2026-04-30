@@ -65,6 +65,7 @@ const BlogPage = lazyRetry(() => import('./pages/BlogPage'));
 const BlogDetailPage = lazyRetry(() => import('./pages/BlogDetailPage'));
 const ForCompaniesPage = lazyRetry(() => import('./pages/ForCompaniesPage'));
 const ForHomeownersPage = lazyRetry(() => import('./pages/ForHomeownersPage'));
+const StartGuidePage = lazyRetry(() => import('./pages/StartGuidePage'));
 const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage'));
 
 // Onboarding
@@ -109,6 +110,7 @@ const AdminActivityLogPage = lazyRetry(() => import('./pages/admin/AdminActivity
 const AdminSuppliersPage = lazyRetry(() => import('./pages/admin/AdminSuppliersPage'));
 const AdminSupplierDetailPage = lazyRetry(() => import('./pages/admin/AdminSupplierDetailPage'));
 const AdminProjectDetailPage = lazyRetry(() => import('./pages/admin/AdminProjectDetailPage'));
+const AdminEnumsPage = lazyRetry(() => import('./pages/admin/AdminEnumsPage'));
 
 // Silently auto-reloads when lazy-loaded chunks fail (stale cache after deploy).
 // Loop guard: max 2 reloads per 60s window to avoid infinite refresh.
@@ -198,6 +200,7 @@ function App() {
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />
             <Route path="company-import" element={<AdminCompanyImportPage />} />
             <Route path="help" element={<AdminHelpPage />} />
+            <Route path="enums" element={<AdminEnumsPage />} />
             <Route path="suppliers" element={<AdminSuppliersPage />} />
             <Route path="suppliers/:id" element={<AdminSupplierDetailPage />} />
           </Route>
@@ -240,6 +243,7 @@ function App() {
           {/* ====== Independent landing pages ====== */}
           <Route path="/for-companies" element={<ForCompaniesPage />} />
           <Route path="/for-homeowners" element={<ForHomeownersPage />} />
+          <Route path="/start" element={<StartGuidePage />} />
           <Route path="/join" element={<Navigate to="/for-companies" replace />} />
 
           {/* ====== Auth ====== */}

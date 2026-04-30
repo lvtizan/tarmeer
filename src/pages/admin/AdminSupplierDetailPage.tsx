@@ -6,7 +6,7 @@ import { showToast } from '../../components/ui/Toast';
 import SmartImage from '../../components/ui/SmartImage';
 import {
   ArrowLeft, Trash2, ExternalLink, Pencil,
-  Package, Layers, FolderOpen, FileText, Download, MapPin,
+  Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon, Plus, X,
 } from 'lucide-react';
 
 // ── InfoRow (same pattern as AdminRegisteredCompanyDetailPage) ───────────────
@@ -41,7 +41,9 @@ export default function AdminSupplierDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({ image_url: '', title: '', category: '' });
+  const [addingProduct, setAddingProduct] = useState(false);
   useEffect(() => {
     if (!id) return;
     adminApi.request(`/suppliers/${id}`)
@@ -88,6 +90,57 @@ export default function AdminSupplierDetailPage() {
       setShowDeleteModal(false);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const setCover = async (imgUrl: string) => {
+    try {
+      await adminApi.request(`/suppliers/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ cover_image_url: imgUrl }),
+      });
+      setSupplier((s: any) => ({ ...s, cover_image_url: imgUrl }));
+      showToast(t('Cover updated', '封面已更新'), 'success');
+    } catch {
+      showToast(t('Failed', '设置失败'), 'error');
+    }
+  };
+
+  const handleDeleteProduct = async (productId: number) => {
+    if (!confirm(t('Delete this product image?', '确认删除这张产品图？'))) return;
+    try {
+      await adminApi.request(`/suppliers/${id}/products/${productId}`, { method: 'DELETE' });
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      showToast(t('Product deleted', '产品图已删除'), 'success');
+    } catch {
+      showToast(t('Failed to delete', '删除失败'), 'error');
+    }
+  };
+
+  const handleAddProduct = async () => {
+    if (!newProduct.image_url.trim()) {
+      showToast(t('Image URL is required', '请填写图片地址'), 'error');
+      return;
+    }
+    setAddingProduct(true);
+    try {
+      const data = await adminApi.request(`/suppliers/${id}/products`, {
+        method: 'POST',
+        body: JSON.stringify({
+          image_url: newProduct.image_url.trim(),
+          title: newProduct.title.trim() || null,
+          category: newProduct.category || null,
+          sort_order: products.length,
+        }),
+      });
+      setProducts(prev => [...prev, data.product]);
+      setNewProduct({ image_url: '', title: '', category: '' });
+      setShowAddProduct(false);
+      showToast(t('Product added', '产品图已添加'), 'success');
+    } catch {
+      showToast(t('Failed to add product', '添加失败'), 'error');
+    } finally {
+      setAddingProduct(false);
     }
   };
 
@@ -258,6 +311,19 @@ export default function AdminSupplierDetailPage() {
             </div>
           </div>
 
+          {/* Card 3: Current Cover Preview */}
+          {supplier.cover_image_url && (
+            <div className="bg-white rounded-xl border border-stone-200 p-4 space-y-2">
+              <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">
+                {t('Cover Image', '封面图')}
+              </h2>
+              <div className="aspect-video w-full rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
+                <img src={supplier.cover_image_url} alt="cover" className="w-full h-full object-cover" />
+              </div>
+              <p className="text-[11px] text-stone-400">{t('Hover over any image below to change', '鼠标移到下方图片可更换')}</p>
+            </div>
+          )}
+
         </div>
 
         {/* ===== RIGHT PANEL ===== */}
@@ -275,7 +341,7 @@ export default function AdminSupplierDetailPage() {
                 {t('No projects yet', '暂无项目')}
               </div>
             ) : (
-              <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 {projects.map(proj => {
                   const imgs = Array.isArray(proj.images) ? proj.images : [];
                   return (
@@ -293,8 +359,17 @@ export default function AdminSupplierDetailPage() {
                             <Layers className="w-8 h-8" />
                           </div>
                         )}
+                        {imgs[0] && (
+                          <button
+                            onClick={() => setCover(imgs[0])}
+                            className="absolute inset-x-0 bottom-0 py-1.5 bg-black/60 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
+                          >
+                            <ImageIcon className="w-3 h-3" />
+                            {t('Set as Cover', '设为封面')}
+                          </button>
+                        )}
                         {imgs.length > 1 && (
-                          <span className="absolute bottom-2 right-2 text-[11px] bg-black/50 text-white px-1.5 py-0.5 rounded-md">
+                          <span className="absolute bottom-2 right-2 text-[11px] bg-black/50 text-white px-1.5 py-0.5 rounded-md group-hover:opacity-0 transition-opacity">
                             {imgs.length} {t('photos', '张')}
                           </span>
                         )}
@@ -316,11 +391,70 @@ export default function AdminSupplierDetailPage() {
 
           {/* Products */}
           <section>
-            <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              {t('Products', '产品')}
-              <span className="font-normal text-stone-400 normal-case tracking-normal">({products.length})</span>
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                {t('Products', '产品')}
+                <span className="font-normal text-stone-400 normal-case tracking-normal">({products.length})</span>
+              </h2>
+              <button
+                onClick={() => setShowAddProduct(v => !v)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#b8864a]/10 text-[#b8864a] hover:bg-[#b8864a]/20 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {t('Add Image', '添加图片')}
+              </button>
+            </div>
+
+            {/* Add product form */}
+            {showAddProduct && (
+              <div className="bg-white rounded-xl border border-[#b8864a]/30 p-4 mb-3 space-y-3">
+                <p className="text-xs font-medium text-stone-500">{t('Add Product Image', '添加产品图')}</p>
+                <input
+                  type="text"
+                  placeholder={t('Image URL (e.g. /uploads/suppliers/68/xxx.jpg)', '图片地址（如 /uploads/suppliers/68/xxx.jpg）')}
+                  value={newProduct.image_url}
+                  onChange={e => setNewProduct(v => ({ ...v, image_url: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('Title (optional)', '名称（可选）')}
+                    value={newProduct.title}
+                    onChange={e => setNewProduct(v => ({ ...v, title: e.target.value }))}
+                    className="flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+                  />
+                  <select
+                    value={newProduct.category}
+                    onChange={e => setNewProduct(v => ({ ...v, category: e.target.value }))}
+                    className="h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+                  >
+                    <option value="">{t('Category', '分类')}</option>
+                    <option value="wardrobe">{t('Wardrobe', '衣柜')}</option>
+                    <option value="kitchen">{t('Kitchen', '橱柜')}</option>
+                    <option value="furniture">{t('Furniture', '家具')}</option>
+                    <option value="other">{t('Other', '其他')}</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddProduct}
+                    disabled={addingProduct}
+                    className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition"
+                  >
+                    {addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}
+                  </button>
+                  <button
+                    onClick={() => { setShowAddProduct(false); setNewProduct({ image_url: '', title: '', category: '' }); }}
+                    className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition"
+                  >
+                    {t('Cancel', '取消')}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {products.length === 0 ? (
               <div className="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-400 text-sm">
                 {t('No products yet', '暂无产品')}
@@ -329,11 +463,30 @@ export default function AdminSupplierDetailPage() {
               <div className="bg-white rounded-xl border border-stone-200 p-4">
                 <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
                   {products.map((p: any) => (
-                    <div key={p.id}>
-                      <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
+                    <div key={p.id} className="group">
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
                         <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                        {/* Delete button — top right */}
+                        <button
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          title={t('Delete', '删除')}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        {/* Set as cover — bottom bar */}
+                        <button
+                          onClick={() => setCover(p.image_url)}
+                          className="absolute inset-x-0 bottom-0 py-1 bg-black/60 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
+                        >
+                          <ImageIcon className="w-2.5 h-2.5" />
+                          {t('Set as Cover', '设为封面')}
+                        </button>
                       </div>
-                      {p.title && <p className="text-[11px] text-stone-500 mt-1 truncate">{p.title}</p>}
+                      {p.category && (
+                        <p className="text-[10px] text-[#b8864a] uppercase tracking-wide mt-1">{p.category}</p>
+                      )}
+                      {p.title && <p className="text-[11px] text-stone-500 truncate">{p.title}</p>}
                     </div>
                   ))}
                 </div>

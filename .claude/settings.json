@@ -13,24 +13,36 @@
       "Bash(git ls-tree:*)",
       "Bash(ls -d */)",
       "Bash(find . -name \".DS_Store\" -delete)",
-      "Read(//Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI项目/迪拜网站/tarmeer-4.0/**)",
+      "Read(//Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI\u9879\u76ee/\u8fea\u62dc\u7f51\u7ad9/tarmeer-4.0/**)",
       "Bash(git commit -m \"chore: clean up unused files:*)",
       "Bash(ln -s ~/.local/share/tarmeer-4.0/node_modules node_modules)",
       "Bash(git commit -m \"chore: fix node_modules symlink and update permissions:*)"
     ],
     "additionalDirectories": [
-      "/Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI项目/迪拜网站/tarmeer-4.0/.git"
+      "/Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI\u9879\u76ee/\u8fea\u62dc\u7f51\u7ad9/tarmeer-4.0/.git"
     ]
   },
   "hooks": {
-    "PreToolUse": [
+    "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit|Write|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // \"\"' | grep -qE 'src/.*[.]tsx$' && jq -cn '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"MOBILE RULES (docs/FRONTEND.md):\\n1. STEPPER: grid-cols-N + absolute connectors (top-[18px] left-1/2), not flex\\n2. GRIDS: 3 cards = grid-cols-3 always; hints hidden sm:block\\n3. SELECTS: Never native <select> - always use <AdminSelect/> from ui/AdminSelect.tsx\\n4. INPUTS: h-[50px] min-height, inline blur validation\\n5. TOUCH: min 44px tap targets (h-11 or p-3)\\n6. TEXT: body>=15px, labels>=12px, micro>=10px\\n7. SPACING: px-4 sm:px-6, p-3 sm:p-4 for cards\\n8. TEST at 375px viewport before marking done\"}}' || true",
-            "statusMessage": "Checking mobile adaptation rules..."
+            "command": "code-review-graph update --skip-flows",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "code-review-graph status",
+            "timeout": 10
           }
         ]
       }

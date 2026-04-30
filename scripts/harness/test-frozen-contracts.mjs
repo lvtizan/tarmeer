@@ -75,16 +75,29 @@ ok('A4', 'is_claimed 字段写入响应', serial.includes('is_claimed: isClaimed
 ok('A4', '不得硬编码 is_claimed: false', !serial.includes('is_claimed: false'));
 
 // ─────────────────────────────────────────────
-// A5. CRM 推送隔离 (companyLeadController.ts)
+// A5. VIP is_signed 契约 (companyController.ts + publicCompaniesSerialization.ts)
 // ─────────────────────────────────────────────
-console.log('\n--- A5: CRM 推送隔离 (companyLeadController.ts) ---\n');
+console.log('\n--- A5: VIP is_signed 契约 (companyController.ts) ---\n');
+
+ok('A5', 'getCompanyBySlug SELECT 包含 cp.is_signed', compCtrl.includes('cp.is_signed'));
+ok('A5', 'getCompanyBySlug 不硬编码 is_signed = false', !compCtrl.includes('company.is_signed = false'));
+ok('A5', 'getCompanyBySlug 正确用 !!() 转换', compCtrl.includes('company.is_signed = !!(company.is_signed)'));
+ok('A5', 'serialization 返回 is_signed 字段', serial.includes('is_signed: !!(company.is_signed)'));
+const adminRoutes = read('server/src/routes/admin.ts');
+ok('A5', 'toggle-signed 路由不含 requireSuperAdmin',
+  adminRoutes.includes("toggle-signed'") && !adminRoutes.includes("toggle-signed', requireSuperAdmin"));
+
+// ─────────────────────────────────────────────
+// A6. CRM 推送隔离 (companyLeadController.ts)
+// ─────────────────────────────────────────────
+console.log('\n--- A6: CRM 推送隔离 (companyLeadController.ts) ---\n');
 const crmCtrl = read('server/src/controllers/companyLeadController.ts');
 
-ok('A5', '只调用 pushCompanyLeadToCRM（装企 tenant）', crmCtrl.includes('pushCompanyLeadToCRM('));
-ok('A5', 'mirror inquiry 不调用 pushLeadToCRM', !crmCtrl.includes('pushLeadToCRM('));
-ok('A5', 'mirror inquiry 标记 crm_sync_status = synced',
+ok('A6', '只调用 pushCompanyLeadToCRM（装企 tenant）', crmCtrl.includes('pushCompanyLeadToCRM('));
+ok('A6', 'mirror inquiry 不调用 pushLeadToCRM', !crmCtrl.includes('pushLeadToCRM('));
+ok('A6', 'mirror inquiry 标记 crm_sync_status = synced',
   crmCtrl.includes('crm_sync_status') && crmCtrl.includes("'synced'"));
-ok('A5', 'submitCompanyLead 有字段截断保护', crmCtrl.includes('.slice(0,'));
+ok('A6', 'submitCompanyLead 有字段截断保护', crmCtrl.includes('.slice(0,'));
 
 // ─────────────────────────────────────────────
 // B1/B2/B3. 公司详情页 — 项目展示契约 (CompanyDetailPage.tsx)
@@ -144,7 +157,7 @@ ok('C1', 'tarmeer.com 在白名单', cors.includes("'https://tarmeer.com'"));
 ok('C1', 'admin.tarmeer.com 在白名单', cors.includes("'https://admin.tarmeer.com'"));
 
 // ─────────────────────────────────────────────
-// C2. DB 字段截断 (companyLeadController.ts)
+// C2. DB 字段截断 (companyLeadController.ts) — crmCtrl from A6
 // ─────────────────────────────────────────────
 console.log('\n--- C2: DB 字段截断 (companyLeadController.ts) ---\n');
 

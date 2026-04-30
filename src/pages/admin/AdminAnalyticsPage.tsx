@@ -54,6 +54,7 @@ export const COMPANY_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
   mep_contractor:      { zh: 'MEP 承包商', en: 'MEP Contractor'     },
   general_contractor:  { zh: '总承包商',   en: 'General Contractor' },
   landscaping:         { zh: '园林绿化',   en: 'Landscaping'        },
+  swimming_pool:       { zh: '游泳池工程', en: 'Swimming Pool'       },
   specialty_trade:     { zh: '专项工程',   en: 'Specialty Trade'    },
   furnishing:          { zh: '软装供应商', en: 'Furnishing'         },
 };

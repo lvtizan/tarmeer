@@ -226,6 +226,7 @@
 <a href="#15-ai-system" class="toc-item">15 — AI 系统</a>
 <a href="#16-supplier-system" class="toc-item">16 — 供应商系统</a>
 <a href="#17-dmca-complaint" class="toc-item">17 — DMCA 投诉系统</a>
+<a href="#18-changelog" class="toc-item">18 — 系统升级日志</a>
 
 </nav>
 
@@ -2652,7 +2653,7 @@ Sitemap: https://www.tarmeer.com/sitemap.xml
 <section id="08-admin">
 <h1>08 — Admin 后台</h1>
 
-<h2>页面列表（21 个）</h2>
+<h2>页面列表（22 个）</h2>
 
 <table><thead><tr><th>页面</th><th>路径</th><th>功能</th></tr></thead><tbody><tr><td>AdminDashboardPage</td><td><code>/admin/dashboard</code></td><td>概览面板：统计数字、最近活动</td></tr>
 <tr><td>AdminUsersPage</td><td><code>/admin/users</code></td><td>用户管理：列表、搜索、角色变更</td></tr>
@@ -2670,6 +2671,7 @@ Sitemap: https://www.tarmeer.com/sitemap.xml
 <tr><td>AdminRoleManagementPage</td><td><code>/admin/roles</code></td><td>子管理员 + 权限管理</td></tr>
 <tr><td>AdminNotificationEmailsPage</td><td><code>/admin/notification-emails</code></td><td>通知邮箱配置</td></tr>
 <tr><td>AdminAdminsPage</td><td><code>/admin/admins</code></td><td>Admin 账号管理</td></tr>
+<tr><td>AdminEnumsPage</td><td><code>/admin/enums</code></td><td>公司类型与服务分类管理（两个 Tab，CRUD，仅超级管理员可写）</td></tr>
 <tr><td>AdminHelpPage</td><td><code>/admin/help</code></td><td>帮助文档</td></tr>
 <tr><td>AdminLoginPage</td><td><code>/admin/login</code></td><td>Admin 登录</td></tr>
 <tr><td>AdminInstallPage</td><td><code>/admin/install</code></td><td>首次安装（创建超级管理员）</td></tr>
@@ -2720,6 +2722,19 @@ Sitemap: https://www.tarmeer.com/sitemap.xml
 <tr><td>GET</td><td><code>/admin/analytics/events</code></td><td>事件列表</td></tr>
 <tr><td>GET</td><td><code>/admin/visitors</code></td><td>访客日志</td></tr>
 <tr><td>GET</td><td><code>/admin/visitors/stats</code></td><td>访客统计</td></tr></tbody></table>
+<h3>枚举管理（公司类型 &amp; 服务分类）</h3>
+
+<p>控制器: <code>server/src/controllers/enumAdminController.ts</code> &nbsp;|&nbsp; 缓存: <code>server/src/lib/enumCache.ts</code></p>
+<table><thead><tr><th>方法</th><th>路径</th><th>权限</th><th>功能</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/admin/enums/company-types</code></td><td>所有 Admin</td><td>公司类型列表（含停用）</td></tr>
+<tr><td>POST</td><td><code>/admin/enums/company-types</code></td><td>超级管理员</td><td>新增类型（slug + label + sort_order）</td></tr>
+<tr><td>PUT</td><td><code>/admin/enums/company-types/:slug</code></td><td>超级管理员</td><td>修改标签 / 排序 / 启停</td></tr>
+<tr><td>DELETE</td><td><code>/admin/enums/company-types/:slug</code></td><td>超级管理员</td><td>删除（如有公司在用则返回 409）</td></tr>
+<tr><td>GET</td><td><code>/admin/enums/company-services</code></td><td>所有 Admin</td><td>服务分类列表（含停用）</td></tr>
+<tr><td>POST</td><td><code>/admin/enums/company-services</code></td><td>超级管理员</td><td>新增服务</td></tr>
+<tr><td>PUT</td><td><code>/admin/enums/company-services/:name</code></td><td>超级管理员</td><td>修改排序 / 启停（name 不可改）</td></tr>
+<tr><td>DELETE</td><td><code>/admin/enums/company-services/:name</code></td><td>超级管理员</td><td>删除服务</td></tr>
+</tbody></table>
 <hr>
 
 <h2>权限系统 (RBAC)</h2>
@@ -3448,7 +3463,9 @@ created_at  TIMESTAMP
 <tr><td><code>admin_audit_log</code></td><td>Admin 操作审计日志</td></tr>
 <tr><td><code>admin_last_seen</code></td><td>Admin 最后查看时间</td></tr>
 <tr><td><code>notification_emails</code></td><td>通知邮箱接收人列表</td></tr>
-<tr><td><code>weight_config</code></td><td>公司权重评分配置</td></tr></tbody></table>
+<tr><td><code>weight_config</code></td><td>公司权重评分配置</td></tr>
+<tr><td><code>company_types</code></td><td>公司类型枚举（slug + label + active），替代原 hardcode 数组</td></tr>
+<tr><td><code>company_services</code></td><td>服务分类枚举（name + active），替代原 hardcode 数组</td></tr></tbody></table>
 <hr>
 
 <h2>关键表详细结构</h2>
@@ -4239,6 +4256,61 @@ INSERT INTO system_config VALUES ('llm_api_key', 'sk-...');
 
 <h2>二、数据库表结构</h2>
 
+<h3>company_types</h3>
+
+<p><strong>装企公司类型枚举表。</strong>取代原 <code>companyProfileDraft.ts</code> 中的 hardcode 数组，通过后台 <code>/admin/enums</code> 页面动态管理。</p>
+
+<pre><code class="lang-sql">slug        VARCHAR(50) PRIMARY KEY   -- 存入 company_profiles.company_type 的值，如 design_studio
+label       VARCHAR(100)              -- 英文显示名，如 Design Studio
+sort_order  INT DEFAULT 0
+active      TINYINT(1) DEFAULT 1      -- 0=停用（不出现在注册下拉），历史数据验证仍通过
+created_at  TIMESTAMP
+</code></pre>
+
+<p><strong>注意</strong>：<code>slug</code> 是 FK，不可改名。停用不影响已注册公司，删除前会检查 <code>company_profiles</code> 中是否有引用（有则返回 409）。</p>
+
+<p><strong>19 个内置类型（已 seed）：</strong></p>
+<table><thead><tr><th>slug</th><th>label（英文）</th></tr></thead><tbody>
+<tr><td>design_studio</td><td>Design Studio</td></tr>
+<tr><td>renovation_company</td><td>Renovation Company</td></tr>
+<tr><td>general_contractor</td><td>General Contractor</td></tr>
+<tr><td>fitout_contractor</td><td>Fit-Out Contractor</td></tr>
+<tr><td>mep_contractor</td><td>MEP Contractor</td></tr>
+<tr><td>maintenance_company</td><td>Maintenance Company</td></tr>
+<tr><td>specialty_trade</td><td>Specialty Trade</td></tr>
+<tr><td>landscaping</td><td>Landscaping</td></tr>
+<tr><td>furnishing</td><td>Furnishing</td></tr>
+<tr><td>glass_aluminium</td><td>Glass &amp; Aluminium</td></tr>
+<tr><td>waterproofing</td><td>Waterproofing</td></tr>
+<tr><td>smart_home</td><td>Smart Home</td></tr>
+<tr><td>fire_fighting</td><td>Fire Fighting</td></tr>
+<tr><td>carpentry_joinery</td><td>Carpentry &amp; Joinery</td></tr>
+<tr><td>stone_marble</td><td>Stone &amp; Marble</td></tr>
+<tr><td>steel_fabrication</td><td>Steel Fabrication</td></tr>
+<tr><td>cleaning_services</td><td>Cleaning Services</td></tr>
+<tr><td>manpower_supply</td><td>Manpower Supply</td></tr>
+<tr><td>swimming_pool</td><td>Swimming Pool</td></tr>
+</tbody></table>
+
+<h3>company_services</h3>
+
+<p><strong>装企服务分类枚举表。</strong>取代原 hardcode 的 <code>VALID_SERVICES</code> 数组。</p>
+
+<pre><code class="lang-sql">name        VARCHAR(100) PRIMARY KEY  -- 服务名称，同时也是存入 company_profiles.services JSON 的值
+sort_order  INT DEFAULT 0
+active      TINYINT(1) DEFAULT 1
+created_at  TIMESTAMP
+</code></pre>
+
+<p><strong>注意</strong>：<code>name</code> 既是标识符也是显示值，<strong>不可改名</strong>（改名会导致历史 JSON 数据对不上）。需要改名时正确做法：停用旧服务 + 新建新服务，历史公司不受影响。</p>
+
+<p><strong>company_type vs services 区别（以真实装企举例）：</strong></p>
+<table><thead><tr><th>字段</th><th>含义</th><th>例子</th></tr></thead><tbody>
+<tr><td><code>company_type</code></td><td>这家公司是什么类型（单选，定性）</td><td><code>renovation_company</code> — 装修公司</td></tr>
+<tr><td><code>services</code></td><td>这家公司能提供哪些服务（多选，能力清单）</td><td><code>["Interior Design", "Fit-Out", "MEP", "Pools"]</code></td></tr>
+</tbody></table>
+<p><code>company_type</code> 说明你是谁，<code>services</code> 说明你能做什么。业主按类型筛选公司，按服务找具体能力。</p>
+
 <h3>supplier_profiles</h3>
 <pre><code class="lang-sql">id                  INT AUTO_INCREMENT
 supplier_user_id    INT (FK → supplier_users.id)
@@ -4353,6 +4425,72 @@ created_at      TIMESTAMP
 
 <h2>四、与爬虫公司图片的关系</h2>
 <p>平台收录的爬虫图片（<code>uae_companies</code> 目录）采用<strong>导流模式</strong>：点击跳转至来源网站，非直接托管。DMCA 投诉系统处理版权方要求下架的情况。</p>
+
+</section>
+
+<section id="18-changelog">
+<h1>18 — 系统升级日志</h1>
+<p>按时间倒序记录重大功能上线和系统架构调整。</p>
+
+<h2>2025-04 — 供应商系统 + 枚举管理后台</h2>
+
+<h3>供应商系统（Supplier）</h3>
+<p>新增完整的建材供应商模块，与装企系统并行运营。</p>
+<table><thead><tr><th>模块</th><th>说明</th></tr></thead><tbody>
+<tr><td>供应商公开页</td><td><code>/materials/suppliers/:slug</code> — 展示供应商品牌、产品系列、项目案例、PDF 目录</td></tr>
+<tr><td>供应商门户</td><td><code>/supplier/dashboard</code> — 供应商自主登录、管理产品/项目/目录</td></tr>
+<tr><td>Admin 管理</td><td><code>/admin/suppliers</code> + <code>/admin/suppliers/:id</code> — 审批、编辑、跟踪线索</td></tr>
+<tr><td>数据表</td><td><code>suppliers</code>, <code>supplier_products</code>, <code>supplier_projects</code>, <code>supplier_catalogs</code>, <code>supplier_leads</code></td></tr>
+<tr><td>图片存储</td><td><code>/uploads/projects/{supplierId}/{supplierName}/{year}/{month}/</code></td></tr>
+</tbody></table>
+
+<h3>供应商内容入库（索菲亚 &amp; 怡发）</h3>
+<p>通过 PDF 提取真实产品图，替换数据库中的占位图片。</p>
+<table><thead><tr><th>供应商</th><th>slug</th><th>内容来源</th><th>处理方式</th></tr></thead><tbody>
+<tr><td>索菲亚定制</td><td><code>sophia-custom</code></td><td>衣柜/厨房/家具系列 PDF</td><td>pdfimages 提取 → sips 转 JPEG + resize → rsync 上传 → SQL 替换 12 个产品</td></tr>
+<tr><td>怡发 EAFA</td><td><code>yifa-windows-doors</code></td><td>EAFA Product Catalogue.pdf</td><td>同上，提取前 30 页实景图，替换 3 个项目（8 张图）</td></tr>
+</tbody></table>
+
+<h3>枚举管理后台（Admin Enums）</h3>
+<p>将原本写死在代码里的公司类型和服务分类，迁移为数据库驱动、可通过后台 CRUD 管理。</p>
+
+<h4>架构变更</h4>
+<table><thead><tr><th>变更点</th><th>旧方案</th><th>新方案</th></tr></thead><tbody>
+<tr><td>公司类型来源</td><td><code>companyProfileDraft.ts</code> 中 hardcode 数组</td><td><code>company_types</code> 表，autoMigrate 自动建表 + 种子数据</td></tr>
+<tr><td>服务分类来源</td><td><code>VALID_SERVICES</code> hardcode 数组</td><td><code>company_services</code> 表，autoMigrate 自动建表 + 种子数据</td></tr>
+<tr><td>验证逻辑</td><td>同步函数</td><td>异步函数（<code>await validateCompanyProfilePayload()</code>），从 DB 读取后校验</td></tr>
+<tr><td>缓存层</td><td>无</td><td><code>enumCache.ts</code> — 内存缓存 + DB 降级 fallback，写操作后自动 invalidate</td></tr>
+</tbody></table>
+
+<h4>新增数据库表</h4>
+<pre><code class="lang-sql">-- 公司类型（19 条种子数据）
+company_types: slug PK, label, sort_order, active, created_at
+
+-- 服务分类（32 条种子数据）
+company_services: name PK, sort_order, active, created_at
+</code></pre>
+
+<h4>新增 API（admin 路由，写操作需 superAdmin）</h4>
+<table><thead><tr><th>方法</th><th>路径</th><th>功能</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/admin/enums/company-types</code></td><td>获取所有公司类型</td></tr>
+<tr><td>POST</td><td><code>/admin/enums/company-types</code></td><td>新增类型（slug + label + sort_order）</td></tr>
+<tr><td>PUT</td><td><code>/admin/enums/company-types/:slug</code></td><td>更新 label / sort_order / active</td></tr>
+<tr><td>DELETE</td><td><code>/admin/enums/company-types/:slug</code></td><td>删除（被引用则返回 409）</td></tr>
+<tr><td>GET</td><td><code>/admin/enums/company-services</code></td><td>获取所有服务分类</td></tr>
+<tr><td>POST</td><td><code>/admin/enums/company-services</code></td><td>新增服务（name + sort_order）</td></tr>
+<tr><td>PUT</td><td><code>/admin/enums/company-services/:name</code></td><td>更新 sort_order / active（name 不可改）</td></tr>
+<tr><td>DELETE</td><td><code>/admin/enums/company-services/:name</code></td><td>删除服务</td></tr>
+</tbody></table>
+
+<h4>前端新增页面</h4>
+<p><code>src/pages/admin/AdminEnumsPage.tsx</code> — 两个 Tab（公司类型 / 服务分类），各有列表 + 新增表单 + inline 编辑 label + active 开关 + 删除。路由：<code>/admin/enums</code>，侧边栏已添加入口（Tags 图标，位于 Tools 分组）。</p>
+
+<h4>概念说明：company_type vs services</h4>
+<table><thead><tr><th>字段</th><th>存储</th><th>选择方式</th><th>用途</th></tr></thead><tbody>
+<tr><td><code>company_type</code></td><td>VARCHAR slug，如 <code>design_studio</code></td><td>单选</td><td>公司列表页筛选、Analytics 分布图、CRM 邮件标注、注册表单</td></tr>
+<tr><td><code>services</code></td><td>JSON 数组，如 <code>["Interior Design","Fit-Out"]</code></td><td>多选</td><td>公司详情页展示、注册表单多选、公司档案描述</td></tr>
+</tbody></table>
+<p><strong>name 即 ID 原则：</strong><code>services</code> 的 name 字段同时作为主键和显示值，历史数据已用英文名存储，不可重命名（改名 = 历史数据失效）。</p>
 
 </section>
 

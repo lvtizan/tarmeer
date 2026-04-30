@@ -1,4 +1,30 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' 2>/dev/null | grep -qE '(src/|server/src/).*[.](ts|tsx|js)$' && touch /tmp/tarmeer-check-needed || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/kp/Code/tarmeer-4.0-local/scripts/harness/stop-hook.sh",
+            "timeout": 60,
+            "asyncRewake": true,
+            "statusMessage": "Running tsc check..."
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(cd:*)",

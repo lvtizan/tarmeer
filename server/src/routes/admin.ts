@@ -64,10 +64,14 @@ import {
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
-import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier } from '../controllers/supplierAdminController';
+import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
+import {
+  listCompanyTypes, createCompanyType, updateCompanyType, deleteCompanyType,
+  listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService,
+} from '../controllers/enumAdminController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
 
@@ -314,11 +318,23 @@ router.get('/suppliers/:id', getSupplierDetail);
 router.put('/suppliers/:id/status', requirePermission('can_approve'), updateSupplierStatus);
 router.put('/suppliers/:id', updateSupplier);
 router.delete('/suppliers/:id', requirePermission('can_approve'), deleteSupplier);
+router.post('/suppliers/:id/products', adminAddProduct);
+router.delete('/suppliers/:id/products/:productId', adminDeleteProduct);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);
 router.post('/admins', requireSuperAdmin, createSubAdmin);
 router.put('/admins/:id', requireSuperAdmin, updateAdmin);
 router.delete('/admins/:id', requireSuperAdmin, deleteAdmin);
+
+// Enum management — company types & services
+router.get('/enums/company-types', listCompanyTypes);
+router.post('/enums/company-types', requireSuperAdmin, createCompanyType);
+router.put('/enums/company-types/:slug', requireSuperAdmin, updateCompanyType);
+router.delete('/enums/company-types/:slug', requireSuperAdmin, deleteCompanyType);
+router.get('/enums/company-services', listCompanyServices);
+router.post('/enums/company-services', requireSuperAdmin, createCompanyService);
+router.put('/enums/company-services/:name', requireSuperAdmin, updateCompanyService);
+router.delete('/enums/company-services/:name', requireSuperAdmin, deleteCompanyService);
 
 export default router;
