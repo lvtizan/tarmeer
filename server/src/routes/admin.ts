@@ -30,6 +30,7 @@ import {
   updateDesignerOrder,
   approveProject,
   rejectProject,
+  getRejectionTemplates,
   getStatsOverview,
   getActivityLogs,
   getRegistrationStats,
@@ -140,6 +141,7 @@ router.put('/designers/bulk-delete', requirePermission('can_approve'), bulkDelet
 router.put('/designers/order', requirePermission('can_sort'), updateDesignerOrder);
 router.put('/projects/:projectId/approve', requirePermission('can_approve'), approveProject);
 router.put('/projects/:projectId/reject', requirePermission('can_approve'), rejectProject);
+router.get('/rejection-templates', getRejectionTemplates);
 
 // Inquiry management (admin)
 router.get('/inquiries', getInquiries);

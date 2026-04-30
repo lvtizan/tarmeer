@@ -383,6 +383,10 @@ class AdminApiClient {
     });
   }
 
+  async getRejectionTemplates(): Promise<{ templates: Array<{ id: number; text: string; use_count: number; last_used_at: string }> }> {
+    return this.request('/rejection-templates');
+  }
+
   // Stats
   async getRegistrationStats(days = 30) {
     return this.request(`/stats/registrations?days=${days}`);

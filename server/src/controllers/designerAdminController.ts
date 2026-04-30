@@ -9,6 +9,7 @@ import {
 } from '../lib/designerSoftDelete';
 import { buildAdminDesignersListQuery } from '../lib/adminDesignersQuery';
 import { buildAutoPublishPendingProjectsQuery } from '../lib/designerApproval';
+import { sendProjectRejectionEmail } from '../services/emailService';
 
 // Get all designers with filters and pagination
 export async function getDesignersForAdmin(req: any, res: Response) {
@@ -588,7 +589,7 @@ export async function rejectProject(req: any, res: Response) {
 
   try {
     const [rows] = await pool.execute(
-      'SELECT id, designer_id, title, status FROM projects WHERE id = ?',
+      'SELECT id, designer_id, company_profile_id, title, status FROM projects WHERE id = ?',
       [projectId]
     );
 
@@ -603,9 +604,7 @@ export async function rejectProject(req: any, res: Response) {
     }
 
     await pool.execute(
-      `UPDATE projects
-       SET status = 'rejected', rejection_reason = ?, updated_at = NOW()
-       WHERE id = ?`,
+      `UPDATE projects SET status = 'rejected', rejection_reason = ?, updated_at = NOW() WHERE id = ?`,
       [reason.trim(), projectId]
     );
 
@@ -614,6 +613,45 @@ export async function rejectProject(req: any, res: Response) {
       designerId: project.designer_id,
       reason: reason.trim()
     });
+
+    // Fire-and-forget: save template for this admin
+    if (req.admin?.id) {
+      pool.execute(
+        `INSERT INTO rejection_templates (admin_id, text, use_count, last_used_at)
+         VALUES (?, ?, 1, NOW())
+         ON DUPLICATE KEY UPDATE use_count = use_count + 1, last_used_at = NOW()`,
+        [req.admin.id, reason.trim()]
+      ).catch((err: any) => console.error('Template save error:', err));
+    }
+
+    // Fire-and-forget: send email to company owner (if this is a company project)
+    if (project.company_profile_id) {
+      (async () => {
+        try {
+          const [cpRows] = await pool.execute(
+            `SELECT u.email, cp.company_name
+             FROM company_profiles cp
+             JOIN users u ON u.id = cp.user_id
+             WHERE cp.id = ?`,
+            [project.company_profile_id]
+          );
+          const cp = (cpRows as any[])[0];
+          if (cp?.email) {
+            const frontendUrl = process.env.FRONTEND_URL || 'https://www.tarmeer.com';
+            const projectListUrl = `${frontendUrl}/company/projects?projectId=${projectId}`;
+            await sendProjectRejectionEmail(
+              cp.email,
+              cp.company_name || 'Company',
+              project.title,
+              reason.trim(),
+              projectListUrl,
+            );
+          }
+        } catch (emailErr) {
+          console.error('Rejection email error:', emailErr);
+        }
+      })();
+    }
 
     res.json({
       message: 'Project rejected.',
@@ -1011,5 +1049,27 @@ export async function getRegistrationStats(req: any, res: Response) {
   } catch (error) {
     console.error('Registration stats error:', error);
     res.status(500).json({ error: 'Failed to get registration stats.' });
+  }
+}
+
+// Rejection template history (per admin)
+export async function getRejectionTemplates(req: any, res: Response) {
+  try {
+    const adminId = req.admin?.id;
+    if (!adminId) return res.status(401).json({ error: 'Unauthorized.' });
+
+    const [rows] = await pool.execute(
+      `SELECT id, text, use_count, last_used_at
+       FROM rejection_templates
+       WHERE admin_id = ?
+       ORDER BY last_used_at DESC
+       LIMIT 10`,
+      [adminId]
+    );
+
+    res.json({ templates: rows });
+  } catch (error) {
+    console.error('getRejectionTemplates error:', error);
+    res.status(500).json({ error: 'Failed to load templates.' });
   }
 }
