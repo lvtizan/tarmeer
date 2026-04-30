@@ -277,6 +277,9 @@ npm run build
 echo "📤 步骤 2/3: 增量同步文件到服务器..."
 run_rsync_to_remote "dist/" "${DEPLOY_PATH}/"
 
+# index.html 强制覆盖（rsync --checksum 在文件大小相同时可能跳过，导致旧版本残留）
+echo "🔄 强制覆盖 index.html..."
+scp -i "${SELECTED_SSH_KEY:-$HOME/.ssh/id_rsa}" -o StrictHostKeyChecking=accept-new "dist/index.html" "${SERVER_USER}@${SERVER_HOST}:${DEPLOY_PATH}/index.html"
 # 3. 统一权限（默认禁止任何 Nginx 操作）
 echo "🔐 步骤 3/3: 统一权限..."
 if [[ "${ALLOW_NGINX_ACTIONS:-NO}" == "YES" ]]; then

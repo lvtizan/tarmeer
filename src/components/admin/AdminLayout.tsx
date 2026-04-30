@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package, MapPin, UserCheck } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, MapPin, UserCheck } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -44,17 +44,6 @@ const navItems = [
     infoEn: 'Track all user and admin operations with IP, location, and timestamps.',
     infoZh: '追踪所有用户和管理员的操作记录，含 IP、地区和时间。',
   },
-  // ── Tools ──
-  {
-    to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
-    infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
-    infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
-  },
-  {
-    to: '/admin/company-import', labelEn: 'Import Company', labelZh: '导入公司', icon: FileUp,
-    infoEn: 'Bulk import company records from templates and validate key fields before publishing.',
-    infoZh: '通过模板批量导入公司信息，发布前校验关键字段。',
-  },
   // ── Other ──
   {
     to: '/admin/complaints', labelEn: 'Complaints', labelZh: '投诉', icon: ShieldAlert,
@@ -64,6 +53,11 @@ const navItems = [
 ];
 
 const adminItems = [
+  {
+    to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
+    infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
+    infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
+  },
   {
     to: '/admin/visit-records', labelEn: 'Visit Records', labelZh: '访谈记录', icon: MapPin, superAdminOnly: true,
     infoEn: 'View all field visit records submitted by field staff.',
