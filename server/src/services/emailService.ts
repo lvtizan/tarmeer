@@ -249,7 +249,7 @@ export async function sendContactFormEmail(contact: any) {
         <p style="margin-top: 20px; color: #666;">Please reply to the client promptly.</p>
       </div>
     `;
-  
+
   const text = [
     'New Client Inquiry',
     `Name: ${contact.name}`,
@@ -263,6 +263,58 @@ export async function sendContactFormEmail(contact: any) {
   await sendTransactionalMail({
     to: NOTIFICATION_EMAIL,
     subject: '[Tarmeer] New Client Inquiry',
+    html,
+    text,
+  });
+}
+
+export async function sendProjectRejectionEmail(
+  to: string,
+  companyName: string,
+  projectTitle: string,
+  rejectionReason: string,
+  projectListUrl: string,
+) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+      <h2 style="color: #b8864a;">Your project submission was not approved</h2>
+      <p>Hi <strong>${companyName}</strong>,</p>
+      <p>We reviewed your recently submitted project <strong>"${projectTitle}"</strong> and it does not meet our content guidelines at this time.</p>
+      <table style="width:100%; border-collapse:collapse; margin: 16px 0;">
+        <tr>
+          <td style="padding: 10px 12px; background:#fef2f2; border-left: 4px solid #ef4444; color:#7f1d1d; font-size:14px;">
+            <strong>Reason:</strong> ${rejectionReason}
+          </td>
+        </tr>
+      </table>
+      <p>Please update your project photos to show interior design or renovation work, then resubmit for review.</p>
+      <a href="${projectListUrl}" style="display:inline-block; padding:12px 24px; background-color:#b8864a; color:white; text-decoration:none; border-radius:8px; margin:16px 0; font-size:14px;">
+        View &amp; Edit Your Projects
+      </a>
+      <p style="color:#666; font-size:13px;">If you have any questions, feel free to contact our support team.</p>
+      <p style="color:#b8864a; font-weight:bold;">The Tarmeer Team</p>
+    </div>
+  `;
+
+  const text = [
+    `Your project submission was not approved`,
+    ``,
+    `Hi ${companyName},`,
+    ``,
+    `We reviewed your project "${projectTitle}" and it does not meet our content guidelines.`,
+    ``,
+    `Reason: ${rejectionReason}`,
+    ``,
+    `Please update your project photos (interior design / renovation work) and resubmit.`,
+    ``,
+    `View & Edit Your Projects: ${projectListUrl}`,
+    ``,
+    `The Tarmeer Team`,
+  ].join('\n');
+
+  await sendTransactionalMail({
+    to,
+    subject: `Your project "${projectTitle}" was not approved — Tarmeer`,
     html,
     text,
   });
