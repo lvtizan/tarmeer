@@ -63,6 +63,30 @@ Violation examples (forbidden in public pages):
 
 ---
 
+## No Hardcoding Rules (MUST FOLLOW)
+
+任何情况下都不得在代码中写死业务数据、配置值或状态值。违反此规则会导致数据与代码脱节，产生静默 bug（VIP 徽章消失、联系方式泄漏等均源于硬编码）。
+
+### 禁止硬编码的场景
+
+1. **布尔状态字段**：绝不写 `field = false` / `field = true` 作为字段赋值，必须从 DB 读取再转换（如 `!!(row.is_signed)`）。
+2. **枚举/分类值**：新增业务类型（company_type、service_tag 等）必须同时更新：后端验证数组、数据库字段（VARCHAR 不用 ENUM）、前端 label 映射、i18n、表单选项。禁止在任意一处遗漏。
+3. **API 响应字段**：SELECT 语句里没有的字段不得出现在响应对象里（结果是 `undefined`，`!!undefined === false` 静默出错）。新增响应字段必须同时加进 SELECT。
+4. **权限级别**：路由 middleware 不得按"感觉"写 `requireSuperAdmin`，必须对照 `docs/SECURITY.md` 的权限矩阵。sub_admin 能操作的接口只用 `requireAdmin`。
+5. **URL / 域名**：不得在代码里写死生产域名（`tarmeer.com`、`47.91.108.104` 等），使用环境变量（`VITE_API_URL`、`API_BASE`）。唯一例外：SEO `<Helmet>` 的 canonical / og:url 可写死生产域名。
+6. **数据库连接信息**：所有 host/user/password 从 `.env` 读取，禁止直接写在代码里。
+7. **图片路径扩展名**：不得假设上传文件的格式（`.webp` vs `.jpg`），路径从 DB 读取原样使用，或在存储时记录实际扩展名。
+8. **分页 / 限制数字**：LIMIT/OFFSET 必须从参数读取并做整数校验，不得在 SQL 里写死（`LIMIT 10` 可以做默认值但要可覆盖）。
+
+### 检查要点（每次写新代码前自查）
+
+- 我写的这个值会变吗？→ 如果会，必须从配置/DB/参数读。
+- 这个字段是 DB 里的布尔列？→ 用 `!!()` 转换，不要写 `= true/false`。
+- 这个枚举值在几个地方用到？→ 列出所有地方，改一处必须全改。
+- 这条 SQL 的 SELECT 包含响应对象用到的所有字段吗？→ 逐字段对照。
+
+---
+
 ## Feature Completion Workflow (MUST FOLLOW)
 
 Every feature MUST go through these steps before notifying the user. No exceptions.
@@ -247,7 +271,14 @@ Admin 列表页的工具栏（tabs + 搜索 + 筛选）必须遵循以下布局�
 - `is_claimed` 基于 `owner_user_id` 计算，不得硬编码
 - **已知返祖风险**：认领后目录公司的 slug 仍走 `/api/companies/:slug` → `sanitizePublicCompany()`，若不在此处过滤，phone 会穿透到前端
 
-#### A5. CRM 推送隔离
+#### A5. VIP 签约标志 `is_signed`
+- 文件：`server/src/controllers/companyController.ts`（注册装企分支）、`server/src/lib/publicCompaniesSerialization.ts`（目录装企）
+- `GET /api/companies/:slug` 和 `GET /api/public/companies` 必须返回 `is_signed: boolean`，值必须来自 DB（`!!(company.is_signed)`），**禁止硬编码为 `false`**
+- 注册装企分支的 SELECT 语句必须包含 `cp.is_signed`，否则字段为 undefined，`!!undefined === false` 导致 VIP 徽章静默消失
+- toggle-signed 路由（`PUT /admin/roles/companies/:id/toggle-signed`）**不得加 `requireSuperAdmin`**，只需 `requireAdmin`，否则 sub_admin 操作被 403 静默丢弃
+- **已知返祖风险**：修改 `getCompanyBySlug` 时，若重写 SELECT 语句忘记带 `cp.is_signed`，VIP 徽章会无声消失且无报错
+
+#### A6. CRM 推送隔离
 - 文件：`server/src/controllers/companyLeadController.ts`
 - 装企线索 → 只能调用 `pushCompanyLeadToCRM()`（company tenant）
 - 业主线索 → 只能调用 `pushLeadToCRM()`（homeowner tenant）

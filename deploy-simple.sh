@@ -245,10 +245,19 @@ fi
 echo "✓ 代码已是最新"
 echo ""
 
-# 0. Bump patch version
+# 0. Bump patch version (patch 0-9 → carry to minor; minor 0-49 → carry to major)
 CURRENT_VER=$(node -p "require('./package.json').version")
 IFS='.' read -r V_MAJOR V_MINOR V_PATCH <<< "$CURRENT_VER"
-NEW_VER="${V_MAJOR}.${V_MINOR}.$((V_PATCH + 1))"
+V_PATCH=$((V_PATCH + 1))
+if [ "$V_PATCH" -ge 10 ]; then
+  V_PATCH=0
+  V_MINOR=$((V_MINOR + 1))
+fi
+if [ "$V_MINOR" -ge 50 ]; then
+  V_MINOR=0
+  V_MAJOR=$((V_MAJOR + 1))
+fi
+NEW_VER="${V_MAJOR}.${V_MINOR}.${V_PATCH}"
 echo "🔖 版本号：${CURRENT_VER} → ${NEW_VER}"
 npm version "$NEW_VER" --no-git-tag-version --allow-same-version
 git add package.json package-lock.json 2>/dev/null || true

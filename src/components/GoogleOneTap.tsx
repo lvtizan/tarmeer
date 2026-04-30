@@ -11,7 +11,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 // 不弹 One Tap 的页面（公司注册/登录页通过 email 流程处理，无需 One Tap）
-const EXCLUDED_PATHS = ['/auth', '/login', '/register', '/designer/', '/for-companies', '/join', '/admin', '/verify-email'];
+const EXCLUDED_PATHS = ['/auth', '/login', '/register', '/designer/', '/for-companies', '/join', '/admin', '/verify-email', '/start'];
 
 // 模块级标志 — 跨组件 mount/unmount 保持，彻底防止重复初始化
 let gsiInitialized = false;
@@ -60,8 +60,9 @@ export default function GoogleOneTap() {
         cancel_on_tap_outside: true,
         context: 'signin',
         itp_support: true,
-        // use_fedcm_for_prompt 不设置 true：FedCM 被用户禁用时会 NetworkError 且无回退
-        // 保持默认（false），GSI 自动选择最合适的弹窗机制
+        // Chrome 116+ 默认走 FedCM，用户禁用时会抛 browser-native NetworkError。
+        // 显式设为 false 强制 GSI 使用 legacy iframe 弹窗，避免 FedCM NetworkError。
+        use_fedcm_for_prompt: false,
       });
 
       (window as any).google.accounts.id.prompt((notification: any) => {

@@ -292,6 +292,7 @@ const STEPS = [
       'Your direct contact number',
       'Work email for your account',
     ],
+
   },
   {
     num: '02',
@@ -302,6 +303,7 @@ const STEPS = [
       'Email arrives within 30 seconds',
       'Or sign in with Google in one click',
     ],
+
   },
   {
     num: '03',
@@ -313,6 +315,7 @@ const STEPS = [
       'Services and specialties',
       'Company logo and cover image',
     ],
+
     active: true,
   },
   {
@@ -325,6 +328,7 @@ const STEPS = [
       'Upload 3–8 photos per project (JPG or PNG)',
       'More projects = higher search ranking',
     ],
+
   },
   {
     num: '05',
@@ -429,6 +433,7 @@ export default function StartGuidePage() {
       <div className="px-5 pb-12 max-w-xl mx-auto">
         {STEPS.map((step, i) => (
           <div key={step.num}>
+
             {i > 0 && (
               <div className="flex justify-center my-1">
                 <div className="w-px h-5 bg-[#e8ddd0]" />

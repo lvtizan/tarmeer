@@ -22,7 +22,7 @@ export async function upsertProfile(req: any, res: any) {
     }
 
     const payload = normalizeCompanyProfilePayload(req.body);
-    const validationError = validateCompanyProfilePayload(payload);
+    const validationError = await validateCompanyProfilePayload(payload);
     if (validationError) {
       return res.status(400).json({ error: validationError });
     }

@@ -70,6 +70,9 @@ export default function AdminApplicationsTable({
     setSelected(new Set());
   };
 
+  const typeLabel = (type: string) => ({ design_studio: t('Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包商'), mep_contractor: t('MEP', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty', '专项工程'), landscaping: t('Landscape', '景观工程'), furnishing: t('Furnishing', '软装公司') }[type] || type);
+  const typeCls = (type: string) => type === 'design_studio' ? 'bg-purple-50 text-purple-600' : type === 'mep_contractor' ? 'bg-orange-50 text-orange-600' : type === 'general_contractor' ? 'bg-emerald-50 text-emerald-600' : type === 'maintenance_company' ? 'bg-cyan-50 text-cyan-600' : type === 'specialty_trade' ? 'bg-amber-50 text-amber-600' : type === 'landscaping' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600';
+
   return (
     <div>
       {selected.size > 0 && (
@@ -85,7 +88,62 @@ export default function AdminApplicationsTable({
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      {/* ── Mobile card view ── */}
+      <div className="sm:hidden space-y-3">
+        {loading ? (
+          <div className="flex justify-center py-12"><div className="w-6 h-6 rounded-full border-2 border-stone-200 border-t-stone-500 animate-spin" /></div>
+        ) : profiles.length === 0 ? (
+          <div className="text-center py-12 text-stone-400 text-sm">{t('No records', '暂无数据')}</div>
+        ) : profiles.map((c) => (
+          <div
+            key={c.id}
+            className="bg-white rounded-xl border border-stone-200 p-4 space-y-3"
+          >
+            {/* Header row */}
+            <div className="flex items-center gap-3">
+              {c.logo_url ? (
+                <SmartImage src={c.logo_url} alt="" className="w-10 h-10 rounded-lg object-contain bg-stone-100 flex-shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center text-base font-semibold text-amber-600 flex-shrink-0">
+                  {c.company_name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-stone-800 truncate">{c.company_name}</p>
+                <p className="text-xs text-stone-400 truncate">{c.user_email}</p>
+              </div>
+              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${typeCls(c.company_type)}`}>
+                {typeLabel(c.company_type)}
+              </span>
+            </div>
+            {/* Meta row */}
+            <div className="flex items-center gap-4 text-xs text-stone-500">
+              {c.city && <span>📍 {c.city}</span>}
+              <span>🗂 {c.project_count} {t('projects', '个项目')}</span>
+              <span className="ml-auto">{new Date(c.created_at).toLocaleDateString()}</span>
+            </div>
+            {/* Action */}
+            <button
+              onClick={() => navigate(`/admin/profile-companies/${c.id}?tab=applications`)}
+              className="w-full h-11 rounded-xl bg-stone-800 text-white text-sm font-medium hover:bg-stone-700 transition"
+            >
+              {t('View & Review', '查看审核')} →
+            </button>
+          </div>
+        ))}
+        {pages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-xs text-stone-500">{page} / {pages}</span>
+            <div className="flex gap-2">
+              <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1.5 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Prev', '上一页')}</button>
+              <button onClick={() => onPageChange(Math.min(pages, page + 1))} disabled={page >= pages} className="px-3 py-1.5 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Next', '下一页')}</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Desktop table view ── */}
+      <div className="hidden sm:block bg-white rounded-xl border border-stone-200 overflow-hidden">
         <table className="w-full text-[15px]">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200 text-sm">
@@ -142,16 +200,8 @@ export default function AdminApplicationsTable({
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                    c.company_type === 'design_studio' ? 'bg-purple-50 text-purple-600'
-                    : c.company_type === 'mep_contractor' ? 'bg-orange-50 text-orange-600'
-                    : c.company_type === 'general_contractor' ? 'bg-emerald-50 text-emerald-600'
-                    : c.company_type === 'maintenance_company' ? 'bg-cyan-50 text-cyan-600'
-                    : c.company_type === 'specialty_trade' ? 'bg-amber-50 text-amber-600'
-                    : c.company_type === 'landscaping' ? 'bg-green-50 text-green-600'
-                    : 'bg-blue-50 text-blue-600'
-                  }`}>
-                    {{ design_studio: t('Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包商'), mep_contractor: t('MEP', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty', '专项工程'), landscaping: t('Landscape', '景观工程'), furnishing: t('Furnishing', '软装公司') }[c.company_type] || c.company_type}
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${typeCls(c.company_type)}`}>
+                    {typeLabel(c.company_type)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>

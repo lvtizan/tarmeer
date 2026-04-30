@@ -45,6 +45,7 @@ const PUBLIC_PAGES = [
   // Marketing / Landing
   { file: 'src/pages/ForCompaniesPage.tsx', label: 'For Companies', detail: false },
   { file: 'src/pages/ForHomeownersPage.tsx', label: 'For Homeowners', detail: false },
+  { file: 'src/pages/StartGuidePage.tsx', label: 'Start Guide', detail: false },
   // Interior design category pages
   { file: 'src/pages/HouseExteriorDesignPage.tsx', label: 'House Exterior Design', detail: false },
   { file: 'src/pages/SoftDecorationPage.tsx', label: 'Soft Decoration', detail: false },

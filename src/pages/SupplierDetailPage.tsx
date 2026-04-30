@@ -25,6 +25,7 @@ interface SupplierProfile {
   has_physical_store: number;
   store_address: string | null;
   google_maps_url: string | null;
+  website: string | null;
 }
 
 interface Product {
@@ -273,6 +274,14 @@ export default function SupplierDetailPage() {
                   ))}
                 </div>
               )}
+
+              {/* Description excerpt — first sentence, skip if it's just a categories list */}
+              {supplier.description && !categoryList.some(c => supplier.description!.startsWith(c)) && (
+                <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
+                  {supplier.description.split(/\.\s/)[0].trim()}.
+                </p>
+              )}
+
             </div>
           </div>
 

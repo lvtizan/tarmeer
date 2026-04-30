@@ -7,7 +7,7 @@ const footerNavLinks = [
   { to: '/', label: 'Home' },
   { to: '/portfolio', label: 'Portfolio' },
   { to: '/companies', label: 'Companies' },
-  // { to: '/materials', label: 'Showrooms' }, — hidden temporarily
+  { to: '/materials', label: 'Showrooms' },
   { to: '/contact', label: 'Become a Partner' },
   { to: '/faq', label: 'FAQ' },
 ];

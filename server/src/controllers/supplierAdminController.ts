@@ -138,3 +138,41 @@ export async function deleteSupplier(req: any, res: any) {
     res.status(500).json({ error: 'Failed to delete supplier.' });
   }
 }
+
+export async function adminAddProduct(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const [profileRows] = await pool.execute('SELECT id FROM supplier_profiles WHERE id = ?', [id]);
+    if ((profileRows as any[]).length === 0) return res.status(404).json({ error: 'Supplier not found.' });
+
+    const { title, description, category, image_url, sort_order } = req.body;
+    if (!image_url) return res.status(400).json({ error: 'image_url is required.' });
+
+    const [result] = await pool.execute(
+      'INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, title || null, description || null, category || null, image_url, sort_order ?? 0]
+    );
+    const [created] = await pool.execute('SELECT * FROM supplier_products WHERE id = ?', [(result as any).insertId]);
+    res.status(201).json({ product: (created as any[])[0] });
+  } catch (error) {
+    console.error('Admin add product error:', error);
+    res.status(500).json({ error: 'Failed to add product.' });
+  }
+}
+
+export async function adminDeleteProduct(req: any, res: any) {
+  try {
+    const { id, productId } = req.params;
+    const [rows] = await pool.execute(
+      'SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?',
+      [productId, id]
+    );
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Product not found.' });
+
+    await pool.execute('DELETE FROM supplier_products WHERE id = ?', [productId]);
+    res.json({ message: 'Product deleted.' });
+  } catch (error) {
+    console.error('Admin delete product error:', error);
+    res.status(500).json({ error: 'Failed to delete product.' });
+  }
+}

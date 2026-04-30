@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTab';
@@ -349,41 +350,21 @@ export default function AdminCompaniesPage() {
         {/* Filter dropdown */}
         <div className="w-36 shrink-0">
           {tab === 'companies' && (
-            <AdminSelect
-              size="sm"
-              value={profileStatusFilter}
+            <AdminSelect size="sm" value={profileStatusFilter}
               onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' },
-              ]}
+              options={[{ value: 'all', label: 'All' }, { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }]}
             />
           )}
           {tab === 'directory' && (
-            <AdminSelect
-              size="sm"
-              value={claimedFilter}
+            <AdminSelect size="sm" value={claimedFilter}
               onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'claimed', label: 'Claimed' },
-                { value: 'unclaimed', label: 'Unclaimed' },
-              ]}
+              options={[{ value: 'all', label: 'All' }, { value: 'claimed', label: 'Claimed' }, { value: 'unclaimed', label: 'Unclaimed' }]}
             />
           )}
           {tab === 'applications' && (
-            <AdminSelect
-              size="sm"
-              value={pendingStatusFilter}
+            <AdminSelect size="sm" value={pendingStatusFilter}
               onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
-              options={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' },
-                { value: 'all', label: 'All' },
-              ]}
+              options={[{ value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }, { value: 'all', label: 'All' }]}
             />
           )}
         </div>

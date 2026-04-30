@@ -46,6 +46,17 @@ const COMPANY_TYPES = [
   { value: 'landscaping', labelKey: 'typeLandscaping' as const },
   { value: 'swimming_pool', labelKey: 'typeSwimmingPool' as const },
   { value: 'furnishing', labelKey: 'typeFurnishing' as const },
+  { value: 'fitout_contractor', labelKey: 'typeFitoutContractor' as const },
+  { value: 'glass_aluminium', labelKey: 'typeGlassAluminium' as const },
+  { value: 'waterproofing', labelKey: 'typeWaterproofing' as const },
+  { value: 'smart_home', labelKey: 'typeSmartHome' as const },
+  { value: 'fire_fighting', labelKey: 'typeFireFighting' as const },
+  { value: 'carpentry_joinery', labelKey: 'typeCarpentryJoinery' as const },
+  { value: 'stone_marble', labelKey: 'typeStoneMarble' as const },
+  { value: 'steel_fabrication', labelKey: 'typeSteelFabrication' as const },
+  { value: 'cleaning_services', labelKey: 'typeCleaningServices' as const },
+  { value: 'manpower_supply', labelKey: 'typeManpowerSupply' as const },
+  { value: 'swimming_pool', labelKey: 'typeSwimmingPool' as const },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';

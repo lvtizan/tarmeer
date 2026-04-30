@@ -809,7 +809,61 @@ const CompaniesTab: React.FC<{
           <p className="text-slate-600">{t('No companies found', '未找到公司')}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        {/* ── Mobile card list ── */}
+        <div className="sm:hidden space-y-3">
+          {companies.map((company) => (
+            <div key={company.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold text-stone-900 truncate">{company.name}</p>
+                  <p className="text-[13px] text-stone-500">{company.contact} · {company.phone}</p>
+                  <p className="text-[12px] text-stone-400">{company.city}</p>
+                </div>
+                <span className={`shrink-0 px-2 py-1 rounded-full text-[11px] font-semibold ${
+                  company.status === 'approved' ? 'bg-green-100 text-green-800'
+                  : company.status === 'pending' ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+                }`}>
+                  {company.status}
+                </span>
+              </div>
+              {company.status === 'pending' && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => onApprove(company.id)}
+                    className="flex-1 h-11 rounded-xl bg-green-600 text-white text-[14px] font-semibold hover:bg-green-700 transition"
+                  >
+                    {t('Approve', '通过')}
+                  </button>
+                  <button
+                    onClick={() => onReject(company.id)}
+                    className="flex-1 h-11 rounded-xl bg-red-600 text-white text-[14px] font-semibold hover:bg-red-700 transition"
+                  >
+                    {t('Reject', '拒绝')}
+                  </button>
+                  <button
+                    onClick={() => onEditClick(company.id)}
+                    className="h-11 px-4 rounded-xl border border-stone-200 text-[13px] text-stone-600 hover:bg-stone-50 transition"
+                  >
+                    {t('Edit', '编辑')}
+                  </button>
+                </div>
+              )}
+              {company.status !== 'pending' && (
+                <button
+                  onClick={() => onEditClick(company.id)}
+                  className="mt-2 h-10 w-full rounded-xl border border-stone-200 text-[13px] text-stone-600 hover:bg-stone-50 transition"
+                >
+                  {t('Edit', '编辑')}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ── Desktop table ── */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
@@ -948,6 +1002,7 @@ const CompaniesTab: React.FC<{
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

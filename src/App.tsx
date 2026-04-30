@@ -113,6 +113,7 @@ const AdminSupplierDetailPage = lazyRetry(() => import('./pages/admin/AdminSuppl
 const AdminProjectDetailPage = lazyRetry(() => import('./pages/admin/AdminProjectDetailPage'));
 const AdminVisitRecordsPage = lazyRetry(() => import('./pages/admin/AdminVisitRecordsPage'));
 const AdminStaffPage = lazyRetry(() => import('./pages/admin/AdminStaffPage'));
+const AdminEnumsPage = lazyRetry(() => import('./pages/admin/AdminEnumsPage'));
 
 // Field
 const FieldSurveyPage = lazyRetry(() => import('./pages/field/FieldSurveyPage'));
@@ -219,6 +220,7 @@ function App() {
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />
             <Route path="company-import" element={<AdminCompanyImportPage />} />
             <Route path="help" element={<AdminHelpPage />} />
+            <Route path="enums" element={<AdminEnumsPage />} />
             <Route path="suppliers" element={<AdminSuppliersPage />} />
             <Route path="suppliers/:id" element={<AdminSupplierDetailPage />} />
             <Route path="visit-records" element={<AdminVisitRecordsPage />} />
@@ -267,6 +269,7 @@ function App() {
           <Route path="/start" element={<StartGuidePage />} />
           <Route path="/for-companies" element={<ForCompaniesPage />} />
           <Route path="/for-homeowners" element={<ForHomeownersPage />} />
+          <Route path="/start" element={<StartGuidePage />} />
           <Route path="/join" element={<Navigate to="/for-companies" replace />} />
 
           {/* ====== Auth ====== */}
@@ -310,7 +313,7 @@ function App() {
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:companySlug/:projectSlug" element={<ProjectDetailPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />
-                
+                <Route path="/@:id" element={<CompanyDetailPage />} />
                 <Route path="*" element={<AtSlugOrNotFound />} />
               </Routes>
             </Layout>

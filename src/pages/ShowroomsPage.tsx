@@ -207,22 +207,24 @@ export default function ShowroomsPage() {
       <section className="relative bg-[#2c2620] overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.8)_1px,transparent_0)] [background-size:32px_32px]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,74,0.12),transparent_70%)]" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mb-2">
-              Find Premium Material Suppliers in UAE
-            </h1>
-            <p className="text-white/60 text-[15px]">
-              Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
-            </p>
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+            <div>
+              <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mb-2">
+                Find Premium Material Suppliers in UAE
+              </h1>
+              <p className="text-white/60 text-[15px]">
+                Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLeadModalOpen(true)}
+              className="btn-primary w-full sm:w-auto sm:shrink-0 inline-flex items-center justify-center gap-2"
+            >
+              Apply to Join
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setLeadModalOpen(true)}
-            className="btn-primary shrink-0 hidden sm:inline-flex items-center gap-2"
-          >
-            Apply to Join
-          </button>
         </div>
       </section>
 
@@ -320,15 +322,12 @@ export default function ShowroomsPage() {
 
           {/* Mobile category filter */}
           <div className="lg:hidden mb-4">
-            <select
+            <AdminSelect
+              size="sm"
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full h-11 px-4 rounded-xl border border-stone-200 bg-white text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
-            >
-              {CATEGORY_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              onChange={setCategoryFilter}
+              options={CATEGORY_OPTIONS}
+            />
           </div>
 
           {/* Result count */}
@@ -356,12 +355,6 @@ export default function ShowroomsPage() {
             </div>
           )}
 
-          {/* Mobile Apply CTA */}
-          <div className="mt-10 sm:hidden">
-            <button type="button" onClick={() => setLeadModalOpen(true)} className="btn-primary w-full py-3.5 text-[15px]">
-              Apply to Join as Supplier
-            </button>
-          </div>
         </div>
       </div>
 

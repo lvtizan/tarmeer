@@ -5,7 +5,7 @@ import {
   validateCompanyProfilePayload,
 } from './companyProfileDraft';
 
-test('company profile draft validation allows partial autosave payloads', () => {
+test('company profile draft validation allows partial autosave payloads', async () => {
   const payload = normalizeCompanyProfilePayload({
     company_name: 'Studio One',
     description: 'Draft bio only',
@@ -13,12 +13,12 @@ test('company profile draft validation allows partial autosave payloads', () => 
     services: ['Interior Design'],
   });
 
-  assert.equal(validateCompanyProfilePayload(payload), null);
+  assert.equal(await validateCompanyProfilePayload(payload), null);
   assert.equal(payload.address, '');
   assert.equal(payload.contact_person, '');
 });
 
-test('company profile draft validation requires company name', () => {
+test('company profile draft validation requires company name', async () => {
   const payload = normalizeCompanyProfilePayload({
     company_name: '   ',
     company_type: 'design_studio',
@@ -26,12 +26,12 @@ test('company profile draft validation requires company name', () => {
   });
 
   assert.equal(
-    validateCompanyProfilePayload(payload),
+    await validateCompanyProfilePayload(payload),
     'Company name is required to save your profile.',
   );
 });
 
-test('company profile draft validation rejects invalid services and specialties', () => {
+test('company profile draft validation rejects invalid services and specialties', async () => {
   const payload = normalizeCompanyProfilePayload({
     company_name: 'Studio One',
     company_type: 'design_studio',
@@ -40,7 +40,7 @@ test('company profile draft validation rejects invalid services and specialties'
   });
 
   assert.equal(
-    validateCompanyProfilePayload(payload),
+    await validateCompanyProfilePayload(payload),
     'Invalid services: Fake Service',
   );
 });

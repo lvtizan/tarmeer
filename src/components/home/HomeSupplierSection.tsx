@@ -27,7 +27,7 @@ export default function HomeSupplierSection() {
         setSuppliers(list.slice(0, 4));
       })
       .catch(() => {});
-    return () => { active = active && false; };
+    return () => { active = false; };
   }, []);
 
   if (suppliers.length === 0) return null;
