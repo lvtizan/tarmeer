@@ -51,6 +51,15 @@ Violation examples (forbidden in public pages):
 11. **相似页面必须复用结构**：开始写任何新页面或改版前，先找最相似的已有页面，直接复用其布局骨架、组件结构和交互模式，只替换数据层。禁止从零重写已有相似结构。
 12. **PC 端与移动端逻辑必须一致**：任何涉及表单、上传、数据提交、页面路由的功能，写代码前必须同时阅读 PC 端和移动端的现有实现，确认以下三点完全一致：（1）交互逻辑（触发条件、校验规则、跳转行为）；（2）数据传输逻辑（API endpoint、payload 结构、字段名）；（3）组件/页面路由（移动端底部导航指向的页面必须与 PC 端侧边栏指向的页面使用相同组件）。如果发现不一致，必须在本次改动中同步修复，不得遗留分叉。
 12. **改完代码后的自动流程**：Stop hook 会在每次 Claude 停止时自动运行 tsc 检查（仅当本次 session 修改了 src/ 或 server/src/ 中的 TS/TSX/JS 文件时触发）。tsc 通过后，Claude 必须：（1）运行相关 harness 测试用例；（2）提供本地测试地址（`http://localhost:5173/` 对应路径）；（3）告知用户改了什么 + 测试结果；（4）等用户确认后才能部署。**tsc 失败时 Claude 会被自动唤醒修复，不需要用户介入。**
+13. **新路由必须有 harness 覆盖**：新增任何后端路由（`router.get/post/put/patch/delete`）后，必须同时在对应 harness 脚本里补充测试用例（至少覆盖：正常返回码、无 token → 401、无权限 → 403）。路由覆盖用 `node scripts/harness/lint-route-coverage.mjs` 验证。未覆盖的路由不允许部署。
+14. **部署流程（用户说"部署"时的完整自动流程）**：
+    1. 运行 `node scripts/harness/lint-route-coverage.mjs`（路由注册检查）
+    2. 运行本次功能相关的 harness 测试脚本
+    3. 运行 `node scripts/harness/test-frozen-contracts.mjs`（契约检查）
+    4. 所有测试全部 PASS 后，git push origin HEAD:main
+    5. 再执行 `bash deploy-backend-ecs.sh`（如有后端改动）
+    6. 再执行 `DEPLOY_SSH_KEY=~/.ssh/tarmeer_ecs DEPLOY_RULES_ACK=YES DEPLOY_USER_APPROVED=YES SKIP_SCHEMA_CHECK=YES bash deploy-simple.sh`
+    7. 任何一步 FAIL → 停止，报告失败原因，不继续部署
 
 ---
 

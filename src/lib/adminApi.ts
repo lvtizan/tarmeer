@@ -848,24 +848,24 @@ class AdminApiClient {
 
   // Field interviews (admin view)
   async getInterviews() {
-    return this.request('/admin/interviews');
+    return this.request('/interviews');
   }
   async getInterview(id: number) {
-    return this.request(`/admin/interviews/${id}`);
+    return this.request(`/interviews/${id}`);
   }
   async updateInterview(id: number, data: Record<string, any>) {
-    return this.request(`/admin/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    return this.request(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
   }
 
   // Field staff management
   async getStaff() {
-    return this.request('/admin/staff');
+    return this.request('/staff');
   }
   async createStaff(data: { email: string; password: string; fullName: string }) {
-    return this.request('/admin/staff', { method: 'POST', body: JSON.stringify(data) });
+    return this.request('/staff', { method: 'POST', body: JSON.stringify(data) });
   }
   async toggleStaff(id: number, is_active: boolean) {
-    return this.request(`/admin/staff/${id}`, { method: 'PATCH', body: JSON.stringify({ is_active }) });
+    return this.request(`/staff/${id}`, { method: 'PATCH', body: JSON.stringify({ is_active }) });
   }
 }
 
