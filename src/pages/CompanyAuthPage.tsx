@@ -131,7 +131,13 @@ function JoinAuthCard() {
           });
         } catch { /* profile may already exist */ }
       }
-      navigate('/company');
+      const returnTo = sessionStorage.getItem('company_returnTo');
+      if (returnTo) {
+        sessionStorage.removeItem('company_returnTo');
+        navigate(returnTo, { replace: true });
+      } else {
+        navigate('/company');
+      }
     } catch (err: any) {
       setLoading(false);
       setError(err.message || 'Invalid email or password.');
@@ -173,7 +179,13 @@ function JoinAuthCard() {
             establishment_year: companySignupData.establishment_year ? Number(companySignupData.establishment_year) : null,
             signup_source: source,
           });
-          navigate('/company');
+          const returnTo = sessionStorage.getItem('company_returnTo');
+          if (returnTo) {
+            sessionStorage.removeItem('company_returnTo');
+            navigate(returnTo, { replace: true });
+          } else {
+            navigate('/company');
+          }
           return;
         } catch (loginErr: any) {
           // Email verification required — show friendly message instead of red error

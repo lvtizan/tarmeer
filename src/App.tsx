@@ -171,6 +171,10 @@ function PageLoader() {
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const token = api.getToken();
   if (!token) {
+    const intended = window.location.pathname + window.location.search;
+    if (intended.startsWith('/company/')) {
+      sessionStorage.setItem('company_returnTo', intended);
+    }
     return <Navigate to="/auth" replace />;
   }
   return <>{children}</>;
