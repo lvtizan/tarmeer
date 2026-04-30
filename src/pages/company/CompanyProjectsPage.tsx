@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import {
   ImagePlus, Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight,
@@ -92,6 +93,12 @@ export default function CompanyProjectsPage() {
   /* ── existing projects ── */
   const [projects, setProjects] = useState<any[]>([]);
   const [projectsLoadError, setProjectsLoadError] = useState('');
+
+  /* ── deep-link highlight ── */
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get('projectId') ? Number(searchParams.get('projectId')) : null;
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+
   const refreshProjects = useCallback(() => {
     setProjectsLoadError('');
     api.get('/auth/company/projects')
@@ -106,6 +113,15 @@ export default function CompanyProjectsPage() {
       .catch(() => setProjectsLoadError('Failed to load projects. Please refresh the page.'));
   }, []);
   useEffect(() => { refreshProjects(); }, [refreshProjects]);
+
+  /* ── scroll highlight effect ── */
+  useEffect(() => {
+    if (highlightId && highlightRef.current) {
+      setTimeout(() => {
+        highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, [highlightId, projects]);
 
   /* ── image functions ── */
   const addFiles = async (files: FileList|File[]) => {
@@ -318,13 +334,19 @@ export default function CompanyProjectsPage() {
                 const firstImage = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
                 const coverImg = typeof firstImage === 'string' ? firstImage : (firstImage && typeof firstImage === 'object' && firstImage.url ? firstImage.url : '');
                 return (
-                  <div key={p.id} className="group overflow-hidden rounded-[20px] border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                  <div
+                    key={p.id}
+                    ref={highlightId === p.id ? highlightRef : null}
+                    className={`group overflow-hidden rounded-[20px] border bg-white shadow-sm transition-shadow hover:shadow-md ${
+                      highlightId === p.id ? 'border-[#b8864a] ring-2 ring-[#b8864a]/30' : 'border-stone-200'
+                    }`}
+                  >
                     <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
                       {coverImg
                         ? <img src={resolveImageUrl(coverImg)} alt={p.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                         : <div className="flex h-full w-full items-center justify-center text-stone-300"><Image className="h-10 w-10" /></div>}
                       <span className={`absolute left-3 top-3 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${p.status === 'published' ? 'bg-green-100 text-green-800' : p.status === 'pending' ? 'bg-amber-100 text-amber-800' : p.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-stone-100 text-stone-700'}`}>
-                        {p.status === 'published' ? 'Approved' : p.status === 'pending' ? 'Under Review' : p.status === 'rejected' ? 'Rejected' : 'Draft'}
+                        {p.status === 'published' ? 'Approved' : p.status === 'pending' ? 'Under Review' : p.status === 'rejected' ? 'Not Approved' : 'Draft'}
                       </span>
                     </div>
                     <div className="p-4">
