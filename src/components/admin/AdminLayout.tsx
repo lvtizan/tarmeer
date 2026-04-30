@@ -337,7 +337,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto [scrollbar-gutter:stable]">
         <AdminLangContext.Provider value={{ lang, t }}>
           <div className="w-full p-4 md:p-6">
             <Outlet />

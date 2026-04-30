@@ -295,13 +295,23 @@ export default function AdminCompaniesPage() {
   }, [tab]);
   const hasNewApplications = newAppCount > 0;
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
+  // Unified search value for the active tab
+  const activeSearch = tab === 'companies' ? profileSearch : tab === 'directory' ? companySearch : pendingSearch;
+  const setActiveSearch = (val: string) => {
+    if (tab === 'companies') { setProfileSearch(val); setProfilePage(1); }
+    else if (tab === 'directory') { setCompanySearch(val); setCompanyPage(1); }
+    else { setPendingSearch(val); setPendingPage(1); }
+  };
 
-      {/* Tabs + inline filters */}
-      <div className="flex items-center gap-3">
-        <div className="flex gap-1 bg-stone-100 rounded-lg p-1">
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-bold text-[#2c2c2c]">Companies</h1>
+
+      {/* PC: tabs + search + filter in one row  |  Mobile: tabs row, then search+filter row */}
+      <div className="flex flex-wrap items-center gap-2">
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-stone-100 rounded-lg p-1 shrink-0">
           {([
             ['companies', `Companies (${profileBadgeTotal})`],
             ['directory', `Directory (${directoryBadgeTotal})`],
@@ -315,7 +325,7 @@ export default function AdminCompaniesPage() {
                   adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
                 }
               }}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === t ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${tab === t ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
             >
               <span className="relative inline-flex items-start">
                 {label}
@@ -327,7 +337,17 @@ export default function AdminCompaniesPage() {
           ))}
         </div>
 
-        <div className="ml-auto w-36">
+        {/* Search — full width on mobile (basis-full), flex-1 on PC */}
+        <input
+          type="text"
+          value={activeSearch}
+          onChange={(e) => setActiveSearch(e.target.value)}
+          placeholder="Search..."
+          className="basis-full sm:basis-auto sm:flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white min-w-0"
+        />
+
+        {/* Filter dropdown */}
+        <div className="w-36 shrink-0">
           {tab === 'companies' && (
             <AdminSelect
               size="sm"
@@ -368,8 +388,6 @@ export default function AdminCompaniesPage() {
           )}
         </div>
       </div>
-
-      {/* Search removed — use global search bar at top */}
 
       {error && <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm">{error}</div>}
 

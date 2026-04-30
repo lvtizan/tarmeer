@@ -195,7 +195,21 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 - `min-h-screen` → root 随内容增高超过 100vh → body 滚动 → header/sidebar 随页面滚动（布局崩坏）
 - `h-screen overflow-hidden` → root 固定 100vh → 只有 `<main className="flex-1 overflow-auto">` 内部滚动
 - 改动 `AdminLayout.tsx` 时，第一件事检查 root div 是否为 `h-screen overflow-hidden`
-- 正确结构：`<div className="h-screen overflow-hidden flex flex-col">` → `<header shrink-0>` → `<div className="flex flex-1 overflow-hidden">` → `<aside>` + `<main className="flex-1 overflow-auto">`
+- 正确结构：`<div className="h-screen overflow-hidden flex flex-col">` → `<header shrink-0>` → `<div className="flex flex-1 overflow-hidden">` → `<aside>` + `<main className="flex-1 overflow-auto [scrollbar-gutter:stable]">`
+- **`<main>` 必须加 `[scrollbar-gutter:stable]`**：内容高度变化时滚动条槽位保持固定，防止竖向滚动条出现/消失时挤压页面宽度造成横向跳动。
+
+---
+
+## Admin 搜索/筛选栏布局规则（MUST FOLLOW）
+
+Admin 列表页的工具栏（tabs + 搜索 + 筛选）必须遵循以下布局规则：
+
+- **PC 端（sm+）**：tabs、搜索框（`flex-1`）、筛选下拉 三者在同一行，不换行
+- **移动端（< sm）**：tabs 一行，搜索框 + 筛选下拉 另起一行（`basis-full` 让搜索框强制换行）
+- **同一页面只允许一个搜索框**：多 tab 页面用 unified search，根据 active tab 绑定对应的 search state，切 tab 时 value 随之重置
+- **搜索框 class 模板**：`basis-full sm:basis-auto sm:flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-[15px] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white min-w-0`
+- **外层容器**：`flex flex-wrap items-center gap-2`（`flex-wrap` 允许移动端换行，`gap-2` 统一间距）
+- 禁止在子组件（table/card 组件）内部再加搜索框，搜索逻辑统一在页面级管理
 
 ---
 
