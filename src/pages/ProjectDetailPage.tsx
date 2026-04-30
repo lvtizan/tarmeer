@@ -114,20 +114,30 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
-      </div>
+      <>
+        <Helmet>
+          <link rel="canonical" href={`https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`} />
+        </Helmet>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
+          <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
+        </div>
+      </>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl text-[#2c2c2c] mb-4">{error || 'Project not found'}</h1>
-          <button onClick={handleBack} className="text-[#c6a065] hover:underline">Back</button>
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex" />
+        </Helmet>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="font-serif text-2xl text-[#2c2c2c] mb-4">{error || 'Project not found'}</h1>
+            <button onClick={handleBack} className="text-[#c6a065] hover:underline">Back</button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 

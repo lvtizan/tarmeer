@@ -98,9 +98,14 @@ export default function BlogDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--color-tarmeer-bg)] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
-      </div>
+      <>
+        <Helmet>
+          <link rel="canonical" href={`https://www.tarmeer.com/blog/${slug}`} />
+        </Helmet>
+        <div className="min-h-screen bg-[var(--color-tarmeer-bg)] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
+        </div>
+      </>
     );
   }
 

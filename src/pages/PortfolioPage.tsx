@@ -596,16 +596,16 @@ export default function PortfolioPage() {
   return (
     <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
       <Helmet>
-        <title>Interior Design Portfolio & Inspiration - Tarmeer UAE</title>
-        <meta name="description" content="Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more." />
-        <link rel="canonical" href="https://www.tarmeer.com/portfolio" />
+        <title>{urlTag ? `${urlTag} Interior Design Projects - Tarmeer UAE` : 'Interior Design Portfolio & Inspiration - Tarmeer UAE'}</title>
+        <meta name="description" content={urlTag ? `Browse ${urlTag.toLowerCase()} interior design projects from top UAE designers. Explore ${urlTag} style inspirations on Tarmeer.` : 'Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more.'} />
+        <link rel="canonical" href={urlTag ? `https://www.tarmeer.com/portfolio?tag=${encodeURIComponent(urlTag)}` : 'https://www.tarmeer.com/portfolio'} />
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'CollectionPage',
-            name: 'Interior Design Portfolio - Tarmeer UAE',
-            description: 'Browse stunning interior design projects from top UAE designers.',
-            url: 'https://www.tarmeer.com/portfolio',
+            name: urlTag ? `${urlTag} Interior Design Projects - Tarmeer UAE` : 'Interior Design Portfolio - Tarmeer UAE',
+            description: urlTag ? `Browse ${urlTag.toLowerCase()} interior design projects from top UAE designers.` : 'Browse stunning interior design projects from top UAE designers.',
+            url: urlTag ? `https://www.tarmeer.com/portfolio?tag=${encodeURIComponent(urlTag)}` : 'https://www.tarmeer.com/portfolio',
             mainEntity: {
               '@type': 'ItemList',
               itemListElement: projects.slice(0, 20).map((p, i) => ({
@@ -623,15 +623,15 @@ export default function PortfolioPage() {
             },
           })}
         </script>
-        <meta property="og:title" content="Interior Design Portfolio & Inspiration - Tarmeer UAE" />
-        <meta property="og:description" content="Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more." />
+        <meta property="og:title" content={urlTag ? `${urlTag} Interior Design Projects - Tarmeer UAE` : 'Interior Design Portfolio & Inspiration - Tarmeer UAE'} />
+        <meta property="og:description" content={urlTag ? `Browse ${urlTag.toLowerCase()} interior design projects from top UAE designers.` : 'Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more.'} />
         <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
-        <meta property="og:url" content="https://www.tarmeer.com/portfolio" />
+        <meta property="og:url" content={urlTag ? `https://www.tarmeer.com/portfolio?tag=${encodeURIComponent(urlTag)}` : 'https://www.tarmeer.com/portfolio'} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Tarmeer" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Interior Design Portfolio & Inspiration - Tarmeer UAE" />
-        <meta name="twitter:description" content="Browse stunning interior design projects from top UAE designers." />
+        <meta name="twitter:title" content={urlTag ? `${urlTag} Interior Design Projects - Tarmeer UAE` : 'Interior Design Portfolio & Inspiration - Tarmeer UAE'} />
+        <meta name="twitter:description" content={urlTag ? `Browse ${urlTag.toLowerCase()} interior design projects from top UAE designers.` : 'Browse stunning interior design projects from top UAE designers.'} />
         <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
         <meta name="keywords" content="interior design portfolio, UAE interior design, luxury villas, modern apartments, renovation projects, Tarmeer, Dubai, Abu Dhabi, design inspiration" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
