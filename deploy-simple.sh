@@ -168,7 +168,33 @@ run_rsync_to_remote() {
   if [[ "$AUTH_MODE" == "key" ]]; then
     rsync "${RSYNC_FLAGS[@]}" -e "ssh -i $SELECTED_SSH_KEY -o StrictHostKeyChecking=accept-new" "$local_path" "${SERVER_USER}@${SERVER_HOST}:${remote_path}"
   else
-    /usr/bin/expect -c "set timeout 1200; spawn rsync -az --delete --checksum --itemize-changes --stats --human-readable --exclude=.DS_Store -e \"ssh -o StrictHostKeyChecking=no\" $local_path ${SERVER_USER}@${SERVER_HOST}:${remote_path}; expect \"password:\"; send \"$DEPLOY_SSH_PASSWORD\r\"; expect eof"
+    /usr/bin/expect << EXPECT_EOF
+set timeout 1200
+spawn rsync -az --delete --checksum --itemize-changes --stats --human-readable --exclude=.DS_Store -e {ssh -o StrictHostKeyChecking=no} $local_path ${SERVER_USER}@${SERVER_HOST}:${remote_path}
+expect "password:"
+send "${DEPLOY_SSH_PASSWORD}\r"
+expect eof
+lassign [wait] pid spawnid os_error_flag value
+exit \$value
+EXPECT_EOF
+  fi
+}
+
+run_scp_to_remote() {
+  local local_file="$1"
+  local remote_path="$2"
+  if [[ "$AUTH_MODE" == "key" ]]; then
+    scp -i "$SELECTED_SSH_KEY" -o StrictHostKeyChecking=accept-new "$local_file" "${SERVER_USER}@${SERVER_HOST}:${remote_path}"
+  else
+    /usr/bin/expect << EXPECT_EOF
+set timeout 120
+spawn scp -o StrictHostKeyChecking=no $local_file ${SERVER_USER}@${SERVER_HOST}:${remote_path}
+expect "password:"
+send "${DEPLOY_SSH_PASSWORD}\r"
+expect eof
+lassign [wait] pid spawnid os_error_flag value
+exit \$value
+EXPECT_EOF
   fi
 }
 
@@ -288,7 +314,7 @@ run_rsync_to_remote "dist/" "${DEPLOY_PATH}/"
 
 # index.html 强制覆盖（rsync --checksum 在文件大小相同时可能跳过，导致旧版本残留）
 echo "🔄 强制覆盖 index.html..."
-scp -i "${SELECTED_SSH_KEY:-$HOME/.ssh/id_rsa}" -o StrictHostKeyChecking=accept-new "dist/index.html" "${SERVER_USER}@${SERVER_HOST}:${DEPLOY_PATH}/index.html"
+run_scp_to_remote "dist/index.html" "${DEPLOY_PATH}/index.html"
 # 3. 统一权限（默认禁止任何 Nginx 操作）
 echo "🔐 步骤 3/3: 统一权限..."
 if [[ "${ALLOW_NGINX_ACTIONS:-NO}" == "YES" ]]; then
