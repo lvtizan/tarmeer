@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ExternalLink, Pencil } from 'lucide-react';
+import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -219,80 +219,378 @@ export default function AdminRegisteredCompanyDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{actionError}</div>
       )}
 
-      <div className="space-y-3">
+      {/* ── MOBILE layout (< md / 768px): Header → Portfolio → Details → Services ── */}
+      <div className="md:hidden space-y-3">
+        {/* Card 1: Header */}
+        <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
+          {company.logo_url && (
+            <SmartImage
+              src={company.logo_url}
+              alt={company.company_name}
+              className="w-16 h-16 rounded-xl object-contain bg-stone-50 border border-stone-100"
+            />
+          )}
+          <div>
+            <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
+                {{ design_studio: t('Design Studio', '设计工作室'), renovation_company: t('Renovation & Fit-out', '装修公司'), general_contractor: t('General Contractor', '总承包商'), mep_contractor: t('MEP Contractor', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty Trade', '专项工程'), landscaping: t('Landscaping & Pools', '景观工程'), furnishing: t('Furnishing', '软装公司') }[company.company_type] || company.company_type}
+              </span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>
+                {company.status}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-1.5">
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
+              >
+                <Pencil size={14} />
+                {t('Edit', '编辑')}
+              </button>
+              <a
+                href={`/companies/${company.id}?admin_preview=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
+              >
+                <ExternalLink size={14} />
+                {t('Preview', '预览')}
+              </a>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 size={14} />
+                {t('Delete', '删除')}
+              </button>
+            </div>
+          </div>
+          {company.description && (
+            <p className="text-sm text-stone-600 leading-relaxed break-all">{company.description}</p>
+          )}
+          {canApprove && company.status === 'pending' && (
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleApprove}
+                disabled={isSubmitting}
+                className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+              >
+                {t('Approve', '通过')}
+              </button>
+              <button
+                onClick={() => setShowRejectModal(true)}
+                disabled={isSubmitting}
+                className="flex-1 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50"
+              >
+                {t('Reject', '拒绝')}
+              </button>
+            </div>
+          )}
+          {company.admin_notes && (
+            <div className="mt-2 text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
+              <span className="font-medium">{t('Admin notes:', '管理员备注:')}</span> {company.admin_notes}
+            </div>
+          )}
+        </div>
 
-          {/* ── Card 1: Header ── */}
-          <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-3">
-            {/* Logo + name + badges + secondary actions */}
-            <div className="flex items-start gap-3">
-              {company.logo_url ? (
-                <SmartImage src={company.logo_url} alt={company.company_name} className="w-12 h-12 rounded-lg object-contain bg-stone-50 border border-stone-100 flex-shrink-0" />
-              ) : (
-                <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center text-lg font-bold text-amber-600 flex-shrink-0">
-                  {company.company_name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <h1 className="text-base font-bold text-stone-800 leading-snug">{company.company_name}</h1>
-                <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
-                    {{ design_studio: t('Design Studio', '设计工作室'), renovation_company: t('Renovation & Fit-out', '装修公司'), general_contractor: t('General Contractor', '总承包商'), mep_contractor: t('MEP Contractor', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty Trade', '专项工程'), landscaping: t('Landscaping & Pools', '景观工程'), furnishing: t('Furnishing', '软装公司') }[company.company_type] || company.company_type}
-                  </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>
-                    {company.status}
-                  </span>
-                </div>
-              </div>
-              {/* Secondary actions — top-right */}
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <button onClick={() => setShowEditModal(true)} className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors">
-                  <Pencil size={15} />
+        {/* Card 2: Portfolio */}
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div className="flex items-center justify-between px-5 pt-5 pb-4">
+            <h2 className="text-sm font-semibold text-stone-800">
+              {t('Portfolio', '项目作品')} ({projects.length})
+            </h2>
+          </div>
+          {styles.length > 1 && (
+            <div className="flex gap-1 flex-wrap px-5 pb-3">
+              {styles.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setActiveStyle(s)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    activeStyle === s
+                      ? 'bg-[#b8864a] text-white'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  {s === 'all' ? `${t('All', '全部')} (${projects.length})` : s}
                 </button>
-                <a href={`/companies/${company.id}?admin_preview=1`} target="_blank" rel="noopener noreferrer" className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors">
-                  <ExternalLink size={15} />
-                </a>
+              ))}
+            </div>
+          )}
+          {visibleProjects.length === 0 ? (
+            <div className="p-12 text-center text-stone-400">
+              {t('No projects yet', '暂无项目')}
+            </div>
+          ) : (
+            <div className="p-5 pt-0">
+              <div className="grid grid-cols-2 gap-3">
+                {visibleProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}
+                  >
+                    <div className="aspect-video bg-stone-100 overflow-hidden">
+                      {project.images[0] ? (
+                        <SmartImage
+                          src={project.images[0]}
+                          alt={project.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-stone-300">
+                          <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3 space-y-1">
+                      <h3 className="text-xs font-medium text-stone-800 leading-snug line-clamp-1">{project.title}</h3>
+                      <div className="flex flex-wrap gap-1 text-xs text-stone-400">
+                        {project.style && <span>{project.style}</span>}
+                        {project.location && <span>· {project.location}</span>}
+                      </div>
+                      {(project.status === 'pending' || project.status === 'rejected') && (
+                        <div className="mt-2 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => handleProjectApprove(project.id)}
+                            className="flex-1 rounded-lg border border-green-200 bg-green-50 px-1.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 transition"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openProjectRejectModal(project.id)}
+                            className="flex-1 rounded-lg border border-red-200 bg-red-50 px-1.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Description */}
-            {company.description && (
-              <p className="text-sm text-stone-600 leading-relaxed">{company.description}</p>
-            )}
-
-            {/* Admin notes */}
-            {company.admin_notes && (
-              <div className="text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
-                <span className="font-medium">{t('Notes:', '备注:')}</span> {company.admin_notes}
+        {/* Card 3: Details + Owner merged */}
+        <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
+          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-4">{t('Details', '详情')}</h2>
+          <div className="space-y-3">
+            {company.contact_person && <InfoRow label={t('Contact', '联系人')} value={company.contact_person} />}
+            {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
+            {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
+            {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
+            {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} />}
+            {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} />}
+            {company.website && (
+              <div className="flex gap-2">
+                <span className="text-stone-400 w-20 flex-shrink-0">{t('Website', '网站')}</span>
+                <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
               </div>
             )}
+          </div>
+          <div className="mt-4 pt-4 border-t border-stone-100">
+            <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} />
+          </div>
+          <div className="mt-4 pt-4 border-t border-stone-100">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Owner Account', '所有者账户')}</p>
+            <div className="font-medium text-stone-800">{company.user_name}</div>
+            <div className="mt-1 text-stone-500">{company.user_email}</div>
+          </div>
+        </div>
 
-            {/* Approve / Reject */}
+        {/* Card 4: Services / Specialties */}
+        {(services.length > 0 || specialties.length > 0) && (
+          <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
+            {services.length > 0 && (
+              <div>
+                <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Services', '服务')}</h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {services.map((s, i) => (
+                    <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {specialties.length > 0 && (
+              <div>
+                <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Specialties', '专长')}</h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {specialties.map((s, i) => (
+                    <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-[#b8864a]/10 text-[#b8864a]">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── DESKTOP layout (md+ / ≥768px): Left sidebar w-80 | Right flex-1 ── */}
+      <div className="hidden md:flex md:items-start gap-6">
+        {/* LEFT: Company Info */}
+        <div className="w-80 flex-shrink-0 space-y-4">
+          {/* Header card */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
+            {company.logo_url && (
+              <SmartImage
+                src={company.logo_url}
+                alt={company.company_name}
+                className="w-16 h-16 rounded-xl object-contain bg-stone-50 border border-stone-100"
+              />
+            )}
+            <div>
+              <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
+                  {{ design_studio: t('Design Studio', '设计工作室'), renovation_company: t('Renovation & Fit-out', '装修公司'), general_contractor: t('General Contractor', '总承包商'), mep_contractor: t('MEP Contractor', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty Trade', '专项工程'), landscaping: t('Landscaping & Pools', '景观工程'), furnishing: t('Furnishing', '软装公司') }[company.company_type] || company.company_type}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>
+                  {company.status}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
+                >
+                  <Pencil size={14} />
+                  {t('Edit', '编辑')}
+                </button>
+                <a
+                  href={`/companies/${company.id}?admin_preview=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
+                >
+                  <ExternalLink size={14} />
+                  {t('Preview', '预览')}
+                </a>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Trash2 size={14} />
+                  {t('Delete', '删除')}
+                </button>
+              </div>
+            </div>
+            {company.description && (
+              <p className="text-sm text-stone-600 leading-relaxed break-all">{company.description}</p>
+            )}
+            {/* Admin actions */}
             {canApprove && company.status === 'pending' && (
               <div className="flex gap-2 pt-1">
-                <button onClick={handleApprove} disabled={isSubmitting} className="flex-1 h-11 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition">
+                <button
+                  onClick={handleApprove}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                >
                   {t('Approve', '通过')}
                 </button>
-                <button onClick={() => setShowRejectModal(true)} disabled={isSubmitting} className="flex-1 h-11 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 border border-red-200 disabled:opacity-50 transition">
+                <button
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50"
+                >
                   {t('Reject', '拒绝')}
                 </button>
               </div>
             )}
+            {company.admin_notes && (
+              <div className="mt-2 text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
+                <span className="font-medium">{t('Admin notes:', '管理员备注:')}</span> {company.admin_notes}
+              </div>
+            )}
           </div>
 
-          {/* ── Card 2: Portfolio ── */}
-          <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide">{t('Portfolio', '作品集')}</h2>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${projects.length > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                {projects.length} {t('projects', '项目')}
-              </span>
+          {/* Details card */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-2.5 text-sm">
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Details', '详情')}</h2>
+            {company.contact_person && <InfoRow label={t('Contact', '联系人')} value={company.contact_person} />}
+            {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
+            {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
+            {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
+            {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} />}
+            {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} />}
+            {company.website && (
+              <div className="flex gap-2">
+                <span className="text-stone-400 w-20 flex-shrink-0">{t('Website', '网站')}</span>
+                <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
+              </div>
+            )}
+            <div className="pt-1 border-t border-stone-100">
+              <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} />
+            </div>
+          </div>
+
+          {/* Services / Specialties */}
+          {(services.length > 0 || specialties.length > 0) && (
+            <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
+              {services.length > 0 && (
+                <div>
+                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Services', '服务')}</h2>
+                  <div className="flex flex-wrap gap-1.5">
+                    {services.map((s, i) => (
+                      <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {specialties.length > 0 && (
+                <div>
+                  <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t('Specialties', '专长')}</h2>
+                  <div className="flex flex-wrap gap-1.5">
+                    {specialties.map((s, i) => (
+                      <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-[#b8864a]/10 text-[#b8864a]">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Owner account */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Owner Account', '所有者账户')}</h2>
+            <div className="font-medium text-stone-800">{company.user_name}</div>
+            <div className="text-stone-500">{company.user_email}</div>
+          </div>
+        </div>
+
+        {/* RIGHT: Portfolio */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+            {/* Header inside card */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-4">
+              <h2 className="text-base font-bold text-stone-800">
+                {t('Portfolio', '作品集')} <span className="text-stone-400 font-normal text-sm">({projects.length} {t('projects', '项目')})</span>
+              </h2>
+              <button
+                onClick={() => navigate(`/admin/profile-companies/${id}/projects/new`)}
+                className="btn-primary px-4 py-2 text-sm"
+              >
+                + {t('Add Project', '添加项目')}
+              </button>
             </div>
 
-            {/* Style filter tabs */}
+            {/* Style tabs */}
             {styles.length > 1 && (
-              <div className="flex gap-1 flex-wrap">
+              <div className="flex gap-1 flex-wrap px-5 pb-3">
                 {styles.map((s) => (
-                  <button key={s} onClick={() => setActiveStyle(s)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${activeStyle === s ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>
+                  <button
+                    key={s}
+                    onClick={() => setActiveStyle(s)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                      activeStyle === s
+                        ? 'bg-[#b8864a] text-white'
+                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    }`}
+                  >
                     {s === 'all' ? `${t('All', '全部')} (${projects.length})` : s}
                   </button>
                 ))}
@@ -301,89 +599,73 @@ export default function AdminRegisteredCompanyDetailPage() {
 
             {/* Project grid */}
             {visibleProjects.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center">
-                <p className="text-sm font-medium text-red-500">{t('No projects uploaded yet', '未上传任何项目')}</p>
-                <p className="text-xs text-stone-400 mt-1">{t('Must upload at least 1 project before approval', '审核通过前须至少上传 1 个项目')}</p>
+              <div className="p-12 text-center text-stone-400">
+                {t('No projects yet', '暂无项目')}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {visibleProjects.map((project) => (
-                  <div key={project.id} className="rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow bg-white" onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}>
-                    <div className="aspect-video bg-stone-100 overflow-hidden">
-                      {project.images[0] ? (
-                        <SmartImage src={project.images[0]} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-stone-300">
-                          <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3 space-y-1">
-                      <h3 className="text-sm font-medium text-stone-800 line-clamp-1">{project.title}</h3>
-                      <div className="flex flex-wrap gap-1 text-xs text-stone-400">
-                        {project.style && <span>{project.style}</span>}
-                        {project.location && <span>· {project.location}</span>}
-                        {project.year && <span>· {project.year}</span>}
+              <div className="p-5 pt-0">
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+                  {visibleProjects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}
+                    >
+                      <div className="aspect-video bg-stone-100 overflow-hidden">
+                        {project.images[0] ? (
+                          <SmartImage
+                            src={project.images[0]}
+                            alt={project.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-stone-300">
+                            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
+                          </div>
+                        )}
                       </div>
-                      {project.rejection_reason && <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1">{project.rejection_reason}</p>}
-                      {project.images.length > 1 && <p className="text-xs text-stone-400">{project.images.length} photos</p>}
+                      <div className="p-3 space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-sm font-medium text-stone-800 leading-snug line-clamp-1">{project.title}</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-1 text-xs text-stone-400">
+                          {project.style && <span>{project.style}</span>}
+                          {project.location && <span>· {project.location}</span>}
+                          {project.year && <span>· {project.year}</span>}
+                        </div>
+                        {project.rejection_reason && (
+                          <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1">{project.rejection_reason}</p>
+                        )}
+                        {(project.status === 'pending' || project.status === 'rejected') && (
+                          <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => handleProjectApprove(project.id)}
+                              className="flex-1 rounded-lg border border-green-200 bg-green-50 px-2 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openProjectRejectModal(project.id)}
+                              className="flex-1 rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                        {project.images.length > 1 && (
+                          <p className="text-xs text-stone-400">{project.images.length} photos</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
-
-          {/* ── Card 3: Details + Owner ── */}
-          <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
-            <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-4">{t('Details', '详情')}</h2>
-            <div className="space-y-3 text-sm">
-              {company.contact_person && <InfoRow label={t('Contact', '联系人')} value={company.contact_person} />}
-              {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
-              {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
-              {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
-              {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} />}
-              {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} />}
-              {company.website && (
-                <div className="flex gap-2">
-                  <span className="text-stone-400 w-20 flex-shrink-0">{t('Website', '网站')}</span>
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 pt-4 border-t border-stone-100 text-sm">
-              <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} />
-            </div>
-            <div className="mt-4 pt-4 border-t border-stone-100">
-              <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">{t('Owner Account', '所有者账户')}</p>
-              <p className="text-sm font-medium text-stone-800">{company.user_name}</p>
-              <p className="mt-1 text-sm text-stone-500">{company.user_email}</p>
-            </div>
-          </div>
-
-          {/* ── Card 4: Services / Specialties (optional) ── */}
-          {(services.length > 0 || specialties.length > 0) && (
-            <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 space-y-4">
-              {services.length > 0 && (
-                <div className="space-y-2">
-                  <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide">{t('Services', '服务')}</h2>
-                  <div className="flex flex-wrap gap-1.5">
-                    {services.map((s, i) => <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">{s}</span>)}
-                  </div>
-                </div>
-              )}
-              {specialties.length > 0 && (
-                <div className="space-y-2">
-                  <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide">{t('Specialties', '专长')}</h2>
-                  <div className="flex flex-wrap gap-1.5">
-                    {specialties.map((s, i) => <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-[#b8864a]/10 text-[#b8864a]">{s}</span>)}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
-
+      </div>
 
       {/* Reject modal */}
       {showRejectModal && (

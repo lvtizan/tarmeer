@@ -5,6 +5,7 @@ import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox 
 import { MapPin, Clock, Package } from 'lucide-react';
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '../lib/supplierConstants';
+import AdminSelect from '../components/ui/AdminSelect';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTab';

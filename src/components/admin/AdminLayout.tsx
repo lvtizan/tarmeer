@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -113,7 +113,6 @@ export default function AdminLayout() {
   });
   const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
 
   const fetchNotificationCounts = useCallback(async () => {
     try {
