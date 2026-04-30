@@ -79,6 +79,23 @@ await test('API Health', 'First company has portfolio data', async () => {
   }
 });
 
+await test('Page Access', 'Company /@slug page returns 200 (no 404)', async () => {
+  if (!firstCompany?.slug) throw new Error('No company slug available from API');
+  const url = `${BASE}/@${firstCompany.slug}`;
+  const res = await fetch(url, { redirect: 'follow' });
+  if (res.status === 404) throw new Error(`/@${firstCompany.slug} returned 404`);
+  if (res.status !== 200) throw new Error(`/@${firstCompany.slug} returned ${res.status}`);
+});
+
+await test('API Health', 'GET /api/companies/:slug resolves first company', async () => {
+  if (!firstCompany?.slug) throw new Error('No company slug available from API');
+  const res = await fetch(`${BASE}/api/companies/${firstCompany.slug}`);
+  if (res.status === 404) throw new Error(`/api/companies/${firstCompany.slug} returned 404`);
+  if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
+  const body = await res.json();
+  if (!body.name && !body.company_name) throw new Error('Company detail missing name field');
+});
+
 await test('Static Assets', '/images/tarmeer_logo.svg returns 200', async () => {
   const res = await fetch(`${BASE}/images/tarmeer_logo.svg`);
   if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);

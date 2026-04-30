@@ -28,6 +28,9 @@ run_check() {
   echo ""
 }
 
+# 0. Route coverage (frontend API calls must all have registered backend routes)
+run_check "Route coverage (no missing routes)" node "$SCRIPT_DIR/lint-route-coverage.mjs"
+
 # 1. Reliability invariants
 run_check "Reliability invariants" node "$SCRIPT_DIR/lint-reliability.mjs"
 

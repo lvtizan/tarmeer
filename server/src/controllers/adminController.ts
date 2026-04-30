@@ -323,6 +323,60 @@ export async function createSubAdmin(req: any, res: Response) {
   }
 }
 
+// ── Field staff management ───────────────────────────────────────────
+
+export async function listStaff(_req: any, res: Response) {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, email, full_name, is_active, created_at
+       FROM admin_users WHERE role = 'field_staff' ORDER BY created_at DESC`
+    );
+    res.json({ staff: rows });
+  } catch (error) {
+    console.error('Error listing staff:', error);
+    res.status(500).json({ error: 'Failed to list staff.' });
+  }
+}
+
+export async function createStaff(req: any, res: Response) {
+  const { email, password, fullName } = req.body;
+  if (!email || !password || !fullName) {
+    return res.status(400).json({ error: 'email, password, fullName are required.' });
+  }
+  try {
+    const [existing] = await pool.execute(
+      'SELECT id FROM admin_users WHERE email = ?',
+      [email.toLowerCase().trim()]
+    );
+    if ((existing as any[]).length > 0) {
+      return res.status(400).json({ error: 'Email already registered.' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const [result] = await pool.execute(
+      `INSERT INTO admin_users (email, password, full_name, role) VALUES (?, ?, ?, 'field_staff')`,
+      [email.toLowerCase().trim(), hashedPassword, fullName.trim()]
+    );
+    const staffId = (result as any).insertId;
+    await logActivity(req.admin.id, 'create_staff', 'admin', staffId, { email });
+    res.status(201).json({ staff: { id: staffId, email: email.toLowerCase(), fullName: fullName.trim(), is_active: true } });
+  } catch (error) {
+    console.error('Error creating staff:', error);
+    res.status(500).json({ error: 'Failed to create staff.' });
+  }
+}
+
+export async function toggleStaff(req: any, res: Response) {
+  const { id } = req.params;
+  const { is_active } = req.body;
+  try {
+    await pool.execute('UPDATE admin_users SET is_active = ? WHERE id = ? AND role = ?', [is_active ? 1 : 0, id, 'field_staff']);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error toggling staff:', error);
+    res.status(500).json({ error: 'Failed to update staff.' });
+  }
+}
+
 // List all admins (super admin only)
 export async function listAdmins(req: any, res: Response) {
   try {

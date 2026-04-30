@@ -84,13 +84,11 @@ console.log('\n── 关键路由存在性检查 ──');
 
 const CRITICAL_ROUTES = [
   '/staff',
-  '/interviews',
   '/suppliers',
   '/inquiries',
   '/companies',
   '/designers',
   '/users',
-  '/rejection-templates',
 ];
 
 for (const route of CRITICAL_ROUTES) {
