@@ -267,7 +267,7 @@ export default function CompanyProjectsPage() {
   if (mode === 'list') {
     return (
       <div className="w-full">
-          <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
+          <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-7">
           {/* Rejected projects banner */}
           {projects.filter(p => p.status === 'rejected').length > 0 && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
@@ -383,7 +383,7 @@ export default function CompanyProjectsPage() {
   /* ── Form view ── */
   return (
     <div className="w-full">
-      <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-7">
 
         {/* ── Sticky top bar ── */}
         <div className="sticky top-3 z-20 mb-4 w-full rounded-[24px] border border-stone-200 bg-[#faf9f7]/95 px-5 py-3.5 shadow-[0_12px_30px_rgba(28,18,8,0.08)] backdrop-blur md:px-6">

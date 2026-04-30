@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTab';
@@ -299,71 +300,74 @@ export default function AdminCompaniesPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-stone-800">Companies</h1>
 
-      {/* Tabs + inline filters */}
-      <div className="flex items-center gap-3">
-        <div className="flex gap-1 bg-stone-100 rounded-lg p-1">
-          {([
-            ['companies', `Companies (${profileBadgeTotal})`],
-            ['directory', `Directory (${directoryBadgeTotal})`],
-            ['applications', `Applications (${pendingBadgeTotal})`],
-          ] as [Tab, string][]).map(([t, label]) => (
-            <button
-              key={t}
-              onClick={() => {
-                setTab(t);
-                if (t === 'applications') {
-                  adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
-                }
-              }}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition ${tab === t ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}
-            >
-              <span className="relative inline-flex items-start">
-                {label}
-                {t === 'applications' && hasNewApplications && (
-                  <span className="absolute -top-0.5 -right-2.5 inline-block w-2 h-2 rounded-full bg-red-500" />
-                )}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* ── Stat tab cards ── */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {([
+          { key: 'companies' as Tab, label: 'Companies', count: profileBadgeTotal, dot: false },
+          { key: 'directory' as Tab, label: 'Directory', count: directoryBadgeTotal, dot: false },
+          { key: 'applications' as Tab, label: 'Applications', count: pendingBadgeTotal, dot: hasNewApplications },
+        ]).map(({ key, label, count, dot }) => (
+          <button
+            key={key}
+            onClick={() => {
+              setTab(key);
+              if (key === 'applications') {
+                adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
+              }
+            }}
+            className={`relative rounded-xl border p-3 text-left transition ${
+              tab === key
+                ? 'bg-[#b8864a] border-[#b8864a] shadow-md'
+                : 'bg-white border-stone-200 hover:border-[#b8864a]/40'
+            }`}
+          >
+            {dot && (
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500" />
+            )}
+            <p className={`text-[26px] sm:text-[30px] font-bold leading-none mb-1 ${tab === key ? 'text-white' : 'text-stone-800'}`}>
+              {count}
+            </p>
+            <p className={`text-[10px] sm:text-[11px] font-medium leading-tight ${tab === key ? 'text-white/75' : 'text-stone-400'}`}>
+              {label}
+            </p>
+          </button>
+        ))}
+      </div>
 
-        <div className="ml-auto w-36">
+      {/* ── Search + filter (one row, shared mobile+desktop) ── */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+          <input
+            type="search"
+            placeholder="Search companies..."
+            value={tab === 'companies' ? profileSearch : tab === 'applications' ? pendingSearch : companySearch}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (tab === 'companies') { setProfileSearch(v); setProfilePage(1); }
+              else if (tab === 'applications') { setPendingSearch(v); setPendingPage(1); }
+              else { setCompanySearch(v); setCompanyPage(1); }
+            }}
+            className="w-full h-9 pl-9 pr-4 rounded-lg border border-stone-200 bg-white text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a]"
+          />
+        </div>
+        <div className="w-32 flex-shrink-0">
           {tab === 'companies' && (
-            <AdminSelect
-              size="sm"
-              value={profileStatusFilter}
+            <AdminSelect size="sm" value={profileStatusFilter}
               onChange={(val) => { setProfileStatusFilter(val as ProfileStatusFilter); setProfilePage(1); }}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' },
-              ]}
+              options={[{ value: 'all', label: 'All' }, { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }]}
             />
           )}
           {tab === 'directory' && (
-            <AdminSelect
-              size="sm"
-              value={claimedFilter}
+            <AdminSelect size="sm" value={claimedFilter}
               onChange={(val) => { setClaimedFilter(val as ClaimedFilter); setCompanyPage(1); }}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'claimed', label: 'Claimed' },
-                { value: 'unclaimed', label: 'Unclaimed' },
-              ]}
+              options={[{ value: 'all', label: 'All' }, { value: 'claimed', label: 'Claimed' }, { value: 'unclaimed', label: 'Unclaimed' }]}
             />
           )}
           {tab === 'applications' && (
-            <AdminSelect
-              size="sm"
-              value={pendingStatusFilter}
+            <AdminSelect size="sm" value={pendingStatusFilter}
               onChange={(val) => { setPendingStatusFilter(val as ProfileStatusFilter); setPendingPage(1); }}
-              options={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'approved', label: 'Approved' },
-                { value: 'rejected', label: 'Rejected' },
-                { value: 'all', label: 'All' },
-              ]}
+              options={[{ value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }, { value: 'all', label: 'All' }]}
             />
           )}
         </div>

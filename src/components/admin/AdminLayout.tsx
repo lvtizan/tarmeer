@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package, Tags } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, FileUp, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -108,6 +108,7 @@ export default function AdminLayout() {
     return saved === 'zh' ? 'zh' : 'en';
   });
   const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
 
   const fetchNotificationCounts = useCallback(async () => {
@@ -149,6 +150,9 @@ export default function AdminLayout() {
     const interval = setInterval(fetchNotificationCounts, 60000);
     return () => clearInterval(interval);
   }, [fetchNotificationCounts, fetchMenuCounts]);
+
+  // Close sidebar on navigation (mobile)
+  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
   // Mark notifications seen when visiting a page, then refresh counts
   useEffect(() => {
@@ -219,18 +223,40 @@ export default function AdminLayout() {
 
   return (
     <div className="h-screen bg-[#faf9f7] flex flex-col overflow-hidden">
-      {/* Top header — Logo | Search (centered) | spacer */}
-      <header className="h-16 bg-white border-b border-stone-200 grid grid-cols-[16rem_1fr_16rem] items-center px-6 sticky top-0 z-30 shrink-0">
+      {/* Top header */}
+      <header className="h-14 md:h-16 bg-white border-b border-stone-200 flex items-center px-4 md:grid md:grid-cols-[16rem_1fr_16rem] md:px-6 sticky top-0 z-30 shrink-0 gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-stone-100 transition shrink-0"
+          onClick={() => setSidebarOpen(v => !v)}
+          aria-label="Menu"
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
         <TarmeerLogo />
-        <div className="flex justify-center">
+        <div className="hidden md:flex justify-center">
           <AdminGlobalSearch />
         </div>
-        <div />
+        <div className="hidden md:block" />
       </header>
 
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       <div className="flex flex-1 overflow-hidden">
-      {/* Sidebar - match DesignerLayout style */}
-      <aside className="w-64 bg-white border-r border-stone-200 flex flex-col sticky top-0 h-[calc(100vh-4rem)] overflow-visible">
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:sticky top-14 md:top-0 z-40 md:z-auto
+        h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)]
+        w-64 bg-white border-r border-stone-200 flex flex-col overflow-visible
+        transition-transform duration-200
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
         {/* Navigation - active: left border + light bg like designer */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto overflow-x-visible">
           {filteredNavItems.map((item) => {
@@ -338,7 +364,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto md:ml-0 w-full">
         <AdminLangContext.Provider value={{ lang, t }}>
           <div className="w-full p-4 md:p-6">
             <Outlet />

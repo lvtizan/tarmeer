@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Circle, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ArrowRight, FolderOpen, FileText, User, TrendingUp, ExternalLink, Zap } from 'lucide-react';
 import { api } from '../../lib/api';
 
 interface ProfileSummary {
@@ -98,6 +98,33 @@ export default function CompanyDashboardPage() {
             Preview
           </a>
         )}
+      </div>
+
+      {/* ── Ranking boost banner ── */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #1a1208 0%, #2d1f0e 60%, #3d2c14 100%)' }}
+      >
+        <div className="px-5 py-4 sm:px-6 sm:py-5 flex items-center gap-4">
+          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#b8864a]/20 flex items-center justify-center">
+            <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-[#d4a96a]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] sm:text-[16px] font-semibold text-white leading-snug">
+              More projects = higher ranking = more clients
+            </p>
+            <p className="text-[13px] sm:text-[14px] text-white/55 mt-0.5">
+              You have <span className="text-[#d4a96a] font-semibold">{projectCount}</span> project{projectCount !== 1 ? 's' : ''} · Ranking score: <span className="text-[#d4a96a] font-semibold">{(projectCount + articleCount) * 10} pts</span>. Upload more to rank higher in search and attract more homeowners.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/company/projects')}
+            className="flex-shrink-0 h-9 px-4 rounded-xl text-[13px] font-semibold text-[#1a1208] transition hover:opacity-90 whitespace-nowrap"
+            style={{ background: 'linear-gradient(135deg, #c6a065 0%, #b8864a 100%)' }}
+          >
+            + Add Project
+          </button>
+        </div>
       </div>
 
       {/* ── Onboarding stepper ── */}
