@@ -7,6 +7,7 @@ import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { useAdminT } from '../../hooks/useAdminLang';
+import { showToast } from '../../components/ui/Toast';
 
 interface CompanyProfile {
   id: number;
@@ -74,6 +75,12 @@ export default function AdminRegisteredCompanyDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [rejectingProjectId, setRejectingProjectId] = useState<number | null>(null);
+  const [projectRejectReason, setProjectRejectReason] = useState('');
+  const [projectRejectLoading, setProjectRejectLoading] = useState(false);
+  const [projectActionError, setProjectActionError] = useState('');
+  const [rejectionTemplates, setRejectionTemplates] = useState<Array<{ id: number; text: string }>>([]);
+  const [templatesLoaded, setTemplatesLoaded] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
@@ -129,6 +136,58 @@ export default function AdminRegisteredCompanyDetailPage() {
       setActionError(err.message || 'Failed to reject.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const openProjectRejectModal = async (projectId: number) => {
+    setRejectingProjectId(projectId);
+    setProjectRejectReason('');
+    setProjectActionError('');
+    if (!templatesLoaded) {
+      try {
+        const { templates } = await adminApi.getRejectionTemplates();
+        setRejectionTemplates(templates);
+        setTemplatesLoaded(true);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const handleProjectReject = async () => {
+    if (!rejectingProjectId || !projectRejectReason.trim()) return;
+    setProjectRejectLoading(true);
+    setProjectActionError('');
+    try {
+      await adminApi.rejectProject(rejectingProjectId, projectRejectReason);
+      setProjects((prev: any[]) =>
+        prev.map((p: any) =>
+          p.id === rejectingProjectId
+            ? { ...p, status: 'rejected', rejection_reason: projectRejectReason.trim() }
+            : p
+        )
+      );
+      setRejectingProjectId(null);
+      setProjectRejectReason('');
+      showToast('Project rejected.', 'success');
+    } catch (err: any) {
+      setProjectActionError(err.message || 'Failed to reject project.');
+    } finally {
+      setProjectRejectLoading(false);
+    }
+  };
+
+  const handleProjectApprove = async (projectId: number) => {
+    try {
+      await adminApi.approveProject(projectId);
+      setProjects((prev: any[]) =>
+        prev.map((p: any) =>
+          p.id === projectId ? { ...p, status: 'published', rejection_reason: null } : p
+        )
+      );
+      showToast('Project approved.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to approve project.', 'error');
     }
   };
 
@@ -362,6 +421,24 @@ export default function AdminRegisteredCompanyDetailPage() {
                     {project.rejection_reason && (
                       <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1">{project.rejection_reason}</p>
                     )}
+                    {(project.status === 'pending' || project.status === 'rejected') && (
+                      <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => handleProjectApprove(project.id)}
+                          className="flex-1 rounded-lg border border-green-200 bg-green-50 px-2 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openProjectRejectModal(project.id)}
+                          className="flex-1 rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
                     {project.images.length > 1 && (
                       <p className="text-xs text-stone-400">{project.images.length} photos</p>
                     )}
@@ -394,6 +471,64 @@ export default function AdminRegisteredCompanyDetailPage() {
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {isSubmitting ? t('Rejecting...', '拒绝中...') : t('Reject', '拒绝')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project reject modal */}
+      {rejectingProjectId !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h2 className="text-lg font-semibold">{t('Reject Project', '拒绝项目')}</h2>
+
+            {/* Template history */}
+            {rejectionTemplates.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-stone-500">{t('Recent reasons (click to use):', '历史话术（点击填入）:')}</p>
+                <div className="max-h-36 overflow-y-auto space-y-1">
+                  {rejectionTemplates.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => setProjectRejectReason(tpl.text)}
+                      className="w-full text-left text-xs px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 transition line-clamp-2"
+                    >
+                      {tpl.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <textarea
+              value={projectRejectReason}
+              onChange={(e) => setProjectRejectReason(e.target.value)}
+              placeholder={t('Reason for rejection...', '拒绝原因...')}
+              rows={4}
+              className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30 focus:border-[#b8864a]"
+            />
+
+            {projectActionError && (
+              <p className="text-xs text-red-600">{projectActionError}</p>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => { setRejectingProjectId(null); setProjectRejectReason(''); }}
+                className="px-4 py-2 text-sm text-stone-600"
+              >
+                {t('Cancel', '取消')}
+              </button>
+              <button
+                type="button"
+                onClick={handleProjectReject}
+                disabled={projectRejectLoading || !projectRejectReason.trim()}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {projectRejectLoading ? t('Rejecting...', '拒绝中...') : t('Reject', '拒绝')}
               </button>
             </div>
           </div>
