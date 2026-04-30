@@ -257,6 +257,18 @@ git tag -a "v${NEW_VER}" -m "Release v${NEW_VER}"
 echo "✓ 已打 tag v${NEW_VER}"
 echo ""
 
+# 0.5 Push current branch tip to main (keep main in sync with what's deployed)
+if [[ "${CURRENT_BRANCH}" != "main" ]]; then
+  echo "🔀 同步到 main 分支..."
+  if git push origin "HEAD:main" --no-verify 2>/dev/null; then
+    echo "✓ main 已同步（fast-forward）"
+  else
+    echo "⚠️  main 无法 fast-forward（可能有 main 上的独立提交），跳过自动同步"
+    echo "   请手动执行：git checkout main && git merge ${CURRENT_BRANCH}"
+  fi
+  echo ""
+fi
+
 # 1. 构建项目
 echo "📦 步骤 1/3: 构建项目..."
 npm run build
