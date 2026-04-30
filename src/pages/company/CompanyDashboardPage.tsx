@@ -19,8 +19,14 @@ export default function CompanyDashboardPage() {
   const [projectCount, setProjectCount] = useState(0);
   const [articleCount, setArticleCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [rejectedProjects, setRejectedProjects] = useState<Array<{ id: number; title: string; rejection_reason: string | null }>>([]);
+  const [hasPendingProjects, setHasPendingProjects] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
+    if (sessionStorage.getItem('tarmeer_pending_banner_dismissed')) {
+      setBannerDismissed(true);
+    }
     (async () => {
       try {
         const [profileRes, projectsRes, articlesRes] = await Promise.allSettled([
@@ -45,8 +51,16 @@ export default function CompanyDashboardPage() {
         }
 
         if (projectsRes.status === 'fulfilled') {
-          const list = projectsRes.value?.projects || projectsRes.value || [];
-          setProjectCount(Array.isArray(list) ? list.length : 0);
+          const list: any[] = Array.isArray(projectsRes.value?.projects)
+            ? projectsRes.value.projects
+            : Array.isArray(projectsRes.value) ? projectsRes.value : [];
+          setProjectCount(list.length);
+          setRejectedProjects(
+            list
+              .filter((p: any) => p.status === 'rejected')
+              .map((p: any) => ({ id: p.id, title: p.title, rejection_reason: p.rejection_reason || null }))
+          );
+          setHasPendingProjects(list.some((p: any) => p.status === 'pending'));
         }
 
         if (articlesRes.status === 'fulfilled') {
@@ -76,6 +90,53 @@ export default function CompanyDashboardPage() {
 
   return (
     <div className="w-full max-w-[900px] mx-auto space-y-8">
+
+      {/* Rejection banner — non-dismissible while rejected */}
+      {rejectedProjects.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-red-800">
+              {rejectedProjects.length === 1
+                ? `"${rejectedProjects[0].title}" was not approved`
+                : `${rejectedProjects.length} projects were not approved`}
+            </p>
+            {rejectedProjects[0]?.rejection_reason && (
+              <p className="mt-1 text-xs text-red-700 leading-relaxed">
+                Reason: {rejectedProjects[0].rejection_reason}
+              </p>
+            )}
+            <a
+              href="/company/projects"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-red-700 underline underline-offset-2 hover:text-red-900"
+            >
+              View &amp; fix your projects →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Pending review banner — dismissible via sessionStorage */}
+      {rejectedProjects.length === 0 && hasPendingProjects && !bannerDismissed && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800">Your project is under review</p>
+            <p className="mt-0.5 text-xs text-amber-700">We'll notify you once the review is complete.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setBannerDismissed(true);
+              sessionStorage.setItem('tarmeer_pending_banner_dismissed', '1');
+            }}
+            className="text-amber-500 hover:text-amber-700 shrink-0"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
 
       {/* ── Welcome header ── */}
       <div className="flex items-start justify-between gap-4">
