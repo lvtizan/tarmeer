@@ -8,6 +8,7 @@ export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
+  const [isSupplier, setIsSupplier] = useState(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -19,31 +20,49 @@ export default function VerifyEmailPage() {
     }
 
     const verifyEmail = async () => {
-      try {
-        const response = await api.post('/auth/verify-email', { token });
+      const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
 
+      // Try user/company endpoint first, then supplier endpoint
+      const tryUser = async () => {
+        const response = await api.post('/auth/verify-email', { token });
         api.setToken(response.token);
         if (response.user) {
           localStorage.setItem('user', JSON.stringify(response.user));
           localStorage.setItem('active_role', response.user.active_role || '');
         }
-
-        setStatus('success');
-
-        // New users (no active_role) go to onboarding
         const activeRole = response.user?.active_role;
+        setStatus('success');
         setTimeout(() => {
-          if (!activeRole) {
-            navigate('/onboarding');
-          } else if (activeRole === 'company') {
-            navigate('/company');
-          } else {
-            navigate('/dashboard');
-          }
+          if (!activeRole) navigate('/onboarding');
+          else if (activeRole === 'company') navigate('/company');
+          else navigate('/dashboard');
         }, 2000);
-      } catch (err: any) {
-        setStatus('error');
-        setError(err.message || 'Verification failed, please try again later');
+      };
+
+      const trySupplier = async () => {
+        const res = await fetch(`${API_BASE}/supplier/auth/verify-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Verification failed');
+        localStorage.setItem('supplier_token', data.token);
+        if (data.user) localStorage.setItem('supplier_user', JSON.stringify(data.user));
+        setIsSupplier(true);
+        setStatus('success');
+        setTimeout(() => navigate('/supplier/dashboard'), 2000);
+      };
+
+      try {
+        await tryUser();
+      } catch {
+        try {
+          await trySupplier();
+        } catch (err: any) {
+          setStatus('error');
+          setError(err.message || 'Verification failed, please try again later');
+        }
       }
     };
 
@@ -79,6 +98,7 @@ export default function VerifyEmailPage() {
                 If redirect doesn't happen,
                 <button
                   onClick={() => {
+                    if (isSupplier) { navigate('/supplier/dashboard'); return; }
                     const role = localStorage.getItem('active_role');
                     navigate(role ? (role === 'company' ? '/company' : '/dashboard') : '/onboarding');
                   }}

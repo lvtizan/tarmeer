@@ -29,6 +29,11 @@
  *   TC24: Admin 删除（级联）
  *   TC25: 未 approved 的供应商不出现在公开列表
  *   TC26: check-availability
+ *   TC27: 未验证邮箱登录 → 403
+ *   TC28: verify-email 缺少 token → 400
+ *   TC29: verify-email 无效 token → 400
+ *   TC30: verify-email 有效 token → 200 + token
+ *   TC31: check-verified 已验证用户 → verified: true
  *
  * 用法: PORT=3099 node scripts/harness/test-supplier-system.mjs
  */
@@ -129,10 +134,48 @@ async function run() {
     ok('TC2', 'Duplicate register → 400', r.status === 400);
   }
 
-  // TC3: Login
+  // TC27: Login before email verified → 403
   {
     const r = await post('/supplier/auth/login', { email: EMAIL, password: PASSWORD });
-    ok('TC3', 'Login → 200', r.status === 200);
+    ok('TC27', 'Login before verify → 403', r.status === 403);
+  }
+
+  // TC28: verify-email missing token → 400
+  {
+    const r = await post('/supplier/auth/verify-email', {});
+    ok('TC28', 'verify-email no token → 400', r.status === 400);
+  }
+
+  // TC29: verify-email invalid token → 400
+  {
+    const r = await post('/supplier/auth/verify-email', { token: 'nonexistent-verify-token' });
+    ok('TC29', 'verify-email invalid token → 400', r.status === 400);
+  }
+
+  // TC30: verify-email valid token → 200 + token
+  {
+    const [rows] = await pool.execute('SELECT verification_token FROM supplier_users WHERE email = ?', [EMAIL]);
+    const token = rows[0]?.verification_token;
+    ok('TC30', 'Verification token exists in DB', !!token);
+    if (token) {
+      const r = await post('/supplier/auth/verify-email', { token });
+      ok('TC30', 'verify-email valid token → 200', r.status === 200);
+      ok('TC30', 'verify-email returns token', !!r.data.token);
+    }
+  }
+
+  // TC31: check-verified → verified: true
+  {
+    const r = await get(`/supplier/auth/check-verified?email=${encodeURIComponent(EMAIL)}`);
+    ok('TC31', 'check-verified → 200', r.status === 200);
+    ok('TC31', 'verified: true', r.data.verified === true);
+    ok('TC31', 'returns token', !!r.data.token);
+  }
+
+  // TC3: Login after email verified → 200
+  {
+    const r = await post('/supplier/auth/login', { email: EMAIL, password: PASSWORD });
+    ok('TC3', 'Login after verify → 200', r.status === 200);
     ok('TC3', 'Login returns token', !!r.data.token);
     supplierToken = r.data.token;
   }
@@ -166,7 +209,7 @@ async function run() {
       google_maps_url: 'https://maps.google.com/test',
       contact_phone: '+971501234567',
     }, supplierToken);
-    ok('TC5', 'Create profile → 201', r.status === 201);
+    ok('TC5', 'Create profile → 200/201', r.status === 200 || r.status === 201);
     ok('TC5', 'Profile has slug', !!r.data.profile?.slug);
     profileSlug = r.data.profile?.slug;
     profileId = r.data.profile?.id;

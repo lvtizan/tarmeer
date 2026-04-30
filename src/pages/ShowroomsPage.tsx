@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox (Task 2)
 import { MapPin, Clock, Package } from 'lucide-react';
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
+import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '../lib/supplierConstants';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -65,12 +66,8 @@ function SupplierCard({ s }: { s: Supplier }) {
             <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
               {s.company_name}
             </h3>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-              s.origin === 'china'
-                ? 'bg-red-50 text-red-600'
-                : 'bg-emerald-50 text-emerald-700'
-            }`}>
-              {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ORIGIN_BADGE_CLASS[s.origin]}`}>
+              {ORIGIN_LABEL[s.origin]}
             </span>
           </div>
           {s.description && (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Building2, Package, Layers, FolderOpen, LogOut, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Building2, Package, Layers, FolderOpen, LogOut, ExternalLink, User } from 'lucide-react';
 import TarmeerLogo from '../TarmeerLogo';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
@@ -20,10 +20,10 @@ export default function SupplierLayout() {
   const [status, setStatus] = useState('');
 
   useEffect(() => {
-    if (!getToken()) { navigate('/supplier/auth', { replace: true }); return; }
+    if (!getToken()) { navigate('/for-suppliers', { replace: true }); return; }
     fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
       .then(r => {
-        if (r.status === 401) { navigate('/supplier/auth', { replace: true }); return null; }
+        if (r.status === 401) { navigate('/for-suppliers', { replace: true }); return null; }
         return r.json();
       })
       .then(data => {
@@ -41,11 +41,11 @@ export default function SupplierLayout() {
   const handleLogout = () => {
     localStorage.removeItem('supplier_token');
     localStorage.removeItem('supplier_user');
-    navigate('/supplier/auth');
+    navigate('/for-suppliers');
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="h-screen overflow-hidden bg-stone-50 flex flex-col">
       {/* Top bar */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-30 h-14 flex items-center px-4 sm:px-6 justify-between shrink-0">
         <TarmeerLogo className="h-6" />
@@ -80,7 +80,11 @@ export default function SupplierLayout() {
           <div className="p-6">
             <nav className="flex flex-col gap-1">
               <NavLink to="/supplier/dashboard" end className={navCls}>
-                <Building2 className="w-5 h-5" />
+                <LayoutDashboard className="w-5 h-5" />
+                <span>Overview</span>
+              </NavLink>
+              <NavLink to="/supplier/profile" className={navCls}>
+                <User className="w-5 h-5" />
                 <span>Profile</span>
               </NavLink>
               <NavLink to="/supplier/products" className={navCls}>
@@ -99,7 +103,7 @@ export default function SupplierLayout() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto md:ml-64 pb-20 md:pb-0">
+        <main className="flex-1 overflow-y-auto md:ml-64 pb-20 md:pb-0 [scrollbar-gutter:stable]">
           <div className="p-4 sm:p-6 lg:p-10">
             <Outlet />
           </div>

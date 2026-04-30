@@ -335,6 +335,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
 
   // Supplier display order (lower = earlier in public listing)
   { table: 'supplier_profiles', column: 'sort_order', type: 'INT NOT NULL DEFAULT 0' },
+
+  // Supplier business license upload
+  { table: 'supplier_profiles', column: 'license_url', type: 'VARCHAR(500) NULL' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）

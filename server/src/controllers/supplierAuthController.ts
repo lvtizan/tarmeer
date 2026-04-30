@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/database';
 import config from '../config';
 import { sendVerificationEmail, generateVerificationToken } from '../services/emailService';
+import { slugify } from '../lib/slugify';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email',
@@ -65,18 +66,33 @@ export async function register(req: any, res: any) {
     );
 
     const userId = (result as any).insertId;
+
+    // Create supplier_profiles entry with status=pending
+    const displayName = full_name || email.split('@')[0];
+    const baseSlug = slugify(displayName) || `supplier-${userId}`;
+    let slug = baseSlug;
+    // Ensure slug uniqueness
+    const [slugCheck] = await pool.execute('SELECT id FROM supplier_profiles WHERE slug = ? LIMIT 1', [slug]);
+    if ((slugCheck as any[]).length > 0) {
+      slug = `${baseSlug}-${userId}`;
+    }
+    await pool.execute(
+      `INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, status) VALUES (?, ?, ?, 'pending')`,
+      [userId, displayName, slug]
+    );
+
     const frontendUrl = resolveFrontendUrl(req);
 
     // Send verification email (fire-and-forget)
     setImmediate(() => {
-      sendVerificationEmail(email, verificationToken, frontendUrl).catch((err: any) =>
+      sendVerificationEmail(email, displayName, verificationToken, frontendUrl).catch((err: any) =>
         console.error('[supplier] Verification email failed:', err)
       );
     });
 
     res.status(201).json({
       message: 'Account created. Please check your email to verify.',
-      user: { id: userId, email, full_name: full_name || email.split('@')[0] },
+      user: { id: userId, email, full_name: displayName },
     });
   } catch (error) {
     console.error('Supplier register error:', error);
@@ -98,6 +114,10 @@ export async function login(req: any, res: any) {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid email or password.' });
 
+    if (!user.email_verified) {
+      return res.status(403).json({ error: 'Please verify your email before signing in.' });
+    }
+
     const token = generateSupplierToken({ id: user.id, email: user.email });
 
     // Get profile if exists
@@ -115,6 +135,52 @@ export async function login(req: any, res: any) {
   } catch (error) {
     console.error('Supplier login error:', error);
     res.status(500).json({ error: 'Login failed.' });
+  }
+}
+
+export async function verifyEmail(req: any, res: any) {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token is required.' });
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM supplier_users WHERE verification_token = ? AND verification_expires > NOW() LIMIT 1',
+      [token]
+    );
+    if ((rows as any[]).length === 0) {
+      return res.status(400).json({ error: 'Verification link is invalid or has expired.' });
+    }
+    const user = (rows as any[])[0];
+
+    await pool.execute(
+      'UPDATE supplier_users SET email_verified = 1, verification_token = NULL, verification_expires = NULL WHERE id = ?',
+      [user.id]
+    );
+
+    const loginToken = generateSupplierToken({ id: user.id, email: user.email });
+    res.json({ message: 'Email verified successfully.', token: loginToken, user: sanitize(user) });
+  } catch (error) {
+    console.error('Supplier verifyEmail error:', error);
+    res.status(500).json({ error: 'Verification failed. Please try again.' });
+  }
+}
+
+export async function checkVerified(req: any, res: any) {
+  try {
+    const email = req.query.email as string;
+    if (!email) return res.json({ verified: false });
+
+    const [rows] = await pool.execute(
+      'SELECT id, email, email_verified, full_name FROM supplier_users WHERE email = ? LIMIT 1',
+      [email]
+    );
+    const user = (rows as any[])[0];
+    if (!user || !user.email_verified) return res.json({ verified: false });
+
+    const token = generateSupplierToken({ id: user.id, email: user.email });
+    res.json({ verified: true, token, user: { id: user.id, email: user.email, full_name: user.full_name } });
+  } catch {
+    res.json({ verified: false });
   }
 }
 

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import SmartImage from '../components/ui/SmartImage';
 import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
+import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS } from '../lib/supplierConstants';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -258,12 +259,8 @@ export default function SupplierDetailPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold text-white">{supplier.company_name}</h1>
-                <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${
-                  supplier.origin === 'china'
-                    ? 'bg-red-500/20 text-red-200 border border-red-400/20'
-                    : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/20'
-                }`}>
-                  {supplier.origin === 'china' ? 'China' : 'Dubai'}
+                <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${ORIGIN_HERO_BADGE_CLASS[supplier.origin]}`}>
+                  {ORIGIN_LABEL[supplier.origin]}
                 </span>
               </div>
 

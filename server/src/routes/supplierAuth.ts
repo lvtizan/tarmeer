@@ -41,6 +41,8 @@ router.post('/login',
 );
 
 router.post('/check-availability', supplierAuth.checkAvailability);
+router.post('/verify-email', supplierAuth.verifyEmail);
+router.get('/check-verified', supplierAuth.checkVerified);
 
 // Google OAuth — only if credentials are configured
 if (process.env.GOOGLE_CLIENT_ID) {

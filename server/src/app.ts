@@ -466,6 +466,14 @@ app.listen(PORT, async () => {
   console.log(`📍 Environment: ${config.nodeEnv}`);
   console.log(`🔒 Security: Helmet enabled, Rate limiting active`);
 
+  // Ensure nginx can traverse the app root directory.
+  // tar extraction during deploy resets this dir to 700 (macOS mktemp default),
+  // blocking nginx from serving /uploads/ files (403 Forbidden).
+  // __dirname = /tarmeer/tarmeer_api/dist → resolve('..')  = /tarmeer/tarmeer_api
+  try {
+    fs.chmodSync(path.resolve(__dirname, '..'), 0o701);
+  } catch { /* non-fatal */ }
+
   // 启动后自动检查并补齐数据库结构
   await runAutoMigrate();
 
