@@ -282,6 +282,7 @@ function App() {
                 <Route path="/companies" element={<CompaniesPage />} />
                 <Route path="/companies/:companySlug/:projectSlug" element={<ProjectDetailPage />} />
                 <Route path="/companies/:id" element={<CompanyDetailPage />} />
+                <Route path="/@:id" element={<CompanyDetailPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>

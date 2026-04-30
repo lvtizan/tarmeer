@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { AnimatePresence, motion } from 'framer-motion';
 import PageContainer from '../components/PageContainer';
 import {
-  ArrowLeft, ArrowUp, FileText, X,
+  ArrowUp, FileText, X,
   Download, Package, Layers, FolderOpen, MapPin, ExternalLink,
   Maximize2, Banknote,
 } from 'lucide-react';
@@ -232,12 +232,13 @@ export default function SupplierDetailPage() {
         )}
 
         <PageContainer className="relative z-10 pt-6 pb-10 sm:pt-8 sm:pb-14">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition mb-8"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Suppliers
-          </button>
+          <nav className="flex items-center gap-1.5 text-xs text-white/50 mb-8">
+            <Link to="/" className="hover:text-white transition-colors">Home</Link>
+            <span>/</span>
+            <Link to="/materials" className="hover:text-white transition-colors">Materials</Link>
+            <span>/</span>
+            <span className="text-white/80 truncate max-w-[200px]">{supplier.company_name}</span>
+          </nav>
 
           <div className="flex items-start gap-5 sm:gap-6">
             {/* Logo */}

@@ -50,7 +50,7 @@ function SupplierCard({ s }: { s: Supplier }) {
       className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 py-5 gap-4 sm:gap-5"
     >
       {/* Cover image */}
-      <div className="w-full sm:w-[220px] md:w-[280px] h-[180px] flex-shrink-0 overflow-hidden rounded-2xl bg-stone-100">
+      <div className="w-full sm:w-[220px] md:w-[280px] h-[180px] flex-shrink-0 overflow-hidden bg-stone-100">
         <img
           src={s.cover_image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
           alt={s.company_name}
@@ -70,7 +70,7 @@ function SupplierCard({ s }: { s: Supplier }) {
                 ? 'bg-red-50 text-red-600'
                 : 'bg-emerald-50 text-emerald-700'
             }`}>
-              {s.origin === 'china' ? '🇨🇳 Cross-border' : '🇦🇪 Dubai'}
+              {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
             </span>
           </div>
           {s.description && (
@@ -249,7 +249,7 @@ export default function ShowroomsPage() {
                 <div className="space-y-1">
                   <FilterOption selected={originFilter === ''} onClick={() => setOriginFilter('')}>All Origins</FilterOption>
                   <FilterOption selected={originFilter === 'dubai'} onClick={() => setOriginFilter('dubai')}>🇦🇪 Dubai</FilterOption>
-                  <FilterOption selected={originFilter === 'china'} onClick={() => setOriginFilter('china')}>🇨🇳 Cross-border</FilterOption>
+                  <FilterOption selected={originFilter === 'china'} onClick={() => setOriginFilter('china')}>🇨🇳 China</FilterOption>
                 </div>
               </div>
 
@@ -305,7 +305,7 @@ export default function ShowroomsPage() {
             {[
               { value: '', label: 'All' },
               { value: 'dubai', label: '🇦🇪 Dubai' },
-              { value: 'china', label: '🇨🇳 Cross-border' },
+              { value: 'china', label: '🇨🇳 China' },
             ].map(opt => (
               <button
                 key={opt.value}
@@ -338,7 +338,7 @@ export default function ShowroomsPage() {
           {!loading && suppliers.length > 0 && (
             <p className="text-sm text-stone-500 mb-4">
               {suppliers.length} verified supplier{suppliers.length !== 1 ? 's' : ''}
-              {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 Cross-border' : '🇦🇪 Dubai'}`}
+              {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}`}
               {categoryFilter && ` · ${CATEGORY_OPTIONS.find(o => o.value === categoryFilter)?.label}`}
             </p>
           )}
