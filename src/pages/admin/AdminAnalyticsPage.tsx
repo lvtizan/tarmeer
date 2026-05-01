@@ -559,34 +559,34 @@ function VisitorTab() {
                   ? c.cities.slice(0, 4).map((city) => `${city.city || '—'} (${city.visitors})`).join('  ·  ')
                   : '';
                 return (
-                  <div key={c.slug} className="relative h-[54px] rounded-xl overflow-hidden" style={{ background: '#B8864A12' }}>
-                    {/* Gold fill */}
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
-                      style={{ width: `${pct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
-                    />
-                    {/* Content overlay — always full width */}
-                    <div className="absolute inset-0 flex flex-col justify-center px-4 gap-0.5">
-                      <div className="flex items-center justify-between">
+                  <div key={c.slug} className="flex items-center gap-3">
+                    {/* Bar — proportional width, name + cities inside */}
+                    <div className="flex-1 relative h-[54px] rounded-xl overflow-hidden" style={{ background: '#B8864A12' }}>
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
+                        style={{ width: `${pct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
+                      />
+                      <div className="absolute inset-0 flex flex-col justify-center px-4 gap-0.5">
                         <a
                           href={`/companies/${c.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="truncate max-w-[78%] hover:underline"
-                          style={{ fontSize: 16, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
+                          className="truncate hover:underline"
+                          style={{ fontSize: 14, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
                         >
                           {displayName}
                         </a>
-                        <span style={{ fontSize: 15, fontWeight: 600, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)', whiteSpace: 'nowrap', marginLeft: 8 }}>
-                          {c.unique_visitors}
-                        </span>
+                        {cityText && (
+                          <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                            {cityText}
+                          </div>
+                        )}
                       </div>
-                      {cityText && (
-                        <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-                          {cityText}
-                        </div>
-                      )}
                     </div>
+                    {/* Number — outside bar, dark brown, always visible */}
+                    <span className="shrink-0 w-8 text-right tabular-nums" style={{ fontSize: 15, fontWeight: 700, color: '#6b4a24' }}>
+                      {c.unique_visitors}
+                    </span>
                   </div>
                 );
               })}
