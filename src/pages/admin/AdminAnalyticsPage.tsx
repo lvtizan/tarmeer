@@ -14,7 +14,7 @@ function lazyRetry<T extends React.ComponentType<any>>(factory: () => Promise<{ 
   return lazy(() => factory().catch(() => factory().catch(() => { window.location.reload(); return factory(); })));
 }
 
-const UAEMapSVG = lazyRetry(() => import('../../components/admin/UAEMapSVG'));
+const UAEMapSVG = lazyRetry(() => import('../../components/admin/UAEMapLeaflet'));
 
 /* ─── Types ─── */
 
