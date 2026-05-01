@@ -781,10 +781,18 @@ export async function oauthCallback(req: any, res: any) {
 
     if (!user) {
       const googleSource = assignRole === 'company' ? 'google-oauth-company' : 'google-oauth';
+
+      // Don't store a phone that's already taken — NULL it out rather than blocking OAuth sign-in
+      let safePhone: string | null = oauthPhone || null;
+      if (safePhone) {
+        const [phoneRows] = await pool.execute('SELECT id FROM users WHERE phone = ? LIMIT 1', [safePhone]);
+        if ((phoneRows as any[]).length > 0) safePhone = null;
+      }
+
       const [result] = await pool.execute(
         `INSERT INTO users (email, password, full_name, phone, avatar_url, role, active_role, onboarding_completed, email_verified, status, signup_source)
          VALUES (?, '', ?, ?, ?, ?, ?, ?, TRUE, 'active', ?)`,
-        [passportUser.email, passportUser.full_name, oauthPhone || null, passportUser.avatar_url || '',
+        [passportUser.email, passportUser.full_name, safePhone, passportUser.avatar_url || '',
          assignRole || 'user', assignRole || null, assignRole ? 1 : 0, googleSource]
       );
       const userId = (result as any).insertId;
@@ -799,7 +807,7 @@ export async function oauthCallback(req: any, res: any) {
           notifyUserRegistration({
             email: passportUser.email,
             fullName: passportUser.full_name,
-            phone: oauthPhone || null,
+            phone: safePhone,
             city: null,
             role: assignRole || 'user',
             signupSource: googleSource,

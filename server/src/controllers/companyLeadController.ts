@@ -79,6 +79,42 @@ export async function submitCompanyLead(req: any, res: any) {
   }
 }
 
+export async function checkCompanyPhone(req: any, res: any) {
+  try {
+    const phone = req.query.phone as string;
+    if (!phone) return res.json({ exists: false });
+
+    const [[userRows], [profileRows]] = await Promise.all([
+      pool.execute(
+        `SELECT id,
+                (SELECT COUNT(*) FROM company_profiles cp WHERE cp.user_id = users.id LIMIT 1) AS has_company
+         FROM users WHERE phone = ? AND deleted_at IS NULL LIMIT 1`,
+        [phone]
+      ),
+      pool.execute(
+        'SELECT id FROM company_leads WHERE phone = ? LIMIT 1',
+        [phone]
+      ),
+    ]) as any;
+
+    const user = (userRows as any[])[0];
+    const lead = (profileRows as any[])[0];
+
+    if (user || lead) {
+      return res.json({
+        exists: true,
+        hasAccount: !!user,
+        hasCompanyProfile: user ? user.has_company > 0 : false,
+      });
+    }
+
+    res.json({ exists: false });
+  } catch (error) {
+    console.error('checkCompanyPhone error:', error);
+    res.json({ exists: false });
+  }
+}
+
 export async function getCompanyLeads(req: any, res: any) {
   try {
     const page = parseInt(req.query.page) || 1;

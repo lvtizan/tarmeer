@@ -364,7 +364,7 @@ export default function AdminInquiriesPage() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(inq.id)} onChange={() => toggleSelect(inq.id)} />
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-800">
+                    <td className="px-4 py-3 font-medium text-stone-800 whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         {inq.name || <span className="text-stone-400">—</span>}
                         {inq.name && <CopyButton text={inq.name} />}
@@ -381,19 +381,19 @@ export default function AdminInquiriesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-stone-600">
+                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap">
                       {inq.phone}
                       {(inq.dup_count || 0) > 1 && (
                         <span className="ml-1.5 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 text-stone-500">×{inq.dup_count}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-stone-600">{inq.city || <span className="text-stone-400">—</span>}</td>
+                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{inq.city || <span className="text-stone-400">—</span>}</td>
                     <td className="px-4 py-3 text-stone-600">{(() => {
                       const fromMessage = inq.message?.match(/Area[:：]?\s*([\d,]+)\s*m²/i);
                       if (fromMessage) return `${fromMessage[1]}m²`;
                       return inq.area_range?.replace(/\+$/, '') || '—';
                     })()}</td>
-                    <td className="px-4 py-3 text-xs">
+                    <td className="px-4 py-3 text-xs max-w-[180px]">
                       {inq.source_company_name ? (
                         <a
                           href={inq.source_company_slug
@@ -402,7 +402,8 @@ export default function AdminInquiriesPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="text-[#b8864a] font-medium hover:underline"
+                          className="text-[#b8864a] font-medium hover:underline block truncate"
+                          title={inq.source_company_name}
                         >{inq.source_company_name}</a>
                       ) : (
                         <span className="text-stone-400">Homepage</span>
