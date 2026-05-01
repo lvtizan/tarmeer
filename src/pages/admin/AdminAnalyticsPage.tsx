@@ -371,6 +371,7 @@ function VisitorTab() {
   const [companyCities, setCompanyCities] = useState<any[]>([]);
   const [inquiryCities, setInquiryCities] = useState<any[]>([]);
   const [visitorCities, setVisitorCities] = useState<any[]>([]);
+  const [homeownerCities, setHomeownerCities] = useState<any[]>([]);
   const [companyTypeCities, setCompanyTypeCities] = useState<Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }>>([]);
   const [weightOpen, setWeightOpen] = useState(false);
 
@@ -399,6 +400,7 @@ function VisitorTab() {
       setCompanyCities(data.company_cities || []);
       setInquiryCities(data.inquiry_cities || []);
       setVisitorCities(data.visitor_cities || []);
+      setHomeownerCities(data.homeowner_cities || []);
       setCompanyTypeCities(data.company_type_cities || []);
     }).catch(() => {});
 
@@ -597,7 +599,7 @@ function VisitorTab() {
 
       {/* UAE SVG Map */}
       <Suspense fallback={<div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 h-[380px] animate-pulse" />}>
-        <UAEMapSVG companyCities={companyCities} inquiryCities={inquiryCities} visitorCities={visitorCities} companyTypeCities={companyTypeCities} />
+        <UAEMapSVG companyCities={companyCities} inquiryCities={inquiryCities} visitorCities={visitorCities} homeownerCities={homeownerCities} companyTypeCities={companyTypeCities} />
       </Suspense>
 
       {/* Weight Config (collapsible) */}
