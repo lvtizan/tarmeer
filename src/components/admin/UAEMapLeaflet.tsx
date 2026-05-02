@@ -1,4 +1,4 @@
-// gold-only single-color v3
+// gold-only single-color v4
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -25,12 +25,15 @@ function ensurePingStyle() {
   s.id = STYLE_ID;
   s.textContent = `
     @keyframes map-ping {
-      0%   { transform:scale(1);  opacity:0.6; }
-      80%  { transform:scale(1.9);opacity:0.08; }
-      100% { transform:scale(2.2);opacity:0;   }
+      0%   { transform:scale(1);   opacity:0.55; }
+      70%  { transform:scale(1.75);opacity:0.08; }
+      100% { transform:scale(2.0); opacity:0;    }
     }
-    .map-ping-ring { position:absolute;inset:0;border-radius:50%;animation:map-ping 2.4s ease-out infinite; }
-    .map-ping-dot  { position:absolute;inset:0;border-radius:50%; }
+    .map-ping-ring {
+      position:absolute; inset:0; border-radius:50%;
+      animation:map-ping 2.8s cubic-bezier(0.4,0,0.6,1) infinite;
+    }
+    .map-ping-dot { position:absolute; inset:0; border-radius:50%; }
   `;
   document.head.appendChild(s);
 }
@@ -128,39 +131,43 @@ function makeBubbleIcon(radius: number): L.DivIcon {
   return L.divIcon({
     className: '', iconSize:[sz, sz], iconAnchor:[radius, radius],
     html: `<div style="position:relative;width:${sz}px;height:${sz}px">
-      <div class="map-ping-ring" style="background:${gA(0.25)}"></div>
-      <div class="map-ping-dot"  style="background:${GOLD}"></div>
+      <div class="map-ping-ring" style="background:${gA(0.22)}"></div>
+      <div class="map-ping-dot" style="background:${GOLD};box-shadow:0 2px 8px ${gA(0.5)},0 0 0 2px ${gA(0.18)}"></div>
     </div>`,
   });
 }
 
-function makeCardIcon(city: AggCity, side: 'left'|'right'): L.DivIcon {
-  const W = 152;
-  const rs = `display:flex;justify-content:space-between;font-size:11px;color:#6b6b6b;line-height:1.85`;
+function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivIcon {
+  const W = 160;
+  const rs = `display:flex;justify-content:space-between;font-size:11px;color:#6b6b6b;line-height:1.8`;
   const vs = `font-weight:700;color:${GOLD}`;
   const rows: string[] = [];
-  if (city.visitor)   rows.push(`<div style="${rs}"><span>访客</span><span style="${vs}">${city.visitor}</span></div>`);
-  if (city.company)   rows.push(`<div style="${rs}"><span>装企</span><span style="${vs}">${city.company}</span></div>`);
-  if (city.homeowner) rows.push(`<div style="${rs}"><span>业主</span><span style="${vs}">${city.homeowner}</span></div>`);
-  if (city.inquiry)   rows.push(`<div style="${rs}"><span>询盘</span><span style="${vs}">${city.inquiry}</span></div>`);
+  if (city.visitor)   rows.push(`<div style="${rs}"><span>访客</span><span style="${vs}">${city.visitor.toLocaleString()}</span></div>`);
+  if (city.company)   rows.push(`<div style="${rs}"><span>装企</span><span style="${vs}">${city.company.toLocaleString()}</span></div>`);
+  if (city.homeowner) rows.push(`<div style="${rs}"><span>业主</span><span style="${vs}">${city.homeowner.toLocaleString()}</span></div>`);
+  if (city.inquiry)   rows.push(`<div style="${rs}"><span>询盘</span><span style="${vs}">${city.inquiry.toLocaleString()}</span></div>`);
   return L.divIcon({
     className: '',
     iconSize: [W, 0],
     iconAnchor: [side === 'left' ? W : 0, CARD_H / 2],
-    html: `<div style="background:white;border:1.5px solid ${gA(0.28)};border-radius:10px;padding:9px 12px;width:${W}px;box-shadow:0 4px 16px ${gA(0.18)};pointer-events:none">
-      <div style="font-weight:700;font-size:13px;color:#2c2c2c;padding-bottom:4px;margin-bottom:4px;border-bottom:1px solid ${gA(0.15)}">${city.city}</div>
+    html: `<div style="background:white;border-radius:10px;padding:9px 12px;width:${W}px;
+      box-shadow:0 2px 4px rgba(0,0,0,0.06),0 8px 24px ${gA(0.16)},0 0 0 1px ${gA(0.22)};pointer-events:none">
+      <div style="display:flex;align-items:center;gap:5px;padding-bottom:5px;margin-bottom:4px;border-bottom:1px solid ${gA(0.12)}">
+        <span style="font-size:9px;font-weight:800;color:white;background:${GOLD};border-radius:3px;padding:1px 4px;line-height:1.4;flex-shrink:0">#${rank}</span>
+        <span style="font-weight:800;font-size:14px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${city.city}</span>
+      </div>
       ${rows.join('')}
-      <div style="margin-top:4px;padding-top:4px;border-top:1px solid ${gA(0.12)};display:flex;justify-content:space-between;align-items:center">
+      <div style="margin-top:4px;padding-top:4px;border-top:1px solid ${gA(0.10)};display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:10px;color:#9b9b9b">合计</span>
-        <span style="font-size:13px;font-weight:700;color:${GOLD}">${city.total}</span>
+        <span style="font-size:14px;font-weight:800;color:${GOLD}">${city.total.toLocaleString()}</span>
       </div>
     </div>`,
   });
 }
 
-const UAE_BOUNDS    = L.latLngBounds([22.6, 51.5], [26.2, 56.5]);
+const UAE_BOUNDS    = L.latLngBounds([22.3, 51.5], [26.5, 56.8]);
 const CARD_OFFSET_PX = 180;
-const CARD_W         = 155;
+const CARD_W         = 160;
 const CARD_H         = 100; // estimated height for collision avoidance
 const TOP_CALLOUT_N  = 5;
 
@@ -254,7 +261,7 @@ export default function UAEMapLeaflet({
     ensurePingStyle();
     if (!mapDivRef.current || mapRef.current) return;
     const map = L.map(mapDivRef.current, { zoomControl:true, scrollWheelZoom:true, attributionControl:true });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       subdomains: 'abcd', maxZoom: 19,
     }).addTo(map);
@@ -279,7 +286,7 @@ export default function UAEMapLeaflet({
     const maxT = Math.max(...agg.map(c => c.total), 1);
 
     for (const city of agg) {
-      const r = Math.max(4, Math.sqrt(city.total / maxT) * 18);
+      const r = Math.max(4, Math.sqrt(city.total / maxT) * 14);
       const m = L.marker(city.coords, { icon: makeBubbleIcon(r), zIndexOffset: Math.round(city.total) });
       m.bindTooltip(`<b>${city.city}</b>: ${city.total}`, { sticky:true, direction:'top' });
       m.addTo(map);
@@ -294,10 +301,10 @@ export default function UAEMapLeaflet({
       const { city, side } = topCities[i];
       const bLL = L.latLng(city.coords);
       leaderLinesRef.current.push(
-        L.polyline([bLL, bLL], { color: GOLD, weight: 1.2, opacity: 0.45 }).addTo(map)
+        L.polyline([bLL, bLL], { color: GOLD, weight: 0.8, opacity: 0.3 }).addTo(map)
       );
       cardMarkersRef.current.push(
-        L.marker(bLL, { icon: makeCardIcon(city, side), interactive: false, zIndexOffset: 2000 }).addTo(map)
+        L.marker(bLL, { icon: makeCardIcon(city, side, i + 1), interactive: false, zIndexOffset: 2000 }).addTo(map)
       );
     }
     // Apply collision-avoided positions immediately
