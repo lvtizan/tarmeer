@@ -25,9 +25,9 @@ function ensurePingStyle() {
   s.id = STYLE_ID;
   s.textContent = `
     @keyframes map-ping {
-      0%   { transform:scale(1);  opacity:0.7; }
-      80%  { transform:scale(2.6);opacity:0.1; }
-      100% { transform:scale(3);  opacity:0;   }
+      0%   { transform:scale(1);  opacity:0.6; }
+      80%  { transform:scale(1.9);opacity:0.08; }
+      100% { transform:scale(2.2);opacity:0;   }
     }
     .map-ping-ring { position:absolute;inset:0;border-radius:50%;animation:map-ping 2.4s ease-out infinite; }
     .map-ping-dot  { position:absolute;inset:0;border-radius:50%; }
@@ -146,7 +146,7 @@ function makeCardIcon(city: AggCity, side: 'left'|'right'): L.DivIcon {
   return L.divIcon({
     className: '',
     iconSize: [W, 0],
-    iconAnchor: [side === 'left' ? W : 0, 38],
+    iconAnchor: [side === 'left' ? W : 0, CARD_H / 2],
     html: `<div style="background:white;border:1.5px solid ${gA(0.28)};border-radius:10px;padding:9px 12px;width:${W}px;box-shadow:0 4px 16px ${gA(0.18)};pointer-events:none">
       <div style="font-weight:700;font-size:13px;color:#2c2c2c;padding-bottom:4px;margin-bottom:4px;border-bottom:1px solid ${gA(0.15)}">${city.city}</div>
       ${rows.join('')}
@@ -158,12 +158,54 @@ function makeCardIcon(city: AggCity, side: 'left'|'right'): L.DivIcon {
   });
 }
 
-const UAE_BOUNDS = L.latLngBounds([22.6, 51.5], [26.2, 56.5]);
-const CARD_OFFSET_PX = 188;
+const UAE_BOUNDS    = L.latLngBounds([22.6, 51.5], [26.2, 56.5]);
+const CARD_OFFSET_PX = 180;
+const CARD_W         = 155;
+const CARD_H         = 100; // estimated height for collision avoidance
 const TOP_CALLOUT_N  = 5;
 
 function cardSide(city: AggCity): 'left'|'right' {
   return city.coords[1] < 54.9 ? 'left' : 'right';
+}
+
+interface CardRect { x: number; y: number; w: number; h: number; side: 'left'|'right'; }
+
+function computeCardLayout(
+  map: L.Map,
+  topCities: { city: AggCity; side: 'left'|'right' }[]
+): { anchorPt: L.Point; bubbleLL: L.LatLng }[] {
+  const rects: CardRect[] = topCities.map(({ city, side }) => {
+    const bPt = map.latLngToContainerPoint(L.latLng(city.coords));
+    const ax  = bPt.x + (side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX);
+    const x   = side === 'left' ? ax - CARD_W : ax;
+    const y   = bPt.y - CARD_H / 2;
+    return { x, y, w: CARD_W, h: CARD_H, side };
+  });
+
+  // Iterative push-apart: resolve overlaps in y-axis
+  const GAP = 8;
+  for (let pass = 0; pass < 20; pass++) {
+    let moved = false;
+    for (let i = 0; i < rects.length; i++) {
+      for (let j = i + 1; j < rects.length; j++) {
+        const a = rects[i], b = rects[j];
+        if (!(a.x < b.x + b.w + GAP && a.x + a.w + GAP > b.x)) continue;
+        const aCY = a.y + a.h / 2, bCY = b.y + b.h / 2;
+        const overlap = (a.h + b.h) / 2 + GAP - Math.abs(bCY - aCY);
+        if (overlap <= 0) continue;
+        const half = overlap / 2;
+        if (aCY <= bCY) { a.y -= half; b.y += half; }
+        else            { a.y += half; b.y -= half; }
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+
+  return rects.map((r, i) => ({
+    anchorPt: L.point(r.side === 'left' ? r.x + r.w : r.x, r.y + r.h / 2),
+    bubbleLL: L.latLng(topCities[i].city.coords),
+  }));
 }
 
 const EMIRATE_DISTANCE_KM: Record<string, number> = {
@@ -199,13 +241,12 @@ export default function UAEMapLeaflet({
   const [mapReady, setMapReady] = useState(false);
 
   function syncCallouts(map: L.Map) {
-    topCitiesRef.current.forEach(({ city, side }, i) => {
-      const bLL = L.latLng(city.coords);
-      const pt  = map.latLngToContainerPoint(bLL);
-      const dx  = side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX;
-      const cLL = map.containerPointToLatLng(L.point(pt.x + dx, pt.y));
+    if (!topCitiesRef.current.length) return;
+    const layout = computeCardLayout(map, topCitiesRef.current);
+    layout.forEach(({ anchorPt, bubbleLL }, i) => {
+      const cLL = map.containerPointToLatLng(anchorPt);
       cardMarkersRef.current[i]?.setLatLng(cLL);
-      leaderLinesRef.current[i]?.setLatLngs([bLL, cLL]);
+      leaderLinesRef.current[i]?.setLatLngs([bubbleLL, cLL]);
     });
   }
 
@@ -238,7 +279,7 @@ export default function UAEMapLeaflet({
     const maxT = Math.max(...agg.map(c => c.total), 1);
 
     for (const city of agg) {
-      const r = Math.max(5, Math.sqrt(city.total / maxT) * 36);
+      const r = Math.max(4, Math.sqrt(city.total / maxT) * 18);
       const m = L.marker(city.coords, { icon: makeBubbleIcon(r), zIndexOffset: Math.round(city.total) });
       m.bindTooltip(`<b>${city.city}</b>: ${city.total}`, { sticky:true, direction:'top' });
       m.addTo(map);
@@ -248,20 +289,19 @@ export default function UAEMapLeaflet({
     const topCities = agg.slice(0, TOP_CALLOUT_N).map(city => ({ city, side: cardSide(city) }));
     topCitiesRef.current = topCities;
 
+    // Create markers at placeholder positions; syncCallouts will apply collision-resolved positions
     for (let i = 0; i < topCities.length; i++) {
       const { city, side } = topCities[i];
       const bLL = L.latLng(city.coords);
-      const pt  = map.latLngToContainerPoint(bLL);
-      const dx  = side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX;
-      const cLL = map.containerPointToLatLng(L.point(pt.x + dx, pt.y));
-
       leaderLinesRef.current.push(
-        L.polyline([bLL, cLL], { color: GOLD, weight: 1.2, opacity: 0.45 }).addTo(map)
+        L.polyline([bLL, bLL], { color: GOLD, weight: 1.2, opacity: 0.45 }).addTo(map)
       );
       cardMarkersRef.current.push(
-        L.marker(cLL, { icon: makeCardIcon(city, side), interactive: false, zIndexOffset: 2000 }).addTo(map)
+        L.marker(bLL, { icon: makeCardIcon(city, side), interactive: false, zIndexOffset: 2000 }).addTo(map)
       );
     }
+    // Apply collision-avoided positions immediately
+    syncCallouts(map);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, companyCities, inquiryCities, visitorCities, homeownerCities]);
 
