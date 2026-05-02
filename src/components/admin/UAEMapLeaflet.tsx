@@ -1,3 +1,4 @@
+// gold-only single-color v3
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
