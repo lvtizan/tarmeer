@@ -560,33 +560,37 @@ function VisitorTab() {
                 const cityText = c.cities && c.cities.length > 0
                   ? c.cities.slice(0, 4).map((city) => `${city.city || '—'} (${city.visitors})`).join('  ·  ')
                   : '';
+                // barW caps at 100%-52px so the number always has room
+                const barW = `min(${pct}%, calc(100% - 52px))`;
                 return (
-                  <div key={c.slug} className="flex items-center gap-3">
-                    {/* Bar — proportional width, name + cities inside */}
-                    <div className="flex-1 relative h-[54px] rounded-xl overflow-hidden" style={{ background: '#B8864A12' }}>
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
-                        style={{ width: `${pct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
-                      />
-                      <div className="absolute inset-0 flex flex-col justify-center px-4 gap-0.5">
-                        <a
-                          href={`/companies/${c.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="truncate hover:underline"
-                          style={{ fontSize: 14, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
-                        >
-                          {displayName}
-                        </a>
-                        {cityText && (
-                          <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-                            {cityText}
-                          </div>
-                        )}
-                      </div>
+                  <div key={c.slug} className="relative h-[54px] rounded-xl" style={{ background: '#B8864A12' }}>
+                    {/* Bar fill — same width as number anchor */}
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
+                      style={{ width: barW, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
+                    />
+                    {/* Name + cities — inside bar area, right-padded so text never bleeds under number */}
+                    <div className="absolute inset-0 flex flex-col justify-center px-4" style={{ paddingRight: 56 }}>
+                      <a
+                        href={`/companies/${c.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate hover:underline"
+                        style={{ fontSize: 14, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
+                      >
+                        {displayName}
+                      </a>
+                      {cityText && (
+                        <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                          {cityText}
+                        </div>
+                      )}
                     </div>
-                    {/* Number — outside bar, dark brown, always visible */}
-                    <span className="shrink-0 w-8 text-right tabular-nums" style={{ fontSize: 15, fontWeight: 700, color: '#6b4a24' }}>
+                    {/* Number — absolutely positioned right after bar end */}
+                    <span
+                      className="absolute top-1/2 -translate-y-1/2 tabular-nums whitespace-nowrap"
+                      style={{ left: `calc(${barW} + 8px)`, fontSize: 18, fontWeight: 700, color: '#6b4a24' }}
+                    >
                       {c.unique_visitors}
                     </span>
                   </div>

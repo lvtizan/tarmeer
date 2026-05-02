@@ -14,7 +14,9 @@ interface UAEMapLeafletProps {
   companyTypeCities?: CompanyTypeCity[];
 }
 
-// ── Inject ping keyframes once ────────────────────────────────────────────
+const GOLD = '#B8864A';
+const gA = (a: number) => `rgba(184,134,74,${a})`;
+
 const STYLE_ID = 'uae-map-ping-style';
 function ensurePingStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -22,24 +24,17 @@ function ensurePingStyle() {
   s.id = STYLE_ID;
   s.textContent = `
     @keyframes map-ping {
-      0%   { transform: scale(1);   opacity: 0.75; }
-      80%  { transform: scale(2.4); opacity: 0.15; }
-      100% { transform: scale(2.8); opacity: 0;    }
+      0%   { transform:scale(1);  opacity:0.7; }
+      80%  { transform:scale(2.6);opacity:0.1; }
+      100% { transform:scale(3);  opacity:0;   }
     }
-    .map-ping-ring {
-      position: absolute; inset: 0; border-radius: 50%;
-      animation: map-ping 2.2s ease-out infinite;
-    }
-    .map-ping-dot {
-      position: absolute; inset: 0; border-radius: 50%; opacity: 0.82;
-    }
+    .map-ping-ring { position:absolute;inset:0;border-radius:50%;animation:map-ping 2.4s ease-out infinite; }
+    .map-ping-dot  { position:absolute;inset:0;border-radius:50%; }
   `;
   document.head.appendChild(s);
 }
 
-// ── City → [lat, lng] ────────────────────────────────────────────────────
 const CITY_COORDS: Record<string, [number, number]> = {
-  // Dubai
   'dubai':                   [25.2048, 55.2708],
   '迪拜':                    [25.2048, 55.2708],
   'downtown dubai':          [25.1972, 55.2744],
@@ -70,7 +65,6 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'dubai hills':             [25.1350, 55.2450],
   'town square':             [24.9965, 55.2418],
   'dubai south':             [24.8968, 55.1638],
-  // Abu Dhabi
   'abu dhabi':               [24.4539, 54.3773],
   'abu-dhabi':               [24.4539, 54.3773],
   'abudhabi':                [24.4539, 54.3773],
@@ -83,62 +77,96 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'al reem island':          [24.4889, 54.4046],
   'saadiyat island':         [24.5420, 54.4350],
   'mussafah':                [24.3615, 54.4990],
-  // Sharjah
   'sharjah':                 [25.3463, 55.4209],
   '沙迦':                    [25.3463, 55.4209],
   '夏尔迦':                  [25.3463, 55.4209],
   'khor fakkan':             [25.3389, 56.3558],
   'kalba':                   [25.0712, 56.3641],
-  // Ajman
   'ajman':                   [25.4052, 55.5136],
   '阿治曼':                  [25.4052, 55.5136],
-  // UAQ
   'umm al quwain':           [25.5648, 55.5554],
   'umm al-quwain':           [25.5648, 55.5554],
   'uaq':                     [25.5648, 55.5554],
   '乌姆盖万':                [25.5648, 55.5554],
-  // RAK
   'ras al khaimah':          [25.7895, 55.9432],
   'ras al-khaimah':          [25.7895, 55.9432],
   'rak':                     [25.7895, 55.9432],
   '哈伊马角':                [25.7895, 55.9432],
   '莱斯海玛':                [25.7895, 55.9432],
-  // Fujairah
   'fujairah':                [25.1288, 56.3265],
   '富查伊拉':                [25.1288, 56.3265],
   'dibba':                   [25.6196, 56.2694],
 };
 
-function cityCoords(city: string): [number, number] | null {
-  return CITY_COORDS[city.toLowerCase().trim()] ?? null;
+interface AggCity {
+  city: string; key: string; coords: [number, number];
+  visitor: number; company: number; homeowner: number; inquiry: number; total: number;
 }
 
-// ── Layer config ──────────────────────────────────────────────────────────
-const LAYERS = [
-  { key: 'visitor',   label: '访客',   color: '#3b82f6', delay: '0s'    },
-  { key: 'company',   label: '装企',   color: '#B8864A', delay: '0.55s' },
-  { key: 'homeowner', label: '业主',   color: '#22c55e', delay: '1.1s'  },
-  { key: 'inquiry',   label: '询盘',   color: '#f97316', delay: '1.65s' },
-] as const;
+function aggregateCities(
+  vC: CityData[], cC: CityData[], hC: CityData[], iC: CityData[]
+): AggCity[] {
+  const m = new Map<string, AggCity>();
+  const add = (data: CityData[], field: 'visitor'|'company'|'homeowner'|'inquiry') => {
+    for (const { city, count } of data) {
+      const k = city.toLowerCase().trim();
+      const coords = CITY_COORDS[k];
+      if (!coords) continue;
+      let e = m.get(k);
+      if (!e) { e = { city, key: k, coords, visitor:0, company:0, homeowner:0, inquiry:0, total:0 }; m.set(k, e); }
+      e[field] += count;
+      e.total += count;
+    }
+  };
+  add(vC, 'visitor'); add(cC, 'company'); add(hC, 'homeowner'); add(iC, 'inquiry');
+  return [...m.values()].sort((a, b) => b.total - a.total);
+}
 
-function makePingIcon(color: string, radius: number, delay: string): L.DivIcon {
-  const size = radius * 2;
+function makeBubbleIcon(radius: number): L.DivIcon {
+  const sz = radius * 2;
   return L.divIcon({
-    className: '',
-    iconSize:   [size, size] as L.PointExpression,
-    iconAnchor: [radius, radius] as L.PointExpression,
-    html: `
-      <div style="position:relative;width:${size}px;height:${size}px">
-        <div class="map-ping-ring" style="background:${color};animation-delay:${delay}"></div>
-        <div class="map-ping-dot"  style="background:${color}"></div>
-      </div>`,
+    className: '', iconSize:[sz, sz], iconAnchor:[radius, radius],
+    html: `<div style="position:relative;width:${sz}px;height:${sz}px">
+      <div class="map-ping-ring" style="background:${gA(0.25)}"></div>
+      <div class="map-ping-dot"  style="background:${GOLD}"></div>
+    </div>`,
   });
 }
 
-// ── Right-panel helpers ───────────────────────────────────────────────────
+function makeCardIcon(city: AggCity, side: 'left'|'right'): L.DivIcon {
+  const W = 152;
+  const rs = `display:flex;justify-content:space-between;font-size:11px;color:#6b6b6b;line-height:1.85`;
+  const vs = `font-weight:700;color:${GOLD}`;
+  const rows: string[] = [];
+  if (city.visitor)   rows.push(`<div style="${rs}"><span>访客</span><span style="${vs}">${city.visitor}</span></div>`);
+  if (city.company)   rows.push(`<div style="${rs}"><span>装企</span><span style="${vs}">${city.company}</span></div>`);
+  if (city.homeowner) rows.push(`<div style="${rs}"><span>业主</span><span style="${vs}">${city.homeowner}</span></div>`);
+  if (city.inquiry)   rows.push(`<div style="${rs}"><span>询盘</span><span style="${vs}">${city.inquiry}</span></div>`);
+  return L.divIcon({
+    className: '',
+    iconSize: [W, 0],
+    iconAnchor: [side === 'left' ? W : 0, 38],
+    html: `<div style="background:white;border:1.5px solid ${gA(0.28)};border-radius:10px;padding:9px 12px;width:${W}px;box-shadow:0 4px 16px ${gA(0.18)};pointer-events:none">
+      <div style="font-weight:700;font-size:13px;color:#2c2c2c;padding-bottom:4px;margin-bottom:4px;border-bottom:1px solid ${gA(0.15)}">${city.city}</div>
+      ${rows.join('')}
+      <div style="margin-top:4px;padding-top:4px;border-top:1px solid ${gA(0.12)};display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:10px;color:#9b9b9b">合计</span>
+        <span style="font-size:13px;font-weight:700;color:${GOLD}">${city.total}</span>
+      </div>
+    </div>`,
+  });
+}
+
+const UAE_BOUNDS = L.latLngBounds([22.6, 51.5], [26.2, 56.5]);
+const CARD_OFFSET_PX = 188;
+const TOP_CALLOUT_N  = 5;
+
+function cardSide(city: AggCity): 'left'|'right' {
+  return city.coords[1] < 54.9 ? 'left' : 'right';
+}
+
 const EMIRATE_DISTANCE_KM: Record<string, number> = {
-  'Dubai': 0, 'Sharjah': 25, 'Ajman': 40, 'UAQ': 80,
-  'RAK': 115, 'Fujairah': 125, 'Abu Dhabi': 140,
+  'Dubai': 0, 'Sharjah': 25, 'Ajman': 40, 'UAQ': 80, 'RAK': 115, 'Fujairah': 125, 'Abu Dhabi': 140,
 };
 const CITY_TO_EMIRATE: Record<string, string> = {
   'abu dhabi': 'Abu Dhabi', 'abu-dhabi': 'Abu Dhabi', 'abudhabi': 'Abu Dhabi',
@@ -151,86 +179,87 @@ const CITY_TO_EMIRATE: Record<string, string> = {
   '沙迦': 'Sharjah', '夏尔迦': 'Sharjah',
   'ajman': 'Ajman', '阿治曼': 'Ajman',
   'umm al quwain': 'UAQ', 'umm al-quwain': 'UAQ', 'uaq': 'UAQ',
-  'ras al khaimah': 'RAK', 'ras al-khaimah': 'RAK', 'rak': 'RAK',
-  '哈伊马角': 'RAK',
+  'ras al khaimah': 'RAK', 'ras al-khaimah': 'RAK', 'rak': 'RAK', '哈伊马角': 'RAK',
   'fujairah': 'Fujairah', 'dibba': 'Fujairah', '富查伊拉': 'Fujairah',
 };
 function mapToEmirate(city: string) { return CITY_TO_EMIRATE[city.toLowerCase().trim()] ?? null; }
 function distanceColor(km: number) { return km < 40 ? '#22c55e' : km < 100 ? '#f59e0b' : '#f97316'; }
 
-const UAE_BOUNDS = L.latLngBounds([22.6, 51.5], [26.2, 56.5]);
-
 export default function UAEMapLeaflet({
-  companyCities,
-  inquiryCities,
-  visitorCities,
-  homeownerCities = [],
-  companyTypeCities = [],
+  companyCities, inquiryCities, visitorCities, homeownerCities = [], companyTypeCities = [],
 }: UAEMapLeafletProps) {
   const { lang } = useAdminT();
-  const mapDivRef  = useRef<HTMLDivElement>(null);
-  const mapRef     = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
+  const mapDivRef      = useRef<HTMLDivElement>(null);
+  const mapRef         = useRef<L.Map | null>(null);
+  const markersRef     = useRef<L.Marker[]>([]);
+  const cardMarkersRef = useRef<L.Marker[]>([]);
+  const leaderLinesRef = useRef<L.Polyline[]>([]);
+  const topCitiesRef   = useRef<{ city: AggCity; side: 'left'|'right' }[]>([]);
   const [mapReady, setMapReady] = useState(false);
+
+  function syncCallouts(map: L.Map) {
+    topCitiesRef.current.forEach(({ city, side }, i) => {
+      const bLL = L.latLng(city.coords);
+      const pt  = map.latLngToContainerPoint(bLL);
+      const dx  = side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX;
+      const cLL = map.containerPointToLatLng(L.point(pt.x + dx, pt.y));
+      cardMarkersRef.current[i]?.setLatLng(cLL);
+      leaderLinesRef.current[i]?.setLatLngs([bLL, cLL]);
+    });
+  }
 
   useEffect(() => {
     ensurePingStyle();
     if (!mapDivRef.current || mapRef.current) return;
-    const map = L.map(mapDivRef.current, {
-      zoomControl:        true,
-      scrollWheelZoom:    true,   // ← 滚轮缩放开启
-      attributionControl: true,
-    });
-    L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
-      { attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', subdomains: 'abcd', maxZoom: 19 }
-    ).addTo(map);
-    map.fitBounds(UAE_BOUNDS, { padding: [24, 24] });
+    const map = L.map(mapDivRef.current, { zoomControl:true, scrollWheelZoom:true, attributionControl:true });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      subdomains: 'abcd', maxZoom: 19,
+    }).addTo(map);
+    map.fitBounds(UAE_BOUNDS, { padding:[24, 24] });
     mapRef.current = map;
+    const handler = () => syncCallouts(map);
+    map.on('moveend', handler).on('zoomend', handler);
     setMapReady(true);
     return () => { map.remove(); mapRef.current = null; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
 
-    markersRef.current.forEach(m => map.removeLayer(m));
-    markersRef.current = [];
+    [...markersRef.current, ...cardMarkersRef.current].forEach(m => map.removeLayer(m));
+    leaderLinesRef.current.forEach(l => map.removeLayer(l));
+    markersRef.current = []; cardMarkersRef.current = []; leaderLinesRef.current = [];
 
-    const datasets: Record<string, CityData[]> = {
-      visitor:   visitorCities,
-      company:   companyCities,
-      homeowner: homeownerCities,
-      inquiry:   inquiryCities,
-    };
+    const agg  = aggregateCities(visitorCities, companyCities, homeownerCities, inquiryCities);
+    const maxT = Math.max(...agg.map(c => c.total), 1);
 
-    const allCounts = Object.values(datasets).flatMap(arr => arr.map(d => d.count));
-    const maxCount  = Math.max(...allCounts, 1);
+    for (const city of agg) {
+      const r = Math.max(5, Math.sqrt(city.total / maxT) * 36);
+      const m = L.marker(city.coords, { icon: makeBubbleIcon(r), zIndexOffset: Math.round(city.total) });
+      m.bindTooltip(`<b>${city.city}</b>: ${city.total}`, { sticky:true, direction:'top' });
+      m.addTo(map);
+      markersRef.current.push(m);
+    }
 
-    for (const layer of LAYERS) {
-      const data = datasets[layer.key] ?? [];
-      for (const { city, count } of data) {
-        const coords = cityCoords(city);
-        if (!coords) continue;
-        const radius  = Math.max(5, Math.sqrt(count / maxCount) * 36);
-        const marker  = L.marker(coords, {
-          icon: makePingIcon(layer.color, radius, layer.delay),
-          interactive: true,
-        });
-        marker.bindTooltip(
-          `<div style="font-size:12px;min-width:90px">
-             <div style="font-weight:700;margin-bottom:3px">${city}</div>
-             <div style="display:flex;justify-content:space-between;gap:10px">
-               <span style="color:#6b6b6b">${layer.label}</span>
-               <span style="font-weight:700;color:${layer.color}">${count}</span>
-             </div>
-           </div>`,
-          { sticky: false, direction: 'top', offset: [0, -radius - 2] }
-        );
-        marker.addTo(map);
-        markersRef.current.push(marker);
-      }
+    const topCities = agg.slice(0, TOP_CALLOUT_N).map(city => ({ city, side: cardSide(city) }));
+    topCitiesRef.current = topCities;
+
+    for (let i = 0; i < topCities.length; i++) {
+      const { city, side } = topCities[i];
+      const bLL = L.latLng(city.coords);
+      const pt  = map.latLngToContainerPoint(bLL);
+      const dx  = side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX;
+      const cLL = map.containerPointToLatLng(L.point(pt.x + dx, pt.y));
+
+      leaderLinesRef.current.push(
+        L.polyline([bLL, cLL], { color: GOLD, weight: 1.2, opacity: 0.45 }).addTo(map)
+      );
+      cardMarkersRef.current.push(
+        L.marker(cLL, { icon: makeCardIcon(city, side), interactive: false, zIndexOffset: 2000 }).addTo(map)
+      );
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, companyCities, inquiryCities, visitorCities, homeownerCities]);
@@ -243,15 +272,11 @@ export default function UAEMapLeaflet({
       <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-bold text-[#2c2c2c]">地理分布</h2>
-          <p className="text-xs text-[#6b6b6b] mt-0.5">装企 · 询盘 · 访客 · 业主</p>
+          <p className="text-xs text-[#6b6b6b] mt-0.5">城市综合热度 · 气泡大小代表活跃度</p>
         </div>
-        <div className="flex items-center gap-3">
-          {LAYERS.map(l => (
-            <span key={l.key} className="flex items-center gap-1 text-[10px] text-[#6b6b6b]">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
-              {l.label}
-            </span>
-          ))}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-full" style={{ background: GOLD }} />
+          <span className="text-[10px] text-[#6b6b6b]">访客 · 装企 · 业主 · 询盘</span>
         </div>
       </div>
 
@@ -324,7 +349,7 @@ export default function UAEMapLeaflet({
                       <span className="text-[11px] text-[#2c2c2c] w-[64px] shrink-0 truncate">{ic.city}</span>
                       <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-500"
-                             style={{ width: `${barPct}%`, background: km !== null ? distanceColor(km) : '#B8864A', opacity: 0.75 }} />
+                             style={{ width: `${barPct}%`, background: km !== null ? distanceColor(km) : GOLD, opacity: 0.75 }} />
                       </div>
                       <span className="text-[10px] font-semibold text-[#6b6b6b] w-[26px] text-right shrink-0">{ic.count}</span>
                       {km !== null && (
