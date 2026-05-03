@@ -79,6 +79,13 @@ E2E (Playwright) — 暂未实现：
 - 触发 zoom（pinch / 按 + / 按 -）
 - 期望：被拖的卡保持新位置，其它卡自动重布局
 
+## TC-9：同侧多张卡 x 对齐
+
+构造 4 张全右侧的卡（迪拜+沙迦+阿治曼+RAK），调用 layout。
+- 期望：所有右侧 rect.x 相等（取所有自然 x 的 min，最贴近地图内容）
+- 1 张时不触发对齐（natural x 即对齐结果）
+- 拖拽过的卡（userMovedRef[i]=true）在 syncCallouts 阶段被跳过，本次对齐不影响其位置
+
 ## Run Harness
 
 ```

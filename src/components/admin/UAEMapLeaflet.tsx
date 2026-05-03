@@ -220,7 +220,7 @@ function computeCardLayout(
   const sides: ('left'|'right')[] = topCities.map(t => t.side);
 
   function buildRects(): CardRect[] {
-    return topCities.map(({ city }, i) => {
+    const rects = topCities.map(({ city }, i) => {
       const side = sides[i];
       const h    = cardHeight(city);
       const bPt  = map.latLngToContainerPoint(L.latLng(city.coords));
@@ -229,6 +229,19 @@ function computeCardLayout(
       const y    = bPt.y - h / 2;
       return { x, y, w: CARD_W, h, side };
     });
+    // Column-align cards on the same side: pick the x closest to map content
+    // (right side → min x, left side → max x). When a side has only 1 card,
+    // it stays at its natural x. Dragged cards' computed x is discarded by
+    // the caller, so user drags survive this alignment.
+    for (const side of ['left', 'right'] as const) {
+      const idxs: number[] = [];
+      for (let i = 0; i < rects.length; i++) if (rects[i].side === side) idxs.push(i);
+      if (idxs.length <= 1) continue;
+      const xs = idxs.map(i => rects[i].x);
+      const alignedX = side === 'right' ? Math.min(...xs) : Math.max(...xs);
+      for (const i of idxs) rects[i].x = alignedX;
+    }
+    return rects;
   }
   function resolveOverlaps(rects: CardRect[]) {
     // Within each side group: sort by y, cascade-down so each card sits below the

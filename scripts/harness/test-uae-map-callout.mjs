@@ -80,15 +80,26 @@ function computeCardLayout(map, topCities) {
   const sz = map.getSize();
   const sides = topCities.map(t => t.side);
 
-  const buildRects = () => topCities.map(({ city }, i) => {
-    const side = sides[i];
-    const h    = cardHeight(city);
-    const bPt  = map.latLngToContainerPoint({ lat: city.coords[0], lng: city.coords[1] });
-    const ax   = bPt.x + (side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX);
-    const x    = side === 'left' ? ax - CARD_W : ax;
-    const y    = bPt.y - h / 2;
-    return { x, y, w: CARD_W, h, side };
-  });
+  const buildRects = () => {
+    const rects = topCities.map(({ city }, i) => {
+      const side = sides[i];
+      const h    = cardHeight(city);
+      const bPt  = map.latLngToContainerPoint({ lat: city.coords[0], lng: city.coords[1] });
+      const ax   = bPt.x + (side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX);
+      const x    = side === 'left' ? ax - CARD_W : ax;
+      const y    = bPt.y - h / 2;
+      return { x, y, w: CARD_W, h, side };
+    });
+    for (const side of ['left', 'right']) {
+      const idxs = [];
+      for (let i = 0; i < rects.length; i++) if (rects[i].side === side) idxs.push(i);
+      if (idxs.length <= 1) continue;
+      const xs = idxs.map(i => rects[i].x);
+      const alignedX = side === 'right' ? Math.min(...xs) : Math.max(...xs);
+      for (const i of idxs) rects[i].x = alignedX;
+    }
+    return rects;
+  };
   const resolveOverlaps = (rects) => {
     const GAP = 8, M = 16;
     for (const side of ['left', 'right']) {
@@ -212,6 +223,21 @@ test('TC-6: computeCardLayout 不留 overlap', () => {
     const yOverlap = a.y < b.y + b.h && a.y + a.h > b.y;
     assert(!(xOverlap && yOverlap), `cards ${i},${j} overlap (x:${xOverlap} y:${yOverlap})`);
   }
+});
+
+// TC-9 同侧对齐（TC-8 是 E2E drag 测试，待 Playwright 接入）
+test('TC-9: 同侧多张卡 x 全部对齐', () => {
+  const cities = [
+    { coords: [25.2048, 55.2708], visitor:2030, company:104, homeowner:1, inquiry:265 }, // Dubai
+    { coords: [25.3463, 55.4209], visitor:549,  company:7,   homeowner:0, inquiry:7   }, // Sharjah
+    { coords: [25.4052, 55.5136], visitor:239,  company:3,   homeowner:0, inquiry:6   }, // Ajman
+    { coords: [25.7895, 55.9432], visitor:63,   company:0,   homeowner:0, inquiry:0   }, // RAK
+  ].map(c => ({ ...c, total: c.visitor + c.company + c.homeowner + c.inquiry }));
+  const map = mockMap(900, 480, [[22.3, 51.5], [26.5, 56.8]]);
+  const top = cities.map(city => ({ city, side: cardSide(city) }));   // all right
+  const rects = computeCardLayout(map, top);
+  const xs = [...new Set(rects.filter(r => r.side === 'right').map(r => r.x))];
+  assert(xs.length === 1, `right-side cards should share 1 x, got ${xs.length}: ${JSON.stringify(xs)}`);
 });
 
 // TC-7 超界换边
