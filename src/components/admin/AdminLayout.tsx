@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, MessageSquare, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck, HandCoins } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -35,7 +35,7 @@ const navItems = [
     infoZh: '管理建材供应商、审核入驻申请、跟踪供应商线索。',
   },
   {
-    to: '/admin/inquiries', labelEn: 'Leads', labelZh: '线索', icon: MessageSquare,
+    to: '/admin/inquiries', labelEn: 'Leads', labelZh: '线索', icon: HandCoins,
     infoEn: 'Review customer leads, update follow-up status, and keep conversion notes synchronized.',
     infoZh: '查看客户线索、更新跟进状态，并同步转化备注。',
   },

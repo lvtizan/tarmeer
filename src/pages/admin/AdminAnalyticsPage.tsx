@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Globe, RefreshCw, Save, Users, Building2, MessageSquare, ChevronDown, ChevronRight, BarChart3, AreaChart as AreaChartIcon, Eye, MousePointerClick, Phone, FileText } from 'lucide-react';
+import { Globe, RefreshCw, Save, Users, Building2, MessageSquare, ChevronDown, ChevronRight, BarChart3, AreaChart as AreaChartIcon, Eye, MousePointerClick, Phone, FileText, TrendingUp } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useAdminT } from '../../hooks/useAdminLang';
@@ -499,34 +499,41 @@ function VisitorTab() {
 
   return (
     <div className="space-y-6">
-      {/* KPI Horizontal Strip */}
+      {/* KPI Horizontal Strip — value is the headline number; conversion rate compactly shown as % string */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-stone-100">
-          {[
-            { icon: <Globe className="w-4 h-4" />, label: t('Unique Visitors', '独立访客'), value: uniqueIps, sub: t('from visitor logs', 'visitor_logs'), color: '#5b7fcb' },
-            { icon: <Eye className="w-4 h-4" />, label: t('Page Views', '页面浏览'), value: ov.page_views, sub: t('last 30 days', '近30天'), color: '#2c6e49' },
-            { icon: <MousePointerClick className="w-4 h-4" />, label: t('Apply Clicks', 'Apply 点击'), value: ov.apply_clicks, sub: `${funnelSteps[1].pct}% ${t('of views', '转化率')}`, color: '#B8864A' },
-            { icon: <Phone className="w-4 h-4" />, label: t('WhatsApp', 'WhatsApp'), value: ov.whatsapp_clicks, sub: `${funnelSteps[2].pct}% ${t('of views', '转化率')}`, color: '#14b8a6' },
-            { icon: <FileText className="w-4 h-4" />, label: t('Contact Submits', '联系提交'), value: ov.contact_submits, sub: `${funnelSteps[3].pct}% ${t('of views', '转化率')}`, color: '#8b5cf6' },
-          ].map((kpi, i) => (
-            <div key={i} className="px-5 py-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: `${kpi.color}18`, color: kpi.color }}>
-                  {kpi.icon}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-y lg:divide-y-0 divide-stone-100">
+          {(() => {
+            const overallPct = ov.page_views > 0
+              ? Math.round(((ov.apply_clicks + ov.whatsapp_clicks + ov.contact_submits) / ov.page_views) * 100 * 10) / 10
+              : null;
+            const kpis: Array<{ icon: any; label: string; value: number | string; sub: string; color: string }> = [
+              { icon: <Globe className="w-4 h-4" />, label: t('Unique Visitors', '独立访客'), value: uniqueIps, sub: t('from visitor logs', 'visitor_logs'), color: '#5b7fcb' },
+              { icon: <Eye className="w-4 h-4" />, label: t('Page Views', '页面浏览'), value: ov.page_views, sub: t('last 30 days', '近30天'), color: '#2c6e49' },
+              { icon: <MousePointerClick className="w-4 h-4" />, label: t('Apply Clicks', 'Apply 点击'), value: ov.apply_clicks, sub: `${funnelSteps[1].pct}% ${t('of views', '转化率')}`, color: '#B8864A' },
+              { icon: <Phone className="w-4 h-4" />, label: t('WhatsApp', 'WhatsApp'), value: ov.whatsapp_clicks, sub: `${funnelSteps[2].pct}% ${t('of views', '转化率')}`, color: '#14b8a6' },
+              { icon: <FileText className="w-4 h-4" />, label: t('Contact Submits', '联系提交'), value: ov.contact_submits, sub: `${funnelSteps[3].pct}% ${t('of views', '转化率')}`, color: '#8b5cf6' },
+              { icon: <TrendingUp className="w-4 h-4" />, label: t('Overall Conversion', '综合转化率'), value: overallPct === null ? '—' : `${overallPct}%`, sub: t('actions / page views', '互动 / 浏览量'), color: '#dc2626' },
+            ];
+            return kpis.map((kpi, i) => (
+              <div key={i} className="px-5 py-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: `${kpi.color}18`, color: kpi.color }}>
+                    {kpi.icon}
+                  </div>
+                  <span className="text-xs font-medium text-stone-500 leading-tight">{kpi.label}</span>
                 </div>
-                <span className="text-xs font-medium text-stone-500 leading-tight">{kpi.label}</span>
+                <div className="text-2xl font-bold text-[#2c2c2c] leading-none mb-1">{typeof kpi.value === 'number' ? kpi.value.toLocaleString() : kpi.value}</div>
+                <div className="text-[10px] text-stone-400">{kpi.sub}</div>
               </div>
-              <div className="text-2xl font-bold text-[#2c2c2c] leading-none mb-1">{kpi.value.toLocaleString()}</div>
-              <div className="text-[10px] text-stone-400">{kpi.sub}</div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
       </div>
 
-      {/* Daily Visit Trend + Conversion Funnel side-by-side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Daily Visit Trend (takes 2/3) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
+      {/* Daily Visit Trend + Top 10 Companies side-by-side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Daily Visit Trend */}
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
           <div className="mb-4">
             <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Daily Visit Trend', '每日访问趋势')}</h2>
             <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Page views (bars) & unique visitors (line)', '页面浏览量（柱）& 独立访客（线）')}</p>
@@ -568,106 +575,61 @@ function VisitorTab() {
           )}
         </div>
 
-        {/* Conversion Funnel (takes 1/3) */}
+        {/* Top 10 Companies — moved here from full-width below; replaces redundant Conversion Funnel */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-          <div className="mb-4">
-            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Conversion Funnel', '转化漏斗')}</h2>
-            <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Visitor intent signals', '访客意向信号')}</p>
+          <div className="mb-5">
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Top 10 Visited Companies', '最受关注的10家公司')}</h2>
+            <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Unique visitors · click name to view detail', '独立访客数 · 点击公司名查看详情')}</p>
           </div>
-          <div className="space-y-3 mt-6">
-            {funnelSteps.map((step, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-[#2c2c2c]">{step.label}</span>
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-[#2c2c2c]">{step.value.toLocaleString()}</span>
-                    {i > 0 && (
-                      <span className="text-[10px] text-[#6b6b6b] ml-1.5">{step.pct}%</span>
-                    )}
-                  </div>
-                </div>
-                <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${step.pct}%`, backgroundColor: step.color }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Conversion rate summary */}
-          <div className="mt-5 pt-4 border-t border-stone-100">
-            <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-2">{t('Overall Conversion', '综合转化')}</div>
-            <div className="text-2xl font-bold text-[#B8864A]">
-              {ov.page_views > 0
-                ? `${Math.round(((ov.apply_clicks + ov.whatsapp_clicks + ov.contact_submits) / ov.page_views) * 100 * 10) / 10}%`
-                : '—'
-              }
-            </div>
-            <div className="text-[10px] text-[#6b6b6b] mt-0.5">{t('actions / page views', '互动 / 浏览量')}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Top 10 Companies */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-        <div className="mb-5">
-          <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Top 10 Visited Companies', '最受关注的10家公司')}</h2>
-          <p className="text-xs text-[#6b6b6b] mt-0.5">{t('Unique visitors · click name to view detail', '独立访客数 · 点击公司名查看详情')}</p>
-        </div>
-        {companies.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px] text-[#6b6b6b] text-sm">{t('No data', '暂无数据')}</div>
-        ) : (() => {
-          const maxV = companies[0]?.unique_visitors || 1;
-          return (
-            <div className="space-y-2">
-              {companies.map((c) => {
-                const displayName = c.company_name.includes('-')
-                  ? c.company_name.replace(/-/g, ' ').replace(/\b\w/g, (ch: string) => ch.toUpperCase())
-                  : c.company_name;
-                // Cap at 75% so even the longest bar leaves clear room for its number
-                const barPct = Math.max(4, Math.round((c.unique_visitors / maxV) * 75));
-                const cityText = c.cities && c.cities.length > 0
-                  ? c.cities.slice(0, 4).map((city) => `${city.city || '—'} (${city.visitors})`).join('  ·  ')
-                  : '';
-                return (
-                  <div key={c.slug} className="relative h-[54px] rounded-xl" style={{ background: '#B8864A12' }}>
-                    {/* Bar fill */}
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
-                      style={{ width: `${barPct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
-                    />
-                    {/* Name + cities — padded right so text stays away from number zone */}
-                    <div className="absolute inset-0 flex flex-col justify-center px-4" style={{ paddingRight: '28%' }}>
-                      <a
-                        href={`/companies/${c.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="truncate hover:underline"
-                        style={{ fontSize: 14, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
+          {companies.length === 0 ? (
+            <div className="flex items-center justify-center h-[200px] text-[#6b6b6b] text-sm">{t('No data', '暂无数据')}</div>
+          ) : (() => {
+            const maxV = companies[0]?.unique_visitors || 1;
+            return (
+              <div className="space-y-2">
+                {companies.map((c) => {
+                  const displayName = c.company_name.includes('-')
+                    ? c.company_name.replace(/-/g, ' ').replace(/\b\w/g, (ch: string) => ch.toUpperCase())
+                    : c.company_name;
+                  const barPct = Math.max(4, Math.round((c.unique_visitors / maxV) * 75));
+                  const cityText = c.cities && c.cities.length > 0
+                    ? c.cities.slice(0, 4).map((city) => `${city.city || '—'} (${city.visitors})`).join('  ·  ')
+                    : '';
+                  return (
+                    <div key={c.slug} className="relative h-[54px] rounded-xl" style={{ background: '#B8864A12' }}>
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
+                        style={{ width: `${barPct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
+                      />
+                      <div className="absolute inset-0 flex flex-col justify-center px-4" style={{ paddingRight: '28%' }}>
+                        <a
+                          href={`/companies/${c.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="truncate hover:underline"
+                          style={{ fontSize: 14, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
+                        >
+                          {displayName}
+                        </a>
+                        {cityText && (
+                          <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                            {cityText}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className="absolute top-1/2 -translate-y-1/2 tabular-nums whitespace-nowrap"
+                        style={{ left: `${barPct}%`, paddingLeft: 10, fontSize: 18, fontWeight: 700, color: '#6b4a24' }}
                       >
-                        {displayName}
-                      </a>
-                      {cityText && (
-                        <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-                          {cityText}
-                        </div>
-                      )}
+                        {c.unique_visitors}
+                      </span>
                     </div>
-                    {/* Number — left tracks barPct%, paddingLeft provides the gap */}
-                    <span
-                      className="absolute top-1/2 -translate-y-1/2 tabular-nums whitespace-nowrap"
-                      style={{ left: `${barPct}%`, paddingLeft: 10, fontSize: 18, fontWeight: 700, color: '#6b4a24' }}
-                    >
-                      {c.unique_visitors}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
       </div>
 
       {/* UAE SVG Map */}
