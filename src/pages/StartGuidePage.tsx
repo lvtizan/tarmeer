@@ -65,7 +65,7 @@ function Step1Image() {
     { label: 'Work Email', placeholder: 'you@company.com' },
   ];
   return (
-    <div className="h-full overflow-hidden flex items-start justify-center"
+    <div className="h-full overflow-hidden flex items-start justify-center pt-4"
       style={{ background: 'linear-gradient(160deg, #1a1410 0%, #2d1f0e 100%)' }}>
       <div style={{ transform: 'scale(0.62)', transformOrigin: 'top center', width: '100%' }}>
         <div className="bg-white rounded-2xl mx-4 px-5 pt-5 pb-4 shadow-2xl">
@@ -96,7 +96,7 @@ function Step1Image() {
 // ── Step 2: Sign-in screen ───────────────────────────────────────────────────
 function Step2Image() {
   return (
-    <div className="h-full overflow-hidden flex items-start justify-center bg-[#f5f0ea]">
+    <div className="h-full overflow-hidden flex items-start justify-center bg-[#f5f0ea] pt-4">
       <div style={{ transform: 'scale(0.62)', transformOrigin: 'top center', width: '100%' }}>
         <div className="bg-white rounded-2xl mx-4 px-6 pt-6 pb-5 shadow-2xl">
           <div className="text-[22px] font-bold text-[#1a1410] mb-1"
