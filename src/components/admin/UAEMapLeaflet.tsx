@@ -438,12 +438,22 @@ export default function UAEMapLeaflet({
   const [mapReady, setMapReady] = useState(false);
 
   // Update one leader line when its card moves (drag or auto-relayout)
-  function updateLeaderLine(_map: L.Map, i: number) {
+  // L 形折线：从卡片中心先垂直走到 bubble 的 y 高度，再水平拐到 bubble。
+  // 比直线倾斜的水平线更有"指向感"，尤其是卡片和 bubble 几乎同高时（如阿布扎比）。
+  function leaderPath(map: L.Map, bubbleLL: L.LatLng, cardLL: L.LatLng): L.LatLng[] {
+    const cardPt   = map.latLngToContainerPoint(cardLL);
+    const bubblePt = map.latLngToContainerPoint(bubbleLL);
+    // Elbow at (cardPt.x, bubblePt.y) → from card view: vertical first, then horizontal
+    const elbowLL = map.containerPointToLatLng(L.point(cardPt.x, bubblePt.y));
+    return [bubbleLL, elbowLL, cardLL];
+  }
+
+  function updateLeaderLine(map: L.Map, i: number) {
     const card = cardMarkersRef.current[i];
     const line = leaderLinesRef.current[i];
     if (!card || !line || !topCitiesRef.current[i]) return;
     const bubbleLL = L.latLng(topCitiesRef.current[i].city.coords);
-    line.setLatLngs([bubbleLL, card.getLatLng()]);
+    line.setLatLngs(leaderPath(map, bubbleLL, card.getLatLng()));
   }
 
   function syncCallouts(map: L.Map) {
@@ -462,7 +472,7 @@ export default function UAEMapLeaflet({
       }
       const cLL = map.containerPointToLatLng(anchorPt);
       cardMarkersRef.current[i]?.setLatLng(cLL);
-      leaderLinesRef.current[i]?.setLatLngs([bubbleLL, cLL]);
+      leaderLinesRef.current[i]?.setLatLngs(leaderPath(map, bubbleLL, cLL));
     });
   }
 
