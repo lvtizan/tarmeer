@@ -74,7 +74,8 @@ function KpiCard({ icon, label, value, ma7, accent }: {
   );
 }
 
-// ─── Wide ranked bars — same visual language as Top 10 Companies for consistency ──
+// ─── Ranked horizontal bars — leaderboard style (text left / bar right / no track / rect bars).
+// Inspired by the Arena.AI text-to-image leaderboard visual language.
 function HorizontalBars({ items, total }: {
   items: Array<{ key: string; label: string; value: number }>;
   total: number;
@@ -85,39 +86,35 @@ function HorizontalBars({ items, total }: {
   const maxV = Math.max(...items.map(it => it.value), 1);
   return (
     <div className="space-y-2 mt-2">
-      {items.slice(0, 8).map((item) => {
-        // Cap at 75% so even longest bar leaves clear room for its number
-        const barPct = Math.max(4, Math.round((item.value / maxV) * 75));
+      {items.slice(0, 8).map((item, i) => {
+        // bar takes up to 75% of the bar column so number always has room
+        const barPct = Math.max(2.5, (item.value / maxV) * 75);
         const pctOfTotal = total > 0 ? Math.round((item.value / total) * 100) : 0;
         return (
-          <div key={item.key} className="relative h-[54px] rounded-xl" style={{ background: '#B8864A12' }}>
-            {/* Bar fill with gold gradient */}
-            <div
-              className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
-              style={{ width: `${barPct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
-            />
-            {/* Label on top of bar (white, padded right so it doesn't touch number zone) */}
-            <div className="absolute inset-0 flex flex-col justify-center px-4" style={{ paddingRight: '28%' }}>
-              <span
-                className="truncate"
-                style={{ fontSize: 14, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
-                title={item.label}
-              >{item.label}</span>
-              <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-                {pctOfTotal}% · 占比
-              </div>
-            </div>
-            {/* Number tracks barPct%, paddingLeft creates the gap */}
-            <span
-              className="absolute top-1/2 -translate-y-1/2 tabular-nums whitespace-nowrap"
-              style={{ left: `${barPct}%`, paddingLeft: 10, fontSize: 18, fontWeight: 700, color: '#6b4a24' }}
-            >
-              {item.value}
+          <div key={item.key} className="flex items-center gap-3 h-9">
+            {/* Rank pill */}
+            <span className="w-6 h-6 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center text-[11px] font-semibold tabular-nums shrink-0">
+              {i + 1}
             </span>
+            {/* Label column — fixed width, dark, plain */}
+            <div className="w-[148px] shrink-0 flex flex-col">
+              <span className="text-[13px] font-semibold text-[#1c1917] truncate" title={item.label}>{item.label}</span>
+              <span className="text-[10px] text-stone-400">{pctOfTotal}%</span>
+            </div>
+            {/* Bar column — rectangular, no track */}
+            <div className="flex-1 flex items-center gap-3 min-w-0">
+              <div
+                className="h-[18px] transition-all duration-500"
+                style={{ width: `${barPct}%`, background: 'linear-gradient(90deg, #B8864A 0%, #C8975A 100%)', borderRadius: 2 }}
+              />
+              <span className="text-[14px] font-bold text-[#1c1917] tabular-nums">
+                {item.value}
+              </span>
+            </div>
           </div>
         );
       })}
-      <div className="text-[10.5px] text-stone-400 text-center pt-2">合计 {total.toLocaleString()}</div>
+      <div className="text-[10.5px] text-stone-400 text-center pt-3 mt-1 border-t border-stone-100">合计 {total.toLocaleString()}</div>
     </div>
   );
 }
