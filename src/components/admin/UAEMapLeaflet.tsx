@@ -34,6 +34,13 @@ function ensurePingStyle() {
       animation:map-ping 2.8s cubic-bezier(0.4,0,0.6,1) infinite;
     }
     .map-ping-dot { position:absolute; inset:0; border-radius:50%; }
+    .uae-card-wrap {
+      cursor:grab; user-select:none; transition:box-shadow 0.15s;
+    }
+    .uae-card-wrap:active { cursor:grabbing; }
+    .leaflet-marker-draggable.leaflet-marker-dragging .uae-card-wrap {
+      box-shadow:0 4px 12px rgba(0,0,0,0.18),0 16px 40px rgba(184,134,74,0.28),0 0 0 1.5px rgba(184,134,74,0.5);
+    }
   `;
   document.head.appendChild(s);
 }
@@ -107,17 +114,27 @@ interface AggCity {
   visitor: number; company: number; homeowner: number; inquiry: number; total: number;
 }
 
+const HAS_CJK = /[一-鿿]/;
+
 function aggregateCities(
   vC: CityData[], cC: CityData[], hC: CityData[], iC: CityData[]
 ): AggCity[] {
   const m = new Map<string, AggCity>();
   const add = (data: CityData[], field: 'visitor'|'company'|'homeowner'|'inquiry') => {
     for (const { city, count } of data) {
-      const k = city.toLowerCase().trim();
-      const coords = CITY_COORDS[k];
+      const lower = city.toLowerCase().trim();
+      const coords = CITY_COORDS[lower];
       if (!coords) continue;
+      // Canonicalize by coordinate so "Dubai" + "迪拜" merge into one entry
+      const k = `${coords[0].toFixed(4)},${coords[1].toFixed(4)}`;
       let e = m.get(k);
-      if (!e) { e = { city, key: k, coords, visitor:0, company:0, homeowner:0, inquiry:0, total:0 }; m.set(k, e); }
+      if (!e) {
+        e = { city, key: k, coords, visitor:0, company:0, homeowner:0, inquiry:0, total:0 };
+        m.set(k, e);
+      } else if (HAS_CJK.test(city) && !HAS_CJK.test(e.city)) {
+        // Prefer Chinese display name when both variants seen
+        e.city = city;
+      }
       e[field] += count;
       e.total += count;
     }
@@ -132,13 +149,28 @@ function makeBubbleIcon(radius: number): L.DivIcon {
     className: '', iconSize:[sz, sz], iconAnchor:[radius, radius],
     html: `<div style="position:relative;width:${sz}px;height:${sz}px">
       <div class="map-ping-ring" style="background:${gA(0.22)}"></div>
-      <div class="map-ping-dot" style="background:${GOLD};box-shadow:0 2px 8px ${gA(0.5)},0 0 0 2px ${gA(0.18)}"></div>
+      <div class="map-ping-dot" style="background:${gA(0.5)}"></div>
     </div>`,
   });
 }
 
+// Per-card geometry. Rows count varies by city, so we compute height for
+// honest collision math instead of using a one-size CARD_H.
+const CARD_W       = 160;
+const ROW_PX       = 20;   // line-height 1.8 * 11px = ~20
+const HEAD_PX      = 27;   // header row + bottom border + margin
+const FOOT_PX      = 26;   // 合计 row + top border + margin
+const PAD_Y_PX     = 18;   // 9 top + 9 bottom
+
+function cardRowCount(city: AggCity): number {
+  return (city.visitor ? 1 : 0) + (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
+}
+function cardHeight(city: AggCity): number {
+  return HEAD_PX + cardRowCount(city) * ROW_PX + FOOT_PX + PAD_Y_PX;
+}
+
 function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivIcon {
-  const W = 160;
+  const H = cardHeight(city);
   const rs = `display:flex;justify-content:space-between;font-size:11px;color:#6b6b6b;line-height:1.8`;
   const vs = `font-weight:700;color:${GOLD}`;
   const rows: string[] = [];
@@ -148,10 +180,10 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
   if (city.inquiry)   rows.push(`<div style="${rs}"><span>询盘</span><span style="${vs}">${city.inquiry.toLocaleString()}</span></div>`);
   return L.divIcon({
     className: '',
-    iconSize: [W, 0],
-    iconAnchor: [side === 'left' ? W : 0, CARD_H / 2],
-    html: `<div style="background:white;border-radius:10px;padding:9px 12px;width:${W}px;
-      box-shadow:0 2px 4px rgba(0,0,0,0.06),0 8px 24px ${gA(0.16)},0 0 0 1px ${gA(0.22)};pointer-events:none">
+    iconSize: [CARD_W, H],
+    iconAnchor: [side === 'left' ? CARD_W : 0, H / 2],
+    html: `<div class="uae-card-wrap" style="background:white;border-radius:10px;padding:9px 12px;width:${CARD_W}px;
+      box-shadow:0 2px 4px rgba(0,0,0,0.06),0 8px 24px ${gA(0.16)},0 0 0 1px ${gA(0.22)}">
       <div style="display:flex;align-items:center;gap:5px;padding-bottom:5px;margin-bottom:4px;border-bottom:1px solid ${gA(0.12)}">
         <span style="font-size:9px;font-weight:800;color:white;background:${GOLD};border-radius:3px;padding:1px 4px;line-height:1.4;flex-shrink:0">#${rank}</span>
         <span style="font-weight:800;font-size:14px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${city.city}</span>
@@ -167,8 +199,6 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
 
 const UAE_BOUNDS    = L.latLngBounds([22.3, 51.5], [26.5, 56.8]);
 const CARD_OFFSET_PX = 180;
-const CARD_W         = 160;
-const CARD_H         = 100; // estimated height for collision avoidance
 const TOP_CALLOUT_N  = 5;
 
 function cardSide(city: AggCity): 'left'|'right' {
@@ -177,41 +207,84 @@ function cardSide(city: AggCity): 'left'|'right' {
 
 interface CardRect { x: number; y: number; w: number; h: number; side: 'left'|'right'; }
 
+// Place cards left/right of bubbles, then iteratively push-apart in y. If a side is
+// too crowded (cards push past the map edge), reassign the lowest-rank crowded card
+// to the opposite side. Final positions are clamped inside the map viewport.
 function computeCardLayout(
   map: L.Map,
   topCities: { city: AggCity; side: 'left'|'right' }[]
-): { anchorPt: L.Point; bubbleLL: L.LatLng }[] {
-  const rects: CardRect[] = topCities.map(({ city, side }) => {
-    const bPt = map.latLngToContainerPoint(L.latLng(city.coords));
-    const ax  = bPt.x + (side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX);
-    const x   = side === 'left' ? ax - CARD_W : ax;
-    const y   = bPt.y - CARD_H / 2;
-    return { x, y, w: CARD_W, h: CARD_H, side };
-  });
+): { anchorPt: L.Point; bubbleLL: L.LatLng; cardSide: 'left'|'right' }[] {
+  const sz = map.getSize();
+  const sides: ('left'|'right')[] = topCities.map(t => t.side);
 
-  // Iterative push-apart: resolve overlaps in y-axis
-  const GAP = 8;
-  for (let pass = 0; pass < 20; pass++) {
-    let moved = false;
-    for (let i = 0; i < rects.length; i++) {
-      for (let j = i + 1; j < rects.length; j++) {
-        const a = rects[i], b = rects[j];
-        if (!(a.x < b.x + b.w + GAP && a.x + a.w + GAP > b.x)) continue;
-        const aCY = a.y + a.h / 2, bCY = b.y + b.h / 2;
-        const overlap = (a.h + b.h) / 2 + GAP - Math.abs(bCY - aCY);
-        if (overlap <= 0) continue;
-        const half = overlap / 2;
-        if (aCY <= bCY) { a.y -= half; b.y += half; }
-        else            { a.y += half; b.y -= half; }
-        moved = true;
+  function buildRects(): CardRect[] {
+    return topCities.map(({ city }, i) => {
+      const side = sides[i];
+      const h    = cardHeight(city);
+      const bPt  = map.latLngToContainerPoint(L.latLng(city.coords));
+      const ax   = bPt.x + (side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX);
+      const x    = side === 'left' ? ax - CARD_W : ax;
+      const y    = bPt.y - h / 2;
+      return { x, y, w: CARD_W, h, side };
+    });
+  }
+  function resolveOverlaps(rects: CardRect[]) {
+    // Within each side group: sort by y, cascade-down so each card sits below the
+    // previous (no y-overlap), then shift the whole stack up if its bottom overflows
+    // the map. Deterministic, single pass — replaces the iterative push-apart that
+    // could oscillate for >2 cards on the same column.
+    const GAP = 8;
+    const M   = 16;
+    for (const side of ['left', 'right'] as const) {
+      const idxs: number[] = [];
+      for (let i = 0; i < rects.length; i++) if (rects[i].side === side) idxs.push(i);
+      if (idxs.length <= 1) continue;
+      idxs.sort((a, b) => rects[a].y - rects[b].y);
+      for (let i = 1; i < idxs.length; i++) {
+        const prev = rects[idxs[i-1]], cur = rects[idxs[i]];
+        const minY = prev.y + prev.h + GAP;
+        if (cur.y < minY) cur.y = minY;
+      }
+      const first = rects[idxs[0]];
+      const last  = rects[idxs[idxs.length - 1]];
+      const overflowBottom = (last.y + last.h) - (sz.y - M);
+      if (overflowBottom > 0) {
+        const shift = Math.min(overflowBottom, first.y - M);
+        if (shift > 0) for (const i of idxs) rects[i].y -= shift;
       }
     }
-    if (!moved) break;
+  }
+  function totalSpan(rects: CardRect[], side: 'left'|'right') {
+    const own = rects.filter(r => r.side === side);
+    if (!own.length) return 0;
+    return own.reduce((s, r) => s + r.h + 8, -8);
+  }
+
+  let rects = buildRects();
+  resolveOverlaps(rects);
+
+  // If one side overflows the map height, flip the lowest-priority card on that
+  // side to the other side and retry, until both sides fit (or we've tried all).
+  const mapH = sz.y;
+  for (let i = topCities.length - 1; i >= 0 && (totalSpan(rects, 'left') > mapH || totalSpan(rects, 'right') > mapH); i--) {
+    const overSide = totalSpan(rects, 'right') > totalSpan(rects, 'left') ? 'right' : 'left';
+    if (sides[i] !== overSide) continue;
+    sides[i] = overSide === 'right' ? 'left' : 'right';
+    rects = buildRects();
+    resolveOverlaps(rects);
+  }
+
+  // Clamp into viewport (16px margin top/bottom)
+  const M = 16;
+  for (const r of rects) {
+    if (r.y < M)               r.y = M;
+    if (r.y + r.h > sz.y - M)  r.y = sz.y - M - r.h;
   }
 
   return rects.map((r, i) => ({
     anchorPt: L.point(r.side === 'left' ? r.x + r.w : r.x, r.y + r.h / 2),
     bubbleLL: L.latLng(topCities[i].city.coords),
+    cardSide: r.side,
   }));
 }
 
@@ -245,12 +318,33 @@ export default function UAEMapLeaflet({
   const cardMarkersRef = useRef<L.Marker[]>([]);
   const leaderLinesRef = useRef<L.Polyline[]>([]);
   const topCitiesRef   = useRef<{ city: AggCity; side: 'left'|'right' }[]>([]);
+  const cardSidesRef   = useRef<('left'|'right')[]>([]);
+  const userMovedRef   = useRef<boolean[]>([]);  // per-index: true if user dragged
   const [mapReady, setMapReady] = useState(false);
+
+  // Update one leader line when its card moves (drag or auto-relayout)
+  function updateLeaderLine(_map: L.Map, i: number) {
+    const card = cardMarkersRef.current[i];
+    const line = leaderLinesRef.current[i];
+    if (!card || !line || !topCitiesRef.current[i]) return;
+    const bubbleLL = L.latLng(topCitiesRef.current[i].city.coords);
+    line.setLatLngs([bubbleLL, card.getLatLng()]);
+  }
 
   function syncCallouts(map: L.Map) {
     if (!topCitiesRef.current.length) return;
     const layout = computeCardLayout(map, topCitiesRef.current);
-    layout.forEach(({ anchorPt, bubbleLL }, i) => {
+    layout.forEach(({ anchorPt, bubbleLL, cardSide: newSide }, i) => {
+      // Skip cards user has dragged manually - keep their position
+      if (userMovedRef.current[i]) {
+        updateLeaderLine(map, i);
+        return;
+      }
+      // If side flipped (auto-relayout chose other side), rebuild the icon so anchor is correct
+      if (cardSidesRef.current[i] !== newSide) {
+        cardSidesRef.current[i] = newSide;
+        cardMarkersRef.current[i]?.setIcon(makeCardIcon(topCitiesRef.current[i].city, newSide, i + 1));
+      }
       const cLL = map.containerPointToLatLng(anchorPt);
       cardMarkersRef.current[i]?.setLatLng(cLL);
       leaderLinesRef.current[i]?.setLatLngs([bubbleLL, cLL]);
@@ -295,6 +389,8 @@ export default function UAEMapLeaflet({
 
     const topCities = agg.slice(0, TOP_CALLOUT_N).map(city => ({ city, side: cardSide(city) }));
     topCitiesRef.current = topCities;
+    cardSidesRef.current = topCities.map(t => t.side);
+    userMovedRef.current = new Array(topCities.length).fill(false);
 
     // Create markers at placeholder positions; syncCallouts will apply collision-resolved positions
     for (let i = 0; i < topCities.length; i++) {
@@ -303,9 +399,17 @@ export default function UAEMapLeaflet({
       leaderLinesRef.current.push(
         L.polyline([bLL, bLL], { color: GOLD, weight: 0.8, opacity: 0.3 }).addTo(map)
       );
-      cardMarkersRef.current.push(
-        L.marker(bLL, { icon: makeCardIcon(city, side, i + 1), interactive: false, zIndexOffset: 2000 }).addTo(map)
-      );
+      const idx = i;
+      const cardMarker = L.marker(bLL, {
+        icon: makeCardIcon(city, side, idx + 1),
+        draggable: true,
+        zIndexOffset: 2000,
+      })
+        .on('dragstart', () => { userMovedRef.current[idx] = true; })
+        .on('drag',      () => { updateLeaderLine(map, idx); })
+        .on('dragend',   () => { updateLeaderLine(map, idx); })
+        .addTo(map);
+      cardMarkersRef.current.push(cardMarker);
     }
     // Apply collision-avoided positions immediately
     syncCallouts(map);
