@@ -35,6 +35,14 @@ interface DayRow {
 interface SourceItem { source?: string; type?: string; count: number }
 interface CityRow { city: string; count: number }
 interface TypeCityRow { type: string; count: number; topCities: Array<{ city: string; count: number }> }
+interface CompanyVisitorRow {
+  page_path: string;
+  company_name: string;
+  slug: string;
+  unique_visitors: number;
+  total_views: number;
+  cities: Array<{ city: string; visitors: number }>;
+}
 
 // ─── 7-day moving average helper ────────────────────────────────────────────
 function withMovingAverage(rows: DayRow[]): (DayRow & { ma_total: number; is_weekend: boolean })[] {
@@ -74,11 +82,20 @@ function KpiCard({ icon, label, value, ma7, accent }: {
   );
 }
 
-// ─── Ranked horizontal bars — leaderboard style (text left / bar right / no track / rect bars).
-// Inspired by the Arena.AI text-to-image leaderboard visual language.
-function HorizontalBars({ items, total }: {
-  items: Array<{ key: string; label: string; value: number }>;
-  total: number;
+// ─── Leaderboard bars — text left / rect bar right / no track / no rounded corners.
+// Supports optional secondary label (sub-line) and an href for clickable primary label.
+interface LBItem {
+  key: string;
+  primary: string;
+  secondary?: string;     // sub-line below the primary label
+  href?: string;
+  value: number;
+}
+function LeaderboardBars({ items, total, labelWidth = 148, max = 10 }: {
+  items: LBItem[];
+  total?: number;
+  labelWidth?: number;
+  max?: number;
 }) {
   if (items.length === 0) {
     return <div className="flex items-center justify-center h-[180px] text-stone-400 text-sm">暂无数据</div>;
@@ -86,35 +103,40 @@ function HorizontalBars({ items, total }: {
   const maxV = Math.max(...items.map(it => it.value), 1);
   return (
     <div className="space-y-2 mt-2">
-      {items.slice(0, 8).map((item, i) => {
-        // bar takes up to 75% of the bar column so number always has room
+      {items.slice(0, max).map((item, i) => {
+        // bar takes up to 75% of bar column → number always has room
         const barPct = Math.max(2.5, (item.value / maxV) * 75);
-        const pctOfTotal = total > 0 ? Math.round((item.value / total) * 100) : 0;
         return (
-          <div key={item.key} className="flex items-center gap-3 h-9">
-            {/* Rank pill */}
+          <div key={item.key} className="flex items-center gap-3" style={{ minHeight: 36 }}>
+            {/* Rank circle */}
             <span className="w-6 h-6 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center text-[11px] font-semibold tabular-nums shrink-0">
               {i + 1}
             </span>
-            {/* Label column — fixed width, dark, plain */}
-            <div className="w-[148px] shrink-0 flex flex-col">
-              <span className="text-[13px] font-semibold text-[#1c1917] truncate" title={item.label}>{item.label}</span>
-              <span className="text-[10px] text-stone-400">{pctOfTotal}%</span>
+            {/* Label column — primary on top, optional secondary below */}
+            <div style={{ width: labelWidth }} className="shrink-0 flex flex-col min-w-0">
+              {item.href ? (
+                <a href={item.href} target="_blank" rel="noopener noreferrer"
+                   className="text-[13px] font-semibold text-[#1c1917] truncate hover:underline hover:text-[#B8864A]"
+                   title={item.primary}>{item.primary}</a>
+              ) : (
+                <span className="text-[13px] font-semibold text-[#1c1917] truncate" title={item.primary}>{item.primary}</span>
+              )}
+              {item.secondary && <span className="text-[10px] text-stone-400 truncate">{item.secondary}</span>}
             </div>
-            {/* Bar column — rectangular, no track */}
+            {/* Bar — rectangular, very subtle 2px corners, no track */}
             <div className="flex-1 flex items-center gap-3 min-w-0">
               <div
                 className="h-[18px] transition-all duration-500"
                 style={{ width: `${barPct}%`, background: 'linear-gradient(90deg, #B8864A 0%, #C8975A 100%)', borderRadius: 2 }}
               />
-              <span className="text-[14px] font-bold text-[#1c1917] tabular-nums">
-                {item.value}
-              </span>
+              <span className="text-[14px] font-bold text-[#1c1917] tabular-nums">{item.value}</span>
             </div>
           </div>
         );
       })}
-      <div className="text-[10.5px] text-stone-400 text-center pt-3 mt-1 border-t border-stone-100">合计 {total.toLocaleString()}</div>
+      {total !== undefined && (
+        <div className="text-[10.5px] text-stone-400 text-center pt-3 mt-1 border-t border-stone-100">合计 {total.toLocaleString()}</div>
+      )}
     </div>
   );
 }
@@ -125,6 +147,7 @@ export default function AdminAnalyticsNextPage() {
   const [daily, setDaily] = useState<DayRow[]>([]);
   const [signupSources, setSignupSources] = useState<SourceItem[]>([]);
   const [companyTypes, setCompanyTypes]   = useState<SourceItem[]>([]);
+  const [topCompanies, setTopCompanies]   = useState<CompanyVisitorRow[]>([]);
   // For map (reused from v1, untouched)
   const [companyCities, setCompanyCities]     = useState<CityRow[]>([]);
   const [inquiryCities, setInquiryCities]     = useState<CityRow[]>([]);
@@ -141,7 +164,8 @@ export default function AdminAnalyticsNextPage() {
     Promise.all([
       adminApi.getDailyStats(30) as Promise<any>,   // v1 用的同一个端点，返 { data: [...], totals: {...} }
       adminApi.getRegistrationSources(),
-    ]).then(([reg, src]) => {
+      adminApi.getCompanyVisitors() as Promise<any>,
+    ]).then(([reg, src, vis]) => {
       if (cancelled) return;
       const rows: any[] = reg?.data || [];
       setDaily(rows.map((r: any) => ({
@@ -157,6 +181,12 @@ export default function AdminAnalyticsNextPage() {
       setVisitorCities((src.visitor_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
       setHomeownerCities((src.homeowner_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
       setCompanyTypeCities((src.company_type_cities || []).map(t => ({ ...t, count: num(t.count) })));
+      const companies: CompanyVisitorRow[] = (vis?.companies || []).slice(0, 10).map((c: any) => ({
+        ...c,
+        unique_visitors: num(c.unique_visitors),
+        total_views: num(c.total_views),
+      }));
+      setTopCompanies(companies);
     }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -182,21 +212,34 @@ export default function AdminAnalyticsNextPage() {
 
   const chartData = withMovingAverage(daily);
 
-  // Source bars
-  const sourceTotal = signupSources.reduce((s, x) => s + x.count, 0);
-  const sourceItems = signupSources.map(s => ({
-    key: s.source || 'unknown',
-    label: s.source || '未知',
-    value: s.count,
-  })).sort((a, b) => b.value - a.value);
+  // Top 10 Companies (replaces source distribution per user request)
+  const companyItems: LBItem[] = topCompanies.map(c => {
+    const displayName = c.company_name.includes('-')
+      ? c.company_name.replace(/-/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase())
+      : c.company_name;
+    const cityText = c.cities && c.cities.length > 0
+      ? c.cities.slice(0, 3).map(ci => `${ci.city || '—'} (${ci.visitors})`).join(' · ')
+      : '';
+    return {
+      key: c.slug,
+      primary: displayName,
+      secondary: cityText,
+      href: `/companies/${c.slug}`,
+      value: c.unique_visitors,
+    };
+  });
 
-  // Type bars
+  // Type bars (装企类型分布)
   const typeTotal = companyTypes.reduce((s, x) => s + x.count, 0);
-  const typeItems = companyTypes.map(t => ({
+  const typeItems: LBItem[] = companyTypes.map(t => ({
     key: t.type || 'unknown',
-    label: labelCompanyType(t.type || '', lang === 'en' ? 'en' : 'zh') || '未知',
+    primary: labelCompanyType(t.type || '', lang === 'en' ? 'en' : 'zh') || '未知',
+    secondary: typeTotal > 0 ? `${Math.round((t.count / typeTotal) * 100)}%` : undefined,
     value: t.count,
   })).sort((a, b) => b.value - a.value);
+
+  // (signupSources unused now — kept the state for future use)
+  void signupSources;
 
   return (
     <div className="w-full">
@@ -259,14 +302,14 @@ export default function AdminAnalyticsNextPage() {
         )}
       </div>
 
-      {/* Two horizontal-bar sections (replaces donuts) */}
+      {/* 最受关注的 10 家公司 + 装企类型分布 — 都用 leaderboard 风格（无圆角，文字左 bar 右）*/}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
           <div className="mb-3">
-            <h2 className="text-sm font-bold text-[#2c2c2c]">注册来源分布</h2>
-            <p className="text-[11px] text-stone-500 mt-0.5">用户注册来源渠道 · 横向 stacked bar 可读性比 donut 高</p>
+            <h2 className="text-sm font-bold text-[#2c2c2c]">最受关注的 10 家公司</h2>
+            <p className="text-[11px] text-stone-500 mt-0.5">独立访客数 · 点击公司名查看详情</p>
           </div>
-          <HorizontalBars items={sourceItems} total={sourceTotal} />
+          <LeaderboardBars items={companyItems} max={10} labelWidth={180} />
         </div>
 
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
@@ -274,7 +317,7 @@ export default function AdminAnalyticsNextPage() {
             <h2 className="text-sm font-bold text-[#2c2c2c]">装企类型分布</h2>
             <p className="text-[11px] text-stone-500 mt-0.5">注册装企类型分布</p>
           </div>
-          <HorizontalBars items={typeItems} total={typeTotal} />
+          <LeaderboardBars items={typeItems} total={typeTotal} max={10} labelWidth={148} />
         </div>
       </div>
 
