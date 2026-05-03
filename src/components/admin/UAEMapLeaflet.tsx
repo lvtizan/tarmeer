@@ -661,8 +661,9 @@ export default function UAEMapLeaflet({
         </div>
       </div>
 
-      <div className="flex min-h-0">
-        <div className="flex-1 min-w-0 border-r border-stone-100 relative" style={{ minHeight: 480 }}>
+      {/* Fixed-height row: map fills it, sidebar scrolls inside if content longer */}
+      <div className="flex" style={{ height: 520 }}>
+        <div className="flex-1 min-w-0 border-r border-stone-100 relative">
           <div ref={mapDivRef} className="absolute inset-0" />
         </div>
 
