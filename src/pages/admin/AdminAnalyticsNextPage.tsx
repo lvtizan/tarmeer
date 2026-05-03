@@ -27,10 +27,10 @@ const COLOR_INQUIRY   = '#6b6b6b';
 const COLOR_MA        = '#e0a86e';
 
 interface DayRow {
-  stat_date: string;
-  homeowner_count: number;
-  company_count: number;
-  inquiry_count?: number;  // not yet from API; stub
+  date: string;
+  new_homeowners: number;
+  new_companies: number;
+  new_inquiries: number;
 }
 interface SourceItem { source?: string; type?: string; count: number }
 interface CityRow { city: string; count: number }
@@ -38,13 +38,13 @@ interface TypeCityRow { type: string; count: number; topCities: Array<{ city: st
 
 // ─── 7-day moving average helper ────────────────────────────────────────────
 function withMovingAverage(rows: DayRow[]): (DayRow & { ma_total: number; is_weekend: boolean })[] {
-  const totals = rows.map(r => (r.homeowner_count || 0) + (r.company_count || 0) + (r.inquiry_count || 0));
+  const totals = rows.map(r => (r.new_homeowners || 0) + (r.new_companies || 0) + (r.new_inquiries || 0));
   return rows.map((r, i) => {
     const start = Math.max(0, i - 6);
     const window = totals.slice(start, i + 1);
     const ma = window.reduce((s, n) => s + n, 0) / window.length;
     // UAE weekend: Friday & Saturday (day 5/6 in JS getDay)
-    const d = new Date(r.stat_date);
+    const d = new Date(r.date);
     const dow = d.getDay();
     return { ...r, ma_total: Math.round(ma * 10) / 10, is_weekend: dow === 5 || dow === 6 };
   });
@@ -134,15 +134,16 @@ export default function AdminAnalyticsNextPage() {
     // and `0 + "1"` becomes "01" (string concat) blowing up totals.
     const num = (v: any) => Number(v) || 0;
     Promise.all([
-      adminApi.getDailyRegistrations({}),
+      adminApi.getRegistrationStats(30) as Promise<any>,
       adminApi.getRegistrationSources(),
     ]).then(([reg, src]) => {
       if (cancelled) return;
-      setDaily((reg.dailyRegistrations || []).map((r: any) => ({
-        stat_date: r.stat_date,
-        homeowner_count: num(r.homeowner_count),
-        company_count:   num(r.company_count),
-        inquiry_count:   num(r.inquiry_count),  // may be undefined → 0, that's fine
+      const rows: any[] = reg?.data || reg?.daily || reg?.rows || [];
+      setDaily(rows.map((r: any) => ({
+        date: r.date || r.stat_date,
+        new_homeowners: num(r.new_homeowners ?? r.homeowner_count),
+        new_companies:  num(r.new_companies  ?? r.company_count),
+        new_inquiries:  num(r.new_inquiries  ?? r.inquiry_count),
       })));
       setSignupSources((src.signup_sources || []).map(s => ({ source: s.source, count: num(s.count) })));
       setCompanyTypes((src.company_types || []).map(s => ({ type: s.type, count: num(s.count) })));
@@ -157,16 +158,16 @@ export default function AdminAnalyticsNextPage() {
 
   // Aggregate KPIs and 7d ma
   const totals = daily.reduce((acc, r) => ({
-    homeowner: acc.homeowner + (r.homeowner_count || 0),
-    company:   acc.company   + (r.company_count   || 0),
-    inquiry:   acc.inquiry   + (r.inquiry_count   || 0),
+    homeowner: acc.homeowner + (r.new_homeowners || 0),
+    company:   acc.company   + (r.new_companies  || 0),
+    inquiry:   acc.inquiry   + (r.new_inquiries  || 0),
   }), { homeowner: 0, company: 0, inquiry: 0 });
   const periodDays = daily.length || 1;
   const last7 = daily.slice(-7);
   const last7Tot = last7.reduce((acc, r) => ({
-    homeowner: acc.homeowner + (r.homeowner_count || 0),
-    company:   acc.company   + (r.company_count   || 0),
-    inquiry:   acc.inquiry   + (r.inquiry_count   || 0),
+    homeowner: acc.homeowner + (r.new_homeowners || 0),
+    company:   acc.company   + (r.new_companies  || 0),
+    inquiry:   acc.inquiry   + (r.new_inquiries  || 0),
   }), { homeowner: 0, company: 0, inquiry: 0 });
   const last7Avg = {
     homeowner: last7.length > 0 ? last7Tot.homeowner / last7.length * periodDays : 0,
@@ -228,27 +229,27 @@ export default function AdminAnalyticsNextPage() {
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" vertical={false} />
-              <XAxis dataKey="stat_date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5, 10)} axisLine={false} tickLine={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5, 10)} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ borderRadius: 12, border: '1px solid #e7e5e4', fontSize: 12 }}
-                formatter={(v: any, n: any) => [v, n === 'ma_total' ? '7 日均值' : n === 'homeowner_count' ? '业主' : n === 'company_count' ? '装企' : n === 'inquiry_count' ? '询盘' : n]}
+                formatter={(v: any, n: any) => [v, n === 'ma_total' ? '7 日均值' : n === 'new_homeowners' ? '业主' : n === 'new_companies' ? '装企' : n === 'new_inquiries' ? '询盘' : n]}
               />
               <Legend
                 wrapperStyle={{ fontSize: 12 }}
-                formatter={(v: string) => ({ ma_total: '7 日均值', homeowner_count: '业主', company_count: '装企', inquiry_count: '询盘' }[v] || v)}
+                formatter={(v: string) => ({ ma_total: '7 日均值', new_homeowners: '业主', new_companies: '装企', new_inquiries: '询盘' }[v] || v)}
               />
               {/* Weekend stripes */}
               {chartData.map((row, i) => row.is_weekend ? (
                 <ReferenceArea
                   key={`we-${i}`}
-                  x1={row.stat_date} x2={row.stat_date}
+                  x1={row.date} x2={row.date}
                   strokeOpacity={0} fill="#5b7fcb" fillOpacity={0.06}
                 />
               ) : null)}
-              <Bar dataKey="homeowner_count" stackId="a" fill={COLOR_HOMEOWNER} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="company_count"   stackId="a" fill={COLOR_COMPANY}   radius={[3, 3, 0, 0]} />
-              <Bar dataKey="inquiry_count"   stackId="a" fill={COLOR_INQUIRY}   radius={[3, 3, 0, 0]} />
+              <Bar dataKey="new_homeowners" stackId="a" fill={COLOR_HOMEOWNER} radius={[3, 3, 0, 0]} />
+              <Bar dataKey="new_companies"  stackId="a" fill={COLOR_COMPANY}   radius={[3, 3, 0, 0]} />
+              <Bar dataKey="new_inquiries"  stackId="a" fill={COLOR_INQUIRY}   radius={[3, 3, 0, 0]} />
               <Line dataKey="ma_total" type="monotone" stroke={COLOR_MA} strokeWidth={2} strokeDasharray="5 4" dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
