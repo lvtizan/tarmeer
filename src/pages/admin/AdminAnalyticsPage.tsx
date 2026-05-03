@@ -294,9 +294,19 @@ export default function AdminAnalyticsPage() {
       {/* Page title */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Analytics', '数据分析')}</h1>
-        <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="text-sm text-[#B8864A] hover:underline">
-          Google Analytics ↗
-        </a>
+        <div className="flex items-center gap-4">
+          <a
+            href="https://search.google.com/search-console?resource_id=https%3A%2F%2Fwww.tarmeer.com%2F"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-[#B8864A] hover:underline"
+          >
+            {t('Search Console', '谷歌收录')} ↗
+          </a>
+          <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="text-sm text-[#B8864A] hover:underline">
+            Google Analytics ↗
+          </a>
+        </div>
       </div>
 
       {/* Tab buttons + time range on same row */}
