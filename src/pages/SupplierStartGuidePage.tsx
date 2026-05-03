@@ -52,7 +52,7 @@ function Step1Image() {
     { label: 'Password', placeholder: '••••••••' },
   ];
   return (
-    <div className="h-full overflow-hidden flex items-start justify-center"
+    <div className="h-full overflow-hidden flex items-start justify-center pt-4"
       style={{ background: 'linear-gradient(160deg, #1a1410 0%, #2d1f0e 100%)' }}>
       <div style={{ transform: 'scale(0.62)', transformOrigin: 'top center', width: '100%' }}>
         <div className="bg-white rounded-2xl mx-4 px-5 pt-5 pb-4 shadow-2xl">
@@ -99,7 +99,7 @@ function Step1Image() {
 // ── Step 2: Email verification ───────────────────────────────────────────────
 function Step2Image() {
   return (
-    <div className="h-full overflow-hidden flex items-start justify-center bg-[#f5f0ea]">
+    <div className="h-full overflow-hidden flex items-start justify-center bg-[#f5f0ea] pt-4">
       <div style={{ transform: 'scale(0.66)', transformOrigin: 'top center', width: '100%' }}>
         <div className="bg-white rounded-2xl mx-4 px-6 pt-6 pb-6 shadow-2xl text-center">
           <div className="w-14 h-14 rounded-2xl bg-[#f5ede0] flex items-center justify-center mx-auto mb-4">
@@ -143,7 +143,7 @@ function Step3Image() {
     { name: 'Hardware', selected: false },
   ];
   return (
-    <div className="h-full overflow-hidden flex items-start justify-center bg-[#faf9f7]">
+    <div className="h-full overflow-hidden flex items-start justify-center bg-[#faf9f7] pt-4">
       <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center', width: '100%' }}>
         <div className="bg-white rounded-2xl mx-4 px-5 pt-5 pb-4 shadow-2xl">
           <div className="text-[19px] font-bold text-[#1a1410] mb-1"
@@ -198,7 +198,7 @@ function Step3Image() {
 // ── Step 4: Products grid + catalog list ─────────────────────────────────────
 function Step4Image({ images }: { images: string[] }) {
   return (
-    <div className="h-full bg-[#faf9f7] overflow-hidden flex items-start justify-center pt-3">
+    <div className="h-full bg-[#faf9f7] overflow-hidden flex items-start justify-center pt-4">
       <div style={{ transform: 'scale(0.78)', transformOrigin: 'top center', width: '100%' }}>
         <div className="mx-4">
           {/* Title bar */}
