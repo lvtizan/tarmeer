@@ -25,15 +25,20 @@ function ensurePingStyle() {
   s.id = STYLE_ID;
   s.textContent = `
     @keyframes map-ping {
-      0%   { transform:scale(1);   opacity:0.55; }
-      70%  { transform:scale(1.75);opacity:0.08; }
-      100% { transform:scale(2.0); opacity:0;    }
+      0%   { transform:scale(0.6); opacity:0.85; }
+      60%  { transform:scale(2.2); opacity:0.18; }
+      100% { transform:scale(2.8); opacity:0;    }
     }
     .map-ping-ring {
       position:absolute; inset:0; border-radius:50%;
-      animation:map-ping 2.8s cubic-bezier(0.4,0,0.6,1) infinite;
+      animation:map-ping 2.4s cubic-bezier(0.25,0,0.4,1) infinite;
+      will-change:transform,opacity;
     }
-    .map-ping-dot { position:absolute; inset:0; border-radius:50%; }
+    .map-ping-ring-2 { animation-delay:1.2s; }
+    .map-ping-dot {
+      position:absolute; inset:0; border-radius:50%;
+      will-change:transform;
+    }
     .uae-card-wrap {
       cursor:grab; user-select:none; transition:box-shadow 0.15s;
     }
@@ -148,7 +153,8 @@ function makeBubbleIcon(radius: number): L.DivIcon {
   return L.divIcon({
     className: '', iconSize:[sz, sz], iconAnchor:[radius, radius],
     html: `<div style="position:relative;width:${sz}px;height:${sz}px">
-      <div class="map-ping-ring" style="background:${gA(0.22)}"></div>
+      <div class="map-ping-ring" style="background:${gA(0.42)}"></div>
+      <div class="map-ping-ring map-ping-ring-2" style="background:${gA(0.28)}"></div>
       <div class="map-ping-dot" style="background:${gA(0.5)}"></div>
     </div>`,
   });
