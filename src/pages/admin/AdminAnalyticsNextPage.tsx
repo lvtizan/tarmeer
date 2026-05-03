@@ -347,9 +347,9 @@ export default function AdminAnalyticsNextPage() {
                   strokeOpacity={0} fill="#5b7fcb" fillOpacity={0.05}
                 />
               ) : null)}
-              {/* 总计 — 蓝色面积 + 平滑实线（GA 同款）*/}
+              {/* 总计 — 蓝色面积 + 直折线段（GA 同款，linear 不用 monotone）*/}
               <Area
-                type="monotone"
+                type="linear"
                 dataKey="total"
                 stroke="#3b6ec0"
                 strokeWidth={2}
@@ -357,10 +357,10 @@ export default function AdminAnalyticsNextPage() {
                 dot={false}
                 activeDot={{ r: 4, stroke: '#3b6ec0', strokeWidth: 2, fill: '#fff' }}
               />
-              {/* 三个分类细线 */}
-              <Line type="monotone" dataKey="new_homeowners" stroke={COLOR_HOMEOWNER} strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
-              <Line type="monotone" dataKey="new_companies"  stroke={COLOR_COMPANY}   strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
-              <Line type="monotone" dataKey="new_inquiries"  stroke={COLOR_INQUIRY}   strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+              {/* 三个分类细线 — 同样直线段 */}
+              <Line type="linear" dataKey="new_homeowners" stroke={COLOR_HOMEOWNER} strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+              <Line type="linear" dataKey="new_companies"  stroke={COLOR_COMPANY}   strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+              <Line type="linear" dataKey="new_inquiries"  stroke={COLOR_INQUIRY}   strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         )}
