@@ -368,20 +368,25 @@ function animateValue(el: HTMLElement, from: number, to: number, ms = 600) {
   requestAnimationFrame(frame);
 }
 
-// "+N 标签" toast popping above a card row. Auto-cleans up after 2.4s.
+// "+N 标签" toast popping above a card row or bubble. Auto-cleans up after 2.4s.
 const FIELD_LABEL: Record<string, string> = {
   visitor: '访客', company: '装企', homeowner: '业主', inquiry: '询盘', total: '合计',
 };
-function spawnDeltaToast(map: L.Map, cardMarker: L.Marker, field: string, delta: number, rowYOffsetPx: number) {
-  const html = `<div class="map-delta-toast">${FIELD_LABEL[field] ?? field} +${delta}</div>`;
+function spawnDeltaToast(
+  map: L.Map,
+  anchorLL: L.LatLng,
+  label: string,
+  delta: number,
+  yOffsetPx: number,    // pixels above the anchor
+) {
+  const html = `<div class="map-delta-toast">${label} +${delta}</div>`;
   const icon = L.divIcon({
     className: '',
     iconSize: [80, 24],
-    // Anchor: 32px above the row's own y-offset (relative to card top).
-    iconAnchor: [40, rowYOffsetPx + 32],
+    iconAnchor: [40, yOffsetPx],
     html,
   });
-  const m = L.marker(cardMarker.getLatLng(), { icon, interactive: false, zIndexOffset: 5000 }).addTo(map);
+  const m = L.marker(anchorLL, { icon, interactive: false, zIndexOffset: 5000 }).addTo(map);
   setTimeout(() => { try { map.removeLayer(m); } catch { /* map may be gone */ } }, 2400);
 }
 
@@ -471,35 +476,32 @@ export default function UAEMapLeaflet({
     userMovedRef.current = new Array(topCities.length).fill(false);
 
     // ─── Detect deltas vs last fetch (skip on first load) ─────────────────
-    interface DeltaEv {
-      rank: number;        // index in topCities (0-based)
-      field: 'visitor'|'company'|'homeowner'|'inquiry';
-      from: number; to: number; delta: number;
-      rowYOffsetPx: number; // pixel offset of this row's center, from card top
-    }
-    const deltas: DeltaEv[] = [];
+    type Field = 'visitor'|'company'|'homeowner'|'inquiry';
+    const FIELD_ORDER: Field[] = ['visitor', 'company', 'homeowner', 'inquiry'];
+    interface CardDelta { rank: number; field: Field; from: number; to: number; delta: number; rowOffsetFromCenterPx: number; }
+    interface BubbleDelta { aggIdx: number; field: Field; delta: number; city: AggCity; }
+    const cardDeltas: CardDelta[] = [];
+    const bubbleDeltas: BubbleDelta[] = [];
     const isFirstLoad = prevAggRef.current.size === 0;
     if (!isFirstLoad) {
-      for (let i = 0; i < topCities.length; i++) {
-        const cur = topCities[i].city;
+      for (let i = 0; i < agg.length; i++) {
+        const cur = agg[i];
         const prev = prevAggRef.current.get(cur.key);
         if (!prev) continue;
-        const order: ('visitor'|'company'|'homeowner'|'inquiry')[] = ['visitor', 'company', 'homeowner', 'inquiry'];
-        // Compute row y-offset by counting only the rows that exist (have value > 0)
+        const isTop = i < TOP_CALLOUT_N;
         let rowsBeforeCount = 0;
-        for (const f of order) {
+        for (const f of FIELD_ORDER) {
           const has = cur[f] > 0 || prev[f] > 0;
           if (cur[f] > prev[f]) {
-            const rowCenterY = HEAD_PX + rowsBeforeCount * ROW_PX + ROW_PX / 2;
-            // Convert to offset from card center (which is what L.divIcon's iconAnchor is relative to)
-            // Card center y = card.h/2 from top; row center y above center = card.h/2 - rowCenterY
-            const cardH = cardHeight(cur);
-            const offsetFromCenter = cardH / 2 - rowCenterY;
-            deltas.push({
-              rank: i, field: f,
-              from: prev[f], to: cur[f], delta: cur[f] - prev[f],
-              rowYOffsetPx: offsetFromCenter,
-            });
+            if (isTop) {
+              // Top → animate the card's row + spawn toast above the row
+              const rowCenterY = HEAD_PX + rowsBeforeCount * ROW_PX + ROW_PX / 2;
+              const offsetFromCenter = cardHeight(cur) / 2 - rowCenterY;
+              cardDeltas.push({ rank: i, field: f, from: prev[f], to: cur[f], delta: cur[f] - prev[f], rowOffsetFromCenterPx: offsetFromCenter });
+            } else {
+              // Non-top → toast above the bubble (no card to anchor to)
+              bubbleDeltas.push({ aggIdx: i, field: f, delta: cur[f] - prev[f], city: cur });
+            }
           }
           if (has) rowsBeforeCount++;
         }
@@ -531,15 +533,16 @@ export default function UAEMapLeaflet({
     syncCallouts(map);
 
     // ─── Trigger animations (next paint, after DOM is in place) ───────────
-    // Group deltas by city so total only rolls once per card even if multiple fields changed.
-    if (deltas.length) {
-      const byRank = new Map<number, DeltaEv[]>();
-      for (const d of deltas) {
+    if (cardDeltas.length || bubbleDeltas.length) {
+      // Group card deltas by rank so total only rolls once per card.
+      const byRank = new Map<number, CardDelta[]>();
+      for (const d of cardDeltas) {
         const arr = byRank.get(d.rank) ?? [];
         arr.push(d);
         byRank.set(d.rank, arr);
       }
       requestAnimationFrame(() => {
+        // Top cities: animate card row + spawn toast above the row
         byRank.forEach((fieldDeltas, rank) => {
           const cardMarker = cardMarkersRef.current[rank];
           const el = cardMarker?.getElement();
@@ -547,7 +550,7 @@ export default function UAEMapLeaflet({
           for (const d of fieldDeltas) {
             const fieldEl = el.querySelector(`[data-field="${d.field}"]`);
             if (fieldEl instanceof HTMLElement) animateValue(fieldEl, d.from, d.to, 600);
-            spawnDeltaToast(map, cardMarker, d.field, d.delta, d.rowYOffsetPx);
+            spawnDeltaToast(map, cardMarker.getLatLng(), FIELD_LABEL[d.field] ?? d.field, d.delta, d.rowOffsetFromCenterPx + 32);
           }
           const totalEl = el.querySelector('[data-field="total"]');
           if (totalEl instanceof HTMLElement) {
@@ -556,6 +559,14 @@ export default function UAEMapLeaflet({
             animateValue(totalEl, totalNew - totalDelta, totalNew, 600);
           }
         });
+        // Non-top cities: toast above the bubble with city name + field
+        for (const d of bubbleDeltas) {
+          const bubble = markersRef.current[d.aggIdx];
+          if (!bubble) continue;
+          const label = `${d.city.city} · ${FIELD_LABEL[d.field] ?? d.field}`;
+          // 24px above bubble icon (icon's anchor is at center, so its top is half the radius up)
+          spawnDeltaToast(map, bubble.getLatLng(), label, d.delta, 24);
+        }
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

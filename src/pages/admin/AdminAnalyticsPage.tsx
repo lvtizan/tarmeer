@@ -395,8 +395,9 @@ function VisitorTab() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
 
-    // Poll registration sources every 30s so the map can detect deltas and
-    // animate (number roll + "+N" toast). Initial call fires immediately.
+    // Poll registration sources so the map can detect deltas and animate.
+    // Pauses when tab is hidden to save server requests; resumes with an
+    // immediate refresh when tab becomes visible again.
     const fetchRegSources = () => {
       adminApi.getRegistrationSources().then(data => {
         if (cancelled) return;
@@ -408,11 +409,31 @@ function VisitorTab() {
       }).catch(() => {});
     };
     fetchRegSources();
-    const pollId = window.setInterval(fetchRegSources, 30000);
+
+    let pollId: number | null = null;
+    const startPolling = () => {
+      if (pollId !== null) return;
+      pollId = window.setInterval(fetchRegSources, 30000);
+    };
+    const stopPolling = () => {
+      if (pollId !== null) { window.clearInterval(pollId); pollId = null; }
+    };
+    startPolling();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        stopPolling();
+      } else {
+        fetchRegSources();   // immediate refresh — tab was hidden, may have missed events
+        startPolling();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       cancelled = true;
-      window.clearInterval(pollId);
+      stopPolling();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 
