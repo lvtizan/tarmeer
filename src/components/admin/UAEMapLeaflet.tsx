@@ -438,14 +438,10 @@ export default function UAEMapLeaflet({
   const [mapReady, setMapReady] = useState(false);
 
   // Update one leader line when its card moves (drag or auto-relayout)
-  // L 形折线：从卡片中心先垂直走到 bubble 的 y 高度，再水平拐到 bubble。
-  // 比直线倾斜的水平线更有"指向感"，尤其是卡片和 bubble 几乎同高时（如阿布扎比）。
-  function leaderPath(map: L.Map, bubbleLL: L.LatLng, cardLL: L.LatLng): L.LatLng[] {
-    const cardPt   = map.latLngToContainerPoint(cardLL);
-    const bubblePt = map.latLngToContainerPoint(bubbleLL);
-    // Elbow at (cardPt.x, bubblePt.y) → from card view: vertical first, then horizontal
-    const elbowLL = map.containerPointToLatLng(L.point(cardPt.x, bubblePt.y));
-    return [bubbleLL, elbowLL, cardLL];
+  // 单根斜线：从 bubble 中心直连卡片中心。L 形折线在卡片列对齐时退化成水平段，
+  // 看起来全水平不"指向"，所以改回斜线。
+  function leaderPath(_map: L.Map, bubbleLL: L.LatLng, cardLL: L.LatLng): L.LatLng[] {
+    return [bubbleLL, cardLL];
   }
 
   function updateLeaderLine(map: L.Map, i: number) {
