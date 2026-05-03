@@ -11,10 +11,10 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
-  ResponsiveContainer, ComposedChart, Bar, Line,
+  ResponsiveContainer, ComposedChart, Area, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea,
 } from 'recharts';
-import { Users, Building2, HandCoins, TrendingUp } from 'lucide-react';
+import { Users, Building2, HandCoins, TrendingUp, Globe, Eye } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { labelCompanyType } from './AdminAnalyticsPage';
@@ -24,7 +24,6 @@ const UAEMap = lazy(() => import('../../components/admin/UAEMapLeaflet'));
 const COLOR_HOMEOWNER = '#5b7fcb';
 const COLOR_COMPANY   = '#B8864A';
 const COLOR_INQUIRY   = '#6b6b6b';
-const COLOR_MA        = '#e0a86e';
 
 interface DayRow {
   date: string;
@@ -44,27 +43,41 @@ interface CompanyVisitorRow {
   cities: Array<{ city: string; visitors: number }>;
 }
 
-// ─── 7-day moving average helper ────────────────────────────────────────────
-function withMovingAverage(rows: DayRow[]): (DayRow & { ma_total: number; is_weekend: boolean })[] {
+// ─── Daily total + 7-day moving average + weekend flag ─────────────────────
+function withTotalsAndMA(rows: DayRow[]): (DayRow & { total: number; ma_total: number; is_weekend: boolean })[] {
   const totals = rows.map(r => (r.new_homeowners || 0) + (r.new_companies || 0) + (r.new_inquiries || 0));
   return rows.map((r, i) => {
     const start = Math.max(0, i - 6);
     const window = totals.slice(start, i + 1);
     const ma = window.reduce((s, n) => s + n, 0) / window.length;
-    // UAE weekend: Friday & Saturday (day 5/6 in JS getDay)
     const d = new Date(r.date);
     const dow = d.getDay();
-    return { ...r, ma_total: Math.round(ma * 10) / 10, is_weekend: dow === 5 || dow === 6 };
+    return {
+      ...r,
+      total: totals[i],
+      ma_total: Math.round(ma * 10) / 10,
+      is_weekend: dow === 5 || dow === 6,
+    };
   });
 }
 
-// ─── KPI card with "vs 7d avg" badge ────────────────────────────────────────
-function KpiCard({ icon, label, value, ma7, accent }: {
-  icon: React.ReactNode; label: string; value: number; ma7: number; accent: string;
+// ─── KPI card. If `ma7` provided, shows %-diff vs 7d avg as up/down badge.
+function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride }: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  ma7?: number | null;
+  sub?: string;
+  accent: string;
+  valueOverride?: string;     // if set, displays this instead of value.toLocaleString()
 }) {
-  const ratio = ma7 > 0 ? value / ma7 : null;
-  const ratioText = ratio === null ? '—' : `${ratio >= 1 ? '+' : ''}${(ratio - 1 >= 0 ? ratio : 1 / ratio).toFixed(1)}× 7d`;
-  const goodBadge = ratio !== null && ratio >= 1;
+  // Diff percent vs 7d avg, NOT a ratio. Easier to read: "+50%" or "-15%".
+  let diffPct: number | null = null;
+  if (typeof ma7 === 'number' && ma7 > 0) {
+    diffPct = Math.round(((value - ma7) / ma7) * 100);
+  }
+  const showBadge = diffPct !== null;
+  const isUp = (diffPct ?? 0) >= 0;
   return (
     <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5">
       <div className="flex items-center gap-2 mb-2">
@@ -72,12 +85,15 @@ function KpiCard({ icon, label, value, ma7, accent }: {
         <span className="text-xs font-medium text-stone-500">{label}</span>
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold text-[#1a1a1a]">{value.toLocaleString()}</span>
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${goodBadge ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-          {ratioText}
-        </span>
+        <span className="text-2xl font-bold text-[#1a1a1a]">{valueOverride ?? value.toLocaleString()}</span>
+        {showBadge && (
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 ${isUp ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+            <span>{isUp ? '↑' : '↓'}</span>
+            <span>{Math.abs(diffPct as number)}%</span>
+          </span>
+        )}
       </div>
-      <div className="text-[10px] text-stone-400 mt-1">本期 vs 近 7 日均值</div>
+      <div className="text-[10px] text-stone-400 mt-1">{sub ?? '相比近 7 日均值'}</div>
     </div>
   );
 }
@@ -148,6 +164,8 @@ export default function AdminAnalyticsNextPage() {
   const [signupSources, setSignupSources] = useState<SourceItem[]>([]);
   const [companyTypes, setCompanyTypes]   = useState<SourceItem[]>([]);
   const [topCompanies, setTopCompanies]   = useState<CompanyVisitorRow[]>([]);
+  const [pageViews, setPageViews]         = useState(0);
+  const [uniqueIps, setUniqueIps]         = useState(0);
   // For map (reused from v1, untouched)
   const [companyCities, setCompanyCities]     = useState<CityRow[]>([]);
   const [inquiryCities, setInquiryCities]     = useState<CityRow[]>([]);
@@ -165,7 +183,9 @@ export default function AdminAnalyticsNextPage() {
       adminApi.getDailyStats(30) as Promise<any>,   // v1 用的同一个端点，返 { data: [...], totals: {...} }
       adminApi.getRegistrationSources(),
       adminApi.getCompanyVisitors() as Promise<any>,
-    ]).then(([reg, src, vis]) => {
+      adminApi.getAnalyticsOverview() as Promise<any>,
+      adminApi.getVisitorOverview() as Promise<any>,
+    ]).then(([reg, src, vis, ov, vov]) => {
       if (cancelled) return;
       const rows: any[] = reg?.data || [];
       setDaily(rows.map((r: any) => ({
@@ -187,6 +207,8 @@ export default function AdminAnalyticsNextPage() {
         total_views: num(c.total_views),
       }));
       setTopCompanies(companies);
+      setPageViews(num(ov?.overview?.page_views));
+      setUniqueIps(num(vov?.uniqueIpCount));
     }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -210,7 +232,7 @@ export default function AdminAnalyticsNextPage() {
     inquiry:   last7.length > 0 ? last7Tot.inquiry   / last7.length * periodDays : 0,
   };
 
-  const chartData = withMovingAverage(daily);
+  const chartData = withTotalsAndMA(daily);
 
   // Top 10 Companies (replaces source distribution per user request)
   const companyItems: LBItem[] = topCompanies.map(c => {
@@ -255,48 +277,90 @@ export default function AdminAnalyticsNextPage() {
         </div>
       </div>
 
-      {/* KPI cards with vs 7d badge */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard icon={<Users className="w-4 h-4" />}     label="新增业主"     value={totals.homeowner} ma7={last7Avg.homeowner} accent={COLOR_HOMEOWNER} />
-        <KpiCard icon={<Building2 className="w-4 h-4" />} label="新增装企"     value={totals.company}   ma7={last7Avg.company}   accent={COLOR_COMPANY}   />
-        <KpiCard icon={<HandCoins className="w-4 h-4" />} label="新增询盘"     value={totals.inquiry}   ma7={last7Avg.inquiry}   accent={COLOR_INQUIRY}   />
-        <KpiCard icon={<TrendingUp className="w-4 h-4" />} label="综合转化率"  value={Math.round(((totals.company + totals.inquiry) / Math.max(totals.homeowner + totals.company + totals.inquiry, 1)) * 100)} ma7={0} accent="#dc2626" />
+      {/* KPI cards — 6 张：4 注册 KPI + 独立访客 + 页面浏览 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <KpiCard icon={<Globe className="w-4 h-4" />}      label="独立访客"    value={uniqueIps}        accent="#5b7fcb" sub="visitor_logs · 累计" />
+        <KpiCard icon={<Eye className="w-4 h-4" />}        label="页面浏览"    value={pageViews}        accent="#2c6e49" sub="近 30 天" />
+        <KpiCard icon={<Users className="w-4 h-4" />}      label="新增业主"    value={totals.homeowner} ma7={last7Avg.homeowner} accent={COLOR_HOMEOWNER} />
+        <KpiCard icon={<Building2 className="w-4 h-4" />}  label="新增装企"    value={totals.company}   ma7={last7Avg.company}   accent={COLOR_COMPANY}   />
+        <KpiCard icon={<HandCoins className="w-4 h-4" />}  label="新增询盘"    value={totals.inquiry}   ma7={last7Avg.inquiry}   accent={COLOR_INQUIRY}   />
+        <KpiCard
+          icon={<TrendingUp className="w-4 h-4" />}
+          label="综合转化率"
+          value={(() => {
+            const tot = totals.homeowner + totals.company + totals.inquiry;
+            return tot > 0 ? Math.round(((totals.company + totals.inquiry) / tot) * 100) : 0;
+          })()}
+          accent="#dc2626"
+          valueOverride={`${(() => {
+            const tot = totals.homeowner + totals.company + totals.inquiry;
+            return tot > 0 ? Math.round(((totals.company + totals.inquiry) / tot) * 100) : 0;
+          })()}%`}
+          sub="（装企+询盘）/ 总注册"
+        />
       </div>
 
-      {/* Daily trend with 7d MA + weekend stripes */}
+      {/* Daily trend — Google Analytics 风：总计面积 + 各分类细线 + 平滑曲线 + endpoint marker + 周末浅蓝 */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 mb-6">
         <div className="mb-4">
           <h2 className="text-sm font-bold text-[#2c2c2c]">每日注册趋势</h2>
-          <p className="text-xs text-stone-500 mt-0.5">业主 / 装企 / 询盘 三色柱 · 黄色虚线为 7 日移动平均 · 蓝底为周末（周五·周六）</p>
+          <p className="text-xs text-stone-500 mt-0.5">合计（蓝色面积）+ 业主 / 装企 / 询盘 分线 · 蓝底为周末</p>
         </div>
-        {loading ? <div className="h-[300px] flex items-center justify-center text-stone-400 text-sm">加载中…</div>
-        : chartData.length === 0 ? <div className="h-[300px] flex items-center justify-center text-stone-400 text-sm">暂无数据</div>
+        {loading ? <div className="h-[320px] flex items-center justify-center text-stone-400 text-sm">加载中…</div>
+        : chartData.length === 0 ? <div className="h-[320px] flex items-center justify-center text-stone-400 text-sm">暂无数据</div>
         : (
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" vertical={false} />
+          <ResponsiveContainer width="100%" height={340}>
+            <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 5 }}>
+              <defs>
+                <linearGradient id="totalArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#5b7fcb" stopOpacity={0.22} />
+                  <stop offset="100%" stopColor="#5b7fcb" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0eeec" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5, 10)} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} axisLine={false} tickLine={false} width={36} />
               <Tooltip
                 contentStyle={{ borderRadius: 12, border: '1px solid #e7e5e4', fontSize: 12 }}
-                formatter={(v: any, n: any) => [v, n === 'ma_total' ? '7 日均值' : n === 'new_homeowners' ? '业主' : n === 'new_companies' ? '装企' : n === 'new_inquiries' ? '询盘' : n]}
+                formatter={(v: any, n: any) => [v, ({
+                  total: '合计',
+                  new_homeowners: '业主',
+                  new_companies: '装企',
+                  new_inquiries: '询盘',
+                } as Record<string, string>)[n] || n]}
               />
               <Legend
-                wrapperStyle={{ fontSize: 12 }}
-                formatter={(v: string) => ({ ma_total: '7 日均值', new_homeowners: '业主', new_companies: '装企', new_inquiries: '询盘' }[v] || v)}
+                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                iconType="circle"
+                formatter={(v: string) => ({
+                  total: '合计',
+                  new_homeowners: '业主',
+                  new_companies: '装企',
+                  new_inquiries: '询盘',
+                } as Record<string, string>)[v] || v}
               />
               {/* Weekend stripes */}
               {chartData.map((row, i) => row.is_weekend ? (
                 <ReferenceArea
                   key={`we-${i}`}
                   x1={row.date} x2={row.date}
-                  strokeOpacity={0} fill="#5b7fcb" fillOpacity={0.06}
+                  strokeOpacity={0} fill="#5b7fcb" fillOpacity={0.05}
                 />
               ) : null)}
-              <Bar dataKey="new_homeowners" stackId="a" fill={COLOR_HOMEOWNER} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="new_companies"  stackId="a" fill={COLOR_COMPANY}   radius={[3, 3, 0, 0]} />
-              <Bar dataKey="new_inquiries"  stackId="a" fill={COLOR_INQUIRY}   radius={[3, 3, 0, 0]} />
-              <Line dataKey="ma_total" type="monotone" stroke={COLOR_MA} strokeWidth={2} strokeDasharray="5 4" dot={false} />
+              {/* 总计 — 蓝色面积 + 平滑实线（GA 同款）*/}
+              <Area
+                type="monotone"
+                dataKey="total"
+                stroke="#3b6ec0"
+                strokeWidth={2}
+                fill="url(#totalArea)"
+                dot={false}
+                activeDot={{ r: 4, stroke: '#3b6ec0', strokeWidth: 2, fill: '#fff' }}
+              />
+              {/* 三个分类细线 */}
+              <Line type="monotone" dataKey="new_homeowners" stroke={COLOR_HOMEOWNER} strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+              <Line type="monotone" dataKey="new_companies"  stroke={COLOR_COMPANY}   strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+              <Line type="monotone" dataKey="new_inquiries"  stroke={COLOR_INQUIRY}   strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         )}
