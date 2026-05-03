@@ -74,42 +74,50 @@ function KpiCard({ icon, label, value, ma7, accent }: {
   );
 }
 
-// ─── Horizontal stacked bar (replaces donut) ────────────────────────────────
-function HorizontalBars({ items, colors, total, onLabelClick }: {
+// ─── Wide ranked bars — same visual language as Top 10 Companies for consistency ──
+function HorizontalBars({ items, total }: {
   items: Array<{ key: string; label: string; value: number }>;
-  colors: string[];
   total: number;
-  onLabelClick?: (key: string) => void;
 }) {
   if (items.length === 0) {
     return <div className="flex items-center justify-center h-[180px] text-stone-400 text-sm">暂无数据</div>;
   }
+  const maxV = Math.max(...items.map(it => it.value), 1);
   return (
     <div className="space-y-2 mt-2">
-      {items.slice(0, 8).map((item, i) => {
-        const pct = total > 0 ? (item.value / total) * 100 : 0;
+      {items.slice(0, 8).map((item) => {
+        // Cap at 75% so even longest bar leaves clear room for its number
+        const barPct = Math.max(4, Math.round((item.value / maxV) * 75));
+        const pctOfTotal = total > 0 ? Math.round((item.value / total) * 100) : 0;
         return (
-          <div key={item.key} className="flex items-center gap-3">
-            <span
-              className={`text-[11.5px] text-stone-600 w-[88px] truncate ${onLabelClick ? 'cursor-pointer hover:text-[#B8864A]' : ''}`}
-              onClick={() => onLabelClick?.(item.key)}
-              title={item.label}
-            >{item.label}</span>
-            <div className="flex-1 h-5 rounded-md bg-stone-100 overflow-hidden relative">
-              <div
-                className="h-full rounded-md transition-all duration-500"
-                style={{ width: `${Math.max(pct, 1.2)}%`, background: colors[i % colors.length] }}
-              />
+          <div key={item.key} className="relative h-[54px] rounded-xl" style={{ background: '#B8864A12' }}>
+            {/* Bar fill with gold gradient */}
+            <div
+              className="absolute inset-y-0 left-0 rounded-xl transition-all duration-500"
+              style={{ width: `${barPct}%`, background: 'linear-gradient(135deg, #C8975A 0%, #A97540 100%)' }}
+            />
+            {/* Label on top of bar (white, padded right so it doesn't touch number zone) */}
+            <div className="absolute inset-0 flex flex-col justify-center px-4" style={{ paddingRight: '28%' }}>
               <span
-                className="absolute top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white"
-                style={{ left: `${Math.max(pct - 4, 4)}%`, textShadow: '0 1px 2px rgba(0,0,0,0.25)' }}
-              >{Math.round(pct)}%</span>
+                className="truncate"
+                style={{ fontSize: 14, fontWeight: 700, color: 'white', textShadow: '0 1px 3px rgba(0,0,0,0.28)' }}
+                title={item.label}
+              >{item.label}</span>
+              <div className="truncate" style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                {pctOfTotal}% · 占比
+              </div>
             </div>
-            <span className="text-xs font-bold text-[#B8864A] tabular-nums w-[36px] text-right">{item.value}</span>
+            {/* Number tracks barPct%, paddingLeft creates the gap */}
+            <span
+              className="absolute top-1/2 -translate-y-1/2 tabular-nums whitespace-nowrap"
+              style={{ left: `${barPct}%`, paddingLeft: 10, fontSize: 18, fontWeight: 700, color: '#6b4a24' }}
+            >
+              {item.value}
+            </span>
           </div>
         );
       })}
-      <div className="text-[10.5px] text-stone-400 text-center pt-2 border-t border-stone-100">合计 {total.toLocaleString()}</div>
+      <div className="text-[10.5px] text-stone-400 text-center pt-2">合计 {total.toLocaleString()}</div>
     </div>
   );
 }
@@ -184,7 +192,6 @@ export default function AdminAnalyticsNextPage() {
     label: s.source || '未知',
     value: s.count,
   })).sort((a, b) => b.value - a.value);
-  const sourceColors = ['#B8864A', '#C8975A', '#D4A05A', '#DCA970', '#E0B284', '#E8C29A', '#EFD2B0', '#F5E2C6'];
 
   // Type bars
   const typeTotal = companyTypes.reduce((s, x) => s + x.count, 0);
@@ -193,7 +200,6 @@ export default function AdminAnalyticsNextPage() {
     label: labelCompanyType(t.type || '', lang === 'en' ? 'en' : 'zh') || '未知',
     value: t.count,
   })).sort((a, b) => b.value - a.value);
-  const typeColors = ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#86efac', '#bbf7d0', '#dcfce7'];
 
   return (
     <div className="w-full">
@@ -263,7 +269,7 @@ export default function AdminAnalyticsNextPage() {
             <h2 className="text-sm font-bold text-[#2c2c2c]">注册来源分布</h2>
             <p className="text-[11px] text-stone-500 mt-0.5">用户注册来源渠道 · 横向 stacked bar 可读性比 donut 高</p>
           </div>
-          <HorizontalBars items={sourceItems} colors={sourceColors} total={sourceTotal} />
+          <HorizontalBars items={sourceItems} total={sourceTotal} />
         </div>
 
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
@@ -271,7 +277,7 @@ export default function AdminAnalyticsNextPage() {
             <h2 className="text-sm font-bold text-[#2c2c2c]">装企类型分布</h2>
             <p className="text-[11px] text-stone-500 mt-0.5">注册装企类型分布</p>
           </div>
-          <HorizontalBars items={typeItems} colors={typeColors} total={typeTotal} />
+          <HorizontalBars items={typeItems} total={typeTotal} />
         </div>
       </div>
 
