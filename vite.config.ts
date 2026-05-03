@@ -55,11 +55,23 @@ export default defineConfig({
     },
   },
   build: {
+    // Modern target → smaller bundles + better LCP on supported browsers
+    target: 'es2020',
+    cssCodeSplit: true,
+    sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          animations: ['framer-motion'],
+        // Split heavy / seldom-used deps into separate chunks so the first-paint
+        // bundle is smaller and LCP improves. Routes already lazy-load —
+        // these vendor chunks come along with the lazy page that needs them.
+        manualChunks: (id) => {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('react-leaflet') || id.includes('/leaflet/')) return 'vendor-leaflet';
+          if (id.includes('recharts') || id.includes('/d3-')) return 'vendor-charts';
+          if (id.includes('lucide-react'))                      return 'vendor-icons';
+          if (id.includes('framer-motion'))                     return 'vendor-animations';
+          if (id.includes('react-helmet'))                      return 'vendor-helmet';
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react';
         },
       },
     },

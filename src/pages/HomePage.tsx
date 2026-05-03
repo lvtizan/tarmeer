@@ -29,14 +29,18 @@ export default function HomePage() {
         <meta name="description" content="Connect with top interior designers, renovation companies, and fit-out professionals across Dubai, Abu Dhabi, and UAE. Browse portfolios, compare services, get personalized quotes." />
         <meta property="og:title" content="Tarmeer - Find Interior Design & Renovation Companies in UAE" />
         <meta property="og:description" content="Connect with top interior designers and renovation companies in UAE." />
-        <meta property="og:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta property="og:image" content="https://www.tarmeer.com/images/hero/hero-living-1.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:url" content="https://www.tarmeer.com/" />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.tarmeer.com/" />
+        {/* LCP image preload — Banner uses /images/hero/hero-living-1.jpg as background */}
+        <link rel="preload" as="image" href="/images/hero/hero-living-1.jpg" fetchPriority="high" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Tarmeer - Find Interior Design & Renovation Companies in UAE" />
         <meta name="twitter:description" content="Find trusted interior design, renovation and fit-out companies in UAE." />
-        <meta name="twitter:image" content="https://www.tarmeer.com/images/tarmeer_logo.svg" />
+        <meta name="twitter:image" content="https://www.tarmeer.com/images/hero/hero-living-1.jpg" />
         <meta name="keywords" content="interior design UAE, renovation companies Dubai, fit-out Abu Dhabi, interior designer, home renovation, Tarmeer, villa design, apartment renovation" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
         <script type="application/ld+json">{JSON.stringify({

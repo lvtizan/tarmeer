@@ -46,10 +46,11 @@ export default function CompanyDetailPage() {
       navigate('/companies');
     }
   };
-  // Canonicalize URL: /companies/:slug → /@:slug
+  // Canonicalize URL: /@:slug → /companies/:slug (Option A — keyword-rich URL is canonical).
+  // Server should send a 301 for direct visits; this client redirect covers SPA navigation.
   useEffect(() => {
-    if (id && window.location.pathname.startsWith('/companies/')) {
-      navigate(`/@${id}`, { replace: true });
+    if (id && window.location.pathname.startsWith('/@')) {
+      navigate(`/companies/${id}`, { replace: true });
     }
   }, [id, navigate]);
 

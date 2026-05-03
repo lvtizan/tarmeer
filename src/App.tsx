@@ -193,6 +193,15 @@ function AtSlugOrNotFound() {
   if (m) return <CompanyDetailPage />;
   return <NotFoundPage />;
 }
+
+// Old /designers/:slug links (e.g. from third-party backlinks) preserve slug
+// when redirecting to canonical /companies/:slug. Server should also send a
+// 301 for SEO; client redirect just covers in-page navigation.
+function DesignerSlugRedirect() {
+  const location = useLocation();
+  const m = location.pathname.match(/^\/designers\/([^/?#]+)$/);
+  return <Navigate to={m ? `/companies/${m[1]}` : '/companies'} replace />;
+}
 function App() {
   useMetaPixelPageView();
   return (
@@ -265,7 +274,8 @@ function App() {
           <Route path="/designer/*" element={<Navigate to="/company" replace />} />
           <Route path="/designers" element={<Navigate to="/companies" replace />} />
           <Route path="/designers/apply" element={<Navigate to="/onboarding" replace />} />
-          <Route path="/designers/:slug" element={<Navigate to="/companies" replace />} />
+          {/* Preserve slug when redirecting old /designers/:slug → /companies/:slug (was losing slug) */}
+          <Route path="/designers/:slug" element={<DesignerSlugRedirect />} />
 
           {/* ====== Independent landing pages ====== */}
           <Route path="/start" element={<StartGuidePage />} />
