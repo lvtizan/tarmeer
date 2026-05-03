@@ -48,11 +48,11 @@ function aggregateCities(vC, cC, hC, iC) {
   return [...m.values()].sort((a, b) => b.total - a.total);
 }
 
-const CARD_W   = 160;
-const ROW_PX   = 20;
-const HEAD_PX  = 27;
-const FOOT_PX  = 26;
-const PAD_Y_PX = 18;
+const CARD_W   = 156;
+const ROW_PX   = 17;
+const HEAD_PX  = 30;
+const FOOT_PX  = 0;
+const PAD_Y_PX = 14;
 
 function cardRowCount(city) {
   return (city.visitor ? 1 : 0) + (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
@@ -178,12 +178,12 @@ test('TC-3: 未识别城市跳过', () => {
   eq(out.length, 0, 'unknown city dropped');
 });
 
-// TC-4 cardHeight 按行数
+// TC-4 cardHeight 按行数（紧凑布局：合计移入 header，无 footer）
 test('TC-4: cardHeight 按行数', () => {
-  eq(cardHeight({ visitor:0, company:0, homeowner:0, inquiry:1 }), 91,  '1 row');
-  eq(cardHeight({ visitor:1, company:0, homeowner:0, inquiry:1 }), 111, '2 row');
-  eq(cardHeight({ visitor:1, company:1, homeowner:0, inquiry:1 }), 131, '3 row');
-  eq(cardHeight({ visitor:1, company:1, homeowner:1, inquiry:1 }), 151, '4 row');
+  eq(cardHeight({ visitor:0, company:0, homeowner:0, inquiry:1 }), 61,  '1 row');
+  eq(cardHeight({ visitor:1, company:0, homeowner:0, inquiry:1 }), 78,  '2 row');
+  eq(cardHeight({ visitor:1, company:1, homeowner:0, inquiry:1 }), 95,  '3 row');
+  eq(cardHeight({ visitor:1, company:1, homeowner:1, inquiry:1 }), 112, '4 row');
 });
 
 // TC-5 cardSide 阈值

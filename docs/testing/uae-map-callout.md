@@ -37,16 +37,18 @@
 输入：`companyCities = [{ city: 'Atlantis', count: 999 }]`（不在 CITY_COORDS）
 期望：输出长度 0
 
-## TC-4：cardHeight 按行数
+## TC-4：cardHeight 按行数（紧凑布局）
 
 | city.visitor | city.company | city.homeowner | city.inquiry | 期望 cardHeight |
 |---:|---:|---:|---:|---:|
-| 0 | 0 | 0 | 1 | 91  (1 行) |
-| 1 | 0 | 0 | 1 | 111 (2 行) |
-| 1 | 1 | 0 | 1 | 131 (3 行) |
-| 1 | 1 | 1 | 1 | 151 (4 行) |
+| 0 | 0 | 0 | 1 | 61  (1 行) |
+| 1 | 0 | 0 | 1 | 78  (2 行) |
+| 1 | 1 | 0 | 1 | 95  (3 行) |
+| 1 | 1 | 1 | 1 | 112 (4 行) |
 
-公式：`HEAD_PX(27) + rows * ROW_PX(20) + FOOT_PX(26) + PAD_Y_PX(18)`
+公式：`HEAD_PX(30) + rows * ROW_PX(17) + FOOT_PX(0) + PAD_Y_PX(14)`
+
+紧凑改动：合计数字移到 header 行（与城市名同行右对齐），删除独立 footer；line-height 1.8 → 1.55；行字号 11px → 10.5px；padding 9 → 7。4 行卡 151 → 112（−26%）。
 
 ## TC-5：卡片侧边判断（cardSide）
 

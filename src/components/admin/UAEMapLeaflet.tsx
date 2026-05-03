@@ -160,13 +160,12 @@ function makeBubbleIcon(radius: number): L.DivIcon {
   });
 }
 
-// Per-card geometry. Rows count varies by city, so we compute height for
-// honest collision math instead of using a one-size CARD_H.
-const CARD_W       = 160;
-const ROW_PX       = 20;   // line-height 1.8 * 11px = ~20
-const HEAD_PX      = 27;   // header row + bottom border + margin
-const FOOT_PX      = 26;   // 合计 row + top border + margin
-const PAD_Y_PX     = 18;   // 9 top + 9 bottom
+// Per-card geometry. Compact layout: total moved into header row, no footer.
+const CARD_W       = 156;
+const ROW_PX       = 17;   // line-height 1.55 * 10.5px ≈ 16.3, round to 17
+const HEAD_PX      = 30;   // rank + city + total inline + bottom border/margin
+const FOOT_PX      = 0;    // no separate 合计 footer
+const PAD_Y_PX     = 14;   // 7 top + 7 bottom
 
 function cardRowCount(city: AggCity): number {
   return (city.visitor ? 1 : 0) + (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
@@ -177,8 +176,8 @@ function cardHeight(city: AggCity): number {
 
 function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivIcon {
   const H = cardHeight(city);
-  const rs = `display:flex;justify-content:space-between;font-size:11px;color:#6b6b6b;line-height:1.8`;
-  const vs = `font-weight:700;color:${GOLD}`;
+  const rs = `display:flex;justify-content:space-between;font-size:10.5px;color:#6b6b6b;line-height:1.55`;
+  const vs = `font-weight:700;color:${GOLD};font-variant-numeric:tabular-nums`;
   const rows: string[] = [];
   if (city.visitor)   rows.push(`<div style="${rs}"><span>访客</span><span style="${vs}">${city.visitor.toLocaleString()}</span></div>`);
   if (city.company)   rows.push(`<div style="${rs}"><span>装企</span><span style="${vs}">${city.company.toLocaleString()}</span></div>`);
@@ -188,17 +187,14 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
     className: '',
     iconSize: [CARD_W, H],
     iconAnchor: [side === 'left' ? CARD_W : 0, H / 2],
-    html: `<div class="uae-card-wrap" style="background:white;border-radius:10px;padding:9px 12px;width:${CARD_W}px;
-      box-shadow:0 2px 4px rgba(0,0,0,0.06),0 8px 24px ${gA(0.16)},0 0 0 1px ${gA(0.22)}">
-      <div style="display:flex;align-items:center;gap:5px;padding-bottom:5px;margin-bottom:4px;border-bottom:1px solid ${gA(0.12)}">
+    html: `<div class="uae-card-wrap" style="background:white;border-radius:8px;padding:7px 10px;width:${CARD_W}px;
+      box-shadow:0 2px 4px rgba(0,0,0,0.06),0 6px 18px ${gA(0.14)},0 0 0 1px ${gA(0.22)}">
+      <div style="display:flex;align-items:center;gap:5px;padding-bottom:4px;margin-bottom:3px;border-bottom:1px solid ${gA(0.12)}">
         <span style="font-size:9px;font-weight:800;color:white;background:${GOLD};border-radius:3px;padding:1px 4px;line-height:1.4;flex-shrink:0">#${rank}</span>
-        <span style="font-weight:800;font-size:14px;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${city.city}</span>
+        <span style="font-weight:700;font-size:12.5px;color:#1a1a1a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${city.city}</span>
+        <span style="font-size:12.5px;font-weight:800;color:${GOLD};font-variant-numeric:tabular-nums;flex-shrink:0">${city.total.toLocaleString()}</span>
       </div>
       ${rows.join('')}
-      <div style="margin-top:4px;padding-top:4px;border-top:1px solid ${gA(0.10)};display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:10px;color:#9b9b9b">合计</span>
-        <span style="font-size:14px;font-weight:800;color:${GOLD}">${city.total.toLocaleString()}</span>
-      </div>
     </div>`,
   });
 }
