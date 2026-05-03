@@ -188,31 +188,60 @@ function makeBubbleIcon(radius: number): L.DivIcon {
   });
 }
 
-// Per-card geometry. Compact layout: total moved into header row, no footer.
-const CARD_W       = 156;
-const ROW_PX       = 17;   // line-height 1.55 * 10.5px ≈ 16.3, round to 17
-const HEAD_PX      = 30;   // rank + city + total inline + bottom border/margin
-const FOOT_PX      = 0;    // no separate 合计 footer
-const PAD_Y_PX     = 14;   // 7 top + 7 bottom
+// Per-card geometry.
+//   总计 = 装企+业主+询盘（去掉访客噪声）→ "转化"
+//   装企/业主/询盘 = 主行（gold）；访客 = 参考行（muted gray + dashed separator）
+const CARD_W            = 156;
+const ROW_PX            = 17;   // primary row: line-height 1.55 * 10.5px ≈ 16.3, round to 17
+const VISITOR_FOOTER_PX = 14;   // visitor row: line-height 1.55 * 9.5px ≈ 14.7, round to 14
+const SEPARATOR_PX      = 5;    // dashed top border + small margin
+const HEAD_PX           = 30;   // rank + city + total + border/margin
+const PAD_Y_PX          = 14;   // 7 top + 7 bottom
+
+const conversionTotal = (c: AggCity) => c.company + c.homeowner + c.inquiry;
 
 function cardRowCount(city: AggCity): number {
-  return (city.visitor ? 1 : 0) + (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
+  // primary rows only (visitor is footer when conv > 0)
+  return (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
 }
 function cardHeight(city: AggCity): number {
-  return HEAD_PX + cardRowCount(city) * ROW_PX + FOOT_PX + PAD_Y_PX;
+  const conv = conversionTotal(city);
+  const primary = cardRowCount(city);
+  const hasVisitor = city.visitor > 0;
+  if (conv === 0 && hasVisitor) {
+    // Degraded: only visitor present → render it as a primary row, no footer/separator
+    return HEAD_PX + ROW_PX + PAD_Y_PX;
+  }
+  const visitorBlock = hasVisitor ? SEPARATOR_PX + VISITOR_FOOTER_PX : 0;
+  return HEAD_PX + primary * ROW_PX + visitorBlock + PAD_Y_PX;
 }
 
 function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivIcon {
   const H = cardHeight(city);
-  const rs = `display:flex;justify-content:space-between;font-size:10.5px;color:#6b6b6b;line-height:1.55`;
-  const vs = `font-weight:700;color:${GOLD};font-variant-numeric:tabular-nums`;
+  const conv = conversionTotal(city);
+  const rs        = `display:flex;justify-content:space-between;font-size:10.5px;color:#4a4a4a;line-height:1.55`;
+  const rsMuted   = `display:flex;justify-content:space-between;font-size:9.5px;color:#a3a3a3;line-height:1.55;border-top:1px dashed rgba(184,134,74,0.18);margin-top:3px;padding-top:2px`;
+  const vs        = `font-weight:700;color:${GOLD};font-variant-numeric:tabular-nums`;
+  const vsMuted   = `font-weight:500;color:#a3a3a3;font-variant-numeric:tabular-nums`;
   // data-field marks each numeric span so animateValue() can find it via querySelector
-  const valueSpan = (field: string, n: number) => `<span style="${vs}" data-field="${field}">${n.toLocaleString()}</span>`;
+  const primarySpan = (field: string, n: number) => `<span style="${vs}" data-field="${field}">${n.toLocaleString()}</span>`;
+  const mutedSpan   = (field: string, n: number) => `<span style="${vsMuted}" data-field="${field}">${n.toLocaleString()}</span>`;
+
   const rows: string[] = [];
-  if (city.visitor)   rows.push(`<div style="${rs}" data-row="visitor"><span>访客</span>${valueSpan('visitor', city.visitor)}</div>`);
-  if (city.company)   rows.push(`<div style="${rs}" data-row="company"><span>装企</span>${valueSpan('company', city.company)}</div>`);
-  if (city.homeowner) rows.push(`<div style="${rs}" data-row="homeowner"><span>业主</span>${valueSpan('homeowner', city.homeowner)}</div>`);
-  if (city.inquiry)   rows.push(`<div style="${rs}" data-row="inquiry"><span>询盘</span>${valueSpan('inquiry', city.inquiry)}</div>`);
+  if (conv > 0) {
+    if (city.company)   rows.push(`<div style="${rs}" data-row="company"><span>装企</span>${primarySpan('company', city.company)}</div>`);
+    if (city.homeowner) rows.push(`<div style="${rs}" data-row="homeowner"><span>业主</span>${primarySpan('homeowner', city.homeowner)}</div>`);
+    if (city.inquiry)   rows.push(`<div style="${rs}" data-row="inquiry"><span>询盘</span>${primarySpan('inquiry', city.inquiry)}</div>`);
+    if (city.visitor)   rows.push(`<div style="${rsMuted}" data-row="visitor"><span>访客</span>${mutedSpan('visitor', city.visitor)}</div>`);
+  } else if (city.visitor) {
+    // Degraded: pure-visitor card (no real conversion yet) — show visitor in primary style
+    rows.push(`<div style="${rs}" data-row="visitor"><span>访客</span>${primarySpan('visitor', city.visitor)}</div>`);
+  }
+
+  // Header total: real conversion total, or visitor count if degraded
+  const headerNum   = conv > 0 ? conv : city.visitor;
+  const headerLabel = conv > 0 ? '转化' : '访客';
+
   return L.divIcon({
     className: '',
     iconSize: [CARD_W, H],
@@ -222,7 +251,8 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
       <div style="display:flex;align-items:center;gap:5px;padding-bottom:4px;margin-bottom:3px;border-bottom:1px solid ${gA(0.12)}">
         <span style="font-size:9px;font-weight:800;color:white;background:${GOLD};border-radius:3px;padding:1px 4px;line-height:1.4;flex-shrink:0">#${rank}</span>
         <span style="font-weight:700;font-size:12.5px;color:#1a1a1a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${city.city}</span>
-        <span style="font-size:12.5px;font-weight:800;color:${GOLD};font-variant-numeric:tabular-nums;flex-shrink:0" data-field="total">${city.total.toLocaleString()}</span>
+        <span style="font-size:9px;color:#9b9b9b;margin-right:2px;flex-shrink:0">${headerLabel}</span>
+        <span style="font-size:12.5px;font-weight:800;color:${GOLD};font-variant-numeric:tabular-nums;flex-shrink:0" data-field="total">${headerNum.toLocaleString()}</span>
       </div>
       ${rows.join('')}
     </div>`,
@@ -319,12 +349,9 @@ function computeCardLayout(
     resolveOverlaps(rects);
   }
 
-  // Clamp into viewport (16px margin top/bottom)
-  const M = 16;
-  for (const r of rects) {
-    if (r.y < M)               r.y = M;
-    if (r.y + r.h > sz.y - M)  r.y = sz.y - M - r.h;
-  }
+  // Note: resolveOverlaps already handles top/bottom overflow by shifting the
+  // whole same-side stack up (capped by margin). Don't re-clamp individual cards
+  // here — that would re-introduce overlap when shift was capped.
 
   return rects.map((r, i) => ({
     anchorPt: L.point(r.side === 'left' ? r.x + r.w : r.x, r.y + r.h / 2),
@@ -482,11 +509,38 @@ export default function UAEMapLeaflet({
 
     // ─── Detect deltas vs last fetch (skip on first load) ─────────────────
     type Field = 'visitor'|'company'|'homeowner'|'inquiry';
-    const FIELD_ORDER: Field[] = ['visitor', 'company', 'homeowner', 'inquiry'];
+    const FIELD_ORDER: Field[] = ['company', 'homeowner', 'inquiry', 'visitor'];
     interface CardDelta { rank: number; field: Field; from: number; to: number; delta: number; rowOffsetFromCenterPx: number; }
     interface BubbleDelta { aggIdx: number; field: Field; delta: number; city: AggCity; }
     const cardDeltas: CardDelta[] = [];
     const bubbleDeltas: BubbleDelta[] = [];
+    // Map of rank → {from, to} for header total (conv-only or visitor in degraded mode)
+    const headerDeltas = new Map<number, { from: number; to: number }>();
+
+    // Compute the y-offset (from card center) for a given field, matching makeCardIcon's layout.
+    function fieldRowOffset(c: AggCity, field: Field): number | null {
+      const conv = conversionTotal(c);
+      const cardH = cardHeight(c);
+      if (conv === 0) {
+        // Degraded: visitor is the only row, in primary position
+        if (field === 'visitor' && c.visitor > 0) {
+          return cardH / 2 - (HEAD_PX + ROW_PX / 2);
+        }
+        return null;
+      }
+      let y = HEAD_PX;
+      for (const f of ['company', 'homeowner', 'inquiry'] as const) {
+        if (c[f] > 0) {
+          if (f === field) return cardH / 2 - (y + ROW_PX / 2);
+          y += ROW_PX;
+        }
+      }
+      if (field === 'visitor' && c.visitor > 0) {
+        return cardH / 2 - (y + SEPARATOR_PX + VISITOR_FOOTER_PX / 2);
+      }
+      return null;
+    }
+
     const isFirstLoad = prevAggRef.current.size === 0;
     if (!isFirstLoad) {
       for (let i = 0; i < agg.length; i++) {
@@ -494,21 +548,26 @@ export default function UAEMapLeaflet({
         const prev = prevAggRef.current.get(cur.key);
         if (!prev) continue;
         const isTop = i < TOP_CALLOUT_N;
-        let rowsBeforeCount = 0;
         for (const f of FIELD_ORDER) {
-          const has = cur[f] > 0 || prev[f] > 0;
           if (cur[f] > prev[f]) {
+            const delta = cur[f] - prev[f];
             if (isTop) {
-              // Top → animate the card's row + spawn toast above the row
-              const rowCenterY = HEAD_PX + rowsBeforeCount * ROW_PX + ROW_PX / 2;
-              const offsetFromCenter = cardHeight(cur) / 2 - rowCenterY;
-              cardDeltas.push({ rank: i, field: f, from: prev[f], to: cur[f], delta: cur[f] - prev[f], rowOffsetFromCenterPx: offsetFromCenter });
+              const off = fieldRowOffset(cur, f) ?? 0;
+              cardDeltas.push({ rank: i, field: f, from: prev[f], to: cur[f], delta, rowOffsetFromCenterPx: off });
             } else {
-              // Non-top → toast above the bubble (no card to anchor to)
-              bubbleDeltas.push({ aggIdx: i, field: f, delta: cur[f] - prev[f], city: cur });
+              bubbleDeltas.push({ aggIdx: i, field: f, delta, city: cur });
             }
           }
-          if (has) rowsBeforeCount++;
+        }
+        // Header total: conv-mode shows conversionTotal; degraded shows visitor count
+        if (isTop) {
+          const prevConv = prev.company + prev.homeowner + prev.inquiry;
+          const curConv = conversionTotal(cur);
+          const prevHeader = prevConv > 0 ? prevConv : prev.visitor;
+          const curHeader  = curConv > 0  ? curConv  : cur.visitor;
+          if (prevHeader !== curHeader) {
+            headerDeltas.set(i, { from: prevHeader, to: curHeader });
+          }
         }
       }
     }
@@ -547,7 +606,7 @@ export default function UAEMapLeaflet({
         byRank.set(d.rank, arr);
       }
       requestAnimationFrame(() => {
-        // Stagger toasts globally: each toast 150ms after previous, capped at 6 visible at once
+        // Stagger toasts globally: each toast 150ms after previous
         const STAGGER_MS = 150;
         let toastIdx = 0;
 
@@ -561,11 +620,11 @@ export default function UAEMapLeaflet({
             if (fieldEl instanceof HTMLElement) animateValue(fieldEl, d.from, d.to, 600);
             spawnDeltaToast(map, cardMarker.getLatLng(), FIELD_LABEL[d.field] ?? d.field, d.delta, d.rowOffsetFromCenterPx + 32, toastIdx++ * STAGGER_MS);
           }
+          // Header total animation uses headerDeltas (conv-only, or visitor in degraded mode)
+          const headerDelta = headerDeltas.get(rank);
           const totalEl = el.querySelector('[data-field="total"]');
-          if (totalEl instanceof HTMLElement) {
-            const totalDelta = fieldDeltas.reduce((s, d) => s + d.delta, 0);
-            const totalNew = topCities[rank].city.total;
-            animateValue(totalEl, totalNew - totalDelta, totalNew, 600);
+          if (totalEl instanceof HTMLElement && headerDelta) {
+            animateValue(totalEl, headerDelta.from, headerDelta.to, 600);
           }
         });
         // Non-top cities: toast above the bubble with city name + field

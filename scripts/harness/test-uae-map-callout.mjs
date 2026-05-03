@@ -48,17 +48,24 @@ function aggregateCities(vC, cC, hC, iC) {
   return [...m.values()].sort((a, b) => b.total - a.total);
 }
 
-const CARD_W   = 156;
-const ROW_PX   = 17;
-const HEAD_PX  = 30;
-const FOOT_PX  = 0;
-const PAD_Y_PX = 14;
+const CARD_W            = 156;
+const ROW_PX            = 17;
+const VISITOR_FOOTER_PX = 14;
+const SEPARATOR_PX      = 5;
+const HEAD_PX           = 30;
+const PAD_Y_PX          = 14;
 
-function cardRowCount(city) {
-  return (city.visitor ? 1 : 0) + (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
+const conversionTotal = (c) => c.company + c.homeowner + c.inquiry;
+function cardRowCount(c) {
+  return (c.company ? 1 : 0) + (c.homeowner ? 1 : 0) + (c.inquiry ? 1 : 0);
 }
-function cardHeight(city) {
-  return HEAD_PX + cardRowCount(city) * ROW_PX + FOOT_PX + PAD_Y_PX;
+function cardHeight(c) {
+  const conv = conversionTotal(c);
+  const primary = cardRowCount(c);
+  const hasVisitor = c.visitor > 0;
+  if (conv === 0 && hasVisitor) return HEAD_PX + ROW_PX + PAD_Y_PX;
+  const visitorBlock = hasVisitor ? SEPARATOR_PX + VISITOR_FOOTER_PX : 0;
+  return HEAD_PX + primary * ROW_PX + visitorBlock + PAD_Y_PX;
 }
 function cardSide(city) { return city.coords[1] < 54.9 ? 'left' : 'right'; }
 
@@ -136,11 +143,8 @@ function computeCardLayout(map, topCities) {
     rects = buildRects();
     resolveOverlaps(rects);
   }
-  const M = 16;
-  for (const r of rects) {
-    if (r.y < M) r.y = M;
-    if (r.y + r.h > sz.y - M) r.y = sz.y - M - r.h;
-  }
+  // Note: resolveOverlaps already handles overflow (shifts whole stack up).
+  // No post-clamp here — clamping individual cards would re-introduce overlap.
   return rects;
 }
 
@@ -189,12 +193,15 @@ test('TC-3: 未识别城市跳过', () => {
   eq(out.length, 0, 'unknown city dropped');
 });
 
-// TC-4 cardHeight 按行数（紧凑布局：合计移入 header，无 footer）
+// TC-4 cardHeight 按行数（C 版：转化总计 + 访客 muted footer）
+//   有 conv 行：HEAD(30) + primary*ROW_PX(17) + (有 visitor: SEP(5)+FOOTER(14)) + PAD(14)
+//   无 conv 仅 visitor：HEAD(30) + ROW_PX(17) + PAD(14) = 61（degraded）
 test('TC-4: cardHeight 按行数', () => {
-  eq(cardHeight({ visitor:0, company:0, homeowner:0, inquiry:1 }), 61,  '1 row');
-  eq(cardHeight({ visitor:1, company:0, homeowner:0, inquiry:1 }), 78,  '2 row');
-  eq(cardHeight({ visitor:1, company:1, homeowner:0, inquiry:1 }), 95,  '3 row');
-  eq(cardHeight({ visitor:1, company:1, homeowner:1, inquiry:1 }), 112, '4 row');
+  eq(cardHeight({ visitor:0, company:0, homeowner:0, inquiry:1 }), 61,  '1 conv 无 visitor');
+  eq(cardHeight({ visitor:1, company:0, homeowner:0, inquiry:1 }), 80,  '1 conv + visitor footer');
+  eq(cardHeight({ visitor:1, company:1, homeowner:0, inquiry:1 }), 97,  '2 conv + visitor footer');
+  eq(cardHeight({ visitor:1, company:1, homeowner:1, inquiry:1 }), 114, '3 conv + visitor footer');
+  eq(cardHeight({ visitor:1, company:0, homeowner:0, inquiry:0 }), 61,  'degraded: 仅 visitor');
 });
 
 // TC-5 cardSide 阈值
