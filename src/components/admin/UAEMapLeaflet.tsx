@@ -46,6 +46,33 @@ function ensurePingStyle() {
     .leaflet-marker-draggable.leaflet-marker-dragging .uae-card-wrap {
       box-shadow:0 4px 12px rgba(0,0,0,0.18),0 16px 40px rgba(184,134,74,0.28),0 0 0 1.5px rgba(184,134,74,0.5);
     }
+    /* "+N" delta toast popping up above a row when new entity registers */
+    @keyframes map-delta-toast {
+      0%   { transform:translateY(0)    scale(0.6); opacity:0; }
+      15%  { transform:translateY(-4px) scale(1);   opacity:1; }
+      75%  { transform:translateY(-22px) scale(1);  opacity:1; }
+      100% { transform:translateY(-32px) scale(0.95); opacity:0; }
+    }
+    .map-delta-toast {
+      display:inline-flex; align-items:center; gap:3px;
+      background:linear-gradient(135deg,#D4A05A,#B8864A);
+      color:white; padding:3px 9px; border-radius:12px;
+      font-size:11px; font-weight:700; line-height:1.4;
+      box-shadow:0 4px 10px rgba(184,134,74,0.45),0 0 0 1px rgba(255,255,255,0.18);
+      white-space:nowrap;
+      animation:map-delta-toast 2.4s cubic-bezier(0.2,0.7,0.3,1) forwards;
+    }
+    /* Subtle highlight while a value is rolling */
+    @keyframes map-num-flash {
+      0%, 100% { background:transparent; }
+      30%      { background:rgba(184,134,74,0.18); }
+    }
+    .map-num-rolling {
+      animation:map-num-flash 0.7s ease-out;
+      border-radius:3px;
+      padding:0 2px;
+      margin:0 -2px;
+    }
   `;
   document.head.appendChild(s);
 }
@@ -178,11 +205,13 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
   const H = cardHeight(city);
   const rs = `display:flex;justify-content:space-between;font-size:10.5px;color:#6b6b6b;line-height:1.55`;
   const vs = `font-weight:700;color:${GOLD};font-variant-numeric:tabular-nums`;
+  // data-field marks each numeric span so animateValue() can find it via querySelector
+  const valueSpan = (field: string, n: number) => `<span style="${vs}" data-field="${field}">${n.toLocaleString()}</span>`;
   const rows: string[] = [];
-  if (city.visitor)   rows.push(`<div style="${rs}"><span>访客</span><span style="${vs}">${city.visitor.toLocaleString()}</span></div>`);
-  if (city.company)   rows.push(`<div style="${rs}"><span>装企</span><span style="${vs}">${city.company.toLocaleString()}</span></div>`);
-  if (city.homeowner) rows.push(`<div style="${rs}"><span>业主</span><span style="${vs}">${city.homeowner.toLocaleString()}</span></div>`);
-  if (city.inquiry)   rows.push(`<div style="${rs}"><span>询盘</span><span style="${vs}">${city.inquiry.toLocaleString()}</span></div>`);
+  if (city.visitor)   rows.push(`<div style="${rs}" data-row="visitor"><span>访客</span>${valueSpan('visitor', city.visitor)}</div>`);
+  if (city.company)   rows.push(`<div style="${rs}" data-row="company"><span>装企</span>${valueSpan('company', city.company)}</div>`);
+  if (city.homeowner) rows.push(`<div style="${rs}" data-row="homeowner"><span>业主</span>${valueSpan('homeowner', city.homeowner)}</div>`);
+  if (city.inquiry)   rows.push(`<div style="${rs}" data-row="inquiry"><span>询盘</span>${valueSpan('inquiry', city.inquiry)}</div>`);
   return L.divIcon({
     className: '',
     iconSize: [CARD_W, H],
@@ -192,7 +221,7 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
       <div style="display:flex;align-items:center;gap:5px;padding-bottom:4px;margin-bottom:3px;border-bottom:1px solid ${gA(0.12)}">
         <span style="font-size:9px;font-weight:800;color:white;background:${GOLD};border-radius:3px;padding:1px 4px;line-height:1.4;flex-shrink:0">#${rank}</span>
         <span style="font-weight:700;font-size:12.5px;color:#1a1a1a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${city.city}</span>
-        <span style="font-size:12.5px;font-weight:800;color:${GOLD};font-variant-numeric:tabular-nums;flex-shrink:0">${city.total.toLocaleString()}</span>
+        <span style="font-size:12.5px;font-weight:800;color:${GOLD};font-variant-numeric:tabular-nums;flex-shrink:0" data-field="total">${city.total.toLocaleString()}</span>
       </div>
       ${rows.join('')}
     </div>`,
@@ -323,6 +352,39 @@ const CITY_TO_EMIRATE: Record<string, string> = {
 function mapToEmirate(city: string) { return CITY_TO_EMIRATE[city.toLowerCase().trim()] ?? null; }
 function distanceColor(km: number) { return km < 40 ? '#22c55e' : km < 100 ? '#f59e0b' : '#f97316'; }
 
+// Roll a numeric value from `from` to `to` over `ms` (cubic ease-out).
+// Updates el.textContent and adds a brief flash class for visual emphasis.
+function animateValue(el: HTMLElement, from: number, to: number, ms = 600) {
+  const t0 = performance.now();
+  el.classList.add('map-num-rolling');
+  setTimeout(() => el.classList.remove('map-num-rolling'), 700);
+  function frame(t: number) {
+    const p = Math.min((t - t0) / ms, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    const v = Math.round(from + (to - from) * eased);
+    el.textContent = v.toLocaleString();
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// "+N 标签" toast popping above a card row. Auto-cleans up after 2.4s.
+const FIELD_LABEL: Record<string, string> = {
+  visitor: '访客', company: '装企', homeowner: '业主', inquiry: '询盘', total: '合计',
+};
+function spawnDeltaToast(map: L.Map, cardMarker: L.Marker, field: string, delta: number, rowYOffsetPx: number) {
+  const html = `<div class="map-delta-toast">${FIELD_LABEL[field] ?? field} +${delta}</div>`;
+  const icon = L.divIcon({
+    className: '',
+    iconSize: [80, 24],
+    // Anchor: 32px above the row's own y-offset (relative to card top).
+    iconAnchor: [40, rowYOffsetPx + 32],
+    html,
+  });
+  const m = L.marker(cardMarker.getLatLng(), { icon, interactive: false, zIndexOffset: 5000 }).addTo(map);
+  setTimeout(() => { try { map.removeLayer(m); } catch { /* map may be gone */ } }, 2400);
+}
+
 export default function UAEMapLeaflet({
   companyCities, inquiryCities, visitorCities, homeownerCities = [], companyTypeCities = [],
 }: UAEMapLeafletProps) {
@@ -335,6 +397,7 @@ export default function UAEMapLeaflet({
   const topCitiesRef   = useRef<{ city: AggCity; side: 'left'|'right' }[]>([]);
   const cardSidesRef   = useRef<('left'|'right')[]>([]);
   const userMovedRef   = useRef<boolean[]>([]);  // per-index: true if user dragged
+  const prevAggRef     = useRef<Map<string, AggCity>>(new Map());  // last seen agg, keyed by city.key
   const [mapReady, setMapReady] = useState(false);
 
   // Update one leader line when its card moves (drag or auto-relayout)
@@ -407,6 +470,44 @@ export default function UAEMapLeaflet({
     cardSidesRef.current = topCities.map(t => t.side);
     userMovedRef.current = new Array(topCities.length).fill(false);
 
+    // ─── Detect deltas vs last fetch (skip on first load) ─────────────────
+    interface DeltaEv {
+      rank: number;        // index in topCities (0-based)
+      field: 'visitor'|'company'|'homeowner'|'inquiry';
+      from: number; to: number; delta: number;
+      rowYOffsetPx: number; // pixel offset of this row's center, from card top
+    }
+    const deltas: DeltaEv[] = [];
+    const isFirstLoad = prevAggRef.current.size === 0;
+    if (!isFirstLoad) {
+      for (let i = 0; i < topCities.length; i++) {
+        const cur = topCities[i].city;
+        const prev = prevAggRef.current.get(cur.key);
+        if (!prev) continue;
+        const order: ('visitor'|'company'|'homeowner'|'inquiry')[] = ['visitor', 'company', 'homeowner', 'inquiry'];
+        // Compute row y-offset by counting only the rows that exist (have value > 0)
+        let rowsBeforeCount = 0;
+        for (const f of order) {
+          const has = cur[f] > 0 || prev[f] > 0;
+          if (cur[f] > prev[f]) {
+            const rowCenterY = HEAD_PX + rowsBeforeCount * ROW_PX + ROW_PX / 2;
+            // Convert to offset from card center (which is what L.divIcon's iconAnchor is relative to)
+            // Card center y = card.h/2 from top; row center y above center = card.h/2 - rowCenterY
+            const cardH = cardHeight(cur);
+            const offsetFromCenter = cardH / 2 - rowCenterY;
+            deltas.push({
+              rank: i, field: f,
+              from: prev[f], to: cur[f], delta: cur[f] - prev[f],
+              rowYOffsetPx: offsetFromCenter,
+            });
+          }
+          if (has) rowsBeforeCount++;
+        }
+      }
+    }
+    // Store new aggregation for next comparison
+    prevAggRef.current = new Map(agg.map(c => [c.key, c]));
+
     // Create markers at placeholder positions; syncCallouts will apply collision-resolved positions
     for (let i = 0; i < topCities.length; i++) {
       const { city, side } = topCities[i];
@@ -428,6 +529,35 @@ export default function UAEMapLeaflet({
     }
     // Apply collision-avoided positions immediately
     syncCallouts(map);
+
+    // ─── Trigger animations (next paint, after DOM is in place) ───────────
+    // Group deltas by city so total only rolls once per card even if multiple fields changed.
+    if (deltas.length) {
+      const byRank = new Map<number, DeltaEv[]>();
+      for (const d of deltas) {
+        const arr = byRank.get(d.rank) ?? [];
+        arr.push(d);
+        byRank.set(d.rank, arr);
+      }
+      requestAnimationFrame(() => {
+        byRank.forEach((fieldDeltas, rank) => {
+          const cardMarker = cardMarkersRef.current[rank];
+          const el = cardMarker?.getElement();
+          if (!cardMarker || !el) return;
+          for (const d of fieldDeltas) {
+            const fieldEl = el.querySelector(`[data-field="${d.field}"]`);
+            if (fieldEl instanceof HTMLElement) animateValue(fieldEl, d.from, d.to, 600);
+            spawnDeltaToast(map, cardMarker, d.field, d.delta, d.rowYOffsetPx);
+          }
+          const totalEl = el.querySelector('[data-field="total"]');
+          if (totalEl instanceof HTMLElement) {
+            const totalDelta = fieldDeltas.reduce((s, d) => s + d.delta, 0);
+            const totalNew = topCities[rank].city.total;
+            animateValue(totalEl, totalNew - totalDelta, totalNew, 600);
+          }
+        });
+      });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, companyCities, inquiryCities, visitorCities, homeownerCities]);
 

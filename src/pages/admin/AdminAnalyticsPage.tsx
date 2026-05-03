@@ -395,16 +395,25 @@ function VisitorTab() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
 
-    adminApi.getRegistrationSources().then(data => {
-      if (cancelled) return;
-      setCompanyCities(data.company_cities || []);
-      setInquiryCities(data.inquiry_cities || []);
-      setVisitorCities(data.visitor_cities || []);
-      setHomeownerCities(data.homeowner_cities || []);
-      setCompanyTypeCities(data.company_type_cities || []);
-    }).catch(() => {});
+    // Poll registration sources every 30s so the map can detect deltas and
+    // animate (number roll + "+N" toast). Initial call fires immediately.
+    const fetchRegSources = () => {
+      adminApi.getRegistrationSources().then(data => {
+        if (cancelled) return;
+        setCompanyCities(data.company_cities || []);
+        setInquiryCities(data.inquiry_cities || []);
+        setVisitorCities(data.visitor_cities || []);
+        setHomeownerCities(data.homeowner_cities || []);
+        setCompanyTypeCities(data.company_type_cities || []);
+      }).catch(() => {});
+    };
+    fetchRegSources();
+    const pollId = window.setInterval(fetchRegSources, 30000);
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearInterval(pollId);
+    };
   }, []);
 
   if (loading) {
