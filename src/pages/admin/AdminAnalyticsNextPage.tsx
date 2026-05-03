@@ -130,19 +130,27 @@ export default function AdminAnalyticsNextPage() {
 
   useEffect(() => {
     let cancelled = false;
+    // Coerce all counts to Number — MySQL driver often returns COUNT() as string,
+    // and `0 + "1"` becomes "01" (string concat) blowing up totals.
+    const num = (v: any) => Number(v) || 0;
     Promise.all([
       adminApi.getDailyRegistrations({}),
       adminApi.getRegistrationSources(),
     ]).then(([reg, src]) => {
       if (cancelled) return;
-      setDaily(reg.dailyRegistrations || []);
-      setSignupSources((src.signup_sources || []).map(s => ({ source: s.source, count: s.count })));
-      setCompanyTypes((src.company_types || []).map(s => ({ type: s.type, count: s.count })));
-      setCompanyCities(src.company_cities || []);
-      setInquiryCities(src.inquiry_cities || []);
-      setVisitorCities(src.visitor_cities || []);
-      setHomeownerCities(src.homeowner_cities || []);
-      setCompanyTypeCities(src.company_type_cities || []);
+      setDaily((reg.dailyRegistrations || []).map((r: any) => ({
+        stat_date: r.stat_date,
+        homeowner_count: num(r.homeowner_count),
+        company_count:   num(r.company_count),
+        inquiry_count:   num(r.inquiry_count),  // may be undefined → 0, that's fine
+      })));
+      setSignupSources((src.signup_sources || []).map(s => ({ source: s.source, count: num(s.count) })));
+      setCompanyTypes((src.company_types || []).map(s => ({ type: s.type, count: num(s.count) })));
+      setCompanyCities((src.company_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
+      setInquiryCities((src.inquiry_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
+      setVisitorCities((src.visitor_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
+      setHomeownerCities((src.homeowner_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
+      setCompanyTypeCities((src.company_type_cities || []).map(t => ({ ...t, count: num(t.count) })));
     }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
