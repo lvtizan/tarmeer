@@ -62,27 +62,35 @@ function withTotalsAndMA(rows: DayRow[]): (DayRow & { total: number; ma_total: n
 }
 
 // ─── KPI card. If `ma7` provided, shows %-diff vs 7d avg as up/down badge.
-function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride }: {
+// If `href` provided, the whole card is a clickable link with hover/cursor styles.
+function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   ma7?: number | null;
   sub?: string;
   accent: string;
-  valueOverride?: string;     // if set, displays this instead of value.toLocaleString()
+  valueOverride?: string;
+  href?: string;
 }) {
-  // Diff percent vs 7d avg, NOT a ratio. Easier to read: "+50%" or "-15%".
   let diffPct: number | null = null;
   if (typeof ma7 === 'number' && ma7 > 0) {
     diffPct = Math.round(((value - ma7) / ma7) * 100);
   }
   const showBadge = diffPct !== null;
   const isUp = (diffPct ?? 0) >= 0;
+  const baseClass = 'bg-white rounded-2xl border border-stone-200 shadow-sm p-5 transition relative';
+  const linkClass = href ? ' cursor-pointer hover:border-[#B8864A]/40 hover:shadow-md group' : '';
+  const Wrapper: any = href ? 'a' : 'div';
+  const wrapperProps = href ? { href, className: baseClass + linkClass } : { className: baseClass };
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5">
+    <Wrapper {...wrapperProps}>
       <div className="flex items-center gap-2 mb-2">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${accent}18`, color: accent }}>{icon}</div>
         <span className="text-xs font-medium text-stone-500">{label}</span>
+        {href && (
+          <span className="ml-auto text-stone-300 text-[12px] opacity-0 group-hover:opacity-100 transition" aria-hidden>→</span>
+        )}
       </div>
       <div className="flex items-baseline gap-2">
         <span className="text-2xl font-bold text-[#1a1a1a]">{valueOverride ?? value.toLocaleString()}</span>
@@ -94,7 +102,7 @@ function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride }: {
         )}
       </div>
       <div className="text-[10px] text-stone-400 mt-1">{sub ?? '相比近 7 日均值'}</div>
-    </div>
+    </Wrapper>
   );
 }
 
@@ -277,13 +285,13 @@ export default function AdminAnalyticsNextPage() {
         </div>
       </div>
 
-      {/* KPI cards — 6 张：4 注册 KPI + 独立访客 + 页面浏览 */}
+      {/* KPI cards — 6 张，可穿透到对应列表页 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <KpiCard icon={<Globe className="w-4 h-4" />}      label="独立访客"    value={uniqueIps}        accent="#5b7fcb" sub="visitor_logs · 累计" />
-        <KpiCard icon={<Eye className="w-4 h-4" />}        label="页面浏览"    value={pageViews}        accent="#2c6e49" sub="近 30 天" />
-        <KpiCard icon={<Users className="w-4 h-4" />}      label="新增业主"    value={totals.homeowner} ma7={last7Avg.homeowner} accent={COLOR_HOMEOWNER} />
-        <KpiCard icon={<Building2 className="w-4 h-4" />}  label="新增装企"    value={totals.company}   ma7={last7Avg.company}   accent={COLOR_COMPANY}   />
-        <KpiCard icon={<HandCoins className="w-4 h-4" />}  label="新增询盘"    value={totals.inquiry}   ma7={last7Avg.inquiry}   accent={COLOR_INQUIRY}   />
+        <KpiCard icon={<Globe className="w-4 h-4" />}      label="独立访客"    value={uniqueIps}        accent="#5b7fcb"          sub="visitor_logs · 累计" />
+        <KpiCard icon={<Eye className="w-4 h-4" />}        label="页面浏览"    value={pageViews}        accent="#2c6e49"          sub="近 30 天" />
+        <KpiCard icon={<Users className="w-4 h-4" />}      label="新增业主"    value={totals.homeowner} ma7={last7Avg.homeowner} accent={COLOR_HOMEOWNER} href="/admin/users" />
+        <KpiCard icon={<Building2 className="w-4 h-4" />}  label="新增装企"    value={totals.company}   ma7={last7Avg.company}   accent={COLOR_COMPANY}   href="/admin/companies" />
+        <KpiCard icon={<HandCoins className="w-4 h-4" />}  label="新增询盘"    value={totals.inquiry}   ma7={last7Avg.inquiry}   accent={COLOR_INQUIRY}   href="/admin/inquiries" />
         <KpiCard
           icon={<TrendingUp className="w-4 h-4" />}
           label="综合转化率"
