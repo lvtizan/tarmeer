@@ -134,11 +134,11 @@ export default function AdminAnalyticsNextPage() {
     // and `0 + "1"` becomes "01" (string concat) blowing up totals.
     const num = (v: any) => Number(v) || 0;
     Promise.all([
-      adminApi.getRegistrationStats(30) as Promise<any>,
+      adminApi.getDailyStats(30) as Promise<any>,   // v1 用的同一个端点，返 { data: [...], totals: {...} }
       adminApi.getRegistrationSources(),
     ]).then(([reg, src]) => {
       if (cancelled) return;
-      const rows: any[] = reg?.data || reg?.daily || reg?.rows || [];
+      const rows: any[] = reg?.data || [];
       setDaily(rows.map((r: any) => ({
         date: r.date || r.stat_date,
         new_homeowners: num(r.new_homeowners ?? r.homeowner_count),
