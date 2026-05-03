@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { analyticsEvents } from '../lib/analyticsEvents';
 import { normalizeHomeownerRecentProjects } from '../lib/homeownerProjectSerialization';
 
 /**
@@ -29,6 +30,8 @@ export async function upsertProfile(req: any, res: any) {
         `INSERT INTO homeowner_profiles (user_id, area_range, city, address, phone, stage, budget_range, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [userId, area_range, city, address || null, phone, stage || null, budget_range || null, notes || null]
       );
+      // Push to admin SSE subscribers (only on create, not update)
+      analyticsEvents.notifyChange('homeowner');
     }
 
     // Ensure active_role is set

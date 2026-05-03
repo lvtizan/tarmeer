@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../config/database';
 import { adminLoginRateLimit } from '../middleware/antiScraping';
+import { analyticsEvents } from '../lib/analyticsEvents';
 import {
   checkInstallation,
   install,
@@ -103,6 +104,36 @@ router.post('/install', install);
 router.post('/login', adminLoginRateLimit, login);
 router.post('/forgot-password', adminLoginRateLimit, forgotPassword);
 router.post('/reset-password', adminLoginRateLimit, resetPassword);
+
+// ============ SSE: registration events (token via ?token= because EventSource can't set headers) ============
+const sseAuthAdapter: import('express').RequestHandler = (req, _res, next) => {
+  if (!req.headers.authorization && typeof req.query.token === 'string') {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  next();
+};
+router.get('/stats/registration-events',
+  sseAuthAdapter, authenticateAdmin, requireAdmin, requirePermission('can_view_stats'),
+  (req, res) => {
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',  // disable nginx proxy buffering
+    });
+    res.flushHeaders?.();
+    res.write(': hi\n\n');                   // initial flush
+    const heartbeat = setInterval(() => { try { res.write(': hb\n\n'); } catch {} }, 25000);
+    const onChange = (payload: any) => {
+      try { res.write(`event: change\ndata: ${JSON.stringify(payload)}\n\n`); } catch {}
+    };
+    analyticsEvents.on('change', onChange);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      analyticsEvents.off('change', onChange);
+    });
+  }
+);
 
 
 // ============ Protected routes (require admin auth) ============

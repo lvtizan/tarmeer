@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { analyticsEvents } from '../lib/analyticsEvents';
 import { pushCompanyLeadToCRM } from '../lib/crmPush';
 
 export async function submitCompanyLead(req: any, res: any) {
@@ -33,6 +34,9 @@ export async function submitCompanyLead(req: any, res: any) {
 
     const leadId = (result as any).insertId;
 
+    // Push to admin SSE subscribers — both company_lead and the mirrored inquiry
+    analyticsEvents.notifyChange('company_lead');
+
     // Mirror into design_inquiries so it appears in the admin Company inquiries tab
     const inquiryMessage = [
       `[Company Inquiry]`,
@@ -45,7 +49,7 @@ export async function submitCompanyLead(req: any, res: any) {
       `INSERT INTO design_inquiries (name, phone, city, area_range, message, source_company_name, crm_sync_status)
        VALUES (?, ?, ?, ?, ?, ?, 'synced')`,
       [contactName, phone, city || null, companyType || 'company-lead', inquiryMessage, companyName]
-    ).catch(() => {});
+    ).then(() => analyticsEvents.notifyChange('inquiry')).catch(() => {});
 
     // Fire-and-forget CRM push (company tenant)
     // notes field carries company_type so CRM sales team sees it

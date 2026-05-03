@@ -60,7 +60,8 @@ function ensurePingStyle() {
       font-size:11px; font-weight:700; line-height:1.4;
       box-shadow:0 4px 10px rgba(184,134,74,0.45),0 0 0 1px rgba(255,255,255,0.18);
       white-space:nowrap;
-      animation:map-delta-toast 2.4s cubic-bezier(0.2,0.7,0.3,1) forwards;
+      /* fill-mode: both → during stagger delay, show 0% keyframe (opacity:0); after, show 100% (also opacity:0). Avoids flicker. */
+      animation:map-delta-toast 2.4s cubic-bezier(0.2,0.7,0.3,1) both;
     }
     /* Subtle highlight while a value is rolling */
     @keyframes map-num-flash {
@@ -378,8 +379,11 @@ function spawnDeltaToast(
   label: string,
   delta: number,
   yOffsetPx: number,    // pixels above the anchor
+  delayMs = 0,          // stagger when multiple toasts fire in same paint
 ) {
-  const html = `<div class="map-delta-toast">${label} +${delta}</div>`;
+  // animation-fill-mode:both in the CSS class handles invisibility during the delay phase
+  const styleAttr = delayMs > 0 ? ` style="animation-delay:${delayMs}ms"` : '';
+  const html = `<div class="map-delta-toast"${styleAttr}>${label} +${delta}</div>`;
   const icon = L.divIcon({
     className: '',
     iconSize: [80, 24],
@@ -387,7 +391,8 @@ function spawnDeltaToast(
     html,
   });
   const m = L.marker(anchorLL, { icon, interactive: false, zIndexOffset: 5000 }).addTo(map);
-  setTimeout(() => { try { map.removeLayer(m); } catch { /* map may be gone */ } }, 2400);
+  // Total lifetime = delay + 2.4s animation
+  setTimeout(() => { try { map.removeLayer(m); } catch { /* map may be gone */ } }, 2400 + delayMs);
 }
 
 export default function UAEMapLeaflet({
@@ -542,6 +547,10 @@ export default function UAEMapLeaflet({
         byRank.set(d.rank, arr);
       }
       requestAnimationFrame(() => {
+        // Stagger toasts globally: each toast 150ms after previous, capped at 6 visible at once
+        const STAGGER_MS = 150;
+        let toastIdx = 0;
+
         // Top cities: animate card row + spawn toast above the row
         byRank.forEach((fieldDeltas, rank) => {
           const cardMarker = cardMarkersRef.current[rank];
@@ -550,7 +559,7 @@ export default function UAEMapLeaflet({
           for (const d of fieldDeltas) {
             const fieldEl = el.querySelector(`[data-field="${d.field}"]`);
             if (fieldEl instanceof HTMLElement) animateValue(fieldEl, d.from, d.to, 600);
-            spawnDeltaToast(map, cardMarker.getLatLng(), FIELD_LABEL[d.field] ?? d.field, d.delta, d.rowOffsetFromCenterPx + 32);
+            spawnDeltaToast(map, cardMarker.getLatLng(), FIELD_LABEL[d.field] ?? d.field, d.delta, d.rowOffsetFromCenterPx + 32, toastIdx++ * STAGGER_MS);
           }
           const totalEl = el.querySelector('[data-field="total"]');
           if (totalEl instanceof HTMLElement) {
@@ -564,8 +573,7 @@ export default function UAEMapLeaflet({
           const bubble = markersRef.current[d.aggIdx];
           if (!bubble) continue;
           const label = `${d.city.city} · ${FIELD_LABEL[d.field] ?? d.field}`;
-          // 24px above bubble icon (icon's anchor is at center, so its top is half the radius up)
-          spawnDeltaToast(map, bubble.getLatLng(), label, d.delta, 24);
+          spawnDeltaToast(map, bubble.getLatLng(), label, d.delta, 24, toastIdx++ * STAGGER_MS);
         }
       });
     }

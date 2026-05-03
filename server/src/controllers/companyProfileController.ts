@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { analyticsEvents } from '../lib/analyticsEvents';
 import { notifyCompanyRegistration } from '../services/notificationService';
 import {
   normalizeCompanyProfilePayload,
@@ -99,6 +100,8 @@ export async function upsertProfile(req: any, res: any) {
         }).catch(() => {});
       });
     }
+    // Push to admin SSE subscribers (map dashboard real-time animation)
+    analyticsEvents.notifyChange('company');
 
     // Ensure active_role is set
     await pool.execute(
@@ -164,6 +167,8 @@ export async function getProfile(req: any, res: any) {
         );
         await pool.execute("UPDATE users SET active_role = 'company' WHERE id = ?", [userId]);
         [rows] = await pool.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+        // Lead-backfill creates a real company_profile row → push event
+        analyticsEvents.notifyChange('company');
       }
     }
 

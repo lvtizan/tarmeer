@@ -395,9 +395,10 @@ function VisitorTab() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
 
-    // Poll registration sources so the map can detect deltas and animate.
-    // Pauses when tab is hidden to save server requests; resumes with an
-    // immediate refresh when tab becomes visible again.
+    // Realtime data flow:
+    //   1. SSE: server pushes 'change' event when company/homeowner/inquiry inserted → instant refetch
+    //   2. Polling 30s: safety-net for missed events, also covers visitor_logs (not pushed to keep event volume sane)
+    //   3. Visibility: pause polling + close SSE when tab hidden, resume on visible
     const fetchRegSources = () => {
       adminApi.getRegistrationSources().then(data => {
         if (cancelled) return;
@@ -420,12 +421,39 @@ function VisitorTab() {
     };
     startPolling();
 
+    // Debounce client-side too (server already throttles 2s, but multiple subscribers
+    // may receive bursts; coalesce within 500ms)
+    let sseFetchTimer: number | null = null;
+    const scheduleFetch = () => {
+      if (sseFetchTimer !== null) return;
+      sseFetchTimer = window.setTimeout(() => { sseFetchTimer = null; fetchRegSources(); }, 500);
+    };
+
+    let es: EventSource | null = null;
+    const openSSE = () => {
+      if (es) return;
+      const token = localStorage.getItem('admin_token');
+      if (!token) return;   // not logged in — skip; polling still works
+      const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+      try {
+        es = new EventSource(`${apiBase}/admin/stats/registration-events?token=${encodeURIComponent(token)}`);
+        es.addEventListener('change', () => { if (!cancelled) scheduleFetch(); });
+        es.onerror = () => { /* browser auto-reconnects; nothing to do */ };
+      } catch { es = null; }
+    };
+    const closeSSE = () => {
+      if (es) { try { es.close(); } catch {} es = null; }
+    };
+    openSSE();
+
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
         stopPolling();
+        closeSSE();
       } else {
-        fetchRegSources();   // immediate refresh — tab was hidden, may have missed events
+        fetchRegSources();   // immediate refresh — may have missed events
         startPolling();
+        openSSE();
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -433,6 +461,8 @@ function VisitorTab() {
     return () => {
       cancelled = true;
       stopPolling();
+      closeSSE();
+      if (sseFetchTimer !== null) window.clearTimeout(sseFetchTimer);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
