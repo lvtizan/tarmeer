@@ -398,8 +398,19 @@ if (fs.existsSync(INDEX_HTML_PATH)) {
   fs.watchFile(INDEX_HTML_PATH, { interval: 5000 }, () => { indexHtmlCache = null; });
 }
 
+// Paths that REQUIRE a DB record to exist. If the slug isn't in the DB,
+// return HTTP 404 instead of 200 + SPA shell — fixes Google Search Console
+// "soft 404" reports (was 164 pages, all /companies/non-existent-slug).
+function isSlugPage(pathname: string): boolean {
+  return /^\/companies\/[a-z0-9-]+\/?$/.test(pathname)
+      || /^\/companies\/[a-z0-9-]+\/[a-z0-9-]+\/?$/.test(pathname)
+      || /^\/materials\/suppliers\/[a-z0-9-]+\/?$/.test(pathname);
+}
+
 app.get('/api/seo-render', async (req, res) => {
-  const pathname = typeof req.query.path === 'string' ? req.query.path : '/';
+  // Normalize: strip trailing slash, default to "/"
+  const rawPath = typeof req.query.path === 'string' ? req.query.path : '/';
+  const pathname = rawPath.replace(/\/+$/, '') || '/';
   const html = getIndexHtml();
   if (!html) return res.status(500).send('index.html not found');
 
@@ -410,11 +421,24 @@ app.get('/api/seo-render', async (req, res) => {
       res.set('Cache-Control', 'public, max-age=3600');
       return res.send(injectMeta(html, meta));
     }
+
+    // No meta found AND it's a slug page → DB had no match → real 404
+    if (isSlugPage(pathname)) {
+      res.set('Content-Type', 'text/html; charset=utf-8');
+      res.set('X-Robots-Tag', 'noindex');
+      res.set('Cache-Control', 'no-cache');
+      return res.status(404).send(injectMeta(html, {
+        title: 'Not Found | Tarmeer',
+        description: 'The page you are looking for does not exist or has been removed.',
+        canonical: 'https://www.tarmeer.com/',
+        ogImage: 'https://www.tarmeer.com/images/og-default.jpg',
+      }));
+    }
   } catch (err) {
     console.error('[SEO] Meta injection error:', err);
   }
 
-  // Fallback: return original HTML
+  // Non-slug page (or error path) → return original HTML with 200
   res.set('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
 });
