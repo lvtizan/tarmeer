@@ -5,6 +5,7 @@ import { adminApi, AdminDesignerDetail, AdminDesignerProject } from '../../lib/a
 import { useAdmin } from '../../contexts/AdminContext';
 import { formatCount } from '../../lib/formatNumber';
 import { resolveImageUrl } from '../../lib/imageUrl';
+import { formatAdminDateTime } from '../../lib/formatTime';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAdminT } from '../../hooks/useAdminLang';
 
@@ -266,8 +267,8 @@ export default function AdminDesignerDetailPage() {
                       </div>
                     )}
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-xs text-stone-500">
-                        {t('Submitted', '提交于')} {new Date(project.created_at).toLocaleDateString()}
+                      <p className="text-[15px] tabular-nums text-stone-500">
+                        {t('Submitted', '提交于')} {formatAdminDateTime(project.created_at)}
                       </p>
                       {canApprove && !designer.deleted_at && project.status === 'pending' && (
                         <div className="flex gap-2">

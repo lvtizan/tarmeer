@@ -4,6 +4,7 @@ import SmartImage from '../ui/SmartImage';
 import { TableSpinner } from '../ui/Spinner';
 import { Trash2 } from 'lucide-react';
 import { useAdminT } from '../../hooks/useAdminLang';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 interface CompanyProfileRecord {
   id: number;
@@ -120,7 +121,7 @@ export default function AdminApplicationsTable({
             <div className="flex items-center gap-4 text-xs text-stone-500">
               {c.city && <span>📍 {c.city}</span>}
               <span>🗂 {c.project_count} {t('projects', '个项目')}</span>
-              <span className="ml-auto">{new Date(c.created_at).toLocaleDateString()}</span>
+              <span className={`ml-auto ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(c.created_at)}</span>
             </div>
             {/* Action */}
             <button
@@ -210,7 +211,7 @@ export default function AdminApplicationsTable({
                   <div className="text-xs text-stone-400">{c.user_email}</div>
                 </td>
                 <td className="px-4 py-3 text-stone-700 font-medium">{c.project_count}</td>
-                <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(c.created_at)}</td>
               </tr>
             ))}
           </tbody>

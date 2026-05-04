@@ -6,20 +6,9 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Globe, Eye, RefreshCw } from 'lucide-react';
 import { adminApi, type VisitorRecord } from '../../lib/adminApi';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 const PAGE_SIZE = 50;
-
-function formatTime(iso: string): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  const now = Date.now();
-  const diffMin = Math.round((now - d.getTime()) / 60000);
-  if (diffMin < 1) return '刚刚';
-  if (diffMin < 60) return `${diffMin} 分钟前`;
-  if (diffMin < 60 * 24) return `${Math.round(diffMin / 60)} 小时前`;
-  return d.toLocaleString('zh-CN', { hour12: false });
-}
 
 export default function AdminVisitorsPage() {
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
@@ -151,7 +140,7 @@ export default function AdminVisitorsPage() {
                 <td className="px-5 py-3 font-mono text-[12.5px] text-[#1a1a1a]">{v.ip}</td>
                 <td className="px-5 py-3 text-[12.5px] text-stone-600">{v.location || '—'}</td>
                 <td className="px-5 py-3 text-right tabular-nums font-semibold text-[#B8864A]">{v.visitCount}</td>
-                <td className="px-5 py-3 text-[11.5px] text-stone-500">{formatTime(v.lastVisitedAt)}</td>
+                <td className={`px-5 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(v.lastVisitedAt)}</td>
                 <td className="px-5 py-3 text-center">
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${v.isPublicIp ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>
                     {v.isPublicIp ? '公网' : '内网'}

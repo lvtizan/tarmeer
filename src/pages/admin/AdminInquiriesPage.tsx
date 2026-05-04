@@ -5,6 +5,7 @@ import CopyButton from '../../components/ui/CopyButton';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 /* ── Floating Tooltip (portal-free, renders outside table overflow) ── */
 function FloatingTip({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
@@ -374,7 +375,7 @@ export default function AdminInquiriesPage() {
                               <div className="font-semibold text-red-600 mb-1">删除理由</div>
                               <div>{inq.deleted_reason || '—（无记录）'}</div>
                               <div className="text-stone-400 mt-1 text-[11px]">
-                                删除时间：{new Date(inq.deleted_at).toLocaleString()}
+                                删除时间：{formatAdminDateTime(inq.deleted_at)}
                               </div>
                             </FloatingTip>
                           </span>
@@ -474,8 +475,8 @@ export default function AdminInquiriesPage() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">
-                      {new Date(inq.created_at).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
+                    <td className={`px-4 py-3 whitespace-nowrap ${ADMIN_TIME_CLS}`}>
+                      {formatAdminDateTime(inq.created_at)}
                     </td>
                   </tr>
                 </>

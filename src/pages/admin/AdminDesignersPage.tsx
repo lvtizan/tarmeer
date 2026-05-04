@@ -6,6 +6,7 @@ import { useAdmin } from '../../contexts/AdminContext';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import AdminSelect from '../../components/ui/AdminSelect';
 import { formatCount } from '../../lib/formatNumber';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAdminT } from '../../hooks/useAdminLang';
 
@@ -544,8 +545,8 @@ export default function AdminDesignersPage() {
                   <td className="py-3 px-4 text-right text-sm">
                     {formatCount(designer.project_count)}
                   </td>
-                  <td className="py-3 px-4 text-sm text-stone-500">
-                    {new Date(designer.created_at).toLocaleDateString()}
+                  <td className={`py-3 px-4 ${ADMIN_TIME_CLS}`}>
+                    {formatAdminDateTime(designer.created_at)}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex flex-col items-end gap-2" onClick={(event) => event.stopPropagation()}>

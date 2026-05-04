@@ -4,6 +4,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { useAdminT } from '../../hooks/useAdminLang';
 import AdminSelect from '../../components/ui/AdminSelect';
 import { MapPin } from 'lucide-react';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 interface VisitRecord {
   id: number;
@@ -51,10 +52,7 @@ export default function AdminVisitRecordsPage() {
     return true;
   });
 
-  const formatDate = (s: string | null) => {
-    if (!s) return '—';
-    return new Date(s).toLocaleDateString('en-AE', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
+  const formatDate = (s: string | null) => formatAdminDateTime(s);
 
   return (
     <div>
@@ -120,8 +118,8 @@ export default function AdminVisitRecordsPage() {
                       {r.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-stone-500">{formatDate(r.submitted_at)}</td>
-                  <td className="px-4 py-3 text-stone-500">{formatDate(r.created_at)}</td>
+                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.submitted_at)}</td>
+                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.created_at)}</td>
                 </tr>
               ))}
             </tbody>

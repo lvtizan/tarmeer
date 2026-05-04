@@ -342,9 +342,9 @@ export default function AdminCompaniesPage() {
         ))}
       </div>
 
-      {/* ── Search + filter (one row) ── */}
+      {/* ── Search (mobile only — PC uses global header search) + filter ── */}
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+        <div className="relative flex-1 md:hidden">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
           <input
             type="search"
@@ -354,6 +354,7 @@ export default function AdminCompaniesPage() {
             className="w-full h-9 pl-9 pr-4 rounded-lg border border-stone-200 bg-white text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a]"
           />
         </div>
+        <div className="hidden md:block flex-1" />
         <div className="w-32 flex-shrink-0">
           {tab === 'companies' && (
             <AdminSelect size="sm" value={profileStatusFilter}
