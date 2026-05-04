@@ -115,8 +115,17 @@ interface LBItem {
   href?: string;
   value: number;
 }
-// 多彩 palette — 跟 v1 donut 同款，8 类别足够覆盖装企类型
-const MULTI_PALETTE = ['#B8864A', '#5b7fcb', '#2c6e49', '#8b5cf6', '#14b8a6', '#f59e0b', '#e0a86e', '#6b6b6b'];
+// 青翠系调色板 — 绿 / 翠 / 青 / 苔，8 个有梯度的 stop
+const MULTI_PALETTE = [
+  '#15803d',  // green-700  (深翠)
+  '#0d9488',  // teal-600
+  '#16a34a',  // green-600
+  '#0891b2',  // cyan-600   (青)
+  '#14b8a6',  // teal-500
+  '#22c55e',  // green-500
+  '#65a30d',  // lime-600   (苔)
+  '#10b981',  // emerald-500
+];
 
 function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
   items: LBItem[];
