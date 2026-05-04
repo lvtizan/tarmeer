@@ -205,20 +205,25 @@ function cardRowCount(city: AggCity): number {
   // primary rows only (visitor is footer when conv > 0)
   return (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
 }
-function cardHeight(city: AggCity): number {
+function cardHeight(city: AggCity, scale = 1): number {
   const conv = conversionTotal(city);
   const primary = cardRowCount(city);
   const hasVisitor = city.visitor > 0;
+  let h: number;
   if (conv === 0 && hasVisitor) {
-    // Degraded: only visitor present → render it as a primary row, no footer/separator
-    return HEAD_PX + ROW_PX + PAD_Y_PX;
+    h = HEAD_PX + ROW_PX + PAD_Y_PX;
+  } else {
+    const visitorBlock = hasVisitor ? SEPARATOR_PX + VISITOR_FOOTER_PX : 0;
+    h = HEAD_PX + primary * ROW_PX + visitorBlock + PAD_Y_PX;
   }
-  const visitorBlock = hasVisitor ? SEPARATOR_PX + VISITOR_FOOTER_PX : 0;
-  return HEAD_PX + primary * ROW_PX + visitorBlock + PAD_Y_PX;
+  return h * scale;
 }
 
-function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivIcon {
-  const H = cardHeight(city);
+function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number, scale = 1): L.DivIcon {
+  // iconSize/iconAnchor stay at unscaled values so leaflet's anchoring math is unaffected.
+  // Visual scaling is done via CSS transform with origin at the anchor edge.
+  const H = cardHeight(city, 1);
+  const W = CARD_W;
   const conv = conversionTotal(city);
   const rs        = `display:flex;justify-content:space-between;font-size:10.5px;color:#4a4a4a;line-height:1.55`;
   const rsMuted   = `display:flex;justify-content:space-between;font-size:9.5px;color:#a3a3a3;line-height:1.55;border-top:1px dashed rgba(184,134,74,0.18);margin-top:3px;padding-top:2px`;
@@ -243,11 +248,15 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
   const headerNum   = conv > 0 ? conv : city.visitor;
   const headerLabel = conv > 0 ? '转化' : '访客';
 
+  // Visual scale: keep anchor edge fixed (right for left-side card, left for right-side).
+  // origin uses "center" vertically so the card grows symmetrically up/down — matches iconAnchor at H/2.
+  const transformOrigin = side === 'left' ? 'right center' : 'left center';
+  const transform = scale !== 1 ? `transform:scale(${scale});transform-origin:${transformOrigin};` : '';
   return L.divIcon({
     className: '',
-    iconSize: [CARD_W, H],
-    iconAnchor: [side === 'left' ? CARD_W : 0, H / 2],
-    html: `<div class="uae-card-wrap" style="background:white;border-radius:8px;padding:7px 10px;width:${CARD_W}px;
+    iconSize: [W, H],
+    iconAnchor: [side === 'left' ? W : 0, H / 2],
+    html: `<div class="uae-card-wrap" data-side="${side}" style="background:white;border-radius:8px;padding:7px 10px;width:${CARD_W}px;${transform}
       box-shadow:0 2px 4px rgba(0,0,0,0.06),0 6px 18px ${gA(0.14)},0 0 0 1px ${gA(0.22)}">
       <div style="display:flex;align-items:center;gap:5px;padding-bottom:4px;margin-bottom:3px;border-bottom:1px solid ${gA(0.12)}">
         <span style="font-size:9px;font-weight:800;color:white;background:${GOLD};border-radius:3px;padding:1px 4px;line-height:1.4;flex-shrink:0">#${rank}</span>
@@ -261,6 +270,8 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number): L.DivI
 }
 
 const UAE_BOUNDS    = L.latLngBounds([22.3, 51.5], [26.5, 56.8]);
+// 海湾六国 (GCC: 沙特/UAE/卡塔尔/巴林/科威特/阿曼) — 全屏时拉宽视野
+const GCC_BOUNDS    = L.latLngBounds([20.5, 46], [30.8, 60]);
 const CARD_OFFSET_PX = 180;
 const TOP_CALLOUT_N  = 5;
 
@@ -275,20 +286,23 @@ interface CardRect { x: number; y: number; w: number; h: number; side: 'left'|'r
 // to the opposite side. Final positions are clamped inside the map viewport.
 function computeCardLayout(
   map: L.Map,
-  topCities: { city: AggCity; side: 'left'|'right' }[]
+  topCities: { city: AggCity; side: 'left'|'right' }[],
+  scale = 1,
 ): { anchorPt: L.Point; bubbleLL: L.LatLng; cardSide: 'left'|'right' }[] {
   const sz = map.getSize();
   const sides: ('left'|'right')[] = topCities.map(t => t.side);
+  const cardW = CARD_W * scale;
+  const offset = CARD_OFFSET_PX * scale;
 
   function buildRects(): CardRect[] {
     const rects = topCities.map(({ city }, i) => {
       const side = sides[i];
-      const h    = cardHeight(city);
+      const h    = cardHeight(city, scale);
       const bPt  = map.latLngToContainerPoint(L.latLng(city.coords));
-      const ax   = bPt.x + (side === 'left' ? -CARD_OFFSET_PX : CARD_OFFSET_PX);
-      const x    = side === 'left' ? ax - CARD_W : ax;
+      const ax   = bPt.x + (side === 'left' ? -offset : offset);
+      const x    = side === 'left' ? ax - cardW : ax;
       const y    = bPt.y - h / 2;
-      return { x, y, w: CARD_W, h, side };
+      return { x, y, w: cardW, h, side };
     });
     // Column-align cards on the same side: pick the x closest to map content
     // (right side → min x, left side → max x). When a side has only 1 card,
@@ -311,6 +325,7 @@ function computeCardLayout(
     // could oscillate for >2 cards on the same column.
     const GAP = 8;
     const M   = 16;
+    const isFs = scale > 1;
     for (const side of ['left', 'right'] as const) {
       const idxs: number[] = [];
       for (let i = 0; i < rects.length; i++) if (rects[i].side === side) idxs.push(i);
@@ -323,10 +338,19 @@ function computeCardLayout(
       }
       const first = rects[idxs[0]];
       const last  = rects[idxs[idxs.length - 1]];
-      const overflowBottom = (last.y + last.h) - (sz.y - M);
-      if (overflowBottom > 0) {
-        const shift = Math.min(overflowBottom, first.y - M);
-        if (shift > 0) for (const i of idxs) rects[i].y -= shift;
+      // Fullscreen: center stack slightly above viewport middle (≈42% from top)
+      // so it doesn't crowd map dots near center yet still feels balanced.
+      if (isFs) {
+        const stackH = (last.y + last.h) - first.y;
+        const desiredFirstY = Math.max(M, sz.y * 0.42 - stackH / 2);
+        const shift = first.y - desiredFirstY;
+        if (Math.abs(shift) > 0.5) for (const i of idxs) rects[i].y -= shift;
+      } else {
+        const overflowBottom = (last.y + last.h) - (sz.y - M);
+        if (overflowBottom > 0) {
+          const shift = Math.min(overflowBottom, first.y - M);
+          if (shift > 0) for (const i of idxs) rects[i].y -= shift;
+        }
       }
     }
   }
@@ -437,6 +461,7 @@ export default function UAEMapLeaflet({
   const userMovedRef   = useRef<boolean[]>([]);  // per-index: true if user dragged
   const prevAggRef     = useRef<Map<string, AggCity>>(new Map());  // last seen agg, keyed by city.key
   const cardRef        = useRef<HTMLDivElement>(null);  // outer card for fullscreen
+  const cardScaleRef   = useRef(1);                     // 1 normal, 1.5 fullscreen
   const [mapReady, setMapReady] = useState(false);
   const [isFs, setIsFs] = useState(false);
 
@@ -445,12 +470,24 @@ export default function UAEMapLeaflet({
     const onChange = () => {
       const inFs = document.fullscreenElement === cardRef.current;
       setIsFs(inFs);
-      // After layout change, leaflet needs invalidateSize to redraw at new dimensions
+      cardScaleRef.current = inFs ? 1.5 : 1;
       setTimeout(() => {
         mapRef.current?.invalidateSize();
         if (mapRef.current) {
-          // Re-fit bounds after resize so the UAE outline is centered nicely
-          mapRef.current.fitBounds(UAE_BOUNDS, { padding: [24, 24] });
+          if (inFs) {
+            // 全屏 → 沙迦 (Sharjah) 居中，比 GCC fit 再放大 2× (zoom+1)
+            const gccZoom = mapRef.current.getBoundsZoom(GCC_BOUNDS, false);
+            mapRef.current.setView([25.3463, 55.4209], gccZoom + 1, { animate: false });
+          } else {
+            mapRef.current.fitBounds(UAE_BOUNDS, { padding: [40, 40] });
+          }
+          // Re-render every card icon with new scale
+          for (let i = 0; i < cardMarkersRef.current.length; i++) {
+            const m = cardMarkersRef.current[i];
+            const tc = topCitiesRef.current[i];
+            const sd = cardSidesRef.current[i] ?? tc?.side ?? 'right';
+            if (m && tc) m.setIcon(makeCardIcon(tc.city, sd, i + 1, cardScaleRef.current));
+          }
           syncCallouts(mapRef.current);
         }
       }, 80);
@@ -472,8 +509,19 @@ export default function UAEMapLeaflet({
   // Update one leader line when its card moves (drag or auto-relayout)
   // 单根斜线：从 bubble 中心直连卡片中心。L 形折线在卡片列对齐时退化成水平段，
   // 看起来全水平不"指向"，所以改回斜线。
-  function leaderPath(_map: L.Map, bubbleLL: L.LatLng, cardLL: L.LatLng): L.LatLng[] {
-    return [bubbleLL, cardLL];
+  function leaderPath(map: L.Map, bubbleLL: L.LatLng, cardLL: L.LatLng): L.LatLng[] {
+    // If the natural straight line is shallower than 45°, insert a kink so the
+    // segment hitting the bubble is at exactly 45° (more visually distinct than
+    // a near-horizontal line, esp. for far-south cities like Abu Dhabi).
+    const A = map.latLngToContainerPoint(cardLL);
+    const B = map.latLngToContainerPoint(bubbleLL);
+    const dx = B.x - A.x, dy = B.y - A.y;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    if (ady < 6 || ady >= adx) return [bubbleLL, cardLL];
+    // Kink point: on the card's horizontal line, |dy| pixels away from bubble in x.
+    const kx = B.x - Math.sign(dx) * ady;
+    const kink = map.containerPointToLatLng(L.point(kx, A.y));
+    return [bubbleLL, kink, cardLL];
   }
 
   function updateLeaderLine(map: L.Map, i: number) {
@@ -486,7 +534,7 @@ export default function UAEMapLeaflet({
 
   function syncCallouts(map: L.Map) {
     if (!topCitiesRef.current.length) return;
-    const layout = computeCardLayout(map, topCitiesRef.current);
+    const layout = computeCardLayout(map, topCitiesRef.current, cardScaleRef.current);
     layout.forEach(({ anchorPt, bubbleLL, cardSide: newSide }, i) => {
       // Skip cards user has dragged manually - keep their position
       if (userMovedRef.current[i]) {
@@ -496,7 +544,7 @@ export default function UAEMapLeaflet({
       // If side flipped (auto-relayout chose other side), rebuild the icon so anchor is correct
       if (cardSidesRef.current[i] !== newSide) {
         cardSidesRef.current[i] = newSide;
-        cardMarkersRef.current[i]?.setIcon(makeCardIcon(topCitiesRef.current[i].city, newSide, i + 1));
+        cardMarkersRef.current[i]?.setIcon(makeCardIcon(topCitiesRef.current[i].city, newSide, i + 1, cardScaleRef.current));
       }
       const cLL = map.containerPointToLatLng(anchorPt);
       cardMarkersRef.current[i]?.setLatLng(cLL);
@@ -556,25 +604,27 @@ export default function UAEMapLeaflet({
     const headerDeltas = new Map<number, { from: number; to: number }>();
 
     // Compute the y-offset (from card center) for a given field, matching makeCardIcon's layout.
+    // Returned in screen pixels — must match the *scaled* card so the toast lines up with the row.
     function fieldRowOffset(c: AggCity, field: Field): number | null {
       const conv = conversionTotal(c);
-      const cardH = cardHeight(c);
+      const s = cardScaleRef.current;
+      const cardH = cardHeight(c, s);
       if (conv === 0) {
         // Degraded: visitor is the only row, in primary position
         if (field === 'visitor' && c.visitor > 0) {
-          return cardH / 2 - (HEAD_PX + ROW_PX / 2);
+          return cardH / 2 - (HEAD_PX + ROW_PX / 2) * s;
         }
         return null;
       }
       let y = HEAD_PX;
       for (const f of ['company', 'homeowner', 'inquiry'] as const) {
         if (c[f] > 0) {
-          if (f === field) return cardH / 2 - (y + ROW_PX / 2);
+          if (f === field) return cardH / 2 - (y + ROW_PX / 2) * s;
           y += ROW_PX;
         }
       }
       if (field === 'visitor' && c.visitor > 0) {
-        return cardH / 2 - (y + SEPARATOR_PX + VISITOR_FOOTER_PX / 2);
+        return cardH / 2 - (y + SEPARATOR_PX + VISITOR_FOOTER_PX / 2) * s;
       }
       return null;
     }
@@ -621,7 +671,7 @@ export default function UAEMapLeaflet({
       );
       const idx = i;
       const cardMarker = L.marker(bLL, {
-        icon: makeCardIcon(city, side, idx + 1),
+        icon: makeCardIcon(city, side, idx + 1, cardScaleRef.current),
         draggable: true,
         zIndexOffset: 2000,
       })
