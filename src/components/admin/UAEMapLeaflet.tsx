@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { labelCompanyType } from '../../pages/admin/AdminAnalyticsPage';
 import { useAdminT } from '../../hooks/useAdminLang';
 
@@ -435,7 +436,38 @@ export default function UAEMapLeaflet({
   const cardSidesRef   = useRef<('left'|'right')[]>([]);
   const userMovedRef   = useRef<boolean[]>([]);  // per-index: true if user dragged
   const prevAggRef     = useRef<Map<string, AggCity>>(new Map());  // last seen agg, keyed by city.key
+  const cardRef        = useRef<HTMLDivElement>(null);  // outer card for fullscreen
   const [mapReady, setMapReady] = useState(false);
+  const [isFs, setIsFs] = useState(false);
+
+  // Fullscreen toggle + listener (ESC handled by browser)
+  useEffect(() => {
+    const onChange = () => {
+      const inFs = document.fullscreenElement === cardRef.current;
+      setIsFs(inFs);
+      // After layout change, leaflet needs invalidateSize to redraw at new dimensions
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+        if (mapRef.current) {
+          // Re-fit bounds after resize so the UAE outline is centered nicely
+          mapRef.current.fitBounds(UAE_BOUNDS, { padding: [24, 24] });
+          syncCallouts(mapRef.current);
+        }
+      }, 80);
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function toggleFullscreen() {
+    if (!cardRef.current) return;
+    if (document.fullscreenElement === cardRef.current) {
+      document.exitFullscreen?.();
+    } else {
+      cardRef.current.requestFullscreen?.();
+    }
+  }
 
   // Update one leader line when its card moves (drag or auto-relayout)
   // 单根斜线：从 bubble 中心直连卡片中心。L 形折线在卡片列对齐时退化成水平段，
@@ -649,20 +681,34 @@ export default function UAEMapLeaflet({
   const maxInquiry = topInquiryCities[0]?.count || 1;
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+    <div
+      ref={cardRef}
+      className={`bg-white border border-stone-200 shadow-sm overflow-hidden ${isFs ? '' : 'rounded-2xl'}`}
+      style={isFs ? { display: 'flex', flexDirection: 'column', height: '100vh' } : undefined}
+    >
+      <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between bg-white shrink-0">
         <div>
           <h2 className="text-sm font-bold text-[#2c2c2c]">地理分布</h2>
           <p className="text-xs text-[#6b6b6b] mt-0.5">城市综合热度 · 气泡大小代表活跃度</p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-full" style={{ background: GOLD }} />
-          <span className="text-[10px] text-[#6b6b6b]">访客 · 装企 · 业主 · 询盘</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-full" style={{ background: GOLD }} />
+            <span className="text-[10px] text-[#6b6b6b]">访客 · 装企 · 业主 · 询盘</span>
+          </div>
+          <button
+            onClick={toggleFullscreen}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-[#B8864A] transition"
+            title={isFs ? '退出全屏 (ESC)' : '全屏查看'}
+            aria-label={isFs ? '退出全屏' : '全屏查看'}
+          >
+            {isFs ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
-      {/* Fixed-height row: map fills it, sidebar scrolls inside if content longer */}
-      <div className="flex" style={{ height: 520 }}>
+      {/* Fixed-height row in card mode; flex-1 fills remaining viewport in fullscreen */}
+      <div className="flex" style={isFs ? { flex: 1, minHeight: 0 } : { height: 520 }}>
         <div className="flex-1 min-w-0 border-r border-stone-100 relative">
           <div ref={mapDivRef} className="absolute inset-0" />
         </div>
