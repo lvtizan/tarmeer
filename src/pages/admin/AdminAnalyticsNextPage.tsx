@@ -115,46 +115,44 @@ interface LBItem {
   href?: string;
   value: number;
 }
-// 青翠系调色板 — 绿 / 翠 / 青 / 苔，8 个有梯度的 stop
-const MULTI_PALETTE = [
-  '#15803d',  // green-700  (深翠)
-  '#0d9488',  // teal-600
-  '#16a34a',  // green-600
-  '#0891b2',  // cyan-600   (青)
-  '#14b8a6',  // teal-500
-  '#22c55e',  // green-500
-  '#65a30d',  // lime-600   (苔)
-  '#10b981',  // emerald-500
+// 高级多彩调色板 — 冷暖混合，每条 [light, dark] 形成渐变
+const MULTI_PALETTE: Array<[string, string]> = [
+  ['#D4A05A', '#A97540'],  // 1. gold — 暖（品牌色）
+  ['#5b8ad4', '#3b6ec0'],  // 2. royal blue — 冷
+  ['#34d399', '#10b981'],  // 3. emerald — 中
+  ['#c084fc', '#9333ea'],  // 4. violet — 中
+  ['#fb923c', '#ea580c'],  // 5. orange — 暖
+  ['#22d3ee', '#0891b2'],  // 6. cyan — 冷
+  ['#f472b6', '#db2777'],  // 7. pink — 暖
+  ['#a3e635', '#65a30d'],  // 8. lime — 中
 ];
 
 function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
   items: LBItem[];
   labelWidth?: number;
   max?: number;
-  colors?: 'gold' | 'multi' | string[];   // 'gold' = single gradient (default), 'multi' = palette per row, or custom array
+  colors?: 'gold' | 'multi';
 }) {
   if (items.length === 0) {
     return <div className="flex items-center justify-center h-[180px] text-stone-400 text-sm">暂无数据</div>;
   }
   const maxV = Math.max(...items.map(it => it.value), 1);
-  const palette = Array.isArray(colors) ? colors
-                : colors === 'multi'    ? MULTI_PALETTE
-                : null;                                   // null → use single gold gradient
+  const useMulti = colors === 'multi';
   return (
     <div className="flex-1 flex flex-col justify-around mt-2 gap-1">
       {items.slice(0, max).map((item, i) => {
         const barPct = Math.max(2.5, (item.value / maxV) * 75);
-        const color = palette ? palette[i % palette.length] : null;
-        const barBg = color
-          ? `linear-gradient(90deg, ${color} 0%, ${color}dd 100%)`
-          : 'linear-gradient(90deg, #B8864A 0%, #C8975A 100%)';
+        // Multi-palette: each row gets its own [light, dark] gradient pair (warm/cool mixed)
+        const [lightC, darkC] = useMulti ? MULTI_PALETTE[i % MULTI_PALETTE.length] : ['#C8975A', '#A97540'];
+        const barBg = `linear-gradient(90deg, ${lightC} 0%, ${darkC} 100%)`;
+        const tintColor = darkC;     // for rank circle tint
         return (
           <div key={item.key} className="flex items-center gap-3" style={{ minHeight: 38 }}>
-            {/* Rank circle — color-tinted when multi-palette */}
+            {/* Rank circle — color-tinted when multi-palette, neutral gray when gold */}
             <span
               className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold tabular-nums shrink-0"
-              style={color
-                ? { background: `${color}1c`, color }
+              style={useMulti
+                ? { background: `${tintColor}1c`, color: tintColor }
                 : { background: '#f5f5f4', color: '#78716c' }}
             >{i + 1}</span>
             <div style={{ width: labelWidth }} className="shrink-0 flex flex-col min-w-0">
@@ -169,8 +167,8 @@ function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
             </div>
             <div className="flex-1 flex items-center gap-3 min-w-0">
               <div
-                className="h-[18px] transition-all duration-500"
-                style={{ width: `${barPct}%`, background: barBg, borderRadius: 2 }}
+                className="h-[18px] transition-all duration-500 shadow-sm"
+                style={{ width: `${barPct}%`, background: barBg, borderRadius: 3 }}
               />
               <span className="text-[14px] font-bold text-[#1c1917] tabular-nums">{item.value}</span>
             </div>
