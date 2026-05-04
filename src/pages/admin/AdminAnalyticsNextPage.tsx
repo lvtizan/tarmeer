@@ -287,8 +287,8 @@ export default function AdminAnalyticsNextPage() {
 
       {/* KPI cards — 6 张，可穿透到对应列表页 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <KpiCard icon={<Globe className="w-4 h-4" />}      label="独立访客"    value={uniqueIps}        accent="#5b7fcb"          sub="visitor_logs · 累计" />
-        <KpiCard icon={<Eye className="w-4 h-4" />}        label="页面浏览"    value={pageViews}        accent="#2c6e49"          sub="近 30 天" />
+        <KpiCard icon={<Globe className="w-4 h-4" />}      label="独立访客"    value={uniqueIps}        accent="#5b7fcb"          sub="visitor_logs · 累计" href="/admin/visitors" />
+        <KpiCard icon={<Eye className="w-4 h-4" />}        label="页面浏览"    value={pageViews}        accent="#2c6e49"          sub="近 30 天"            href="/admin/visitors" />
         <KpiCard icon={<Users className="w-4 h-4" />}      label="新增业主"    value={totals.homeowner} ma7={last7Avg.homeowner} accent={COLOR_HOMEOWNER} href="/admin/users" />
         <KpiCard icon={<Building2 className="w-4 h-4" />}  label="新增装企"    value={totals.company}   ma7={last7Avg.company}   accent={COLOR_COMPANY}   href="/admin/companies" />
         <KpiCard icon={<HandCoins className="w-4 h-4" />}  label="新增询盘"    value={totals.inquiry}   ma7={last7Avg.inquiry}   accent={COLOR_INQUIRY}   href="/admin/inquiries" />
