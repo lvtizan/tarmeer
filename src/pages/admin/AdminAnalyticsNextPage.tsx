@@ -115,9 +115,8 @@ interface LBItem {
   href?: string;
   value: number;
 }
-function LeaderboardBars({ items, total, labelWidth = 148, max = 10 }: {
+function LeaderboardBars({ items, labelWidth = 148, max = 10 }: {
   items: LBItem[];
-  total?: number;
   labelWidth?: number;
   max?: number;
 }) {
@@ -126,17 +125,17 @@ function LeaderboardBars({ items, total, labelWidth = 148, max = 10 }: {
   }
   const maxV = Math.max(...items.map(it => it.value), 1);
   return (
-    <div className="space-y-2 mt-2">
+    // flex-1 + justify-around → 行间距自动占满父容器，避免下方留白
+    <div className="flex-1 flex flex-col justify-around mt-2 gap-1">
       {items.slice(0, max).map((item, i) => {
-        // bar takes up to 75% of bar column → number always has room
         const barPct = Math.max(2.5, (item.value / maxV) * 75);
         return (
-          <div key={item.key} className="flex items-center gap-3" style={{ minHeight: 36 }}>
+          <div key={item.key} className="flex items-center gap-3" style={{ minHeight: 38 }}>
             {/* Rank circle */}
             <span className="w-6 h-6 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center text-[11px] font-semibold tabular-nums shrink-0">
               {i + 1}
             </span>
-            {/* Label column — primary on top, optional secondary below */}
+            {/* Label column — primary on top, optional secondary (% bigger now) below */}
             <div style={{ width: labelWidth }} className="shrink-0 flex flex-col min-w-0">
               {item.href ? (
                 <a href={item.href} target="_blank" rel="noopener noreferrer"
@@ -145,9 +144,9 @@ function LeaderboardBars({ items, total, labelWidth = 148, max = 10 }: {
               ) : (
                 <span className="text-[13px] font-semibold text-[#1c1917] truncate" title={item.primary}>{item.primary}</span>
               )}
-              {item.secondary && <span className="text-[10px] text-stone-400 truncate">{item.secondary}</span>}
+              {item.secondary && <span className="text-[12px] font-semibold text-stone-500 truncate">{item.secondary}</span>}
             </div>
-            {/* Bar — rectangular, very subtle 2px corners, no track */}
+            {/* Bar */}
             <div className="flex-1 flex items-center gap-3 min-w-0">
               <div
                 className="h-[18px] transition-all duration-500"
@@ -158,9 +157,6 @@ function LeaderboardBars({ items, total, labelWidth = 148, max = 10 }: {
           </div>
         );
       })}
-      {total !== undefined && (
-        <div className="text-[10.5px] text-stone-400 text-center pt-3 mt-1 border-t border-stone-100">合计 {total.toLocaleString()}</div>
-      )}
     </div>
   );
 }
@@ -374,22 +370,32 @@ export default function AdminAnalyticsNextPage() {
         )}
       </div>
 
-      {/* 最受关注的 10 家公司 + 装企类型分布 — 都用 leaderboard 风格（无圆角，文字左 bar 右）*/}
+      {/* 最受关注的 10 家公司 + 装企类型分布 — 都用 leaderboard 风格 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-          <div className="mb-3">
-            <h2 className="text-sm font-bold text-[#2c2c2c]">最受关注的 10 家公司</h2>
-            <p className="text-[11px] text-stone-500 mt-0.5">独立访客数 · 点击公司名查看详情</p>
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 flex flex-col">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-[#2c2c2c]">最受关注的 10 家公司</h2>
+              <p className="text-[11px] text-stone-500 mt-0.5">独立访客数 · 点击公司名查看详情</p>
+            </div>
+            <div className="text-[11px] text-stone-500 tabular-nums shrink-0">
+              共 <span className="font-bold text-[#1c1917] text-[14px]">{companyItems.length}</span> 家
+            </div>
           </div>
           <LeaderboardBars items={companyItems} max={10} labelWidth={180} />
         </div>
 
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-          <div className="mb-3">
-            <h2 className="text-sm font-bold text-[#2c2c2c]">装企类型分布</h2>
-            <p className="text-[11px] text-stone-500 mt-0.5">注册装企类型分布</p>
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 flex flex-col">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-[#2c2c2c]">装企类型分布</h2>
+              <p className="text-[11px] text-stone-500 mt-0.5">注册装企类型分布</p>
+            </div>
+            <div className="text-[11px] text-stone-500 tabular-nums shrink-0">
+              合计 <span className="font-bold text-[#1c1917] text-[14px]">{typeTotal.toLocaleString()}</span>
+            </div>
           </div>
-          <LeaderboardBars items={typeItems} total={typeTotal} max={10} labelWidth={148} />
+          <LeaderboardBars items={typeItems} max={10} labelWidth={148} />
         </div>
       </div>
 
