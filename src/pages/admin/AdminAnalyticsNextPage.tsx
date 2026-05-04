@@ -89,7 +89,7 @@ function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href }: 
         <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${accent}18`, color: accent }}>{icon}</div>
         <span className="text-xs font-medium text-stone-500">{label}</span>
         {href && (
-          <span className="ml-auto text-stone-300 text-[12px] opacity-0 group-hover:opacity-100 transition" aria-hidden>→</span>
+          <span className="ml-auto text-stone-400 group-hover:text-[#B8864A] text-[13px] transition" aria-hidden>→</span>
         )}
       </div>
       <div className="flex items-baseline gap-2">
