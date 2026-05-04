@@ -115,16 +115,16 @@ interface LBItem {
   href?: string;
   value: number;
 }
-// 高级多彩调色板 — 冷暖混合，每条 [light, dark] 形成渐变
+// 高端 SaaS 看板调色 — Tableau 风「低饱和雾感 + 浅深渐变」，冷暖交错不刺眼
 const MULTI_PALETTE: Array<[string, string]> = [
-  ['#D4A05A', '#A97540'],  // 1. gold — 暖（品牌色）
-  ['#5b8ad4', '#3b6ec0'],  // 2. royal blue — 冷
-  ['#34d399', '#10b981'],  // 3. emerald — 中
-  ['#c084fc', '#9333ea'],  // 4. violet — 中
-  ['#fb923c', '#ea580c'],  // 5. orange — 暖
-  ['#22d3ee', '#0891b2'],  // 6. cyan — 冷
-  ['#f472b6', '#db2777'],  // 7. pink — 暖
-  ['#a3e635', '#65a30d'],  // 8. lime — 中
+  ['#C9A876', '#9C7A48'],  // 1. 雾金（贴品牌）
+  ['#A8B6CF', '#6F86A8'],  // 2. 雾蓝灰
+  ['#B5C7A8', '#7B9266'],  // 3. 鼠尾草绿
+  ['#CFA9C8', '#9F7194'],  // 4. 灰梅紫
+  ['#D6A48F', '#A47158'],  // 5. 陶土橙
+  ['#9CB8B4', '#647F7A'],  // 6. 雾松绿
+  ['#D5B58A', '#A8845D'],  // 7. 蜂蜜棕
+  ['#C5A5B8', '#896276'],  // 8. 雾玫瑰
 ];
 
 function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
