@@ -608,6 +608,20 @@ export async function getCompanyProfile(req: any, res: any) {
   }
 }
 
+// Set / clear admin-pinned cover image (one of the company's portfolio photos)
+export async function setCompanyCoverImage(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const { url } = req.body || {};
+    const value = (typeof url === 'string' && url.trim()) ? url.trim() : null;
+    await pool.execute('UPDATE company_profiles SET cover_image_url = ? WHERE id = ?', [value, id]);
+    res.json({ id: Number(id), cover_image_url: value });
+  } catch (error) {
+    console.error('Set company cover image error:', error);
+    res.status(500).json({ error: 'Failed to set cover image.' });
+  }
+}
+
 // Edit company profile (company_profiles) by admin
 export async function editCompanyProfile(req: any, res: any) {
   try {

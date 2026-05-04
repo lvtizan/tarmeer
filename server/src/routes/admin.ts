@@ -53,6 +53,7 @@ import {
   editScrapedCompany,
   getCompanyProfile,
   editCompanyProfile,
+  setCompanyCoverImage,
   getCompanyFullDetail,
   getCompanyProfileFullDetail,
   updateCompanyDisplayOrder,
@@ -238,6 +239,7 @@ router.post('/roles/companies/:id/restore', requirePermission('can_approve'), ro
 router.get('/roles/companies/:id/detail', getCompanyProfile);
 router.get('/roles/companies/:id/full-detail', getCompanyProfileFullDetail);
 router.put('/roles/companies/:id/edit', editCompanyProfile);
+router.put('/roles/companies/:id/cover-image', setCompanyCoverImage);
 
 // Company project CRUD (admin)
 router.get('/roles/companies/:companyId/projects/:projectId', getAdminProject);
