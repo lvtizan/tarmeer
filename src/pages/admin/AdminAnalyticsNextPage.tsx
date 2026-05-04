@@ -115,27 +115,39 @@ interface LBItem {
   href?: string;
   value: number;
 }
-function LeaderboardBars({ items, labelWidth = 148, max = 10 }: {
+// 多彩 palette — 跟 v1 donut 同款，8 类别足够覆盖装企类型
+const MULTI_PALETTE = ['#B8864A', '#5b7fcb', '#2c6e49', '#8b5cf6', '#14b8a6', '#f59e0b', '#e0a86e', '#6b6b6b'];
+
+function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
   items: LBItem[];
   labelWidth?: number;
   max?: number;
+  colors?: 'gold' | 'multi' | string[];   // 'gold' = single gradient (default), 'multi' = palette per row, or custom array
 }) {
   if (items.length === 0) {
     return <div className="flex items-center justify-center h-[180px] text-stone-400 text-sm">暂无数据</div>;
   }
   const maxV = Math.max(...items.map(it => it.value), 1);
+  const palette = Array.isArray(colors) ? colors
+                : colors === 'multi'    ? MULTI_PALETTE
+                : null;                                   // null → use single gold gradient
   return (
-    // flex-1 + justify-around → 行间距自动占满父容器，避免下方留白
     <div className="flex-1 flex flex-col justify-around mt-2 gap-1">
       {items.slice(0, max).map((item, i) => {
         const barPct = Math.max(2.5, (item.value / maxV) * 75);
+        const color = palette ? palette[i % palette.length] : null;
+        const barBg = color
+          ? `linear-gradient(90deg, ${color} 0%, ${color}dd 100%)`
+          : 'linear-gradient(90deg, #B8864A 0%, #C8975A 100%)';
         return (
           <div key={item.key} className="flex items-center gap-3" style={{ minHeight: 38 }}>
-            {/* Rank circle */}
-            <span className="w-6 h-6 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center text-[11px] font-semibold tabular-nums shrink-0">
-              {i + 1}
-            </span>
-            {/* Label column — primary on top, optional secondary (% bigger now) below */}
+            {/* Rank circle — color-tinted when multi-palette */}
+            <span
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold tabular-nums shrink-0"
+              style={color
+                ? { background: `${color}1c`, color }
+                : { background: '#f5f5f4', color: '#78716c' }}
+            >{i + 1}</span>
             <div style={{ width: labelWidth }} className="shrink-0 flex flex-col min-w-0">
               {item.href ? (
                 <a href={item.href} target="_blank" rel="noopener noreferrer"
@@ -146,11 +158,10 @@ function LeaderboardBars({ items, labelWidth = 148, max = 10 }: {
               )}
               {item.secondary && <span className="text-[12px] font-semibold text-stone-500 truncate">{item.secondary}</span>}
             </div>
-            {/* Bar */}
             <div className="flex-1 flex items-center gap-3 min-w-0">
               <div
                 className="h-[18px] transition-all duration-500"
-                style={{ width: `${barPct}%`, background: 'linear-gradient(90deg, #B8864A 0%, #C8975A 100%)', borderRadius: 2 }}
+                style={{ width: `${barPct}%`, background: barBg, borderRadius: 2 }}
               />
               <span className="text-[14px] font-bold text-[#1c1917] tabular-nums">{item.value}</span>
             </div>
@@ -395,7 +406,7 @@ export default function AdminAnalyticsNextPage() {
               合计 <span className="font-bold text-[#1c1917] text-[14px]">{typeTotal.toLocaleString()}</span>
             </div>
           </div>
-          <LeaderboardBars items={typeItems} max={10} labelWidth={148} />
+          <LeaderboardBars items={typeItems} max={10} labelWidth={148} colors="multi" />
         </div>
       </div>
 
