@@ -115,17 +115,19 @@ interface LBItem {
   href?: string;
   value: number;
 }
-// 高端 SaaS 看板调色 — Tableau 风「低饱和雾感 + 浅深渐变」，冷暖交错不刺眼
-const MULTI_PALETTE: Array<[string, string]> = [
-  ['#C9A876', '#9C7A48'],  // 1. 雾金（贴品牌）
-  ['#A8B6CF', '#6F86A8'],  // 2. 雾蓝灰
-  ['#B5C7A8', '#7B9266'],  // 3. 鼠尾草绿
-  ['#CFA9C8', '#9F7194'],  // 4. 灰梅紫
-  ['#D6A48F', '#A47158'],  // 5. 陶土橙
-  ['#9CB8B4', '#647F7A'],  // 6. 雾松绿
-  ['#D5B58A', '#A8845D'],  // 7. 蜂蜜棕
-  ['#C5A5B8', '#896276'],  // 8. 雾玫瑰
+// 低饱和高级色系 — 纯色 + 透明度（不用渐变），冷暖交错
+const MULTI_PALETTE: string[] = [
+  '#B8864A',  // 1. 雾金（品牌）
+  '#7C95B3',  // 2. 雾蓝灰
+  '#7B9266',  // 3. 鼠尾草绿
+  '#9C7194',  // 4. 灰梅紫
+  '#A47158',  // 5. 陶土橙
+  '#5F7A75',  // 6. 雾松绿
+  '#A8845D',  // 7. 蜂蜜棕
+  '#8F687A',  // 8. 雾玫瑰
 ];
+const BAR_ALPHA = 'D9';   // ≈ 85% — 给柱子加点呼吸感
+const TINT_ALPHA = '1F';  // ≈ 12% — rank 圆背景
 
 function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
   items: LBItem[];
@@ -142,17 +144,16 @@ function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
     <div className="flex-1 flex flex-col justify-around mt-2 gap-1">
       {items.slice(0, max).map((item, i) => {
         const barPct = Math.max(2.5, (item.value / maxV) * 75);
-        // Multi-palette: each row gets its own [light, dark] gradient pair (warm/cool mixed)
-        const [lightC, darkC] = useMulti ? MULTI_PALETTE[i % MULTI_PALETTE.length] : ['#C8975A', '#A97540'];
-        const barBg = `linear-gradient(90deg, ${lightC} 0%, ${darkC} 100%)`;
-        const tintColor = darkC;     // for rank circle tint
+        // Multi: solid muted color w/ ~85% alpha; gold mode: brand single color
+        const baseColor = useMulti ? MULTI_PALETTE[i % MULTI_PALETTE.length] : '#B8864A';
+        const barBg = `${baseColor}${BAR_ALPHA}`;
         return (
           <div key={item.key} className="flex items-center gap-3" style={{ minHeight: 38 }}>
             {/* Rank circle — color-tinted when multi-palette, neutral gray when gold */}
             <span
               className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold tabular-nums shrink-0"
               style={useMulti
-                ? { background: `${tintColor}1c`, color: tintColor }
+                ? { background: `${baseColor}${TINT_ALPHA}`, color: baseColor }
                 : { background: '#f5f5f4', color: '#78716c' }}
             >{i + 1}</span>
             <div style={{ width: labelWidth }} className="shrink-0 flex flex-col min-w-0">
@@ -167,7 +168,7 @@ function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
             </div>
             <div className="flex-1 flex items-center gap-3 min-w-0">
               <div
-                className="h-[18px] transition-all duration-500 shadow-sm"
+                className="h-[18px] transition-all duration-500"
                 style={{ width: `${barPct}%`, background: barBg, borderRadius: 3 }}
               />
               <span className="text-[14px] font-bold text-[#1c1917] tabular-nums">{item.value}</span>
