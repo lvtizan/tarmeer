@@ -64,6 +64,7 @@ interface PublicCompanyRecord {
   list_display_order?: number;
   projects?: any[];
   portfolio_categories?: Record<string, { url: string; title: string }[]>;
+  cover_image_url?: string | null;
   is_claimed?: boolean;
   is_signed?: boolean;
   weight_score?: number;
@@ -286,6 +287,15 @@ function toCompany(company: PublicCompanyRecord): Company {
           .trim(),
       })) };
     }
+  }
+
+  // Admin-pinned cover wins: bring it to the front of projectImages so the list
+  // card and detail hero both lead with it. Falls back to natural order when null.
+  const pinnedCover = typeof company.cover_image_url === 'string' && company.cover_image_url.trim()
+    ? company.cover_image_url.trim()
+    : null;
+  if (pinnedCover) {
+    projectImages = [pinnedCover, ...projectImages.filter((u) => u !== pinnedCover)];
   }
 
   return {
@@ -554,45 +564,30 @@ export async function fetchAdminCompanyPreview(profileId: string): Promise<Compa
 
   const { company: profile, projects } = await res.json();
 
-  const categories: PortfolioCategories = {};
-  const allImages: string[] = [];
-
-  (projects || []).forEach((project: any) => {
-    const projectImages = sanitizeImageUrls(parseJsonArray(project.images));
-    if (!projectImages.length) return;
-    const category = String(project.style || 'Projects');
-    const titleBase = String(project.title || 'Project');
-    const items = projectImages.map((url: string, idx: number) => ({
-      url,
-      title: projectImages.length > 1 ? `${titleBase} ${idx + 1}` : titleBase,
-    }));
-    categories[category] = [...(categories[category] || []), ...items];
-    allImages.push(...projectImages);
-  });
-
-  const services = parseJsonArray(profile.services);
-  const specialties = parseJsonArray(profile.specialties);
-
-  return {
-    id: String(profile.id),
-    name: String(profile.company_name || 'Company'),
-    description: String(profile.description || ''),
-    shortDescription: summarizeCompanyDescription(String(profile.description || '')),
-    city: String(profile.city || 'UAE'),
-    address: String(profile.address || 'UAE'),
-    foundedYear: normalizeFoundedYear(profile.establishment_year),
-    website: String(profile.website || ''),
-    instagram: '',
-    phone: String(profile.phone || ''),
-    email: '',
-    styles: specialties,
-    projectCount: projects?.length || allImages.length,
-    services,
-    featured: false,
-    coverImage: String(profile.logo_url || ''),
-    projectImages: allImages,
-    portfolioCategories: categories,
-    isClaimed: true,
-    companyType: profile.company_type || undefined,
+  // SINGLE SOURCE OF TRUTH: feed admin response into the same toCompany() pipeline
+  // that public detail uses. This locks admin-preview rendering to public-detail
+  // behavior — any future Company-shape change flows through one function.
+  // (See commit 20b7b5f7 + 243a6c24 — the dual-pipeline split is what caused the
+  //  4-week-long "Featured Projects (175) collapses to one tab" regression.)
+  const record: PublicCompanyRecord = {
+    id: profile.id,
+    slug: profile.slug,
+    name_en: profile.company_name,
+    company_name: profile.company_name,
+    description: profile.description,
+    city: profile.city,
+    address: profile.address,
+    year_established: profile.establishment_year,
+    website: profile.website,
+    phone: profile.phone,
+    company_type: profile.company_type,
+    logo_url: profile.logo_url,
+    services: profile.services,
+    specialties: profile.specialties,
+    project_count: Array.isArray(projects) ? projects.length : 0,
+    projects: projects || [],
+    cover_image_url: profile.cover_image_url || null,
+    is_claimed: true,
   };
+  return toCompany(record);
 }

@@ -5,7 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft, Globe, Instagram, MapPin, Briefcase,
   Calendar, FolderOpen, Phone, Mail, ChevronLeft, ChevronRight,
-  Share2, ExternalLink, X, BadgeCheck, ImageIcon, Link2, CheckCircle2,
+  Share2, ExternalLink, X, BadgeCheck, Link2, CheckCircle2,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
 import { getCompanyTypeLabel } from '../lib/companyData';
@@ -14,6 +14,7 @@ import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompani
 import { resolveImageUrl } from '../lib/imageUrl';
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
 import MasonryGallery from '../components/MasonryGallery';
+import CompanyProjectsSection from '../components/CompanyProjectsSection';
 import Lightbox from '../components/Lightbox';
 import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
 import SmartImage from '../components/ui/SmartImage';
@@ -617,53 +618,13 @@ export default function CompanyDetailPage() {
               </section>
             )}
 
-            {/* ===== Projects Section (inside left column so sidebar stays sticky alongside) ===== */}
+            {/* ===== Projects Section (inside left column so sidebar stays sticky alongside) =====
+                 锁死布局：项目网格只有一个唯一的渲染入口（CompanyProjectsSection）。
+                 任何 detail 数据来源（public 直访 / admin preview / company-dashboard preview）
+                 只要喂出 isClaimed=true + projects[]，就走这块。不要再在这里 inline 重写一份。 */}
             <div className="mt-2">
               {company.isClaimed && company.projects && company.projects.length > 0 ? (
-                <section className="py-10 lg:py-14">
-                  <div className="flex items-end justify-between mb-8">
-                    <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Projects</h2>
-                    <span className="text-sm text-[#6b6b6b] tabular-nums">
-                      {company.projects.length} {company.projects.length === 1 ? 'project' : 'projects'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {company.projects.map((proj) => (
-                      <div
-                        key={proj.slug}
-                        className="group cursor-pointer"
-                        onClick={() => navigate(`/companies/${company.id}/${proj.slug}`)}
-                      >
-                        <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100">
-                          <SmartImage
-                            src={proj.images[0]}
-                            alt={`${proj.title} by ${company.name}`}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                          {proj.images.length > 1 && (
-                            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-medium backdrop-blur-sm">
-                              <ImageIcon className="w-3.5 h-3.5" />
-                              {proj.images.length}
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-3">
-                          <h3 className="text-[15px] font-medium text-[#1c1917] group-hover:text-[#b8864a] transition line-clamp-1">
-                            {proj.title}
-                          </h3>
-                          {proj.location && (
-                            <p className="flex items-center gap-1 text-sm text-stone-500 mt-1">
-                              <MapPin className="w-3.5 h-3.5" /> {proj.location}
-                            </p>
-                          )}
-                          {!proj.location && proj.description && (
-                            <p className="text-sm text-stone-500 mt-1 line-clamp-1">{proj.description}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                <CompanyProjectsSection company={company} projects={company.projects} />
               ) : (
                 <>
                   {hasProjectCategories && (
