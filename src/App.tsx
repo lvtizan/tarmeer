@@ -99,6 +99,7 @@ const AdminAdminsPage = lazyRetry(() => import('./pages/admin/AdminAdminsPage'))
 const AdminDesignerDetailPage = lazyRetry(() => import('./pages/admin/AdminDesignerDetailPage'));
 const AdminAnalyticsPage = lazyRetry(() => import('./pages/admin/AdminAnalyticsNextPage'));
 const AdminVisitorsPage = lazyRetry(() => import('./pages/admin/AdminVisitorsPage'));
+const AdminSignedCompaniesPage = lazyRetry(() => import('./pages/admin/AdminSignedCompaniesPage'));
 const AdminUsersPage = lazyRetry(() => import('./pages/admin/AdminUsersPage'));
 const AdminUserDetailPage = lazyRetry(() => import('./pages/admin/AdminUserDetailPage'));
 const AdminCompaniesPage = lazyRetry(() => import('./pages/admin/AdminCompaniesPage'));
@@ -217,6 +218,7 @@ function App() {
           <Route path="/admin" element={<AdminProvider><AdminLayout /></AdminProvider>}>
             <Route index element={<AdminAnalyticsPage />} />
             <Route path="visitors" element={<AdminVisitorsPage />} />
+            <Route path="signed-companies" element={<AdminSignedCompaniesPage />} />
             <Route path="designers" element={<AdminDesignersPage />} />
             <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
             <Route path="activity-log" element={<AdminActivityLogPage />} />

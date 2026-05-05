@@ -774,6 +774,17 @@ class AdminApiClient {
     return this.request(`/roles/companies/${companyId}/projects/${projectId}/restore`, { method: 'PUT' });
   }
 
+  async getSignedCompanies(): Promise<{
+    companies: Array<{
+      id: number; slug: string; company_name: string; company_type: string;
+      city: string | null; logo_url: string | null; weight_score: number;
+      created_at: string; source: 'profile' | 'scraped';
+    }>;
+    total: number;
+  }> {
+    return this.request('/signed-companies');
+  }
+
   async replaceSupplierProductImage(supplierId: number | string, productId: number | string, file: File): Promise<{ id: number; image_url: string }> {
     const fd = new FormData();
     fd.append('file', file, file.name);

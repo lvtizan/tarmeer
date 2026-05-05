@@ -14,7 +14,7 @@ import {
   ResponsiveContainer, ComposedChart, Area, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea,
 } from 'recharts';
-import { Users, Building2, HandCoins, TrendingUp, Globe, Eye } from 'lucide-react';
+import { Users, Building2, HandCoins, TrendingUp, Globe, Eye, BadgeCheck } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { labelCompanyType } from '../../lib/companyTypeLabel';
@@ -68,7 +68,7 @@ function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href }: 
   label: string;
   value: number;
   ma7?: number | null;
-  sub?: string;
+  sub?: React.ReactNode;
   accent: string;
   valueOverride?: string;
   href?: string;
@@ -187,8 +187,12 @@ export default function AdminAnalyticsNextPage() {
   const [signupSources, setSignupSources] = useState<SourceItem[]>([]);
   const [companyTypes, setCompanyTypes]   = useState<SourceItem[]>([]);
   const [topCompanies, setTopCompanies]   = useState<CompanyVisitorRow[]>([]);
-  const [pageViews, setPageViews]         = useState(0);
+  const [pageViewsTotal, setPageViewsTotal]   = useState(0);
+  const [pageViews30d, setPageViews30d]       = useState(0);
+  const [pageViewMode, setPageViewMode]       = useState<'total' | '30d'>('total');
+  const pageViews = pageViewMode === 'total' ? pageViewsTotal : pageViews30d;
   const [uniqueIps, setUniqueIps]         = useState(0);
+  const [signedCount, setSignedCount]     = useState(0);
   // For map (reused from v1, untouched)
   const [companyCities, setCompanyCities]     = useState<CityRow[]>([]);
   const [inquiryCities, setInquiryCities]     = useState<CityRow[]>([]);
@@ -202,13 +206,28 @@ export default function AdminAnalyticsNextPage() {
     // Coerce all counts to Number — MySQL driver often returns COUNT() as string,
     // and `0 + "1"` becomes "01" (string concat) blowing up totals.
     const num = (v: any) => Number(v) || 0;
-    Promise.all([
-      adminApi.getDailyStats(30) as Promise<any>,   // v1 用的同一个端点，返 { data: [...], totals: {...} }
+    // 健壮性：用 allSettled 保证任何单个 endpoint 故障都不会让整页 KPI 全归零。
+    // 失败的接口对应数据维持默认值（0 / 空数组），同时把错误打到 console 便于排查。
+    Promise.allSettled([
+      adminApi.getDailyStats(30) as Promise<any>,
       adminApi.getRegistrationSources(),
       adminApi.getCompanyVisitors() as Promise<any>,
       adminApi.getVisitorOverview() as Promise<any>,
-    ]).then(([reg, src, vis, vov]) => {
+      adminApi.getSignedCompanies() as Promise<any>,
+    ]).then((results) => {
       if (cancelled) return;
+      const labels = ['getDailyStats', 'getRegistrationSources', 'getCompanyVisitors', 'getVisitorOverview', 'getSignedCompanies'];
+      const ok = (i: number): any => {
+        const r = results[i];
+        if (r.status === 'fulfilled') return r.value;
+        console.error(`[analytics] ${labels[i]} failed:`, r.reason);
+        return null;
+      };
+      const reg    = ok(0);
+      const src    = ok(1) || {};
+      const vis    = ok(2) || {};
+      const vov    = ok(3) || {};
+      const signed = ok(4) || {};
       const rows: any[] = reg?.data || [];
       setDaily(rows.map((r: any) => ({
         date: r.date || r.stat_date,
@@ -216,23 +235,25 @@ export default function AdminAnalyticsNextPage() {
         new_companies:  num(r.new_companies  ?? r.company_count),
         new_inquiries:  num(r.new_inquiries  ?? r.inquiry_count),
       })));
-      setSignupSources((src.signup_sources || []).map(s => ({ source: s.source, count: num(s.count) })));
-      setCompanyTypes((src.company_types || []).map(s => ({ type: s.type, count: num(s.count) })));
-      setCompanyCities((src.company_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
-      setInquiryCities((src.inquiry_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
-      setVisitorCities((src.visitor_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
-      setHomeownerCities((src.homeowner_cities || []).map(c => ({ city: c.city, count: num(c.count) })));
-      setCompanyTypeCities((src.company_type_cities || []).map(t => ({ ...t, count: num(t.count) })));
+      setSignupSources((src.signup_sources || []).map((s: any) => ({ source: s.source, count: num(s.count) })));
+      setCompanyTypes((src.company_types || []).map((s: any) => ({ type: s.type, count: num(s.count) })));
+      setCompanyCities((src.company_cities || []).map((c: any) => ({ city: c.city, count: num(c.count) })));
+      setInquiryCities((src.inquiry_cities || []).map((c: any) => ({ city: c.city, count: num(c.count) })));
+      setVisitorCities((src.visitor_cities || []).map((c: any) => ({ city: c.city, count: num(c.count) })));
+      setHomeownerCities((src.homeowner_cities || []).map((c: any) => ({ city: c.city, count: num(c.count) })));
+      setCompanyTypeCities((src.company_type_cities || []).map((t: any) => ({ ...t, count: num(t.count) })));
       const companies: CompanyVisitorRow[] = (vis?.companies || []).slice(0, 10).map((c: any) => ({
         ...c,
         unique_visitors: num(c.unique_visitors),
         total_views: num(c.total_views),
       }));
       setTopCompanies(companies);
-      // 统一口径：页面浏览数也走 visitor_logs（与 /admin/visitors 内页同源），
-      // 不再从 analytics_events.page_view 取，避免双源不一致（参 visitsLast30d）。
-      setPageViews(num(vov?.visitsLast30d));
+      // 统一口径：页面浏览全部走 visitor_logs（与 /admin/visitors 内页同源），
+      // 同时拿 累计 / 近30天 两个值，前端切换 view mode 时无需重新拉接口。
+      setPageViewsTotal(num(vov?.totalVisits));
+      setPageViews30d(num(vov?.visitsLast30d));
       setUniqueIps(num(vov?.uniqueIpCount));
+      setSignedCount(num(signed?.total));
     }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -299,12 +320,34 @@ export default function AdminAnalyticsNextPage() {
         </div>
       </div>
 
-      {/* KPI cards — 6 张，可穿透到对应列表页 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      {/* KPI cards — 7 张，可穿透到对应列表页 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
         <KpiCard icon={<Globe className="w-4 h-4" />}      label="独立访客"    value={uniqueIps}        accent="#5b7fcb"          sub="visitor_logs · 累计" href="/admin/visitors" />
-        <KpiCard icon={<Eye className="w-4 h-4" />}        label="页面浏览"    value={pageViews}        accent="#2c6e49"          sub="近 30 天"            href="/admin/visitors" />
+        <KpiCard
+          icon={<Eye className="w-4 h-4" />}
+          label="页面浏览"
+          value={pageViews}
+          accent="#2c6e49"
+          href="/admin/visitors"
+          sub={
+            <span className="inline-flex items-center gap-1">
+              {(['total', '30d'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPageViewMode(m); }}
+                  className={`text-[10px] px-1.5 py-0.5 rounded ${pageViewMode === m
+                    ? 'bg-[#2c6e49] text-white'
+                    : 'text-stone-500 hover:bg-stone-100'}`}
+                >
+                  {m === 'total' ? '累计' : '近30天'}
+                </button>
+              ))}
+            </span>
+          }
+        />
         <KpiCard icon={<Users className="w-4 h-4" />}      label="新增业主"    value={totals.homeowner} ma7={last7Avg.homeowner} accent={COLOR_HOMEOWNER} href="/admin/users" />
         <KpiCard icon={<Building2 className="w-4 h-4" />}  label="新增装企"    value={totals.company}   ma7={last7Avg.company}   accent={COLOR_COMPANY}   href="/admin/companies" />
+        <KpiCard icon={<BadgeCheck className="w-4 h-4" />} label="已签约装企"  value={signedCount}      accent="#0d7c54"          sub="is_signed=1"         href="/admin/signed-companies" />
         <KpiCard icon={<HandCoins className="w-4 h-4" />}  label="新增询盘"    value={totals.inquiry}   ma7={last7Avg.inquiry}   accent={COLOR_INQUIRY}   href="/admin/inquiries" />
         <KpiCard
           icon={<TrendingUp className="w-4 h-4" />}

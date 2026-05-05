@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ExternalLink, Pencil, Trash2, Star, Check } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
@@ -63,8 +63,11 @@ export default function AdminRegisteredCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useAdminT();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { hasPermission } = useAdmin();
+  // 来源页：优先 history.state（从列表点进来时塞的），否则按 backTab 回 /admin/companies
+  const fromState = (location.state || {}) as { from?: string; fromLabel?: string };
   const canApprove = hasPermission('can_approve');
 
   const [company, setCompany] = useState<CompanyProfile | null>(null);
@@ -221,13 +224,13 @@ export default function AdminRegisteredCompanyDetailPage() {
 
   return (
     <div className="w-full space-y-4">
-      {/* Back button */}
+      {/* Back button — 优先用从哪来的 from（如已签约列表），其次回 /admin/companies?tab=... */}
       <button
-        onClick={() => navigate(`/admin/companies?tab=${backTab}`)}
+        onClick={() => navigate(fromState.from || `/admin/companies?tab=${backTab}`)}
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        {t('Back to Companies', '返回公司列表')}
+        {fromState.fromLabel ? `返回${fromState.fromLabel}` : t('Back to Companies', '返回公司列表')}
       </button>
 
       {actionError && (

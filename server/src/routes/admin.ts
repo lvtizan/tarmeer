@@ -67,6 +67,7 @@ import {
   restoreAdminProject,
   toggleCompanyProfileSigned,
   toggleDirectorySigned,
+  listSignedCompanies,
   getWeightConfigList,
   updateWeightConfig,
   triggerWeightRecalculation,
@@ -252,6 +253,7 @@ router.put('/roles/companies/:companyId/projects/:projectId/restore', restoreAdm
 // Weight system: toggle signed status
 router.put('/roles/companies/:id/toggle-signed', toggleCompanyProfileSigned);
 router.put('/companies/:companyId/toggle-signed', toggleDirectorySigned);
+router.get('/signed-companies', listSignedCompanies);
 
 // Weight config management
 router.get('/weight-config', requireSuperAdmin, getWeightConfigList);

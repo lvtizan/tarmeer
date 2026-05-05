@@ -1043,6 +1043,36 @@ export async function restoreAdminProject(req: any, res: any) {
 
 // ====== Weight System ======
 
+// GET /admin/signed-companies — 列出所有 is_signed=1 的公司（合并 company_profiles + uae_companies）
+export async function listSignedCompanies(_req: any, res: any) {
+  try {
+    // 注意：uae_companies 没有 company_type 列（只有 categories JSON），不要 SELECT
+    const [profileRows] = await pool.execute(
+      `SELECT cp.id, cp.slug, cp.company_name, cp.company_type, cp.city, cp.logo_url,
+              cp.weight_score, cp.created_at, cp.linked_uae_company_id
+       FROM company_profiles cp
+       WHERE cp.is_signed = 1 AND cp.deleted_at IS NULL
+       ORDER BY cp.weight_score DESC, cp.created_at DESC`
+    );
+    const [scrapedRows] = await pool.execute(
+      `SELECT uc.id, uc.slug, uc.name_en AS company_name, NULL AS company_type, uc.city, uc.logo_url,
+              uc.weight_score, uc.created_at
+       FROM uae_companies uc
+       WHERE uc.is_signed = 1
+       ORDER BY uc.weight_score DESC, uc.created_at DESC`
+    );
+    const profiles = (profileRows as any[]).map((r) => ({ ...r, source: 'profile' as const }));
+    const linkedIds = new Set(profiles.map((p) => p.linked_uae_company_id).filter(Boolean));
+    const scraped = (scrapedRows as any[])
+      .filter((s) => !linkedIds.has(s.id))
+      .map((r) => ({ ...r, source: 'scraped' as const }));
+    res.json({ companies: [...profiles, ...scraped], total: profiles.length + scraped.length });
+  } catch (error) {
+    console.error('List signed companies error:', error);
+    res.status(500).json({ error: 'Failed to list signed companies.' });
+  }
+}
+
 // PUT /admin/roles/companies/:id/toggle-signed
 export async function toggleCompanyProfileSigned(req: any, res: any) {
   try {
