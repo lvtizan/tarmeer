@@ -6,6 +6,7 @@ import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
+import BackToAnalytics from '../../components/admin/BackToAnalytics';
 
 /* ── Floating Tooltip (portal-free, renders outside table overflow) ── */
 function FloatingTip({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
@@ -230,6 +231,7 @@ export default function AdminInquiriesPage() {
 
   return (
     <div className="space-y-4">
+      <BackToAnalytics />
       {/* Row 1: Title */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-[#2c2c2c]">线索管理</h1>

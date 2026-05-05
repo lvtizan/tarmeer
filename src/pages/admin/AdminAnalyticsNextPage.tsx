@@ -17,7 +17,7 @@ import {
 import { Users, Building2, HandCoins, TrendingUp, Globe, Eye } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdminT } from '../../hooks/useAdminLang';
-import { labelCompanyType } from './AdminAnalyticsPage';
+import { labelCompanyType } from '../../lib/companyTypeLabel';
 
 const UAEMap = lazy(() => import('../../components/admin/UAEMapLeaflet'));
 
@@ -206,9 +206,8 @@ export default function AdminAnalyticsNextPage() {
       adminApi.getDailyStats(30) as Promise<any>,   // v1 用的同一个端点，返 { data: [...], totals: {...} }
       adminApi.getRegistrationSources(),
       adminApi.getCompanyVisitors() as Promise<any>,
-      adminApi.getAnalyticsOverview() as Promise<any>,
       adminApi.getVisitorOverview() as Promise<any>,
-    ]).then(([reg, src, vis, ov, vov]) => {
+    ]).then(([reg, src, vis, vov]) => {
       if (cancelled) return;
       const rows: any[] = reg?.data || [];
       setDaily(rows.map((r: any) => ({
@@ -230,7 +229,9 @@ export default function AdminAnalyticsNextPage() {
         total_views: num(c.total_views),
       }));
       setTopCompanies(companies);
-      setPageViews(num(ov?.overview?.page_views));
+      // 统一口径：页面浏览数也走 visitor_logs（与 /admin/visitors 内页同源），
+      // 不再从 analytics_events.page_view 取，避免双源不一致（参 visitsLast30d）。
+      setPageViews(num(vov?.visitsLast30d));
       setUniqueIps(num(vov?.uniqueIpCount));
     }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -293,10 +294,8 @@ export default function AdminAnalyticsNextPage() {
       {/* Title */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#2c2c2c]">
-            注册分析 <span className="ml-2 inline-block px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider align-middle" style={{ background: '#dcfce7', color: '#15803d' }}>v2 BETA</span>
-          </h1>
-          <p className="text-xs text-stone-500 mt-0.5">改 horizontal bar / 加 7d MA / 周末高亮 / vs 均值 badge — <a href="/admin/analytics" className="text-[#B8864A] underline ml-1">回老版对比 →</a></p>
+          <h1 className="text-xl font-bold text-[#2c2c2c]">数据分析</h1>
+          <p className="text-xs text-stone-500 mt-0.5">注册趋势 / 流量来源 / 装企地理分布 — 点 KPI 卡可穿透到对应列表</p>
         </div>
       </div>
 

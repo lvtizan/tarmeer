@@ -9,6 +9,7 @@ import DeleteReasonModal from '../../components/admin/DeleteReasonModal';
 import AdminRowActions from '../../components/admin/AdminRowActions';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
+import BackToAnalytics from '../../components/admin/BackToAnalytics';
 
 interface UserRecord {
   id: number;
@@ -222,6 +223,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
+      <BackToAnalytics />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-stone-800">Users</h1>
         <span className="text-sm text-stone-500">{total} total</span>

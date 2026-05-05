@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Maximize2, Minimize2 } from 'lucide-react';
-import { labelCompanyType } from '../../pages/admin/AdminAnalyticsPage';
+import { labelCompanyType } from '../../lib/companyTypeLabel';
 import { useAdminT } from '../../hooks/useAdminLang';
 
 interface CityData { city: string; count: number; }

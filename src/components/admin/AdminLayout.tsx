@@ -15,11 +15,6 @@ const ADMIN_LANG_KEY = 'admin_lang';
 const navItems = [
   // ── Core Business ──
   {
-    to: '/admin', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, end: true, permission: 'can_view_stats' as const,
-    infoEn: 'Analyze traffic/events, company visitors, compare trends, and jump to external analytics platforms.',
-    infoZh: '分析流量与事件趋势、公司访客，并可跳转外部分析平台。',
-  },
-  {
     to: '/admin/users', labelEn: 'Homeowners', labelZh: '业主', icon: Users,
     infoEn: 'Manage homeowner accounts, role/status changes, and trace account-level operations.',
     infoZh: '管理业主账号、角色与状态变更，并追踪账号操作记录。',
@@ -54,9 +49,9 @@ const navItems = [
 
 const adminItems = [
   {
-    to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
-    infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
-    infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
+    to: '/admin', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, end: true, permission: 'can_view_stats' as const,
+    infoEn: 'Analyze traffic/events, company visitors, compare trends, and jump to external analytics platforms.',
+    infoZh: '分析流量与事件趋势、公司访客，并可跳转外部分析平台。',
   },
   {
     to: '/admin/enums', labelEn: 'Types & Services', labelZh: '类型与服务', icon: Tags,
@@ -82,6 +77,11 @@ const adminItems = [
     to: '/admin/notification-emails', labelEn: 'Notify Emails', labelZh: '通知邮箱', icon: Mail, superAdminOnly: true,
     infoEn: 'Configure recipients for system notifications to ensure operational events are delivered.',
     infoZh: '配置系统通知接收邮箱，确保运营事件及时送达。',
+  },
+  {
+    to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,
+    infoEn: 'Open operation guides, SOPs, troubleshooting steps, and team onboarding documentation.',
+    infoZh: '查看操作指南、SOP、故障排查与团队上手文档。',
   },
 ];
 
@@ -202,8 +202,9 @@ export default function AdminLayout() {
     !item.permission || hasPermission(item.permission)
   );
 
-  const filteredAdminItems = adminItems.filter(item => 
-    !item.superAdminOnly || isSuperAdmin
+  const filteredAdminItems = adminItems.filter(item =>
+    (!('superAdminOnly' in item) || !item.superAdminOnly || isSuperAdmin) &&
+    (!('permission' in item) || !item.permission || hasPermission(item.permission))
   );
 
   const t = (en: string, zh: string) => (lang === 'zh' ? zh : en);
@@ -274,7 +275,7 @@ export default function AdminLayout() {
               <SidebarNavLink
                 key={item.to}
                 to={item.to}
-                end={item.end}
+                end={'end' in item ? Boolean(item.end) : undefined}
                 className="relative group"
               >
                 <Icon className="w-5 h-5 shrink-0" />
@@ -316,6 +317,7 @@ export default function AdminLayout() {
                   <SidebarNavLink
                     key={item.to}
                     to={item.to}
+                    end={'end' in item ? Boolean(item.end) : undefined}
                     className="relative group"
                   >
                     <Icon className="w-5 h-5 shrink-0" />

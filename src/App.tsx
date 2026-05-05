@@ -97,8 +97,7 @@ const AdminInstallPage = lazyRetry(() => import('./pages/admin/AdminInstallPage'
 const AdminDesignersPage = lazyRetry(() => import('./pages/admin/AdminDesignersPage'));
 const AdminAdminsPage = lazyRetry(() => import('./pages/admin/AdminAdminsPage'));
 const AdminDesignerDetailPage = lazyRetry(() => import('./pages/admin/AdminDesignerDetailPage'));
-const AdminAnalyticsPage = lazyRetry(() => import('./pages/admin/AdminAnalyticsPage'));
-const AdminAnalyticsNextPage = lazyRetry(() => import('./pages/admin/AdminAnalyticsNextPage'));
+const AdminAnalyticsPage = lazyRetry(() => import('./pages/admin/AdminAnalyticsNextPage'));
 const AdminVisitorsPage = lazyRetry(() => import('./pages/admin/AdminVisitorsPage'));
 const AdminUsersPage = lazyRetry(() => import('./pages/admin/AdminUsersPage'));
 const AdminUserDetailPage = lazyRetry(() => import('./pages/admin/AdminUserDetailPage'));
@@ -217,7 +216,6 @@ function App() {
           {/* ====== Admin ====== */}
           <Route path="/admin" element={<AdminProvider><AdminLayout /></AdminProvider>}>
             <Route index element={<AdminAnalyticsPage />} />
-            <Route path="analytics-next" element={<AdminAnalyticsNextPage />} />
             <Route path="visitors" element={<AdminVisitorsPage />} />
             <Route path="designers" element={<AdminDesignersPage />} />
             <Route path="designers/:id" element={<AdminDesignerDetailPage />} />

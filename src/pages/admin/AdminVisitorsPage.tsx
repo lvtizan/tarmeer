@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async';
 import { Globe, Eye, RefreshCw } from 'lucide-react';
 import { adminApi, type VisitorRecord } from '../../lib/adminApi';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
+import BackToAnalytics from '../../components/admin/BackToAnalytics';
 
 const PAGE_SIZE = 50;
 
@@ -48,6 +49,8 @@ export default function AdminVisitorsPage() {
   return (
     <div className="w-full">
       <Helmet><title>访客列表 — Tarmeer Admin</title></Helmet>
+
+      <BackToAnalytics />
 
       {/* Title bar */}
       <div className="flex items-center justify-between mb-6">

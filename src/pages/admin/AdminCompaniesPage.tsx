@@ -7,6 +7,7 @@ import AdminCompaniesTableTab from '../../components/admin/AdminCompaniesTableTa
 import AdminDirectoryTable from '../../components/admin/AdminDirectoryTable';
 import AdminApplicationsTable from '../../components/admin/AdminApplicationsTable';
 import AdminSelect from '../../components/ui/AdminSelect';
+import BackToAnalytics from '../../components/admin/BackToAnalytics';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -306,6 +307,7 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="space-y-4">
+      <BackToAnalytics />
       <h1 className="text-xl font-bold text-[#2c2c2c]">Companies</h1>
 
       {/* ── Stat tab cards ── */}
