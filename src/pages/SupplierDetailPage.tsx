@@ -387,8 +387,8 @@ export default function SupplierDetailPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
                     <div key={p.id} className="group cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
-                      <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
-                        <SmartImage src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />
+                      <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-white border border-stone-200">
+                        <SmartImage src={p.image_url} alt={p.title || ''} className="w-full h-full object-contain group-hover:scale-105 transition duration-300" loading="lazy" />
                       </div>
                       {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
                       {p.title && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>}
