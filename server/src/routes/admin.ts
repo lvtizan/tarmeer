@@ -72,7 +72,7 @@ import {
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
-import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct } from '../controllers/supplierAdminController';
+import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminReplaceProductImage } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -84,6 +84,7 @@ import { generateTemplate, parseTemplate, importCompany } from '../services/comp
 import multer from 'multer';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const uploadLargePdf = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 import {
   authenticateAdmin,
   requireAdmin,
@@ -362,6 +363,8 @@ router.put('/suppliers/:id', updateSupplier);
 router.delete('/suppliers/:id', requirePermission('can_approve'), deleteSupplier);
 router.post('/suppliers/:id/products', adminAddProduct);
 router.delete('/suppliers/:id/products/:productId', adminDeleteProduct);
+router.put('/suppliers/catalogs/:id/file', requirePermission('can_approve'), uploadLargePdf.single('file'), adminReplaceCatalogFile);
+router.put('/suppliers/:id/products/:productId/image', upload.single('file'), adminReplaceProductImage);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);
