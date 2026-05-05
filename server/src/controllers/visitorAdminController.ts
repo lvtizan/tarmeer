@@ -12,9 +12,12 @@ function isTruthyIp(ip: string | null | undefined): boolean {
 export async function getVisitorOverview(req: any, res: Response) {
   try {
     await ensureVisitorLogsTable();
+    // 单次扫表算累计 + 近 30 天 + unique IP，避免两个数据源（visitor_logs vs analytics_events）
+    // 给同一个"访问数"指标产生不同结果（统一口径：服务端 visitor_logs，更全且不漏埋点）。
     const [rows] = await pool.execute(
       `SELECT
         COUNT(*) AS total_visits,
+        SUM(CASE WHEN created_at >= NOW() - INTERVAL 30 DAY THEN 1 ELSE 0 END) AS visits_last_30d,
         COUNT(DISTINCT CASE
           WHEN viewer_ip IS NOT NULL
            AND viewer_ip <> ''
@@ -27,9 +30,10 @@ export async function getVisitorOverview(req: any, res: Response) {
        FROM visitor_logs`
     );
 
-    const overview = (rows as any[])[0] || { total_visits: 0, unique_ip_count: 0 };
+    const overview = (rows as any[])[0] || {};
     res.json({
       totalVisits: Number(overview.total_visits || 0),
+      visitsLast30d: Number(overview.visits_last_30d || 0),
       uniqueIpCount: Number(overview.unique_ip_count || 0),
     });
   } catch (error) {

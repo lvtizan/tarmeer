@@ -84,6 +84,7 @@ export interface AdminDesignerDetail {
 
 export interface VisitorOverview {
   totalVisits: number;
+  visitsLast30d: number;
   uniqueIpCount: number;
 }
 
@@ -771,6 +772,24 @@ class AdminApiClient {
 
   async restoreAdminProject(companyId: string, projectId: string) {
     return this.request(`/roles/companies/${companyId}/projects/${projectId}/restore`, { method: 'PUT' });
+  }
+
+  async replaceSupplierProductImage(supplierId: number | string, productId: number | string, file: File): Promise<{ id: number; image_url: string }> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    const url = `${API_BASE}/admin/suppliers/${supplierId}/products/${productId}/image`;
+    const token = this.getToken();
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: fd,
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); if (j?.error) msg = j.error; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
   }
 
   // Complaint management
