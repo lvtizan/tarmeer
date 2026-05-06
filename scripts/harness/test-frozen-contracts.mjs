@@ -100,21 +100,23 @@ ok('A6', 'mirror inquiry 标记 crm_sync_status = synced',
 ok('A6', 'submitCompanyLead 有字段截断保护', crmCtrl.includes('.slice(0,'));
 
 // ─────────────────────────────────────────────
-// B1/B2/B3. 公司详情页 — 项目展示契约 (CompanyDetailPage.tsx)
+// B1/B2/B3. 公司详情页 — 项目展示契约
+// B2 布局已提取到 CompanyProjectsSection 组件，同时检查两个文件
 // ─────────────────────────────────────────────
-console.log('\n--- B1/B2/B3: 公司详情页 项目展示契约 (CompanyDetailPage.tsx) ---\n');
+console.log('\n--- B1/B2/B3: 公司详情页 项目展示契约 (CompanyDetailPage + CompanyProjectsSection) ---\n');
 const detailPage = read('src/pages/CompanyDetailPage.tsx');
+const projectsSection = (() => { try { return read('src/components/CompanyProjectsSection.tsx'); } catch { return ''; } })();
 
 ok('B1', "portfolioMode 初始值为 'project'",
   detailPage.includes("useState<'project' | 'style'>('project')"));
 ok('B1', '项目卡片触发条件: isClaimed && projects && projects.length > 0',
   detailPage.includes('company.isClaimed && company.projects && company.projects.length > 0'));
 ok('B2', '项目卡片布局: grid-cols-1 sm:grid-cols-2',
-  detailPage.includes('grid-cols-1 sm:grid-cols-2'));
+  detailPage.includes('grid-cols-1 sm:grid-cols-2') || projectsSection.includes('grid-cols-1 sm:grid-cols-2'));
 ok('B2', '卡片封面图比例: aspect-video',
-  detailPage.includes('aspect-video'));
+  detailPage.includes('aspect-video') || projectsSection.includes('aspect-video'));
 ok('B2', '多图角标显示图片数量',
-  detailPage.includes('proj.images.length > 1'));
+  detailPage.includes('proj.images.length > 1') || projectsSection.includes('proj.images.length > 1'));
 ok('B3', '图片点击跳转项目详情页',
   detailPage.includes('navigate(`/companies/${company.id}/${proj.slug}`)') ||
   detailPage.includes("navigate(`/companies/${company.id}/${projectSlug}`)"));
