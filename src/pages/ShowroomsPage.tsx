@@ -218,13 +218,12 @@ export default function ShowroomsPage() {
                 Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setLeadModalOpen(true)}
+            <Link
+              to="/supplier/auth"
               className="btn-primary w-full sm:w-auto sm:shrink-0 inline-flex items-center justify-center gap-2"
             >
               Apply to Join
-            </button>
+            </Link>
           </div>
         </div>
       </section>
