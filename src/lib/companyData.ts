@@ -46,6 +46,8 @@ export interface Company {
   projects?: CompanyProjectCard[];
   /** Company type (design_studio, renovation_company, etc.) */
   companyType?: string;
+  /** Canonical URL slug (used to redirect legacy directory slugs after claiming) */
+  slug?: string;
 }
 
 export const COMPANY_TYPE_LABELS: Record<string, string> = {

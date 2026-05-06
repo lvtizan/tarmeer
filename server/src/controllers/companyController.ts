@@ -463,6 +463,22 @@ export async function getCompanyBySlug(req: any, res: any) {
     }
 
     if (!company) {
+      // 3. Slug-to-name fallback: convert "rana-matloob-design-studio" → "rana matloob design studio"
+      //    and match against company_name. Handles cases where the uae_companies record was deleted
+      //    after a company claimed their listing, leaving the old slug URL as a dead 404.
+      const nameFromSlug = slug.replace(/-/g, ' ');
+      const [aliasRows] = await pool.execute(
+        `SELECT slug FROM company_profiles
+         WHERE LOWER(company_name) = LOWER(?)
+           AND status = 'approved' AND deleted_at IS NULL
+         LIMIT 1`,
+        [nameFromSlug]
+      );
+      if ((aliasRows as any[]).length > 0) {
+        const canonicalSlug = (aliasRows as any[])[0].slug;
+        return res.redirect(301, `/api/companies/${canonicalSlug}`);
+      }
+
       // Check if this slug was deleted/rejected — return 410 Gone so Google de-indexes it
       const [deletedRows] = await pool.execute(
         'SELECT id FROM company_profiles WHERE slug = ? AND (deleted_at IS NOT NULL OR status = ?) LIMIT 1',

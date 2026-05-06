@@ -134,6 +134,11 @@ export default function CompanyDetailPage() {
         if (id && !isNaN(Number(id)) && item.id && item.id !== id) {
           navigate(`/companies/${item.id}`, { replace: true });
         }
+        // Redirect slug aliases (e.g. old directory slug deleted after claiming)
+        // so the URL bar shows the canonical registered-company slug
+        if (id && item.slug && item.slug !== id && isNaN(Number(id)) && !window.location.pathname.startsWith('/@')) {
+          navigate(`/companies/${item.slug}`, { replace: true });
+        }
       })
       .catch((error) => { if (active) setLoadError(error instanceof Error ? error.message : 'Failed to load'); })
       .finally(() => { if (active) setLoading(false); });
