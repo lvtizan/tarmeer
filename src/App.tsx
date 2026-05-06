@@ -197,12 +197,12 @@ function AtSlugOrNotFound() {
 }
 
 // Old /designers/:slug links (e.g. from third-party backlinks) preserve slug
-// when redirecting to canonical /companies/:slug. Server should also send a
+// when redirecting to canonical /@slug. Server should also send a
 // 301 for SEO; client redirect just covers in-page navigation.
 function DesignerSlugRedirect() {
   const location = useLocation();
   const m = location.pathname.match(/^\/designers\/([^/?#]+)$/);
-  return <Navigate to={m ? `/companies/${m[1]}` : '/companies'} replace />;
+  return <Navigate to={m ? `/@${m[1]}` : '/companies'} replace />;
 }
 function App() {
   useMetaPixelPageView();

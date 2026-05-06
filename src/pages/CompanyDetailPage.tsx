@@ -47,13 +47,14 @@ export default function CompanyDetailPage() {
       navigate('/companies');
     }
   };
-  // Canonicalize URL: /@:slug → /companies/:slug (Option A — keyword-rich URL is canonical).
+  // Canonicalize URL: /companies/:slug → /@:slug (short link is canonical per 4/29-30 spec).
   // Server should send a 301 for direct visits; this client redirect covers SPA navigation.
+  // Skip admin/preview contexts where /companies/ links are intentional.
   useEffect(() => {
-    if (id && window.location.pathname.startsWith('/@')) {
-      navigate(`/companies/${id}`, { replace: true });
+    if (id && !window.location.pathname.startsWith('/@') && !adminPreview && !previewMode) {
+      navigate(`/@${id}`, { replace: true });
     }
-  }, [id, navigate]);
+  }, [id, navigate, adminPreview, previewMode]);
 
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -130,14 +131,14 @@ export default function CompanyDetailPage() {
         if (!active) return;
         setCompany(item);
         trackViewContent({ content_name: item.name, content_id: item.id || id });
-        // Redirect numeric IDs to slug-based URL
-        if (id && !isNaN(Number(id)) && item.id && item.id !== id) {
-          navigate(`/companies/${item.id}`, { replace: true });
+        // Redirect to canonical /@slug when response ID differs from URL identifier
+        // (covers numeric IDs, dead/renamed slugs, and alias resolution)
+        if (id && item.id && item.id !== id) {
+          navigate(`/@${item.id}`, { replace: true });
         }
-        // Redirect slug aliases (e.g. old directory slug deleted after claiming)
-        // so the URL bar shows the canonical registered-company slug
-        if (id && item.slug && item.slug !== id && isNaN(Number(id)) && !window.location.pathname.startsWith('/@')) {
-          navigate(`/companies/${item.slug}`, { replace: true });
+        // Redirect dead/alias slugs via explicit canonical slug field
+        if (id && item.slug && item.slug !== id) {
+          navigate(`/@${item.slug}`, { replace: true });
         }
       })
       .catch((error) => { if (active) setLoadError(error instanceof Error ? error.message : 'Failed to load'); })
@@ -219,7 +220,7 @@ export default function CompanyDetailPage() {
   if (loading) {
     return (
       <>
-        {id && <Helmet><link rel="canonical" href={`https://www.tarmeer.com/companies/${id}`} /></Helmet>}
+        {id && <Helmet><link rel="canonical" href={`https://www.tarmeer.com/@${id}`} /></Helmet>}
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
           <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
         </div>
@@ -322,9 +323,9 @@ export default function CompanyDetailPage() {
         <meta property="og:title" content={`${company.name} - ${company.city} - Tarmeer`} />
         <meta property="og:description" content={company.shortDescription} />
         <meta property="og:image" content={ogImage} />
-        <meta property="og:url" content={`https://www.tarmeer.com/companies/${company.id}`} />
+        <meta property="og:url" content={`https://www.tarmeer.com/@${company.id}`} />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href={`https://www.tarmeer.com/companies/${company.id}`} />
+        <link rel="canonical" href={`https://www.tarmeer.com/@${company.id}`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
