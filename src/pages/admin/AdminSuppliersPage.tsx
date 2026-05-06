@@ -4,7 +4,7 @@ import { adminApi } from '../../lib/adminApi';
 import { Spinner } from '../../components/ui/Spinner';
 import { showToast } from '../../components/ui/Toast';
 import { useAdminT } from '../../hooks/useAdminLang';
-import { Package, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink } from 'lucide-react';
 import AdminRowActions from '../../components/admin/AdminRowActions';
 import AdminSelect from '../../components/ui/AdminSelect';
 import DeleteReasonModal from '../../components/admin/DeleteReasonModal';
@@ -93,6 +93,15 @@ export default function AdminSuppliersPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Suppliers', '供应商')}</h1>
+        <a
+          href="/start-suppliers"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          {t('Supplier Guide', '供应商教程页')}
+        </a>
       </div>
 
       <div className="flex items-center justify-end gap-2 mb-4">

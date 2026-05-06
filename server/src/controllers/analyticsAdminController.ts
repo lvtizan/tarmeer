@@ -195,14 +195,45 @@ export async function getCompanyVisitors(req: Request, res: Response): Promise<v
       cityMap[row.page_path].push({ city: row.city, visitors: Number(row.visitors) });
     }
 
-    const result = companies.map(c => ({
-      page_path: c.page_path,
-      company_name: c.company_name,
-      slug: c.slug,
-      unique_visitors: c.unique_visitors,
-      total_views: c.total_views,
-      cities: (cityMap[c.page_path] || []).slice(0, 5),
-    }));
+    // Deduplicate by company_name — same company can appear under both slug URL
+    // (/companies/rana-matloob-design-studio) and registered ID URL (/companies/15)
+    // when a directory listing has been claimed. Merge their visitor counts.
+    const mergedMap: Record<string, {
+      page_path: string; company_name: string; slug: string;
+      unique_visitors: number; total_views: number;
+      cities: Array<{ city: string; visitors: number }>;
+    }> = {};
+    for (const c of companies) {
+      const key = c.company_name.toLowerCase().trim();
+      const cities = cityMap[c.page_path] || [];
+      if (!mergedMap[key]) {
+        mergedMap[key] = {
+          page_path: c.page_path,
+          company_name: c.company_name,
+          slug: c.slug,
+          unique_visitors: c.unique_visitors,
+          total_views: c.total_views,
+          cities,
+        };
+      } else {
+        // Merge: add visitors, merge city lists
+        mergedMap[key].unique_visitors += c.unique_visitors;
+        mergedMap[key].total_views += c.total_views;
+        // Combine city lists, summing same-city visitors
+        const cityMerge: Record<string, number> = {};
+        for (const cv of [...mergedMap[key].cities, ...cities]) {
+          cityMerge[cv.city] = (cityMerge[cv.city] || 0) + cv.visitors;
+        }
+        mergedMap[key].cities = Object.entries(cityMerge)
+          .map(([city, visitors]) => ({ city, visitors }))
+          .sort((a, b) => b.visitors - a.visitors);
+      }
+    }
+
+    const result = Object.values(mergedMap)
+      .sort((a, b) => b.unique_visitors - a.unique_visitors)
+      .slice(0, 10)
+      .map(c => ({ ...c, cities: c.cities.slice(0, 5) }));
 
     res.json({ companies: result, dateRange: { start, end } });
   } catch (error) {
