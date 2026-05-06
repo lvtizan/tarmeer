@@ -55,6 +55,23 @@ const portfolioCategories = {
   ],
 };
 
+const materialsCategories = {
+  'Materials': [
+    { label: 'Furniture', to: '/materials?category=furniture' },
+    { label: 'Stone & Marble', to: '/materials?category=stone' },
+    { label: 'Lighting', to: '/materials?category=lighting' },
+    { label: 'Plants & Landscaping', to: '/materials?category=plants' },
+    { label: 'Flooring', to: '/materials?category=flooring' },
+  ],
+  'More': [
+    { label: 'Kitchen & Bath', to: '/materials?category=kitchen' },
+    { label: 'Curtains & Textiles', to: '/materials?category=curtains' },
+    { label: 'Paint & Coatings', to: '/materials?category=paint' },
+    { label: 'Hardware & Fittings', to: '/materials?category=hardware' },
+    { label: 'Other', to: '/materials?category=other' },
+  ],
+};
+
 const navLinks = [
   { to: '/', label: 'Home' },
 ];
@@ -71,6 +88,7 @@ export default function Navbar({
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
+  const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
@@ -111,6 +129,7 @@ export default function Navbar({
     setOpen(false);
     setDropdownOpen(false);
     setPortfolioDropdownOpen(false);
+    setMaterialsDropdownOpen(false);
   };
 
   const renderNavLink = (to: string, label: string, extraClasses = '') => (
@@ -241,7 +260,59 @@ export default function Navbar({
               </div>
           </div>
 
-          {renderNavLink('/materials', 'Materials')}
+          {/* Materials Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setMaterialsDropdownOpen(true)}
+            onMouseLeave={() => setMaterialsDropdownOpen(false)}
+          >
+            <Link
+              to="/materials"
+              onClick={() => { setMaterialsDropdownOpen(false); handleClick('/materials'); }}
+              className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+            >
+              Materials
+              <ChevronDown className={`w-4 h-4 transition-transform ${materialsDropdownOpen ? 'rotate-180' : ''}`} />
+            </Link>
+
+            <div
+              className={`absolute top-full right-0 pt-2 w-max z-50 transition-all duration-150 ${materialsDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+            >
+              <div className="bg-white shadow-xl rounded-lg border border-stone-200">
+                <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
+                  {Object.entries(materialsCategories).map(([category, items]) => (
+                    <div key={category}>
+                      <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">
+                        {category}
+                      </h3>
+                      <ul className="space-y-2">
+                        {items.map((item) => (
+                          <li key={item.to}>
+                            <Link
+                              to={item.to}
+                              onClick={() => handleClick(item.to)}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition"
+                            >
+                              {item.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
+                  <Link
+                    to="/materials"
+                    onClick={() => handleClick('/materials')}
+                    className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition"
+                  >
+                    All Suppliers {'>'}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {showUserEntry ? (
             <div className="flex items-center gap-3">
@@ -398,7 +469,57 @@ export default function Navbar({
                 )}
             </div>
 
-            {renderNavLink('/materials', 'Materials', 'py-2')}
+            {/* Mobile Materials Dropdown */}
+            <div className="py-2">
+              <div className="flex items-center justify-between">
+                <Link
+                  to="/materials"
+                  onClick={() => handleClick('/materials')}
+                  className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+                >
+                  Materials
+                </Link>
+                <button
+                  onClick={() => setMaterialsDropdownOpen(!materialsDropdownOpen)}
+                  className="p-1 text-[#2c2c2c]/60 hover:text-[#2c2c2c] transition"
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform ${materialsDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              {materialsDropdownOpen && (
+                <div className="mt-3 pl-4 space-y-4">
+                  {Object.entries(materialsCategories).map(([category, items]) => (
+                    <div key={category}>
+                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">
+                        {category}
+                      </h3>
+                      <ul className="space-y-1">
+                        {items.map((item) => (
+                          <li key={item.to}>
+                            <Link
+                              to={item.to}
+                              onClick={() => handleClick(item.to)}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1"
+                            >
+                              {item.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                  <div className="border-t border-stone-200 pt-2">
+                    <Link
+                      to="/materials"
+                      onClick={() => handleClick('/materials')}
+                      className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1"
+                    >
+                      All Suppliers {'>'}
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {isLoggedIn ? (
               <Link
