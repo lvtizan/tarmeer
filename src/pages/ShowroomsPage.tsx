@@ -219,7 +219,7 @@ export default function ShowroomsPage() {
               </p>
             </div>
             <Link
-              to="/supplier/auth"
+              to="/for-suppliers"
               className="btn-primary w-full sm:w-auto sm:shrink-0 inline-flex items-center justify-center gap-2"
             >
               Apply to Join
