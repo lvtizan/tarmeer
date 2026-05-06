@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { labelCompanyType } from '../../pages/admin/AdminAnalyticsPage';
+import { labelCompanyType } from '../../lib/companyTypeLabel';
 import { useAdminT } from '../../hooks/useAdminLang';
 
 interface CityData {

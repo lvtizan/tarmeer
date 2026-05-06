@@ -8,6 +8,8 @@ import UserEditModal from '../../components/admin/UserEditModal';
 import DeleteReasonModal from '../../components/admin/DeleteReasonModal';
 import AdminRowActions from '../../components/admin/AdminRowActions';
 import { useAdminT } from '../../hooks/useAdminLang';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
+import BackToAnalytics from '../../components/admin/BackToAnalytics';
 
 interface UserRecord {
   id: number;
@@ -221,6 +223,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
+      <BackToAnalytics />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-stone-800">Users</h1>
         <span className="text-sm text-stone-500">{total} total</span>
@@ -303,12 +306,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3.5 text-stone-500">{user.city || <span className="text-stone-300">—</span>}</td>
                   <td className="px-4 py-3.5 text-stone-600">{user.email}</td>
                   <td className="px-4 py-3.5 text-stone-600">{user.phone || <span className="text-stone-300">—</span>}</td>
-                  <td className="px-4 py-3.5 text-stone-500 text-sm">
-                    <div>{new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                    <div className="text-xs text-stone-400 mt-0.5">
-                      {new Date(user.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </td>
+                  <td className={`px-4 py-3.5 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(user.created_at)}</td>
                   <td className="px-2 py-3.5">
                     <AdminRowActions actions={[
                       {

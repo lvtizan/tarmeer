@@ -168,7 +168,33 @@ run_rsync_to_remote() {
   if [[ "$AUTH_MODE" == "key" ]]; then
     rsync "${RSYNC_FLAGS[@]}" -e "ssh -i $SELECTED_SSH_KEY -o StrictHostKeyChecking=accept-new" "$local_path" "${SERVER_USER}@${SERVER_HOST}:${remote_path}"
   else
-    /usr/bin/expect -c "set timeout 1200; spawn rsync -az --delete --checksum --itemize-changes --stats --human-readable --exclude=.DS_Store -e \"ssh -o StrictHostKeyChecking=no\" $local_path ${SERVER_USER}@${SERVER_HOST}:${remote_path}; expect \"password:\"; send \"$DEPLOY_SSH_PASSWORD\r\"; expect eof"
+    /usr/bin/expect << EXPECT_EOF
+set timeout 1200
+spawn rsync -az --delete --checksum --itemize-changes --stats --human-readable --exclude=.DS_Store -e {ssh -o StrictHostKeyChecking=no} $local_path ${SERVER_USER}@${SERVER_HOST}:${remote_path}
+expect "password:"
+send "${DEPLOY_SSH_PASSWORD}\r"
+expect eof
+lassign [wait] pid spawnid os_error_flag value
+exit \$value
+EXPECT_EOF
+  fi
+}
+
+run_scp_to_remote() {
+  local local_file="$1"
+  local remote_path="$2"
+  if [[ "$AUTH_MODE" == "key" ]]; then
+    scp -i "$SELECTED_SSH_KEY" -o StrictHostKeyChecking=accept-new "$local_file" "${SERVER_USER}@${SERVER_HOST}:${remote_path}"
+  else
+    /usr/bin/expect << EXPECT_EOF
+set timeout 120
+spawn scp -o StrictHostKeyChecking=no $local_file ${SERVER_USER}@${SERVER_HOST}:${remote_path}
+expect "password:"
+send "${DEPLOY_SSH_PASSWORD}\r"
+expect eof
+lassign [wait] pid spawnid os_error_flag value
+exit \$value
+EXPECT_EOF
   fi
 }
 
@@ -222,6 +248,19 @@ fi
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "当前分支: ${CURRENT_BRANCH}"
 git fetch origin "${CURRENT_BRANCH}"
+git fetch origin main 2>/dev/null || true
+
+# ── 防覆盖检查：main 有未合并的 commit 时必须先 merge ──────────────────────────
+MAIN_BEHIND=$(git rev-list --count "HEAD..origin/main" 2>/dev/null || echo 0)
+if [[ "${MAIN_BEHIND}" -gt 0 ]]; then
+  echo ""
+  echo "❌ 部署已阻止：origin/main 有 ${MAIN_BEHIND} 个 commit 不在当前分支"
+  git log --oneline "HEAD..origin/main" | head -10
+  echo ""
+  echo "请先执行：git merge origin/main"
+  echo "解决冲突后再重新部署，否则会覆盖其他人的工作"
+  exit 1
+fi
 
 LOCAL_SHA=$(git rev-parse HEAD)
 REMOTE_SHA=$(git rev-parse "origin/${CURRENT_BRANCH}")
@@ -242,21 +281,13 @@ if [[ "${LOCAL_SHA}" != "${REMOTE_SHA}" ]]; then
     echo "⏭️  ALLOW_UNPUSHED_DEPLOY=YES，跳过未推送检查"
   fi
 fi
-echo "✓ 代码已是最新"
+echo "✓ 代码已是最新，main 已合并"
 echo ""
 
-# 0. Bump patch version (patch 0-9 → carry to minor; minor 0-49 → carry to major)
+# 0. Bump patch version (+0.0.1，单一来源：package.json)
 CURRENT_VER=$(node -p "require('./package.json').version")
 IFS='.' read -r V_MAJOR V_MINOR V_PATCH <<< "$CURRENT_VER"
 V_PATCH=$((V_PATCH + 1))
-if [ "$V_PATCH" -ge 10 ]; then
-  V_PATCH=0
-  V_MINOR=$((V_MINOR + 1))
-fi
-if [ "$V_MINOR" -ge 50 ]; then
-  V_MINOR=0
-  V_MAJOR=$((V_MAJOR + 1))
-fi
 NEW_VER="${V_MAJOR}.${V_MINOR}.${V_PATCH}"
 echo "🔖 版本号：${CURRENT_VER} → ${NEW_VER}"
 npm version "$NEW_VER" --no-git-tag-version --allow-same-version
@@ -288,7 +319,7 @@ run_rsync_to_remote "dist/" "${DEPLOY_PATH}/"
 
 # index.html 强制覆盖（rsync --checksum 在文件大小相同时可能跳过，导致旧版本残留）
 echo "🔄 强制覆盖 index.html..."
-scp -i "${SELECTED_SSH_KEY:-$HOME/.ssh/id_rsa}" -o StrictHostKeyChecking=accept-new "dist/index.html" "${SERVER_USER}@${SERVER_HOST}:${DEPLOY_PATH}/index.html"
+run_scp_to_remote "dist/index.html" "${DEPLOY_PATH}/index.html"
 # 3. 统一权限（默认禁止任何 Nginx 操作）
 echo "🔐 步骤 3/3: 统一权限..."
 if [[ "${ALLOW_NGINX_ACTIONS:-NO}" == "YES" ]]; then

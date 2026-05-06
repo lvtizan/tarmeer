@@ -68,6 +68,7 @@ const BlogDetailPage = lazyRetry(() => import('./pages/BlogDetailPage'));
 const ForCompaniesPage = lazyRetry(() => import('./pages/ForCompaniesPage'));
 const ForHomeownersPage = lazyRetry(() => import('./pages/ForHomeownersPage'));
 const StartGuidePage = lazyRetry(() => import('./pages/StartGuidePage'));
+const SupplierStartGuidePage = lazyRetry(() => import('./pages/SupplierStartGuidePage'));
 const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage'));
 
 // Onboarding
@@ -96,7 +97,9 @@ const AdminInstallPage = lazyRetry(() => import('./pages/admin/AdminInstallPage'
 const AdminDesignersPage = lazyRetry(() => import('./pages/admin/AdminDesignersPage'));
 const AdminAdminsPage = lazyRetry(() => import('./pages/admin/AdminAdminsPage'));
 const AdminDesignerDetailPage = lazyRetry(() => import('./pages/admin/AdminDesignerDetailPage'));
-const AdminAnalyticsPage = lazyRetry(() => import('./pages/admin/AdminAnalyticsPage'));
+const AdminAnalyticsPage = lazyRetry(() => import('./pages/admin/AdminAnalyticsNextPage'));
+const AdminVisitorsPage = lazyRetry(() => import('./pages/admin/AdminVisitorsPage'));
+const AdminSignedCompaniesPage = lazyRetry(() => import('./pages/admin/AdminSignedCompaniesPage'));
 const AdminUsersPage = lazyRetry(() => import('./pages/admin/AdminUsersPage'));
 const AdminUserDetailPage = lazyRetry(() => import('./pages/admin/AdminUserDetailPage'));
 const AdminCompaniesPage = lazyRetry(() => import('./pages/admin/AdminCompaniesPage'));
@@ -192,6 +195,15 @@ function AtSlugOrNotFound() {
   if (m) return <CompanyDetailPage />;
   return <NotFoundPage />;
 }
+
+// Old /designers/:slug links (e.g. from third-party backlinks) preserve slug
+// when redirecting to canonical /companies/:slug. Server should also send a
+// 301 for SEO; client redirect just covers in-page navigation.
+function DesignerSlugRedirect() {
+  const location = useLocation();
+  const m = location.pathname.match(/^\/designers\/([^/?#]+)$/);
+  return <Navigate to={m ? `/companies/${m[1]}` : '/companies'} replace />;
+}
 function App() {
   useMetaPixelPageView();
   return (
@@ -205,6 +217,8 @@ function App() {
           {/* ====== Admin ====== */}
           <Route path="/admin" element={<AdminProvider><AdminLayout /></AdminProvider>}>
             <Route index element={<AdminAnalyticsPage />} />
+            <Route path="visitors" element={<AdminVisitorsPage />} />
+            <Route path="signed-companies" element={<AdminSignedCompaniesPage />} />
             <Route path="designers" element={<AdminDesignersPage />} />
             <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
             <Route path="activity-log" element={<AdminActivityLogPage />} />
@@ -264,10 +278,12 @@ function App() {
           <Route path="/designer/*" element={<Navigate to="/company" replace />} />
           <Route path="/designers" element={<Navigate to="/companies" replace />} />
           <Route path="/designers/apply" element={<Navigate to="/onboarding" replace />} />
-          <Route path="/designers/:slug" element={<Navigate to="/companies" replace />} />
+          {/* Preserve slug when redirecting old /designers/:slug → /companies/:slug (was losing slug) */}
+          <Route path="/designers/:slug" element={<DesignerSlugRedirect />} />
 
           {/* ====== Independent landing pages ====== */}
           <Route path="/start" element={<StartGuidePage />} />
+          <Route path="/start-suppliers" element={<SupplierStartGuidePage />} />
           <Route path="/for-companies" element={<ForCompaniesPage />} />
           <Route path="/for-homeowners" element={<ForHomeownersPage />} />
           <Route path="/start" element={<StartGuidePage />} />

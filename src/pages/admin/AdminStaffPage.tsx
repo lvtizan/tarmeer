@@ -5,6 +5,7 @@ import { showToast } from '../../components/ui/Toast';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { UserCheck, Plus, X } from 'lucide-react';
 import PasswordInput from '../../components/admin/PasswordInput';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 interface StaffMember {
   id: number;
@@ -69,8 +70,7 @@ export default function AdminStaffPage() {
     setSubmitting(false);
   };
 
-  const formatDate = (s: string) =>
-    new Date(s).toLocaleDateString('en-AE', { day: '2-digit', month: 'short', year: 'numeric' });
+  const formatDate = (s: string) => formatAdminDateTime(s);
 
   return (
     <div>
@@ -169,7 +169,7 @@ export default function AdminStaffPage() {
                 <tr key={s.id} className="border-b border-stone-50 hover:bg-stone-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-[#2c2c2c]">{s.full_name}</td>
                   <td className="px-4 py-3 text-stone-500">{s.email}</td>
-                  <td className="px-4 py-3 text-stone-500">{formatDate(s.created_at)}</td>
+                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(s.created_at)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       s.is_active

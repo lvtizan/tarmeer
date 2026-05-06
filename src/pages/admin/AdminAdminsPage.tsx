@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAdminT } from '../../hooks/useAdminLang';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 interface Admin {
   id: number;
@@ -149,7 +150,7 @@ export default function AdminAdminsPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return t('Never', '从未');
-    return new Date(dateStr).toLocaleString();
+    return formatAdminDateTime(dateStr);
   };
 
   if (isLoading) {
@@ -238,7 +239,7 @@ export default function AdminAdminsPage() {
                     {admin.is_active ? t('Active', '活跃') : t('Inactive', '已停用')}
                   </span>
                 </td>
-                <td className="py-4 px-4 text-sm text-stone-500">
+                <td className={`py-4 px-4 ${ADMIN_TIME_CLS}`}>
                   {formatDate(admin.last_login)}
                 </td>
                 <td className="py-4 px-4 text-right">

@@ -1,5 +1,6 @@
 import pool from '../config/database';
 import * as XLSX from 'xlsx';
+import { analyticsEvents } from '../lib/analyticsEvents';
 import { notifyNewInquiry } from '../services/notificationService';
 import { pushLeadToCRM, type LeadPayload } from '../lib/crmPush';
 import { logActivity, getClientIp } from '../lib/activityLogger';
@@ -54,6 +55,9 @@ export async function submitInquiry(req: any, res: any) {
     );
 
     const inquiryId = (result as any).insertId;
+
+    // Push to admin SSE subscribers (real-time map animation)
+    analyticsEvents.notifyChange('inquiry');
 
     setImmediate(() => {
       logActivity({

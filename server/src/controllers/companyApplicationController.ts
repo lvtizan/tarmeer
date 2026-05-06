@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { analyticsEvents } from '../lib/analyticsEvents';
 
 // Submit company application
 export async function applyAsCompany(req: any, res: any) {
@@ -32,6 +33,9 @@ export async function applyAsCompany(req: any, res: any) {
     );
 
     const applicationId = (result as any).insertId;
+
+    // Push to admin SSE subscribers
+    analyticsEvents.notifyChange('company_application');
 
     res.status(201).json({
       message: 'Company application submitted successfully. It will be reviewed by our team.',

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../config/database';
 import { adminLoginRateLimit } from '../middleware/antiScraping';
+import { analyticsEvents } from '../lib/analyticsEvents';
 import {
   checkInstallation,
   install,
@@ -52,6 +53,7 @@ import {
   editScrapedCompany,
   getCompanyProfile,
   editCompanyProfile,
+  setCompanyCoverImage,
   getCompanyFullDetail,
   getCompanyProfileFullDetail,
   updateCompanyDisplayOrder,
@@ -65,12 +67,13 @@ import {
   restoreAdminProject,
   toggleCompanyProfileSigned,
   toggleDirectorySigned,
+  listSignedCompanies,
   getWeightConfigList,
   updateWeightConfig,
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
-import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct } from '../controllers/supplierAdminController';
+import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminReplaceProductImage } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -82,6 +85,7 @@ import { generateTemplate, parseTemplate, importCompany } from '../services/comp
 import multer from 'multer';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const uploadLargePdf = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 import {
   authenticateAdmin,
   requireAdmin,
@@ -103,6 +107,36 @@ router.post('/install', install);
 router.post('/login', adminLoginRateLimit, login);
 router.post('/forgot-password', adminLoginRateLimit, forgotPassword);
 router.post('/reset-password', adminLoginRateLimit, resetPassword);
+
+// ============ SSE: registration events (token via ?token= because EventSource can't set headers) ============
+const sseAuthAdapter: import('express').RequestHandler = (req, _res, next) => {
+  if (!req.headers.authorization && typeof req.query.token === 'string') {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  next();
+};
+router.get('/stats/registration-events',
+  sseAuthAdapter, authenticateAdmin, requireAdmin, requirePermission('can_view_stats'),
+  (req, res) => {
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',  // disable nginx proxy buffering
+    });
+    res.flushHeaders?.();
+    res.write(': hi\n\n');                   // initial flush
+    const heartbeat = setInterval(() => { try { res.write(': hb\n\n'); } catch {} }, 25000);
+    const onChange = (payload: any) => {
+      try { res.write(`event: change\ndata: ${JSON.stringify(payload)}\n\n`); } catch {}
+    };
+    analyticsEvents.on('change', onChange);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      analyticsEvents.off('change', onChange);
+    });
+  }
+);
 
 
 // ============ Protected routes (require admin auth) ============
@@ -207,6 +241,7 @@ router.post('/roles/companies/:id/restore', requirePermission('can_approve'), ro
 router.get('/roles/companies/:id/detail', getCompanyProfile);
 router.get('/roles/companies/:id/full-detail', getCompanyProfileFullDetail);
 router.put('/roles/companies/:id/edit', editCompanyProfile);
+router.put('/roles/companies/:id/cover-image', setCompanyCoverImage);
 
 // Company project CRUD (admin)
 router.get('/roles/companies/:companyId/projects/:projectId', getAdminProject);
@@ -218,6 +253,7 @@ router.put('/roles/companies/:companyId/projects/:projectId/restore', restoreAdm
 // Weight system: toggle signed status
 router.put('/roles/companies/:id/toggle-signed', toggleCompanyProfileSigned);
 router.put('/companies/:companyId/toggle-signed', toggleDirectorySigned);
+router.get('/signed-companies', listSignedCompanies);
 
 // Weight config management
 router.get('/weight-config', requireSuperAdmin, getWeightConfigList);
@@ -329,6 +365,8 @@ router.put('/suppliers/:id', updateSupplier);
 router.delete('/suppliers/:id', requirePermission('can_approve'), deleteSupplier);
 router.post('/suppliers/:id/products', adminAddProduct);
 router.delete('/suppliers/:id/products/:productId', adminDeleteProduct);
+router.put('/suppliers/catalogs/:id/file', requirePermission('can_approve'), uploadLargePdf.single('file'), adminReplaceCatalogFile);
+router.put('/suppliers/:id/products/:productId/image', upload.single('file'), adminReplaceProductImage);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);

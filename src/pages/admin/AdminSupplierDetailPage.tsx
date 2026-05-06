@@ -4,9 +4,10 @@ import { adminApi } from '../../lib/adminApi';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { showToast } from '../../components/ui/Toast';
 import SmartImage from '../../components/ui/SmartImage';
+import { useRef } from 'react';
 import {
   ArrowLeft, Trash2, ExternalLink, Pencil,
-  Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon, Plus, X,
+  Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon, Plus, X, Upload,
 } from 'lucide-react';
 
 // ── InfoRow (same pattern as AdminRegisteredCompanyDetailPage) ───────────────
@@ -44,6 +45,26 @@ export default function AdminSupplierDetailPage() {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ image_url: '', title: '', category: '' });
   const [addingProduct, setAddingProduct] = useState(false);
+  const [replacingId, setReplacingId] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceTargetRef = useRef<number | null>(null);
+
+  const handleReplaceImage = async (file: File, productId: number) => {
+    if (!supplier) return;
+    setReplacingId(productId);
+    try {
+      const result = await adminApi.replaceSupplierProductImage(supplier.id, productId, file);
+      // 加 ?t=… 强刷绕过浏览器缓存（同 url 替换 image 时浏览器看 cache hit）
+      const bust = `${result.image_url}?t=${Date.now()}`;
+      setProducts((prev) => prev.map((p) => p.id === productId ? { ...p, image_url: bust } : p));
+      showToast(t('Image replaced', '图片已更换'), 'success');
+    } catch (err: any) {
+      showToast(err?.message || t('Replace failed', '替换失败'), 'error');
+    } finally {
+      setReplacingId(null);
+      replaceTargetRef.current = null;
+    }
+  };
   useEffect(() => {
     if (!id) return;
     adminApi.request(`/suppliers/${id}`)
@@ -155,6 +176,20 @@ export default function AdminSupplierDetailPage() {
 
   return (
     <div className="space-y-4">
+
+      {/* Hidden file input — 给"更换图片"按钮共用，targetId 在 ref 里 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          const targetId = replaceTargetRef.current;
+          e.target.value = '';
+          if (file && targetId) handleReplaceImage(file, targetId);
+        }}
+      />
 
       {/* Back */}
       <button
@@ -473,6 +508,21 @@ export default function AdminSupplierDetailPage() {
                           title={t('Delete', '删除')}
                         >
                           <X className="w-3 h-3" />
+                        </button>
+                        {/* Replace image — top left */}
+                        <button
+                          onClick={() => {
+                            replaceTargetRef.current = p.id;
+                            fileInputRef.current?.click();
+                          }}
+                          disabled={replacingId === p.id}
+                          className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/95 text-stone-700 text-[10px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white disabled:opacity-50"
+                          title={t('Replace image', '更换图片')}
+                        >
+                          {replacingId === p.id
+                            ? <span className="text-[10px]">…</span>
+                            : <Upload className="w-3 h-3" />}
+                          {t('Replace', '更换图片')}
                         </button>
                         {/* Set as cover — bottom bar */}
                         <button

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import CompanyEditModal from '../../components/admin/CompanyEditModal';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { resolveImageUrl } from '../../lib/imageUrl';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 import AdminSelect from '../../components/ui/AdminSelect';
 import { useAdminT } from '../../hooks/useAdminLang';
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
@@ -744,8 +745,8 @@ const HomeownersTab: React.FC<{
               <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                 {homeowner.assignedDesigner || '—'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                {new Date(homeowner.date).toLocaleDateString()}
+              <td className={`px-6 py-4 whitespace-nowrap ${ADMIN_TIME_CLS}`}>
+                {formatAdminDateTime(homeowner.date)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <button

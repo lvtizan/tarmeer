@@ -84,6 +84,7 @@ export interface AdminDesignerDetail {
 
 export interface VisitorOverview {
   totalVisits: number;
+  visitsLast30d: number;
   uniqueIpCount: number;
 }
 
@@ -703,6 +704,13 @@ class AdminApiClient {
     });
   }
 
+  async setCompanyCoverImage(id: number, url: string | null) {
+    return this.request(`/roles/companies/${id}/cover-image`, {
+      method: 'PUT',
+      body: JSON.stringify({ url }),
+    });
+  }
+
   async restoreCompanyProfile(id: number) {
     return this.request(`/roles/companies/${id}/restore`, {
       method: 'POST',
@@ -764,6 +772,35 @@ class AdminApiClient {
 
   async restoreAdminProject(companyId: string, projectId: string) {
     return this.request(`/roles/companies/${companyId}/projects/${projectId}/restore`, { method: 'PUT' });
+  }
+
+  async getSignedCompanies(): Promise<{
+    companies: Array<{
+      id: number; slug: string; company_name: string; company_type: string;
+      city: string | null; logo_url: string | null; weight_score: number;
+      created_at: string; source: 'profile' | 'scraped';
+    }>;
+    total: number;
+  }> {
+    return this.request('/signed-companies');
+  }
+
+  async replaceSupplierProductImage(supplierId: number | string, productId: number | string, file: File): Promise<{ id: number; image_url: string }> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    const url = `${API_BASE}/admin/suppliers/${supplierId}/products/${productId}/image`;
+    const token = this.getToken();
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: fd,
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); if (j?.error) msg = j.error; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
   }
 
   // Complaint management
@@ -842,7 +879,7 @@ class AdminApiClient {
     return `${base}/admin/activity-log/export?${qs.toString()}`;
   }
 
-  async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }>; company_cities?: Array<{ city: string; count: number }>; inquiry_cities?: Array<{ city: string; count: number }>; visitor_cities?: Array<{ city: string; count: number }>; company_type_cities?: Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }> }> {
+  async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }>; company_cities?: Array<{ city: string; count: number }>; inquiry_cities?: Array<{ city: string; count: number }>; visitor_cities?: Array<{ city: string; count: number }>; homeowner_cities?: Array<{ city: string; count: number }>; company_type_cities?: Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }> }> {
     return this.request('/stats/registration-sources');
   }
 

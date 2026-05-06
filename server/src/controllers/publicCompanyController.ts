@@ -91,6 +91,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         cp.home_display_order,
         cp.list_display_order,
         cp.is_signed,
+        cp.cover_image_url,
         (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count
       FROM company_profiles cp
       WHERE ${whereClause}
@@ -129,6 +130,13 @@ export async function listApprovedCompanies(req: any, res: any) {
         ? JSON.parse(company.services)
         : company.services;
 
+      // Admin-pinned cover overrides natural ordering — bring it to images[0] so
+      // any consumer that just takes the first image gets the chosen cover.
+      const rawImages = imageMap[company.id] || [];
+      const portfolio_images = company.cover_image_url
+        ? [company.cover_image_url, ...rawImages.filter((u) => u !== company.cover_image_url)]
+        : rawImages;
+
       return {
         id: company.id,
         slug: company.slug || '',
@@ -142,7 +150,8 @@ export async function listApprovedCompanies(req: any, res: any) {
         home_display_order: company.home_display_order || 0,
         list_display_order: company.list_display_order || 0,
         project_count: company.project_count || 0,
-        portfolio_images: imageMap[company.id] || [],
+        portfolio_images,
+        cover_image_url: company.cover_image_url || null,
         is_claimed: true,
         is_registered: true,
         is_signed: !!(company.is_signed),
@@ -209,6 +218,7 @@ export async function getCompanyDetail(req: any, res: any) {
       display_order: company.display_order,
       created_at: company.created_at,
       projects: projects,
+      cover_image_url: company.cover_image_url || null,
       is_claimed: true,
       is_registered: true,
       is_signed: !!(company.is_signed),

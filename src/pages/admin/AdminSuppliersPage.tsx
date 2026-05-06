@@ -8,6 +8,7 @@ import { Package, Trash2, Pencil, Check, X } from 'lucide-react';
 import AdminRowActions from '../../components/admin/AdminRowActions';
 import AdminSelect from '../../components/ui/AdminSelect';
 import DeleteReasonModal from '../../components/admin/DeleteReasonModal';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 interface Supplier {
   id: number;
@@ -200,8 +201,8 @@ export default function AdminSuppliersPage() {
                   <td className="px-4 py-3 text-[15px] text-stone-600">{s.product_count}</td>
 
                   {/* Joined date */}
-                  <td className="px-4 py-3 text-[15px] text-stone-500">
-                    {new Date(s.created_at).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>
+                    {formatAdminDateTime(s.created_at)}
                   </td>
 
                   {/* Actions */}

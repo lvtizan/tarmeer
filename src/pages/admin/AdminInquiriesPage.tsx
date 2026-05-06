@@ -5,6 +5,8 @@ import CopyButton from '../../components/ui/CopyButton';
 import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
+import BackToAnalytics from '../../components/admin/BackToAnalytics';
 
 /* ── Floating Tooltip (portal-free, renders outside table overflow) ── */
 function FloatingTip({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
@@ -229,6 +231,7 @@ export default function AdminInquiriesPage() {
 
   return (
     <div className="space-y-4">
+      <BackToAnalytics />
       {/* Row 1: Title */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-[#2c2c2c]">线索管理</h1>
@@ -364,7 +367,7 @@ export default function AdminInquiriesPage() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(inq.id)} onChange={() => toggleSelect(inq.id)} />
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-800">
+                    <td className="px-4 py-3 font-medium text-stone-800 whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         {inq.name || <span className="text-stone-400">—</span>}
                         {inq.name && <CopyButton text={inq.name} />}
@@ -374,26 +377,26 @@ export default function AdminInquiriesPage() {
                               <div className="font-semibold text-red-600 mb-1">删除理由</div>
                               <div>{inq.deleted_reason || '—（无记录）'}</div>
                               <div className="text-stone-400 mt-1 text-[11px]">
-                                删除时间：{new Date(inq.deleted_at).toLocaleString()}
+                                删除时间：{formatAdminDateTime(inq.deleted_at)}
                               </div>
                             </FloatingTip>
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-stone-600">
+                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap">
                       {inq.phone}
                       {(inq.dup_count || 0) > 1 && (
                         <span className="ml-1.5 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 text-stone-500">×{inq.dup_count}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-stone-600">{inq.city || <span className="text-stone-400">—</span>}</td>
+                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{inq.city || <span className="text-stone-400">—</span>}</td>
                     <td className="px-4 py-3 text-stone-600">{(() => {
                       const fromMessage = inq.message?.match(/Area[:：]?\s*([\d,]+)\s*m²/i);
                       if (fromMessage) return `${fromMessage[1]}m²`;
                       return inq.area_range?.replace(/\+$/, '') || '—';
                     })()}</td>
-                    <td className="px-4 py-3 text-xs">
+                    <td className="px-4 py-3 text-xs max-w-[180px]">
                       {inq.source_company_name ? (
                         <a
                           href={inq.source_company_slug
@@ -402,7 +405,8 @@ export default function AdminInquiriesPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="text-[#b8864a] font-medium hover:underline"
+                          className="text-[#b8864a] font-medium hover:underline block truncate"
+                          title={inq.source_company_name}
                         >{inq.source_company_name}</a>
                       ) : (
                         <span className="text-stone-400">Homepage</span>
@@ -473,8 +477,8 @@ export default function AdminInquiriesPage() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-stone-500 text-xs whitespace-nowrap">
-                      {new Date(inq.created_at).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
+                    <td className={`px-4 py-3 whitespace-nowrap ${ADMIN_TIME_CLS}`}>
+                      {formatAdminDateTime(inq.created_at)}
                     </td>
                   </tr>
                 </>

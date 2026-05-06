@@ -166,7 +166,7 @@ export default function AdminEnumsPage() {
   return (
     <>
       <Helmet><title>{t('Enum Management', '枚举管理')} — Tarmeer Admin</title></Helmet>
-      <div className="p-6 max-w-4xl">
+      <div className="p-6 max-w-4xl mx-auto">
         <h1 className="text-xl font-bold text-[#2c2c2c] mb-1">{t('Company Type & Service Management', '公司类型 & 服务管理')}</h1>
         <p className="text-sm text-stone-500 mb-6">{t('Manage the types and services available when companies register.', '管理公司注册时可选的类型和服务分类。')}</p>
 

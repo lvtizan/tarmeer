@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { adminApi } from '../../lib/adminApi';
+import { formatAdminDateTime } from '../../lib/formatTime';
 import {
   PieChart,
   Pie,
@@ -127,9 +128,7 @@ function getRoleBadge(role: string | null) {
 }
 
 function formatTime(dateStr: string): string {
-  const d = new Date(dateStr);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return formatAdminDateTime(dateStr);
 }
 
 function extractDate(dateStr: string): string {
@@ -178,7 +177,7 @@ function AggregatedEntry({ group }: { group: AggregatedGroup }) {
           <span className="font-medium text-[#2c2c2c] truncate">{group.user_name || '未知用户'}</span>
           {getRoleBadge(group.user_role)}
         </div>
-        <span className="text-xs text-[#6b6b6b] ml-4 whitespace-nowrap">{formatTime(group.latest.created_at)}</span>
+        <span className="text-[15px] tabular-nums text-stone-500 ml-4 whitespace-nowrap">{formatTime(group.latest.created_at)}</span>
       </div>
 
       {/* Second row */}

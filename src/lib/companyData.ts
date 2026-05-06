@@ -5,6 +5,16 @@ export interface PortfolioItem {
 
 export type PortfolioCategories = Record<string, PortfolioItem[]>;
 
+/** Per-project card shown in CompanyProjectsSection. Shared by all detail-page entry paths. */
+export interface CompanyProjectCard {
+  title: string;
+  slug: string;
+  description: string;
+  style: string;
+  location: string;
+  images: string[];
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -33,7 +43,7 @@ export interface Company {
   /** computed weight score for sorting */
   weightScore?: number;
   /** Project list for project cards (claimed companies only) */
-  projects?: Array<{ title: string; slug: string; description: string; style: string; location: string; images: string[] }>;
+  projects?: CompanyProjectCard[];
   /** Company type (design_studio, renovation_company, etc.) */
   companyType?: string;
 }

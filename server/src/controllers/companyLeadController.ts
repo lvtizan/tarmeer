@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { analyticsEvents } from '../lib/analyticsEvents';
 import { pushCompanyLeadToCRM } from '../lib/crmPush';
 
 export async function submitCompanyLead(req: any, res: any) {
@@ -33,6 +34,9 @@ export async function submitCompanyLead(req: any, res: any) {
 
     const leadId = (result as any).insertId;
 
+    // Push to admin SSE subscribers — both company_lead and the mirrored inquiry
+    analyticsEvents.notifyChange('company_lead');
+
     // Mirror into design_inquiries so it appears in the admin Company inquiries tab
     const inquiryMessage = [
       `[Company Inquiry]`,
@@ -45,7 +49,7 @@ export async function submitCompanyLead(req: any, res: any) {
       `INSERT INTO design_inquiries (name, phone, city, area_range, message, source_company_name, crm_sync_status)
        VALUES (?, ?, ?, ?, ?, ?, 'synced')`,
       [contactName, phone, city || null, companyType || 'company-lead', inquiryMessage, companyName]
-    ).catch(() => {});
+    ).then(() => analyticsEvents.notifyChange('inquiry')).catch(() => {});
 
     // Fire-and-forget CRM push (company tenant)
     // notes field carries company_type so CRM sales team sees it
@@ -76,6 +80,42 @@ export async function submitCompanyLead(req: any, res: any) {
   } catch (error) {
     console.error('Submit company lead error:', error);
     res.status(500).json({ error: 'Submission failed. Please try again.' });
+  }
+}
+
+export async function checkCompanyPhone(req: any, res: any) {
+  try {
+    const phone = req.query.phone as string;
+    if (!phone) return res.json({ exists: false });
+
+    const [[userRows], [profileRows]] = await Promise.all([
+      pool.execute(
+        `SELECT id,
+                (SELECT COUNT(*) FROM company_profiles cp WHERE cp.user_id = users.id LIMIT 1) AS has_company
+         FROM users WHERE phone = ? AND deleted_at IS NULL LIMIT 1`,
+        [phone]
+      ),
+      pool.execute(
+        'SELECT id FROM company_leads WHERE phone = ? LIMIT 1',
+        [phone]
+      ),
+    ]) as any;
+
+    const user = (userRows as any[])[0];
+    const lead = (profileRows as any[])[0];
+
+    if (user || lead) {
+      return res.json({
+        exists: true,
+        hasAccount: !!user,
+        hasCompanyProfile: user ? user.has_company > 0 : false,
+      });
+    }
+
+    res.json({ exists: false });
+  } catch (error) {
+    console.error('checkCompanyPhone error:', error);
+    res.json({ exists: false });
   }
 }
 

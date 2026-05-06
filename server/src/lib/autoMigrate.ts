@@ -352,6 +352,10 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // Company onboarding wizard step tracker
   { table: 'company_profiles', column: 'onboarding_step', type: 'TINYINT DEFAULT 0' },
 
+  // Admin-pinned cover image (URL of a portfolio photo to use as company list/detail cover).
+  // NULL = fallback to portfolio_images[0].
+  { table: 'company_profiles', column: 'cover_image_url', type: 'VARCHAR(1024) NULL' },
+
   // Supplier display order (lower = earlier in public listing)
   { table: 'supplier_profiles', column: 'sort_order', type: 'INT NOT NULL DEFAULT 0' },
 

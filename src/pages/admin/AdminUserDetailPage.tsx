@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import { adminApi } from '../../lib/adminApi';
+import { formatAdminDateTime } from '../../lib/formatTime';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAdminT } from '../../hooks/useAdminLang';
 
@@ -285,8 +286,8 @@ export default function AdminUserDetailPage() {
               <div key={app.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg text-sm">
                 <div>
                   <span className="font-medium text-stone-800">{app.company_name}</span>
-                  <span className="text-stone-400 ml-2 text-xs">
-                    {new Date(app.created_at).toLocaleDateString()}
+                  <span className="text-stone-500 ml-2 text-[15px] tabular-nums">
+                    {formatAdminDateTime(app.created_at)}
                   </span>
                 </div>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${

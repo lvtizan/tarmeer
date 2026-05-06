@@ -4,6 +4,7 @@ import { adminApi } from '../../lib/adminApi';
 import { TableSpinner } from '../../components/ui/Spinner';
 import AdminSelect from '../../components/ui/AdminSelect';
 import { useAdminT } from '../../hooks/useAdminLang';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 type StatusFilter = 'all' | 'new' | 'processing' | 'resolved' | 'rejected';
 
@@ -187,8 +188,8 @@ export default function AdminComplaintsPage() {
                         {c.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-stone-500 text-xs">
-                      {new Date(c.created_at).toLocaleDateString()}
+                    <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>
+                      {formatAdminDateTime(c.created_at)}
                     </td>
                   </tr>
                   {expandedId === c.id && (

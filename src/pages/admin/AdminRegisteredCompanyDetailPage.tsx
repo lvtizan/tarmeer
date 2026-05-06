@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { ExternalLink, Pencil, Trash2, Star, Check } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -25,6 +25,7 @@ interface CompanyProfile {
   trade_license_number: string | null;
   establishment_year: number | null;
   logo_url: string | null;
+  cover_image_url: string | null;
   admin_notes: string | null;
   reviewed_at: string | null;
   created_at: string;
@@ -62,8 +63,11 @@ export default function AdminRegisteredCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useAdminT();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { hasPermission } = useAdmin();
+  // 来源页：优先 history.state（从列表点进来时塞的），否则按 backTab 回 /admin/companies
+  const fromState = (location.state || {}) as { from?: string; fromLabel?: string };
   const canApprove = hasPermission('can_approve');
 
   const [company, setCompany] = useState<CompanyProfile | null>(null);
@@ -139,6 +143,20 @@ export default function AdminRegisteredCompanyDetailPage() {
     }
   };
 
+  const handleSetCover = async (url: string) => {
+    if (!company) return;
+    const prev = company.cover_image_url;
+    const next = prev === url ? null : url;
+    setCompany({ ...company, cover_image_url: next });
+    try {
+      await adminApi.setCompanyCoverImage(company.id, next);
+      showToast(next ? t('Cover updated', '封面已设置') : t('Cover cleared', '封面已清除'), 'success');
+    } catch (err: any) {
+      setCompany({ ...company, cover_image_url: prev });
+      showToast(err?.message || t('Failed to update cover', '封面设置失败'), 'error');
+    }
+  };
+
   const openProjectRejectModal = async (projectId: number) => {
     setRejectingProjectId(projectId);
     setProjectRejectReason('');
@@ -206,13 +224,13 @@ export default function AdminRegisteredCompanyDetailPage() {
 
   return (
     <div className="w-full space-y-4">
-      {/* Back button */}
+      {/* Back button — 优先用从哪来的 from（如已签约列表），其次回 /admin/companies?tab=... */}
       <button
-        onClick={() => navigate(`/admin/companies?tab=${backTab}`)}
+        onClick={() => navigate(fromState.from || `/admin/companies?tab=${backTab}`)}
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        {t('Back to Companies', '返回公司列表')}
+        {fromState.fromLabel ? `返回${fromState.fromLabel}` : t('Back to Companies', '返回公司列表')}
       </button>
 
       {actionError && (
@@ -331,7 +349,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                     className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}
                   >
-                    <div className="aspect-video bg-stone-100 overflow-hidden">
+                    <div className="aspect-video bg-stone-100 overflow-hidden relative">
                       {project.images[0] ? (
                         <SmartImage
                           src={project.images[0]}
@@ -343,6 +361,24 @@ export default function AdminRegisteredCompanyDetailPage() {
                           <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
                         </div>
                       )}
+                      {project.images[0] && (() => {
+                        const isCover = company.cover_image_url === project.images[0];
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
+                            className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md transition ${
+                              isCover
+                                ? 'bg-[#b8864a] text-white opacity-100'
+                                : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
+                            }`}
+                            title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
+                          >
+                            {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                            {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
+                          </button>
+                        );
+                      })()}
                     </div>
                     <div className="p-3 space-y-1">
                       <h3 className="text-xs font-medium text-stone-800 leading-snug line-clamp-1">{project.title}</h3>
@@ -611,7 +647,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                       className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}
                     >
-                      <div className="aspect-video bg-stone-100 overflow-hidden">
+                      <div className="aspect-video bg-stone-100 overflow-hidden relative">
                         {project.images[0] ? (
                           <SmartImage
                             src={project.images[0]}
@@ -623,6 +659,24 @@ export default function AdminRegisteredCompanyDetailPage() {
                             <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
                           </div>
                         )}
+                        {project.images[0] && (() => {
+                          const isCover = company.cover_image_url === project.images[0];
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
+                              className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium shadow-md transition ${
+                                isCover
+                                  ? 'bg-[#b8864a] text-white opacity-100'
+                                  : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
+                              }`}
+                              title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
+                            >
+                              {isCover ? <Check className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
+                              {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
+                            </button>
+                          );
+                        })()}
                       </div>
                       <div className="p-3 space-y-1.5">
                         <div className="flex items-start justify-between gap-2">

@@ -4,6 +4,7 @@ import SmartImage from '../ui/SmartImage';
 import { TableSpinner } from '../ui/Spinner';
 import { Trash2 } from 'lucide-react';
 import CopyButton from '../ui/CopyButton';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
 
 interface CompanyProfileRecord {
   id: number;
@@ -255,9 +256,9 @@ export default function AdminCompaniesTableTab({
                     <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-transform ${c.is_signed ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
                   </button>
                 </td>
-                <td className="px-4 py-3 text-stone-600 text-xs font-mono">{c.weight_score ?? '—'}</td>
-                <td className="px-4 py-3 text-stone-500 text-xs">{new Date(c.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-stone-500 text-xs">{c.updated_at ? new Date(c.updated_at).toLocaleDateString() : '—'}</td>
+                <td className="px-4 py-3 text-stone-600 text-[15px] tabular-nums font-mono">{c.weight_score ?? '—'}</td>
+                <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(c.created_at)}</td>
+                <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(c.updated_at)}</td>
               </tr>
             ))}
           </tbody>
