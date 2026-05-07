@@ -1,6 +1,8 @@
 import pool from '../config/database';
 import fs from 'fs/promises';
+import { createWriteStream } from 'fs';
 import path from 'path';
+import os from 'os';
 import { randomUUID } from 'crypto';
 
 async function getProfileId(supplierUserId: number): Promise<number | null> {
@@ -37,6 +39,52 @@ export async function uploadCatalogFile(req: any, res: any) {
   } catch (error) {
     console.error('Upload catalog file error:', error);
     res.status(500).json({ error: 'Failed to upload file.' });
+  }
+}
+
+export async function uploadCatalogChunk(req: any, res: any) {
+  try {
+    const userId = req.supplierUser.id;
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No chunk data.' });
+
+    const { upload_id, chunk_index, total_chunks, original_name } = req.body;
+    if (!upload_id || chunk_index === undefined || !total_chunks) {
+      return res.status(400).json({ error: 'Missing chunk metadata.' });
+    }
+
+    const chunkDir = path.join(os.tmpdir(), 'tarmeer-chunks', upload_id);
+    await fs.mkdir(chunkDir, { recursive: true });
+    await fs.writeFile(path.join(chunkDir, `chunk_${chunk_index}`), file.buffer);
+
+    const idx = parseInt(chunk_index, 10);
+    const total = parseInt(total_chunks, 10);
+
+    if (idx < total - 1) {
+      return res.json({ done: false });
+    }
+
+    // Last chunk received — assemble
+    const ext = original_name ? path.extname(original_name).replace('.', '') || 'bin' : 'bin';
+    const fileName = `${userId}-${randomUUID()}.${ext}`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'suppliers', 'catalogs');
+    await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
+    const finalPath = path.join(uploadDir, fileName);
+
+    const ws = createWriteStream(finalPath);
+    for (let i = 0; i < total; i++) {
+      const buf = await fs.readFile(path.join(chunkDir, `chunk_${i}`));
+      await new Promise<void>((resolve, reject) => { ws.write(buf, err => err ? reject(err) : resolve()); });
+    }
+    await new Promise<void>(resolve => ws.end(resolve));
+    await fs.chmod(finalPath, 0o644);
+    await fs.rm(chunkDir, { recursive: true, force: true });
+
+    const baseName = original_name ? path.basename(original_name, path.extname(original_name)) : '';
+    res.json({ done: true, url: `/uploads/suppliers/catalogs/${fileName}`, original_name: baseName });
+  } catch (error) {
+    console.error('Upload catalog chunk error:', error);
+    res.status(500).json({ error: 'Failed to process chunk.' });
   }
 }
 

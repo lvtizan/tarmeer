@@ -2,17 +2,38 @@ import { useState, useRef, useEffect } from 'react';
 import { Paperclip, X, FileText } from 'lucide-react';
 
 interface ImageUploadZoneProps {
-  value: string[];            // list of uploaded URLs
+  value: string[];
   onUpload: (urls: string[]) => void;
   uploadUrl: string;
   getHeaders: () => Record<string, string>;
   label?: string;
   sublabel?: string;
-  accept?: string;            // defaults to 'image/*'
-  onFileMeta?: (meta: { original_name: string }) => void; // called with server response metadata
+  accept?: string;
+  onFileMeta?: (meta: { original_name: string }) => void;
+  chunkUploadUrl?: string; // if set, files > 4MB are uploaded in 2MB chunks
 }
 
 function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
+
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB per chunk
+
+function xhrPost(url: string, headers: Record<string, string>, formData: FormData, onProgress?: (p: number) => void): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
+    if (onProgress) xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100)); };
+    xhr.onload = () => {
+      try {
+        const res = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300) resolve(res);
+        else reject(new Error(res.error || 'Upload failed'));
+      } catch { reject(new Error('Server error')); }
+    };
+    xhr.onerror = () => reject(new Error('Upload failed'));
+    xhr.send(formData);
+  });
+}
 
 export default function ImageUploadZone({
   value,
@@ -23,6 +44,7 @@ export default function ImageUploadZone({
   sublabel = 'JPG · PNG · WebP',
   accept = 'image/*',
   onFileMeta,
+  chunkUploadUrl,
 }: ImageUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -41,27 +63,30 @@ export default function ImageUploadZone({
     setProgress(0);
     setErr('');
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('original_name', file.name);
-      const data = await new Promise<any>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', uploadUrl);
-        const headers = getHeaders();
-        Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
-        xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)); };
-        xhr.onload = () => {
-          try {
-            const res = JSON.parse(xhr.responseText);
-            if (xhr.status >= 200 && xhr.status < 300) resolve(res);
-            else reject(new Error(res.error || 'Upload failed'));
-          } catch {
-            reject(new Error('Server error'));
-          }
-        };
-        xhr.onerror = () => reject(new Error('Upload failed'));
-        xhr.send(formData);
-      });
+      let data: any;
+      if (chunkUploadUrl && file.size > 4 * 1024 * 1024) {
+        // Chunked upload for large files
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        const uploadId = Array.from(crypto.getRandomValues(new Uint8Array(8)))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+          const fd = new FormData();
+          fd.append('file', chunk, file.name);
+          fd.append('upload_id', uploadId);
+          fd.append('chunk_index', String(i));
+          fd.append('total_chunks', String(totalChunks));
+          fd.append('original_name', file.name);
+          data = await xhrPost(chunkUploadUrl, getHeaders(), fd);
+          setProgress(Math.round((i + 1) / totalChunks * 100));
+        }
+      } else {
+        // Single upload
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('original_name', file.name);
+        data = await xhrPost(uploadUrl, getHeaders(), fd, setProgress);
+      }
       onUpload([...value, data.url]);
       if (onFileMeta && data.original_name) onFileMeta({ original_name: data.original_name });
     } catch (e: any) {

@@ -100,6 +100,7 @@ export default function SupplierCatalogsPage() {
                 value={uploadedUrls}
                 onUpload={setUploadedUrls}
                 uploadUrl={`${API_BASE}/suppliers/me/upload-catalog-file`}
+                chunkUploadUrl={`${API_BASE}/suppliers/me/upload-catalog-chunk`}
                 getHeaders={() => ({ Authorization: `Bearer ${getToken()}` })}
                 accept="image/*,application/pdf"
                 label={t('Click, drag or paste to upload', '点击、拖放或粘贴截图上传')}

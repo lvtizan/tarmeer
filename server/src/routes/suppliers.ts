@@ -37,6 +37,7 @@ router.put('/me/products/:id', authenticateSupplier, products.updateProduct);
 router.delete('/me/products/:id', authenticateSupplier, products.deleteProduct);
 router.put('/me/products-reorder', authenticateSupplier, products.reorderProducts);
 router.post('/me/upload-catalog-file', authenticateSupplier, upload.single('file'), catalogs.uploadCatalogFile);
+router.post('/me/upload-catalog-chunk', authenticateSupplier, upload.single('file'), catalogs.uploadCatalogChunk);
 router.get('/me/catalogs', authenticateSupplier, catalogs.listMyCatalogs);
 router.post('/me/catalogs', authenticateSupplier, catalogs.uploadCatalog);
 router.delete('/me/catalogs/:id', authenticateSupplier, catalogs.deleteCatalog);
