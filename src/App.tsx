@@ -293,6 +293,16 @@ function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
+          {/* ====== Supplier Dashboard (own layout, no main Navbar) ====== */}
+          <Route path="/supplier" element={<SupplierLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<SupplierDashboardPage />} />
+            <Route path="profile" element={<SupplierProfilePage />} />
+            <Route path="products" element={<SupplierProductsPage />} />
+            <Route path="projects" element={<SupplierProjectsPage />} />
+            <Route path="catalogs" element={<SupplierCatalogsPage />} />
+          </Route>
+
           {/* ====== Public ====== */}
           <Route path="/*" element={
             <Layout>
@@ -310,14 +320,6 @@ function App() {
                 <Route path="/for-suppliers" element={<ForSuppliersPage />} />
                 <Route path="/supplier/auth" element={<SupplierAuthPage />} />
                 <Route path="/supplier/auth/callback" element={<SupplierAuthPage />} />
-                <Route path="/supplier" element={<SupplierLayout />}>
-                  <Route index element={<Navigate to="dashboard" replace />} />
-                  <Route path="dashboard" element={<SupplierDashboardPage />} />
-                  <Route path="profile" element={<SupplierProfilePage />} />
-                  <Route path="products" element={<SupplierProductsPage />} />
-                  <Route path="projects" element={<SupplierProjectsPage />} />
-                  <Route path="catalogs" element={<SupplierCatalogsPage />} />
-                </Route>
                 <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
                 <Route path="/services/house-exterior" element={<HouseExteriorDesignPage />} />

@@ -212,6 +212,32 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 
 ---
 
+## Portal/Dashboard 双 Navbar 禁止规则（MUST FOLLOW）
+
+**任何独立 Portal（Supplier Dashboard、Company Dashboard、Admin 等）的路由必须放在主站 `<Layout>` 之外，否则会同时渲染两个顶栏（双 Navbar / 双 Logo）。**
+
+- 主站 `<Layout>` 包含 `<Navbar>`，所有放在其内的路由都会自动获得主站导航
+- Supplier / Company / Admin 等有自己 header 的 Portal 路由必须与 `/auth` 同级，独立放在 `<Routes>` 顶层
+- 正确做法（参考 `src/App.tsx`）：
+  ```tsx
+  // ✅ 正确 — 与 /auth 同级，在 <Layout> 之外
+  <Route path="/supplier" element={<SupplierLayout />}>...</Route>
+
+  // ❌ 错误 — 嵌套在 <Layout> 内，会双 Navbar
+  <Route path="/*" element={<Layout>}>
+    <Route path="/supplier" element={<SupplierLayout />}>...</Route>
+  </Route>
+  ```
+- **每次新增 Portal 路由时，第一件事检查它是否在 `<Layout>` 外面**
+
+## Portal/Dashboard 内容区居中规则（MUST FOLLOW）
+
+**任何带 sidebar 的 Dashboard/Portal，`<main>` 内的内容 wrapper 必须加 `max-w-4xl mx-auto`（或合适的 max-w），禁止内容靠左贴边。**
+
+- 错误：`<div className="p-6"><Outlet /></div>` → 内容在 sidebar 右侧左对齐，宽屏下视觉失衡
+- 正确：`<div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto"><Outlet /></div>`
+- 适用：SupplierLayout、CompanyLayout、AdminLayout 的 `<main>` 内层 div
+
 ## Admin Layout 规则（MUST FOLLOW）
 
 **AdminLayout root 必须用 `h-screen overflow-hidden flex flex-col`，禁止用 `min-h-screen`。**

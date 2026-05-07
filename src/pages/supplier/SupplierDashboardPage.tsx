@@ -75,7 +75,7 @@ export default function SupplierDashboardPage() {
 
   const steps: Step[] = [
     {
-      label: '公司介绍',
+      label: 'Company Profile',
       hint: 'Company name, description, origin and categories',
       icon: User,
       done: profileDone,
@@ -83,7 +83,7 @@ export default function SupplierDashboardPage() {
       cta: profileDone ? 'Edit Profile' : 'Fill Profile',
     },
     {
-      label: '营业执照',
+      label: 'Trade License',
       hint: 'Upload your trade license document',
       icon: FileText,
       done: licenseDone,
@@ -91,7 +91,7 @@ export default function SupplierDashboardPage() {
       cta: licenseDone ? 'View License' : 'Upload License',
     },
     {
-      label: '产品目录',
+      label: 'Product Catalogue',
       hint: 'Upload PDF catalogs and brochures',
       icon: FolderOpen,
       done: catalogCount > 0,
@@ -99,7 +99,7 @@ export default function SupplierDashboardPage() {
       cta: catalogCount > 0 ? `${catalogCount} uploaded` : 'Add Catalog',
     },
     {
-      label: '产品图',
+      label: 'Products',
       hint: 'Add product photos with descriptions',
       icon: Package,
       done: productCount > 0,
@@ -107,7 +107,7 @@ export default function SupplierDashboardPage() {
       cta: productCount > 0 ? `${productCount} products` : 'Add Products',
     },
     {
-      label: '项目图',
+      label: 'Projects',
       hint: 'Showcase your project case studies',
       icon: Layers,
       done: projectCount > 0,
