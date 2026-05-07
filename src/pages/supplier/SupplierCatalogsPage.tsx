@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Plus, Trash2, FileText, Download, FolderOpen, X } from 'lucide-react';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { ScreenSpinner } from '../../components/ui/Spinner';
+import ImageUploadZone from '../../components/ui/ImageUploadZone';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 function getToken() { return localStorage.getItem('supplier_token'); }
@@ -17,7 +18,7 @@ export default function SupplierCatalogsPage() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
-  const [fileUrl, setFileUrl] = useState('');
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [tried, setTried] = useState(false);
@@ -37,18 +38,19 @@ export default function SupplierCatalogsPage() {
 
   const handleAdd = async () => {
     setTried(true);
-    if (!title.trim() || !fileUrl.trim()) { setMsg('Title and PDF URL are required.'); return; }
+    if (!title.trim()) { setMsg(t('Title is required.', '请填写目录名称。')); return; }
+    if (uploadedUrls.length === 0) { setMsg(t('Please upload a file.', '请先上传文件。')); return; }
     setSaving(true); setMsg('');
     try {
       const res = await fetch(`${API_BASE}/suppliers/me/catalogs`, {
         method: 'POST',
         headers: authHeaders() as any,
-        body: JSON.stringify({ title: title.trim(), file_url: fileUrl.trim() }),
+        body: JSON.stringify({ title: title.trim(), file_url: uploadedUrls[0] }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setCatalogs(prev => [...prev, data.catalog]);
-      setTitle(''); setFileUrl(''); setAdding(false); setTried(false);
+      setTitle(''); setUploadedUrls([]); setAdding(false); setTried(false);
     } catch (err: any) {
       setMsg(err.message || 'Failed.');
     } finally {
@@ -61,7 +63,7 @@ export default function SupplierCatalogsPage() {
     setCatalogs(prev => prev.filter(c => c.id !== id));
   };
 
-  const cancelAdd = () => { setAdding(false); setTitle(''); setFileUrl(''); setMsg(''); setTried(false); };
+  const cancelAdd = () => { setAdding(false); setTitle(''); setUploadedUrls([]); setMsg(''); setTried(false); };
 
   if (loading) return <ScreenSpinner />;
 
@@ -93,6 +95,21 @@ export default function SupplierCatalogsPage() {
             </div>
 
             <div>
+              <label className={labelCls}>{t('File *', '文件 *')}</label>
+              <ImageUploadZone
+                value={uploadedUrls}
+                onUpload={setUploadedUrls}
+                uploadUrl={`${API_BASE}/suppliers/me/upload-catalog-file`}
+                getHeaders={() => ({ Authorization: `Bearer ${getToken()}` })}
+                accept="image/*,application/pdf"
+                label={t('Click, drag or paste to upload', '点击、拖放或粘贴截图上传')}
+                sublabel="PDF · JPG · PNG · WebP"
+                onFileMeta={({ original_name }) => { if (original_name && !title.trim()) setTitle(original_name); }}
+              />
+              {tried && uploadedUrls.length === 0 && <p className="text-xs text-red-500 mt-1">{t('Please upload a file', '请先上传文件')}</p>}
+            </div>
+
+            <div>
               <label className={labelCls}>{t('Catalog Title *', '目录名称 *')}</label>
               <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                 placeholder={t('e.g. Product Catalogue 2024', '如：2024 产品目录')}
@@ -100,24 +117,15 @@ export default function SupplierCatalogsPage() {
               {tried && !title.trim() && <p className="text-xs text-red-500 mt-1">{t('Title is required', '请填写目录名称')}</p>}
             </div>
 
-            <div>
-              <label className={labelCls}>{t('PDF URL *', 'PDF 链接 *')}</label>
-              <input type="url" value={fileUrl} onChange={e => setFileUrl(e.target.value)}
-                placeholder="https://..."
-                className={`${inputCls} ${tried && !fileUrl.trim() ? '!border-red-400' : ''}`} />
-              {tried && !fileUrl.trim() && <p className="text-xs text-red-500 mt-1">{t('PDF URL is required', '请填写 PDF 链接')}</p>}
-              <p className="text-xs text-stone-400 mt-1">{t('Upload your PDF to Google Drive, Dropbox, or similar, then paste the public link.', '将 PDF 上传至 Google Drive 或 Dropbox，粘贴公开链接到此处。')}</p>
-            </div>
-
             {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-2xl">{msg}</p>}
 
-            <div className="flex gap-3">
+            <div className="flex justify-end gap-3">
+              <button onClick={cancelAdd} className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
+                {t('Cancel', '取消')}
+              </button>
               <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                 <Plus className="w-4 h-4" />
                 {saving ? t('Saving...', '保存中...') : t('Add Catalog', '添加目录')}
-              </button>
-              <button onClick={cancelAdd} className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
-                {t('Cancel', '取消')}
               </button>
             </div>
           </div>
@@ -158,10 +166,7 @@ export default function SupplierCatalogsPage() {
               <FolderOpen className="w-8 h-8 text-stone-300" />
             </div>
             <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{t('No catalogs yet', '暂无目录')}</h3>
-            <p className="text-sm text-stone-500 mb-5">{t('Upload product catalogues and brochures for buyers to download.', '上传产品目录和宣传册，供采购方下载。')}</p>
-            <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> {t('Add Catalog', '添加目录')}
-            </button>
+            <p className="text-sm text-stone-500">{t('Upload product catalogues and brochures for buyers to download.', '上传产品目录和宣传册，供采购方下载。')}</p>
           </div>
         ) : null}
       </div>

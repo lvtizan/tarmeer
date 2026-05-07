@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Trash2, ImagePlus, X } from 'lucide-react';
 import AdminSelect from '../../components/ui/AdminSelect';
+import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { ScreenSpinner } from '../../components/ui/Spinner';
 
@@ -11,15 +12,6 @@ function authHeaders() { return { 'Content-Type': 'application/json', Authorizat
 
 const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
 const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 export default function SupplierProductsPage() {
   const { t } = useAdminT();
@@ -46,36 +38,20 @@ export default function SupplierProductsPage() {
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
-  const [newImagePreview, setNewImagePreview] = useState<string>('');
-  const [newImageData, setNewImageData] = useState<string>(''); // base64 data url
+  const [newImageUrls, setNewImageUrls] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
+    fetch(`${API_BASE}/suppliers/me/products`, { headers: authHeaders() as any })
       .then(r => r.json())
-      .then(data => {
-        const slug = data.profile?.slug;
-        if (!slug) { setLoading(false); return; }
-        return fetch(`${API_BASE}/suppliers/detail/${slug}/products`).then(r => r.json());
-      })
       .then(data => { if (data?.products) setProducts(data.products); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const dataUrl = await fileToDataUrl(file);
-    setNewImageData(dataUrl);
-    setNewImagePreview(dataUrl);
-    e.target.value = '';
-  };
-
   const handleAdd = async () => {
-    if (!newImageData && !newImagePreview) { setMsg('Please select an image.'); return; }
+    if (newImageUrls.length === 0) { setMsg('Please upload at least one image.'); return; }
     setSaving(true);
     setMsg('');
     try {
@@ -86,13 +62,13 @@ export default function SupplierProductsPage() {
           title: newTitle || null,
           description: newDesc || null,
           category: newCat || null,
-          image_url: newImageData,
+          image_urls: newImageUrls,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setProducts(prev => [...prev, data.product]);
-      setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageData(''); setNewImagePreview('');
+      setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
       setAdding(false);
     } catch (err: any) {
       setMsg(err.message || 'Failed.');
@@ -138,27 +114,14 @@ export default function SupplierProductsPage() {
             {/* Image picker */}
             <div>
               <label className={labelCls}>{t('Product Image *', '产品图片 *')}</label>
-              {newImagePreview ? (
-                <div className="relative w-40">
-                  <img src={newImagePreview} alt="" className="w-40 h-32 object-cover rounded-2xl border border-stone-200" />
-                  <button
-                    onClick={() => { setNewImageData(''); setNewImagePreview(''); }}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="flex flex-col items-center justify-center gap-2 w-full h-32 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 text-stone-400 hover:border-[#b8864a]/40 hover:text-[#b8864a] transition text-sm"
-                >
-                  <ImagePlus className="w-6 h-6" />
-                  {t('Click to upload image', '点击上传图片')}
-                </button>
-              )}
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+              <ImageUploadZone
+                value={newImageUrls}
+                onUpload={setNewImageUrls}
+                uploadUrl={`${API_BASE}/suppliers/me/upload-image`}
+                getHeaders={() => ({ Authorization: `Bearer ${getToken()}` })}
+                label={t('Click, drag or paste to upload', '点击、拖放或粘贴截图上传')}
+                sublabel="JPG · PNG · WebP"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -181,14 +144,14 @@ export default function SupplierProductsPage() {
 
             {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-2xl">{msg}</p>}
 
-            <div className="flex gap-3">
-              <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
-                <Plus className="w-4 h-4" />
-                {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
-              </button>
+            <div className="flex justify-end gap-3">
               <button onClick={() => { setAdding(false); setMsg(''); }}
                 className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
                 {t('Cancel', '取消')}
+              </button>
+              <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+                <Plus className="w-4 h-4" />
+                {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
               </button>
             </div>
           </div>
@@ -196,11 +159,16 @@ export default function SupplierProductsPage() {
 
         {/* Products grid */}
         {products.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {products.map(p => (
               <div key={p.id} className="group relative bg-white rounded-2xl border border-stone-200 overflow-hidden">
-                <div className="aspect-[4/3] bg-stone-100">
+                <div className="aspect-[3/4] bg-stone-100 relative">
                   <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" />
+                  {Array.isArray(p.image_urls) && p.image_urls.length > 1 && (
+                    <span className="absolute bottom-1.5 right-1.5 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-md">
+                      +{p.image_urls.length - 1}
+                    </span>
+                  )}
                 </div>
                 <div className="p-3">
                   {p.category && (
@@ -225,10 +193,7 @@ export default function SupplierProductsPage() {
               <ImagePlus className="w-8 h-8 text-stone-300" />
             </div>
             <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{t('No products yet', '暂无产品')}</h3>
-            <p className="text-sm text-stone-500 mb-5">{t('Add your first product to showcase your materials.', '添加第一件产品，开始展示您的建材。')}</p>
-            <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> {t('Add Product', '添加产品')}
-            </button>
+            <p className="text-sm text-stone-500">{t('Add your first product to showcase your materials.', '添加第一件产品，开始展示您的建材。')}</p>
           </div>
         ) : null}
       </div>

@@ -1,4 +1,34 @@
 import pool from '../config/database';
+import fs from 'fs/promises';
+import path from 'path';
+import { randomUUID } from 'crypto';
+
+export async function uploadProductImage(req: any, res: any) {
+  try {
+    const userId = req.supplierUser.id;
+    const { data_url } = req.body;
+    if (!data_url) return res.status(400).json({ error: 'No image data provided.' });
+    const matches = data_url.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) return res.status(400).json({ error: 'Invalid image format.' });
+    const mimeType = matches[1];
+    if (!mimeType.startsWith('image/')) return res.status(400).json({ error: 'Only images allowed.' });
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+      'image/webp': 'webp', 'image/gif': 'gif',
+    };
+    const ext = extMap[mimeType] || 'jpg';
+    const buffer = Buffer.from(matches[2], 'base64');
+    const fileName = `${userId}-${randomUUID()}.${ext}`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'suppliers', 'products');
+    await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
+    const filePath = path.join(uploadDir, fileName);
+    await fs.writeFile(filePath, buffer, { mode: 0o644 });
+    res.json({ url: `/uploads/suppliers/products/${fileName}` });
+  } catch (error) {
+    console.error('Upload product image error:', error);
+    res.status(500).json({ error: 'Failed to upload image.' });
+  }
+}
 
 async function getProfileId(supplierUserId: number): Promise<number | null> {
   const [rows] = await pool.execute(
@@ -49,16 +79,27 @@ export async function addProduct(req: any, res: any) {
     const profileId = await getProfileId(req.supplierUser.id);
     if (!profileId) return res.status(400).json({ error: 'Create your profile first.' });
 
-    const { title, description, image_url, sort_order } = req.body;
-    if (!image_url) return res.status(400).json({ error: 'Image URL is required.' });
+    const { title, description, category, image_url, image_urls, sort_order } = req.body;
+    // Support multi-image: image_urls takes precedence; image_url is kept for backward compat
+    const urls: string[] = Array.isArray(image_urls) && image_urls.length > 0
+      ? image_urls
+      : image_url ? [image_url] : [];
+    if (urls.length === 0) return res.status(400).json({ error: 'At least one image is required.' });
+
+    const primaryUrl = urls[0];
+    const urlsJson = JSON.stringify(urls);
 
     const [result] = await pool.execute(
-      'INSERT INTO supplier_products (supplier_profile_id, title, description, image_url, sort_order) VALUES (?, ?, ?, ?, ?)',
-      [profileId, title || null, description || null, image_url, sort_order || 0]
+      'INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0]
     );
     const id = (result as any).insertId;
     const [created] = await pool.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
-    res.status(201).json({ product: (created as any[])[0] });
+    const product = (created as any[])[0];
+    if (product?.image_urls && typeof product.image_urls === 'string') {
+      product.image_urls = JSON.parse(product.image_urls);
+    }
+    res.status(201).json({ product });
   } catch (error) {
     console.error('Add product error:', error);
     res.status(500).json({ error: 'Failed to add product.' });
@@ -71,7 +112,7 @@ export async function updateProduct(req: any, res: any) {
     if (!profileId) return res.status(403).json({ error: 'Forbidden.' });
 
     const { id } = req.params;
-    const { title, description, image_url, sort_order } = req.body;
+    const { title, description, category, image_url, image_urls, sort_order } = req.body;
 
     const [existing] = await pool.execute(
       'SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?',
@@ -79,9 +120,13 @@ export async function updateProduct(req: any, res: any) {
     );
     if ((existing as any[]).length === 0) return res.status(404).json({ error: 'Product not found.' });
 
+    const urls: string[] | null = Array.isArray(image_urls) && image_urls.length > 0 ? image_urls : null;
+    const primaryUrl = urls ? urls[0] : (image_url || null);
+    const urlsJson = urls ? JSON.stringify(urls) : null;
+
     await pool.execute(
-      'UPDATE supplier_products SET title=?, description=?, image_url=COALESCE(?, image_url), sort_order=? WHERE id=?',
-      [title || null, description || null, image_url || null, sort_order ?? 0, id]
+      'UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=? WHERE id=?',
+      [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, id]
     );
     const [updated] = await pool.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
     res.json({ product: (updated as any[])[0] });

@@ -11,7 +11,7 @@ rm -f "$SENTINEL"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-OUT=$("$ROOT/node_modules/.bin/tsc" --noEmit --skipLibCheck 2>&1)
+OUT=$(cd "$ROOT" && "$ROOT/node_modules/.bin/tsc" --noEmit --skipLibCheck 2>&1)
 CODE=$?
 
 if [ $CODE -eq 0 ]; then

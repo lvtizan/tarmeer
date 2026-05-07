@@ -45,6 +45,28 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -n '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:\"[TARMEER 规则摘要]\\n下拉=AdminSelect(size=sm筛选栏/lg表单) 禁<select>\\nTooltip=FloatingTip，Logo=TarmeerLogo\\n新页面前：找相似页面复用结构 + 先运行 node scripts/harness/lint-admin-ui.mjs --guide\\n新路由必须立即注册到路由文件，PC端移动端逻辑必须一致\"}}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/kp/Code/tarmeer-4.0-local/scripts/harness/dev-checklist-hook.sh",
+            "timeout": 10
+          }
+        ]
       }
     ]
   }

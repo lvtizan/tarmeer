@@ -361,6 +361,10 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
 
   // Supplier business license upload
   { table: 'supplier_profiles', column: 'license_url', type: 'VARCHAR(500) NULL' },
+
+  // Supplier product multi-image + category
+  { table: 'supplier_products', column: 'image_urls', type: 'JSON NULL' },
+  { table: 'supplier_products', column: 'category', type: 'VARCHAR(100) NULL' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）

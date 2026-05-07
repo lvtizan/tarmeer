@@ -5,7 +5,7 @@ import {
   normalizeCompanyProfilePayload,
   validateCompanyProfilePayload,
 } from '../lib/companyProfileDraft';
-import { slugify } from '../lib/slugify';
+import { generateEmailHandle, slugify } from '../lib/slugify';
 import { parseJsonField } from '../lib/parseJsonField';
 import { logActivity, getClientIp } from '../lib/activityLogger';
 
@@ -30,7 +30,6 @@ export async function upsertProfile(req: any, res: any) {
 
     const servicesJson = JSON.stringify(payload.services);
     const specialtiesJson = JSON.stringify(payload.specialties);
-    const slug = slugify(payload.company_name);
     const onboardingStep = typeof req.body.onboarding_step === 'number' ? req.body.onboarding_step : null;
     const signupSource = typeof req.body.signup_source === 'string' ? req.body.signup_source.slice(0, 64) : null;
 
@@ -40,8 +39,9 @@ export async function upsertProfile(req: any, res: any) {
     const existingSource = (existing as any[])[0]?.signup_source;
 
     if ((existing as any[]).length > 0) {
+      // UPDATE: preserve existing slug so public URLs don't break
       await pool.execute(
-        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, slug = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?), signup_source = COALESCE(signup_source, ?) WHERE user_id = ?`,
+        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?), signup_source = COALESCE(signup_source, ?) WHERE user_id = ?`,
         [
           payload.company_name,
           payload.description,
@@ -56,13 +56,25 @@ export async function upsertProfile(req: any, res: any) {
           payload.trade_license_number,
           payload.establishment_year,
           specialtiesJson,
-          slug,
           onboardingStep || 0,
           signupSource,
           userId,
         ]
       );
     } else {
+      // INSERT: generate slug from user's email prefix, with collision handling
+      const [userRows] = await pool.execute('SELECT email FROM users WHERE id = ?', [userId]);
+      const userEmail: string = (userRows as any[])[0]?.email || '';
+      const baseHandle = generateEmailHandle(userEmail);
+
+      let slug = baseHandle;
+      let suffix = 2;
+      while (true) {
+        const [conflict] = await pool.execute('SELECT id FROM company_profiles WHERE slug = ?', [slug]);
+        if ((conflict as any[]).length === 0) break;
+        slug = `${baseHandle}-${suffix++}`;
+      }
+
       await pool.execute(
         `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, slug, status, onboarding_step, signup_source)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,

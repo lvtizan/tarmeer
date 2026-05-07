@@ -13,7 +13,7 @@ import {
   listAdmins,
   updateAdmin,
   deleteAdmin,
-  changePassword
+  changePassword,
 } from '../controllers/adminController';
 import {
   listInterviews, getInterview, editInterview,
