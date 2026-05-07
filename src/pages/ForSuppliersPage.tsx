@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import TarmeerLogo from '../components/TarmeerLogo';
 import { ChevronRight, Mail, Lock, Eye, EyeOff, Check, Package, Search, Globe } from 'lucide-react';
 import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '../components/auth/authCardStyles';
 import AuthCardShell from '../components/auth/AuthCardShell';
@@ -374,14 +373,6 @@ export default function ForSuppliersPage() {
         <link rel="canonical" href="https://www.tarmeer.com/for-suppliers" />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-
-      {/* Header */}
-      <header className="sticky top-0 z-50 h-16 bg-white shadow-sm flex items-center px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
-          <TarmeerLogo />
-          <span className="text-[13px] font-medium text-[#b8864a] tracking-wide">Supplier Portal</span>
-        </div>
-      </header>
 
       {/* Hero */}
       <section className="relative overflow-hidden">
