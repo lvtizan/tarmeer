@@ -107,7 +107,7 @@ export async function sendDesignerRegistrationEmail(designer: any) {
 
   await sendTransactionalMail({
     to: NOTIFICATION_EMAIL,
-    subject: '[Tarmeer] New Designer Registration',
+    subject: '[Tarmeer] 新设计师注册',
     html,
     text,
   });

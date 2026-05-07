@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/database';
 import config from '../config';
 import { sendVerificationEmail, generateVerificationToken } from '../services/emailService';
+import { notifySupplierRegistration } from '../services/notificationService';
 import { slugify } from '../lib/slugify';
 
 const TEMP_EMAIL_DOMAINS = [
@@ -83,11 +84,12 @@ export async function register(req: any, res: any) {
 
     const frontendUrl = resolveFrontendUrl(req);
 
-    // Send verification email (fire-and-forget)
+    // Send verification email + admin notification (fire-and-forget)
     setImmediate(() => {
       sendVerificationEmail(email, displayName, verificationToken, frontendUrl).catch((err: any) =>
         console.error('[supplier] Verification email failed:', err)
       );
+      notifySupplierRegistration({ email, fullName: displayName, signupSource: 'supplier-email' }).catch(() => {});
     });
 
     res.status(201).json({
@@ -248,6 +250,9 @@ export async function googleCallback(req: any, res: any) {
         );
         const [newUser] = await pool.execute('SELECT * FROM supplier_users WHERE id = ?', [(result as any).insertId]);
         user = (newUser as any[])[0];
+        setImmediate(() => {
+          notifySupplierRegistration({ email, fullName: fullName || undefined, signupSource: 'supplier-google' }).catch(() => {});
+        });
       }
     }
 

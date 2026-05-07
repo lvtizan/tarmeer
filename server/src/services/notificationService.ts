@@ -98,7 +98,7 @@ export async function notifyNewInquiry(inquiry: InquiryData) {
   // Group email
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #b8864a;">New Design Inquiry</h2>
+      <h2 style="color: #b8864a;">新设计咨询</h2>
       <table style="width: 100%; border-collapse: collapse;">
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.name}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.phone}</td></tr>
@@ -112,7 +112,7 @@ export async function notifyNewInquiry(inquiry: InquiryData) {
   `;
   const text = `New Inquiry: ${inquiry.name}, ${inquiry.phone}, ${inquiry.city}, ${inquiry.area_range}`;
 
-  await sendGroupEmail('[Tarmeer] New Design Inquiry', html, text);
+  await sendGroupEmail('[Tarmeer] 新设计咨询', html, text);
 }
 
 interface CompanyData {
@@ -136,6 +136,8 @@ const SOURCE_LABELS: Record<string, string> = {
   'google-one-tap': 'Google One Tap 弹窗',
   'designer-application': '设计师申请',
   'home-banner': '首页 Banner',
+  'supplier-email': '供应商门户邮箱注册',
+  'supplier-google': '供应商门户 Google 登录',
 };
 
 export async function notifyCompanyRegistration(company: CompanyData) {
@@ -161,7 +163,7 @@ export async function notifyCompanyRegistration(company: CompanyData) {
   const sourceLabel = company.signupSource ? (SOURCE_LABELS[company.signupSource] || company.signupSource) : '未知';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #b8864a;">New Company Registration</h2>
+      <h2 style="color: #b8864a;">新装修公司注册</h2>
       <table style="width: 100%; border-collapse: collapse;">
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Company:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${company.companyName}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Type:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${typeLabel}</td></tr>
@@ -177,7 +179,7 @@ export async function notifyCompanyRegistration(company: CompanyData) {
   `;
   const text = `New Company: ${company.companyName} (${typeLabel}), ${company.contactPerson}, ${company.phone}, ${company.city} | 渠道: ${sourceLabel}`;
 
-  await sendGroupEmail('[Tarmeer] New Company Registration', html, text);
+  await sendGroupEmail('[Tarmeer] 新装修公司注册', html, text);
 }
 
 // ============================================================
@@ -210,7 +212,7 @@ export async function notifyUserRegistration(user: UserData) {
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #b8864a;">New User Registration</h2>
+      <h2 style="color: #b8864a;">新${roleLabel}注册</h2>
       <table style="width: 100%; border-collapse: collapse;">
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${user.fullName || '—'}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${user.email}</td></tr>
@@ -224,7 +226,41 @@ export async function notifyUserRegistration(user: UserData) {
   `;
   const text = `New ${roleLabel}: ${user.fullName || user.email}, ${user.phone || '—'}, ${user.city || '—'} | 渠道: ${sourceLabel}`;
 
-  await sendGroupEmail(`[Tarmeer] New ${roleLabel} Registration`, html, text);
+  await sendGroupEmail(`[Tarmeer] 新${roleLabel}注册`, html, text);
+}
+
+// ── Supplier registration ──
+
+interface SupplierData {
+  email: string;
+  fullName?: string | null;
+  signupSource?: string;
+}
+
+export async function notifySupplierRegistration(supplier: SupplierData) {
+  const sourceLabel = supplier.signupSource ? (SOURCE_LABELS[supplier.signupSource] || supplier.signupSource) : '未知';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #b8864a;">新供应商注册</h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>姓名:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${supplier.fullName || '—'}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>邮箱:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${supplier.email}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>注册渠道:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #b8864a;"><strong>${sourceLabel}</strong></td></tr>
+        <tr><td style="padding: 8px 0;"><strong>时间:</strong></td><td style="padding: 8px 0;">${new Date().toLocaleString('zh-CN')}</td></tr>
+      </table>
+      <p style="margin-top: 16px;"><a href="https://admin.tarmeer.com/admin/suppliers" style="color: #b8864a;">在管理后台查看 →</a></p>
+    </div>
+  `;
+  const text = `新供应商: ${supplier.fullName || supplier.email}, ${supplier.email} | 渠道: ${sourceLabel}`;
+
+  await createNotification({
+    type: 'user_registration',
+    title: `新供应商注册: ${supplier.fullName || supplier.email}`,
+    message: `${supplier.email} 通过 ${sourceLabel} 注册`,
+    link: '/admin/suppliers',
+  });
+
+  await sendGroupEmail('[Tarmeer] 新供应商注册', html, text);
 }
 
 // ── Company Lead (for-companies form submission) ──
@@ -251,8 +287,8 @@ export async function notifyNewCompanyLead(lead: CompanyLeadData) {
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #b8864a;">🏢 New Company Lead</h2>
-      <p style="color: #6b6b6b;">A company submitted interest via the landing page.</p>
+      <h2 style="color: #b8864a;">🏢 新装修公司线索</h2>
+      <p style="color: #6b6b6b;">装修公司通过落地页提交了合作意向。</p>
       <table style="width: 100%; border-collapse: collapse;">
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Contact:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${lead.contactName}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Company:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${lead.companyName || '—'}</td></tr>
@@ -267,5 +303,5 @@ export async function notifyNewCompanyLead(lead: CompanyLeadData) {
   `;
   const text = `New Company Lead: ${lead.contactName}, ${lead.companyName}, ${lead.phone}, ${lead.city}`;
 
-  await sendGroupEmail('[Tarmeer] 🏢 New Company Lead', html, text);
+  await sendGroupEmail('[Tarmeer] 🏢 新装修公司线索', html, text);
 }

@@ -89,6 +89,7 @@ export default function AdminEnumsPage() {
         body: JSON.stringify({ active: type.active ? 0 : 1 }),
       });
       setTypes((prev) => prev.map((t) => t.slug === type.slug ? { ...t, active: t.active ? 0 : 1 } : t));
+      showToast(t('Updated', '已更新'), 'success');
     } catch {
       showToast(t('Update failed', '更新失败'), 'error');
     }
@@ -145,6 +146,21 @@ export default function AdminEnumsPage() {
         body: JSON.stringify({ active: svc.active ? 0 : 1 }),
       });
       setServices((prev) => prev.map((s) => s.name === svc.name ? { ...s, active: s.active ? 0 : 1 } : s));
+      showToast(t('Updated', '已更新'), 'success');
+    } catch {
+      showToast(t('Update failed', '更新失败'), 'error');
+    }
+  }
+
+  async function updateServiceName(svc: CompanyService, name: string) {
+    if (!name.trim() || name === svc.name) return;
+    try {
+      await adminApi.request(`/enums/company-services/${encodeURIComponent(svc.name)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      setServices((prev) => prev.map((s) => s.name === svc.name ? { ...s, name: name.trim() } : s));
+      showToast(t('Updated', '已更新'), 'success');
     } catch {
       showToast(t('Update failed', '更新失败'), 'error');
     }
@@ -329,7 +345,13 @@ export default function AdminEnumsPage() {
                     {services.map((svc) => (
                       <tr key={svc.name} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50">
                         <td className="px-4 py-2.5 text-stone-400">{svc.sort_order}</td>
-                        <td className="px-4 py-2.5 text-[#2c2c2c]">{svc.name}</td>
+                        <td className="px-4 py-2.5">
+                          <input
+                            className={`${inputCls} w-full`}
+                            defaultValue={svc.name}
+                            onBlur={(e) => updateServiceName(svc, e.target.value)}
+                          />
+                        </td>
                         <td className="px-4 py-2.5">
                           <button
                             onClick={() => toggleServiceActive(svc)}

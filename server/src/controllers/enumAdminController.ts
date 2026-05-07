@@ -111,9 +111,10 @@ export async function createCompanyService(req: any, res: any) {
 export async function updateCompanyService(req: any, res: any) {
   try {
     const name = decodeURIComponent(req.params.name);
-    const { sort_order, active } = req.body;
+    const { sort_order, active, name: newName } = req.body;
     const sets: string[] = [];
     const values: any[] = [];
+    if (newName !== undefined) { sets.push('name = ?'); values.push(String(newName).slice(0, 200)); }
     if (sort_order !== undefined) { sets.push('sort_order = ?'); values.push(Number(sort_order)); }
     if (active !== undefined) { sets.push('active = ?'); values.push(active ? 1 : 0); }
     if (sets.length === 0) return res.status(400).json({ error: 'Nothing to update.' });

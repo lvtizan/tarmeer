@@ -386,12 +386,12 @@ router.patch('/staff/:id', requireSuperAdmin, toggleStaff);
 
 // Enum management — company types & services
 router.get('/enums/company-types', listCompanyTypes);
-router.post('/enums/company-types', requireSuperAdmin, createCompanyType);
-router.put('/enums/company-types/:slug', requireSuperAdmin, updateCompanyType);
-router.delete('/enums/company-types/:slug', requireSuperAdmin, deleteCompanyType);
+router.post('/enums/company-types', requireAdmin, createCompanyType);
+router.put('/enums/company-types/:slug', requireAdmin, updateCompanyType);
+router.delete('/enums/company-types/:slug', requireAdmin, deleteCompanyType);
 router.get('/enums/company-services', listCompanyServices);
-router.post('/enums/company-services', requireSuperAdmin, createCompanyService);
-router.put('/enums/company-services/:name', requireSuperAdmin, updateCompanyService);
-router.delete('/enums/company-services/:name', requireSuperAdmin, deleteCompanyService);
+router.post('/enums/company-services', requireAdmin, createCompanyService);
+router.put('/enums/company-services/:name', requireAdmin, updateCompanyService);
+router.delete('/enums/company-services/:name', requireAdmin, deleteCompanyService);
 
 export default router;
