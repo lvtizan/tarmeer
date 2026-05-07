@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { validatePhone } from '../../lib/phoneValidation';
 
 export const PHONE_COUNTRIES = [
   { code: '+971', flag: '🇦🇪', name: 'UAE',     maxDigits: 9  },
@@ -77,8 +78,10 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
-  const hasError = touched && digits.length > 0 && digits.length < selected.maxDigits;
   const isComplete = digits.length === selected.maxDigits;
+  const formatError = touched && isComplete ? validatePhone(digits, code) : null;
+  const hasLengthError = touched && digits.length > 0 && digits.length < selected.maxDigits;
+  const hasError = hasLengthError || !!formatError;
 
   const defaultPlaceholder = '0'.repeat(selected.maxDigits);
 
@@ -135,7 +138,10 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
       </div>
 
       {/* Validation hint */}
-      {hasError && (
+      {formatError && (
+        <p className="text-xs text-red-500 mt-1.5">{formatError}</p>
+      )}
+      {hasLengthError && (
         <p className="text-xs text-red-500 mt-1.5">
           需要 {selected.maxDigits} 位数字，已输入 {digits.length} 位
         </p>
