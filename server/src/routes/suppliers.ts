@@ -28,6 +28,7 @@ router.post('/leads', leadLimiter, leads.submitLead);
 router.get('/me/profile', authenticateSupplier, profile.getMyProfile);
 router.post('/me/profile', authenticateSupplier, profile.upsertProfile);
 router.post('/me/upload-license', authenticateSupplier, profile.uploadLicense);
+router.post('/me/upload-image', authenticateSupplier, products.uploadProductImage);
 router.get('/me/products', authenticateSupplier, products.listMyProducts);
 router.post('/me/products', authenticateSupplier, products.addProduct);
 router.put('/me/products/:id', authenticateSupplier, products.updateProduct);
