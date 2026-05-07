@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Paperclip, X } from 'lucide-react';
+import { Paperclip, X, FileText } from 'lucide-react';
 
 interface ImageUploadZoneProps {
   value: string[];            // list of uploaded URLs
@@ -8,6 +8,8 @@ interface ImageUploadZoneProps {
   getHeaders: () => Record<string, string>;
   label?: string;
   sublabel?: string;
+  accept?: string;            // defaults to 'image/*'
+  onFileMeta?: (meta: { original_name: string }) => void; // called with server response metadata
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -19,6 +21,8 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
+
 export default function ImageUploadZone({
   value,
   onUpload,
@@ -26,6 +30,8 @@ export default function ImageUploadZone({
   getHeaders,
   label = '点击、拖放或粘贴截图上传',
   sublabel = 'JPG · PNG · WebP',
+  accept = 'image/*',
+  onFileMeta,
 }: ImageUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState('');
@@ -33,7 +39,12 @@ export default function ImageUploadZone({
   const uploadFnRef = useRef<(file: File) => void>(() => {});
 
   const upload = async (file: File) => {
-    if (!file.type.startsWith('image/')) { setErr('仅支持图片文件。'); return; }
+    const acceptsAny = accept.split(',').map(s => s.trim());
+    const allowed = acceptsAny.some(a => {
+      if (a.endsWith('/*')) return file.type.startsWith(a.slice(0, -1));
+      return file.type === a;
+    });
+    if (!allowed) { setErr('不支持该文件类型。'); return; }
     setUploading(true);
     setErr('');
     try {
@@ -41,11 +52,12 @@ export default function ImageUploadZone({
       const resp = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getHeaders() },
-        body: JSON.stringify({ data_url: dataUrl }),
+        body: JSON.stringify({ data_url: dataUrl, original_name: file.name }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Upload failed');
       onUpload([...value, data.url]);
+      if (onFileMeta && data.original_name) onFileMeta({ original_name: data.original_name });
     } catch (e: any) {
       setErr(e.message || 'Upload failed');
     } finally {
@@ -69,28 +81,31 @@ export default function ImageUploadZone({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    files.forEach(f => uploadFnRef.current(f));
+    Array.from(e.dataTransfer.files).forEach(f => uploadFnRef.current(f));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    files.forEach(f => upload(f));
+    Array.from(e.target.files ?? []).forEach(f => upload(f));
     e.target.value = '';
   };
 
-  const remove = (idx: number) => {
-    onUpload(value.filter((_, i) => i !== idx));
-  };
+  const remove = (idx: number) => onUpload(value.filter((_, i) => i !== idx));
 
   return (
     <div className="space-y-3">
-      {/* Thumbnails */}
+      {/* Uploaded file previews */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {value.map((url, idx) => (
-            <div key={idx} className="relative w-20 h-20 shrink-0">
-              <img src={url} alt="" className="w-full h-full object-cover rounded-xl border border-stone-200" />
+            <div key={idx} className="relative shrink-0">
+              {isPdf(url) ? (
+                <div className="w-20 h-20 rounded-xl border border-stone-200 bg-red-50 flex flex-col items-center justify-center gap-1">
+                  <FileText className="w-7 h-7 text-red-500" />
+                  <span className="text-[10px] text-red-400 font-medium">PDF</span>
+                </div>
+              ) : (
+                <img src={url} alt="" className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
+              )}
               <button
                 type="button"
                 onClick={() => remove(idx)}
@@ -124,7 +139,7 @@ export default function ImageUploadZone({
       </button>
 
       {err && <p className="text-xs text-red-500">{err}</p>}
-      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleChange} />
+      <input ref={fileRef} type="file" accept={accept} multiple className="hidden" onChange={handleChange} />
     </div>
   );
 }
