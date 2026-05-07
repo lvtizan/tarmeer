@@ -4,7 +4,7 @@ import axios from 'axios';
 import passport from 'passport';
 import pool from '../config/database';
 import config from '../config';
-import { sendDesignerRegistrationEmail, sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
+import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmail, generatePasswordResetToken } from '../services/emailService';
 import { buildRegisterEmailStatus } from '../lib/registerEmailPolicy';
 import { buildRegistrationAvailabilityResult } from '../lib/registrationAvailability';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';

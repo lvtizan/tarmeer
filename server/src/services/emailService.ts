@@ -79,40 +79,6 @@ export async function sendVerificationEmail(email: string, fullName: string, tok
   });
 }
 
-export async function sendDesignerRegistrationEmail(designer: any) {
-  const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #b8864a;">New Designer Registration</h2>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${designer.full_name}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${designer.email}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${designer.phone || 'Not provided'}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>City:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${designer.city || 'Not provided'}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Email Verified:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${designer.email_verified ? '✅ Verified' : '❌ Not Verified'}</td></tr>
-          <tr><td style="padding: 8px 0;"><strong>Registration Time:</strong></td><td style="padding: 8px 0;">${new Date().toLocaleString('en-US')}</td></tr>
-        </table>
-        <p style="margin-top: 20px; color: #666;">Please log in to the admin panel to review.</p>
-      </div>
-    `;
-  
-  const text = [
-    'New Designer Registration',
-    `Name: ${designer.full_name}`,
-    `Email: ${designer.email}`,
-    `Phone: ${designer.phone || 'Not provided'}`,
-    `City: ${designer.city || 'Not provided'}`,
-    `Email Verified: ${designer.email_verified ? 'Verified' : 'Not Verified'}`,
-    `Registration Time: ${new Date().toLocaleString('en-US')}`,
-  ].join('\n');
-
-  await sendTransactionalMail({
-    to: NOTIFICATION_EMAIL,
-    subject: '[Tarmeer] 新设计师注册',
-    html,
-    text,
-  });
-}
-
 export function generateVerificationToken(): { token: string; expires: Date } {
   const token = crypto.randomBytes(32).toString('hex');
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -200,40 +166,6 @@ export function generatePasswordResetToken(): { token: string; expires: Date } {
   return { token, expires };
 }
 
-export async function sendProjectSubmissionEmail(project: any, designer: any) {
-  const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #b8864a;">Designer ${designer.full_name} submitted a new project</h2>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Project Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${project.title}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Style:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${project.style || 'Not provided'}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Location:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${project.location || 'Not provided'}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Area:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${project.area || 'Not provided'}</td></tr>
-          <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Budget:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${project.cost || 'Not provided'}</td></tr>
-          <tr><td style="padding: 8px 0;"><strong>Submission Time:</strong></td><td style="padding: 8px 0;">${new Date().toLocaleString('en-US')}</td></tr>
-        </table>
-        <p style="margin-top: 20px; color: #666;">Please log in to the admin panel to review.</p>
-      </div>
-    `;
-  
-  const text = [
-    `Designer ${designer.full_name} submitted a new project`,
-    `Project Name: ${project.title}`,
-    `Style: ${project.style || 'Not provided'}`,
-    `Location: ${project.location || 'Not provided'}`,
-    `Area: ${project.area || 'Not provided'}`,
-    `Budget: ${project.cost || 'Not provided'}`,
-    `Submission Time: ${new Date().toLocaleString('en-US')}`,
-  ].join('\n');
-
-  await sendTransactionalMail({
-    to: NOTIFICATION_EMAIL,
-    subject: '[Tarmeer] New Project Submission',
-    html,
-    text,
-  });
-}
-
 export async function sendContactFormEmail(contact: any) {
   const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -262,7 +194,7 @@ export async function sendContactFormEmail(contact: any) {
 
   await sendTransactionalMail({
     to: NOTIFICATION_EMAIL,
-    subject: '[Tarmeer] New Client Inquiry',
+    subject: '[Tarmeer] 新客户咨询',
     html,
     text,
   });
