@@ -144,14 +144,14 @@ export default function SupplierProductsPage() {
 
             {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-2xl">{msg}</p>}
 
-            <div className="flex gap-3">
-              <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
-                <Plus className="w-4 h-4" />
-                {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
-              </button>
+            <div className="flex justify-end gap-3">
               <button onClick={() => { setAdding(false); setMsg(''); }}
                 className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
                 {t('Cancel', '取消')}
+              </button>
+              <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+                <Plus className="w-4 h-4" />
+                {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
               </button>
             </div>
           </div>
@@ -159,10 +159,10 @@ export default function SupplierProductsPage() {
 
         {/* Products grid */}
         {products.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {products.map(p => (
               <div key={p.id} className="group relative bg-white rounded-2xl border border-stone-200 overflow-hidden">
-                <div className="aspect-[4/3] bg-stone-100 relative">
+                <div className="aspect-[3/4] bg-stone-100 relative">
                   <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" />
                   {Array.isArray(p.image_urls) && p.image_urls.length > 1 && (
                     <span className="absolute bottom-1.5 right-1.5 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-md">
