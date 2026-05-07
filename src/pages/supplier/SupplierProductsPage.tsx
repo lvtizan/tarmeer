@@ -2,24 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Trash2, ImagePlus, X } from 'lucide-react';
 import AdminSelect from '../../components/ui/AdminSelect';
+import { useAdminT } from '../../hooks/useAdminLang';
+import { ScreenSpinner } from '../../components/ui/Spinner';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 function getToken() { return localStorage.getItem('supplier_token'); }
 function authHeaders() { return { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }; }
-
-const CATEGORY_OPTIONS = [
-  { value: '', label: 'No category' },
-  { value: 'furniture', label: 'Furniture' },
-  { value: 'stone', label: 'Stone' },
-  { value: 'lighting', label: 'Lighting' },
-  { value: 'plants', label: 'Plants' },
-  { value: 'flooring', label: 'Flooring' },
-  { value: 'kitchen', label: 'Kitchen' },
-  { value: 'curtains', label: 'Curtains' },
-  { value: 'paint', label: 'Paint' },
-  { value: 'hardware', label: 'Hardware' },
-  { value: 'other', label: 'Other' },
-];
 
 const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
 const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
@@ -34,6 +22,22 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 export default function SupplierProductsPage() {
+  const { t } = useAdminT();
+
+  const CATEGORY_OPTIONS = [
+    { value: '', label: t('No category', '无品类') },
+    { value: 'furniture', label: t('Furniture', '家具') },
+    { value: 'stone', label: t('Stone', '石材') },
+    { value: 'lighting', label: t('Lighting', '灯具') },
+    { value: 'plants', label: t('Plants', '植物景观') },
+    { value: 'flooring', label: t('Flooring', '地板') },
+    { value: 'kitchen', label: t('Kitchen', '厨卫') },
+    { value: 'curtains', label: t('Curtains', '窗帘纺织') },
+    { value: 'paint', label: t('Paint', '涂料') },
+    { value: 'hardware', label: t('Hardware', '五金配件') },
+    { value: 'other', label: t('Other', '其他') },
+  ];
+
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -102,11 +106,7 @@ export default function SupplierProductsPage() {
     setProducts(prev => prev.filter(p => p.id !== id));
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <ScreenSpinner />;
 
   return (
     <>
@@ -115,15 +115,12 @@ export default function SupplierProductsPage() {
       <div className="max-w-4xl space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#2c2c2c]">Products</h1>
-            <p className="text-sm text-stone-500 mt-1">{products.length} product{products.length !== 1 ? 's' : ''} uploaded</p>
+            <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Products', '产品')}</h1>
+            <p className="text-sm text-stone-500 mt-1">{t(`${products.length} product${products.length !== 1 ? 's' : ''} uploaded`, `已上传 ${products.length} 件产品`)}</p>
           </div>
           {!adding && (
-            <button
-              onClick={() => setAdding(true)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" /> Add Product
+            <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> {t('Add Product', '添加产品')}
             </button>
           )}
         </div>
@@ -132,7 +129,7 @@ export default function SupplierProductsPage() {
         {adding && (
           <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-[15px] font-semibold text-[#2c2c2c]">New Product</h2>
+              <h2 className="text-[15px] font-semibold text-[#2c2c2c]">{t('New Product', '新增产品')}</h2>
               <button onClick={() => { setAdding(false); setMsg(''); }} className="text-stone-400 hover:text-stone-600 transition p-1">
                 <X className="w-5 h-5" />
               </button>
@@ -140,7 +137,7 @@ export default function SupplierProductsPage() {
 
             {/* Image picker */}
             <div>
-              <label className={labelCls}>Product Image *</label>
+              <label className={labelCls}>{t('Product Image *', '产品图片 *')}</label>
               {newImagePreview ? (
                 <div className="relative w-40">
                   <img src={newImagePreview} alt="" className="w-40 h-32 object-cover rounded-2xl border border-stone-200" />
@@ -158,7 +155,7 @@ export default function SupplierProductsPage() {
                   className="flex flex-col items-center justify-center gap-2 w-full h-32 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 text-stone-400 hover:border-[#b8864a]/40 hover:text-[#b8864a] transition text-sm"
                 >
                   <ImagePlus className="w-6 h-6" />
-                  Click to upload image
+                  {t('Click to upload image', '点击上传图片')}
                 </button>
               )}
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
@@ -166,51 +163,32 @@ export default function SupplierProductsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Title</label>
-                <input
-                  type="text"
-                  value={newTitle}
-                  onChange={e => setNewTitle(e.target.value)}
-                  placeholder="Product name"
-                  className={inputCls}
-                />
+                <label className={labelCls}>{t('Title', '产品名称')}</label>
+                <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+                  placeholder={t('Product name', '请输入产品名称')} className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>Category</label>
-                <AdminSelect
-                  options={CATEGORY_OPTIONS}
-                  value={newCat}
-                  onChange={setNewCat}
-                />
+                <label className={labelCls}>{t('Category', '品类')}</label>
+                <AdminSelect options={CATEGORY_OPTIONS} value={newCat} onChange={setNewCat} />
               </div>
               <div className="sm:col-span-2">
-                <label className={labelCls}>Description</label>
-                <textarea
-                  value={newDesc}
-                  onChange={e => setNewDesc(e.target.value)}
-                  rows={3}
-                  placeholder="Brief description"
-                  className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none"
-                />
+                <label className={labelCls}>{t('Description', '产品描述')}</label>
+                <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={3}
+                  placeholder={t('Brief description', '简短描述')}
+                  className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none" />
               </div>
             </div>
 
             {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-2xl">{msg}</p>}
 
             <div className="flex gap-3">
-              <button
-                onClick={handleAdd}
-                disabled={saving}
-                className="btn-primary flex items-center gap-2 disabled:opacity-50"
-              >
+              <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                 <Plus className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Add Product'}
+                {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
               </button>
-              <button
-                onClick={() => { setAdding(false); setMsg(''); }}
-                className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition"
-              >
-                Cancel
+              <button onClick={() => { setAdding(false); setMsg(''); }}
+                className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
+                {t('Cancel', '取消')}
               </button>
             </div>
           </div>
@@ -228,16 +206,14 @@ export default function SupplierProductsPage() {
                   {p.category && (
                     <p className="text-[10px] font-semibold text-[#b8864a] uppercase tracking-wider mb-0.5">{p.category}</p>
                   )}
-                  <p className="text-sm font-medium text-[#2c2c2c] line-clamp-1">{p.title || 'Untitled'}</p>
+                  <p className="text-sm font-medium text-[#2c2c2c] line-clamp-1">{p.title || t('Untitled', '未命名')}</p>
                   {p.description && (
                     <p className="text-xs text-stone-500 line-clamp-2 mt-0.5">{p.description}</p>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDelete(p.id)}
+                <button onClick={() => handleDelete(p.id)}
                   className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                  aria-label="Delete"
-                >
+                  aria-label="Delete">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -248,10 +224,10 @@ export default function SupplierProductsPage() {
             <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mb-4">
               <ImagePlus className="w-8 h-8 text-stone-300" />
             </div>
-            <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">No products yet</h3>
-            <p className="text-sm text-stone-500 mb-5">Add your first product to showcase your materials.</p>
+            <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{t('No products yet', '暂无产品')}</h3>
+            <p className="text-sm text-stone-500 mb-5">{t('Add your first product to showcase your materials.', '添加第一件产品，开始展示您的建材。')}</p>
             <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Product
+              <Plus className="w-4 h-4" /> {t('Add Product', '添加产品')}
             </button>
           </div>
         ) : null}

@@ -16,6 +16,19 @@ export function Spinner({ size = 'md', text }: SpinnerProps) {
   );
 }
 
+/**
+ * Full-screen page loading state — fixed at absolute center of viewport.
+ * Use as early return when a page is fetching its initial data.
+ * Works correctly inside any layout (sidebars, headers don't affect centering).
+ */
+export function ScreenSpinner() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div className="w-10 h-10 border-2 border-[#b8864a]/20 border-t-[#b8864a] rounded-full animate-spin" />
+    </div>
+  );
+}
+
 /** Full-area centered spinner — use as page/section loading state */
 export function PageSpinner({ text = 'Loading...' }: { text?: string }) {
   return (

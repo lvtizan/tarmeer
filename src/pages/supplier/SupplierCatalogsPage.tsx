@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Trash2, FileText, Download, FolderOpen, X } from 'lucide-react';
+import { useAdminT } from '../../hooks/useAdminLang';
+import { ScreenSpinner } from '../../components/ui/Spinner';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 function getToken() { return localStorage.getItem('supplier_token'); }
@@ -10,6 +12,7 @@ const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-st
 const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
 
 export default function SupplierCatalogsPage() {
+  const { t } = useAdminT();
   const [catalogs, setCatalogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -60,11 +63,7 @@ export default function SupplierCatalogsPage() {
 
   const cancelAdd = () => { setAdding(false); setTitle(''); setFileUrl(''); setMsg(''); setTried(false); };
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <ScreenSpinner />;
 
   return (
     <>
@@ -73,12 +72,12 @@ export default function SupplierCatalogsPage() {
       <div className="max-w-2xl space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#2c2c2c]">Catalogs & Brochures</h1>
-            <p className="text-sm text-stone-500 mt-1">{catalogs.length} file{catalogs.length !== 1 ? 's' : ''} uploaded</p>
+            <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Catalogs & Brochures', '目录 & 宣传册')}</h1>
+            <p className="text-sm text-stone-500 mt-1">{t(`${catalogs.length} file${catalogs.length !== 1 ? 's' : ''} uploaded`, `已上传 ${catalogs.length} 份文件`)}</p>
           </div>
           {!adding && (
             <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Catalog
+              <Plus className="w-4 h-4" /> {t('Add Catalog', '添加目录')}
             </button>
           )}
         </div>
@@ -87,53 +86,38 @@ export default function SupplierCatalogsPage() {
         {adding && (
           <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-[15px] font-semibold text-[#2c2c2c]">New Catalog</h2>
+              <h2 className="text-[15px] font-semibold text-[#2c2c2c]">{t('New Catalog', '新增目录')}</h2>
               <button onClick={cancelAdd} className="text-stone-400 hover:text-stone-600 transition p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div>
-              <label className={labelCls}>Catalog Title *</label>
-              <input
-                type="text"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="e.g. Product Catalogue 2024"
-                className={`${inputCls} ${tried && !title.trim() ? '!border-red-400' : ''}`}
-              />
-              {tried && !title.trim() && <p className="text-xs text-red-500 mt-1">Title is required</p>}
+              <label className={labelCls}>{t('Catalog Title *', '目录名称 *')}</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                placeholder={t('e.g. Product Catalogue 2024', '如：2024 产品目录')}
+                className={`${inputCls} ${tried && !title.trim() ? '!border-red-400' : ''}`} />
+              {tried && !title.trim() && <p className="text-xs text-red-500 mt-1">{t('Title is required', '请填写目录名称')}</p>}
             </div>
 
             <div>
-              <label className={labelCls}>PDF URL *</label>
-              <input
-                type="url"
-                value={fileUrl}
-                onChange={e => setFileUrl(e.target.value)}
+              <label className={labelCls}>{t('PDF URL *', 'PDF 链接 *')}</label>
+              <input type="url" value={fileUrl} onChange={e => setFileUrl(e.target.value)}
                 placeholder="https://..."
-                className={`${inputCls} ${tried && !fileUrl.trim() ? '!border-red-400' : ''}`}
-              />
-              {tried && !fileUrl.trim() && <p className="text-xs text-red-500 mt-1">PDF URL is required</p>}
-              <p className="text-xs text-stone-400 mt-1">Upload your PDF to Google Drive, Dropbox, or similar, then paste the public link.</p>
+                className={`${inputCls} ${tried && !fileUrl.trim() ? '!border-red-400' : ''}`} />
+              {tried && !fileUrl.trim() && <p className="text-xs text-red-500 mt-1">{t('PDF URL is required', '请填写 PDF 链接')}</p>}
+              <p className="text-xs text-stone-400 mt-1">{t('Upload your PDF to Google Drive, Dropbox, or similar, then paste the public link.', '将 PDF 上传至 Google Drive 或 Dropbox，粘贴公开链接到此处。')}</p>
             </div>
 
             {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-2xl">{msg}</p>}
 
             <div className="flex gap-3">
-              <button
-                onClick={handleAdd}
-                disabled={saving}
-                className="btn-primary flex items-center gap-2 disabled:opacity-50"
-              >
+              <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                 <Plus className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Add Catalog'}
+                {saving ? t('Saving...', '保存中...') : t('Add Catalog', '添加目录')}
               </button>
-              <button
-                onClick={cancelAdd}
-                className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition"
-              >
-                Cancel
+              <button onClick={cancelAdd} className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
+                {t('Cancel', '取消')}
               </button>
             </div>
           </div>
@@ -151,26 +135,18 @@ export default function SupplierCatalogsPage() {
                   <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
                   {c.file_size && (
                     <p className="text-xs text-stone-400 mt-0.5">
-                      {c.file_size > 1048576
-                        ? `${(c.file_size / 1048576).toFixed(1)} MB`
-                        : `${(c.file_size / 1024).toFixed(0)} KB`}
+                      {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
                     </p>
                   )}
                 </div>
-                <a
-                  href={c.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-sm font-medium text-stone-600 hover:bg-[#b8864a] hover:text-white hover:border-[#b8864a] transition"
-                >
+                <a href={c.file_url} target="_blank" rel="noopener noreferrer"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-sm font-medium text-stone-600 hover:bg-[#b8864a] hover:text-white hover:border-[#b8864a] transition">
                   <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">View</span>
+                  <span className="hidden sm:inline">{t('View', '查看')}</span>
                 </a>
-                <button
-                  onClick={() => handleDelete(c.id)}
+                <button onClick={() => handleDelete(c.id)}
                   className="shrink-0 w-9 h-9 rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition opacity-0 group-hover:opacity-100"
-                  aria-label="Delete"
-                >
+                  aria-label="Delete">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -181,10 +157,10 @@ export default function SupplierCatalogsPage() {
             <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mb-4">
               <FolderOpen className="w-8 h-8 text-stone-300" />
             </div>
-            <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">No catalogs yet</h3>
-            <p className="text-sm text-stone-500 mb-5">Upload product catalogues and brochures for buyers to download.</p>
+            <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{t('No catalogs yet', '暂无目录')}</h3>
+            <p className="text-sm text-stone-500 mb-5">{t('Upload product catalogues and brochures for buyers to download.', '上传产品目录和宣传册，供采购方下载。')}</p>
             <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Catalog
+              <Plus className="w-4 h-4" /> {t('Add Catalog', '添加目录')}
             </button>
           </div>
         ) : null}

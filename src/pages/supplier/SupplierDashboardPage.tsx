@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { CheckCircle2, ExternalLink, AlertTriangle, Clock, Package, Layers, FolderOpen, User, FileText } from 'lucide-react';
 import { useAdminT } from '../../hooks/useAdminLang';
+import { ScreenSpinner } from '../../components/ui/Spinner';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 function getToken() { return localStorage.getItem('supplier_token'); }
@@ -65,11 +66,7 @@ export default function SupplierDashboardPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <ScreenSpinner />;
 
   const cats = Array.isArray(profile?.categories) ? profile!.categories : [];
   const profileDone = !!(profile?.company_name && profile?.description && cats.length > 0);
