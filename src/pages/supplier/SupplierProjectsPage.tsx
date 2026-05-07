@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Trash2, X, MapPin, Maximize2, Banknote, CalendarDays, Layers } from 'lucide-react';
+import { Plus, Trash2, X, MapPin, Maximize2, Banknote, CalendarDays, Layers, Pencil } from 'lucide-react';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { ScreenSpinner } from '../../components/ui/Spinner';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
@@ -41,6 +41,7 @@ export default function SupplierProjectsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [images, setImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -64,14 +65,33 @@ export default function SupplierProjectsPage() {
 
   useEffect(() => { loadProjects(); }, []);
 
+  const startEdit = (proj: any) => {
+    setEditingId(proj.id);
+    setAdding(true);
+    setForm({
+      title: proj.title || '',
+      description: proj.description || '',
+      location: proj.location || '',
+      area_sqm: proj.area_sqm ? String(proj.area_sqm) : '',
+      budget: proj.budget || '',
+      year: proj.year || '',
+    });
+    setImages(Array.isArray(proj.images) ? proj.images : []);
+    setMsg('');
+    setTried(false);
+  };
+
   const handleSubmit = async () => {
     setTried(true);
     if (!form.title.trim()) { setMsg('Title is required.'); return; }
     setSaving(true);
     setMsg('');
     try {
-      const res = await fetch(`${API_BASE}/suppliers/me/projects`, {
-        method: 'POST',
+      const url = editingId
+        ? `${API_BASE}/suppliers/me/projects/${editingId}`
+        : `${API_BASE}/suppliers/me/projects`;
+      const res = await fetch(url, {
+        method: editingId ? 'PUT' : 'POST',
         headers: authHeaders() as any,
         body: JSON.stringify({
           title: form.title.trim(),
@@ -88,6 +108,7 @@ export default function SupplierProjectsPage() {
       setForm(EMPTY_FORM);
       setImages([]);
       setAdding(false);
+      setEditingId(null);
       setTried(false);
       loadProjects();
     } catch (err: any) {
@@ -102,7 +123,7 @@ export default function SupplierProjectsPage() {
     setProjects(prev => prev.filter(p => p.id !== id));
   };
 
-  const cancelAdd = () => { setAdding(false); setForm(EMPTY_FORM); setImages([]); setMsg(''); setTried(false); };
+  const cancelAdd = () => { setAdding(false); setEditingId(null); setForm(EMPTY_FORM); setImages([]); setMsg(''); setTried(false); };
 
   if (loading) return <ScreenSpinner />;
 
@@ -127,7 +148,7 @@ export default function SupplierProjectsPage() {
         {adding && (
           <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-[15px] font-semibold text-[#2c2c2c]">{t('New Project', '新增项目')}</h2>
+              <h2 className="text-[15px] font-semibold text-[#2c2c2c]">{editingId ? t('Edit Project', '编辑项目') : t('New Project', '新增项目')}</h2>
               <button onClick={cancelAdd} className="text-stone-400 hover:text-stone-600 transition p-1">
                 <X className="w-5 h-5" />
               </button>
@@ -202,7 +223,7 @@ export default function SupplierProjectsPage() {
               </button>
               <button onClick={handleSubmit} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                 <Plus className="w-4 h-4" />
-                {saving ? t('Saving...', '保存中...') : t('Save Project', '保存项目')}
+                {saving ? t('Saving...', '保存中...') : editingId ? t('Save Changes', '保存修改') : t('Save Project', '保存项目')}
               </button>
             </div>
           </div>
@@ -230,11 +251,18 @@ export default function SupplierProjectsPage() {
                           {proj.year && <span className="inline-flex items-center gap-1 text-xs text-stone-400"><CalendarDays className="w-3.5 h-3.5" />{proj.year}</span>}
                         </div>
                       </div>
-                      <button onClick={() => handleDelete(proj.id)}
-                        className="shrink-0 w-9 h-9 rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition"
-                        aria-label="Delete project">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => startEdit(proj)}
+                          className="w-9 h-9 rounded-xl border border-stone-200 bg-stone-50 text-stone-400 hover:bg-stone-100 hover:text-stone-600 flex items-center justify-center transition"
+                          aria-label="Edit project">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(proj.id)}
+                          className="w-9 h-9 rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition"
+                          aria-label="Delete project">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

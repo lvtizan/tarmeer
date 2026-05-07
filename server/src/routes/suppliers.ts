@@ -40,6 +40,7 @@ router.post('/me/catalogs', authenticateSupplier, catalogs.uploadCatalog);
 router.delete('/me/catalogs/:id', authenticateSupplier, catalogs.deleteCatalog);
 router.get('/me/projects', authenticateSupplier, projects.listMyProjects);
 router.post('/me/projects', authenticateSupplier, projects.addProject);
+router.put('/me/projects/:id', authenticateSupplier, projects.updateProject);
 router.delete('/me/projects/:id', authenticateSupplier, projects.deleteProject);
 
 export default router;
