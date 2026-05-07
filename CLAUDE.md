@@ -212,9 +212,13 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 
 ---
 
-## Portal/Dashboard 双 Navbar 禁止规则（MUST FOLLOW）
+## 双 Navbar 禁止规则（MUST FOLLOW）
 
-**任何独立 Portal（Supplier Dashboard、Company Dashboard、Admin 等）的路由必须放在主站 `<Layout>` 之外，否则会同时渲染两个顶栏（双 Navbar / 双 Logo）。**
+双 Navbar 有两种来源，必须同时防范：
+
+### 情形 A：Portal 路由嵌套在 `<Layout>` 内
+
+**任何独立 Portal（Supplier Dashboard、Company Dashboard、Admin 等）的路由必须放在主站 `<Layout>` 之外。**
 
 - 主站 `<Layout>` 包含 `<Navbar>`，所有放在其内的路由都会自动获得主站导航
 - Supplier / Company / Admin 等有自己 header 的 Portal 路由必须与 `/auth` 同级，独立放在 `<Routes>` 顶层
@@ -229,6 +233,39 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
   </Route>
   ```
 - **每次新增 Portal 路由时，第一件事检查它是否在 `<Layout>` 外面**
+
+### 情形 B：公共页面组件内部渲染了自己的 `<header>`
+
+**任何路由在 `<Layout>` 内的页面组件，不得在 JSX 中渲染 `<header>`、`<nav>` 或任何充当顶栏功能的元素（含 TarmeerLogo + 导航链接的组合）。**
+
+根因：`<Layout>` 已经渲染 `<Navbar>`，页面再出一个 `<header>` 就产生双顶栏。
+典型错误（已在 `ForSuppliersPage.tsx` 出现过）：
+
+```tsx
+// ❌ 错误 — 此页面在 <Layout> 内，不能再有自己的 header
+export default function ForSuppliersPage() {
+  return (
+    <>
+      <header className="sticky top-0 ...">  {/* 双 Navbar！ */}
+        <TarmeerLogo />
+        <span>Supplier Portal</span>
+      </header>
+      ...
+    </>
+  );
+}
+```
+
+**检查方法（写新页面 / 改页面时必做）：**
+1. 在 `src/App.tsx` 搜索该页面的路径，确认它的父级是 `<Layout>` 还是独立 Portal Layout
+2. 如果父级是 `<Layout>`：页面组件内禁止出现 `<header>`、`<nav>` 标签或 `<TarmeerLogo />` + 导航链接的组合
+3. 如果父级是独立 Portal Layout（SupplierLayout、CompanyLayout、AdminLayout）：页面本身也不需要再加 `<header>`，layout 已处理
+
+**快速自检命令（改完页面后跑）：**
+```bash
+grep -n "<header\|<nav " src/pages/<PageName>.tsx
+# 有输出就需要确认：此页面是否在 <Layout> 内？如果是，必须删掉这个 header/nav
+```
 
 ## Portal/Dashboard 内容区居中规则（MUST FOLLOW）
 
