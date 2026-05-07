@@ -1,5 +1,4 @@
 import pool from '../config/database';
-import { sendProjectSubmissionEmail } from '../services/emailService';
 import { getProjectStatusForDesignerSubmit } from '../lib/projectReview';
 import { buildPublicProjectsListQuery } from '../lib/publicProjectsQuery';
 import { parseJsonField } from '../lib/parseJsonField';
@@ -122,12 +121,6 @@ export async function createProject(req: any, res: any) {
     );
     const notificationDesigner = (cpInfo as any[])[0] || { full_name: 'Unknown', email: req.user.email };
 
-    try {
-      await sendProjectSubmissionEmail((project as any[])[0], notificationDesigner);
-    } catch (notificationError) {
-      console.error('Project submission notification error:', notificationError);
-    }
-    
     setImmediate(() => {
       logActivity({
         userId: req.user.userId, userName: '', userRole: 'company',

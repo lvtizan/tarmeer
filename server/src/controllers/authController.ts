@@ -156,21 +156,7 @@ export async function register(req: any, res: any) {
         if (emailError?.response) console.error('[SMTP] Response:', emailError.response);
       }
 
-      setImmediate(async () => {
-        try {
-          const sendResult = await sendDesignerRegistrationEmail(newDesigner);
-          const mailInfo = sendResult as any;
-          console.log(`[SMTP] Registration notification sent for ${email}`, {
-            messageId: mailInfo?.messageId,
-            response: mailInfo?.response,
-            accepted: mailInfo?.accepted,
-            rejected: mailInfo?.rejected,
-          });
-        } catch (emailError: any) {
-          console.error('[SMTP] Registration notification failed:', emailError?.message || emailError);
-          if (emailError?.response) console.error('[SMTP] Response:', emailError.response);
-        }
-      });
+      // Designer registration notification removed — designers now register as 装企
     } else {
       console.warn('[SMTP] Not configured: set SMTP_USER and SMTP_PASS in .env on server, then pm2 restart tarmeer-api');
       verificationSent = false;
