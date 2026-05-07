@@ -14,9 +14,6 @@ import {
   updateAdmin,
   deleteAdmin,
   changePassword,
-  listStaff,
-  createStaff,
-  toggleStaff,
 } from '../controllers/adminController';
 import {
   listInterviews, getInterview, editInterview,
@@ -370,11 +367,6 @@ router.post('/suppliers/:id/products', adminAddProduct);
 router.delete('/suppliers/:id/products/:productId', adminDeleteProduct);
 router.put('/suppliers/catalogs/:id/file', requirePermission('can_approve'), uploadLargePdf.single('file'), adminReplaceCatalogFile);
 router.put('/suppliers/:id/products/:productId/image', upload.single('file'), adminReplaceProductImage);
-
-// Field staff management (super admin only)
-router.get('/staff', requireSuperAdmin, listStaff);
-router.post('/staff', requireSuperAdmin, createStaff);
-router.patch('/staff/:id', requireSuperAdmin, toggleStaff);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);
