@@ -193,10 +193,7 @@ export default function SupplierProductsPage() {
               <ImagePlus className="w-8 h-8 text-stone-300" />
             </div>
             <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{t('No products yet', '暂无产品')}</h3>
-            <p className="text-sm text-stone-500 mb-5">{t('Add your first product to showcase your materials.', '添加第一件产品，开始展示您的建材。')}</p>
-            <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> {t('Add Product', '添加产品')}
-            </button>
+            <p className="text-sm text-stone-500">{t('Add your first product to showcase your materials.', '添加第一件产品，开始展示您的建材。')}</p>
           </div>
         ) : null}
       </div>

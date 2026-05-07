@@ -209,6 +209,10 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
     - 按钮：在 hero 或固定区域内，移动端不可见的按钮用 `hidden sm:inline-flex`；移动端底部单独提供全宽 CTA（`w-full sm:hidden`）；绝不在小屏幕上让按钮与标题文字并排挤压
     - 卡片：移动端单列（`grid-cols-1 sm:grid-cols-2`），内边距适当缩小（`p-4 sm:p-6`），图片高度用 `aspect-ratio` 而非固定高度
     - `btn-primary` 必须保持在 `@layer components` 内（`src/index.css`），否则 `hidden`/`sm:hidden` 等 Tailwind utilities 无法覆盖其 display，导致移动端按钮显示错误
+11. **一个界面只允许一个主操作按钮（btn-primary），禁止重复**：同一页面内，功能相同的主按钮只能出现一次。典型违规：页面标题行右侧有"添加 X"，空状态（empty state）区块内又出现第二个"添加 X"。修复规则：
+    - 空状态区块只放图标 + 文字说明，**不放任何按钮**
+    - 唯一的主操作入口固定在页面标题行右侧
+    - 检查方法：在组件中搜索 `btn-primary`，出现 2 次以上立即排查是否功能重复
 
 ---
 
