@@ -14,6 +14,28 @@ const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
 
 const EMPTY_FORM = { title: '', description: '', location: '', area_sqm: '', budget: '', year: '' };
 
+function ProjectImageGrid({ images }: { images: string[] }) {
+  const n = images.length;
+  const cols = Math.min(n, 4);
+  const slots = images.slice(0, cols);
+  const extra = n - cols;
+  const colClass = ['', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4'][cols];
+  return (
+    <div className={`grid ${colClass} gap-0.5`}>
+      {slots.map((img, i) => (
+        <div key={i} className="relative">
+          <img src={img} alt="" className="w-full aspect-[4/3] object-cover" />
+          {i === cols - 1 && extra > 0 && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">
+              +{extra}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SupplierProjectsPage() {
   const { t } = useAdminT();
   const [projects, setProjects] = useState<any[]>([]);
@@ -194,18 +216,7 @@ export default function SupplierProjectsPage() {
               return (
                 <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
                   {imgs.length > 0 && (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-0.5">
-                      {imgs.slice(0, 4).map((img, i) => (
-                        <div key={i} className="relative">
-                          <img src={img} alt="" className="w-full aspect-[4/3] object-cover" />
-                          {i === 3 && imgs.length > 4 && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">
-                              +{imgs.length - 4}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    <ProjectImageGrid images={imgs} />
                   )}
                   <div className="p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-3">
