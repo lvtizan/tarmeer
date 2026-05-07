@@ -12,15 +12,6 @@ interface ImageUploadZoneProps {
   onFileMeta?: (meta: { original_name: string }) => void; // called with server response metadata
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
 
 export default function ImageUploadZone({
@@ -50,21 +41,26 @@ export default function ImageUploadZone({
     setProgress(0);
     setErr('');
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('original_name', file.name);
       const data = await new Promise<any>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', uploadUrl);
-        xhr.setRequestHeader('Content-Type', 'application/json');
         const headers = getHeaders();
         Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
         xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)); };
         xhr.onload = () => {
-          const res = JSON.parse(xhr.responseText);
-          if (xhr.status >= 200 && xhr.status < 300) resolve(res);
-          else reject(new Error(res.error || 'Upload failed'));
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) resolve(res);
+            else reject(new Error(res.error || 'Upload failed'));
+          } catch {
+            reject(new Error('Server error'));
+          }
         };
         xhr.onerror = () => reject(new Error('Upload failed'));
-        xhr.send(JSON.stringify({ data_url: dataUrl, original_name: file.name }));
+        xhr.send(formData);
       });
       onUpload([...value, data.url]);
       if (onFileMeta && data.original_name) onFileMeta({ original_name: data.original_name });

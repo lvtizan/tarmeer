@@ -6,18 +6,16 @@ import { randomUUID } from 'crypto';
 export async function uploadProductImage(req: any, res: any) {
   try {
     const userId = req.supplierUser.id;
-    const { data_url } = req.body;
-    if (!data_url) return res.status(400).json({ error: 'No image data provided.' });
-    const matches = data_url.match(/^data:([^;]+);base64,(.+)$/);
-    if (!matches) return res.status(400).json({ error: 'Invalid image format.' });
-    const mimeType = matches[1];
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No image data provided.' });
+    const mimeType = file.mimetype;
     if (!mimeType.startsWith('image/')) return res.status(400).json({ error: 'Only images allowed.' });
     const extMap: Record<string, string> = {
       'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
       'image/webp': 'webp', 'image/gif': 'gif',
     };
     const ext = extMap[mimeType] || 'jpg';
-    const buffer = Buffer.from(matches[2], 'base64');
+    const buffer = file.buffer;
     const fileName = `${userId}-${randomUUID()}.${ext}`;
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'suppliers', 'products');
     await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
