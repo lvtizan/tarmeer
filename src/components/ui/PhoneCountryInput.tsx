@@ -32,8 +32,9 @@ interface PhoneCountryInputProps {
 
 export default function PhoneCountryInput({ value, onChange, placeholder }: PhoneCountryInputProps) {
   const { code: initCode, digits: initDigits } = parsePhone(value);
+  const initCountry = PHONE_COUNTRIES.find(c => c.code === initCode) ?? PHONE_COUNTRIES[0];
   const [code, setCode] = useState(initCode);
-  const [digits, setDigits] = useState(initDigits);
+  const [digits, setDigits] = useState(initDigits.slice(0, initCountry.maxDigits));
   const [open, setOpen] = useState(false);
   const [touched, setTouched] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -46,8 +47,9 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
     if (value !== prevValueRef.current) {
       prevValueRef.current = value;
       const { code: c, digits: d } = parsePhone(value);
+      const country = PHONE_COUNTRIES.find(x => x.code === c) ?? PHONE_COUNTRIES[0];
       setCode(c);
-      setDigits(d);
+      setDigits(d.slice(0, country.maxDigits));
     }
   }, [value]);
 
