@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Trash2, ImagePlus, X, MapPin, Maximize2, Banknote, CalendarDays, Layers } from 'lucide-react';
+import { Plus, Trash2, X, MapPin, Maximize2, Banknote, CalendarDays, Layers } from 'lucide-react';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { ScreenSpinner } from '../../components/ui/Spinner';
+import ImageUploadZone from '../../components/ui/ImageUploadZone';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 function getToken() { return localStorage.getItem('supplier_token'); }
@@ -10,15 +11,6 @@ function authHeaders() { return { 'Content-Type': 'application/json', Authorizat
 
 const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
 const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 const EMPTY_FORM = { title: '', description: '', location: '', area_sqm: '', budget: '', year: '' };
 
@@ -28,11 +20,10 @@ export default function SupplierProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [images, setImages] = useState<string[]>([]); // data URLs / local paths
+  const [images, setImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [tried, setTried] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const loadProjects = () => {
     fetch(`${API_BASE}/suppliers/me/projects`, { headers: authHeaders() as any })
@@ -50,20 +41,6 @@ export default function SupplierProjectsPage() {
   };
 
   useEffect(() => { loadProjects(); }, []);
-
-  const handleFiles = async (files: FileList | File[]) => {
-    const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
-    const dataUrls = await Promise.all(arr.map(fileToDataUrl));
-    setImages(prev => [...prev, ...dataUrls]);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    await handleFiles(e.dataTransfer.files);
-  };
-
-  const removeImage = (idx: number) =>
-    setImages(prev => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async () => {
     setTried(true);
@@ -137,25 +114,14 @@ export default function SupplierProjectsPage() {
             {/* Project images */}
             <div>
               <label className={labelCls}>{t('Project Photos', '项目图片')}</label>
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
-                  {images.map((img, i) => (
-                    <div key={i} className="relative group">
-                      <img src={img} alt="" className="w-full aspect-[4/3] object-cover rounded-xl border border-stone-200" />
-                      <button onClick={() => removeImage(i)}
-                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <button type="button" onClick={() => fileRef.current?.click()} onDrop={handleDrop} onDragOver={e => e.preventDefault()}
-                className="flex flex-col items-center justify-center gap-2 w-full h-24 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 text-stone-400 hover:border-[#b8864a]/40 hover:text-[#b8864a] transition text-sm">
-                <ImagePlus className="w-5 h-5" />
-                {images.length > 0 ? t('Add more photos', '继续添加图片') : t('Upload photos (drag or click)', '上传图片（拖放或点击）')}
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; } }} />
+              <ImageUploadZone
+                value={images}
+                onUpload={setImages}
+                uploadUrl={`${API_BASE}/suppliers/me/upload-image`}
+                getHeaders={() => ({ Authorization: `Bearer ${getToken()}` })}
+                label={t('Click, drag or paste to upload', '点击、拖放或粘贴截图上传')}
+                sublabel="JPG · PNG · WebP"
+              />
             </div>
 
             {/* Title */}
