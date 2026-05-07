@@ -113,6 +113,49 @@ export async function addProject(req: any, res: any) {
   }
 }
 
+export async function updateProject(req: any, res: any) {
+  try {
+    const profile = await getProfile(req.supplierUser.id);
+    if (!profile) return res.status(403).json({ error: 'Forbidden.' });
+
+    const { id } = req.params;
+    const [existing] = await pool.execute(
+      'SELECT id FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?',
+      [id, profile.id]
+    );
+    if ((existing as any[]).length === 0) return res.status(404).json({ error: 'Project not found.' });
+
+    const { title, description, location, area_sqm, budget, year, images } = req.body;
+    if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' });
+
+    const rawImages: string[] = Array.isArray(images) ? images : [];
+    const persistedImages = rawImages.length > 0
+      ? await persistProjectImages(rawImages, { designerId: profile.id, projectId: String(id) })
+      : [];
+
+    await pool.execute(
+      `UPDATE supplier_projects
+       SET title=?, description=?, location=?, area_sqm=?, budget=?, year=?, images=?
+       WHERE id=?`,
+      [
+        title.trim(),
+        description?.trim() || null,
+        location?.trim() || null,
+        area_sqm ? Number(area_sqm) : null,
+        budget?.trim() || null,
+        year?.trim() || null,
+        JSON.stringify(persistedImages),
+        id,
+      ]
+    );
+    const [updated] = await pool.execute('SELECT * FROM supplier_projects WHERE id = ?', [id]);
+    res.json({ project: (updated as any[])[0] });
+  } catch (error) {
+    console.error('Update supplier project error:', error);
+    res.status(500).json({ error: 'Failed to update project.' });
+  }
+}
+
 export async function deleteProject(req: any, res: any) {
   try {
     const profile = await getProfile(req.supplierUser.id);

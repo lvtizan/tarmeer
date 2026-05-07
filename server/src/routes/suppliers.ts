@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
 import { authenticateSupplier } from '../middleware/supplierAuth';
 import * as profile from '../controllers/supplierProfileController';
 import * as products from '../controllers/supplierProductController';
@@ -8,6 +9,7 @@ import * as leads from '../controllers/supplierLeadController';
 import * as projects from '../controllers/supplierProjectController';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 const leadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -28,18 +30,19 @@ router.post('/leads', leadLimiter, leads.submitLead);
 router.get('/me/profile', authenticateSupplier, profile.getMyProfile);
 router.post('/me/profile', authenticateSupplier, profile.upsertProfile);
 router.post('/me/upload-license', authenticateSupplier, profile.uploadLicense);
-router.post('/me/upload-image', authenticateSupplier, products.uploadProductImage);
+router.post('/me/upload-image', authenticateSupplier, upload.single('file'), products.uploadProductImage);
 router.get('/me/products', authenticateSupplier, products.listMyProducts);
 router.post('/me/products', authenticateSupplier, products.addProduct);
 router.put('/me/products/:id', authenticateSupplier, products.updateProduct);
 router.delete('/me/products/:id', authenticateSupplier, products.deleteProduct);
 router.put('/me/products-reorder', authenticateSupplier, products.reorderProducts);
-router.post('/me/upload-catalog-file', authenticateSupplier, catalogs.uploadCatalogFile);
+router.post('/me/upload-catalog-file', authenticateSupplier, upload.single('file'), catalogs.uploadCatalogFile);
 router.get('/me/catalogs', authenticateSupplier, catalogs.listMyCatalogs);
 router.post('/me/catalogs', authenticateSupplier, catalogs.uploadCatalog);
 router.delete('/me/catalogs/:id', authenticateSupplier, catalogs.deleteCatalog);
 router.get('/me/projects', authenticateSupplier, projects.listMyProjects);
 router.post('/me/projects', authenticateSupplier, projects.addProject);
+router.put('/me/projects/:id', authenticateSupplier, projects.updateProject);
 router.delete('/me/projects/:id', authenticateSupplier, projects.deleteProject);
 
 export default router;

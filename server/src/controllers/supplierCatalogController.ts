@@ -14,11 +14,9 @@ async function getProfileId(supplierUserId: number): Promise<number | null> {
 export async function uploadCatalogFile(req: any, res: any) {
   try {
     const userId = req.supplierUser.id;
-    const { data_url, original_name } = req.body;
-    if (!data_url) return res.status(400).json({ error: 'No file data provided.' });
-    const matches = data_url.match(/^data:([^;]+);base64,(.+)$/);
-    if (!matches) return res.status(400).json({ error: 'Invalid file format.' });
-    const mimeType = matches[1];
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No file data provided.' });
+    const mimeType = file.mimetype;
     const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
     if (!allowed.includes(mimeType) && !mimeType.startsWith('image/')) {
       return res.status(400).json({ error: 'Only PDF and image files are allowed.' });
@@ -28,13 +26,13 @@ export async function uploadCatalogFile(req: any, res: any) {
       'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
     };
     const ext = extMap[mimeType] || 'bin';
-    const buffer = Buffer.from(matches[2], 'base64');
     const fileName = `${userId}-${randomUUID()}.${ext}`;
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'suppliers', 'catalogs');
     await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
     const filePath = path.join(uploadDir, fileName);
-    await fs.writeFile(filePath, buffer, { mode: 0o644 });
-    const baseName = original_name ? path.basename(original_name, path.extname(original_name)) : '';
+    await fs.writeFile(filePath, file.buffer, { mode: 0o644 });
+    const originalName = req.body.original_name || file.originalname || '';
+    const baseName = originalName ? path.basename(originalName, path.extname(originalName)) : '';
     res.json({ url: `/uploads/suppliers/catalogs/${fileName}`, original_name: baseName });
   } catch (error) {
     console.error('Upload catalog file error:', error);

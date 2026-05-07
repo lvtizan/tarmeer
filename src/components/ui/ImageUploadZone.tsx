@@ -12,15 +12,6 @@ interface ImageUploadZoneProps {
   onFileMeta?: (meta: { original_name: string }) => void; // called with server response metadata
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
 
 export default function ImageUploadZone({
@@ -34,6 +25,7 @@ export default function ImageUploadZone({
   onFileMeta,
 }: ImageUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [err, setErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const uploadFnRef = useRef<(file: File) => void>(() => {});
@@ -46,22 +38,37 @@ export default function ImageUploadZone({
     });
     if (!allowed) { setErr('不支持该文件类型。'); return; }
     setUploading(true);
+    setProgress(0);
     setErr('');
     try {
-      const dataUrl = await fileToDataUrl(file);
-      const resp = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getHeaders() },
-        body: JSON.stringify({ data_url: dataUrl, original_name: file.name }),
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('original_name', file.name);
+      const data = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        const headers = getHeaders();
+        Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
+        xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)); };
+        xhr.onload = () => {
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) resolve(res);
+            else reject(new Error(res.error || 'Upload failed'));
+          } catch {
+            reject(new Error('Server error'));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send(formData);
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Upload failed');
       onUpload([...value, data.url]);
       if (onFileMeta && data.original_name) onFileMeta({ original_name: data.original_name });
     } catch (e: any) {
       setErr(e.message || 'Upload failed');
     } finally {
       setUploading(false);
+      setProgress(0);
     }
   };
 
@@ -128,7 +135,12 @@ export default function ImageUploadZone({
         className="flex flex-col items-center justify-center gap-2 w-full h-24 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 text-stone-400 hover:border-[#b8864a]/40 hover:text-[#b8864a] transition disabled:opacity-50 text-sm cursor-pointer"
       >
         {uploading ? (
-          <div className="w-5 h-5 border-2 border-[#b8864a]/20 border-t-[#b8864a] rounded-full animate-spin" />
+          <div className="w-full px-6 flex flex-col items-center gap-2">
+            <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-[#b8864a] h-1.5 rounded-full transition-all duration-200" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="text-xs text-stone-400">{progress}%</span>
+          </div>
         ) : (
           <>
             <Paperclip className="w-5 h-5" />
