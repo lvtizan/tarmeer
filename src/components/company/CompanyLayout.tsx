@@ -78,8 +78,8 @@ export default function CompanyLayout() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto md:ml-64 pb-20 md:pb-0">
-          <div className="p-4 sm:p-6 lg:p-10">
+        <main className="flex-1 overflow-y-auto md:ml-64 pb-20 md:pb-0 [scrollbar-gutter:stable]">
+          <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
             <Outlet />
           </div>
         </main>
