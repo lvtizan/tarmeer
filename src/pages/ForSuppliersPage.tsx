@@ -51,6 +51,7 @@ function SupplierAuthCard() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isNewEmail, setIsNewEmail] = useState<boolean | null>(null);
+  const [emailConflict, setEmailConflict] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pollingEmail, setPollingEmail] = useState<string | null>(null);
@@ -76,7 +77,7 @@ function SupplierAuthCard() {
 
   // Debounced email availability check
   useEffect(() => {
-    if (!email || !EMAIL_REGEX.test(email)) { setIsNewEmail(null); return; }
+    if (!email || !EMAIL_REGEX.test(email)) { setIsNewEmail(null); setEmailConflict(false); return; }
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`${API_BASE}/supplier/auth/check-availability`, {
@@ -85,8 +86,14 @@ function SupplierAuthCard() {
           body: JSON.stringify({ email }),
         });
         const data = await res.json();
-        setIsNewEmail(data.isNewEmail === true);
-      } catch { setIsNewEmail(null); }
+        if (data.conflict === 'homeowner') {
+          setIsNewEmail(null);
+          setEmailConflict(true);
+        } else {
+          setEmailConflict(false);
+          setIsNewEmail(data.isNewEmail === true);
+        }
+      } catch { setIsNewEmail(null); setEmailConflict(false); }
     }, 500);
     return () => clearTimeout(t);
   }, [email]);
@@ -94,6 +101,7 @@ function SupplierAuthCard() {
   const handleEmailContinue = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !EMAIL_REGEX.test(email)) { setError('Please enter a valid email'); return; }
+    if (emailConflict) return;
     setError(null);
     setStep('password');
   };
@@ -236,9 +244,17 @@ function SupplierAuthCard() {
               {isNewEmail === true && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-emerald-600">New account</span>}
               {isNewEmail === false && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-stone-500">Sign in</span>}
             </div>
+            {emailConflict && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                This email has a Tarmeer account. Please{' '}
+                <a href="/auth" className="font-semibold underline hover:text-amber-900">sign in there</a>
+                {' '}or use a different email for your supplier account.
+              </p>
+            )}
             <button
               type="submit"
-              className="w-full h-[54px] rounded-2xl bg-[#B8864A] text-white font-semibold text-[15px] hover:bg-[#a3780a] transition-all duration-200 shadow-[0_4px_20px_rgba(184,134,74,0.25)]"
+              disabled={emailConflict}
+              className="w-full h-[54px] rounded-2xl bg-[#B8864A] text-white font-semibold text-[15px] hover:bg-[#a3780a] transition-all duration-200 shadow-[0_4px_20px_rgba(184,134,74,0.25)] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Continue with email
             </button>

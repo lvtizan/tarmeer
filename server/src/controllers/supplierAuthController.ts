@@ -189,8 +189,19 @@ export async function checkAvailability(req: any, res: any) {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required.' });
 
-    const [rows] = await pool.execute('SELECT id FROM supplier_users WHERE email = ? LIMIT 1', [email]);
-    res.json({ isNewEmail: (rows as any[]).length === 0 });
+    // Check if already a supplier
+    const [supplierRows] = await pool.execute('SELECT id FROM supplier_users WHERE email = ? LIMIT 1', [email]);
+    if ((supplierRows as any[]).length > 0) {
+      return res.json({ isNewEmail: false });
+    }
+
+    // Check if email belongs to a homeowner/company account
+    const [userRows] = await pool.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+    if ((userRows as any[]).length > 0) {
+      return res.json({ isNewEmail: false, conflict: 'homeowner' });
+    }
+
+    res.json({ isNewEmail: true });
   } catch (error) {
     console.error('Supplier check availability error:', error);
     res.status(500).json({ error: 'Check failed.' });
