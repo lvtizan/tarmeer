@@ -208,13 +208,13 @@ export default function SupplierProjectsPage() {
 
             {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-2xl">{msg}</p>}
 
-            <div className="flex gap-3">
+            <div className="flex justify-end gap-3">
+              <button onClick={cancelAdd} className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
+                {t('Cancel', '取消')}
+              </button>
               <button onClick={handleSubmit} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                 <Plus className="w-4 h-4" />
                 {saving ? t('Saving...', '保存中...') : t('Save Project', '保存项目')}
-              </button>
-              <button onClick={cancelAdd} className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
-                {t('Cancel', '取消')}
               </button>
             </div>
           </div>
@@ -270,10 +270,7 @@ export default function SupplierProjectsPage() {
               <Layers className="w-8 h-8 text-stone-300" />
             </div>
             <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{t('No projects yet', '暂无项目')}</h3>
-            <p className="text-sm text-stone-500 mb-5">{t('Showcase completed projects to attract clients.', '展示已完成项目，吸引更多客户。')}</p>
-            <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> {t('Add Project', '添加项目')}
-            </button>
+            <p className="text-sm text-stone-500">{t('Showcase completed projects to attract clients.', '展示已完成项目，吸引更多客户。')}</p>
           </div>
         ) : null}
       </div>
