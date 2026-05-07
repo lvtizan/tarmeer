@@ -3,11 +3,13 @@ import { Helmet } from 'react-helmet-async';
 import { Save } from 'lucide-react';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { ScreenSpinner } from '../../components/ui/Spinner';
+import PhoneCountryInput from '../../components/ui/PhoneCountryInput';
+import FileUploadButton from '../../components/ui/FileUploadButton';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 function getToken() { return localStorage.getItem('supplier_token'); }
-function authHeaders(extra?: Record<string, string>) {
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...extra };
+function authHeaders(): Record<string, string> {
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` };
 }
 
 const CATEGORY_OPTIONS = [
@@ -102,11 +104,13 @@ export default function SupplierProfilePage() {
 
   if (loading) return <ScreenSpinner />;
 
+  const msgIsSuccess = msg.includes('saved') || msg.includes('成功');
+
   return (
     <>
       <Helmet><title>Profile — Supplier Dashboard | Tarmeer</title></Helmet>
 
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl pb-24 space-y-6">
         <div>
           <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Company Profile', '公司资料')}</h1>
           <p className="text-sm text-stone-500 mt-1">{t('Fill in your company details. Submitted for admin review after save.', '填写公司信息，保存后提交管理员审核。')}</p>
@@ -158,23 +162,21 @@ export default function SupplierProfilePage() {
           </div>
         </div>
 
-        {/* Business license */}
+        {/* Business license — upload only, no display */}
         <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
           <div>
             <h2 className="text-[15px] font-semibold text-[#2c2c2c]">{t('Business License', '营业执照')}</h2>
-            <p className="text-sm text-stone-500 mt-1">{t('Upload your trade license to Google Drive or Dropbox and paste the shared link below.', '将营业执照上传至 Google Drive 或 Dropbox，粘贴共享链接到下方。')}</p>
+            <p className="text-sm text-stone-500 mt-1">{t('Upload your trade license for admin verification. Supports image and PDF.', '上传营业执照供管理员审核，支持图片和 PDF。')}</p>
           </div>
-          <div>
-            <label className={labelCls}>{t('License Document URL', '执照文件链接')}</label>
-            <input type="url" value={licenseUrl} onChange={e => setLicenseUrl(e.target.value)}
-              placeholder="https://drive.google.com/..." className={inputCls} />
-          </div>
-          {licenseUrl && (
-            <a href={licenseUrl} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-[#b8864a] hover:underline">
-              {t('View uploaded license ↗', '查看已上传执照 ↗')}
-            </a>
-          )}
+          <FileUploadButton
+            value={licenseUrl}
+            onUpload={url => setLicenseUrl(url)}
+            uploadUrl={`${API_BASE}/suppliers/me/upload-license`}
+            getHeaders={() => ({ Authorization: `Bearer ${getToken()}` })}
+            accept="image/*,application/pdf"
+            label={t('Click, drag, or paste screenshot to upload', '点击、拖放或粘贴截图上传')}
+            sublabel={t('JPG · PNG · PDF', 'JPG · PNG · PDF')}
+          />
         </div>
 
         {/* Contact */}
@@ -183,13 +185,11 @@ export default function SupplierProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>{t('Contact Phone', '联系电话')}</label>
-              <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)}
-                placeholder="+971..." className={inputCls} />
+              <PhoneCountryInput value={contactPhone} onChange={setContactPhone} />
             </div>
             <div>
               <label className={labelCls}>WhatsApp</label>
-              <input type="tel" value={whatsapp} onChange={e => setWhatsapp(e.target.value)}
-                placeholder="+971..." className={inputCls} />
+              <PhoneCountryInput value={whatsapp} onChange={setWhatsapp} />
             </div>
             <div className="sm:col-span-2">
               <label className={labelCls}>{t('Website', '官网')}</label>
@@ -223,13 +223,13 @@ export default function SupplierProfilePage() {
             </div>
           )}
         </div>
+      </div>
 
+      {/* Sticky save bar — bottom right */}
+      <div className="fixed bottom-0 right-0 left-0 md:left-64 z-40 bg-white/90 backdrop-blur border-t border-stone-100 px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-end gap-4">
         {msg && (
-          <p className={`text-sm px-4 py-3 rounded-2xl ${
-            msg.includes('saved') || msg.includes('成功') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
-          }`}>{msg}</p>
+          <span className={`text-sm ${msgIsSuccess ? 'text-emerald-700' : 'text-red-600'}`}>{msg}</span>
         )}
-
         <button onClick={handleSave} disabled={saving || !companyName.trim()}
           className="btn-primary flex items-center gap-2 disabled:opacity-50">
           <Save className="w-4 h-4" />

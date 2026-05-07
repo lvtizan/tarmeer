@@ -27,6 +27,7 @@ router.post('/leads', leadLimiter, leads.submitLead);
 // ── Authenticated supplier ──
 router.get('/me/profile', authenticateSupplier, profile.getMyProfile);
 router.post('/me/profile', authenticateSupplier, profile.upsertProfile);
+router.post('/me/upload-license', authenticateSupplier, profile.uploadLicense);
 router.get('/me/products', authenticateSupplier, products.listMyProducts);
 router.post('/me/products', authenticateSupplier, products.addProduct);
 router.put('/me/products/:id', authenticateSupplier, products.updateProduct);

@@ -1,4 +1,34 @@
 import pool from '../config/database';
+import fs from 'fs/promises';
+import path from 'path';
+import { randomUUID } from 'crypto';
+
+export async function uploadLicense(req: any, res: any) {
+  try {
+    const userId = req.supplierUser.id;
+    const { data_url } = req.body;
+    if (!data_url) return res.status(400).json({ error: 'No file data provided.' });
+    const matches = data_url.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) return res.status(400).json({ error: 'Invalid file format.' });
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+      'image/gif': 'gif', 'application/pdf': 'pdf',
+    };
+    const ext = extMap[mimeType] || 'bin';
+    const fileName = `${userId}-${randomUUID()}.${ext}`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'suppliers', 'licenses');
+    await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
+    const filePath = path.join(uploadDir, fileName);
+    await fs.writeFile(filePath, buffer, { mode: 0o644 });
+    res.json({ url: `/uploads/suppliers/licenses/${fileName}` });
+  } catch (error) {
+    console.error('Upload license error:', error);
+    res.status(500).json({ error: 'Failed to upload file.' });
+  }
+}
 
 function slugify(name: string): string {
   return name.toLowerCase().trim()
