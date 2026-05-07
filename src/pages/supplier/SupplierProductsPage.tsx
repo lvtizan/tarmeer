@@ -43,13 +43,8 @@ export default function SupplierProductsPage() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
+    fetch(`${API_BASE}/suppliers/me/products`, { headers: authHeaders() as any })
       .then(r => r.json())
-      .then(data => {
-        const slug = data.profile?.slug;
-        if (!slug) { setLoading(false); return; }
-        return fetch(`${API_BASE}/suppliers/detail/${slug}/products`).then(r => r.json());
-      })
       .then(data => { if (data?.products) setProducts(data.products); })
       .catch(() => {})
       .finally(() => setLoading(false));
