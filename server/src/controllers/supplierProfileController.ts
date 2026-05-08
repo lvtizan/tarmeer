@@ -147,19 +147,27 @@ export async function upsertProfile(req: any, res: any) {
     const cats = Array.isArray(categories) ? JSON.stringify(categories) : categories || '[]';
 
     if (existingProfile) {
+      // cover_image_url and logo_url are admin-managed; only update them if explicitly included in the request
+      const coverUpdate = cover_image_url !== undefined ? ', cover_image_url=?' : '';
+      const coverValues = cover_image_url !== undefined ? [cover_image_url || null] : [];
       await pool.execute(
         `UPDATE supplier_profiles SET
-          company_name=?, description=?, origin=?, categories=?, cover_image_url=?, license_url=?,
+          company_name=?, description=?, origin=?, categories=?, license_url=?,
           has_physical_store=?, store_address=?, store_lat=?, store_lng=?, google_maps_url=?,
-          contact_phone=?, whatsapp=?, website=?
+          contact_phone=?, whatsapp=?, website=?${coverUpdate}
          WHERE id=?`,
         [
-          company_name, description || '', origin || 'china', cats, cover_image_url || null, license_url || null,
+          company_name, description || '', origin || 'china', cats, license_url || null,
           has_physical_store ? 1 : 0, store_address || null, store_lat || null, store_lng || null, google_maps_url || null,
           contact_phone || null, whatsapp || null, website || null,
+          ...coverValues,
           existingProfile.id,
         ]
       );
+      // Keep supplier_users.phone in sync so admin sees latest phone regardless of which field they look at
+      if (contact_phone !== undefined) {
+        await pool.execute('UPDATE supplier_users SET phone = ? WHERE id = ?', [contact_phone || null, userId]);
+      }
       const [updated] = await pool.execute('SELECT * FROM supplier_profiles WHERE id = ?', [existingProfile.id]);
       res.json({ profile: (updated as any[])[0] });
     } else {

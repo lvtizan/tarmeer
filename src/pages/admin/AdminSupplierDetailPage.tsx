@@ -311,7 +311,9 @@ export default function AdminSupplierDetailPage() {
               {t('Details', '详情')}
             </h2>
             <InfoRow label={t('Origin', '产地')} value={supplier.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'} />
-            {supplier.contact_phone && <InfoRow label={t('Phone', '电话')} value={supplier.contact_phone} />}
+            {(supplier.contact_phone || supplier.user_phone) && (
+              <InfoRow label={t('Phone', '电话')} value={supplier.contact_phone || supplier.user_phone} />
+            )}
             {supplier.whatsapp && <InfoRow label="WhatsApp" value={supplier.whatsapp} />}
             {supplier.website && <InfoRow label={t('Website', '网站')} value={supplier.website} isLink />}
             {supplier.has_physical_store ? (

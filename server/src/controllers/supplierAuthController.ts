@@ -78,8 +78,8 @@ export async function register(req: any, res: any) {
       slug = `${baseSlug}-${userId}`;
     }
     await pool.execute(
-      `INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, status) VALUES (?, ?, ?, 'pending')`,
-      [userId, displayName, slug]
+      `INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, status, contact_phone) VALUES (?, ?, ?, 'pending', ?)`,
+      [userId, displayName, slug, phone || null]
     );
 
     const frontendUrl = resolveFrontendUrl(req);
