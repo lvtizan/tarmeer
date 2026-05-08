@@ -24,13 +24,8 @@ export default function SupplierCatalogsPage() {
   const [tried, setTried] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
+    fetch(`${API_BASE}/suppliers/me/catalogs`, { headers: authHeaders() as any })
       .then(r => r.json())
-      .then(data => {
-        const slug = data.profile?.slug;
-        if (!slug) { setLoading(false); return; }
-        return fetch(`${API_BASE}/suppliers/detail/${slug}/catalogs`).then(r => r.json());
-      })
       .then(data => { if (data?.catalogs) setCatalogs(data.catalogs); })
       .catch(() => {})
       .finally(() => setLoading(false));
