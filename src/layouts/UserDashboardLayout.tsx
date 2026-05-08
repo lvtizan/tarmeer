@@ -21,6 +21,10 @@ export default function UserDashboardLayout() {
         if (payload.role === 'company' || payload.role === 'designer') {
           return <Navigate to="/company" replace />;
         }
+        // Supplier token accidentally stored as main-site token — redirect to supplier portal
+        if (payload.type === 'supplier' || payload.supplierUserId) {
+          return <Navigate to="/supplier/dashboard" replace />;
+        }
       } catch { /* ignore */ }
     }
     return <Navigate to="/onboarding" replace />;

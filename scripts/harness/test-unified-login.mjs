@@ -223,6 +223,55 @@ await test('TC7', '不存在邮箱登录 → 401', async () => {
   if (res.status !== 401) throw new Error(`Expected 401, got ${res.status}`);
 });
 
+// ─── TC9: 供应商 token 在主站 /auth/me 被拒（401）── token 隔离验证 ─────────────
+
+if (!SUPPLIER_EMAIL || !SUPPLIER_PASSWORD) {
+  skip('TC9', '供应商 token → 主站 /auth/me → 401（token 不应被主站接受）', '需要 --supplier-email 和 --supplier-password');
+} else {
+  await test('TC9', '供应商 token → 主站 /auth/me → 401', async () => {
+    // 先登录拿 token
+    const loginRes = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: SUPPLIER_EMAIL, password: SUPPLIER_PASSWORD }),
+    });
+    if (!loginRes.ok) throw new Error(`Login failed: ${loginRes.status}`);
+    const loginData = await loginRes.json();
+    if (loginData.accountType !== 'supplier') throw new Error(`Expected accountType: supplier, got: ${loginData.accountType}`);
+
+    // 用 supplier token 访问主站 /auth/me — 必须被拒绝
+    const meRes = await fetch(`${API}/auth/me`, {
+      headers: { Authorization: `Bearer ${loginData.token}` },
+    });
+    if (meRes.status !== 401) {
+      throw new Error(`Supplier token should NOT be accepted by main-site /auth/me — expected 401, got ${meRes.status}`);
+    }
+  });
+}
+
+// ─── TC10: 供应商 token 能访问供应商接口 ─────────────────────────────────────
+
+if (!SUPPLIER_EMAIL || !SUPPLIER_PASSWORD) {
+  skip('TC10', '供应商 token → /suppliers/me/profile → 200', '需要 --supplier-email 和 --supplier-password');
+} else {
+  await test('TC10', '供应商 token → /suppliers/me/profile → 200', async () => {
+    const loginRes = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: SUPPLIER_EMAIL, password: SUPPLIER_PASSWORD }),
+    });
+    if (!loginRes.ok) throw new Error(`Login failed: ${loginRes.status}`);
+    const loginData = await loginRes.json();
+
+    const profileRes = await fetch(`${API}/suppliers/me/profile`, {
+      headers: { Authorization: `Bearer ${loginData.token}` },
+    });
+    if (!profileRes.ok) {
+      throw new Error(`Supplier token should be accepted by /suppliers/me/profile — got ${profileRes.status}`);
+    }
+  });
+}
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 console.log(`\n${'─'.repeat(55)}`);
