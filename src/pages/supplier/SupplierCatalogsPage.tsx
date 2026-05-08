@@ -19,6 +19,7 @@ export default function SupplierCatalogsPage() {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [uploadedNames, setUploadedNames] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [tried, setTried] = useState(false);
@@ -33,19 +34,24 @@ export default function SupplierCatalogsPage() {
 
   const handleAdd = async () => {
     setTried(true);
-    if (!title.trim()) { setMsg(t('Title is required.', '请填写目录名称。')); return; }
     if (uploadedUrls.length === 0) { setMsg(t('Please upload a file.', '请先上传文件。')); return; }
+    if (uploadedUrls.length === 1 && !title.trim()) { setMsg(t('Title is required.', '请填写目录名称。')); return; }
     setSaving(true); setMsg('');
     try {
-      const res = await fetch(`${API_BASE}/suppliers/me/catalogs`, {
-        method: 'POST',
-        headers: authHeaders() as any,
-        body: JSON.stringify({ title: title.trim(), file_url: uploadedUrls[0] }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setCatalogs(prev => [...prev, data.catalog]);
-      setTitle(''); setUploadedUrls([]); setAdding(false); setTried(false);
+      for (let i = 0; i < uploadedUrls.length; i++) {
+        const catalogTitle = uploadedUrls.length === 1
+          ? title.trim()
+          : (uploadedNames[i] || `Catalog ${i + 1}`);
+        const res = await fetch(`${API_BASE}/suppliers/me/catalogs`, {
+          method: 'POST',
+          headers: authHeaders() as any,
+          body: JSON.stringify({ title: catalogTitle, file_url: uploadedUrls[i] }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setCatalogs(prev => [...prev, data.catalog]);
+      }
+      setTitle(''); setUploadedUrls([]); setUploadedNames([]); setAdding(false); setTried(false);
     } catch (err: any) {
       setMsg(err.message || 'Failed.');
     } finally {
@@ -58,7 +64,7 @@ export default function SupplierCatalogsPage() {
     setCatalogs(prev => prev.filter(c => c.id !== id));
   };
 
-  const cancelAdd = () => { setAdding(false); setTitle(''); setUploadedUrls([]); setMsg(''); setTried(false); };
+  const cancelAdd = () => { setAdding(false); setTitle(''); setUploadedUrls([]); setUploadedNames([]); setMsg(''); setTried(false); };
 
   if (loading) return <ScreenSpinner />;
 
@@ -100,18 +106,26 @@ export default function SupplierCatalogsPage() {
                 accept="image/*,application/pdf"
                 label={t('Click, drag or paste to upload', '点击、拖放或粘贴截图上传')}
                 sublabel="PDF · JPG · PNG · WebP"
-                onFileMeta={({ original_name }) => { if (original_name && !title.trim()) setTitle(original_name); }}
+                onFileMeta={({ original_name }) => {
+                  setUploadedNames(prev => [...prev, original_name]);
+                  if (original_name && !title.trim()) setTitle(original_name);
+                }}
               />
               {tried && uploadedUrls.length === 0 && <p className="text-xs text-red-500 mt-1">{t('Please upload a file', '请先上传文件')}</p>}
             </div>
 
-            <div>
-              <label className={labelCls}>{t('Catalog Title *', '目录名称 *')}</label>
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-                placeholder={t('e.g. Product Catalogue 2024', '如：2024 产品目录')}
-                className={`${inputCls} ${tried && !title.trim() ? '!border-red-400' : ''}`} />
-              {tried && !title.trim() && <p className="text-xs text-red-500 mt-1">{t('Title is required', '请填写目录名称')}</p>}
-            </div>
+            {uploadedUrls.length <= 1 && (
+              <div>
+                <label className={labelCls}>{t('Catalog Title *', '目录名称 *')}</label>
+                <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                  placeholder={t('e.g. Product Catalogue 2024', '如：2024 产品目录')}
+                  className={`${inputCls} ${tried && uploadedUrls.length === 1 && !title.trim() ? '!border-red-400' : ''}`} />
+                {tried && uploadedUrls.length === 1 && !title.trim() && <p className="text-xs text-red-500 mt-1">{t('Title is required', '请填写目录名称')}</p>}
+              </div>
+            )}
+            {uploadedUrls.length > 1 && (
+              <p className="text-xs text-stone-400">{t(`${uploadedUrls.length} files will be saved as separate catalogs using their filenames.`, `将保存 ${uploadedUrls.length} 个目录，各自使用文件名作为标题。`)}</p>
+            )}
 
             {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-2xl">{msg}</p>}
 
@@ -131,7 +145,7 @@ export default function SupplierCatalogsPage() {
         {catalogs.length > 0 ? (
           <div className="space-y-3">
             {catalogs.map(c => (
-              <div key={c.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 group">
+              <div key={c.id} className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-stone-200">
                 <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
                   <FileText className="w-6 h-6 text-red-500" />
                 </div>
@@ -143,16 +157,16 @@ export default function SupplierCatalogsPage() {
                     </p>
                   )}
                 </div>
+                <button onClick={() => handleDelete(c.id)}
+                  className="shrink-0 w-9 h-9 rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition"
+                  aria-label="Delete">
+                  <Trash2 className="w-4 h-4" />
+                </button>
                 <a href={c.file_url} target="_blank" rel="noopener noreferrer"
                   className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-sm font-medium text-stone-600 hover:bg-[#b8864a] hover:text-white hover:border-[#b8864a] transition">
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">{t('View', '查看')}</span>
                 </a>
-                <button onClick={() => handleDelete(c.id)}
-                  className="shrink-0 w-9 h-9 rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition opacity-0 group-hover:opacity-100"
-                  aria-label="Delete">
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
             ))}
           </div>
