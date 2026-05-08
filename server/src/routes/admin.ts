@@ -73,7 +73,7 @@ import {
   triggerWeightRecalculation,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
-import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminReplaceProductImage } from '../controllers/supplierAdminController';
+import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminReplaceProductImage, adminUpdateProduct, adminUploadProjectImage, adminAddProject, adminUpdateProject, adminDeleteProject } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -364,9 +364,14 @@ router.put('/suppliers/:id/status', requirePermission('can_approve'), updateSupp
 router.put('/suppliers/:id', updateSupplier);
 router.delete('/suppliers/:id', requirePermission('can_approve'), deleteSupplier);
 router.post('/suppliers/:id/products', adminAddProduct);
+router.put('/suppliers/:id/products/:productId', adminUpdateProduct);
 router.delete('/suppliers/:id/products/:productId', adminDeleteProduct);
 router.put('/suppliers/catalogs/:id/file', requirePermission('can_approve'), uploadLargePdf.single('file'), adminReplaceCatalogFile);
 router.put('/suppliers/:id/products/:productId/image', upload.single('file'), adminReplaceProductImage);
+router.post('/suppliers/:id/project-image', upload.single('file'), adminUploadProjectImage);
+router.post('/suppliers/:id/projects', adminAddProject);
+router.put('/suppliers/:id/projects/:projectId', adminUpdateProject);
+router.delete('/suppliers/:id/projects/:projectId', adminDeleteProject);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);

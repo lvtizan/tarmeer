@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { showToast } from '../../components/ui/Toast';
 import SmartImage from '../../components/ui/SmartImage';
-import { useRef } from 'react';
 import {
   ArrowLeft, Trash2, ExternalLink, Pencil,
-  Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon, Plus, X, Upload,
+  Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon,
+  Plus, X, Upload,
 } from 'lucide-react';
 
-// ── InfoRow (same pattern as AdminRegisteredCompanyDetailPage) ───────────────
+// ── InfoRow ───────────────────────────────────────────────────────────────────
 function InfoRow({ label, value, isLink }: { label: string; value: string; isLink?: boolean }) {
   return (
     <div className="flex gap-2">
@@ -31,6 +31,311 @@ const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
 };
 
+const inputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
+const PRODUCT_CATEGORIES = ['wardrobe', 'kitchen', 'furniture', 'stone', 'lighting', 'plants', 'flooring', 'curtains', 'paint', 'hardware', 'other'];
+
+// ── Project Form Modal ────────────────────────────────────────────────────────
+interface ProjectFormState {
+  title: string;
+  location: string;
+  year: string;
+  area_sqm: string;
+  budget: string;
+  description: string;
+  images: string[];
+}
+
+function emptyProjectForm(): ProjectFormState {
+  return { title: '', location: '', year: '', area_sqm: '', budget: '', description: '', images: [] };
+}
+
+function projectToForm(p: any): ProjectFormState {
+  const imgs = Array.isArray(p.images) ? p.images
+    : (() => { try { return JSON.parse(p.images || '[]'); } catch { return []; } })();
+  return {
+    title: p.title || '',
+    location: p.location || '',
+    year: p.year ? String(p.year) : '',
+    area_sqm: p.area_sqm ? String(p.area_sqm) : '',
+    budget: p.budget || '',
+    description: p.description || '',
+    images: imgs,
+  };
+}
+
+interface ProjectModalProps {
+  supplierId: number;
+  editingProject: any | null; // null = add mode
+  onClose: () => void;
+  onSaved: (project: any, isNew: boolean) => void;
+  t: (en: string, zh: string) => string;
+}
+
+function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: ProjectModalProps) {
+  const [form, setForm] = useState<ProjectFormState>(
+    editingProject ? projectToForm(editingProject) : emptyProjectForm()
+  );
+  const [saving, setSaving] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const set = (k: keyof ProjectFormState, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleUploadImage = async (file: File) => {
+    setUploadingImg(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file, file.name);
+      const token = adminApi.getToken ? adminApi.getToken() : localStorage.getItem('admin_token');
+      const API_BASE = (import.meta.env.VITE_API_URL?.trim() || '/api') + '/admin';
+      const res = await fetch(`${API_BASE}/suppliers/${supplierId}/project-image`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: fd,
+      });
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+      const data = await res.json();
+      setForm(f => ({ ...f, images: [...f.images, data.url] }));
+    } catch (e: any) {
+      showToast(e.message || 'Upload failed', 'error');
+    } finally {
+      setUploadingImg(false);
+      if (imgInputRef.current) imgInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) { showToast(t('Title is required', '请填写标题'), 'error'); return; }
+    setSaving(true);
+    try {
+      const body = {
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        location: form.location.trim() || null,
+        area_sqm: form.area_sqm ? Number(form.area_sqm) : null,
+        budget: form.budget.trim() || null,
+        year: form.year.trim() || null,
+        images: form.images,
+      };
+      let data: any;
+      if (editingProject) {
+        data = await adminApi.request(`/suppliers/${supplierId}/projects/${editingProject.id}`, {
+          method: 'PUT', body: JSON.stringify(body),
+        });
+      } else {
+        data = await adminApi.request(`/suppliers/${supplierId}/projects`, {
+          method: 'POST', body: JSON.stringify(body),
+        });
+      }
+      const proj = {
+        ...data.project,
+        images: (() => {
+          const raw = data.project?.images;
+          if (Array.isArray(raw)) return raw;
+          try { return JSON.parse(raw || '[]'); } catch { return []; }
+        })(),
+      };
+      onSaved(proj, !editingProject);
+      showToast(editingProject ? t('Project updated', '项目已更新') : t('Project added', '项目已添加'), 'success');
+    } catch (e: any) {
+      showToast(e.message || t('Save failed', '保存失败'), 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-stone-100">
+          <h2 className="text-base font-bold text-[#2c2c2c]">
+            {editingProject ? t('Edit Project', '编辑项目') : t('Add Project', '添加项目')}
+          </h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title *', '标题 *')}</label>
+            <input type="text" value={form.title} onChange={e => set('title', e.target.value)}
+              placeholder={t('e.g. Modern Living Room Renovation', '如：现代风格客厅改造')}
+              className={inputCls} />
+          </div>
+
+          {/* Location + Year */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Location', '地点')}</label>
+              <input type="text" value={form.location} onChange={e => set('location', e.target.value)}
+                placeholder="Dubai" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Year', '年份')}</label>
+              <input type="text" value={form.year} onChange={e => set('year', e.target.value)}
+                placeholder="2024" className={inputCls} />
+            </div>
+          </div>
+
+          {/* Area + Budget */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Area (m²)', '面积（㎡）')}</label>
+              <input type="number" value={form.area_sqm} onChange={e => set('area_sqm', e.target.value)}
+                placeholder="120" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Budget', '预算')}</label>
+              <input type="text" value={form.budget} onChange={e => set('budget', e.target.value)}
+                placeholder="AED 50,000" className={inputCls} />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Description', '描述')}</label>
+            <textarea value={form.description} onChange={e => set('description', e.target.value)}
+              rows={3} placeholder={t('Project description...', '项目描述...')}
+              className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] resize-none" />
+          </div>
+
+          {/* Images */}
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-2">
+              {t('Images', '图片')} ({form.images.length})
+            </label>
+            {form.images.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {form.images.map((url, i) => (
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-stone-100 group">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={imgInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleUploadImage(file);
+              }}
+            />
+            <button
+              onClick={() => imgInputRef.current?.click()}
+              disabled={uploadingImg}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-stone-300 text-xs text-stone-500 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-50"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              {uploadingImg ? t('Uploading...', '上传中...') : t('Upload Image', '上传图片')}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 px-5 pb-5">
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">
+            {t('Cancel', '取消')}
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="px-4 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
+            {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Product Edit Modal ────────────────────────────────────────────────────────
+interface ProductEditModalProps {
+  supplierId: number;
+  product: any;
+  onClose: () => void;
+  onSaved: (product: any) => void;
+  t: (en: string, zh: string) => string;
+}
+
+function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductEditModalProps) {
+  const [title, setTitle] = useState(product.title || '');
+  const [category, setCategory] = useState(product.category || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ title: title.trim() || null, category: category || null }),
+      });
+      onSaved(data.product);
+      showToast(t('Product updated', '产品已更新'), 'success');
+    } catch (e: any) {
+      showToast(e.message || t('Save failed', '保存失败'), 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between p-5 border-b border-stone-100">
+          <h2 className="text-base font-bold text-[#2c2c2c]">{t('Edit Product', '编辑产品')}</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          {product.image_url && (
+            <img src={product.image_url} alt="" className="w-full aspect-[4/3] object-cover rounded-lg bg-stone-100" />
+          )}
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title', '名称')}</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+              placeholder={t('Product title', '产品名称')} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Category', '分类')}</label>
+            <select value={category} onChange={e => setCategory(e.target.value)}
+              className={inputCls + ' cursor-pointer'}>
+              <option value="">{t('No category', '不分类')}</option>
+              {PRODUCT_CATEGORIES.map(c => (
+                <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 px-5 pb-5">
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">
+            {t('Cancel', '取消')}
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="px-4 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
+            {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function AdminSupplierDetailPage() {
   const { t } = useAdminT();
   const { id } = useParams<{ id: string }>();
@@ -49,14 +354,20 @@ export default function AdminSupplierDetailPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceTargetRef = useRef<number | null>(null);
 
+  // Project modal state
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<any | null>(null);
+
+  // Product edit modal state
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+
   const handleReplaceImage = async (file: File, productId: number) => {
     if (!supplier) return;
     setReplacingId(productId);
     try {
       const result = await adminApi.replaceSupplierProductImage(supplier.id, productId, file);
-      // 加 ?t=… 强刷绕过浏览器缓存（同 url 替换 image 时浏览器看 cache hit）
       const bust = `${result.image_url}?t=${Date.now()}`;
-      setProducts((prev) => prev.map((p) => p.id === productId ? { ...p, image_url: bust } : p));
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, image_url: bust } : p));
       showToast(t('Image replaced', '图片已更换'), 'success');
     } catch (err: any) {
       showToast(err?.message || t('Replace failed', '替换失败'), 'error');
@@ -65,6 +376,7 @@ export default function AdminSupplierDetailPage() {
       replaceTargetRef.current = null;
     }
   };
+
   useEffect(() => {
     if (!id) return;
     adminApi.request(`/suppliers/${id}`)
@@ -87,10 +399,7 @@ export default function AdminSupplierDetailPage() {
   const handleStatus = async (status: string) => {
     setIsSubmitting(true);
     try {
-      await adminApi.request(`/suppliers/${id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status }),
-      });
+      await adminApi.request(`/suppliers/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
       setSupplier((s: any) => ({ ...s, status }));
       showToast(t('Status updated', '状态已更新'), 'success');
     } catch {
@@ -116,10 +425,7 @@ export default function AdminSupplierDetailPage() {
 
   const setCover = async (imgUrl: string) => {
     try {
-      await adminApi.request(`/suppliers/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ cover_image_url: imgUrl }),
-      });
+      await adminApi.request(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify({ cover_image_url: imgUrl }) });
       setSupplier((s: any) => ({ ...s, cover_image_url: imgUrl }));
       showToast(t('Cover updated', '封面已更新'), 'success');
     } catch {
@@ -139,10 +445,7 @@ export default function AdminSupplierDetailPage() {
   };
 
   const handleAddProduct = async () => {
-    if (!newProduct.image_url.trim()) {
-      showToast(t('Image URL is required', '请填写图片地址'), 'error');
-      return;
-    }
+    if (!newProduct.image_url.trim()) { showToast(t('Image URL is required', '请填写图片地址'), 'error'); return; }
     setAddingProduct(true);
     try {
       const data = await adminApi.request(`/suppliers/${id}/products`, {
@@ -165,6 +468,17 @@ export default function AdminSupplierDetailPage() {
     }
   };
 
+  const handleDeleteProject = async (projectId: number) => {
+    if (!confirm(t('Delete this project?', '确认删除该项目？'))) return;
+    try {
+      await adminApi.request(`/suppliers/${id}/projects/${projectId}`, { method: 'DELETE' });
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+      showToast(t('Project deleted', '项目已删除'), 'success');
+    } catch {
+      showToast(t('Failed to delete', '删除失败'), 'error');
+    }
+  };
+
   if (loading) return <div className="py-20 text-center text-stone-400">{t('Loading...', '加载中...')}</div>;
   if (!supplier) return <div className="py-20 text-center text-stone-500">{t('Supplier not found', '供应商不存在')}</div>;
 
@@ -177,7 +491,7 @@ export default function AdminSupplierDetailPage() {
   return (
     <div className="space-y-4">
 
-      {/* Hidden file input — 给"更换图片"按钮共用，targetId 在 ref 里 */}
+      {/* Hidden file input for product image replace */}
       <input
         ref={fileInputRef}
         type="file"
@@ -190,6 +504,39 @@ export default function AdminSupplierDetailPage() {
           if (file && targetId) handleReplaceImage(file, targetId);
         }}
       />
+
+      {/* Project Modal */}
+      {showProjectModal && supplier && (
+        <ProjectModal
+          supplierId={supplier.id}
+          editingProject={editingProject}
+          onClose={() => { setShowProjectModal(false); setEditingProject(null); }}
+          onSaved={(proj, isNew) => {
+            if (isNew) {
+              setProjects(prev => [proj, ...prev]);
+            } else {
+              setProjects(prev => prev.map(p => p.id === proj.id ? proj : p));
+            }
+            setShowProjectModal(false);
+            setEditingProject(null);
+          }}
+          t={t}
+        />
+      )}
+
+      {/* Product Edit Modal */}
+      {editingProduct && supplier && (
+        <ProductEditModal
+          supplierId={supplier.id}
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onSaved={(updated) => {
+            setProducts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p));
+            setEditingProduct(null);
+          }}
+          t={t}
+        />
+      )}
 
       {/* Back */}
       <button
@@ -207,7 +554,6 @@ export default function AdminSupplierDetailPage() {
 
           {/* Card 1: Header */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
-            {/* Logo */}
             {supplier.logo_url && (
               <SmartImage
                 src={supplier.logo_url}
@@ -215,18 +561,10 @@ export default function AdminSupplierDetailPage() {
                 className="w-16 h-16 rounded-xl object-contain bg-stone-50 border border-stone-100"
               />
             )}
-
-            {/* Name */}
-            <h1 className="text-lg font-bold text-stone-800 leading-snug">
-              {supplier.company_name}
-            </h1>
-
-            {/* Tags: origin + status */}
+            <h1 className="text-lg font-bold text-stone-800 leading-snug">{supplier.company_name}</h1>
             <div className="flex flex-wrap gap-1.5">
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                supplier.origin === 'china'
-                  ? 'bg-red-50 text-red-600'
-                  : 'bg-stone-100 text-stone-600'
+                supplier.origin === 'china' ? 'bg-red-50 text-red-600' : 'bg-stone-100 text-stone-600'
               }`}>
                 {supplier.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
               </span>
@@ -234,8 +572,6 @@ export default function AdminSupplierDetailPage() {
                 {supplier.status}
               </span>
             </div>
-
-            {/* Action links — below tags */}
             <div className="flex flex-wrap gap-1">
               <button
                 onClick={() => showToast(t('Edit not yet available', '编辑功能待开发'), 'error')}
@@ -246,8 +582,7 @@ export default function AdminSupplierDetailPage() {
               {supplier.slug && (
                 <a
                   href={`/materials/suppliers/${supplier.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
                 >
                   <ExternalLink size={14} /> {t('Preview', '预览')}
@@ -260,46 +595,30 @@ export default function AdminSupplierDetailPage() {
                 <Trash2 size={14} /> {t('Delete', '删除')}
               </button>
             </div>
-
-            {/* Description */}
             {supplier.description && (
               <p className="text-sm text-stone-600 leading-relaxed">{supplier.description}</p>
             )}
-
-            {/* Audit CTA — same style as AdminRegisteredCompanyDetailPage */}
             {supplier.status === 'pending' && (
               <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => handleStatus('approved')}
-                  disabled={isSubmitting}
-                  className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition"
-                >
+                <button onClick={() => handleStatus('approved')} disabled={isSubmitting}
+                  className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition">
                   {t('Approve', '通过')}
                 </button>
-                <button
-                  onClick={() => handleStatus('rejected')}
-                  disabled={isSubmitting}
-                  className="flex-1 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50 transition"
-                >
+                <button onClick={() => handleStatus('rejected')} disabled={isSubmitting}
+                  className="flex-1 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50 transition">
                   {t('Reject', '拒绝')}
                 </button>
               </div>
             )}
             {supplier.status === 'approved' && (
-              <button
-                onClick={() => handleStatus('rejected')}
-                disabled={isSubmitting}
-                className="w-full py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50 transition"
-              >
+              <button onClick={() => handleStatus('rejected')} disabled={isSubmitting}
+                className="w-full py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 border border-red-200 disabled:opacity-50 transition">
                 {t('Reject', '拒绝')}
               </button>
             )}
             {supplier.status === 'rejected' && (
-              <button
-                onClick={() => handleStatus('approved')}
-                disabled={isSubmitting}
-                className="w-full py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition"
-              >
+              <button onClick={() => handleStatus('approved')} disabled={isSubmitting}
+                className="w-full py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition">
                 {t('Approve', '通过')}
               </button>
             )}
@@ -348,7 +667,7 @@ export default function AdminSupplierDetailPage() {
             </div>
           </div>
 
-          {/* Card 3: Current Cover Preview */}
+          {/* Card 3: Cover Preview */}
           {supplier.cover_image_url && (
             <div className="bg-white rounded-xl border border-stone-200 p-4 space-y-2">
               <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">
@@ -360,7 +679,6 @@ export default function AdminSupplierDetailPage() {
               <p className="text-[11px] text-stone-400">{t('Hover over any image below to change', '鼠标移到下方图片可更换')}</p>
             </div>
           )}
-
         </div>
 
         {/* ===== RIGHT PANEL ===== */}
@@ -368,11 +686,21 @@ export default function AdminSupplierDetailPage() {
 
           {/* Projects */}
           <section>
-            <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              {t('Projects', '项目')}
-              <span className="font-normal text-stone-400 normal-case tracking-normal">({projects.length})</span>
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                <Layers className="w-4 h-4" />
+                {t('Projects', '项目')}
+                <span className="font-normal text-stone-400 normal-case tracking-normal">({projects.length})</span>
+              </h2>
+              <button
+                onClick={() => { setEditingProject(null); setShowProjectModal(true); }}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#b8864a]/10 text-[#b8864a] hover:bg-[#b8864a]/20 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {t('Add Project', '添加项目')}
+              </button>
+            </div>
+
             {projects.length === 0 ? (
               <div className="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-400 text-sm">
                 {t('No projects yet', '暂无项目')}
@@ -382,7 +710,7 @@ export default function AdminSupplierDetailPage() {
                 {projects.map(proj => {
                   const imgs = Array.isArray(proj.images) ? proj.images : [];
                   return (
-                    <div key={proj.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group">
+                    <div key={proj.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group relative">
                       <div className="aspect-video bg-stone-100 overflow-hidden relative">
                         {imgs[0] ? (
                           <img
@@ -410,6 +738,23 @@ export default function AdminSupplierDetailPage() {
                             {imgs.length} {t('photos', '张')}
                           </span>
                         )}
+                        {/* Edit + Delete overlay */}
+                        <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => { setEditingProject(proj); setShowProjectModal(true); }}
+                            className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
+                            title={t('Edit', '编辑')}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(proj.id)}
+                            className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-red-500 hover:text-white transition-colors"
+                            title={t('Delete', '删除')}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                       <div className="p-3 space-y-1">
                         <h3 className="text-sm font-medium text-stone-800 line-clamp-1">{proj.title}</h3>
@@ -452,7 +797,7 @@ export default function AdminSupplierDetailPage() {
                   placeholder={t('Image URL (e.g. /uploads/suppliers/68/xxx.jpg)', '图片地址（如 /uploads/suppliers/68/xxx.jpg）')}
                   value={newProduct.image_url}
                   onChange={e => setNewProduct(v => ({ ...v, image_url: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+                  className={inputCls}
                 />
                 <div className="flex gap-2">
                   <input
@@ -460,7 +805,7 @@ export default function AdminSupplierDetailPage() {
                     placeholder={t('Title (optional)', '名称（可选）')}
                     value={newProduct.title}
                     onChange={e => setNewProduct(v => ({ ...v, title: e.target.value }))}
-                    className="flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+                    className={inputCls + ' flex-1'}
                   />
                   <select
                     value={newProduct.category}
@@ -468,24 +813,19 @@ export default function AdminSupplierDetailPage() {
                     className="h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
                   >
                     <option value="">{t('Category', '分类')}</option>
-                    <option value="wardrobe">{t('Wardrobe', '衣柜')}</option>
-                    <option value="kitchen">{t('Kitchen', '橱柜')}</option>
-                    <option value="furniture">{t('Furniture', '家具')}</option>
-                    <option value="other">{t('Other', '其他')}</option>
+                    {PRODUCT_CATEGORIES.map(c => (
+                      <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={handleAddProduct}
-                    disabled={addingProduct}
-                    className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition"
-                  >
+                  <button onClick={handleAddProduct} disabled={addingProduct}
+                    className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
                     {addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}
                   </button>
                   <button
                     onClick={() => { setShowAddProduct(false); setNewProduct({ image_url: '', title: '', category: '' }); }}
-                    className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition"
-                  >
+                    className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition">
                     {t('Cancel', '取消')}
                   </button>
                 </div>
@@ -503,7 +843,7 @@ export default function AdminSupplierDetailPage() {
                     <div key={p.id} className="group">
                       <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
                         <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
-                        {/* Delete button — top right */}
+                        {/* Delete — top right */}
                         <button
                           onClick={() => handleDeleteProduct(p.id)}
                           className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
@@ -511,28 +851,29 @@ export default function AdminSupplierDetailPage() {
                         >
                           <X className="w-3 h-3" />
                         </button>
-                        {/* Replace image — top left */}
+                        {/* Edit — top left */}
+                        <button
+                          onClick={() => setEditingProduct(p)}
+                          className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/95 text-stone-700 text-[10px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#b8864a] hover:text-white"
+                          title={t('Edit', '编辑')}
+                        >
+                          <Pencil className="w-3 h-3" />
+                          {t('Edit', '编辑')}
+                        </button>
+                        {/* Replace — triggered from edit button area, kept for compatibility */}
                         <button
                           onClick={() => {
                             replaceTargetRef.current = p.id;
                             fileInputRef.current?.click();
                           }}
                           disabled={replacingId === p.id}
-                          className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/95 text-stone-700 text-[10px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white disabled:opacity-50"
+                          className="absolute bottom-0 inset-x-0 py-1 bg-black/60 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
                           title={t('Replace image', '更换图片')}
                         >
                           {replacingId === p.id
                             ? <span className="text-[10px]">…</span>
                             : <Upload className="w-3 h-3" />}
-                          {t('Replace', '更换图片')}
-                        </button>
-                        {/* Set as cover — bottom bar */}
-                        <button
-                          onClick={() => setCover(p.image_url)}
-                          className="absolute inset-x-0 bottom-0 py-1 bg-black/60 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
-                        >
-                          <ImageIcon className="w-2.5 h-2.5" />
-                          {t('Set as Cover', '设为封面')}
+                          {t('Replace Image', '更换图片')}
                         </button>
                       </div>
                       {p.category && (
@@ -559,8 +900,7 @@ export default function AdminSupplierDetailPage() {
                   <a
                     key={c.id}
                     href={c.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group"
                   >
                     <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
@@ -586,28 +926,21 @@ export default function AdminSupplierDetailPage() {
         </div>
       </div>
 
-      {/* Delete confirm modal */}
+      {/* Delete Supplier confirm modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full mx-4 space-y-4">
-            <h2 className="text-base font-bold text-[#2c2c2c]">
-              {t('Delete Supplier?', '删除供应商？')}
-            </h2>
+            <h2 className="text-base font-bold text-[#2c2c2c]">{t('Delete Supplier?', '删除供应商？')}</h2>
             <p className="text-sm text-stone-500">
               {t('This will permanently delete the supplier and all their data. This cannot be undone.', '这将永久删除该供应商及其所有数据，无法恢复。')}
             </p>
             <div className="flex gap-2 pt-1">
-              <button
-                onClick={handleDelete}
-                disabled={isSubmitting}
-                className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition"
-              >
+              <button onClick={handleDelete} disabled={isSubmitting}
+                className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition">
                 {t('Delete', '确认删除')}
               </button>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition"
-              >
+              <button onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">
                 {t('Cancel', '取消')}
               </button>
             </div>

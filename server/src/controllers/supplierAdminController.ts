@@ -259,3 +259,141 @@ export async function adminDeleteProduct(req: any, res: any) {
     res.status(500).json({ error: 'Failed to delete product.' });
   }
 }
+
+export async function adminUpdateProduct(req: any, res: any) {
+  try {
+    const { id, productId } = req.params;
+    const [rows] = await pool.execute(
+      'SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?',
+      [productId, id]
+    );
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Product not found.' });
+
+    const { title, category } = req.body;
+    await pool.execute(
+      'UPDATE supplier_products SET title = ?, category = ? WHERE id = ?',
+      [title?.trim() || null, category || null, productId]
+    );
+    const [updated] = await pool.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
+    res.json({ product: (updated as any[])[0] });
+  } catch (error) {
+    console.error('Admin update product error:', error);
+    res.status(500).json({ error: 'Failed to update product.' });
+  }
+}
+
+/** Upload a single image file for use in a project; returns the stored URL. */
+export async function adminUploadProjectImage(req: any, res: any) {
+  try {
+    const supplierId = Number(req.params.id);
+    if (!supplierId) return res.status(400).json({ error: 'invalid id' });
+    if (!req.file?.buffer) return res.status(400).json({ error: 'no file uploaded' });
+
+    const [supRows] = await pool.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [supplierId]);
+    const sup = (supRows as any[])[0];
+    if (!sup) return res.status(404).json({ error: 'supplier not found' });
+
+    const mimeToExt: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+    };
+    const ext = mimeToExt[req.file.mimetype] || 'jpg';
+    const ts = Date.now();
+    const dirSlug = (sup.slug || `id${sup.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const relPath = `suppliers/${dirSlug}/projects/${ts}.${ext}`;
+    const absPath = path.resolve(process.cwd(), 'public/uploads', relPath);
+    await fs.mkdir(path.dirname(absPath), { recursive: true, mode: 0o755 });
+    await fs.writeFile(absPath, req.file.buffer, { mode: 0o644 });
+
+    res.json({ url: `/uploads/${relPath}` });
+  } catch (error) {
+    console.error('Admin upload project image error:', error);
+    res.status(500).json({ error: 'Failed to upload image.' });
+  }
+}
+
+export async function adminAddProject(req: any, res: any) {
+  try {
+    const supplierId = Number(req.params.id);
+    const [supRows] = await pool.execute('SELECT id FROM supplier_profiles WHERE id = ?', [supplierId]);
+    if ((supRows as any[]).length === 0) return res.status(404).json({ error: 'Supplier not found.' });
+
+    const { title, description, location, area_sqm, budget, year, images } = req.body;
+    if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' });
+
+    const imgs: string[] = Array.isArray(images) ? images : [];
+    const [result] = await pool.execute(
+      `INSERT INTO supplier_projects
+         (supplier_profile_id, title, description, location, area_sqm, budget, year, images, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      [
+        supplierId,
+        title.trim(),
+        description?.trim() || null,
+        location?.trim() || null,
+        area_sqm ? Number(area_sqm) : null,
+        budget?.trim() || null,
+        year?.trim() || null,
+        JSON.stringify(imgs),
+      ]
+    );
+    const insertId = (result as any).insertId;
+    const [created] = await pool.execute('SELECT * FROM supplier_projects WHERE id = ?', [insertId]);
+    res.status(201).json({ project: (created as any[])[0] });
+  } catch (error) {
+    console.error('Admin add project error:', error);
+    res.status(500).json({ error: 'Failed to add project.' });
+  }
+}
+
+export async function adminUpdateProject(req: any, res: any) {
+  try {
+    const { id, projectId } = req.params;
+    const [rows] = await pool.execute(
+      'SELECT id FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?',
+      [projectId, id]
+    );
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Project not found.' });
+
+    const { title, description, location, area_sqm, budget, year, images } = req.body;
+    if (!title?.trim()) return res.status(400).json({ error: 'Title is required.' });
+
+    const imgs: string[] = Array.isArray(images) ? images : [];
+    await pool.execute(
+      `UPDATE supplier_projects
+       SET title=?, description=?, location=?, area_sqm=?, budget=?, year=?, images=?
+       WHERE id=?`,
+      [
+        title.trim(),
+        description?.trim() || null,
+        location?.trim() || null,
+        area_sqm ? Number(area_sqm) : null,
+        budget?.trim() || null,
+        year?.trim() || null,
+        JSON.stringify(imgs),
+        projectId,
+      ]
+    );
+    const [updated] = await pool.execute('SELECT * FROM supplier_projects WHERE id = ?', [projectId]);
+    res.json({ project: (updated as any[])[0] });
+  } catch (error) {
+    console.error('Admin update project error:', error);
+    res.status(500).json({ error: 'Failed to update project.' });
+  }
+}
+
+export async function adminDeleteProject(req: any, res: any) {
+  try {
+    const { id, projectId } = req.params;
+    const [rows] = await pool.execute(
+      'SELECT id FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?',
+      [projectId, id]
+    );
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Project not found.' });
+
+    await pool.execute('DELETE FROM supplier_projects WHERE id = ?', [projectId]);
+    res.json({ message: 'Project deleted.' });
+  } catch (error) {
+    console.error('Admin delete project error:', error);
+    res.status(500).json({ error: 'Failed to delete project.' });
+  }
+}
