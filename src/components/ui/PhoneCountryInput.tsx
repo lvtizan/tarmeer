@@ -38,7 +38,16 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
   const [open, setOpen] = useState(false);
   const [touched, setTouched] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
-  const prevValueRef = useRef(value);
+  const normalizedInit = initCode + initDigits.slice(0, initCountry.maxDigits);
+  const prevValueRef = useRef(normalizedInit);
+
+  // If the stored value was truncated on mount, push the normalized value up immediately
+  useEffect(() => {
+    if (value && value !== normalizedInit) {
+      onChange(normalizedInit);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selected = PHONE_COUNTRIES.find(c => c.code === code) ?? PHONE_COUNTRIES[0];
 
