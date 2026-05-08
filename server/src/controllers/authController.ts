@@ -76,8 +76,10 @@ async function checkExistingDesignerFields(email?: string, phone?: string | null
            ))
            UNION
            SELECT id FROM users WHERE email = ? AND deleted_at IS NULL
+           UNION
+           SELECT id FROM supplier_users WHERE email = ? AND email_verified = 1
            LIMIT 1`,
-          [email, email]
+          [email, email, email]
         )
       : Promise.resolve([[ ]]),
     normalizedPhone

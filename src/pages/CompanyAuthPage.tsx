@@ -104,6 +104,13 @@ function JoinAuthCard() {
     setError(null);
     try {
       const response = await api.post('/auth/login', { email, password });
+      // Supplier account — store supplier token and redirect to supplier dashboard
+      if (response.accountType === 'supplier') {
+        localStorage.setItem('supplier_token', response.token);
+        localStorage.setItem('supplier_user', JSON.stringify(response.user));
+        navigate('/supplier/dashboard');
+        return;
+      }
       api.setToken(response.token);
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user));

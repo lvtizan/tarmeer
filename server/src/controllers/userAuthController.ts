@@ -96,6 +96,12 @@ export async function register(req: any, res: any) {
       return res.status(400).json({ error: 'Temporary email addresses are not allowed. Please use a valid email.' });
     }
 
+    // Block supplier emails first — more specific error before generic "already registered"
+    const [supplierExisting] = await pool.execute('SELECT id FROM supplier_users WHERE email = ? LIMIT 1', [email]);
+    if ((supplierExisting as any[]).length > 0) {
+      return res.status(400).json({ error: 'This email is registered as a supplier account. Please sign in at the supplier portal.' });
+    }
+
     // Check if email already exists in users table
     const [existing] = await pool.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
     if ((existing as any[]).length > 0) {
@@ -283,6 +289,32 @@ export async function login(req: any, res: any) {
     const users = rows as any[];
 
     if (users.length === 0) {
+      // Check if this email belongs to a supplier — validate password and issue supplier token
+      const [supplierRows] = await pool.execute('SELECT * FROM supplier_users WHERE email = ? LIMIT 1', [email]);
+      if ((supplierRows as any[]).length > 0) {
+        const supplier = (supplierRows as any[])[0];
+        if (!supplier.password) {
+          recordAuthFailure(req, res, () => {});
+          return res.status(401).json({ error: 'This supplier account uses Google login. Please sign in with Google at the supplier portal.' });
+        }
+        if (!supplier.email_verified) {
+          return res.status(401).json({ error: 'Please verify your supplier account email first.', needVerification: true, email: supplier.email });
+        }
+        const isValidSupplier = await bcrypt.compare(password, supplier.password);
+        if (!isValidSupplier) {
+          recordAuthFailure(req, res, () => {});
+          return res.status(401).json({ error: 'Invalid email or password.' });
+        }
+        const supplierToken = jwt.sign(
+          { supplierUserId: supplier.id, email: supplier.email, type: 'supplier' },
+          config.jwt.secret,
+          { expiresIn: '7d' }
+        );
+        const { password: _p, verification_token, verification_expires, reset_token, reset_expires, ...safeSupplier } = supplier;
+        recordAuthSuccess(req, res, () => {});
+        return res.json({ token: supplierToken, user: safeSupplier, accountType: 'supplier' });
+      }
+
       // No user found — try admin_users, then legacy designers
       const adminResult = await tryAdminLogin(email, password);
       if (adminResult) {
@@ -703,6 +735,12 @@ export async function googleOneTap(req: any, res: any) {
     let user = (rows as any[])[0];
 
     if (!user) {
+      // Block supplier emails from creating homeowner accounts via Google One Tap
+      const [supplierRows] = await pool.execute('SELECT id FROM supplier_users WHERE email = ? LIMIT 1', [email]);
+      if ((supplierRows as any[]).length > 0) {
+        return res.status(401).json({ error: 'This email is registered as a supplier account. Please sign in at the supplier portal.' });
+      }
+
       // Also check designers table for existing OAuth user
       const [designerRows] = await pool.execute(
         'SELECT * FROM designers WHERE email = ? AND deleted_at IS NULL', [email]
@@ -780,6 +818,12 @@ export async function oauthCallback(req: any, res: any) {
     let user = (rows as any[])[0];
 
     if (!user) {
+      // Block supplier emails from creating homeowner/company accounts via OAuth
+      const [supplierRows] = await pool.execute('SELECT id FROM supplier_users WHERE email = ? LIMIT 1', [passportUser.email]);
+      if ((supplierRows as any[]).length > 0) {
+        return res.redirect(`${frontendUrl}/auth?error=supplier_account`);
+      }
+
       const googleSource = assignRole === 'company' ? 'google-oauth-company' : 'google-oauth';
 
       // Don't store a phone that's already taken — NULL it out rather than blocking OAuth sign-in
