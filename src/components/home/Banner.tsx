@@ -58,7 +58,7 @@ export default function Banner() {
           phone: `${phoneRegion.code}${phone}`,
           city: 'Dubai',
           area_range: `${numericArea}m²`,
-          message: `Quick booking from home banner. Area: ${numericArea}m².`,
+          source_page: 'home-banner',
         }),
       });
 

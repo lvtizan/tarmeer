@@ -81,6 +81,7 @@ interface InquiryData {
   area_range: string;
   message?: string;
   companyName?: string;
+  sourcePage?: string;
 }
 
 export async function notifyNewInquiry(inquiry: InquiryData) {
@@ -96,23 +97,25 @@ export async function notifyNewInquiry(inquiry: InquiryData) {
   });
 
   // Group email
+  const sourceLabel = inquiry.sourcePage ? (SOURCE_LABELS[inquiry.sourcePage] || inquiry.sourcePage) : null;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #b8864a;">新设计咨询</h2>
+      <h2 style="color: #b8864a;">新设计询单</h2>
       <table style="width: 100%; border-collapse: collapse;">
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Name:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.name}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.phone}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>City:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.city}</td></tr>
         <tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Area:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.area_range}</td></tr>
-        ${inquiry.message ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Message:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.message}</td></tr>` : ''}
         ${inquiry.companyName ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Company:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.companyName}</td></tr>` : ''}
+        ${sourceLabel ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>来源:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #b8864a;"><strong>${sourceLabel}</strong></td></tr>` : ''}
+        ${inquiry.message ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Message:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${inquiry.message}</td></tr>` : ''}
         <tr><td style="padding: 8px 0;"><strong>Time:</strong></td><td style="padding: 8px 0;">${new Date().toLocaleString('en-US')}</td></tr>
       </table>
     </div>
   `;
   const text = `New Inquiry: ${inquiry.name}, ${inquiry.phone}, ${inquiry.city}, ${inquiry.area_range}`;
 
-  await sendGroupEmail('[Tarmeer] 新设计咨询', html, text);
+  await sendGroupEmail('[Tarmeer] 新设计询单', html, text);
 }
 
 interface CompanyData {

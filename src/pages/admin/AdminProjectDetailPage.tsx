@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
@@ -65,8 +65,25 @@ export default function AdminProjectDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const didDragRef = useRef(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const closeLightbox = useCallback(() => setLightboxIdx(null), []);
+  const lightboxPrev = useCallback(() => setLightboxIdx((i) => (i !== null && i > 0 ? i - 1 : i)), []);
+  const lightboxNext = useCallback(() => setLightboxIdx((i) => (i !== null && i < images.length - 1 ? i + 1 : i)), [images.length]);
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') lightboxPrev();
+      else if (e.key === 'ArrowRight') lightboxNext();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightboxIdx, closeLightbox, lightboxPrev, lightboxNext]);
 
   const loadProject = async () => {
     if (!companyId || !projectId) return;
@@ -246,7 +263,7 @@ export default function AdminProjectDetailPage() {
             <div
               key={idx}
               draggable
-              onDragStart={() => setDraggingIdx(idx)}
+              onDragStart={() => { didDragRef.current = true; setDraggingIdx(idx); }}
               onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
               onDrop={(e) => {
                 e.preventDefault();
@@ -256,7 +273,8 @@ export default function AdminProjectDetailPage() {
                 setDraggingIdx(null);
                 setDragOverIdx(null);
               }}
-              onDragEnd={() => { setDraggingIdx(null); setDragOverIdx(null); }}
+              onDragEnd={() => { setDraggingIdx(null); setDragOverIdx(null); setTimeout(() => { didDragRef.current = false; }, 0); }}
+              onClick={() => { if (!didDragRef.current) setLightboxIdx(idx); }}
               className={`relative group aspect-video bg-stone-100 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-opacity ${draggingIdx === idx ? 'opacity-40' : dragOverIdx === idx ? 'ring-2 ring-[#b8864a]' : ''}`}
             >
               <SmartImage
@@ -268,8 +286,14 @@ export default function AdminProjectDetailPage() {
               {idx === 0 && (
                 <span className="absolute left-2 top-2 rounded-md bg-[#b8864a] px-1.5 py-0.5 text-[10px] font-semibold text-white">{t('Cover', '封面')}</span>
               )}
+              {/* Zoom hint */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="bg-black/40 rounded-full p-2">
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>
+                </div>
+              </div>
               <button
-                onClick={() => handleRemoveImage(idx)}
+                onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }}
                 className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm font-bold"
                 title="Remove image"
               >
@@ -366,6 +390,51 @@ export default function AdminProjectDetailPage() {
             <Trash2 className="w-4 h-4" />
             {t('Delete', '删除')}
           </button>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxIdx !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          {/* Close */}
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl transition"
+          >
+            ×
+          </button>
+          {/* Counter */}
+          <span className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm tabular-nums">
+            {lightboxIdx + 1} / {images.length}
+          </span>
+          {/* Prev */}
+          {lightboxIdx > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); lightboxPrev(); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+          )}
+          {/* Image */}
+          <img
+            src={images[lightboxIdx]}
+            alt={`Image ${lightboxIdx + 1}`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+          />
+          {/* Next */}
+          {lightboxIdx < images.length - 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); lightboxNext(); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          )}
         </div>
       )}
 

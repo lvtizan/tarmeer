@@ -71,7 +71,7 @@ export async function submitInquiry(req: any, res: any) {
     // Async notification (don't block response)
     const companyName = source_company_name || undefined;
     setImmediate(() => {
-      notifyNewInquiry({ id: inquiryId, name: name || 'Anonymous', phone, city, area_range, message, companyName }).catch(() => {});
+      notifyNewInquiry({ id: inquiryId, name: name || 'Anonymous', phone, city, area_range, message, companyName, sourcePage: source_page || undefined }).catch(() => {});
     });
 
     // Push to CRM (fire-and-forget)
