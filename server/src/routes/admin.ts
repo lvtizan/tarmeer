@@ -1,4 +1,8 @@
 import { Router } from 'express';
+import path from 'path';
+import fs from 'fs/promises';
+import crypto from 'crypto';
+import sharp from 'sharp';
 import pool from '../config/database';
 import { adminLoginRateLimit } from '../middleware/antiScraping';
 import { analyticsEvents } from '../lib/analyticsEvents';
@@ -354,6 +358,36 @@ router.put('/system-config', requireSuperAdmin, async (req: any, res: any) => {
   } catch (error) {
     console.error('Update system config error:', error);
     res.status(500).json({ error: 'Failed to update config.' });
+  }
+});
+
+
+// Showcase image optimization — fetch external URL, resize to 800px, convert to WebP
+router.post('/showcase-images/optimize', requireSuperAdmin, async (req: any, res: any) => {
+  const { url } = req.body;
+  if (!url || typeof url !== 'string') return res.status(400).json({ error: 'url required' });
+  // 相对路径（/uploads/...）直接返回原路径，无需压缩——文件在同一台服务器上
+  if (url.startsWith('/')) return res.json({ optimizedUrl: url });
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!response.ok) return res.status(422).json({ error: 'Failed to fetch image' });
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.startsWith('image/')) return res.status(422).json({ error: 'URL is not an image' });
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const hash = crypto.createHash('md5').update(url).digest('hex').slice(0, 12);
+    const filename = `showcase-${hash}.webp`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'showcase');
+    const filePath = path.join(uploadDir, filename);
+    await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
+    await sharp(buffer)
+      .resize({ width: 800, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toFile(filePath);
+    await fs.chmod(filePath, 0o644);
+    res.json({ optimizedUrl: `/uploads/showcase/${filename}` });
+  } catch (err: any) {
+    console.error('Showcase optimize error:', err);
+    res.status(500).json({ error: 'Optimization failed' });
   }
 });
 

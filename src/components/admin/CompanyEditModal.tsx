@@ -12,15 +12,6 @@ interface Props {
 
 const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
-const SERVICES = [
-  'Interior Design', 'Architecture', 'Fit-Out', 'Renovation', 'Construction', 'Landscape',
-  'Furniture', 'Joinery', 'MEP', 'Project Management', 'Design & Build', 'Turnkey Solutions', 'Maintenance',
-  'Glass & Aluminium', 'Painting & Finishing', 'Flooring & Tiling', 'Demolition',
-  'Steel & Fabrication', 'Curtains & Blinds', 'Cleaning Services', 'Pools',
-  'HVAC & Ducting', 'Fire Fighting', 'Smart Home & Automation', 'Waterproofing',
-  'Solar Systems', 'Epoxy & PU Flooring', 'Scaffolding', 'Lighting Installation',
-  'Stone & Marble Fixing', 'Gypsum & Partitions', 'Deep Cleaning',
-];
 
 const SPECIALTIES = [
   'Residential', 'Villa', 'Commercial', 'Hospitality', 'Retail', 'Office',
@@ -32,6 +23,17 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [SERVICES, setServices] = useState<string[]>([]);
+
+  useEffect(() => {
+    adminApi.request('/enums/company-services')
+      .then((d: any) => {
+        if (Array.isArray(d.services)) {
+          setServices(d.services.map((s: any) => s.name ?? s));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {

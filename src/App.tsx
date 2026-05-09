@@ -118,6 +118,7 @@ const AdminProjectDetailPage = lazyRetry(() => import('./pages/admin/AdminProjec
 const AdminVisitRecordsPage = lazyRetry(() => import('./pages/admin/AdminVisitRecordsPage'));
 const AdminStaffPage = lazyRetry(() => import('./pages/admin/AdminStaffPage'));
 const AdminEnumsPage = lazyRetry(() => import('./pages/admin/AdminEnumsPage'));
+const AdminShowcaseImagesPage = lazyRetry(() => import('./pages/admin/AdminShowcaseImagesPage'));
 
 // Field
 const FieldSurveyPage = lazyRetry(() => import('./pages/field/FieldSurveyPage'));
@@ -240,6 +241,7 @@ function App() {
             <Route path="suppliers/:id" element={<AdminSupplierDetailPage />} />
             <Route path="visit-records" element={<AdminVisitRecordsPage />} />
             <Route path="staff" element={<AdminStaffPage />} />
+            <Route path="showcase-images" element={<AdminShowcaseImagesPage />} />
           </Route>
           <Route path="/admin/login" element={<Layout navbarVariant="admin-auth"><AdminProvider><AdminLoginPage /></AdminProvider></Layout>} />
           <Route path="/admin/forgot-password" element={<Layout navbarVariant="admin-auth"><AdminForgotPasswordPage /></Layout>} />

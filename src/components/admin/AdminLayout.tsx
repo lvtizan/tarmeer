@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck, HandCoins } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck, HandCoins, Images } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -77,6 +77,11 @@ const adminItems = [
     to: '/admin/notification-emails', labelEn: 'Notify Emails', labelZh: '通知邮箱', icon: Mail, superAdminOnly: true,
     infoEn: 'Configure recipients for system notifications to ensure operational events are delivered.',
     infoZh: '配置系统通知接收邮箱，确保运营事件及时送达。',
+  },
+  {
+    to: '/admin/showcase-images', labelEn: 'Showcase Images', labelZh: '登录页图片', icon: Images,
+    infoEn: 'Manage image URLs displayed in the scrolling animation on the login page.',
+    infoZh: '管理登录页左侧滚动展示的图片链接。',
   },
   {
     to: '/admin/help', labelEn: 'Help', labelZh: '帮助中心', icon: CircleHelp,

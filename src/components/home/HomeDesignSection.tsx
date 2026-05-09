@@ -123,8 +123,8 @@ export default function HomeDesignSection() {
   }, []);
 
   // Keep backend-provided order (operations-managed display order), do not re-sort on frontend.
-  const featured = companies.slice(0, 6);
-  const hasMoreCompanies = companies.length > 6;
+  const featured = companies.slice(0, 9);
+  const hasMoreCompanies = companies.length > 9;
 
   return (
     <section className="bg-white py-10 sm:py-12">

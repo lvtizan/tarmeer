@@ -8,28 +8,35 @@ import NotificationBell from './NotificationBell';
 import { useNavigationHandler } from '../hooks/useNavigationHandler';
 import TarmeerLogo from './TarmeerLogo';
 
-const serviceCategories = {
-  Design: [
-    { label: 'Interior Design', to: '/companies?service=Interior+Design' },
-    { label: 'Architecture', to: '/companies?service=Architecture' },
-    { label: 'Design & Build', to: '/companies?service=Design+%26+Build' },
-  ],
-  Renovation: [
-    { label: 'Fit-Out', to: '/companies?service=Fit-Out' },
-    { label: 'Renovation', to: '/companies?service=Renovation' },
-    { label: 'Construction', to: '/companies?service=Construction' },
-    { label: 'MEP', to: '/companies?service=MEP' },
-  ],
-  Furnishing: [
-    { label: 'Furniture', to: '/companies?service=Furniture' },
-    { label: 'Joinery', to: '/companies?service=Joinery' },
-    { label: 'Turnkey Solutions', to: '/companies?service=Turnkey+Solutions' },
-  ],
-  Services: [
-    { label: 'Project Management', to: '/companies?service=Project+Management' },
-    { label: 'Landscape', to: '/companies?service=Landscape' },
-    { label: 'Maintenance', to: '/companies?service=Maintenance' },
-  ],
+const spaceTypeItems = [
+  { label: 'Residential', to: '/companies?style=Residential' },
+  { label: 'Commercial', to: '/companies?style=Commercial' },
+  { label: 'Public / Institutional', to: '/companies?style=Office' },
+  { label: 'Outdoor / Landscape', to: '/companies?service=Landscape' },
+];
+
+const navServiceTypeItems = [
+  'Design & Planning',
+  'Construction',
+  'Design & Build',
+  'Renovation',
+  'Extensions',
+  'Outdoor & Pools',
+  'Home Systems',
+  'Interiors & Furniture',
+  'Maintenance & Repairs',
+];
+
+const SERVICE_CATEGORY_MAP: Record<string, string[]> = {
+  'Design & Planning': ['Interior Design', 'Architecture', 'Project Management'],
+  'Construction': ['Construction', 'Fit-Out', 'Demolition', 'Scaffolding', 'Gypsum & Partitions', 'Steel & Fabrication'],
+  'Design & Build': ['Design & Build', 'Turnkey Solutions'],
+  'Renovation': ['Renovation', 'Painting & Finishing', 'Flooring & Tiling', 'Joinery', 'Glass & Aluminium'],
+  'Extensions': ['Construction', 'Gypsum & Partitions'],
+  'Outdoor & Pools': ['Landscape', 'Pools'],
+  'Home Systems': ['MEP', 'HVAC & Ducting', 'Smart Home & Automation', 'Fire Fighting', 'Solar Systems', 'Waterproofing'],
+  'Interiors & Furniture': ['Furniture', 'Curtains & Blinds', 'Lighting Installation', 'Stone & Marble Fixing', 'Epoxy & PU Flooring'],
+  'Maintenance & Repairs': ['Maintenance', 'Cleaning Services', 'Deep Cleaning'],
 };
 
 const portfolioCategories = {
@@ -89,9 +96,14 @@ export default function Navbar({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
+
+  useEffect(() => {
+    if (!dropdownOpen) setHoveredCategory(null);
+  }, [dropdownOpen]);
 
   // Hide navbar completely on auth page
   if (isAuthPage && !forceShowOnAuth) return null;
@@ -222,32 +234,51 @@ export default function Navbar({
             </Link>
 
             <div
-                className={`absolute top-full right-0 pt-2 w-max z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+                className={`absolute top-full right-0 pt-2 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
               >
-              <div className="bg-white shadow-xl rounded-lg border border-stone-200">
-                  <div className="p-6 grid grid-cols-4 gap-8 min-w-max">
-                    {Object.entries(serviceCategories).map(([category, services]) => (
-                      <div key={category}>
-                        <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">
-                          {category}
-                        </h3>
-                        <ul className="space-y-2">
-                          {services.map((service) => (
-                            <li key={service.to}>
-                              <Link
-                                to={service.to}
-                                onClick={() => handleClick(service.to)}
-                                className="text-sm text-stone-600 hover:text-[#b8864a] transition"
-                              >
-                                {service.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+              <div className="relative">
+                <div className="bg-white shadow-xl rounded-lg border border-stone-200">
+                  <div className="flex">
+                    {/* SPACE TYPE */}
+                    <div className="p-6 w-48 border-r border-stone-100 flex-shrink-0">
+                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Space Type</h3>
+                      <ul className="space-y-2">
+                        {spaceTypeItems.map((item) => (
+                          <li key={item.to}>
+                            <Link
+                              to={item.to}
+                              onClick={() => handleClick(item.to)}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
+                            >
+                              {item.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {/* SERVICE TYPE */}
+                    <div className="p-6 w-52 flex-shrink-0">
+                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Service Type</h3>
+                      <ul className="space-y-1">
+                        {navServiceTypeItems.map((cat) => (
+                          <li key={cat}>
+                            <button
+                              onMouseEnter={() => setHoveredCategory(cat)}
+                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-sm transition text-left ${
+                                hoveredCategory === cat
+                                  ? 'bg-stone-50 text-[#b8864a]'
+                                  : 'text-stone-600 hover:bg-stone-50 hover:text-[#b8864a]'
+                              }`}
+                            >
+                              {cat}
+                              <span className="text-stone-300 text-xs ml-2">›</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                  <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
+                  <div className="border-t border-stone-200 px-6 py-3 bg-stone-50 rounded-b-lg">
                     <Link
                       to="/companies"
                       onClick={() => handleClick('/companies')}
@@ -257,7 +288,29 @@ export default function Navbar({
                     </Link>
                   </div>
                 </div>
+                {/* SUB-SERVICES — absolute panel to the right, no layout shift */}
+                {hoveredCategory && (
+                  <div className="absolute top-0 left-full ml-1 bg-white shadow-xl rounded-lg border border-stone-200 w-52 p-6">
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">
+                      {hoveredCategory}
+                    </h3>
+                    <ul className="space-y-2">
+                      {SERVICE_CATEGORY_MAP[hoveredCategory]?.map((svc) => (
+                        <li key={svc}>
+                          <Link
+                            to={`/companies?service=${encodeURIComponent(svc)}`}
+                            onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
+                            className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
+                          >
+                            {svc}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
+            </div>
           </div>
 
           {/* Materials Dropdown */}
@@ -434,34 +487,34 @@ export default function Navbar({
                 </button>
               </div>
               {dropdownOpen && (
-                  <div className="mt-3 pl-4 space-y-4"
-                  >
-                    {Object.entries(serviceCategories).map(([category, services]) => (
-                      <div key={category}>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">
-                          {category}
-                        </h3>
-                        <ul className="space-y-1">
-                          {services.map((service) => (
-                            <li key={service.to}>
-                              <Link
-                                to={service.to}
-                                onClick={() => handleClick(service.to)}
-                                className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1"
-                              >
-                                {service.label}
-                              </Link>
-                            </li>
+                  <div className="mt-3 pl-4 space-y-4">
+                    <div>
+                      <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Space Type</h4>
+                      {spaceTypeItems.map((item) => (
+                        <Link key={item.to} to={item.to} onClick={() => handleClick(item.to)}
+                          className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Service Type</h4>
+                      {navServiceTypeItems.map((cat) => (
+                        <div key={cat} className="py-1">
+                          <p className="text-xs font-semibold text-stone-500 mb-1">{cat}</p>
+                          {SERVICE_CATEGORY_MAP[cat]?.map((svc) => (
+                            <Link key={svc} to={`/companies?service=${encodeURIComponent(svc)}`}
+                              onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
+                              {svc}
+                            </Link>
                           ))}
-                        </ul>
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                     <div className="border-t border-stone-200 pt-2">
-                      <Link
-                        to="/companies"
-                        onClick={() => handleClick('/companies')}
-                        className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1"
-                      >
+                      <Link to="/companies" onClick={() => handleClick('/companies')}
+                        className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
                         All Companies {'>'}
                       </Link>
                     </div>
