@@ -349,6 +349,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // YouTube / external video link per project
   { table: 'projects', column: 'video_url', type: 'VARCHAR(500) NULL' },
 
+  // Service-type tags per project (JSON array: ["Design & Planning", "Flooring & Carpet", ...])
+  { table: 'projects', column: 'service_tags', type: 'JSON NULL' },
+
   // Company onboarding wizard step tracker
   { table: 'company_profiles', column: 'onboarding_step', type: 'TINYINT DEFAULT 0' },
 

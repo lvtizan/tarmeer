@@ -1,6 +1,7 @@
 import pool from '../config/database';
 import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
 import { persistProjectImages, isImageDataUrl } from '../lib/projectImageStorage';
+import type { NormalizedImage } from '../lib/projectPersistence';
 import { calculateAllWeights } from '../lib/weightCalculator';
 import { slugify } from '../lib/slugify';
 import fs from 'fs';
@@ -894,7 +895,15 @@ export async function updateAdminProject(req: any, res: any) {
         }
       }
 
-      finalImages = persistedUrls.map((url) => metaByUrl.get(url) ?? url);
+      finalImages = persistedUrls.map((img: NormalizedImage) => {
+        const url = typeof img === 'string' ? img : img.url;
+        const dbMeta = metaByUrl.get(url);
+        if (dbMeta) {
+          // Merge AI metadata from DB with user-assigned tag from incoming image
+          return (typeof img === 'object' && img.tag) ? { ...dbMeta, tag: img.tag } : dbMeta;
+        }
+        return img;
+      });
     }
 
     await pool.execute(
@@ -940,7 +949,7 @@ export async function createAdminProject(req: any, res: any) {
     const projectStatus = company.status === 'approved' ? 'published' : 'pending';
 
     // Handle base64 images
-    let persistedImages: string[] = [];
+    let persistedImages: NormalizedImage[] = [];
     if (Array.isArray(images)) {
       const designerId = await resolveDesignerIdForProfile(Number(companyId));
       persistedImages = await persistProjectImages(images, { designerId });

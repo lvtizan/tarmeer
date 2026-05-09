@@ -21,6 +21,7 @@ import articleRoutes from './routes/articles';
 import supplierAuthRoutes from './routes/supplierAuth';
 import supplierRoutes from './routes/suppliers';
 import fieldRoutes from './routes/field';
+import siteRoutes from './routes/site';
 import config from './config';
 import {
   isPayloadTooLargeError,
@@ -373,6 +374,7 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/supplier/auth', supplierAuthRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/field', fieldRoutes);
+app.use('/api/site', siteRoutes);
 
 // SEO: serve index.html with injected meta for search engine bots
 import { getPageMeta, injectMeta } from './lib/seoMetaInjector';

@@ -181,7 +181,7 @@ export async function approveCompany(req: any, res: any) {
 
     setImmediate(() => {
       logActivityEvent({
-        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
+        userId: req.admin?.id || null, userName: req.admin?.full_name || req.admin?.email || 'Admin', userRole: 'admin',
         action: 'approve', targetType: 'company_profile', targetId: Number(id),
         targetName: profile?.company_name, description: `审批通过了装企「${profile?.company_name}」`,
         ip: getClientIp(req),
@@ -453,7 +453,7 @@ export async function deleteCompanyProfile(req: any, res: any) {
 
     setImmediate(() => {
       logActivityEvent({
-        userId: req.admin?.id || null, userName: req.admin?.name || 'Admin', userRole: 'admin',
+        userId: req.admin?.id || null, userName: req.admin?.full_name || req.admin?.email || 'Admin', userRole: 'admin',
         action: 'delete', targetType: 'company_profile', targetId: id,
         targetName: profile.company_name, description: `删除了装企「${profile.company_name}」，原因: ${reason}`,
         ip: getClientIp(req),

@@ -3,6 +3,7 @@ import { sanitizePublicCompany } from '../lib/publicCompaniesSerialization';
 import {
   buildPublicCompaniesListQuery,
   buildPublicCompanyDetailQuery,
+  SPACE_L2_MAP,
 } from '../lib/publicCompaniesQuery';
 import { slugify } from '../lib/slugify';
 import { extractImageUrls } from '../lib/projectImagesSerialization';
@@ -16,12 +17,20 @@ export async function getCompanies(req: any, res: any) {
     const offset = (page - 1) * limit;
     const orderMode = req.query?.order === 'home' ? 'home' : 'list';
 
+    // ?space=residential|commercial|public|outdoor → filter by L2 specialties
+    const spaceParam = typeof req.query.space === 'string' ? req.query.space.toLowerCase().trim() : '';
+    const spaceTags = spaceParam && SPACE_L2_MAP[spaceParam] ? SPACE_L2_MAP[spaceParam] : undefined;
+
+    const spaceWhere = spaceTags && spaceTags.length > 0
+      ? ` AND JSON_OVERLAPS(COALESCE(specialties, '[]'), '${JSON.stringify(spaceTags)}')`
+      : '';
+
     const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as total FROM uae_companies ${PUBLIC_COMPANY_WHERE}`
+      `SELECT COUNT(*) as total FROM uae_companies WHERE is_active = 1${spaceWhere}`
     );
     const total = (countResult as any[])[0]?.total || 0;
 
-    const listQuery = buildPublicCompaniesListQuery({ limit, offset, orderMode });
+    const listQuery = buildPublicCompaniesListQuery({ limit, offset, orderMode, spaceTags });
     const [companies] = await pool.execute(listQuery.sql, listQuery.params);
 
     res.json({
@@ -36,6 +45,27 @@ export async function getCompanies(req: any, res: any) {
   } catch (error) {
     console.error('Get companies error:', error);
     res.status(500).json({ error: 'Failed to load companies.' });
+  }
+}
+
+/**
+ * GET /api/companies/active-services
+ * Returns all active service types from the company_services master table,
+ * ordered by sort_order. Includes all 32 (or however many) admin-configured
+ * services regardless of whether companies currently use them — new services
+ * added in /admin/enums will automatically appear here with no extra config.
+ */
+export async function getActiveServices(req: any, res: any) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT name FROM company_services WHERE active = 1 ORDER BY sort_order, name'
+    );
+    const services = (rows as any[]).map((r) => r.name as string);
+    res.setHeader('Cache-Control', 'public, max-age=300'); // 5-min CDN cache
+    res.json({ services });
+  } catch (error) {
+    console.error('getActiveServices error:', error);
+    res.status(500).json({ error: 'Failed to load active services.' });
   }
 }
 

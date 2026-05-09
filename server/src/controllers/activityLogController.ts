@@ -32,7 +32,12 @@ export async function getActivityLogs(req: any, res: any) {
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.query(
-      `SELECT * FROM activity_log ${where} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
+      `SELECT al.*,
+        COALESCE(NULLIF(al.user_name, ''), au.full_name, au.email, u.full_name, u.email) AS user_name
+       FROM activity_log al
+       LEFT JOIN admin_users au ON au.id = al.user_id AND al.user_role = 'admin'
+       LEFT JOIN users u ON u.id = al.user_id AND al.user_role != 'admin'
+       ${where} ORDER BY al.created_at DESC LIMIT ${limit} OFFSET ${offset}`,
       params
     );
 

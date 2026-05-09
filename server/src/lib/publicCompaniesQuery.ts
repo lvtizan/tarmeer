@@ -1,6 +1,23 @@
-export function buildPublicCompaniesListQuery(input: { limit: number; offset: number; orderMode: 'home' | 'list' }) {
+/** L1 space id → L2 specialty tags (mirrors src/lib/tagTaxonomy.ts SPACE_TAXONOMY) */
+const SPACE_L2_MAP: Record<string, string[]> = {
+  residential: ['Apartment', 'Villa', 'Luxury Residential', 'Townhouse'],
+  commercial: ['Retail', 'Office', 'Restaurant', 'Hotel', 'Hospitality', 'Showroom', 'Mall'],
+  public: ['School', 'Education', 'Healthcare', 'Hospital', 'Club', 'Factory', 'ADU', 'Mixed-Use'],
+  outdoor: ['Garden', 'Terrace', 'Pool', 'Fence', 'Driveway', 'Landscape'],
+};
+
+export function buildPublicCompaniesListQuery(input: { limit: number; offset: number; orderMode: 'home' | 'list'; spaceTags?: string[] }) {
   const primary = input.orderMode === 'home' ? 'home_display_order' : 'list_display_order';
   const orderBy = `weight_score DESC, CASE WHEN COALESCE(${primary}, 0) > 0 THEN 0 ELSE 1 END, ${primary} ASC, google_rating DESC, google_reviews_count DESC, name_en ASC`;
+
+  const spaceWhere = input.spaceTags && input.spaceTags.length > 0
+    ? `AND JSON_OVERLAPS(COALESCE(specialties, '[]'), ?)`
+    : '';
+  const params: any[] = [];
+  if (input.spaceTags && input.spaceTags.length > 0) {
+    params.push(JSON.stringify(input.spaceTags));
+  }
+
   return {
     sql: `SELECT
          id,
@@ -25,12 +42,14 @@ export function buildPublicCompaniesListQuery(input: { limit: number; offset: nu
          owner_user_id,
          is_signed
        FROM uae_companies
-       WHERE is_active = 1
+       WHERE is_active = 1 ${spaceWhere}
        ORDER BY ${orderBy}
        LIMIT ${input.limit} OFFSET ${input.offset}`,
-    params: [],
+    params,
   };
 }
+
+export { SPACE_L2_MAP };
 
 export function buildPublicCompanyDetailQuery(slug: string) {
   return {

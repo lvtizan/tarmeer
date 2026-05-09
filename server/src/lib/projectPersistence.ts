@@ -1,3 +1,6 @@
+/** A single project image — either a plain URL string or an object with url + user-assigned tag */
+export type NormalizedImage = string | { url: string; tag?: string };
+
 type ProjectPersistenceInput = {
   title: string;
   description: string;
@@ -8,6 +11,7 @@ type ProjectPersistenceInput = {
   cost?: string | number | null;
   images?: unknown;
   tags?: unknown;
+  service_tags?: unknown;
   status: string;
 };
 
@@ -21,6 +25,7 @@ type ProjectPersistenceValues = {
   cost: string | number | null;
   images: string;
   tags: string;
+  service_tags: string;
   status: string;
 };
 
@@ -71,21 +76,27 @@ function toJsonArrayString(value: unknown) {
   return JSON.stringify(Array.isArray(value) ? value : []);
 }
 
-export function normalizeProjectImages(value: unknown): string[] {
+export function normalizeProjectImages(value: unknown): NormalizedImage[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value
-    .map((item) => {
-      if (typeof item === 'string') return item.trim();
-      if (item && typeof item === 'object' && 'url' in item) return (item as any).url;
-      return '';
-    })
-    .filter((item) => item.length > 0);
+  const result: NormalizedImage[] = [];
+  for (const item of value) {
+    if (typeof item === 'string') {
+      const url = item.trim();
+      if (url) result.push(url);
+    } else if (item && typeof item === 'object' && 'url' in item) {
+      const url = String((item as any).url).trim();
+      if (!url) continue;
+      const tag = (item as any).tag;
+      result.push(typeof tag === 'string' && tag.trim() ? { url, tag: tag.trim() } : url);
+    }
+  }
+  return result;
 }
 
-export function assertProjectHasImages(value: unknown): string[] {
+export function assertProjectHasImages(value: unknown): NormalizedImage[] {
   const normalizedImages = normalizeProjectImages(value);
   if (normalizedImages.length === 0) {
     throw new Error(PROJECT_IMAGES_REQUIRED_ERROR);
@@ -94,7 +105,7 @@ export function assertProjectHasImages(value: unknown): string[] {
 }
 
 export function buildProjectPersistenceValues(input: ProjectPersistenceInput): ProjectPersistenceValues {
-  const normalizedImages = assertProjectHasImages(input.images);
+  const normalizedImages: NormalizedImage[] = assertProjectHasImages(input.images);
 
   // CRITICAL: Prevent base64 images from entering the database
   validateNoBase64Images(normalizedImages);
@@ -109,6 +120,7 @@ export function buildProjectPersistenceValues(input: ProjectPersistenceInput): P
     cost: toNullableCost(input.cost),
     images: toJsonArrayString(normalizedImages),
     tags: toJsonArrayString(input.tags),
+    service_tags: toJsonArrayString(input.service_tags),
     status: input.status,
   };
 }

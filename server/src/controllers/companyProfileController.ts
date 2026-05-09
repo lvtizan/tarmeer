@@ -8,6 +8,7 @@ import {
 import { generateEmailHandle, slugify } from '../lib/slugify';
 import { parseJsonField } from '../lib/parseJsonField';
 import { logActivity, getClientIp } from '../lib/activityLogger';
+import { getValidServices } from '../lib/enumCache';
 
 /**
  * POST /api/company/profile
@@ -240,10 +241,10 @@ export async function getCompanyProjects(req: any, res: any) {
  * Return available service options
  */
 export async function getServiceOptions(_req: any, res: any) {
-  res.json({
-    services: [
-      'Interior Design', 'Architecture', 'Fit-Out', 'Renovation', 'Construction', 'Landscape',
-      'Furniture', 'Joinery', 'MEP', 'Project Management', 'Design & Build', 'Turnkey Solutions', 'Maintenance',
-    ],
-  });
+  try {
+    const services = await getValidServices();
+    res.json({ services });
+  } catch {
+    res.status(500).json({ error: 'Failed to load services.' });
+  }
 }

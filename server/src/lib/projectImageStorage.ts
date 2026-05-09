@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { generateVariants } from './imageVariants';
+import type { NormalizedImage } from './projectPersistence';
 
 const DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/;
 const PROJECT_UPLOADS_RELATIVE_DIR = '/uploads/projects';
@@ -87,25 +88,33 @@ function isPersistedImageUrl(value: string): boolean {
   return value.startsWith('/') || value.startsWith('http://') || value.startsWith('https://');
 }
 
+function getRawUrl(image: NormalizedImage): string {
+  return typeof image === 'string' ? image : image.url;
+}
+
+function withUpdatedUrl(image: NormalizedImage, newUrl: string): NormalizedImage {
+  return typeof image === 'string' ? newUrl : { ...image, url: newUrl };
+}
+
 export async function persistProjectImages(
-  rawImages: string[],
+  rawImages: NormalizedImage[],
   options: { designerId: unknown; projectId?: unknown }
-): Promise<string[]> {
-  const result: string[] = [];
+): Promise<NormalizedImage[]> {
+  const result: NormalizedImage[] = [];
   const { designerId, projectId } = options;
 
   for (const image of rawImages) {
-    const value = toTrimmedString(image);
+    const value = toTrimmedString(getRawUrl(image));
     if (!value) continue;
 
     if (isPersistedImageUrl(value)) {
-      result.push(value);
+      result.push(image); // preserve object (with tag) unchanged
       continue;
     }
 
     if (isImageDataUrl(value)) {
       const uploadedUrl = await persistSingleImageDataUrl(value, designerId, projectId);
-      result.push(uploadedUrl);
+      result.push(withUpdatedUrl(image, uploadedUrl)); // keep tag, update url
     }
   }
 

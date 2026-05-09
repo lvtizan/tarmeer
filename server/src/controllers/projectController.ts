@@ -19,6 +19,7 @@ function normalizeProject(project: any) {
     ...project,
     images: parseJsonField(project.images) || [],
     tags: parseJsonField(project.tags) || [],
+    service_tags: parseJsonField(project.service_tags) || [],
   };
 }
 
@@ -48,7 +49,7 @@ function compareProjectsNewestFirst(left: any, right: any) {
 export async function createProject(req: any, res: any) {
   try {
     const userId = req.user.userId;
-    const { title, description, style, location, area, year, cost, images, tags, status, video_url } = req.body;
+    const { title, description, style, location, area, year, cost, images, tags, service_tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
       designerId: userId,
@@ -67,6 +68,7 @@ export async function createProject(req: any, res: any) {
       cost,
       images: finalImages,
       tags,
+      service_tags,
       status: projectStatus,
     });
     
@@ -82,8 +84,8 @@ export async function createProject(req: any, res: any) {
     const finalStatus = companyProfile?.status === 'approved' ? 'published' : values.status;
 
     const [result] = await pool.execute(
-      `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason, video_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+      `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, service_tags, status, rejection_reason, video_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
       [
         null,
         companyProfileId,
@@ -96,6 +98,7 @@ export async function createProject(req: any, res: any) {
         values.cost,
         values.images,
         values.tags,
+        values.service_tags,
         finalStatus,
         video_url || null,
       ]
@@ -123,7 +126,7 @@ export async function createProject(req: any, res: any) {
 
     setImmediate(() => {
       logActivity({
-        userId: req.user.userId, userName: '', userRole: 'company',
+        userId: req.user.userId, userName: notificationDesigner.full_name || '', userRole: 'company',
         action: 'create', targetType: 'project', targetId: projectId, targetName: title || 'Untitled',
         description: `上传了项目「${title || 'Untitled'}」`,
         ip: getClientIp(req),
@@ -206,7 +209,7 @@ export async function getMyProjects(req: any, res: any) {
     const userId = req.user.userId;
 
     const [projects] = await pool.execute(
-      `SELECT id, title, description, style, location, area, year, cost, images, tags, status, rejection_reason, created_at, updated_at
+      `SELECT id, title, description, style, location, area, year, cost, images, tags, service_tags, status, rejection_reason, created_at, updated_at
        FROM projects
        WHERE company_profile_id IN (SELECT id FROM company_profiles WHERE user_id = ?)`,
       [userId]
@@ -265,7 +268,7 @@ export async function getProjectById(req: any, res: any) {
 export async function updateProject(req: any, res: any) {
   try {
     const { id } = req.params;
-    const { title, description, style, location, area, year, cost, images, tags, status, video_url } = req.body;
+    const { title, description, style, location, area, year, cost, images, tags, service_tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
       designerId: req.user.userId,
@@ -285,6 +288,7 @@ export async function updateProject(req: any, res: any) {
       cost,
       images: finalImages,
       tags,
+      service_tags,
       status: nextStatus,
     });
     
@@ -309,7 +313,7 @@ export async function updateProject(req: any, res: any) {
     
     await pool.execute(
       `UPDATE projects
-       SET title = ?, description = ?, style = ?, location = ?, area = ?, year = ?, cost = ?, images = ?, tags = ?, status = ?, rejection_reason = NULL, video_url = ?
+       SET title = ?, description = ?, style = ?, location = ?, area = ?, year = ?, cost = ?, images = ?, tags = ?, service_tags = ?, status = ?, rejection_reason = NULL, video_url = ?
        WHERE id = ?`,
       [
         values.title,
@@ -321,6 +325,7 @@ export async function updateProject(req: any, res: any) {
         values.cost,
         values.images,
         values.tags,
+        values.service_tags,
         values.status,
         video_url || null,
         id,
@@ -334,7 +339,7 @@ export async function updateProject(req: any, res: any) {
     
     setImmediate(() => {
       logActivity({
-        userId: req.user.userId, userName: '', userRole: 'company',
+        userId: req.user.userId, userName: null as any, userRole: 'company',
         action: 'update', targetType: 'project', targetId: Number(req.params.id), targetName: title || 'Untitled',
         description: `编辑了项目「${title || 'Untitled'}」`,
         ip: getClientIp(req),
@@ -392,7 +397,7 @@ export async function deleteProject(req: any, res: any) {
 
     setImmediate(() => {
       logActivity({
-        userId: req.user.userId, userName: '', userRole: 'company',
+        userId: req.user.userId, userName: null as any, userRole: 'company',
         action: 'delete', targetType: 'project', targetId: Number(req.params.id),
         description: '删除了项目',
         ip: getClientIp(req),
