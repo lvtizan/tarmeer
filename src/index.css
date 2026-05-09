@@ -5,10 +5,14 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Auth page: scrolling image column animation */
+/* Auth page: scrolling image column animations */
 @keyframes scrollColUp {
   from { transform: translateY(0); }
   to { transform: translateY(-50%); }
+}
+@keyframes scrollColDown {
+  from { transform: translateY(-50%); }
+  to { transform: translateY(0); }
 }
 
 @theme {

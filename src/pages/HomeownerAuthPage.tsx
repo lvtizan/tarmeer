@@ -265,9 +265,9 @@ export default function HomeownerAuthPage() {
         <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden bg-[#1a1714] flex-col justify-end">
           {/* 3 scrolling image columns — stagger via negative animation-delay (no empty gaps) */}
           <div className="absolute inset-0 flex gap-0.5">
-            {/* Column 1 — base speed */}
+            {/* Column 1 — scrolls down */}
             <div className="flex-1 overflow-hidden">
-              <div style={{ animation: 'scrollColUp 38s linear infinite', willChange: 'transform' }}>
+              <div style={{ animation: 'scrollColDown 38s linear infinite', willChange: 'transform' }}>
                 {[...col1, ...col1].map((src, i) => (
                   <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
                 ))}
@@ -281,9 +281,9 @@ export default function HomeownerAuthPage() {
                 ))}
               </div>
             </div>
-            {/* Column 3 — slowest, starts 65% into cycle via negative delay */}
+            {/* Column 3 — scrolls down, starts 65% into cycle via negative delay */}
             <div className="flex-1 overflow-hidden">
-              <div style={{ animation: 'scrollColUp 30s linear -19.5s infinite', willChange: 'transform' }}>
+              <div style={{ animation: 'scrollColDown 30s linear -19.5s infinite', willChange: 'transform' }}>
                 {[...col3, ...col3].map((src, i) => (
                   <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
                 ))}
@@ -317,6 +317,12 @@ export default function HomeownerAuthPage() {
                 <p className="text-white text-2xl font-semibold">UAE</p>
                 <p className="text-stone-500 text-xs mt-0.5">Coverage</p>
               </div>
+            </div>
+            {/* Copyright — inside left panel */}
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <span className="text-stone-600 text-[11px]">&copy; {new Date().getFullYear()} Tarmeer</span>
+              <span className="text-stone-700 mx-2">·</span>
+              <a href="/privacy" className="text-stone-600 text-[11px] hover:text-stone-400 transition">Privacy</a>
             </div>
           </div>
         </div>
@@ -582,12 +588,6 @@ export default function HomeownerAuthPage() {
         </div>{/* closes right panel */}
       </div>{/* closes split-screen flex flex-1 overflow-hidden */}
 
-      {/* Minimal footer — pinned to bottom */}
-      <footer className="py-4 text-center text-[11px] text-stone-400">
-        <span>&copy; {new Date().getFullYear()} Tarmeer</span>
-        <span className="mx-2">·</span>
-        <a href="/privacy" className="hover:text-stone-600 transition">Privacy</a>
-      </footer>
     </div>
   );
 }
