@@ -65,6 +65,7 @@ export default function AdminCompanyDetailPage() {
   const [error, setError] = useState('');
   const [activeStyle, setActiveStyle] = useState<string>('all');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const loadDetail = () => {
     if (!id) return;
@@ -136,9 +137,26 @@ export default function AdminCompanyDetailPage() {
               {company.name_ar && <p className="text-sm text-stone-500 mt-0.5" dir="rtl">{company.name_ar}</p>}
               <p className="text-xs text-stone-400 mt-1">/{company.slug}</p>
             </div>
-            {company.description && (
-              <p className="text-sm text-stone-600 leading-relaxed">{company.description}</p>
-            )}
+            {company.description && (() => {
+              const lines = company.description.split('\n').length;
+              const charThreshold = 400;
+              const needsCollapse = lines > 10 || company.description.length > charThreshold;
+              return (
+                <div>
+                  <p className={`text-sm text-stone-600 leading-relaxed whitespace-pre-wrap ${!descExpanded && needsCollapse ? 'line-clamp-[10]' : ''}`}>
+                    {company.description}
+                  </p>
+                  {needsCollapse && (
+                    <button
+                      onClick={() => setDescExpanded(v => !v)}
+                      className="mt-1 text-xs text-[#b8864a] hover:underline"
+                    >
+                      {descExpanded ? '收起' : '展开'}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Details card */}

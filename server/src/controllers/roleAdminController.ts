@@ -133,7 +133,8 @@ export async function listCompanies(req: any, res: any) {
       `SELECT cp.*, u.email as user_email, u.full_name as user_name,
               uc.name_en as linked_company_name, uc.slug as linked_company_slug,
               COALESCE(pc.project_count, 0) as project_count,
-              (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id AND p.deleted_at IS NULL AND DATE(p.created_at) = CURDATE()) as today_project_count
+              (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id AND p.deleted_at IS NULL AND DATE(p.created_at) = CURDATE()) as today_project_count,
+              (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id AND p.deleted_at IS NULL AND p.status = 'pending') as pending_project_count
        FROM company_profiles cp
        JOIN users u ON u.id = cp.user_id
        LEFT JOIN uae_companies uc ON uc.id = cp.linked_uae_company_id

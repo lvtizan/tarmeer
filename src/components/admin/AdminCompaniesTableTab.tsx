@@ -24,6 +24,7 @@ interface CompanyProfileRecord {
   updated_at?: string;
   is_signed?: boolean;
   weight_score?: number;
+  pending_project_count?: number;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -202,6 +203,11 @@ export default function AdminCompaniesTableTab({
                       </div>
                     )}
                     <span className="font-medium text-stone-800">{c.company_name}</span>
+                    {c.pending_project_count != null && c.pending_project_count > 0 && (
+                      <span className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        待审核{c.pending_project_count}
+                      </span>
+                    )}
                     <CopyButton text={c.company_name} />
                   </div>
                 </td>
