@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ExternalLink, Pencil, Trash2, Star, Check } from 'lucide-react';
+import { ExternalLink, Pencil, Trash2, Star, Check, ImagePlus } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -154,6 +154,46 @@ export default function AdminRegisteredCompanyDetailPage() {
     } catch (err: any) {
       setCompany({ ...company, cover_image_url: prev });
       showToast(err?.message || t('Failed to update cover', '封面设置失败'), 'error');
+    }
+  };
+
+  const handleAddToShowcase = async (url: string) => {
+    try {
+      // 读取当前配置
+      const data = await adminApi.request('/system-config');
+      const rows = (data.config as { config_key: string; config_value: string }[]);
+      const row = rows.find(r => r.config_key === 'showcase_images');
+      let images: string[] = [];
+      if (row) { try { images = JSON.parse(row.config_value); } catch { } }
+      if (images.includes(url)) { showToast(t('Already added', '已在展示列表中'), 'success'); return; }
+      // 立即写入原图 URL
+      await adminApi.request('/system-config', {
+        method: 'PUT',
+        body: JSON.stringify({ configs: [{ key: 'showcase_images', value: JSON.stringify([...images, url]) }] }),
+      });
+      showToast(t('Added', '设置成功'), 'success');
+      // 后台静默压缩并替换为优化版本
+      (async () => {
+        try {
+          const { optimizedUrl } = await adminApi.request('/showcase-images/optimize', {
+            method: 'POST',
+            body: JSON.stringify({ url }),
+          });
+          if (optimizedUrl === url) return;
+          const d2 = await adminApi.request('/system-config');
+          const r2 = (d2.config as { config_key: string; config_value: string }[]);
+          const row2 = r2.find(r => r.config_key === 'showcase_images');
+          let imgs2: string[] = [];
+          if (row2) { try { imgs2 = JSON.parse(row2.config_value); } catch { } }
+          const replaced = imgs2.map((u: string) => u === url ? optimizedUrl : u);
+          await adminApi.request('/system-config', {
+            method: 'PUT',
+            body: JSON.stringify({ configs: [{ key: 'showcase_images', value: JSON.stringify(replaced) }] }),
+          });
+        } catch { /* 静默失败，保留原图 URL */ }
+      })();
+    } catch {
+      showToast(t('Failed', '设置失败'), 'error');
     }
   };
 
@@ -364,19 +404,30 @@ export default function AdminRegisteredCompanyDetailPage() {
                       {project.images[0] && (() => {
                         const isCover = company.cover_image_url === project.images[0];
                         return (
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
-                            className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md transition ${
-                              isCover
-                                ? 'bg-[#b8864a] text-white opacity-100'
-                                : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
-                            }`}
-                            title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
-                          >
-                            {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
-                            {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
+                              className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md transition ${
+                                isCover
+                                  ? 'bg-[#b8864a] text-white opacity-100'
+                                  : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
+                              }`}
+                              title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
+                            >
+                              {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                              {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleAddToShowcase(project.images[0]); }}
+                              className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100 transition"
+                              title={t('Add to login page showcase', '添加到登录页展示')}
+                            >
+                              <ImagePlus className="w-3 h-3" />
+                              {t('Showcase', '用作展示')}
+                            </button>
+                          </>
                         );
                       })()}
                     </div>
@@ -662,19 +713,30 @@ export default function AdminRegisteredCompanyDetailPage() {
                         {project.images[0] && (() => {
                           const isCover = company.cover_image_url === project.images[0];
                           return (
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
-                              className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium shadow-md transition ${
-                                isCover
-                                  ? 'bg-[#b8864a] text-white opacity-100'
-                                  : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
-                              }`}
-                              title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
-                            >
-                              {isCover ? <Check className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
-                              {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
+                                className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium shadow-md transition ${
+                                  isCover
+                                    ? 'bg-[#b8864a] text-white opacity-100'
+                                    : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
+                                }`}
+                                title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
+                              >
+                                {isCover ? <Check className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
+                                {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleAddToShowcase(project.images[0]); }}
+                                className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium shadow-md bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100 transition"
+                                title={t('Add to login page showcase', '添加到登录页展示')}
+                              >
+                                <ImagePlus className="w-3.5 h-3.5" />
+                                {t('Showcase', '用作展示')}
+                              </button>
+                            </>
                           );
                         })()}
                       </div>

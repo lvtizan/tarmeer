@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck, SlidersHorizontal } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useServices } from '../hooks/useServices';
 import { Helmet } from 'react-helmet-async';
 import type { Company } from '../lib/companyData';
 import { getCompanyTypeLabel } from '../lib/companyData';
@@ -222,16 +223,25 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
 }
 
 // Hover Preview Popup - Landscape
+const SHOW_LIMIT = 6;
+
 export default function CompaniesPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const allServices = useServices();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>(() => {
+    const s = searchParams.get('service');
+    return s ? [s] : [];
+  });
   const [selectedType, setSelectedType] = useState<string>('');
+  const [showAllStyles, setShowAllStyles] = useState(false);
+  const [showAllServices, setShowAllServices] = useState(false);
   const [foundedRange, setFoundedRange] = useState<string>('');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
@@ -265,10 +275,12 @@ export default function CompaniesPage() {
     () => [...new Set(companies.map((c) => c.companyType).filter(Boolean))] as string[],
     [companies]
   );
-  const serviceOptions = useMemo(
-    () => [...new Set(companies.flatMap((c) => c.services).filter(Boolean))].sort(),
-    [companies]
-  );
+  // Use canonical service list from DB; put selected ones first so they're visible without expanding
+  const serviceOptions = useMemo(() => {
+    const selected = selectedServices.filter((s) => allServices.includes(s));
+    const rest = allServices.filter((s) => !selectedServices.includes(s));
+    return [...selected, ...rest];
+  }, [allServices, selectedServices]);
 
   const filteredCompanies = useMemo(() => {
     return companies.filter((company) => {
@@ -367,8 +379,8 @@ export default function CompaniesPage() {
       {/* Style */}
       <div>
         <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Style</h4>
-        <div className="space-y-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-          {styleOptions.map((style) => (
+        <div className="space-y-1">
+          {(showAllStyles ? styleOptions : styleOptions.slice(0, SHOW_LIMIT)).map((style) => (
             <FilterOption
               key={style}
               selected={selectedStyles.includes(style)}
@@ -380,6 +392,14 @@ export default function CompaniesPage() {
             </FilterOption>
           ))}
         </div>
+        {styleOptions.length > SHOW_LIMIT && (
+          <button
+            onClick={() => setShowAllStyles((v) => !v)}
+            className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
+          >
+            {showAllStyles ? 'Show less' : `Show ${styleOptions.length - SHOW_LIMIT} more`}
+          </button>
+        )}
       </div>
 
       <hr className="border-stone-100" />
@@ -387,8 +407,8 @@ export default function CompaniesPage() {
       {/* Services */}
       <div>
         <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Services</h4>
-        <div className="space-y-1 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-          {serviceOptions.map((service) => (
+        <div className="space-y-1">
+          {(showAllServices ? serviceOptions : serviceOptions.slice(0, SHOW_LIMIT)).map((service) => (
             <FilterOption
               key={service}
               selected={selectedServices.includes(service)}
@@ -400,6 +420,14 @@ export default function CompaniesPage() {
             </FilterOption>
           ))}
         </div>
+        {serviceOptions.length > SHOW_LIMIT && (
+          <button
+            onClick={() => setShowAllServices((v) => !v)}
+            className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
+          >
+            {showAllServices ? 'Show less' : `Show ${serviceOptions.length - SHOW_LIMIT} more`}
+          </button>
+        )}
       </div>
     </>
   );

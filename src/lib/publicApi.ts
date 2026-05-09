@@ -408,6 +408,25 @@ export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, ta
   return result;
 }
 
+/** Module-level cache so the navbar doesn't re-fetch on every hover. */
+let _activeServicesCache: string[] | null = null;
+let _activeServicesFetching: Promise<string[]> | null = null;
+
+export async function fetchActiveServices(): Promise<string[]> {
+  if (_activeServicesCache) return _activeServicesCache;
+  if (_activeServicesFetching) return _activeServicesFetching;
+  _activeServicesFetching = request<{ services: string[] }>('/companies/active-services')
+    .then((res) => {
+      _activeServicesCache = res.services || [];
+      return _activeServicesCache;
+    })
+    .catch(() => {
+      _activeServicesFetching = null;
+      return [];
+    });
+  return _activeServicesFetching;
+}
+
 export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {
   try {
     const [directoryResult, approvedResult] = await Promise.all([

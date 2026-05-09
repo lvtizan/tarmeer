@@ -3,22 +3,27 @@ import { useSearchParams } from 'react-router-dom';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import {
   ImagePlus, Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight,
-  Link2, Loader2, FolderOpen, Image, Pencil, AlertCircle,
+  Link2, Loader2, FolderOpen, Image, Pencil, AlertCircle, Check,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { showToast } from '../../components/ui/Toast';
 import { getDroppedImageFiles } from '../../lib/dropFiles';
 import SelectField from '../../components/form/SelectField';
+import AdminSelect from '../../components/ui/AdminSelect';
 import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
   MAX_ESTIMATED_PAYLOAD_BYTES, MAX_TOTAL_UPLOAD_BYTES, buildUploadSizeMessage,
 } from '../../lib/projectImageUpload';
 import { findDuplicates } from '../../lib/imageDedup';
+import { SPACE_TAXONOMY, SERVICE_GROUPS } from '../../lib/tagTaxonomy';
 
 const PRIMARY = '#b8864a';
 const STYLES = [{ value:'', label:'Select a style' },{ value:'modern', label:'Modern Contemporary' },{ value:'islamic', label:'Modern Islamic' },{ value:'classic', label:'Neo-Classic' },{ value:'minimalist', label:'Minimalist' },{ value:'industrial', label:'Industrial' }];
-const TAGS = ['Apartment','Villa','Bathroom','Kitchen','Living','Bedroom','Majlis','Dining','Workspace','Outdoor','Lighting','Storage','Renovation','Materials'];
 const CITIES = ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain','Riyadh','Jeddah','Other'];
+const SPACE_L1_OPTIONS = [
+  { value: '', label: 'Select project type…' },
+  ...SPACE_TAXONOMY.map(g => ({ value: g.id, label: g.label })),
+];
 
 const fieldCls = "h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35";
 const textareaCls = "w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 resize-none";
@@ -44,6 +49,7 @@ function parseMaybeArray(value: unknown): string[] {
 
 interface ImageEntry {
   url: string;
+  tag?: string;           // user-assigned space/scene tag (one per image)
   ai_tags?: string[];
   ai_category?: string[];
   ai_tagged_at?: string;
@@ -65,12 +71,16 @@ export default function CompanyProjectsPage() {
 
   /* ── project form ── */
   const [form, setForm] = useState({ title:'', description:'', style:'', location:'', area:'', video_url:'' });
+  const [spaceL1, setSpaceL1] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [serviceTags, setServiceTags] = useState<string[]>([]);
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
 
   /* ── image board ── */
   const [imgs, setImgs] = useState<string[]>([]);
   const [imageEntries, setImageEntries] = useState<ImageEntry[]>([]);
+  const [imgTags, setImgTags] = useState<(string | undefined)[]>([]); // per-image user tag
+  const [checkedImgs, setCheckedImgs] = useState<Set<number>>(new Set()); // indices selected for batch tagging
   const [fps, setFps] = useState<string[]>([]);
   const [cover, setCover] = useState(0);
   const [prepping, setPrepping] = useState(false);
@@ -148,6 +158,7 @@ export default function CompanyProjectsPage() {
 
       setImgs(prev=>[...prev,...dedupedUrls]);
       setFps(prev=>[...prev,...dedupedFps.map(f=>`${f.name}:${f.size}:${f.lastModified}`)]);
+      setImgTags(prev=>[...prev,...Array(dedupedUrls.length).fill(undefined)]);
     } catch (e:any) { setNotice(e.message||'Failed'); }
     finally { setPrepping(false); }
   };
@@ -163,8 +174,30 @@ export default function CompanyProjectsPage() {
       await addFiles(result.files);
     }
   };
-  const rmImg = (i:number) => { setImgs(p=>p.filter((_,x)=>x!==i));setFps(p=>p.filter((_,x)=>x!==i));if(cover>=i&&cover>0)setCover(c=>c-1) };
-  const mvImg = (f:number,t:number) => { setImgs(p=>reorder(p,f,t));setFps(p=>reorder(p,f,t));if(cover===f)setCover(t) };
+  const rmImg = (i:number) => {
+    setImgs(p=>p.filter((_,x)=>x!==i));
+    setFps(p=>p.filter((_,x)=>x!==i));
+    setImgTags(p=>p.filter((_,x)=>x!==i));
+    setCheckedImgs(prev => {
+      const next = new Set<number>();
+      prev.forEach(x => { if (x < i) next.add(x); else if (x > i) next.add(x - 1); });
+      return next;
+    });
+    if(cover>=i&&cover>0) setCover(c=>c-1);
+  };
+  const mvImg = (f:number,t:number) => {
+    setImgs(p=>reorder(p,f,t));
+    setFps(p=>reorder(p,f,t));
+    setImgTags(p=>reorder(p,f,t));
+    if(cover===f) setCover(t);
+  };
+  const toggleCheck = (i: number) => {
+    setCheckedImgs(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  };
 
   /* ── URL scrape ── */
   const doScrape = async () => {
@@ -173,7 +206,11 @@ export default function CompanyProjectsPage() {
     catch(e:any){setScrapeErr(e.message||'Failed')}finally{setScraping(false)}
   };
   const applyScrape = () => {
-    if(!scrapeRes)return;setImgs(p=>[...p,...scrapeRes.images]);setFps(p=>[...p,...scrapeRes.images.map((u:string,i:number)=>`s:${i}:${u.slice(-30)}`)]);setScrapeRes(null);setScrapeUrl('');
+    if(!scrapeRes)return;
+    setImgs(p=>[...p,...scrapeRes.images]);
+    setFps(p=>[...p,...scrapeRes.images.map((u:string,i:number)=>`s:${i}:${u.slice(-30)}`)]);
+    setImgTags(p=>[...p,...Array(scrapeRes.images.length).fill(undefined)]);
+    setScrapeRes(null);setScrapeUrl('');
   };
 
   /* ── submit project ── */
@@ -184,7 +221,14 @@ export default function CompanyProjectsPage() {
       return;
     }
     setSubmitting(true);    try{
-      const ordered=[imgs[cover],...imgs.filter((_,i)=>i!==cover)];
+      const orderedIndices = [cover, ...imgs.map((_,i)=>i).filter(i=>i!==cover)];
+      const ordered = orderedIndices.map(i => imgs[i]);
+      const orderedTags = orderedIndices.map(i => imgTags[i]);
+      // Send images as {url, tag} objects when a tag is present, else plain strings
+      const imagesPayload = ordered.map((url, i) => {
+        const tag = orderedTags[i];
+        return tag ? { url, tag } : url;
+      });
       const payload = {
         title: form.title,
         description: form.description,
@@ -192,8 +236,9 @@ export default function CompanyProjectsPage() {
         location: form.location,
         area: form.area,
         video_url: form.video_url || null,
-        images: ordered,
+        images: imagesPayload,
         tags,
+        service_tags: serviceTags,
         status: publish ? 'pending' : 'draft',
       };
 
@@ -212,7 +257,7 @@ export default function CompanyProjectsPage() {
       }
 
       setEditingProjectId(null);
-      setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});setTags([]);setImgs([]);setFps([]);setImageEntries([]);setCover(0);
+      setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});setSpaceL1('');setTags([]);setServiceTags([]);setImgs([]);setFps([]);setImageEntries([]);setImgTags([]);setCheckedImgs(new Set());setCover(0);
       setMode('list');
       refreshProjects();
     }catch(e:any){showToast(e.message||'Failed', 'error')}finally{setSubmitting(false)}
@@ -232,11 +277,16 @@ export default function CompanyProjectsPage() {
       video_url: project.video_url || '',
     });
     setImageEntries(entries);
+    setImgTags(entries.map(e => e.tag || undefined));
     const aiCategories = entries.flatMap((e) => e.ai_category || []);
-    setTags(() => {
-      const merged = parseMaybeArray(project.tags);
-      return aiCategories.length > 0 ? [...new Set([...merged, ...aiCategories])] : merged;
-    });
+    const spaceTags = parseMaybeArray(project.tags);
+    const mergedTags = aiCategories.length > 0 ? [...new Set([...spaceTags, ...aiCategories])] : spaceTags;
+    setTags(mergedTags);
+    setServiceTags(parseMaybeArray(project.service_tags));
+    // Derive L1 from the first existing space tag
+    const firstSpaceTag = mergedTags.find((t: string) => SPACE_TAXONOMY.some(g => (g.tags as readonly string[]).includes(t)));
+    const derivedL1 = firstSpaceTag ? SPACE_TAXONOMY.find(g => (g.tags as readonly string[]).includes(firstSpaceTag))?.id || '' : '';
+    setSpaceL1(derivedL1);
     setImgs(projectImages);
     setFps(projectImages.map((url, index) => `existing:${project.id}:${index}:${url.slice(-30)}`));
     setCover(0);
@@ -248,10 +298,14 @@ export default function CompanyProjectsPage() {
   const cancelEdit = () => {
     setEditingProjectId(null);
     setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});
+    setSpaceL1('');
     setTags([]);
+    setServiceTags([]);
     setImgs([]);
     setFps([]);
     setImageEntries([]);
+    setImgTags([]);
+    setCheckedImgs(new Set());
     setCover(0);
     setTried(false);
     setMode('list');
@@ -483,9 +537,60 @@ export default function CompanyProjectsPage() {
                 <div className="flex h-11 items-center rounded-lg border border-stone-200 bg-stone-50 px-4"><input type="text" value={form.area} onChange={e=>setForm(p=>({...p,area:e.target.value}))} placeholder="e.g. 450" inputMode="decimal" className="h-full w-full bg-transparent text-[#2c2c2c] outline-none"/><span className="text-xs text-stone-500">sqm</span></div>
               </div>
               <div className="md:col-span-2">
-                <label className={labelCls}>Project Tags</label>
-                <p className="mb-2 text-xs text-stone-500">Select tags to classify this project (optional).</p>
-                <div className="flex flex-wrap gap-2">{TAGS.map(t=>{const on=tags.includes(t);return<button key={t} type="button" onClick={()=>setTags(p=>on?p.filter(x=>x!==t):[...p,t])} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on?tagOn:tagOff}`}>{t}</button>})}</div>
+                <label className={labelCls}>Space Type</label>
+                <p className="mb-2 text-xs text-stone-500">Select a project category, then pick the specific types that apply.</p>
+                <AdminSelect
+                  value={spaceL1}
+                  onChange={(v) => {
+                    setSpaceL1(v);
+                    setTags([]); // reset L2 when L1 changes
+                  }}
+                  options={SPACE_L1_OPTIONS}
+                  className="w-full mb-3"
+                />
+                {spaceL1 && (() => {
+                  const group = SPACE_TAXONOMY.find(g => g.id === spaceL1);
+                  if (!group) return null;
+                  return (
+                    <div className="flex flex-wrap gap-2">
+                      {group.tags.map(t => {
+                        const on = tags.includes(t);
+                        return (
+                          <button key={t} type="button"
+                            onClick={() => setTags(p => on ? p.filter(x => x !== t) : [...p, t])}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? tagOn : tagOff}`}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelCls}>Service Tags <span className="font-normal text-stone-400">(optional)</span></label>
+                <p className="mb-2 text-xs text-stone-500">Select the services involved in this project.</p>
+                <div className="space-y-2">
+                  {SERVICE_GROUPS.map(({ group, tags: stags }) => (
+                    <div key={group}>
+                      <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1.5">{group}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {stags.map(t => {
+                          const on = serviceTags.includes(t);
+                          return (
+                            <button key={t} type="button"
+                              onClick={() => setServiceTags(p => on ? p.filter(x => x !== t) : [...p, t])}
+                              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? tagOn : tagOff}`}
+                            >
+                              {t}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
@@ -553,26 +658,58 @@ export default function CompanyProjectsPage() {
 
               {/* Image grid */}
               {imgs.length>0&&(
-                <div className="mt-3 max-h-[420px] overflow-y-auto pr-0.5 pb-0.5">
+                <div className="mt-3 max-h-[540px] overflow-y-auto pr-0.5 pb-0.5">
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {imgs.map((url,i)=>{
                       const entry = imageEntries.find((e) => e.url === url || url.includes(e.url) || e.url.includes(url));
+                      const isChecked = checkedImgs.has(i);
+                      const isCover = cover === i;
+                      const imgTag = imgTags[i];
                       return (
                       <div key={i} className="flex flex-col">
                         <div draggable onDragStart={()=>setDragI(i)} onDragOver={e=>{e.preventDefault();if(dragO!==i)setDragO(i)}} onDrop={e=>{e.preventDefault();if(dragI!==null)mvImg(dragI,i);setDragI(null);setDragO(null)}} onDragEnd={()=>{setDragI(null);setDragO(null)}}
-                          className={`group relative aspect-square overflow-hidden rounded-xl border bg-stone-100 transition ${cover===i?'border-[#b8864a] ring-2 ring-[#b8864a]/35':dragO===i?'border-[#b8864a]/70':'border-stone-200'} ${dragI===i?'cursor-grabbing opacity-80':'cursor-grab'}`}>
+                          className={`group relative aspect-square overflow-hidden rounded-xl border bg-stone-100 transition ${
+                            isCover ? 'border-[#b8864a] ring-2 ring-[#b8864a]/35' :
+                            isChecked ? 'border-[#b8864a] ring-2 ring-[#b8864a]/55' :
+                            dragO===i ? 'border-[#b8864a]/70' : 'border-stone-200'
+                          } ${dragI===i?'cursor-grabbing opacity-80':'cursor-grab'}`}>
                           <img src={url} alt="" className="h-full w-full object-cover"/>
-                          {cover===i&&<div className="absolute left-1.5 top-1.5 rounded-full bg-[#b8864a] px-2 py-0.5 text-[10px] font-semibold text-white">Cover</div>}
+
+                          {/* Top-left: checkbox (star when cover, checkmark when selected) */}
+                          <button
+                            type="button"
+                            onClick={(e)=>{e.stopPropagation();toggleCheck(i);}}
+                            className={`absolute left-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white shadow-sm transition ${
+                              isChecked || isCover ? 'bg-[#b8864a]' : 'bg-black/35 hover:bg-black/55'
+                            }`}
+                          >
+                            {isChecked
+                              ? <Check className="h-2.5 w-2.5 text-white" strokeWidth={3}/>
+                              : isCover
+                                ? <span className="text-[9px] text-white leading-none">★</span>
+                                : null}
+                          </button>
+
+                          {/* Top-right: drag handle */}
                           <div className="absolute right-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white"><GripVertical className="h-3.5 w-3.5"/></div>
-                          {entry?.ai_tagged_at && (
-                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#b8864a]/20 flex items-center justify-center" title="AI Tagged">
-                              <span className="text-[10px]">✦</span>
-                            </div>
+
+                          {/* Bottom-left: user tag chip (hidden when hovering) */}
+                          {imgTag && (
+                            <button
+                              type="button"
+                              onClick={(e)=>{e.stopPropagation();setImgTags(prev=>{const next=[...prev];next[i]=undefined;return next;});}}
+                              className="absolute bottom-1.5 left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-[#b8864a]/90 px-1.5 py-0.5 text-[9px] font-semibold text-white hover:bg-[#b8864a] transition group-hover:opacity-0"
+                              title="Click to remove tag"
+                            >
+                              {imgTag.length > 9 ? imgTag.slice(0,9)+'…' : imgTag}
+                            </button>
                           )}
+
+                          {/* Hover overlay */}
                           <div className="absolute inset-0 bg-black/45 opacity-0 transition-opacity group-hover:opacity-100"/>
                           <div className="absolute inset-x-1.5 bottom-1.5 grid h-6 grid-cols-3 gap-1 opacity-0 transition group-hover:opacity-100">
                             <button type="button" onClick={()=>setPrevI(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-stone-700"><Eye className="mx-auto h-3 w-3"/></button>
-                            <button type="button" onClick={()=>setCover(i)} className="rounded-md bg-white px-1 text-[10px] font-semibold text-stone-700">{cover===i?'Cover':'Set'}</button>
+                            <button type="button" onClick={()=>setCover(i)} className="rounded-md bg-white px-1 text-[10px] font-semibold text-stone-700">{isCover?'Cover':'Set'}</button>
                             <button type="button" onClick={()=>rmImg(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-red-600"><Trash2 className="mx-auto h-3 w-3"/></button>
                           </div>
                         </div>
@@ -592,6 +729,38 @@ export default function CompanyProjectsPage() {
                       );
                     })}
                   </div>
+
+                  {/* Floating tag bar — shown when images are checked */}
+                  {checkedImgs.size > 0 && (
+                    <div className="mt-2 rounded-xl border border-[#b8864a]/30 bg-[#b8864a]/6 px-3 py-2.5">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-[11px] font-semibold text-[#7a5c2e]">
+                          Assign tag to {checkedImgs.size} image{checkedImgs.size > 1 ? 's' : ''}
+                        </p>
+                        <button type="button" onClick={()=>setCheckedImgs(new Set())} className="text-[11px] text-stone-400 hover:text-stone-600 transition">
+                          Cancel
+                        </button>
+                      </div>
+                      {spaceL1 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {(SPACE_TAXONOMY.find(g=>g.id===spaceL1)?.tags||[]).map(t=>{
+                            const allHaveTag = checkedImgs.size > 0 && [...checkedImgs].every(idx=>imgTags[idx]===t);
+                            return (
+                              <button key={t} type="button"
+                                onClick={()=>{
+                                  setImgTags(prev=>{const next=[...prev];checkedImgs.forEach(idx=>{next[idx]=allHaveTag?undefined:t;});return next;});
+                                  if(!allHaveTag) setCheckedImgs(new Set());
+                                }}
+                                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${allHaveTag?tagOn:tagOff}`}
+                              >{t}</button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-stone-500 italic">Select a project type above first to assign image tags.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </section>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import AdminSelect from '../../components/ui/AdminSelect';
 import Navbar from '../../components/Navbar';
+import { useServices } from '../../hooks/useServices';
 import {
   convertProjectImagesForUpload,
   estimateDataUrlBytes,
@@ -34,11 +35,6 @@ const STYLES = [
 
 const CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
-const SERVICES = [
-  'Interior Design', 'Architecture', 'Fit-Out', 'Renovation', 'Construction',
-  'Landscape', 'Furniture', 'Joinery', 'MEP', 'Project Management',
-  'Design & Build', 'Turnkey Solutions', 'Maintenance',
-];
 
 const SPECIALTIES = [
   'Residential', 'Villa', 'Commercial', 'Hospitality', 'Retail', 'Office',
@@ -72,6 +68,7 @@ const LABEL_CLS = 'block text-xs font-medium uppercase tracking-wider text-stone
 
 export default function CompanyOnboardingPage() {
   const navigate = useNavigate();
+  const SERVICES = useServices();
 
   /* state */
   const [step, setStep] = useState(0); // 0 = loading

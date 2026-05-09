@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ChevronRight, Briefcase, Users } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
 import LoadingButton from '../components/ui/LoadingButton';
 import Navbar from '../components/Navbar';
@@ -11,6 +11,29 @@ import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '../components/auth/a
 import { useVerificationPoller } from '../hooks/useVerificationPoller';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
+
+// High-quality interior design fallback images (used until real ones load)
+const PANEL_FALLBACK = [
+  'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=500&q=85',
+  'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=500&q=85',
+  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500&q=85',
+  'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=500&q=85',
+  'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=85',
+  'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500&q=85',
+  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500&q=85',
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500&q=85',
+  'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&q=85',
+  'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=500&q=85',
+  'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=500&q=85',
+  'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=500&q=85',
+  'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=500&q=85',
+  'https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=500&q=85',
+  'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=500&q=85',
+  'https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?w=500&q=85',
+  'https://images.unsplash.com/photo-1615529328331-f8917597711f?w=500&q=85',
+  'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500&q=85',
+];
 // Google Auth: enabled by default (backend is configured), disable explicitly with 'false'
 const ENABLE_GOOGLE_AUTH = import.meta.env.VITE_ENABLE_GOOGLE_AUTH !== 'false';
 // Facebook Auth: disabled by default until configured
@@ -18,18 +41,6 @@ const ENABLE_FACEBOOK_AUTH = import.meta.env.VITE_ENABLE_FACEBOOK_AUTH === 'true
 
 type AuthStep = 'initial' | 'password' | 'done';
 
-const valuePoints = [
-  {
-    icon: Briefcase,
-    title: 'Find the right company',
-    description: 'Browse verified renovation companies and design studios across the UAE.',
-  },
-  {
-    icon: Users,
-    title: 'Get matched with professionals',
-    description: 'Submit your requirements and connect with trusted partners for your project.',
-  },
-];
 
 export default function HomeownerAuthPage() {
   const navigate = useNavigate();
@@ -48,6 +59,26 @@ export default function HomeownerAuthPage() {
 
   const [searchParams] = useSearchParams();
   const authRole = searchParams.get('role') === 'company' ? 'company' : 'homeowner';
+
+  // Showcase images: start with fallback, replace with DB-configured images when loaded
+  const [panelImages, setPanelImages] = useState<string[]>(PANEL_FALLBACK);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/site/showcase-images`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.images && Array.isArray(data.images) && data.images.length >= 9) {
+          setPanelImages(data.images);
+        }
+      })
+      .catch(() => { /* keep fallback */ });
+  }, []);
+
+  // Split into 3 columns
+  const third = Math.ceil(panelImages.length / 3);
+  const col1 = panelImages.slice(0, third);
+  const col2 = panelImages.slice(third, third * 2);
+  const col3 = panelImages.slice(third * 2);
 
   // Poll for email verification — auto-login when user verifies in another tab/device
   useVerificationPoller(step === 'done' ? email : null, authRole);
@@ -227,53 +258,81 @@ export default function HomeownerAuthPage() {
       </Helmet>
       <Navbar forceShowOnAuth />
 
-      <div className="flex flex-1 items-start justify-center overflow-hidden px-4 pt-[clamp(20px,8vh,80px)] pb-6 sm:px-6 sm:pt-[clamp(24px,10vh,100px)]">
-      {/* Premium Ambient Background */}
-      <div className="absolute top-0 left-0 w-[700px] h-[700px] bg-[#B8864A]/4 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-stone-300/20 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3" />
+      {/* Split-screen layout: dark left panel + white right panel */}
+      <div className="flex flex-1 overflow-hidden">
 
-      {/* Main Container - Left Right Split */}
-      <div className="relative z-10 w-full max-w-[1100px] mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-center">
-
-        {/* Left Column - Value Proposition */}
-        <div className="max-w-[580px] hidden lg:block">
-          {/* Eyebrow */}
-          <p className="text-xs font-medium text-[#B8864A] tracking-[0.2em] mb-2 uppercase">
-            UAE's Renovation Platform
-          </p>
-
-          {/* Main Title */}
-          <h1 className="font-serif text-[28px] lg:text-[36px] text-[#1c1917] mb-3 leading-[1.2] tracking-tight">
-            Your Home Renovation<br />Starts Here
-          </h1>
-
-          {/* Description */}
-          <p className="text-stone-600 text-[15px] leading-relaxed mb-6 max-w-[480px]">
-            Connect with top renovation companies and design studios across the UAE.
-          </p>
-
-          {/* Value Points */}
-          <div className="space-y-4">
-            {valuePoints.map((point, index) => {
-              const Icon = point.icon;
-              return (
-                <div key={index} className="flex gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#B8864A]/10 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-[#B8864A]" />
-                  </div>
-                  <div className="pt-0.5">
-                    <h3 className="font-semibold text-[#1c1917] text-sm mb-0.5">{point.title}</h3>
-                    <p className="text-sm text-stone-500 leading-snug">{point.description}</p>
-                  </div>
-                </div>
-              );
-            })}
+        {/* LEFT PANEL — dark with staggered scrolling image columns + brand copy */}
+        <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden bg-[#1a1714] flex-col justify-end">
+          {/* 3 scrolling image columns — stagger via negative animation-delay (no empty gaps) */}
+          <div className="absolute inset-0 flex gap-0.5">
+            {/* Column 1 — base speed */}
+            <div className="flex-1 overflow-hidden">
+              <div style={{ animation: 'scrollColUp 38s linear infinite', willChange: 'transform' }}>
+                {[...col1, ...col1].map((src, i) => (
+                  <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
+                ))}
+              </div>
+            </div>
+            {/* Column 2 — faster, starts 40% into cycle via negative delay */}
+            <div className="flex-1 overflow-hidden">
+              <div style={{ animation: 'scrollColUp 28s linear -11.2s infinite', willChange: 'transform' }}>
+                {[...col2, ...col2].map((src, i) => (
+                  <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
+                ))}
+              </div>
+            </div>
+            {/* Column 3 — slowest, starts 65% into cycle via negative delay */}
+            <div className="flex-1 overflow-hidden">
+              <div style={{ animation: 'scrollColUp 30s linear -19.5s infinite', willChange: 'transform' }}>
+                {[...col3, ...col3].map((src, i) => (
+                  <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Top fade: hide the scroll loop seam */}
+          <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#1a1714] to-transparent pointer-events-none" />
+          {/* Bottom gradient for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1714] via-[#1a1714]/65 to-transparent pointer-events-none" />
+          {/* Brand copy */}
+          <div className="relative z-10 p-12 pb-14">
+            <p className="text-[#B8864A] text-[11px] font-medium tracking-[0.2em] uppercase mb-4">UAE's Renovation Platform</p>
+            <h1 className="font-serif text-[38px] text-white leading-[1.15] mb-4">
+              Your Home<br />Renovation<br />Starts Here
+            </h1>
+            <p className="text-stone-400 text-[15px] leading-relaxed max-w-[340px]">
+              Connect with top renovation companies and design studios across the UAE.
+            </p>
+            {/* Stats row */}
+            <div className="mt-8 flex gap-8">
+              <div>
+                <p className="text-white text-2xl font-semibold">500+</p>
+                <p className="text-stone-500 text-xs mt-0.5">Verified Companies</p>
+              </div>
+              <div>
+                <p className="text-white text-2xl font-semibold">12K+</p>
+                <p className="text-stone-500 text-xs mt-0.5">Projects Completed</p>
+              </div>
+              <div>
+                <p className="text-white text-2xl font-semibold">UAE</p>
+                <p className="text-stone-500 text-xs mt-0.5">Coverage</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Right Column - Registration Card */}
-        <div className="flex justify-center lg:justify-end">
+        {/* RIGHT PANEL — white, card centered */}
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 bg-white sm:px-10">
+          <div className="w-full max-w-[400px]">
+
+        {/* RIGHT Column - Registration Card */}
+        <div className="flex justify-center w-full">
           <AuthCardShell>
+            {/* Card header */}
+            <div className="mb-6">
+              <p className="text-xs font-medium text-[#B8864A] tracking-[0.15em] uppercase mb-1.5">Welcome</p>
+              <h2 className="font-serif text-[24px] text-[#1c1917] leading-snug">Sign in or create<br />your account</h2>
+            </div>
               {/* Error/Success Messages */}
               {error && (
                 <div className="mb-5 rounded-xl border border-red-100 bg-red-50/50 p-3.5">
@@ -519,8 +578,9 @@ export default function HomeownerAuthPage() {
               )}
           </AuthCardShell>
         </div>
-      </div>
-      </div>
+          </div>{/* closes w-full max-w-[400px] */}
+        </div>{/* closes right panel */}
+      </div>{/* closes split-screen flex flex-1 overflow-hidden */}
 
       {/* Minimal footer — pinned to bottom */}
       <footer className="py-4 text-center text-[11px] text-stone-400">
