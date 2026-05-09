@@ -5,21 +5,23 @@
 
 const CATEGORY_MAP: Record<string, string> = {
   // === Standard categories (keep as-is) ===
-  'Residential': 'Residential',
   'Commercial': 'Commercial',
   'Hospitality': 'Hospitality',
   'Office': 'Office',
   'Retail': 'Retail',
   'Healthcare': 'Healthcare',
 
-  // === Map to Residential ===
-  'Villa': 'Residential',
-  'Villas-Design': 'Residential',
-  'Villa-renovation': 'Residential',
-  'Penthouse': 'Residential',
-  'Apartment': 'Residential',
-  'Residental': 'Residential', // typo in data
-  'Luxury': 'Residential',
+  // === Map to Villa ===
+  'Villa': 'Villa',
+  'Villas-Design': 'Villa',
+  'Villa-renovation': 'Villa',
+  'Luxury': 'Villa',
+  'Residential': 'Villa', // legacy fallback — most "Residential" in UAE data means villa
+  'Residental': 'Villa', // typo in data
+
+  // === Map to Apartment ===
+  'Apartment': 'Apartment',
+  'Penthouse': 'Apartment',
 
   // === Map to Hospitality ===
   'Hotel': 'Hospitality',
@@ -99,7 +101,9 @@ export function normalizeCategory(raw: string): string {
   }
 
   // Heuristic: if it contains words like villa, hotel, office etc.
-  if (/villa|palace|residence|mansion|townhouse|apartment/i.test(raw)) return 'Residential';
+  if (/villa|palace|mansion|townhouse/i.test(raw)) return 'Villa';
+  if (/apartment|penthouse|flat|studio/i.test(raw)) return 'Apartment';
+  if (/residence/i.test(raw)) return 'Villa'; // generic "residence" → villa in UAE context
   if (/hotel|resort|restaurant|cafe|coffee|lounge|dining|hallab/i.test(raw)) return 'Hospitality';
   if (/office|hq|headquarter|corporate|law.firm|visa/i.test(raw)) return 'Office';
   if (/mall|shop|store|retail|showroom|boutique/i.test(raw)) return 'Commercial';

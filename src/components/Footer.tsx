@@ -6,10 +6,31 @@ import { trackAnalyticsEvent } from '../lib/analytics';
 const footerNavLinks = [
   { to: '/', label: 'Home' },
   { to: '/portfolio', label: 'Portfolio' },
-  { to: '/companies', label: 'Companies' },
-  { to: '/materials', label: 'Showrooms' },
-  { to: '/contact', label: 'Become a Partner' },
+  { to: '/companies', label: 'Find Company' },
+  { to: '/materials', label: 'Materials' },
+  { to: '/for-companies', label: 'Join as Company' },
   { to: '/faq', label: 'FAQ' },
+  { to: '/contact', label: 'Contact Us' },
+];
+
+const footerSpaceLinks = [
+  { to: '/companies?style=Villa', label: 'Villa' },
+  { to: '/companies?style=Apartment', label: 'Apartment' },
+  { to: '/companies?style=Commercial', label: 'Commercial' },
+  { to: '/companies?style=Office', label: 'Public / Institutional' },
+  { to: '/companies?service=Landscape', label: 'Outdoor / Landscape' },
+];
+
+const footerServiceLinks = [
+  { to: '/companies?service=Interior+Design', label: 'Design & Planning' },
+  { to: '/companies?service=Construction', label: 'Construction' },
+  { to: '/companies?service=Design+%26+Build', label: 'Design & Build' },
+  { to: '/companies?service=Renovation', label: 'Renovation' },
+  { to: '/companies?service=Construction', label: 'Extensions' },
+  { to: '/companies?service=Landscape', label: 'Outdoor & Pools' },
+  { to: '/companies?service=MEP', label: 'Home Systems' },
+  { to: '/companies?service=Furniture', label: 'Interiors & Furniture' },
+  { to: '/companies?service=Maintenance', label: 'Maintenance & Repairs' },
 ];
 
 export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
@@ -17,41 +38,33 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
     <footer className="bg-[#2c2c2c] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
         {/* Havenly-style multi-column: Company | About | Address | Contact & Follow */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[auto_auto_auto_1fr_auto] gap-8 lg:gap-10">
           <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">
-              Company
-            </h3>
+            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">Explore</h3>
             <nav className="flex flex-col gap-3" aria-label="Footer navigation">
               {footerNavLinks.map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="text-sm text-white/80 hover:text-white transition"
-                >
-                  {label}
-                </Link>
+                <Link key={to} to={to} className="text-sm text-white/80 hover:text-white transition">{label}</Link>
               ))}
-              <Link
-                to="/contact"
-                className="text-sm text-white/80 hover:text-white transition"
-              >
-                Contact Us
-              </Link>
             </nav>
           </div>
           <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">
-              About
-            </h3>
-            <p className="text-sm text-white/80">
-              Interior design & build services in the UAE. Your space, your style, our expertise.
-            </p>
+            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">Space Type</h3>
+            <nav className="flex flex-col gap-3">
+              {footerSpaceLinks.map(({ to, label }) => (
+                <Link key={label} to={to} className="text-sm text-white/80 hover:text-white transition">{label}</Link>
+              ))}
+            </nav>
           </div>
           <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">
-              Address
-            </h3>
+            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">Service Type</h3>
+            <nav className="flex flex-col gap-3">
+              {footerServiceLinks.map(({ to, label }) => (
+                <Link key={label} to={to} className="text-sm text-white/80 hover:text-white transition">{label}</Link>
+              ))}
+            </nav>
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">Address</h3>
             <p className="text-sm text-white/80 flex items-start gap-2">
               <span className="text-lg leading-none" aria-hidden>🏢</span>
               <span>{ADDRESS}</span>
@@ -67,9 +80,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
             </a>
           </div>
           <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">
-              Contact & Follow
-            </h3>
+            <h3 className="font-semibold text-sm uppercase tracking-wider text-white/90 mb-4">Contact & Follow</h3>
             <a
               href={whatsAppLink}
               target="_blank"

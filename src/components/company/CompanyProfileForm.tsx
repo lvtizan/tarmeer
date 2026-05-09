@@ -29,7 +29,7 @@ function parsePhone(full: string): { dialCode: string; local: string } {
 }
 
 /* ── Constants ── */
-export const SPECIALTIES = ['Residential','Villa','Commercial','Hospitality','Retail','Office','Education','Healthcare','F&B','Luxury Residential','Mixed-Use'];
+export const SPECIALTIES = ['Villa','Apartment','Commercial','Hospitality','Retail','Office','Education','Healthcare','F&B','Mixed-Use'];
 export const EMIRATES = ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain'];
 export const TYPE_OPTIONS = [
   { value:'design_studio', label:'Interior Design Studio' },

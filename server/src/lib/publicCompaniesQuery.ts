@@ -1,6 +1,7 @@
 /** L1 space id → L2 specialty tags (mirrors src/lib/tagTaxonomy.ts SPACE_TAXONOMY) */
 const SPACE_L2_MAP: Record<string, string[]> = {
-  residential: ['Apartment', 'Villa', 'Luxury Residential', 'Townhouse'],
+  villa: ['Villa', 'Luxury Villa', 'Townhouse'],
+  apartment: ['Apartment', 'Penthouse', 'Studio'],
   commercial: ['Retail', 'Office', 'Restaurant', 'Hotel', 'Hospitality', 'Showroom', 'Mall'],
   public: ['School', 'Education', 'Healthcare', 'Hospital', 'Club', 'Factory', 'ADU', 'Mixed-Use'],
   outdoor: ['Garden', 'Terrace', 'Pool', 'Fence', 'Driveway', 'Landscape'],

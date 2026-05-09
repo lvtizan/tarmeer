@@ -9,7 +9,8 @@ import { useNavigationHandler } from '../hooks/useNavigationHandler';
 import TarmeerLogo from './TarmeerLogo';
 
 const spaceTypeItems = [
-  { label: 'Residential', to: '/companies?style=Residential' },
+  { label: 'Villa', to: '/companies?style=Villa' },
+  { label: 'Apartment', to: '/companies?style=Apartment' },
   { label: 'Commercial', to: '/companies?style=Commercial' },
   { label: 'Public / Institutional', to: '/companies?style=Office' },
   { label: 'Outdoor / Landscape', to: '/companies?service=Landscape' },

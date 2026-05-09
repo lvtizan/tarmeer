@@ -37,8 +37,8 @@ const CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fuj
 
 
 const SPECIALTIES = [
-  'Residential', 'Villa', 'Commercial', 'Hospitality', 'Retail', 'Office',
-  'Education', 'Healthcare', 'F&B', 'Luxury Residential', 'Mixed-Use',
+  'Villa', 'Apartment', 'Commercial', 'Hospitality', 'Retail', 'Office',
+  'Education', 'Healthcare', 'F&B', 'Mixed-Use',
 ];
 
 const COMPANY_TYPES = [

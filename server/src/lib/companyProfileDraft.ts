@@ -1,8 +1,8 @@
 import { getValidTypes, getValidServices } from './enumCache';
 
 const VALID_SPECIALTIES = [
-  'Residential', 'Villa', 'Commercial', 'Hospitality', 'Retail', 'Office',
-  'Education', 'Healthcare', 'F&B', 'Luxury Residential', 'Mixed-Use',
+  'Villa', 'Apartment', 'Commercial', 'Hospitality', 'Retail', 'Office',
+  'Education', 'Healthcare', 'F&B', 'Mixed-Use',
 ];
 
 export type CompanyProfilePayload = {

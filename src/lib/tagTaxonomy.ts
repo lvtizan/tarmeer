@@ -5,9 +5,14 @@
 
 export const SPACE_TAXONOMY = [
   {
-    id: 'residential',
-    label: 'Residential',
-    tags: ['Apartment', 'Villa', 'Luxury Residential', 'Townhouse'],
+    id: 'villa',
+    label: 'Villa',
+    tags: ['Villa', 'Luxury Villa', 'Townhouse'],
+  },
+  {
+    id: 'apartment',
+    label: 'Apartment',
+    tags: ['Apartment', 'Penthouse', 'Studio'],
   },
   {
     id: 'commercial',
