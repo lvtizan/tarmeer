@@ -88,9 +88,11 @@ type NavbarVariant = 'default' | 'admin-auth';
 
 export default function Navbar({
   forceShowOnAuth = false,
+  noBorder = false,
   variant = 'default',
 }: {
   forceShowOnAuth?: boolean;
+  noBorder?: boolean;
   variant?: NavbarVariant;
 }) {
   const [open, setOpen] = useState(false);
@@ -156,7 +158,7 @@ export default function Navbar({
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-stone-200">
+    <header className={`sticky top-0 z-50 bg-white/95 backdrop-blur-sm ${noBorder ? '' : 'border-b border-stone-200'}`}>
       <div className="w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between h-14 sm:h-16">
         <TarmeerLogo />
 

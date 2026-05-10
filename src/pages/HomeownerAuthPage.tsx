@@ -256,7 +256,7 @@ export default function HomeownerAuthPage() {
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://www.tarmeer.com/auth" />
       </Helmet>
-      <Navbar forceShowOnAuth />
+      <Navbar forceShowOnAuth noBorder />
 
       {/* Split-screen layout: dark left panel + white right panel */}
       <div className="flex flex-1 overflow-hidden">
@@ -265,25 +265,25 @@ export default function HomeownerAuthPage() {
         <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden bg-[#1a1714] flex-col justify-end">
           {/* 3 scrolling image columns — stagger via negative animation-delay (no empty gaps) */}
           <div className="absolute inset-0 flex gap-0.5">
-            {/* Column 1 — scrolls down */}
+            {/* Column 1 — scrolls down, 70s */}
             <div className="flex-1 overflow-hidden">
-              <div style={{ animation: 'scrollColDown 38s linear infinite', willChange: 'transform' }}>
+              <div style={{ animation: 'scrollColDown 70s linear infinite', willChange: 'transform' }}>
                 {[...col1, ...col1].map((src, i) => (
                   <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
                 ))}
               </div>
             </div>
-            {/* Column 2 — faster, starts 40% into cycle via negative delay */}
+            {/* Column 2 — scrolls up, 80s, offset 1/3 of its cycle */}
             <div className="flex-1 overflow-hidden">
-              <div style={{ animation: 'scrollColUp 28s linear -11.2s infinite', willChange: 'transform' }}>
+              <div style={{ animation: 'scrollColUp 80s linear -26.7s infinite', willChange: 'transform' }}>
                 {[...col2, ...col2].map((src, i) => (
                   <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
                 ))}
               </div>
             </div>
-            {/* Column 3 — scrolls down, starts 65% into cycle via negative delay */}
+            {/* Column 3 — scrolls down, 90s, offset 2/3 of its cycle */}
             <div className="flex-1 overflow-hidden">
-              <div style={{ animation: 'scrollColDown 30s linear -19.5s infinite', willChange: 'transform' }}>
+              <div style={{ animation: 'scrollColDown 90s linear -60s infinite', willChange: 'transform' }}>
                 {[...col3, ...col3].map((src, i) => (
                   <img key={i} src={src} alt="" className="w-full aspect-[3/4] object-cover mb-0.5 opacity-75" loading="lazy" />
                 ))}
