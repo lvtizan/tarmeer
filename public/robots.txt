@@ -1,5 +1,22 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /supplier/
+Disallow: /company/
+Disallow: /auth
+Disallow: /auth/
+Disallow: /supplier/auth
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+# Legacy Shopify URLs no longer on this site
+Disallow: /products/
+Disallow: /blogs/
+Disallow: /account/
+Disallow: /pages/
+Disallow: /collections/
 Crawl-delay: 2
 
 User-agent: Bingbot
@@ -31,6 +48,20 @@ Allow: /
 Disallow: /api/
 Allow: /api/sitemap.xml
 Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /supplier/
+Disallow: /company/
+Disallow: /auth
+Disallow: /auth/
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+# Legacy Shopify URLs
+Disallow: /products/
+Disallow: /blogs/
+Disallow: /account/
+Disallow: /pages/
+Disallow: /collections/
 Crawl-delay: 10
 
 Sitemap: https://www.tarmeer.com/sitemap.xml

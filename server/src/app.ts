@@ -213,7 +213,7 @@ app.get('/api/sitemap.xml', async (req, res) => {
 
     // Supplier detail pages
     const [supplierRows] = await pool.execute(
-      "SELECT slug, updated_at FROM supplier_profiles WHERE status = 'active' AND slug IS NOT NULL ORDER BY updated_at DESC"
+      "SELECT slug, updated_at FROM supplier_profiles WHERE status = 'approved' AND slug IS NOT NULL ORDER BY updated_at DESC"
     );
     for (const sup of supplierRows as any[]) {
       if (sup.slug) {
@@ -266,6 +266,20 @@ app.get('/api/robots.txt', (req, res) => {
   res.send([
     'User-agent: Googlebot',
     'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /admin/',
+    'Disallow: /dashboard/',
+    'Disallow: /supplier/',
+    'Disallow: /auth',
+    'Disallow: /auth/',
+    'Disallow: /verify-email',
+    'Disallow: /reset-password',
+    'Disallow: /forgot-password',
+    'Disallow: /products/',
+    'Disallow: /blogs/',
+    'Disallow: /account/',
+    'Disallow: /pages/',
+    'Disallow: /collections/',
     'Crawl-delay: 2',
     '',
     'User-agent: Bingbot',
