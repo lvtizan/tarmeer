@@ -102,12 +102,11 @@ export default function AdminSuppliersPage() {
     try {
       if (type === 'home') {
         await adminApi.setSupplierHomeOrder(id, value);
-        setSuppliers(prev => prev.map(s => s.id === id ? { ...s, home_display_order: value } : s));
       } else {
         await adminApi.setSupplierListOrder(id, value);
-        setSuppliers(prev => prev.map(s => s.id === id ? { ...s, list_display_order: value } : s));
       }
       showOrderToast(`${type === 'home' ? '首页' : '列表'}排序已设为 ${value}`, key);
+      fetchSuppliers();
     } catch {
       showToast(t('Failed to update order', '排序更新失败'), 'error');
     }
