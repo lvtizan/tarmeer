@@ -151,6 +151,7 @@ export default function ShowroomsPage() {
     if (originFilter) params.set('origin', originFilter);
     if (categoryFilter) params.set('category', categoryFilter);
     params.set('limit', '50');
+    params.set('order', 'list');
 
     fetch(`${API_BASE}/suppliers?${params}`)
       .then(r => r.json())

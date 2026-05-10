@@ -62,6 +62,23 @@ export async function calculateAllWeights(): Promise<{ updated: number }> {
     updated++;
   }
 
-  console.log(`[Weight] Calculated weights for ${updated} companies`);
+  // 3. Calculate for supplier_profiles
+  const [suppliers] = await pool.execute(
+    `SELECT sp.id,
+       (SELECT COUNT(*) FROM supplier_products WHERE supplier_profile_id = sp.id) as product_count,
+       (SELECT COUNT(*) FROM supplier_catalogs WHERE supplier_profile_id = sp.id) as catalog_count
+     FROM supplier_profiles sp WHERE sp.status = 'approved'`
+  );
+
+  for (const supplier of suppliers as any[]) {
+    let score = config.base_profile_score;
+    score += (Number(supplier.product_count) || 0) * config.per_project_score;
+    score += (Number(supplier.catalog_count) || 0) * config.per_article_score;
+
+    await pool.execute('UPDATE supplier_profiles SET weight_score = ? WHERE id = ?', [score, supplier.id]);
+    updated++;
+  }
+
+  console.log(`[Weight] Calculated weights for ${updated} companies/suppliers`);
   return { updated };
 }

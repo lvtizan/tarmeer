@@ -362,6 +362,11 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // Supplier display order (lower = earlier in public listing)
   { table: 'supplier_profiles', column: 'sort_order', type: 'INT NOT NULL DEFAULT 0' },
 
+  // Supplier ranking system (mirrors company home_display_order / list_display_order / weight_score)
+  { table: 'supplier_profiles', column: 'home_display_order', type: 'INT NOT NULL DEFAULT 0' },
+  { table: 'supplier_profiles', column: 'list_display_order', type: 'INT NOT NULL DEFAULT 0' },
+  { table: 'supplier_profiles', column: 'weight_score', type: 'INT DEFAULT 0' },
+
   // Supplier business license upload
   { table: 'supplier_profiles', column: 'license_url', type: 'VARCHAR(500) NULL' },
 

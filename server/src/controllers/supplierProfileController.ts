@@ -45,6 +45,8 @@ export async function listPublicSuppliers(req: any, res: any) {
     const offset = (page - 1) * limit;
     const origin = req.query.origin; // 'china' | 'dubai'
     const category = req.query.category;
+    const orderMode = req.query.order === 'home' ? 'home' : 'list';
+    const displayOrderCol = orderMode === 'home' ? 'home_display_order' : 'list_display_order';
 
     let where = "WHERE sp.status = 'approved'";
     const params: any[] = [];
@@ -63,12 +65,14 @@ export async function listPublicSuppliers(req: any, res: any) {
     );
     const total = (countRows as any[])[0].total;
 
+    const orderBy = `COALESCE(sp.weight_score, 0) DESC, CASE WHEN COALESCE(sp.${displayOrderCol}, 0) > 0 THEN 0 ELSE 1 END, sp.${displayOrderCol} ASC, sp.created_at DESC`;
+
     const [rows] = await pool.query(
       `SELECT sp.*, su.email as user_email
        FROM supplier_profiles sp
        JOIN supplier_users su ON su.id = sp.supplier_user_id
        ${where}
-       ORDER BY sp.sort_order ASC, sp.created_at DESC
+       ORDER BY ${orderBy}
        LIMIT ${limit} OFFSET ${offset}`,
       params
     );

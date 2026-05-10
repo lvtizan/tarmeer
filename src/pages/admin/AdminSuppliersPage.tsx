@@ -23,6 +23,9 @@ interface Supplier {
   product_count: number;
   catalog_count: number;
   created_at: string;
+  home_display_order: number;
+  list_display_order: number;
+  weight_score: number | null;
 }
 
 export default function AdminSuppliersPage() {
@@ -36,6 +39,8 @@ export default function AdminSuppliersPage() {
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
+  const [orderToast, setOrderToast] = useState<{ msg: string; key: string } | null>(null);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -78,6 +83,34 @@ export default function AdminSuppliersPage() {
       fetchSuppliers();
     } catch {}
     setDeleteLoading(false);
+  };
+
+  const getEditKey = (id: number, type: string) => `${type}-${id}`;
+
+  const showOrderToast = (msg: string, key: string) => {
+    setOrderToast({ msg, key });
+    setTimeout(() => setOrderToast(null), 2000);
+  };
+
+  const handleOrderBlur = async (id: number, type: 'home' | 'list', original: number) => {
+    const key = getEditKey(id, type);
+    const raw = editingOrder[key];
+    if (raw === undefined) return;
+    const value = parseInt(raw) || 0;
+    setEditingOrder(prev => { const next = { ...prev }; delete next[key]; return next; });
+    if (value === original) return;
+    try {
+      if (type === 'home') {
+        await adminApi.setSupplierHomeOrder(id, value);
+        setSuppliers(prev => prev.map(s => s.id === id ? { ...s, home_display_order: value } : s));
+      } else {
+        await adminApi.setSupplierListOrder(id, value);
+        setSuppliers(prev => prev.map(s => s.id === id ? { ...s, list_display_order: value } : s));
+      }
+      showOrderToast(`${type === 'home' ? '首页' : '列表'}排序已设为 ${value}`, key);
+    } catch {
+      showToast(t('Failed to update order', '排序更新失败'), 'error');
+    }
   };
 
   return (
@@ -148,6 +181,9 @@ export default function AdminSuppliersPage() {
                 >
                   {t('Products', '产品')} {productSort === 'asc' ? '↑' : productSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">首页排序</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">列表排序</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">权重</th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
                   onClick={() => setJoinedSort(s => s === 'desc' ? 'asc' : 'desc')}
@@ -208,6 +244,43 @@ export default function AdminSuppliersPage() {
 
                   {/* Product count */}
                   <td className="px-4 py-3 text-[15px] text-stone-600">{s.product_count}</td>
+
+                  {/* Home display order */}
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <div className="relative">
+                      {orderToast?.key === getEditKey(s.id, 'home') && (
+                        <div className="absolute -top-8 left-0 bg-white border border-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">{orderToast.msg}</div>
+                      )}
+                      <input
+                        type="number"
+                        value={editingOrder[getEditKey(s.id, 'home')] ?? (s.home_display_order || 0)}
+                        onChange={e => setEditingOrder(prev => ({ ...prev, [getEditKey(s.id, 'home')]: e.target.value }))}
+                        onBlur={() => handleOrderBlur(s.id, 'home', s.home_display_order || 0)}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        className="w-16 px-2 py-1 text-xs border rounded"
+                      />
+                    </div>
+                  </td>
+
+                  {/* List display order */}
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <div className="relative">
+                      {orderToast?.key === getEditKey(s.id, 'list') && (
+                        <div className="absolute -top-8 left-0 bg-white border border-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">{orderToast.msg}</div>
+                      )}
+                      <input
+                        type="number"
+                        value={editingOrder[getEditKey(s.id, 'list')] ?? (s.list_display_order || 0)}
+                        onChange={e => setEditingOrder(prev => ({ ...prev, [getEditKey(s.id, 'list')]: e.target.value }))}
+                        onBlur={() => handleOrderBlur(s.id, 'list', s.list_display_order || 0)}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        className="w-16 px-2 py-1 text-xs border rounded"
+                      />
+                    </div>
+                  </td>
+
+                  {/* Weight score */}
+                  <td className="px-4 py-3 text-stone-600 text-[15px] tabular-nums font-mono">{s.weight_score ?? '—'}</td>
 
                   {/* Joined date */}
                   <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>
