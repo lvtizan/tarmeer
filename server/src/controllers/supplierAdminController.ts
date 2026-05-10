@@ -106,10 +106,7 @@ export async function listSuppliers(req: any, res: any) {
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.query(
-      `SELECT sp.id, sp.company_name, sp.slug, sp.status, sp.origin, sp.city, sp.logo_url,
-              sp.home_display_order, sp.list_display_order, sp.weight_score,
-              sp.created_at, sp.updated_at,
-              su.email as user_email, su.full_name as user_name,
+      `SELECT sp.*, su.email as user_email, su.full_name as user_name,
               (SELECT COUNT(*) FROM supplier_products WHERE supplier_profile_id = sp.id) as product_count,
               (SELECT COUNT(*) FROM supplier_catalogs WHERE supplier_profile_id = sp.id) as catalog_count
        FROM supplier_profiles sp
