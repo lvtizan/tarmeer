@@ -58,6 +58,7 @@ import {
   getCompanyProfile,
   editCompanyProfile,
   setCompanyCoverImage,
+  setDirectoryCompanyCoverImage,
   getCompanyFullDetail,
   getCompanyProfileFullDetail,
   updateCompanyDisplayOrder,
@@ -246,6 +247,7 @@ router.get('/roles/companies/:id/detail', getCompanyProfile);
 router.get('/roles/companies/:id/full-detail', getCompanyProfileFullDetail);
 router.put('/roles/companies/:id/edit', editCompanyProfile);
 router.put('/roles/companies/:id/cover-image', setCompanyCoverImage);
+router.put('/companies/:companyId/cover-image', setDirectoryCompanyCoverImage);
 
 // Company project CRUD (admin)
 router.get('/roles/companies/:companyId/projects/:projectId', getAdminProject);

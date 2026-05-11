@@ -711,6 +711,13 @@ class AdminApiClient {
     });
   }
 
+  async setDirectoryCompanyCoverImage(id: number, url: string | null) {
+    return this.request(`/companies/${id}/cover-image`, {
+      method: 'PUT',
+      body: JSON.stringify({ url }),
+    });
+  }
+
   async restoreCompanyProfile(id: number) {
     return this.request(`/roles/companies/${id}/restore`, {
       method: 'POST',
