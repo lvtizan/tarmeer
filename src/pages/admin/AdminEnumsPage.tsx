@@ -5,6 +5,7 @@ import { showToast } from '../../components/ui/Toast';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { SERVICE_CATEGORIES } from '../../lib/serviceCategories';
 import { Pencil } from 'lucide-react';
+import AdminSelect from '../../components/ui/AdminSelect';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,24 +39,33 @@ function ServiceRow({
   idx,
   dragging,
   over,
+  allCats,
   onDragStart,
   onDragEnter,
   onDragEnd,
   onToggle,
   onRename,
+  onChangeCategory,
   onDelete,
 }: {
   svc: CompanyService;
   idx: number;
   dragging: boolean;
   over: boolean;
+  allCats: string[];
   onDragStart: () => void;
   onDragEnter: () => void;
   onDragEnd: () => void;
   onToggle: () => void;
   onRename: (name: string) => void;
+  onChangeCategory: (cat: string | null) => void;
   onDelete: () => void;
 }) {
+  const catOptions = [
+    { value: '', label: '— 未分类 —' },
+    ...allCats.map((c) => ({ value: c, label: c })),
+  ];
+
   return (
     <div
       draggable
@@ -78,6 +88,16 @@ function ServiceRow({
         onBlur={(e) => onRename(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
       />
+
+      {/* Category selector */}
+      <div className="shrink-0 w-40">
+        <AdminSelect
+          size="sm"
+          value={svc.category ?? ''}
+          onChange={(v) => onChangeCategory(v || null)}
+          options={catOptions}
+        />
+      </div>
 
       {/* Toggle */}
       <button
@@ -223,6 +243,20 @@ function ServicesTab({
       onReload();
     } catch {
       showToast('更新失败', 'error');
+    }
+  }
+
+  async function changeCategory(svc: CompanyService, cat: string | null) {
+    if (cat === (svc.category ?? null)) return;
+    try {
+      await adminApi.request(`/enums/company-services/${encodeURIComponent(svc.name)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ category: cat }),
+      });
+      showToast('已更新分类', 'success');
+      onReload();
+    } catch {
+      showToast('更新分类失败', 'error');
     }
   }
 
@@ -373,11 +407,13 @@ function ServicesTab({
                   idx={idx}
                   dragging={draggingIdx === idx}
                   over={overIdx === idx && draggingIdx !== idx}
+                  allCats={allCats}
                   onDragStart={() => handleDragStart(idx)}
                   onDragEnter={() => handleDragEnter(idx)}
                   onDragEnd={handleDragEnd}
                   onToggle={() => toggleActive(svc)}
                   onRename={(name) => rename(svc, name)}
+                  onChangeCategory={(cat) => changeCategory(svc, cat)}
                   onDelete={() => deleteSvc(svc.name)}
                 />
               ))}
