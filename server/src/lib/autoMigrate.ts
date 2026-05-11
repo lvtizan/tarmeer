@@ -373,6 +373,13 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // Supplier product multi-image + category
   { table: 'supplier_products', column: 'image_urls', type: 'JSON NULL' },
   { table: 'supplier_products', column: 'category', type: 'VARCHAR(100) NULL' },
+
+  // Company multi-type + service area
+  { table: 'company_profiles', column: 'company_types', type: 'JSON NULL' },
+  { table: 'company_profiles', column: 'emirates_served', type: 'JSON NULL' },
+
+  // Project space type
+  { table: 'projects', column: 'space_type', type: 'VARCHAR(100) NULL' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）
@@ -552,7 +559,30 @@ export async function runAutoMigrate(): Promise<void> {
           ('Lighting Installation',   29),
           ('Stone & Marble Fixing',   30),
           ('Gypsum & Partitions',     31),
-          ('Deep Cleaning',           32)`
+          ('Deep Cleaning',           32),
+          ('Spatial Planning',        33),
+          ('Civil Works',             34),
+          ('Full Package',            35),
+          ('Full Renovation',         36),
+          ('Kitchen Renovation',      37),
+          ('Bathroom Renovation',     38),
+          ('Partial Renovation',      39),
+          ('Landscape Design',        40),
+          ('Pool Construction',       41),
+          ('Garden Design',           42),
+          ('Outdoor Lighting',        43),
+          ('Electrical',              44),
+          ('Plumbing',                45),
+          ('Furniture Supply',        46),
+          ('Custom Joinery',          47),
+          ('Flooring',                48),
+          ('Wallpaper & Finishes',    49),
+          ('General Maintenance',     50),
+          ('Handyman Services',       51),
+          ('AC Maintenance',          52),
+          ('Stone & Marble',          53),
+          ('Steel Works',             54),
+          ('Fire Fighting & Safety',  55)`
       );
     } catch { /* table may not exist yet */ }
 

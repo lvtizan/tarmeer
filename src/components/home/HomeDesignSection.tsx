@@ -5,21 +5,6 @@ import type { Company } from '../../lib/companyData';
 import { fetchPublicCompanies } from '../../lib/publicApi';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
 import { resolveImageUrl, resolveVariantUrl } from '../../lib/imageUrl';
-import { HERO_BLUR } from '../../lib/heroBlurMap';
-
-const HERO_IMAGES = [
-  '/images/hero/hero-living-1.jpg',
-  '/images/hero/hero-villa-1.jpg',
-  '/images/hero/hero-kitchen-1.jpg',
-  '/images/hero/hero-living-2.jpg',
-];
-
-const HERO_BLUR_MAP = [
-  HERO_BLUR['hero-living-1'],
-  HERO_BLUR['hero-villa-1'],
-  HERO_BLUR['hero-kitchen-1'],
-  HERO_BLUR['hero-living-2'],
-];
 
 function StudioImage({ company, className }: { company: Company; className: string }) {
   const [imgIndex, setImgIndex] = useState(0);
@@ -65,29 +50,42 @@ function StudioImage({ company, className }: { company: Company; className: stri
   );
 }
 
+function toDisplayName(name: string): string {
+  const letters = name.replace(/[^a-zA-Z]/g, '');
+  const upperRatio = letters.length > 0 ? (name.match(/[A-Z]/g) || []).length / letters.length : 0;
+  if (upperRatio > 0.6) {
+    return name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return name;
+}
+
 function FeaturedCompanyGrid({ companies }: { companies: Company[] }) {
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {companies.map((company) => (
         <Link
           key={company.id}
           to={`/companies/${company.id}`}
-          className="group grid min-h-[184px] grid-cols-[116px_1fr] gap-4 rounded-[24px] border border-stone-200 bg-white p-4 transition hover:border-stone-300 hover:shadow-[0_18px_40px_rgba(28,25,23,0.08)] sm:min-h-[196px] sm:grid-cols-[124px_1fr] sm:p-4.5"
+          className="group flex flex-col overflow-hidden rounded-[20px] border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_18px_40px_rgba(28,25,23,0.08)]"
         >
-          <StudioImage company={company} className="aspect-[4/5] rounded-[20px]" />
-          <div className="min-w-0 flex flex-col py-1">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-stone-400">{company.city}</p>
-            <h4 className="mt-2 font-serif text-[23px] leading-tight text-[#1c1917] transition group-hover:text-[#b8864a] sm:text-[26px] line-clamp-2">
-              {company.name}
+          <StudioImage company={company} className="aspect-video w-full" />
+          <div className="flex flex-col p-4">
+            <h4 className="font-serif font-semibold text-[18px] leading-tight text-[#1c1917] transition group-hover:text-[#b8864a] line-clamp-1">
+              {toDisplayName(company.name)}
             </h4>
-            <p className="mt-2.5 line-clamp-2 text-[13px] leading-6 text-stone-500 sm:text-[14px]">
-              {company.shortDescription}
-            </p>
-            <div className="mt-auto pt-2 flex items-center gap-2 text-[9px] uppercase tracking-[0.16em] text-stone-400 sm:text-[10px]">
+            <div className="mt-2 flex flex-nowrap gap-1.5 overflow-hidden">
+              {(company.services ?? []).slice(0, 3).map((svc) => (
+                <span key={svc} className="shrink-0 inline-block px-2.5 py-0.5 rounded-full border border-stone-200 text-[11px] text-stone-500">
+                  {svc}
+                </span>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-stone-400">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 {company.city}
               </span>
+              <span>·</span>
               <span>{company.projectCount}+ Projects</span>
             </div>
           </div>
@@ -97,9 +95,30 @@ function FeaturedCompanyGrid({ companies }: { companies: Company[] }) {
   );
 }
 
+const SERVICE_TABS = [
+  { label: 'All', services: [], to: '/companies' },
+  { label: 'Design & Planning', services: ['Interior Design', 'Architecture', 'Project Management'], to: '/companies?service=Interior+Design' },
+  { label: 'Construction', services: ['Construction', 'Fit-Out'], to: '/companies?service=Construction' },
+  { label: 'Design & Build', services: ['Design & Build', 'Turnkey Solutions'], to: '/companies?service=Design+%26+Build' },
+  { label: 'Renovation', services: ['Renovation'], to: '/companies?service=Renovation' },
+  { label: 'Outdoor & Pools', services: ['Landscape', 'Pools'], to: '/companies?service=Landscape' },
+  { label: 'Home Systems', services: ['MEP', 'Smart Home & Automation', 'HVAC & Ducting'], to: '/companies?service=MEP' },
+  { label: 'Interiors & Furniture', services: ['Furniture', 'Joinery', 'Curtains & Blinds'], to: '/companies?service=Furniture' },
+  { label: 'Maintenance', services: ['Maintenance'], to: '/companies?service=Maintenance' },
+];
+
+function filterByTab(companies: Company[], tab: typeof SERVICE_TABS[number]): Company[] {
+  if (!tab.services.length) return companies;
+  return companies.filter((c) =>
+    (c.services ?? []).some((s) =>
+      tab.services.some((t) => s.toLowerCase().includes(t.toLowerCase()))
+    )
+  );
+}
+
 export default function HomeDesignSection() {
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [heroImageIndex, setHeroImageIndex] = useState(0);
+  const [activeTabIdx, setActiveTabIdx] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -114,92 +133,67 @@ export default function HomeDesignSection() {
     return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setHeroImageIndex((current) => (current + 1) % HERO_IMAGES.length);
-    }, 5000);
+  if (companies.length === 0) return null;
 
-    return () => window.clearInterval(timer);
-  }, []);
-
-  // Keep backend-provided order (operations-managed display order), do not re-sort on frontend.
-  const featured = companies.slice(0, 9);
-  const hasMoreCompanies = companies.length > 9;
+  const activeTab = SERVICE_TABS[activeTabIdx];
+  const filtered = filterByTab(companies, activeTab);
+  const featured = filtered.slice(0, 9);
+  const hasMore = filtered.length > 9;
 
   return (
     <section className="bg-white py-10 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="relative mb-7 overflow-hidden rounded-[28px] border border-stone-200 bg-[#0f0f0d] min-h-[210px] sm:mb-8 sm:min-h-[240px]">
-          {/* Blur placeholder — inline base64, instant */}
-          {HERO_BLUR_MAP[heroImageIndex] && (
-            <img
-              src={HERO_BLUR_MAP[heroImageIndex]}
-              alt="" aria-hidden
-              className="absolute inset-0 w-full h-full object-cover scale-110"
-              style={{ filter: 'blur(20px)' }}
-            />
-          )}
-          {/* HD image with srcset */}
-          <img
-            src={HERO_IMAGES[heroImageIndex]}
-            srcSet={`${HERO_IMAGES[heroImageIndex].replace('.jpg', '-thumb.webp')} 600w, ${HERO_IMAGES[heroImageIndex].replace('.jpg', '-medium.webp')} 1200w, ${HERO_IMAGES[heroImageIndex]} 1920w`}
-            sizes="100vw"
-            alt="Premium design and build spaces across the Middle East"
-            className="absolute inset-0 h-full w-full object-cover"
-            fetchPriority="high"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,7,6,0.82)_0%,rgba(8,7,6,0.58)_34%,rgba(8,7,6,0.16)_68%,rgba(8,7,6,0.12)_100%)]" />
-          <div className="relative z-10 flex min-h-[210px] items-end px-5 py-5 sm:min-h-[240px] sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-            <div className="max-w-[420px]">
-              <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.2em] text-[#d0bc93] sm:text-[10px]">
-                For Homeowners Across the Region
-              </p>
-              <h2 className="max-w-[10ch] font-serif text-[24px] leading-[0.94] tracking-[-0.02em] text-[#f6f2ea] sm:text-[29px] lg:text-[36px]">
-                The Middle East&apos;s Design &amp; Build Collective
-              </h2>
-              <p className="mt-2.5 max-w-[40ch] whitespace-nowrap text-[11px] leading-5 text-[#e0d8cb]/88 sm:text-[12px]">
-                Bringing trusted designers, contractors, suppliers and fit-out partners onto one platform.
-              </p>
-              <Link
-                to="/companies"
-                className="mt-3 inline-flex w-fit items-center gap-2 rounded-full border border-[#bfa67e]/55 px-4 py-2 text-[10px] uppercase tracking-[0.08em] text-[#f2eadb] transition hover:bg-[#bfa67e]/12 sm:text-[11px]"
-              >
-                Explore Companies
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <div className="mt-2.5 flex items-center gap-2">
-                {HERO_IMAGES.map((image, index) => (
-                  <button
-                    key={image}
-                    type="button"
-                    aria-label={`Show hero image ${index + 1}`}
-                    onClick={() => setHeroImageIndex(index)}
-                    className={`h-2.5 rounded-full transition-all ${
-                      heroImageIndex === index
-                        ? 'w-8 bg-[#d0bc93]'
-                        : 'w-2.5 bg-white/35 hover:bg-white/55'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-[#b8864a]">
+              Curated for UAE Homeowners
+            </p>
+            <h2 className="font-serif text-[26px] leading-tight text-[#1c1917] sm:text-[32px]">
+              Top Design &amp; Build Companies
+            </h2>
           </div>
+          <Link
+            to={activeTab.to}
+            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition"
+          >
+            View all <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
-        {featured.length > 0 && (
-          <div>
+        {/* Service type tabs */}
+        <div className="flex gap-2 flex-wrap mb-7">
+          {SERVICE_TABS.map((tab, idx) => (
+            <button
+              key={tab.label}
+              onClick={() => setActiveTabIdx(idx)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                idx === activeTabIdx
+                  ? 'bg-[#b8864a] text-white'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {featured.length > 0 ? (
+          <>
             <FeaturedCompanyGrid companies={featured} />
-            {hasMoreCompanies && (
+            {hasMore && (
               <div className="mt-5 flex justify-center">
                 <Link
-                  to="/companies"
+                  to={activeTab.to}
                   className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-5 py-2.5 text-sm font-medium text-[#1c1917] transition hover:border-[#b8864a] hover:text-[#b8864a]"
                 >
-                  View More
-                  <ArrowRight className="h-4 w-4" />
+                  View More <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             )}
+          </>
+        ) : (
+          <div className="py-12 text-center text-stone-400 text-sm">
+            No companies found for this category yet.
           </div>
         )}
       </div>

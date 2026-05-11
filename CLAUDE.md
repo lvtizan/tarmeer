@@ -429,6 +429,13 @@ Key routing rules:
 - Design system, brand → invoke design-consultation
 - Visual audit, design polish → invoke design-review
 - Architecture review → invoke plan-eng-review
+- **任何新版面设计、布局改动、UI 组件修改** → 改前/改后必须主动自检以下设计基准，发现问题立即修正，不等用户指出：
+  1. **列/网格均匀分布** — 不允许某列极窄或极宽；用 `grid-cols-N` 等分或 `fr` 单位，禁止嵌套 grid 导致列宽失衡
+  2. **间距一致** — gap/padding/margin 使用 design token（`gap-4`/`gap-6`/`gap-8`），不混用随意数值
+  3. **对齐正确** — 文字左对齐，数字/价格右对齐，标题与内容对齐基线，图标与文字垂直居中
+  4. **主次层级分明** — 标题 > 正文 > 辅助信息，字重/字号/颜色须有明显区分
+  5. **文字不换行异常** — 给容器足够宽度，长文加 `line-clamp` 兜底，禁止单词在窄列中意外断行
+  6. **移动端适配** — 宽屏多列在移动端降为单列或双列，触摸区域 ≥ 44px，不出现横向溢出
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

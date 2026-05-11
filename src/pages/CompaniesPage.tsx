@@ -234,7 +234,10 @@ export default function CompaniesPage() {
   const [loadError, setLoadError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('');
-  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [selectedStyles, setSelectedStyles] = useState<string[]>(() => {
+    const s = searchParams.get('style');
+    return s ? [s] : [];
+  });
   const [selectedServices, setSelectedServices] = useState<string[]>(() => {
     const s = searchParams.get('service');
     return s ? [s] : [];

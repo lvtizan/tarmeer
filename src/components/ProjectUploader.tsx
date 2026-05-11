@@ -6,8 +6,11 @@ import {
   GripVertical,
   Image,
   Plus,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { SERVICE_CATEGORIES, SPACE_TYPES, MAX_SERVICE_CATEGORIES, getActiveParents } from '../lib/serviceCategories';
 
 interface ProjectUploaderProps {
   ownerType: 'designer' | 'company';
@@ -22,6 +25,101 @@ interface UploadedImage {
   isCover: boolean;
 }
 
+const styleOptions = [
+  'Modern', 'Contemporary', 'Luxury', 'Minimalist',
+  'Arabic', 'Mediterranean', 'Industrial', 'Classic',
+];
+
+/* ── Inline service category picker (optional, no parent limit in project context) ── */
+function ProjectServicePicker({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const activeParents = getActiveParents(selected);
+
+  const toggleExpand = (name: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  };
+
+  const toggleSub = (sub: string, parentName: string) => {
+    const isSelected = selected.includes(sub);
+    if (isSelected) {
+      onChange(selected.filter(s => s !== sub));
+    } else {
+      const isNewParent = !activeParents.includes(parentName);
+      if (isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES) return;
+      onChange([...selected, sub]);
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {activeParents.length >= MAX_SERVICE_CATEGORIES && (
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+          Max {MAX_SERVICE_CATEGORIES} categories selected.
+        </p>
+      )}
+      {SERVICE_CATEGORIES.map(cat => {
+        const catSelected = cat.subs.filter(s => selected.includes(s));
+        const isOpen = expanded.has(cat.name);
+        const isActive = activeParents.includes(cat.name);
+        const isLocked = !isActive && activeParents.length >= MAX_SERVICE_CATEGORIES;
+
+        return (
+          <div key={cat.name} className={`rounded-xl border transition-colors ${isActive ? 'border-[#b8864a]/40' : 'border-stone-200'} ${isLocked ? 'opacity-50' : ''}`}>
+            <button
+              type="button"
+              onClick={() => toggleExpand(cat.name)}
+              className="w-full flex items-center justify-between px-3 py-2 text-left"
+            >
+              <div className="flex items-center gap-2">
+                {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-stone-400 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />}
+                <span className={`text-sm ${isActive ? 'text-[#b8864a] font-medium' : 'text-stone-700'}`}>{cat.name}</span>
+              </div>
+              {catSelected.length > 0 && (
+                <span className="text-xs bg-[#b8864a] text-white rounded-full px-2 py-0.5 shrink-0">
+                  {catSelected.length}
+                </span>
+              )}
+            </button>
+            {isOpen && (
+              <div className="px-3 pb-3 flex flex-wrap gap-2">
+                {cat.subs.map(sub => {
+                  const active = selected.includes(sub);
+                  return (
+                    <button
+                      key={sub}
+                      type="button"
+                      disabled={isLocked && !active}
+                      onClick={() => toggleSub(sub, cat.name)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        active
+                          ? 'bg-[#b8864a] text-white border-[#b8864a]'
+                          : 'bg-white text-stone-600 border-stone-200 hover:border-[#b8864a]/60'
+                      } disabled:opacity-40 disabled:cursor-not-allowed`}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const ProjectUploader: React.FC<ProjectUploaderProps> = ({
   ownerType,
   ownerId,
@@ -31,8 +129,10 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
   const [description, setDescription] = useState('');
   const [projectName, setProjectName] = useState('');
   const [style, setStyle] = useState('');
+  const [spaceType, setSpaceType] = useState('');
   const [location, setLocation] = useState('');
   const [area, setArea] = useState('');
+  const [serviceTags, setServiceTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -86,7 +186,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     return files;
   };
 
-  // Handle files (from both file input and drag/drop)
   const processFiles = useCallback(
     async (fileList: FileList | File[]) => {
       const newImages: UploadedImage[] = [];
@@ -104,7 +203,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
         }
       }
 
-      // If this is the first batch, mark first as cover
       if (images.length === 0 && newImages.length > 0) {
         newImages[0].isCover = true;
       }
@@ -115,7 +213,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     [images.length]
   );
 
-  // Handle drag events
   const handleDrag = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -126,7 +223,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     }
   }, []);
 
-  // Handle drop with folder support
   const handleDrop = useCallback(
     async (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -156,7 +252,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     [processFiles]
   );
 
-  // Handle file input change
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
@@ -166,11 +261,9 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     [processFiles]
   );
 
-  // Remove image
   const removeImage = (index: number) => {
     setImages((prev) => {
       const updated = prev.filter((_, i) => i !== index);
-      // Ensure at least one image is marked as cover
       if (updated.length > 0 && !updated.some((img) => img.isCover)) {
         updated[0].isCover = true;
       }
@@ -178,7 +271,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     });
   };
 
-  // Set cover image
   const setCoverImage = (index: number) => {
     setImages((prev) =>
       prev.map((img, i) => ({
@@ -188,7 +280,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     );
   };
 
-  // Handle submit
   const handleSubmit = async (useQuickUpload: boolean = false) => {
     if (images.length === 0) {
       setError('Please upload at least one image');
@@ -201,7 +292,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     try {
       const formData = new FormData();
 
-      // Add images
       images.forEach((img, index) => {
         formData.append('images', img.file);
         formData.append(`image_names[${index}]`, img.name);
@@ -210,14 +300,14 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
         }
       });
 
-      // Add optional fields
       if (description) formData.append('description', description);
       if (projectName) formData.append('project_name', projectName);
       if (style) formData.append('style', style);
+      if (spaceType) formData.append('space_type', spaceType);
       if (location) formData.append('location', location);
       if (area) formData.append('area', area);
+      if (serviceTags.length > 0) formData.append('service_tags', JSON.stringify(serviceTags));
 
-      // Add owner info
       formData.append('owner_type', ownerType);
       if (ownerId) formData.append('owner_id', ownerId.toString());
 
@@ -228,13 +318,15 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
       const response = await api.post(endpoint, formData);
 
       if (response.status === 200 || response.status === 201) {
-        // Clear form
         setImages([]);
         setDescription('');
         setProjectName('');
         setStyle('');
+        setSpaceType('');
         setLocation('');
         setArea('');
+        setServiceTags([]);
+        setError(null);
 
         onSuccess?.();
       } else {
@@ -250,16 +342,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
   };
 
   const isQuickMode = images.length === 1 && !description && !projectName;
-  const styleOptions = [
-    'Modern',
-    'Contemporary',
-    'Luxury',
-    'Minimalist',
-    'Arabic',
-    'Mediterranean',
-    'Industrial',
-    'Classic',
-  ];
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
@@ -289,8 +371,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                 or drag a folder to upload all images inside
               </p>
             </div>
-
-            {/* Buttons side by side */}
             <div className="flex gap-3 mt-6">
               <button
                 type="button"
@@ -316,37 +396,26 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               {images.length} image{images.length !== 1 ? 's' : ''} uploaded
             </p>
 
-            {/* Image Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {images.map((image, index) => (
                 <div
                   key={index}
                   className="relative group aspect-square rounded-lg overflow-hidden bg-stone-100 border border-stone-200 hover:border-stone-300 transition-colors"
                 >
-                  {/* Image */}
                   <img
                     src={image.preview}
                     alt={image.name}
                     className="w-full h-full object-cover"
                   />
-
-                  {/* Filename overlay */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                    <p className="text-xs text-white truncate">
-                      {image.name}
-                    </p>
+                    <p className="text-xs text-white truncate">{image.name}</p>
                   </div>
-
-                  {/* Cover badge */}
                   {image.isCover && (
                     <div className="absolute top-2 right-2 bg-[#b8864a] text-white text-xs font-medium px-2 py-1 rounded">
                       Cover
                     </div>
                   )}
-
-                  {/* Hover actions */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                    {/* Set as cover button (if not already cover) */}
                     {!image.isCover && (
                       <button
                         type="button"
@@ -357,8 +426,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                         <Image className="w-4 h-4" />
                       </button>
                     )}
-
-                    {/* Remove button */}
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
@@ -368,8 +435,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-
-                  {/* Drag handle */}
                   <div className="absolute top-2 left-2 cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="p-1 bg-white/80 rounded hover:bg-white">
                       <GripVertical className="w-4 h-4 text-stone-600" />
@@ -378,7 +443,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                 </div>
               ))}
 
-              {/* Add more button */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -393,7 +457,6 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
           </div>
         )}
 
-        {/* Hidden inputs */}
         <input
           ref={fileInputRef}
           type="file"
@@ -432,66 +495,98 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
 
           {/* Project Name */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">
-              Project Name
+            <label className="block text-sm font-medium text-stone-700 mb-1">
+              Project Title
             </label>
+            <p className="text-xs text-stone-400 mb-2">
+              Tips: Use the format — Neighborhood + Property Type + Renovation Scope<br />
+              e.g. Palm Jumeirah - Villa - Full Renovation &nbsp;|&nbsp; Emirates Hills - Villa - Kitchen Remodel &nbsp;|&nbsp; JVC - Apartment - Window &amp; Door Replacement
+            </p>
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              placeholder="Project name (optional, auto-generated if empty)"
+              placeholder="Palm Jumeirah - Villa - Full Renovation (optional)"
               className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
             />
           </div>
 
-          {/* Style */}
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">
-              Style
-            </label>
-            <select
-              value={style}
-              onChange={(e) => setStyle(e.target.value)}
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
-            >
-              <option value="">Select a style...</option>
-              {styleOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+          {/* Style + Space Type in a grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Style */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Style
+              </label>
+              <select
+                value={style}
+                onChange={(e) => setStyle(e.target.value)}
+                className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
+              >
+                <option value="">Select a style (optional)</option>
+                {styleOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Space Type */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Space Type
+              </label>
+              <select
+                value={spaceType}
+                onChange={(e) => setSpaceType(e.target.value)}
+                className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
+              >
+                <option value="">Select space type (optional)</option>
+                {SPACE_TYPES.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Location */}
+          {/* Location + Area */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Location
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g., Dubai Marina"
+                className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Area
+              </label>
+              <input
+                type="text"
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+                placeholder="e.g., 150 m²"
+                className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
+              />
+            </div>
+          </div>
+
+          {/* Service Tags (optional) */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">
-              Location
+            <label className="block text-sm font-medium text-stone-700 mb-1">
+              Project Services <span className="text-stone-400 font-normal">(optional — what services were involved?)</span>
             </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g., Dubai Marina"
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
+            <ProjectServicePicker
+              selected={serviceTags}
+              onChange={setServiceTags}
             />
           </div>
 
-          {/* Area */}
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">
-              Area
-            </label>
-            <input
-              type="text"
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              placeholder="e.g., 150 m²"
-              className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-900 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
-            />
-          </div>
-
-          {/* Error message */}
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
@@ -524,8 +619,10 @@ const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                 setDescription('');
                 setProjectName('');
                 setStyle('');
+                setSpaceType('');
                 setLocation('');
                 setArea('');
+                setServiceTags([]);
                 setError(null);
               }}
               disabled={isLoading}

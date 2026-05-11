@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Globe, MapPin, Phone } from 'lucide-react';
+import { Globe, MapPin, Phone, ChevronDown, ChevronRight } from 'lucide-react';
 import { api } from '../../lib/api';
-import { FormInput, FormTextarea, FormSelect, FormLabel, FormTag } from '../form/FormInput';
+import { FormInput, FormTextarea, FormLabel, FormTag } from '../form/FormInput';
 import AdminSelect from '../ui/AdminSelect';
-import { useServices } from '../../hooks/useServices';
+import { SERVICE_CATEGORIES, SPACE_TYPES, MAX_SERVICE_CATEGORIES, getActiveParents } from '../../lib/serviceCategories';
 
 const GCC_DIAL_CODES = [
   { code: '+971', label: '🇦🇪 UAE (+971)' },
@@ -29,8 +29,8 @@ function parsePhone(full: string): { dialCode: string; local: string } {
 }
 
 /* ── Constants ── */
-export const SPECIALTIES = ['Villa','Apartment','Commercial','Hospitality','Retail','Office','Education','Healthcare','F&B','Mixed-Use'];
-export const EMIRATES = ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Fujairah','Umm Al Quwain'];
+export const SPECIALTIES = SPACE_TYPES; // backward compat export
+export const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 export const TYPE_OPTIONS = [
   { value:'design_studio', label:'Interior Design Studio' },
   { value:'renovation_company', label:'Renovation & Fit-out' },
@@ -56,15 +56,22 @@ export const TYPE_OPTIONS = [
 export interface ProfileData {
   company_name: string; description: string; contact_person: string;
   phone: string; website: string; city: string; address: string;
-  company_type: string; trade_license_number: string;
-  establishment_year: number | null; services: string[]; specialties: string[];
+  company_type: string; // legacy, kept for backward compat
+  company_types: string[]; // multi-select (max 5)
+  trade_license_number: string;
+  establishment_year: number | null;
+  services: string[]; // selected service subcategories
+  specialties: string[]; // space types
+  emirates_served: string[];
   status: string; admin_notes?: string;
 }
 
 export const EMPTY_PROFILE: ProfileData = {
   company_name:'', description:'', contact_person:'', phone:'', website:'',
-  city:'Dubai', address:'', company_type:'renovation_company',
-  trade_license_number:'', establishment_year:null, services:[], specialties:[],
+  city:'Dubai', address:'',
+  company_type:'', company_types:[],
+  trade_license_number:'', establishment_year:null,
+  services:[], specialties:[], emirates_served:[],
   status:'pending',
 };
 
@@ -74,20 +81,23 @@ export function parseProfile(r: any): ProfileData {
     if (typeof v === 'string') try { return JSON.parse(v); } catch { return []; }
     return [];
   }
+  const company_types = pj(r.company_types);
   return {
     company_name: r.company_name || '', description: r.description || '',
     contact_person: r.contact_person || '', phone: r.phone || '',
     website: r.website || '', city: r.city || 'Dubai', address: r.address || '',
-    company_type: r.company_type || 'renovation_company',
+    company_type: r.company_type || '',
+    // If company_types saved, use it; otherwise migrate from single company_type
+    company_types: company_types.length > 0 ? company_types : (r.company_type ? [r.company_type] : []),
     trade_license_number: r.trade_license_number || '',
     establishment_year: r.establishment_year || null,
     services: pj(r.services), specialties: pj(r.specialties),
+    emirates_served: pj(r.emirates_served),
     status: r.status || 'pending', admin_notes: r.admin_notes,
   };
 }
 
 interface Props {
-  /** Called after every successful save. Passes back the saved profile id. */
   onSaved?: (profileId: number | null) => void;
 }
 
@@ -97,8 +107,127 @@ export interface CompanyProfileFormRef {
   saveText: string;
 }
 
+/* ── Service Category Picker ── */
+function ServiceCategoryPicker({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const activeParents = getActiveParents(selected);
+
+  const toggleExpand = (name: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  };
+
+  const toggleSub = (sub: string, parentName: string) => {
+    const isSelected = selected.includes(sub);
+    if (isSelected) {
+      onChange(selected.filter(s => s !== sub));
+    } else {
+      // Check parent limit
+      const isNewParent = !activeParents.includes(parentName);
+      if (isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES) return;
+      onChange([...selected, sub]);
+    }
+  };
+
+  const toggleAllInCategory = (cat: typeof SERVICE_CATEGORIES[0]) => {
+    const catSubs = cat.subs;
+    const allSelected = catSubs.every(s => selected.includes(s));
+    if (allSelected) {
+      // Deselect all in this category
+      onChange(selected.filter(s => !catSubs.includes(s)));
+    } else {
+      // Select all — check parent limit first
+      const isNewParent = !activeParents.includes(cat.name);
+      if (isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES) return;
+      const newSubs = catSubs.filter(s => !selected.includes(s));
+      onChange([...selected, ...newSubs]);
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {activeParents.length >= MAX_SERVICE_CATEGORIES && (
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+          Max {MAX_SERVICE_CATEGORIES} categories selected. Deselect from an existing category to add another.
+        </p>
+      )}
+      {SERVICE_CATEGORIES.map(cat => {
+        const catSelected = cat.subs.filter(s => selected.includes(s));
+        const isOpen = expanded.has(cat.name);
+        const isActive = activeParents.includes(cat.name);
+        const isLocked = !isActive && activeParents.length >= MAX_SERVICE_CATEGORIES;
+
+        return (
+          <div key={cat.name} className={`rounded-xl border transition-colors ${isActive ? 'border-[#b8864a]/40 bg-[#b8864a]/3' : 'border-stone-200 bg-white'} ${isLocked ? 'opacity-50' : ''}`}>
+            {/* Category header */}
+            <button
+              type="button"
+              onClick={() => toggleExpand(cat.name)}
+              className="w-full flex items-center justify-between px-3 py-2.5 text-left"
+            >
+              <div className="flex items-center gap-2">
+                {isOpen ? <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />}
+                <span className={`text-sm font-medium ${isActive ? 'text-[#b8864a]' : 'text-stone-700'}`}>{cat.name}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {catSelected.length > 0 && (
+                  <span className="text-xs bg-[#b8864a] text-white rounded-full px-2 py-0.5">
+                    {catSelected.length}/{cat.subs.length}
+                  </span>
+                )}
+                {!isLocked && (
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); toggleAllInCategory(cat); }}
+                    className="text-xs text-stone-400 hover:text-[#b8864a] transition-colors px-1"
+                  >
+                    {catSelected.length === cat.subs.length ? 'Clear' : 'All'}
+                  </button>
+                )}
+              </div>
+            </button>
+
+            {/* Subcategories */}
+            {isOpen && (
+              <div className="px-3 pb-3 flex flex-wrap gap-2">
+                {cat.subs.map(sub => {
+                  const active = selected.includes(sub);
+                  return (
+                    <button
+                      key={sub}
+                      type="button"
+                      disabled={isLocked && !active}
+                      onClick={() => toggleSub(sub, cat.name)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        active
+                          ? 'bg-[#b8864a] text-white border-[#b8864a]'
+                          : 'bg-white text-stone-600 border-stone-200 hover:border-[#b8864a]/60'
+                      } disabled:opacity-40 disabled:cursor-not-allowed`}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function CompanyProfileForm({ onSaved }, ref) {
-  const SERVICES = useServices();
   const [profile, setProfile] = useState<ProfileData>(EMPTY_PROFILE);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,7 +275,6 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
             setLocalPhone(parsed.local);
           }
         } else {
-          // Check for pending signup data from /for-companies registration
           let pending: any = null;
           try {
             const raw = sessionStorage.getItem('pending_company_profile');
@@ -165,8 +293,9 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
               contact_person: pending.contact_person || '',
               phone: pending.phone || '',
               city: pending.city || '',
-              company_type: pending.company_type || 'renovation_company',
-              services: pending.services || ['Interior Design'],
+              company_type: pending.company_type || '',
+              company_types: pending.company_type ? [pending.company_type] : [],
+              services: pending.services || [],
               establishment_year: pending.establishment_year || '',
             };
             setProfile(prefilled);
@@ -214,10 +343,12 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
         city: current.city,
         address: current.address,
         services: current.services.length > 0 ? current.services : ['Interior Design'],
-        company_type: current.company_type,
+        company_type: current.company_types[0] || current.company_type || '',
+        company_types: current.company_types,
         trade_license_number: current.trade_license_number,
         establishment_year: current.establishment_year,
         specialties: current.specialties,
+        emirates_served: current.emirates_served,
       });
       const saved = res?.profile || res;
       const newId = saved?.id ? Number(saved.id) : profileId;
@@ -260,9 +391,14 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
     get saveText() { return saveText; },
   }), [saveProfile, saving, saveText]);
 
-  const set = (f: string, v: string) => setProfile(p => ({ ...p, [f]: v }));
-  const toggleTag = (f: 'services' | 'specialties', t: string) =>
-    setProfile(p => ({ ...p, [f]: p[f].includes(t) ? p[f].filter(x => x !== t) : [...p[f], t] }));
+  const set = (f: string, v: any) => setProfile(p => ({ ...p, [f]: v }));
+  const toggleTag = (f: 'specialties' | 'emirates_served' | 'company_types', t: string, max?: number) =>
+    setProfile(p => {
+      const arr = p[f] as string[];
+      if (arr.includes(t)) return { ...p, [f]: arr.filter(x => x !== t) };
+      if (max && arr.length >= max) return p;
+      return { ...p, [f]: [...arr, t] };
+    });
 
   if (loading) return <div className="flex items-center justify-center py-12 text-stone-400 text-sm">Loading...</div>;
 
@@ -325,20 +461,16 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
             <FormInput type="url" value={profile.website} onChange={e => set('website', e.target.value)} placeholder="https://yourcompany.com" />
           </div>
           <div>
-            <FormLabel icon={<MapPin className="w-3.5 h-3.5" />}>City</FormLabel>
-            <FormSelect value={profile.city} onChange={e => set('city', e.target.value)}>
-              {EMIRATES.map(c => <option key={c} value={c}>{c}</option>)}
-            </FormSelect>
+            <FormLabel icon={<MapPin className="w-3.5 h-3.5" />}>Headquarter City</FormLabel>
+            <AdminSelect
+              value={profile.city}
+              onChange={v => set('city', v)}
+              options={EMIRATES.map(c => ({ value: c, label: c }))}
+            />
           </div>
           <div>
             <FormLabel>Address</FormLabel>
             <FormInput value={profile.address} onChange={e => set('address', e.target.value)} placeholder="Street address, area" />
-          </div>
-          <div>
-            <FormLabel>Company Type</FormLabel>
-            <FormSelect value={profile.company_type} onChange={e => set('company_type', e.target.value)}>
-              {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </FormSelect>
           </div>
           <div>
             <FormLabel>Trade License No.</FormLabel>
@@ -349,23 +481,64 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
             <FormInput type="number" value={profile.establishment_year ?? ''} onChange={e => set('establishment_year', e.target.value)} placeholder="2010" />
           </div>
         </div>
+
+        {/* Company Type multiselect */}
+        <div className="mt-3">
+          <FormLabel>Company Type <span className="text-stone-400 font-normal">(select up to 5)</span></FormLabel>
+          <div className="flex flex-wrap gap-2 mt-1.5">
+            {TYPE_OPTIONS.map(o => (
+              <FormTag
+                key={o.value}
+                label={o.label}
+                active={profile.company_types.includes(o.value)}
+                onClick={() => toggleTag('company_types', o.value, 5)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Emirates Served */}
+        <div className="mt-3">
+          <FormLabel>Emirates Served</FormLabel>
+          <div className="flex flex-wrap gap-2 mt-1.5">
+            {EMIRATES.map(e => (
+              <FormTag
+                key={e}
+                label={e}
+                active={profile.emirates_served.includes(e)}
+                onClick={() => toggleTag('emirates_served', e)}
+              />
+            ))}
+          </div>
+        </div>
       </section>
 
-      {/* Services & Specialties */}
+      {/* Services & Expertise */}
       <section className="rounded-2xl border border-stone-200 bg-white p-4">
-        <h2 className="text-sm font-bold text-[#2c2c2c] mb-3">Services & Specialties</h2>
-        <div className="space-y-3">
+        <h2 className="text-sm font-bold text-[#2c2c2c] mb-1">Services & Expertise</h2>
+        <div className="space-y-4">
           <div>
-            <FormLabel required>Services</FormLabel>
-            <div className={`flex flex-wrap gap-2 mt-1.5 ${tried && profile.services.length === 0 ? 'rounded-2xl border-2 border-dashed border-red-300 p-2' : ''}`}>
-              {SERVICES.map(t => <FormTag key={t} label={t} active={profile.services.includes(t)} onClick={() => toggleTag('services', t)} />)}
+            <div className="flex items-center justify-between mb-2">
+              <FormLabel required>Service Categories <span className="text-stone-400 font-normal">(max {MAX_SERVICE_CATEGORIES} categories)</span></FormLabel>
+              {profile.services.length > 0 && (
+                <span className="text-xs text-stone-400">{profile.services.length} selected</span>
+              )}
+            </div>
+            <div className={tried && profile.services.length === 0 ? 'rounded-2xl border-2 border-dashed border-red-300 p-2' : ''}>
+              <ServiceCategoryPicker
+                selected={profile.services}
+                onChange={v => set('services', v)}
+              />
             </div>
             {tried && profile.services.length === 0 && <p className="mt-1 text-xs text-red-500">Select at least one service</p>}
           </div>
+
           <div>
-            <FormLabel>Project Specialties</FormLabel>
+            <FormLabel>Space Types</FormLabel>
             <div className="flex flex-wrap gap-2 mt-1.5">
-              {SPECIALTIES.map(t => <FormTag key={t} label={t} active={profile.specialties.includes(t)} onClick={() => toggleTag('specialties', t)} />)}
+              {SPACE_TYPES.map(t => (
+                <FormTag key={t} label={t} active={profile.specialties.includes(t)} onClick={() => toggleTag('specialties', t)} />
+              ))}
             </div>
           </div>
         </div>

@@ -49,7 +49,7 @@ function compareProjectsNewestFirst(left: any, right: any) {
 export async function createProject(req: any, res: any) {
   try {
     const userId = req.user.userId;
-    const { title, description, style, location, area, year, cost, images, tags, service_tags, status, video_url } = req.body;
+    const { title, description, style, space_type, location, area, year, cost, images, tags, service_tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
       designerId: userId,
@@ -71,7 +71,7 @@ export async function createProject(req: any, res: any) {
       service_tags,
       status: projectStatus,
     });
-    
+
     // Look up company profile for this user
     const [cpRows] = await pool.execute(
       'SELECT id, status FROM company_profiles WHERE user_id = ? LIMIT 1',
@@ -84,14 +84,15 @@ export async function createProject(req: any, res: any) {
     const finalStatus = companyProfile?.status === 'approved' ? 'published' : values.status;
 
     const [result] = await pool.execute(
-      `INSERT INTO projects (designer_id, company_profile_id, title, description, style, location, area, year, cost, images, tags, service_tags, status, rejection_reason, video_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+      `INSERT INTO projects (designer_id, company_profile_id, title, description, style, space_type, location, area, year, cost, images, tags, service_tags, status, rejection_reason, video_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
       [
         null,
         companyProfileId,
         values.title,
         values.description,
         values.style,
+        space_type || null,
         values.location,
         values.area,
         values.year,
@@ -268,7 +269,7 @@ export async function getProjectById(req: any, res: any) {
 export async function updateProject(req: any, res: any) {
   try {
     const { id } = req.params;
-    const { title, description, style, location, area, year, cost, images, tags, service_tags, status, video_url } = req.body;
+    const { title, description, style, space_type, location, area, year, cost, images, tags, service_tags, status, video_url } = req.body;
     const normalizedImages = assertProjectHasImages(images);
     const persistedImages = await persistProjectImages(normalizedImages, {
       designerId: req.user.userId,
@@ -291,16 +292,16 @@ export async function updateProject(req: any, res: any) {
       service_tags,
       status: nextStatus,
     });
-    
+
     const [project] = await pool.execute(
       'SELECT * FROM projects WHERE id = ?',
       [id]
     );
-    
+
     if ((project as any[]).length === 0) {
       return res.status(404).json({ error: 'Project not found.' });
     }
-    
+
     // Permission check: verify user owns this project via company_profiles
     const projectRow = (project as any[])[0];
     const [ownerCheck] = await pool.execute(
@@ -310,15 +311,16 @@ export async function updateProject(req: any, res: any) {
     if ((ownerCheck as any[]).length === 0) {
       return res.status(403).json({ error: 'You cannot edit another designer\'s project.' });
     }
-    
+
     await pool.execute(
       `UPDATE projects
-       SET title = ?, description = ?, style = ?, location = ?, area = ?, year = ?, cost = ?, images = ?, tags = ?, service_tags = ?, status = ?, rejection_reason = NULL, video_url = ?
+       SET title = ?, description = ?, style = ?, space_type = ?, location = ?, area = ?, year = ?, cost = ?, images = ?, tags = ?, service_tags = ?, status = ?, rejection_reason = NULL, video_url = ?
        WHERE id = ?`,
       [
         values.title,
         values.description,
         values.style,
+        space_type || null,
         values.location,
         values.area,
         values.year,

@@ -31,6 +31,8 @@ export async function upsertProfile(req: any, res: any) {
 
     const servicesJson = JSON.stringify(payload.services);
     const specialtiesJson = JSON.stringify(payload.specialties);
+    const companyTypesJson = JSON.stringify(payload.company_types);
+    const emiratesServedJson = JSON.stringify(payload.emirates_served);
     const onboardingStep = typeof req.body.onboarding_step === 'number' ? req.body.onboarding_step : null;
     const signupSource = typeof req.body.signup_source === 'string' ? req.body.signup_source.slice(0, 64) : null;
 
@@ -42,7 +44,7 @@ export async function upsertProfile(req: any, res: any) {
     if ((existing as any[]).length > 0) {
       // UPDATE: preserve existing slug so public URLs don't break
       await pool.execute(
-        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?), signup_source = COALESCE(signup_source, ?) WHERE user_id = ?`,
+        `UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, company_types = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, emirates_served = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?), signup_source = COALESCE(signup_source, ?) WHERE user_id = ?`,
         [
           payload.company_name,
           payload.description,
@@ -54,9 +56,11 @@ export async function upsertProfile(req: any, res: any) {
           payload.logo_url,
           servicesJson,
           payload.company_type,
+          companyTypesJson,
           payload.trade_license_number,
           payload.establishment_year,
           specialtiesJson,
+          emiratesServedJson,
           onboardingStep || 0,
           signupSource,
           userId,
@@ -77,8 +81,8 @@ export async function upsertProfile(req: any, res: any) {
       }
 
       await pool.execute(
-        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, trade_license_number, establishment_year, specialties, slug, status, onboarding_step, signup_source)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+        `INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, company_types, trade_license_number, establishment_year, specialties, emirates_served, slug, status, onboarding_step, signup_source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
         [
           userId,
           payload.company_name,
@@ -91,9 +95,11 @@ export async function upsertProfile(req: any, res: any) {
           payload.logo_url,
           servicesJson,
           payload.company_type,
+          companyTypesJson,
           payload.trade_license_number,
           payload.establishment_year,
           specialtiesJson,
+          emiratesServedJson,
           slug,
           onboardingStep || 0,
           signupSource,
