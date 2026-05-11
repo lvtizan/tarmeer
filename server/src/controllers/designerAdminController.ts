@@ -940,6 +940,13 @@ export async function getDailyStatsReport(req: any, res: Response) {
        GROUP BY DATE(created_at)`
     ) as any[];
 
+    const [supplierRows] = await pool.query(
+      `SELECT DATE(created_at) as date, COUNT(*) as count
+       FROM supplier_users
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY)
+       GROUP BY DATE(created_at)`
+    ) as any[];
+
     // Detail queries for tooltip
     const [homeownerDetail] = await pool.query(
       `SELECT DATE(created_at) as date, full_name, email, city
@@ -987,6 +994,7 @@ export async function getDailyStatsReport(req: any, res: Response) {
     const uMap = toMap(userRows);
     const cMap = toMap(companyRows);
     const iMap = toMap(inquiryRows);
+    const sMap = toMap(supplierRows);
     const homeownerDetailMap = toDetailMap(homeownerDetail);
     const companyDetailMap = toDetailMap(companyDetail);
     const inquiryDetailMap = toDetailMap(inquiryDetail);
@@ -996,6 +1004,7 @@ export async function getDailyStatsReport(req: any, res: Response) {
       new_homeowners: uMap[date] || 0,
       new_companies: cMap[date] || 0,
       new_inquiries: iMap[date] || 0,
+      new_suppliers: sMap[date] || 0,
       homeowner_list: (homeownerDetailMap[date] || []).map((r: any) => ({
         name: r.full_name || r.email?.split('@')[0] || '—',
         email: r.email,
@@ -1020,8 +1029,9 @@ export async function getDailyStatsReport(req: any, res: Response) {
         new_homeowners: acc.new_homeowners + r.new_homeowners,
         new_companies: acc.new_companies + r.new_companies,
         new_inquiries: acc.new_inquiries + r.new_inquiries,
+        new_suppliers: acc.new_suppliers + r.new_suppliers,
       }),
-      { new_homeowners: 0, new_companies: 0, new_inquiries: 0 }
+      { new_homeowners: 0, new_companies: 0, new_inquiries: 0, new_suppliers: 0 }
     );
 
     res.json({ data, totals, days });

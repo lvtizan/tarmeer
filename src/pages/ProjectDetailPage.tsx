@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, X,
   Share2, Heart, MapPin, Calendar, DollarSign, BadgeCheck,
-  Phone, Mail, Globe, Instagram, ExternalLink, FolderOpen,
+  Mail, Globe, Instagram, ExternalLink, FolderOpen,
 } from 'lucide-react';
 import { fetchPublicProjectDetail, type PublicProjectDetailData } from '../lib/publicApi';
 import SmartImage from '../components/ui/SmartImage';
@@ -534,15 +534,10 @@ export default function ProjectDetailPage() {
                 </div>
 
                 {/* Contact Info card */}
-                {(company.phone || company.email || company.website || company.instagram || company.address) && (
+                {(company.email || company.website || company.instagram || company.address) && (
                   <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm">
                     <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Contact Info</h3>
                     <div className="space-y-2.5 text-sm">
-                      {company.phone && (
-                        <a href={`tel:${company.phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
-                          <Phone className="w-4 h-4 text-stone-400 flex-shrink-0" /> {company.phone}
-                        </a>
-                      )}
                       {company.email && (
                         <a href={`mailto:${company.email}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition truncate">
                           <Mail className="w-4 h-4 text-stone-400 flex-shrink-0" /> <span className="truncate">{company.email}</span>
@@ -649,52 +644,73 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Main two-column layout */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-10">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-28 sm:pb-10">
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* ========== Left: Company header + project info + gallery ========== */}
           <div className="flex-1 min-w-0">
             {/* Company header row */}
-            <div className="flex items-center gap-4 pb-5 border-b border-stone-200">
-              {company.logo ? (
-                <SmartImage
-                  src={company.logo}
-                  alt={`${company.name} logo`}
-                  className="w-14 h-14 rounded-xl object-contain bg-white border border-stone-100 p-1.5 flex-shrink-0"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center flex-shrink-0">
-                  <span className="font-serif text-xl text-stone-400">{company.name.charAt(0)}</span>
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <Link
-                  to={companyHref}
-                  className="font-serif text-2xl font-semibold text-[#1c1917] hover:text-[#b8864a] transition inline-flex items-center gap-1.5"
-                >
-                  {company.name}
-                  <BadgeCheck className="w-5 h-5 text-[#b8864a]/70" />
-                </Link>
-                {company.city && (
-                  <p className="text-sm text-stone-500 mt-0.5 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5" /> {company.city}, UAE
-                  </p>
+            <div className="pb-5 border-b border-stone-200">
+              <div className="flex items-center gap-3">
+                {company.logo ? (
+                  <SmartImage
+                    src={company.logo}
+                    alt={`${company.name} logo`}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-contain bg-white border border-stone-100 p-1.5 flex-shrink-0"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : (
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-stone-100 flex items-center justify-center flex-shrink-0">
+                    <span className="font-serif text-lg text-stone-400">{company.name.charAt(0)}</span>
+                  </div>
                 )}
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to={companyHref}
+                    className="font-serif text-lg sm:text-2xl font-semibold text-[#1c1917] hover:text-[#b8864a] transition inline-flex items-center gap-1.5 leading-snug"
+                  >
+                    <span className="break-words">{company.name}</span>
+                    <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#b8864a]/70 flex-shrink-0" />
+                  </Link>
+                  {company.city && (
+                    <p className="text-sm text-stone-500 mt-0.5 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {company.city}, UAE
+                    </p>
+                  )}
+                </div>
+                {/* Share + Save — inline on sm+, hidden on mobile (shown below) */}
+                <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={handleShare}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-stone-200 text-sm text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition"
+                  >
+                    <Share2 className="w-4 h-4" /> Share
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    aria-pressed={isSaved}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-sm transition ${
+                      isSaved
+                        ? 'border-[#b8864a] bg-[#b8864a]/10 text-[#b8864a]'
+                        : 'border-stone-200 text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a]'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} /> {isSaved ? 'Saved' : 'Save'}
+                  </button>
+                </div>
               </div>
-
-              {/* Share + Save */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Share + Save — mobile only, full-width row below company info */}
+              <div className="flex sm:hidden items-center gap-2 mt-3">
                 <button
                   onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-stone-200 text-sm text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-2xl border border-stone-200 text-sm text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition"
                 >
                   <Share2 className="w-4 h-4" /> Share
                 </button>
                 <button
                   onClick={handleSave}
                   aria-pressed={isSaved}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-sm transition ${
+                  className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-2xl border text-sm transition ${
                     isSaved
                       ? 'border-[#b8864a] bg-[#b8864a]/10 text-[#b8864a]'
                       : 'border-stone-200 text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a]'
@@ -776,8 +792,8 @@ export default function ProjectDetailPage() {
               </div>
             )}
 
-            {/* Share Project button */}
-            <div className="mt-6">
+            {/* Share Project button — hidden on mobile (Share is already in header row) */}
+            <div className="mt-6 hidden sm:block">
               <button
                 onClick={handleShare}
                 className="inline-flex items-center gap-2 px-4 py-2 border border-stone-200 rounded-2xl text-sm font-medium text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition"
@@ -846,7 +862,7 @@ export default function ProjectDetailPage() {
           </div>
 
           {/* ========== Right: Sticky inquiry form ========== */}
-          <div className="w-full lg:w-[340px] lg:flex-shrink-0">
+          <div id="inquiry-form" className="w-full lg:w-[340px] lg:flex-shrink-0">
             <div className="lg:sticky lg:top-6">
               <ServiceInquiryCard
                 title={`Get in touch with ${company.name}`}
@@ -856,6 +872,20 @@ export default function ProjectDetailPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile sticky CTA — scrolls to inquiry form, hidden on lg+ */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white/95 backdrop-blur-sm border-t border-stone-200 px-4 py-3 safe-area-inset-bottom">
+        <a
+          href="#inquiry-form"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('inquiry-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+          className="btn-primary w-full text-center py-3"
+        >
+          Get in touch
+        </a>
       </div>
 
       {/* Share toast */}

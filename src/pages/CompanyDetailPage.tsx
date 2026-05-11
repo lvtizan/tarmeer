@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft, Globe, Instagram, MapPin, Briefcase,
-  Calendar, FolderOpen, Phone, Mail, ChevronLeft, ChevronRight,
+  Calendar, FolderOpen, Mail, ChevronLeft, ChevronRight,
   Share2, ExternalLink, X, BadgeCheck, Link2, CheckCircle2,
 } from 'lucide-react';
 import type { Company, PortfolioItem } from '../lib/companyData';
@@ -595,11 +595,6 @@ export default function CompanyDetailPage() {
               <section className="py-6 border-b border-stone-100 lg:hidden">
                 <h2 className="text-lg font-semibold text-[#1c1917] mb-3">Contact</h2>
                 <div className="space-y-2.5 text-sm">
-                  {company.phone && (
-                    <a href={`tel:${company.phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a]">
-                      <Phone className="w-4 h-4 text-[#c6a065]" /> {company.phone}
-                    </a>
-                  )}
                   {company.email && (
                     <a href={`mailto:${company.email}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a]">
                       <Mail className="w-4 h-4 text-[#c6a065]" /> {company.email}
@@ -677,11 +672,6 @@ export default function CompanyDetailPage() {
                 <div className="border border-stone-200 rounded-xl p-5">
                   <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Contact Info</h3>
                   <div className="space-y-2.5 text-sm">
-                    {company.phone && (
-                      <a href={`tel:${company.phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
-                        <Phone className="w-4 h-4 text-stone-400" /> {company.phone}
-                      </a>
-                    )}
                     {company.email && (
                       <a href={`mailto:${company.email}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
                         <Mail className="w-4 h-4 text-stone-400" /> {company.email}

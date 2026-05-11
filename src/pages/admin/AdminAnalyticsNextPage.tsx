@@ -14,7 +14,7 @@ import {
   ResponsiveContainer, ComposedChart, Area, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea,
 } from 'recharts';
-import { Users, Building2, HandCoins, TrendingUp, Globe, Eye, BadgeCheck } from 'lucide-react';
+import { Users, Building2, HandCoins, TrendingUp, Globe, Eye, BadgeCheck, Package } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { labelCompanyType } from '../../lib/companyTypeLabel';
@@ -30,6 +30,7 @@ interface DayRow {
   new_homeowners: number;
   new_companies: number;
   new_inquiries: number;
+  new_suppliers?: number;
 }
 interface SourceItem { source?: string; type?: string; count: number }
 interface CityRow { city: string; count: number }
@@ -270,7 +271,8 @@ export default function AdminAnalyticsNextPage() {
     homeowner: acc.homeowner + (r.new_homeowners || 0),
     company:   acc.company   + (r.new_companies  || 0),
     inquiry:   acc.inquiry   + (r.new_inquiries  || 0),
-  }), { homeowner: 0, company: 0, inquiry: 0 });
+    supplier:  acc.supplier  + (r.new_suppliers  || 0),
+  }), { homeowner: 0, company: 0, inquiry: 0, supplier: 0 });
   const last7Avg = {
     homeowner: last7.length > 0 ? last7Tot.homeowner / last7.length * periodDays : 0,
     company:   last7.length > 0 ? last7Tot.company   / last7.length * periodDays : 0,
@@ -381,6 +383,40 @@ export default function AdminAnalyticsNextPage() {
           })()}%`}
           sub="（装企+询盘）/ 总注册"
         />
+      </div>
+
+      {/* 最近 7 天新增 */}
+      <div className="mb-6">
+        <h2 className="text-sm font-bold text-[#2c2c2c] mb-3">最近 7 天新增</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${COLOR_COMPANY}18` }}>
+              <Building2 className="w-5 h-5" style={{ color: COLOR_COMPANY }} />
+            </div>
+            <div>
+              <p className="text-xs text-stone-500">近7天新增装企</p>
+              <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums leading-tight">{last7Tot.company}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${COLOR_HOMEOWNER}18` }}>
+              <Users className="w-5 h-5" style={{ color: COLOR_HOMEOWNER }} />
+            </div>
+            <div>
+              <p className="text-xs text-stone-500">近7天新增业主</p>
+              <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums leading-tight">{last7Tot.homeowner}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#0ea5e918' }}>
+              <Package className="w-5 h-5" style={{ color: '#0ea5e9' }} />
+            </div>
+            <div>
+              <p className="text-xs text-stone-500">近7天新增供应商</p>
+              <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums leading-tight">{last7Tot.supplier}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Daily trend — Google Analytics 风：总计面积 + 各分类细线 + 平滑曲线 + endpoint marker + 周末浅蓝 */}

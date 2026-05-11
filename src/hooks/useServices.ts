@@ -11,7 +11,7 @@ const FALLBACK: string[] = [
 async function fetchServices(): Promise<string[]> {
   if (cache) return cache;
   if (!inflight) {
-    inflight = fetch('/api/company/services')
+    inflight = fetch('/api/auth/company/services')
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         const services = Array.isArray(d.services) ? d.services as string[] : FALLBACK;

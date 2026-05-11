@@ -128,7 +128,7 @@ export function sanitizePublicCompany(company: any) {
     year_established: toPublicString(company.year_established),
     website: isClaimed ? '' : toPublicString(company.website),
     instagram: toPublicString(company.instagram),
-    phone: isClaimed ? '' : toPublicString(company.phone),
+    phone: '',  // WA/phone always hidden — leads go through platform inquiry form
     email: isClaimed ? '' : toPublicString(company.email),
     services: parseJsonField(company.services) || [],
     specialties: parseJsonField(company.specialties) || [],
