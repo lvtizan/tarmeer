@@ -10,8 +10,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { api } from '../lib/api';
-import { SPACE_TYPES, MAX_SERVICE_CATEGORIES, getActiveParents } from '../lib/serviceCategories';
-import { useServiceGroups } from '../hooks/useServiceGroups';
+import { SPACE_TYPES, MAX_SERVICE_CATEGORIES } from '../lib/serviceCategories';
+import { useServiceCategories, getActiveParentsDynamic } from '../hooks/useServiceCategories';
 
 interface ProjectUploaderProps {
   ownerType: 'designer' | 'company';
@@ -39,10 +39,10 @@ function ProjectServicePicker({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
-  const serviceGroups = useServiceGroups();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const activeParents = getActiveParents(selected);
+  const dynamicCategories = useServiceCategories();
+  const activeParents = getActiveParentsDynamic(selected, dynamicCategories);
 
   const toggleExpand = (name: string) => {
     setExpanded(prev => {
@@ -70,7 +70,7 @@ function ProjectServicePicker({
           Max {MAX_SERVICE_CATEGORIES} categories selected.
         </p>
       )}
-      {serviceGroups.map(cat => {
+      {dynamicCategories.map(cat => {
         const catSelected = cat.subs.filter(s => selected.includes(s));
         const isOpen = expanded.has(cat.name);
         const isActive = activeParents.includes(cat.name);

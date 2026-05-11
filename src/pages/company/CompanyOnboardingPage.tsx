@@ -100,11 +100,10 @@ export default function CompanyOnboardingPage() {
   const [companyType, setCompanyType] = useState('renovation_company');
 
   // cached profile data for step 2/3 re-posts
-  const [profileData, setProfileData] = useState<{ company_name: string; contact_person: string; phone: string; establishment_year: number | null }>({
+  const [profileData, setProfileData] = useState<{ company_name: string; contact_person: string; phone: string }>({
     company_name: '',
     contact_person: '',
     phone: '',
-    establishment_year: null,
   });
 
   /* on mount: check auth + onboarding state */
@@ -151,7 +150,6 @@ export default function CompanyOnboardingPage() {
             company_name: profile.company_name || '',
             contact_person: profile.contact_person || '',
             phone: profile.phone || '',
-            establishment_year: profile.establishment_year || null,
           });
           if (profile.company_name) setCompanyName(profile.company_name);
           if (profile.contact_person) setContactPerson(profile.contact_person);
@@ -188,7 +186,6 @@ export default function CompanyOnboardingPage() {
               company_name: pending.company_name || '',
               contact_person: pending.contact_person || '',
               phone: pending.phone || '',
-              establishment_year: pending.establishment_year || null,
             });
           } catch { /* best-effort */ }
         }
@@ -203,30 +200,12 @@ export default function CompanyOnboardingPage() {
           setStep(2);
         } else if (profile?.company_name && profile?.contact_person) {
           // Profile already created during registration — auto-advance past step 1
-          // IMPORTANT: must pass all existing fields; the UPDATE SQL overwrites every column
-          // and partial posts silently wipe establishment_year, city, services, etc.
-          const parseJson = (v: any) => {
-            if (Array.isArray(v)) return v;
-            if (typeof v === 'string') { try { return JSON.parse(v); } catch { return []; } }
-            return [];
-          };
           try {
             await api.post('/auth/company/profile', {
               company_name: profile.company_name,
               contact_person: profile.contact_person,
               phone: profile.phone || '',
               company_type: profile.company_type || 'renovation_company',
-              city: profile.city || '',
-              description: profile.description || '',
-              establishment_year: profile.establishment_year || null,
-              services: parseJson(profile.services),
-              specialties: parseJson(profile.specialties),
-              emirates_served: parseJson(profile.emirates_served),
-              company_types: parseJson(profile.company_types),
-              trade_license_number: profile.trade_license_number || null,
-              website: profile.website || null,
-              logo_url: profile.logo_url || null,
-              address: profile.address || '',
               onboarding_step: 1,
             });
           } catch { /* ignore, best-effort */ }
@@ -319,7 +298,6 @@ export default function CompanyOnboardingPage() {
         company_name: companyName.trim(),
         contact_person: contactPerson.trim(),
         phone: fullPhone,
-        establishment_year: null,
       });
       setStep(2);
     } catch (err: any) {
@@ -352,7 +330,6 @@ export default function CompanyOnboardingPage() {
         contact_person: profileData.contact_person,
         phone: profileData.phone,
         company_type: companyType || 'renovation_company',
-        establishment_year: profileData.establishment_year || null,
         onboarding_step: 2,
       });
 
@@ -373,7 +350,6 @@ export default function CompanyOnboardingPage() {
         contact_person: profileData.contact_person,
         phone: profileData.phone,
         company_type: companyType || 'renovation_company',
-        establishment_year: profileData.establishment_year || null,
         onboarding_step: 3,
       };
 

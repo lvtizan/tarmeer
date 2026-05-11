@@ -10,6 +10,7 @@ import {
 import type { Company, PortfolioItem } from '../lib/companyData';
 import { getCompanyTypeLabel } from '../lib/companyData';
 import { trackViewContent } from '../lib/analytics';
+import { trackEvent } from '../lib/trackEvent';
 import { fetchCompanyPreviewDetail, fetchPublicCompanyDetail, fetchPublicCompanies, fetchAdminCompanyPreview } from '../lib/publicApi';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { normalizePortfolioCategories } from '../lib/categoryNormalize';
@@ -131,6 +132,9 @@ export default function CompanyDetailPage() {
         if (!active) return;
         setCompany(item);
         trackViewContent({ content_name: item.name, content_id: item.id || id });
+        if (!previewMode && !adminPreview) {
+          trackEvent({ event_type: 'view_company', target_id: item.id ? Number(item.id) : null, target_name: (item as any).name_en || item.name, target_type: 'company' });
+        }
         // Redirect to canonical /@slug when response ID differs from URL identifier
         // (covers numeric IDs, dead/renamed slugs, and alias resolution)
         if (id && item.id && item.id !== id) {

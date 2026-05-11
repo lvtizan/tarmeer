@@ -42,7 +42,7 @@ import {
   getRegistrationSources,
   getDailyStatsReport,
 } from '../controllers/designerAdminController';
-import { getActivityLogStats, exportActivityLogs } from '../controllers/activityLogController';
+import { getActivityLogStats, exportActivityLogs, getTopActiveUsers, getUserTimeline } from '../controllers/activityLogController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries, resendCrmSync } from '../controllers/inquiryController';
@@ -84,8 +84,7 @@ import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import {
   listCompanyTypes, createCompanyType, updateCompanyType, deleteCompanyType,
-  listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService,
-  batchCategorizeServices,
+  listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService, reorderCompanyServices,
 } from '../controllers/enumAdminController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
@@ -164,6 +163,8 @@ router.get('/stats/daily', requirePermission('can_view_stats'), getDailyStatsRep
 router.get('/stats/today-new', getTodayNew);
 router.get('/activity-log/stats', getActivityLogStats);
 router.get('/activity-log/export', exportActivityLogs);
+router.get('/activity-log/top-users', getTopActiveUsers);
+router.get('/activity-log/user/:userId', getUserTimeline);
 router.get('/activity-log', getActivityLogs);
 router.get('/visitors/overview', requirePermission('can_view_stats'), getVisitorOverview);
 router.get('/visitors', requirePermission('can_view_stats'), listVisitors);
@@ -435,7 +436,7 @@ router.put('/enums/company-types/:slug', requireAdmin, updateCompanyType);
 router.delete('/enums/company-types/:slug', requireAdmin, deleteCompanyType);
 router.get('/enums/company-services', listCompanyServices);
 router.post('/enums/company-services', requireAdmin, createCompanyService);
-router.put('/enums/company-services/batch-categorize', requireAdmin, batchCategorizeServices);
+router.put('/enums/company-services/reorder', requireAdmin, reorderCompanyServices);
 router.put('/enums/company-services/:name', requireAdmin, updateCompanyService);
 router.delete('/enums/company-services/:name', requireAdmin, deleteCompanyService);
 

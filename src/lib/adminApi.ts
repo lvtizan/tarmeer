@@ -900,6 +900,19 @@ class AdminApiClient {
     return `${base}/admin/activity-log/export?${qs.toString()}`;
   }
 
+  async getTopActiveUsers(days?: number): Promise<{ users: any[] }> {
+    return this.request(`/activity-log/top-users${days ? `?days=${days}` : ''}`);
+  }
+
+  async getUserTimeline(userId: number, params: { role?: string; page?: number; limit?: number } = {}): Promise<{ logs: any[]; summary: any; pagination: any }> {
+    const qs = new URLSearchParams();
+    if (params.role) qs.set('role', params.role);
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const query = qs.toString();
+    return this.request(`/activity-log/user/${userId}${query ? `?${query}` : ''}`);
+  }
+
   async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }>; company_cities?: Array<{ city: string; count: number }>; inquiry_cities?: Array<{ city: string; count: number }>; visitor_cities?: Array<{ city: string; count: number }>; homeowner_cities?: Array<{ city: string; count: number }>; company_type_cities?: Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }> }> {
     return this.request('/stats/registration-sources');
   }

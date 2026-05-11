@@ -91,11 +91,11 @@ export async function listCompanyServices(req: any, res: any) {
 
 export async function createCompanyService(req: any, res: any) {
   try {
-    const { name, sort_order = 0 } = req.body;
+    const { name, sort_order = 0, category } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'name is required.' });
     await pool.execute(
-      'INSERT INTO company_services (name, sort_order, active) VALUES (?, ?, 1)',
-      [name.trim(), Number(sort_order) || 0]
+      'INSERT INTO company_services (name, sort_order, active, category) VALUES (?, ?, 1, ?)',
+      [name.trim(), Number(sort_order) || 0, category?.trim() || null]
     );
     invalidateEnumCache();
     res.status(201).json({ name: name.trim() });
@@ -117,7 +117,7 @@ export async function updateCompanyService(req: any, res: any) {
     if (newName !== undefined) { sets.push('name = ?'); values.push(String(newName).slice(0, 200)); }
     if (sort_order !== undefined) { sets.push('sort_order = ?'); values.push(Number(sort_order)); }
     if (active !== undefined) { sets.push('active = ?'); values.push(active ? 1 : 0); }
-    if (category !== undefined) { sets.push('category = ?'); values.push(category ? String(category).slice(0, 100) : null); }
+    if (category !== undefined) { sets.push('category = ?'); values.push(category ? String(category).trim() : null); }
     if (sets.length === 0) return res.status(400).json({ error: 'Nothing to update.' });
     values.push(name);
     await pool.execute(`UPDATE company_services SET ${sets.join(', ')} WHERE name = ?`, values);
@@ -126,29 +126,6 @@ export async function updateCompanyService(req: any, res: any) {
   } catch (error) {
     console.error('updateCompanyService error:', error);
     res.status(500).json({ error: 'Failed to update service.' });
-  }
-}
-
-export async function batchCategorizeServices(req: any, res: any) {
-  try {
-    const { names, category } = req.body;
-    if (!Array.isArray(names) || names.length === 0) {
-      return res.status(400).json({ error: 'names array required.' });
-    }
-    if (!category || typeof category !== 'string') {
-      return res.status(400).json({ error: 'category string required.' });
-    }
-    const catValue = category.slice(0, 100);
-    const placeholders = names.map(() => '?').join(', ');
-    await pool.execute(
-      `UPDATE company_services SET category = ? WHERE name IN (${placeholders})`,
-      [catValue, ...names]
-    );
-    invalidateEnumCache();
-    res.json({ message: `Categorized ${names.length} service(s) into "${catValue}".` });
-  } catch (error) {
-    console.error('batchCategorizeServices error:', error);
-    res.status(500).json({ error: 'Failed to categorize services.' });
   }
 }
 
@@ -161,5 +138,71 @@ export async function deleteCompanyService(req: any, res: any) {
   } catch (error) {
     console.error('deleteCompanyService error:', error);
     res.status(500).json({ error: 'Failed to delete service.' });
+  }
+}
+
+// ── Reorder Company Services ──────────────────────────────────────────────────
+
+export async function reorderCompanyServices(req: any, res: any) {
+  try {
+    const { names } = req.body; // ordered array of service names
+    if (!Array.isArray(names) || names.length === 0) {
+      return res.status(400).json({ error: 'names array is required.' });
+    }
+    // Batch update sort_order based on position in the array
+    for (let i = 0; i < names.length; i++) {
+      await pool.execute(
+        'UPDATE company_services SET sort_order = ? WHERE name = ?',
+        [i, names[i]]
+      );
+    }
+    invalidateEnumCache();
+    res.json({ message: 'Reordered.' });
+  } catch (error) {
+    console.error('reorderCompanyServices error:', error);
+    res.status(500).json({ error: 'Failed to reorder services.' });
+  }
+}
+
+// ── Public: grouped service categories ───────────────────────────────────────
+
+const CATEGORY_ORDER = [
+  'Design & Planning', 'Construction', 'Design & Build', 'Renovation',
+  'Outdoor & Pools', 'Home Systems', 'Interiors & Furniture', 'Maintenance', 'Specialty Works',
+];
+
+export async function getPublicServiceCategories(req: any, res: any) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT name, category FROM company_services WHERE active = 1 ORDER BY sort_order, name'
+    );
+    const grouped = new Map<string, string[]>();
+    const uncategorised: string[] = [];
+    for (const row of rows as { name: string; category: string | null }[]) {
+      const cat = row.category?.trim() || null;
+      if (cat) {
+        if (!grouped.has(cat)) grouped.set(cat, []);
+        grouped.get(cat)!.push(row.name);
+      } else {
+        uncategorised.push(row.name);
+      }
+    }
+    // Build ordered result
+    const categories: { name: string; subs: string[] }[] = [];
+    for (const catName of CATEGORY_ORDER) {
+      const subs = grouped.get(catName);
+      if (subs && subs.length > 0) {
+        categories.push({ name: catName, subs });
+        grouped.delete(catName);
+      }
+    }
+    // Any remaining categories not in CATEGORY_ORDER
+    for (const [catName, subs] of grouped.entries()) {
+      if (subs.length > 0) categories.push({ name: catName, subs });
+    }
+    res.json({ categories });
+  } catch (error) {
+    console.error('getPublicServiceCategories error:', error);
+    res.status(500).json({ error: 'Failed to load service categories.' });
   }
 }

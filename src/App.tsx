@@ -112,6 +112,7 @@ const AdminCompanyDetailPage = lazyRetry(() => import('./pages/admin/AdminCompan
 const AdminRegisteredCompanyDetailPage = lazyRetry(() => import('./pages/admin/AdminRegisteredCompanyDetailPage'));
 const AdminHelpPage = lazyRetry(() => import('./pages/admin/AdminHelpPage'));
 const AdminActivityLogPage = lazyRetry(() => import('./pages/admin/AdminActivityLogPage'));
+const AdminUserTimelinePage = lazyRetry(() => import('./pages/admin/AdminUserTimelinePage'));
 const AdminSuppliersPage = lazyRetry(() => import('./pages/admin/AdminSuppliersPage'));
 const AdminSupplierDetailPage = lazyRetry(() => import('./pages/admin/AdminSupplierDetailPage'));
 const AdminProjectDetailPage = lazyRetry(() => import('./pages/admin/AdminProjectDetailPage'));
@@ -232,7 +233,10 @@ function App() {
             <Route path="signed-companies" element={<AdminSignedCompaniesPage />} />
             <Route path="designers" element={<AdminDesignersPage />} />
             <Route path="designers/:id" element={<AdminDesignerDetailPage />} />
-            <Route path="activity-log" element={<AdminActivityLogPage />} />
+            <Route path="activity-log">
+              <Route index element={<AdminActivityLogPage />} />
+              <Route path="user/:userId" element={<AdminUserTimelinePage />} />
+            </Route>
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="users/:id" element={<AdminUserDetailPage />} />
             <Route path="companies" element={<AdminCompaniesPage />} />

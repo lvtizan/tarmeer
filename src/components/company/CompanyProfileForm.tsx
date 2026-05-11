@@ -3,8 +3,8 @@ import { Globe, MapPin, Phone, ChevronDown, ChevronRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormLabel, FormTag } from '../form/FormInput';
 import AdminSelect from '../ui/AdminSelect';
-import { SPACE_TYPES, MAX_SERVICE_CATEGORIES, getActiveParents } from '../../lib/serviceCategories';
-import { useServiceGroups } from '../../hooks/useServiceGroups';
+import { SPACE_TYPES, MAX_SERVICE_CATEGORIES } from '../../lib/serviceCategories';
+import { useServiceCategories, getActiveParentsDynamic } from '../../hooks/useServiceCategories';
 
 const GCC_DIAL_CODES = [
   { code: '+971', label: '🇦🇪 UAE (+971)' },
@@ -116,10 +116,10 @@ function ServiceCategoryPicker({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
-  const serviceGroups = useServiceGroups();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const activeParents = getActiveParents(selected);
+  const dynamicCategories = useServiceCategories();
+  const activeParents = getActiveParentsDynamic(selected, dynamicCategories);
 
   const toggleExpand = (name: string) => {
     setExpanded(prev => {
@@ -163,7 +163,7 @@ function ServiceCategoryPicker({
           Max {MAX_SERVICE_CATEGORIES} categories selected. Deselect from an existing category to add another.
         </p>
       )}
-      {serviceGroups.map(cat => {
+      {dynamicCategories.map(cat => {
         const catSelected = cat.subs.filter(s => selected.includes(s));
         const isOpen = expanded.has(cat.name);
         const isActive = activeParents.includes(cat.name);

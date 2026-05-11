@@ -381,7 +381,7 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // Project space type
   { table: 'projects', column: 'space_type', type: 'VARCHAR(100) NULL' },
 
-  // Service category assignment (for grouping orphaned services into known categories)
+  // Service parent category (e.g. 'Design & Planning') — drives public grouped endpoint
   { table: 'company_services', column: 'category', type: 'VARCHAR(100) NULL' },
 ];
 
@@ -588,6 +588,29 @@ export async function runAutoMigrate(): Promise<void> {
           ('Fire Fighting & Safety',  55)`
       );
     } catch { /* table may not exist yet */ }
+
+    // 7b. Back-fill category column for existing services (idempotent UPDATE)
+    try {
+      const categoryMap: [string, string[]][] = [
+        ['Design & Planning',    ['Interior Design','Architecture Design','Architecture','Spatial Planning','Project Management']],
+        ['Construction',         ['Construction','Fit-Out','Civil Works']],
+        ['Design & Build',       ['Design & Build','Turnkey Solutions','Full Package']],
+        ['Renovation',           ['Full Renovation','Kitchen Renovation','Bathroom Renovation','Partial Renovation','Renovation']],
+        ['Outdoor & Pools',      ['Landscape Design','Pool Construction','Garden Design','Outdoor Lighting','Landscape']],
+        ['Home Systems',         ['MEP','Smart Home & Automation','HVAC & Ducting','Electrical','Plumbing']],
+        ['Interiors & Furniture',['Furniture Supply','Custom Joinery','Curtains & Blinds','Flooring','Wallpaper & Finishes','Furniture']],
+        ['Maintenance',          ['General Maintenance','Deep Cleaning','Handyman Services','AC Maintenance','Maintenance']],
+        ['Specialty Works',      ['Glass & Aluminium','Stone & Marble','Stone & Marble Fixing','Steel Works','Steel & Fabrication','Steel Fabrication','Waterproofing','Fire Fighting & Safety','Fire Fighting','Painting & Finishing','Flooring & Tiling','Demolition','Epoxy & PU Flooring','Scaffolding','Lighting Installation','Gypsum & Partitions','Joinery','Custom Joinery']],
+      ];
+      for (const [cat, names] of categoryMap) {
+        if (names.length === 0) continue;
+        const placeholders = names.map(() => '?').join(',');
+        await pool.execute(
+          `UPDATE company_services SET category = ? WHERE name IN (${placeholders}) AND (category IS NULL OR category = '')`,
+          [cat, ...names]
+        );
+      }
+    } catch { /* ignore */ }
 
     // 8. Add field_staff role to admin_users ENUM
     await addFieldStaffRole();
