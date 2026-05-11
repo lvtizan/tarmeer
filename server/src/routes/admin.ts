@@ -85,7 +85,7 @@ import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import {
   listCompanyTypes, createCompanyType, updateCompanyType, deleteCompanyType,
-  listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService, reorderCompanyServices,
+  listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService, reorderCompanyServices, renameServiceCategory,
 } from '../controllers/enumAdminController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
@@ -443,6 +443,7 @@ router.delete('/enums/company-types/:slug', requireAdmin, deleteCompanyType);
 router.get('/enums/company-services', listCompanyServices);
 router.post('/enums/company-services', requireAdmin, createCompanyService);
 router.put('/enums/company-services/reorder', requireAdmin, reorderCompanyServices);
+router.put('/enums/company-services/rename-category', requireAdmin, renameServiceCategory);
 router.put('/enums/company-services/:name', requireAdmin, updateCompanyService);
 router.delete('/enums/company-services/:name', requireAdmin, deleteCompanyService);
 

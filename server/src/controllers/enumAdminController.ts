@@ -143,6 +143,25 @@ export async function deleteCompanyService(req: any, res: any) {
 
 // ── Reorder Company Services ──────────────────────────────────────────────────
 
+export async function renameServiceCategory(req: any, res: any) {
+  try {
+    const { oldName, newName } = req.body;
+    if (!oldName?.trim() || !newName?.trim()) {
+      return res.status(400).json({ error: 'oldName and newName are required.' });
+    }
+    const cleanNew = newName.trim().slice(0, 100);
+    await pool.execute(
+      'UPDATE company_services SET category = ? WHERE category = ?',
+      [cleanNew, oldName.trim()]
+    );
+    invalidateEnumCache();
+    res.json({ message: 'Category renamed.', newName: cleanNew });
+  } catch (error) {
+    console.error('renameServiceCategory error:', error);
+    res.status(500).json({ error: 'Failed to rename category.' });
+  }
+}
+
 export async function reorderCompanyServices(req: any, res: any) {
   try {
     const { names } = req.body; // ordered array of service names

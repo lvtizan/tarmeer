@@ -4,6 +4,7 @@ import { adminApi } from '../../lib/adminApi';
 import { showToast } from '../../components/ui/Toast';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { SERVICE_CATEGORIES } from '../../lib/serviceCategories';
+import { Pencil } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,6 +117,8 @@ function ServicesTab({
   const [selectedCat, setSelectedCat] = useState<string>('');
   const [newServiceName, setNewServiceName] = useState('');
   const [addingService, setAddingService] = useState(false);
+  const [editingCat, setEditingCat] = useState<string | null>(null);
+  const [editingCatValue, setEditingCatValue] = useState('');
   const dragIndex = useRef<number>(-1);
   const overIndex = useRef<number>(-1);
   const [draggingIdx, setDraggingIdx] = useState<number>(-1);
@@ -234,6 +237,23 @@ function ServicesTab({
     }
   }
 
+  async function commitCatRename(oldName: string) {
+    const newName = editingCatValue.trim();
+    setEditingCat(null);
+    if (!newName || newName === oldName) return;
+    try {
+      await adminApi.request('/enums/company-services/rename-category', {
+        method: 'PUT',
+        body: JSON.stringify({ oldName, newName }),
+      });
+      if (selectedCat === oldName) setSelectedCat(newName);
+      showToast('分类已重命名', 'success');
+      onReload();
+    } catch {
+      showToast('重命名失败', 'error');
+    }
+  }
+
   if (loading) {
     return <div className="p-8 text-center text-stone-400 text-sm">加载中…</div>;
   }
@@ -249,21 +269,48 @@ function ServicesTab({
           {allCats.map((cat) => {
             const count = services.filter((s) => s.category === cat).length;
             const activeCount = services.filter((s) => s.category === cat && s.active).length;
+            const isSelected = selectedCat === cat;
+            const isEditing = editingCat === cat;
             return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCat(cat)}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-sm transition-colors ${
-                  selectedCat === cat
-                    ? 'bg-[#b8864a]/10 text-[#b8864a] font-medium'
-                    : 'text-stone-600 hover:bg-stone-50'
-                }`}
-              >
-                <span className="truncate">{cat}</span>
-                <span className={`text-[11px] shrink-0 ml-1 ${selectedCat === cat ? 'text-[#b8864a]/70' : 'text-stone-400'}`}>
-                  {activeCount}/{count}
-                </span>
-              </button>
+              <div key={cat} className="group relative">
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    className="w-full h-8 px-2.5 rounded-lg text-sm border border-[#b8864a] bg-[#b8864a]/5 text-[#b8864a] font-medium focus:outline-none"
+                    value={editingCatValue}
+                    onChange={(e) => setEditingCatValue(e.target.value)}
+                    onBlur={() => commitCatRename(cat)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                      if (e.key === 'Escape') { setEditingCat(null); }
+                    }}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setSelectedCat(cat)}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-sm transition-colors ${
+                      isSelected
+                        ? 'bg-[#b8864a]/10 text-[#b8864a] font-medium'
+                        : 'text-stone-600 hover:bg-stone-50'
+                    }`}
+                  >
+                    <span className="truncate">{cat}</span>
+                    <span className={`text-[11px] shrink-0 ml-1 ${isSelected ? 'text-[#b8864a]/70' : 'text-stone-400'}`}>
+                      {activeCount}/{count}
+                    </span>
+                  </button>
+                )}
+                {/* Pencil edit button — visible on row hover */}
+                {!isEditing && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingCat(cat); setEditingCatValue(cat); setSelectedCat(cat); }}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center justify-center w-5 h-5 rounded hover:bg-[#b8864a]/10 text-stone-400 hover:text-[#b8864a] transition-colors"
+                    title="重命名分类"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             );
           })}
           {orphans.length > 0 && (
