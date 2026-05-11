@@ -47,6 +47,7 @@ import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminCon
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries, resendCrmSync } from '../controllers/inquiryController';
 import { getComplaints, updateComplaintStatus, getNewCounts, markNotificationSeen } from '../controllers/complaintController';
+import { listFeedback, getFeedback, markAllFeedbackRead } from '../controllers/feedbackController';
 import {
   listCompanies,
   listCompanyApplications,
@@ -199,6 +200,11 @@ router.post('/inquiries/:id/resend-crm', resendCrmSync);
 // Complaint management (admin)
 router.get('/complaints', getComplaints);
 router.put('/complaints/:id/status', updateComplaintStatus);
+
+// Feedback management (admin)
+router.get('/feedback', listFeedback);
+router.get('/feedback/:id', getFeedback);
+router.put('/feedback/mark-all-read', markAllFeedbackRead);
 
 // Notification counts (admin)
 router.get('/notifications/counts', getNewCounts);

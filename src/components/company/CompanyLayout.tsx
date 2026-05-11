@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, FileText, User, ImagePlus, Settings } from 'lucide-react';
+import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare } from 'lucide-react';
 import Navbar from '../Navbar';
 import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
+import FeedbackModal from '../FeedbackModal';
 
 const navCls = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-4 py-3 rounded-full transition cursor-pointer ${
@@ -15,6 +16,7 @@ export default function CompanyLayout() {
   const navigate = useNavigate();
   const token = api.getToken();
   const [authValid, setAuthValid] = useState<boolean | null>(token ? null : false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -84,6 +86,17 @@ export default function CompanyLayout() {
           </div>
         </main>
       </div>
+
+      {/* Feedback bubble — fixed bottom-right, above mobile nav */}
+      <button
+        onClick={() => setFeedbackOpen(true)}
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-20 w-12 h-12 rounded-full bg-[#1c1917] text-white shadow-lg hover:bg-[#2c2c2c] transition flex items-center justify-center"
+        aria-label="Send feedback"
+        title="Share feedback"
+      >
+        <MessageSquare className="w-5 h-5" />
+      </button>
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="company_portal" />
 
       {/* Mobile bottom navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex items-center justify-around px-2 py-2 safe-area-pb">

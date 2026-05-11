@@ -105,6 +105,8 @@ const AdminUserDetailPage = lazyRetry(() => import('./pages/admin/AdminUserDetai
 const AdminCompaniesPage = lazyRetry(() => import('./pages/admin/AdminCompaniesPage'));
 const AdminInquiriesPage = lazyRetry(() => import('./pages/admin/AdminInquiriesPage'));
 const AdminComplaintsPage = lazyRetry(() => import('./pages/admin/AdminComplaintsPage'));
+const AdminFeedbackPage = lazyRetry(() => import('./pages/admin/AdminFeedbackPage'));
+const AdminFeedbackDetailPage = lazyRetry(() => import('./pages/admin/AdminFeedbackDetailPage'));
 const AdminRoleManagementPage = lazyRetry(() => import('./pages/admin/AdminRoleManagementPage'));
 const AdminNotificationEmailsPage = lazyRetry(() => import('./pages/admin/AdminNotificationEmailsPage'));
 const AdminCompanyImportPage = lazyRetry(() => import('./pages/admin/AdminCompanyImportPage'));
@@ -245,6 +247,8 @@ function App() {
             <Route path="profile-companies/:companyId/projects/:projectId" element={<AdminProjectDetailPage />} />
             <Route path="inquiries" element={<AdminInquiriesPage />} />
             <Route path="complaints" element={<AdminComplaintsPage />} />
+            <Route path="feedback" element={<AdminFeedbackPage />} />
+            <Route path="feedback/:id" element={<AdminFeedbackDetailPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
             <Route path="roles" element={<AdminRoleManagementPage />} />
             <Route path="notification-emails" element={<AdminNotificationEmailsPage />} />

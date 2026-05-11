@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck, HandCoins, Images } from 'lucide-react';
+import { Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail, CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin, UserCheck, HandCoins, Images, MessageSquare } from 'lucide-react';
 import { useAdmin } from '../../contexts/AdminContext';
 import { adminApi } from '../../lib/adminApi';
 import Avatar from '../ui/Avatar';
@@ -44,6 +44,11 @@ const navItems = [
     to: '/admin/complaints', labelEn: 'Complaints', labelZh: '投诉', icon: ShieldAlert,
     infoEn: 'Handle abuse/report tickets, complete investigation notes, and close complaint workflows.',
     infoZh: '处理举报/投诉工单，补全调查记录并完成闭环。',
+  },
+  {
+    to: '/admin/feedback', labelEn: 'Feedback', labelZh: '用户反馈', icon: MessageSquare,
+    infoEn: 'View feedback and suggestions submitted via the website footer and company portal.',
+    infoZh: '查看通过官网底部和装企后台提交的反馈意见。',
   },
 ];
 
@@ -103,6 +108,7 @@ const NOTIFICATION_MAP: Record<string, string> = {
   '/admin/inquiries': 'newInquiries',
   '/admin/companies': 'newCompanyApps',
   '/admin/users': 'newUsers',
+  '/admin/feedback': 'newFeedback',
 };
 
 export default function AdminLayout() {
@@ -172,6 +178,7 @@ export default function AdminLayout() {
         newInquiries: 'inquiries',
         newCompanyApps: 'companies',
         newUsers: 'users',
+        newFeedback: 'feedback',
       };
       const pageKey = pageKeyMap[notifKey];
       if (pageKey) {

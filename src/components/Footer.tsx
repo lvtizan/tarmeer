@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GOOGLE_MAPS_URL, ADDRESS, INSTAGRAM_URL } from '../lib/constants';
 import { MapPin } from 'lucide-react';
 import { trackAnalyticsEvent } from '../lib/analytics';
+import FeedbackModal from './FeedbackModal';
 
 const footerNavLinks = [
   { to: '/', label: 'Home' },
@@ -10,7 +12,6 @@ const footerNavLinks = [
   { to: '/materials', label: 'Materials' },
   { to: '/for-companies', label: 'Join as Company' },
   { to: '/faq', label: 'FAQ' },
-  { to: '/contact', label: 'Contact Us' },
 ];
 
 const footerSpaceLinks = [
@@ -34,6 +35,8 @@ const footerServiceLinks = [
 ];
 
 export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+
   return (
     <footer className="bg-[#2c2c2c] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
@@ -45,6 +48,12 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
               {footerNavLinks.map(({ to, label }) => (
                 <Link key={to} to={to} className="text-sm text-white/80 hover:text-white transition">{label}</Link>
               ))}
+              <button
+                onClick={() => setFeedbackOpen(true)}
+                className="text-sm text-white/80 hover:text-white transition text-left"
+              >
+                Feedback
+              </button>
             </nav>
           </div>
           <div>
@@ -114,6 +123,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
           </div>
         </div>
       </div>
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="footer" />
     </footer>
   );
 }

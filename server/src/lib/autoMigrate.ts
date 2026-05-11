@@ -284,6 +284,22 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
   },
+  {
+    name: 'feedback',
+    sql: `CREATE TABLE IF NOT EXISTS feedback (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      content TEXT NOT NULL,
+      source VARCHAR(50) DEFAULT 'website',
+      user_id INT NULL,
+      user_name VARCHAR(100) NULL,
+      user_email VARCHAR(255) NULL,
+      is_read TINYINT(1) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_is_read (is_read),
+      INDEX idx_created_at (created_at)
+    )`,
+  },
 ];
 
 // 需要确保存在的字段

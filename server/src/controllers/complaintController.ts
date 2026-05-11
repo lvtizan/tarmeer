@@ -1,4 +1,5 @@
 import pool from '../config/database';
+import { getUnreadFeedbackCount } from './feedbackController';
 
 async function countBySql(sql: string, params: any[] = []) {
   const [rows] = await pool.execute(sql, params);
@@ -120,7 +121,7 @@ export async function updateComplaintStatus(req: any, res: any) {
 export async function markNotificationSeen(req: any, res: any) {
   try {
     const page = req.query.page as string;
-    const validPages = ['inquiries', 'companies', 'complaints', 'users'];
+    const validPages = ['inquiries', 'companies', 'complaints', 'users', 'feedback'];
     if (!page || !validPages.includes(page)) {
       return res.status(400).json({ error: 'Invalid page. Must be one of: ' + validPages.join(', ') });
     }
@@ -166,6 +167,7 @@ export async function getNewCounts(req: any, res: any) {
     let newCompanyApps = 0;
     let newInquiries = 0;
     let newUsers = 0;
+    let newFeedback = 0;
 
     if (adminId) {
       const [seenInquiries, seenCompanies, seenComplaints, seenUsers] = await Promise.all([
@@ -257,7 +259,9 @@ export async function getNewCounts(req: any, res: any) {
       }
     }
 
-    res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers });
+    newFeedback = await getUnreadFeedbackCount();
+
+    res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers, newFeedback });
   } catch (error) {
     console.error('Get new counts error:', error);
     res.status(500).json({ error: 'Failed to get notification counts.' });
