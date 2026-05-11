@@ -333,11 +333,11 @@ Admin 列表页的工具栏（tabs + 搜索 + 筛选）必须遵循以下布局�
 
 #### A4. 目录装企（uae_companies）
 - 文件：`server/src/lib/publicCompaniesSerialization.ts`
-- `sanitizePublicCompany()` 对**未认领**目录公司（`owner_user_id IS NULL`）正常返回 `phone`、`email`
-- **已认领**目录公司（`owner_user_id` 有值，即 `isClaimed = true`）必须隐藏 `phone`、`email`、`website`（同注册装企）
+- **phone 永远返回 `''`**（业务决策 2026-05-11：全平台隐藏 WA/电话号，引导走平台询价留资）
+- `sanitizePublicCompany()` 对**未认领**目录公司（`owner_user_id IS NULL`）正常返回 `email`，认领后隐藏 `email`、`website`
 - `is_claimed` 基于 `owner_user_id` 计算，不得硬编码
 - **已知返祖风险**：认领后目录公司的 slug 仍走 `/api/companies/:slug` → `sanitizePublicCompany()`，若不在此处过滤，phone 会穿透到前端
-
+- **已知返祖风险**：认领后目录公司的 slug 仍走 `/api/companies/:slug` → `sanitizePublicCompany()`，若不在此处过滤，联系方式会穿透到前端
 #### A5. VIP 签约标志 `is_signed`
 - 文件：`server/src/controllers/companyController.ts`（注册装企分支）、`server/src/lib/publicCompaniesSerialization.ts`（目录装企）
 - `GET /api/companies/:slug` 和 `GET /api/public/companies` 必须返回 `is_signed: boolean`，值必须来自 DB（`!!(company.is_signed)`），**禁止硬编码为 `false`**

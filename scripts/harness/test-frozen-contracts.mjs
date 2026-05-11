@@ -63,12 +63,13 @@ ok('A2', 'is_claimed: true 出现在详情', pubCtrl.includes('is_claimed: true'
 ok('A3', 'is_registered: true 出现在列表+详情 (≥2处)', (pubCtrl.match(/is_registered: true/g) || []).length >= 2);
 
 // ─────────────────────────────────────────────
-// A4. 目录装企序列化 — 联系方式正常返回
+// A4. 目录装企序列化 — phone 永远隐藏，email 未认领时返回
+// 业务决策 2026-05-11：所有公司 WA/电话号全部隐藏，引导走平台询价留资
 // ─────────────────────────────────────────────
-console.log('\n--- A4: 目录装企序列化 — 联系方式正常返回 (publicCompaniesSerialization.ts) ---\n');
+console.log('\n--- A4: 目录装企序列化 — phone 永远隐藏 (publicCompaniesSerialization.ts) ---\n');
 const serial = read('server/src/lib/publicCompaniesSerialization.ts');
 
-ok('A4', 'sanitizePublicCompany 返回 phone（未认领时）', serial.includes("phone: isClaimed ? '' : toPublicString(company.phone)"));
+ok('A4', 'sanitizePublicCompany phone 永远返回空字符串', serial.includes("phone: '',"));
 ok('A4', 'sanitizePublicCompany 返回 email（未认领时）', serial.includes("email: isClaimed ? '' : toPublicString(company.email)"));
 ok('A4', 'is_claimed 基于 owner_user_id 计算', serial.includes('const isClaimed = !!(company.owner_user_id)'));
 ok('A4', 'is_claimed 字段写入响应', serial.includes('is_claimed: isClaimed'));

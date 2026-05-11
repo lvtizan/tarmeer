@@ -35,10 +35,15 @@ export default function SupplierLayout() {
   };
 
   useEffect(() => {
-    if (!getToken()) { navigate('/for-suppliers', { replace: true }); return; }
+    if (!getToken()) { navigate('/supplier/auth', { replace: true }); return; }
     fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
       .then(r => {
-        if (r.status === 401) { navigate('/for-suppliers', { replace: true }); return null; }
+        if (r.status === 401) {
+          localStorage.removeItem('supplier_token');
+          localStorage.removeItem('supplier_user');
+          navigate('/supplier/auth', { replace: true });
+          return null;
+        }
         return r.json();
       })
       .then(data => {
@@ -56,7 +61,7 @@ export default function SupplierLayout() {
   const handleLogout = () => {
     localStorage.removeItem('supplier_token');
     localStorage.removeItem('supplier_user');
-    navigate('/for-suppliers');
+    navigate('/supplier/auth');
   };
 
   return (
