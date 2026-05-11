@@ -112,7 +112,10 @@ export async function listSuppliers(req: any, res: any) {
        FROM supplier_profiles sp
        JOIN supplier_users su ON su.id = sp.supplier_user_id
        ${where}
-       ORDER BY sp.created_at DESC
+       ORDER BY CASE WHEN GREATEST(COALESCE(sp.home_display_order,0), COALESCE(sp.list_display_order,0)) > 0 THEN 0 ELSE 1 END,
+                LEAST(CASE WHEN sp.home_display_order > 0 THEN sp.home_display_order ELSE 999999 END,
+                      CASE WHEN sp.list_display_order > 0 THEN sp.list_display_order ELSE 999999 END) ASC,
+                sp.created_at DESC
        LIMIT ${limit} OFFSET ${offset}`,
       params
     );
@@ -395,5 +398,51 @@ export async function adminDeleteProject(req: any, res: any) {
   } catch (error) {
     console.error('Admin delete project error:', error);
     res.status(500).json({ error: 'Failed to delete project.' });
+  }
+}
+
+export async function setSupplierHomeOrder(req: any, res: any) {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'invalid id' });
+    const value = parseInt(req.body?.home_display_order) || 0;
+
+    const [rows] = await pool.execute('SELECT id FROM supplier_profiles WHERE id = ?', [id]);
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Supplier not found.' });
+
+    if (value > 0) {
+      await pool.execute(
+        'UPDATE supplier_profiles SET home_display_order = 0 WHERE home_display_order = ? AND id != ?',
+        [value, id]
+      );
+    }
+    await pool.execute('UPDATE supplier_profiles SET home_display_order = ? WHERE id = ?', [value, id]);
+    res.json({ id, home_display_order: value });
+  } catch (error) {
+    console.error('Set supplier home order error:', error);
+    res.status(500).json({ error: 'Failed to update home display order.' });
+  }
+}
+
+export async function setSupplierListOrder(req: any, res: any) {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'invalid id' });
+    const value = parseInt(req.body?.list_display_order) || 0;
+
+    const [rows] = await pool.execute('SELECT id FROM supplier_profiles WHERE id = ?', [id]);
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Supplier not found.' });
+
+    if (value > 0) {
+      await pool.execute(
+        'UPDATE supplier_profiles SET list_display_order = 0 WHERE list_display_order = ? AND id != ?',
+        [value, id]
+      );
+    }
+    await pool.execute('UPDATE supplier_profiles SET list_display_order = ? WHERE id = ?', [value, id]);
+    res.json({ id, list_display_order: value });
+  } catch (error) {
+    console.error('Set supplier list order error:', error);
+    res.status(500).json({ error: 'Failed to update list display order.' });
   }
 }

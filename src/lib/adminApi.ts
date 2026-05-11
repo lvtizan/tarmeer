@@ -785,6 +785,20 @@ class AdminApiClient {
     return this.request('/signed-companies');
   }
 
+  async setSupplierHomeOrder(id: number, displayOrder: number) {
+    return this.request(`/suppliers/${id}/home-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ home_display_order: displayOrder }),
+    });
+  }
+
+  async setSupplierListOrder(id: number, displayOrder: number) {
+    return this.request(`/suppliers/${id}/list-order`, {
+      method: 'PUT',
+      body: JSON.stringify({ list_display_order: displayOrder }),
+    });
+  }
+
   async replaceSupplierProductImage(supplierId: number | string, productId: number | string, file: File): Promise<{ id: number; image_url: string }> {
     const fd = new FormData();
     fd.append('file', file, file.name);

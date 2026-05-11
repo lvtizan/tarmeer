@@ -1,5 +1,5 @@
 import { Suspense, lazy, type ReactNode, Component, type ErrorInfo } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AdminProvider } from './contexts/AdminContext';
 import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
@@ -205,6 +205,16 @@ function DesignerSlugRedirect() {
   const m = location.pathname.match(/^\/designers\/([^/?#]+)$/);
   return <Navigate to={m ? `/@${m[1]}` : '/companies'} replace />;
 }
+
+// Old /designers/:slug/projects/:projectSlug URLs (indexed by Google before the
+// /companies rename). Redirect to the equivalent /companies/:slug/:projectSlug.
+function DesignerProjectRedirect() {
+  const { slug, projectSlug } = useParams<{ slug: string; projectSlug: string }>();
+  if (slug && projectSlug) {
+    return <Navigate to={`/companies/${slug}/${projectSlug}`} replace />;
+  }
+  return <Navigate to="/companies" replace />;
+}
 function App() {
   useMetaPixelPageView();
   return (
@@ -280,6 +290,8 @@ function App() {
           <Route path="/designer/*" element={<Navigate to="/company" replace />} />
           <Route path="/designers" element={<Navigate to="/companies" replace />} />
           <Route path="/designers/apply" element={<Navigate to="/onboarding" replace />} />
+          {/* Old /designers/:slug/projects/:projectSlug → preserve project for SEO */}
+          <Route path="/designers/:slug/projects/:projectSlug" element={<DesignerProjectRedirect />} />
           {/* Preserve slug when redirecting old /designers/:slug → /companies/:slug (was losing slug) */}
           <Route path="/designers/:slug" element={<DesignerSlugRedirect />} />
 
@@ -311,6 +323,9 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/showrooms" element={<Navigate to="/materials" replace />} />
+                <Route path="/home" element={<Navigate to="/" replace />} />
+                <Route path="/materials/brands" element={<Navigate to="/materials" replace />} />
+                <Route path="/materials/brands/*" element={<Navigate to="/materials" replace />} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />

@@ -19,7 +19,7 @@ export default function HomeSupplierSection() {
 
   useEffect(() => {
     let active = true;
-    fetch(`${API_BASE}/suppliers?limit=4`)
+    fetch(`${API_BASE}/suppliers?limit=4&order=home`)
       .then((r) => r.json())
       .then((data) => {
         if (!active) return;

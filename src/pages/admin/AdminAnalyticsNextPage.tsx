@@ -318,6 +318,24 @@ export default function AdminAnalyticsNextPage() {
           <h1 className="text-xl font-bold text-[#2c2c2c]">数据分析</h1>
           <p className="text-xs text-stone-500 mt-0.5">注册趋势 / 流量来源 / 装企地理分布 — 点 KPI 卡可穿透到对应列表</p>
         </div>
+        <div className="flex items-center gap-4">
+          <a
+            href="https://search.google.com/search-console/index?resource_id=https%3A%2F%2Fwww.tarmeer.com%2F&utm_source=wnc_20237597&utm_medium=panel&utm_campaign=wnc_20237597&utm_content=msg_20237597"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-[#B8864A] hover:underline"
+          >
+            谷歌收录 ↗
+          </a>
+          <a
+            href="https://analytics.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-[#B8864A] hover:underline"
+          >
+            Google Analytics ↗
+          </a>
+        </div>
       </div>
 
       {/* KPI cards — 7 张，可穿透到对应列表页 */}
