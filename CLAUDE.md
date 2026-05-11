@@ -279,6 +279,20 @@ grep -n "<header\|<nav " src/pages/<PageName>.tsx
 - 正确：`<div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto"><Outlet /></div>`
 - 适用：SupplierLayout、CompanyLayout、AdminLayout 的 `<main>` 内层 div
 
+## Admin 公司详情页统一布局规则（MUST FOLLOW）
+
+**所有 admin 公司详情页（目录装企 `/admin/companies/:id` 和注册装企 `/admin/profile-companies/:id`）必须使用完全相同的布局和功能。**
+
+- Root wrapper 必须用 `w-full`，**禁止用 `max-w-*`**（不能缩窄 admin 内容区）
+- 必须实现 mobile + desktop 双布局：
+  - Mobile (`md:hidden`): 纵向堆叠卡片
+  - Desktop (`hidden md:flex md:items-start gap-6`): 左侧信息栏 `w-80` + 右侧作品集 `flex-1`
+- 项目图片卡片**必须有 hover 按钮**：「设为封面」（`handleSetCover`）和「用作展示」（`handleAddToShowcase`）
+- 参考实现：`src/pages/admin/AdminRegisteredCompanyDetailPage.tsx`（注册装企）和 `src/pages/admin/AdminCompanyDetailPage.tsx`（目录装企）
+- 写新的 admin 公司详情页时，**直接复用上述两个文件的结构，不从零重写**
+
+---
+
 ## Admin Layout 规则（MUST FOLLOW）
 
 **AdminLayout root 必须用 `h-screen overflow-hidden flex flex-col`，禁止用 `min-h-screen`。**

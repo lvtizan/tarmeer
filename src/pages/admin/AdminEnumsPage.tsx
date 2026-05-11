@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { ChevronDown } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { showToast } from '../../components/ui/Toast';
 import { useAdminT } from '../../hooks/useAdminLang';
+import { SERVICE_CATEGORIES } from '../../lib/serviceCategories';
 
 interface CompanyType {
   slug: string;
@@ -34,7 +36,9 @@ export default function AdminEnumsPage() {
   const [servicesLoading, setServicesLoading] = useState(true);
   const [newServiceName, setNewServiceName] = useState('');
   const [newServiceOrder, setNewServiceOrder] = useState('');
+  const [newServiceCategory, setNewServiceCategory] = useState('');
   const [addingService, setAddingService] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const loadTypes = useCallback(async () => {
     setTypesLoading(true);
@@ -304,11 +308,22 @@ export default function AdminEnumsPage() {
             <div className="bg-white rounded-2xl border border-stone-200 p-4 mb-4">
               <p className="text-sm font-medium text-stone-500 mb-3">{t('Add New Service', '添加新服务')}</p>
               <div className="flex gap-2 flex-wrap">
+                <select
+                  className={`${inputCls} w-52`}
+                  value={newServiceCategory}
+                  onChange={(e) => setNewServiceCategory(e.target.value)}
+                >
+                  <option value="">{t('Parent Category', '所属大类')}</option>
+                  {SERVICE_CATEGORIES.map((cat) => (
+                    <option key={cat.name} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
                 <input
                   className={`${inputCls} flex-1 min-w-48`}
-                  placeholder={t('Service name (English)', '服务名称（英文）')}
+                  placeholder={t('Sub-service name (English)', '子服务名称（英文）')}
                   value={newServiceName}
                   onChange={(e) => setNewServiceName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addService()}
                 />
                 <input
                   className={`${inputCls} w-20`}
@@ -327,57 +342,137 @@ export default function AdminEnumsPage() {
               </div>
             </div>
 
-            {/* List */}
-            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-              {servicesLoading ? (
-                <div className="p-8 text-center text-stone-400 text-sm">{t('Loading…', '加载中…')}</div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-stone-50 border-b border-stone-200">
-                    <tr>
-                      <th className="text-left px-4 py-2.5 text-stone-500 font-medium w-8">#</th>
-                      <th className="text-left px-4 py-2.5 text-stone-500 font-medium">{t('Service Name', '服务名称')}</th>
-                      <th className="text-left px-4 py-2.5 text-stone-500 font-medium w-24">{t('Active', '启用')}</th>
-                      <th className="w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {services.map((svc) => (
-                      <tr key={svc.name} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50">
-                        <td className="px-4 py-2.5 text-stone-400">{svc.sort_order}</td>
-                        <td className="px-4 py-2.5">
-                          <input
-                            className={`${inputCls} w-full`}
-                            defaultValue={svc.name}
-                            onBlur={(e) => updateServiceName(svc, e.target.value)}
+            {/* Grouped list */}
+            {servicesLoading ? (
+              <div className="bg-white rounded-2xl border border-stone-200 p-8 text-center text-stone-400 text-sm">{t('Loading…', '加载中…')}</div>
+            ) : (() => {
+              // Build a lookup: service name → DB record
+              const svcMap = new Map(services.map((s) => [s.name, s]));
+              // Track which names have been shown (to catch orphans)
+              const shownNames = new Set<string>();
+
+              const rows = SERVICE_CATEGORIES.map((cat) => {
+                // Find all DB services that belong to this category
+                const catSubs = cat.subs.filter((sub) => svcMap.has(sub));
+                // Also find any DB services whose name starts with the category prefix (in case of custom additions)
+                const extraSubs = services
+                  .filter((s) => !cat.subs.includes(s.name) && s.name.toLowerCase().startsWith(cat.name.toLowerCase().slice(0, 4)))
+                  .map((s) => s.name);
+                const allSubs = [...catSubs, ...extraSubs.filter((n) => !catSubs.includes(n))];
+                allSubs.forEach((n) => shownNames.add(n));
+                return { cat, allSubs };
+              });
+
+              // Orphaned services (not matched to any category)
+              const orphans = services.filter((s) => !shownNames.has(s.name));
+
+              const toggleGroup = (name: string) => {
+                setCollapsedGroups((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(name)) next.delete(name); else next.add(name);
+                  return next;
+                });
+              };
+
+              const ServiceRow = ({ svc, idx }: { svc: CompanyService; idx: number }) => (
+                <tr key={svc.name} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50">
+                  <td className="px-4 py-2.5 text-stone-400 text-xs w-8">{idx + 1}</td>
+                  <td className="px-4 py-2.5 pl-8">
+                    <input
+                      className={`${inputCls} w-full`}
+                      defaultValue={svc.name}
+                      onBlur={(e) => updateServiceName(svc, e.target.value)}
+                    />
+                  </td>
+                  <td className="px-4 py-2.5 w-24">
+                    <button
+                      onClick={() => toggleServiceActive(svc)}
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                        svc.active
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                      }`}
+                    >
+                      {svc.active ? t('On', '启用') : t('Off', '停用')}
+                    </button>
+                  </td>
+                  <td className="px-4 py-2.5 text-right w-16">
+                    <button
+                      onClick={() => deleteService(svc.name)}
+                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                    >
+                      {t('Delete', '删除')}
+                    </button>
+                  </td>
+                </tr>
+              );
+
+              return (
+                <div className="space-y-3">
+                  {rows.map(({ cat, allSubs }) => {
+                    const isCollapsed = collapsedGroups.has(cat.name);
+                    const activeCount = allSubs.filter((n) => svcMap.get(n)?.active).length;
+                    return (
+                      <div key={cat.name} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+                        {/* Category header */}
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(cat.name)}
+                          className="w-full flex items-center justify-between px-4 py-3 bg-stone-50 hover:bg-stone-100 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold text-sm text-stone-800">{cat.name}</span>
+                            <span className="text-xs text-stone-400">
+                              {allSubs.length} {t('services', '项')} · {activeCount} {t('active', '启用')}
+                            </span>
+                          </div>
+                          <ChevronDown
+                            className={`w-4 h-4 text-stone-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
                           />
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <button
-                            onClick={() => toggleServiceActive(svc)}
-                            className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
-                              svc.active
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
-                            }`}
-                          >
-                            {svc.active ? t('On', '启用') : t('Off', '停用')}
-                          </button>
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          <button
-                            onClick={() => deleteService(svc.name)}
-                            className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                          >
-                            {t('Delete', '删除')}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                        </button>
+
+                        {/* Services under this category */}
+                        {!isCollapsed && (
+                          <table className="w-full text-sm">
+                            <tbody>
+                              {allSubs.length === 0 ? (
+                                <tr>
+                                  <td colSpan={4} className="px-4 py-3 text-xs text-stone-400 italic pl-8">
+                                    {t('No services yet — add one above', '暂无子服务，通过上方表单添加')}
+                                  </td>
+                                </tr>
+                              ) : (
+                                allSubs.map((name, idx) => {
+                                  const svc = svcMap.get(name);
+                                  return svc ? <ServiceRow key={name} svc={svc} idx={idx} /> : null;
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Orphaned services not in any category */}
+                  {orphans.length > 0 && (
+                    <div className="bg-white rounded-2xl border border-amber-200 overflow-hidden">
+                      <div className="flex items-center gap-3 px-4 py-3 bg-amber-50">
+                        <span className="font-semibold text-sm text-amber-800">{t('Other (unclassified)', '其他（未分类）')}</span>
+                        <span className="text-xs text-amber-600">{orphans.length} {t('services', '项')}</span>
+                      </div>
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {orphans.map((svc, idx) => (
+                            <ServiceRow key={svc.name} svc={svc} idx={idx} />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

@@ -623,6 +623,19 @@ export async function setCompanyCoverImage(req: any, res: any) {
   }
 }
 
+export async function setDirectoryCompanyCoverImage(req: any, res: any) {
+  try {
+    const { companyId } = req.params;
+    const { url } = req.body || {};
+    const value = (typeof url === 'string' && url.trim()) ? url.trim() : null;
+    await pool.execute('UPDATE uae_companies SET cover_image = ? WHERE id = ?', [value, companyId]);
+    res.json({ id: Number(companyId), cover_image: value });
+  } catch (error) {
+    console.error('Set directory company cover image error:', error);
+    res.status(500).json({ error: 'Failed to set cover image.' });
+  }
+}
+
 // Edit company profile (company_profiles) by admin
 export async function editCompanyProfile(req: any, res: any) {
   try {
