@@ -3,7 +3,8 @@ import { Globe, MapPin, Phone, ChevronDown, ChevronRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import { FormInput, FormTextarea, FormLabel, FormTag } from '../form/FormInput';
 import AdminSelect from '../ui/AdminSelect';
-import { SERVICE_CATEGORIES, SPACE_TYPES, MAX_SERVICE_CATEGORIES, getActiveParents } from '../../lib/serviceCategories';
+import { SPACE_TYPES, MAX_SERVICE_CATEGORIES, getActiveParents } from '../../lib/serviceCategories';
+import { useServiceGroups } from '../../hooks/useServiceGroups';
 
 const GCC_DIAL_CODES = [
   { code: '+971', label: '🇦🇪 UAE (+971)' },
@@ -115,6 +116,7 @@ function ServiceCategoryPicker({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
+  const serviceGroups = useServiceGroups();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const activeParents = getActiveParents(selected);
@@ -139,7 +141,7 @@ function ServiceCategoryPicker({
     }
   };
 
-  const toggleAllInCategory = (cat: typeof SERVICE_CATEGORIES[0]) => {
+  const toggleAllInCategory = (cat: { name: string; subs: string[] }) => {
     const catSubs = cat.subs;
     const allSelected = catSubs.every(s => selected.includes(s));
     if (allSelected) {
@@ -161,7 +163,7 @@ function ServiceCategoryPicker({
           Max {MAX_SERVICE_CATEGORIES} categories selected. Deselect from an existing category to add another.
         </p>
       )}
-      {SERVICE_CATEGORIES.map(cat => {
+      {serviceGroups.map(cat => {
         const catSelected = cat.subs.filter(s => selected.includes(s));
         const isOpen = expanded.has(cat.name);
         const isActive = activeParents.includes(cat.name);

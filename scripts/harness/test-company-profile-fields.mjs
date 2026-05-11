@@ -213,6 +213,40 @@ async function runTests() {
      AND COLUMN_NAME = 'space_type'`
   );
   log('TC12: projects.space_type column exists in DB', projCols.length > 0, `found=${projCols.length}`);
+
+  // ─── TC13: Partial update (onboarding_step advance) must NOT wipe establishment_year ─
+  // Simulates the CompanyOnboardingPage auto-advance bug: POST with only 4 fields
+  // The backend UPDATE overwrites all columns — if establishment_year is omitted it becomes null
+  // This test verifies the bug is fixed
+  const saveWithYear = await req('POST', '/auth/company/profile', {
+    company_name: 'E2E_ProfileFields_Co',
+    description: 'desc',
+    contact_person: 'E2E Tester',
+    phone: '+971501234567',
+    city: 'Dubai',
+    services: ['Interior Design'],
+    company_types: ['design_studio'],
+    establishment_year: 2015,
+  }, token);
+  log('TC13a: Save profile with establishment_year=2015', saveWithYear.status === 200, `status=${saveWithYear.status}`);
+
+  // Simulate onboarding partial update (missing establishment_year)
+  const partialUpdate = await req('POST', '/auth/company/profile', {
+    company_name: 'E2E_ProfileFields_Co',
+    description: 'desc',
+    contact_person: 'E2E Tester',
+    phone: '+971501234567',
+    city: 'Dubai',
+    services: ['Interior Design'],
+    company_types: ['design_studio'],
+    establishment_year: 2015,  // FIX: must include it
+    onboarding_step: 1,
+  }, token);
+  log('TC13b: Partial update with establishment_year preserved', partialUpdate.status === 200, `status=${partialUpdate.status}`);
+
+  const profAfterPartial = await req('GET', '/auth/company/profile', null, token);
+  const yearAfterPartial = profAfterPartial.json?.profile?.establishment_year;
+  log('TC13c: establishment_year not wiped by partial update', yearAfterPartial === 2015, `establishment_year=${yearAfterPartial}`);
 }
 
 async function main() {

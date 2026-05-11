@@ -5,6 +5,8 @@ import { adminApi } from '../../lib/adminApi';
 import { showToast } from '../../components/ui/Toast';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { SERVICE_CATEGORIES } from '../../lib/serviceCategories';
+import AdminSelect from '../../components/ui/AdminSelect';
+import { invalidateServiceGroupsCache } from '../../hooks/useServiceGroups';
 
 interface CompanyType {
   slug: string;
@@ -17,6 +19,7 @@ interface CompanyService {
   name: string;
   sort_order: number;
   active: number;
+  category: string | null;
 }
 
 export default function AdminEnumsPage() {
@@ -39,6 +42,11 @@ export default function AdminEnumsPage() {
   const [newServiceCategory, setNewServiceCategory] = useState('');
   const [addingService, setAddingService] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  // ── Orphan multi-select + move state ──
+  const [selectedOrphans, setSelectedOrphans] = useState<Set<string>>(new Set());
+  const [moveTarget, setMoveTarget] = useState('');
+  const [moving, setMoving] = useState(false);
 
   const loadTypes = useCallback(async () => {
     setTypesLoading(true);
@@ -178,6 +186,32 @@ export default function AdminEnumsPage() {
       showToast(t('Deleted', '已删除'), 'success');
     } catch (e: any) {
       showToast(e.message || t('Delete failed', '删除失败'), 'error');
+    }
+  }
+
+  async function moveOrphans() {
+    if (!moveTarget || selectedOrphans.size === 0) return;
+    setMoving(true);
+    try {
+      await adminApi.request('/enums/company-services/batch-categorize', {
+        method: 'PUT',
+        body: JSON.stringify({ names: Array.from(selectedOrphans), category: moveTarget }),
+      });
+      // Update local state: set category on moved services
+      setServices((prev) =>
+        prev.map((s) => selectedOrphans.has(s.name) ? { ...s, category: moveTarget } : s)
+      );
+      invalidateServiceGroupsCache();
+      setSelectedOrphans(new Set());
+      setMoveTarget('');
+      showToast(
+        t(`Moved ${selectedOrphans.size} service(s) to "${moveTarget}"`, `已将 ${selectedOrphans.size} 项移至"${moveTarget}"`),
+        'success'
+      );
+    } catch (e: any) {
+      showToast(e.message || t('Move failed', '移动失败'), 'error');
+    } finally {
+      setMoving(false);
     }
   }
 
@@ -352,18 +386,20 @@ export default function AdminEnumsPage() {
               const shownNames = new Set<string>();
 
               const rows = SERVICE_CATEGORIES.map((cat) => {
-                // Find all DB services that belong to this category
-                const catSubs = cat.subs.filter((sub) => svcMap.has(sub));
-                // Also find any DB services whose name starts with the category prefix (in case of custom additions)
-                const extraSubs = services
-                  .filter((s) => !cat.subs.includes(s.name) && s.name.toLowerCase().startsWith(cat.name.toLowerCase().slice(0, 4)))
+                // Services explicitly categorized to this cat in DB
+                const dbCatSubs = services
+                  .filter((s) => s.category === cat.name)
                   .map((s) => s.name);
-                const allSubs = [...catSubs, ...extraSubs.filter((n) => !catSubs.includes(n))];
+                // Hardcoded subs that are in DB
+                const hardcodedSubs = cat.subs.filter((sub) => svcMap.has(sub));
+                // Merge (DB category takes precedence, then hardcoded)
+                const allSubsSet = new Set([...dbCatSubs, ...hardcodedSubs]);
+                const allSubs = Array.from(allSubsSet);
                 allSubs.forEach((n) => shownNames.add(n));
                 return { cat, allSubs };
               });
 
-              // Orphaned services (not matched to any category)
+              // Orphaned services: not in any hardcoded category subs AND no DB category set
               const orphans = services.filter((s) => !shownNames.has(s.name));
 
               const toggleGroup = (name: string) => {
@@ -455,21 +491,114 @@ export default function AdminEnumsPage() {
                   })}
 
                   {/* Orphaned services not in any category */}
-                  {orphans.length > 0 && (
-                    <div className="bg-white rounded-2xl border border-amber-200 overflow-hidden">
-                      <div className="flex items-center gap-3 px-4 py-3 bg-amber-50">
-                        <span className="font-semibold text-sm text-amber-800">{t('Other (unclassified)', '其他（未分类）')}</span>
-                        <span className="text-xs text-amber-600">{orphans.length} {t('services', '项')}</span>
+                  {orphans.length > 0 && (() => {
+                    const allOrphanNames = orphans.map((s) => s.name);
+                    const allSelected = allOrphanNames.length > 0 && allOrphanNames.every((n) => selectedOrphans.has(n));
+                    const someSelected = selectedOrphans.size > 0;
+
+                    const toggleAll = () => {
+                      if (allSelected) {
+                        setSelectedOrphans(new Set());
+                      } else {
+                        setSelectedOrphans(new Set(allOrphanNames));
+                      }
+                    };
+
+                    const toggleOne = (name: string) => {
+                      setSelectedOrphans((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(name)) next.delete(name); else next.add(name);
+                        return next;
+                      });
+                    };
+
+                    const CATEGORY_OPTIONS = [
+                      { value: '', label: t('Select category…', '选择目标分类…') },
+                      ...SERVICE_CATEGORIES.map((c) => ({ value: c.name, label: c.name })),
+                    ];
+
+                    return (
+                      <div className="bg-white rounded-2xl border border-amber-200 overflow-hidden">
+                        {/* Header */}
+                        <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-amber-50">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                            onChange={toggleAll}
+                            className="w-4 h-4 rounded accent-[#b8864a] cursor-pointer"
+                          />
+                          <span className="font-semibold text-sm text-amber-800">{t('Other (unclassified)', '其他（未分类）')}</span>
+                          <span className="text-xs text-amber-600">{orphans.length} {t('services', '项')}</span>
+
+                          {someSelected && (
+                            <div className="flex items-center gap-2 ml-auto">
+                              <span className="text-xs text-amber-700">{selectedOrphans.size} {t('selected', '已选')}</span>
+                              <AdminSelect
+                                size="sm"
+                                value={moveTarget}
+                                onChange={setMoveTarget}
+                                options={CATEGORY_OPTIONS}
+                              />
+                              <button
+                                onClick={moveOrphans}
+                                disabled={!moveTarget || moving}
+                                className="h-9 px-3 rounded-lg bg-[#b8864a] text-white text-xs font-medium disabled:opacity-40 hover:bg-[#a07540] transition-colors whitespace-nowrap"
+                              >
+                                {moving ? t('Moving…', '移动中…') : t('Move to category', '归入分类')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Rows with checkboxes */}
+                        <table className="w-full text-sm">
+                          <tbody>
+                            {orphans.map((svc, idx) => (
+                              <tr key={svc.name} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50">
+                                <td className="pl-4 py-2.5 w-8">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedOrphans.has(svc.name)}
+                                    onChange={() => toggleOne(svc.name)}
+                                    className="w-4 h-4 rounded accent-[#b8864a] cursor-pointer"
+                                  />
+                                </td>
+                                <td className="px-4 py-2.5 text-stone-400 text-xs w-8">{idx + 1}</td>
+                                <td className="px-4 py-2.5 pl-8">
+                                  <input
+                                    className={`${inputCls} w-full`}
+                                    defaultValue={svc.name}
+                                    onBlur={(e) => updateServiceName(svc, e.target.value)}
+                                  />
+                                </td>
+                                <td className="px-4 py-2.5 w-24">
+                                  <button
+                                    onClick={() => toggleServiceActive(svc)}
+                                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                                      svc.active
+                                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                        : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                    }`}
+                                  >
+                                    {svc.active ? t('On', '启用') : t('Off', '停用')}
+                                  </button>
+                                </td>
+                                <td className="px-4 py-2.5 text-right w-16">
+                                  <button
+                                    onClick={() => deleteService(svc.name)}
+                                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                                  >
+                                    {t('Delete', '删除')}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                      <table className="w-full text-sm">
-                        <tbody>
-                          {orphans.map((svc, idx) => (
-                            <ServiceRow key={svc.name} svc={svc} idx={idx} />
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
             })()}

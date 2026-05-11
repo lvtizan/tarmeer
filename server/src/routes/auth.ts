@@ -145,6 +145,7 @@ router.post('/company/profile', authenticate, companyProfile.upsertProfile);
 router.get('/company/profile', authenticate, companyProfile.getProfile);
 router.get('/company/projects', authenticate, companyProfile.getCompanyProjects);
 router.get('/company/services', companyProfile.getServiceOptions);
+router.get('/company/service-groups', companyProfile.getServiceGroups);
 
 // Portfolio scrape from URL
 router.post('/company/scrape-portfolio', authenticate, async (req: any, res: any) => {

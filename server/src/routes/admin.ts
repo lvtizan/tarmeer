@@ -85,6 +85,7 @@ import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '..
 import {
   listCompanyTypes, createCompanyType, updateCompanyType, deleteCompanyType,
   listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService,
+  batchCategorizeServices,
 } from '../controllers/enumAdminController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
@@ -434,6 +435,7 @@ router.put('/enums/company-types/:slug', requireAdmin, updateCompanyType);
 router.delete('/enums/company-types/:slug', requireAdmin, deleteCompanyType);
 router.get('/enums/company-services', listCompanyServices);
 router.post('/enums/company-services', requireAdmin, createCompanyService);
+router.put('/enums/company-services/batch-categorize', requireAdmin, batchCategorizeServices);
 router.put('/enums/company-services/:name', requireAdmin, updateCompanyService);
 router.delete('/enums/company-services/:name', requireAdmin, deleteCompanyService);
 

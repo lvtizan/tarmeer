@@ -80,7 +80,7 @@ export async function deleteCompanyType(req: any, res: any) {
 export async function listCompanyServices(req: any, res: any) {
   try {
     const [rows] = await pool.execute(
-      'SELECT name, sort_order, active FROM company_services ORDER BY sort_order, name'
+      'SELECT name, sort_order, active, category FROM company_services ORDER BY sort_order, name'
     );
     res.json({ services: rows });
   } catch (error) {
@@ -111,12 +111,13 @@ export async function createCompanyService(req: any, res: any) {
 export async function updateCompanyService(req: any, res: any) {
   try {
     const name = decodeURIComponent(req.params.name);
-    const { sort_order, active, name: newName } = req.body;
+    const { sort_order, active, name: newName, category } = req.body;
     const sets: string[] = [];
     const values: any[] = [];
     if (newName !== undefined) { sets.push('name = ?'); values.push(String(newName).slice(0, 200)); }
     if (sort_order !== undefined) { sets.push('sort_order = ?'); values.push(Number(sort_order)); }
     if (active !== undefined) { sets.push('active = ?'); values.push(active ? 1 : 0); }
+    if (category !== undefined) { sets.push('category = ?'); values.push(category ? String(category).slice(0, 100) : null); }
     if (sets.length === 0) return res.status(400).json({ error: 'Nothing to update.' });
     values.push(name);
     await pool.execute(`UPDATE company_services SET ${sets.join(', ')} WHERE name = ?`, values);
@@ -125,6 +126,29 @@ export async function updateCompanyService(req: any, res: any) {
   } catch (error) {
     console.error('updateCompanyService error:', error);
     res.status(500).json({ error: 'Failed to update service.' });
+  }
+}
+
+export async function batchCategorizeServices(req: any, res: any) {
+  try {
+    const { names, category } = req.body;
+    if (!Array.isArray(names) || names.length === 0) {
+      return res.status(400).json({ error: 'names array required.' });
+    }
+    if (!category || typeof category !== 'string') {
+      return res.status(400).json({ error: 'category string required.' });
+    }
+    const catValue = category.slice(0, 100);
+    const placeholders = names.map(() => '?').join(', ');
+    await pool.execute(
+      `UPDATE company_services SET category = ? WHERE name IN (${placeholders})`,
+      [catValue, ...names]
+    );
+    invalidateEnumCache();
+    res.json({ message: `Categorized ${names.length} service(s) into "${catValue}".` });
+  } catch (error) {
+    console.error('batchCategorizeServices error:', error);
+    res.status(500).json({ error: 'Failed to categorize services.' });
   }
 }
 

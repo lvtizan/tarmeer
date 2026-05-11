@@ -254,3 +254,61 @@ export async function getServiceOptions(_req: any, res: any) {
     res.status(500).json({ error: 'Failed to load services.' });
   }
 }
+
+/**
+ * GET /api/company/service-groups
+ * Return services grouped by category, for the service-picker UI.
+ * Services with DB category set take precedence; others fall back to hardcoded mapping.
+ */
+export async function getServiceGroups(_req: any, res: any) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT name, category FROM company_services WHERE active = 1 ORDER BY sort_order, name'
+    ) as any[];
+
+    // Build category → names map from DB
+    const dbCat = new Map<string, string[]>();
+    const noCat: string[] = [];
+    for (const row of rows) {
+      if (row.category) {
+        if (!dbCat.has(row.category)) dbCat.set(row.category, []);
+        dbCat.get(row.category)!.push(row.name);
+      } else {
+        noCat.push(row.name);
+      }
+    }
+
+    // Merge with hardcoded SERVICE_CATEGORIES (source of truth for category names + base subs)
+    const HARDCODED: { name: string; subs: string[] }[] = [
+      { name: 'Design & Planning', subs: ['Interior Design', 'Architecture', 'Spatial Planning', 'Project Management'] },
+      { name: 'Construction', subs: ['Construction', 'Fit-Out', 'Civil Works'] },
+      { name: 'Design & Build', subs: ['Design & Build', 'Turnkey Solutions', 'Full Package'] },
+      { name: 'Renovation', subs: ['Full Renovation', 'Kitchen Renovation', 'Bathroom Renovation', 'Partial Renovation'] },
+      { name: 'Outdoor & Pools', subs: ['Landscape Design', 'Pool Construction', 'Garden Design', 'Outdoor Lighting'] },
+      { name: 'Home Systems', subs: ['MEP', 'Smart Home & Automation', 'HVAC & Ducting', 'Electrical', 'Plumbing'] },
+      { name: 'Interiors & Furniture', subs: ['Furniture Supply', 'Custom Joinery', 'Curtains & Blinds', 'Flooring', 'Wallpaper & Finishes'] },
+      { name: 'Maintenance', subs: ['General Maintenance', 'Deep Cleaning', 'Handyman Services', 'AC Maintenance'] },
+      { name: 'Specialty Works', subs: ['Glass & Aluminium', 'Stone & Marble', 'Steel Works', 'Waterproofing', 'Fire Fighting & Safety'] },
+    ];
+
+    const result = HARDCODED.map((cat) => {
+      // Start with base subs, add DB-categorized services for this category
+      const subsSet = new Set(cat.subs);
+      const dbSubs = dbCat.get(cat.name) || [];
+      dbSubs.forEach((s) => subsSet.add(s));
+      return { name: cat.name, subs: Array.from(subsSet) };
+    });
+
+    // Add any DB categories not in HARDCODED
+    for (const [catName, subs] of dbCat) {
+      if (!HARDCODED.find((c) => c.name === catName)) {
+        result.push({ name: catName, subs });
+      }
+    }
+
+    res.json({ categories: result });
+  } catch (error) {
+    console.error('getServiceGroups error:', error);
+    res.status(500).json({ error: 'Failed to load service groups.' });
+  }
+}

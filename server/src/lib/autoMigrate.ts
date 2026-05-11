@@ -380,6 +380,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
 
   // Project space type
   { table: 'projects', column: 'space_type', type: 'VARCHAR(100) NULL' },
+
+  // Service category assignment (for grouping orphaned services into known categories)
+  { table: 'company_services', column: 'category', type: 'VARCHAR(100) NULL' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）
