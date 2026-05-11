@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { SCROLL_TIMEOUT_MS } from '../lib/constants';
 import Banner from '../components/home/Banner';
+import HomeSpaceSection from '../components/home/HomeSpaceSection';
 import HomeDesignSection from '../components/home/HomeDesignSection';
 import HomeSupplierSection from '../components/home/HomeSupplierSection';
 
@@ -82,6 +83,7 @@ export default function HomePage() {
       </Helmet>
       <Banner />
       <HomeDesignSection />
+      <HomeSpaceSection />
       <HomeSupplierSection />
     </>
   );
