@@ -74,7 +74,6 @@ export default function SupplierDetailPage() {
     setLightbox({ images, labels, idx });
   const closeLightbox = () => setLightbox(null);
   const [productCatFilter, setProductCatFilter] = useState<string | null>(null);
-  const [productRatios, setProductRatios] = useState<Record<number, 'portrait' | 'landscape'>>({});
   const [logoError, setLogoError] = useState(false);
 
   const [showFloatingForm, setShowFloatingForm] = useState(false);
@@ -227,7 +226,7 @@ export default function SupplierDetailPage() {
       <div className="relative overflow-hidden">
         {heroImage ? (
           <div className="absolute inset-0">
-            <SmartImage src={heroImage} alt="" className="w-full h-full object-cover" />
+            <SmartImage src={heroImage} variant="medium" alt="" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#1c1917]/90 via-[#1c1917]/75 to-[#1c1917]/60" />
           </div>
         ) : (
@@ -385,36 +384,23 @@ export default function SupplierDetailPage() {
                     ))}
                   </div>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 items-start">
-                  {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => {
-                    const ratio = productRatios[p.id];
-                    const isPortrait = ratio === 'portrait';
-                    const containerAspect = ratio === undefined
-                      ? 'aspect-[4/3]'
-                      : isPortrait ? 'aspect-[2/3]' : 'aspect-[16/9]';
-                    const imgFit = isPortrait ? 'object-contain' : 'object-cover';
-                    const bgColor = isPortrait ? 'bg-white' : 'bg-stone-100';
-                    return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
                     <div key={p.id} className="group cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
-                      <div className={`${containerAspect} rounded-2xl overflow-hidden ${bgColor} border border-stone-200`}>
+                      <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
                         <SmartImage
                           src={p.image_url}
+                          variant="thumb"
                           alt={p.title || ''}
-                          className={`w-full h-full ${imgFit} group-hover:scale-105 transition duration-300`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                           loading="lazy"
-                          onLoad={(e) => {
-                            const img = e.currentTarget;
-                            const r = img.naturalWidth / img.naturalHeight;
-                            setProductRatios(prev => ({ ...prev, [p.id]: r < 0.9 ? 'portrait' : 'landscape' }));
-                          }}
                         />
                       </div>
                       {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
                       {p.title && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>}
                       {p.description && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>}
                     </div>
-                  );
-                  })}
+                  ))}
                 </div>
               </>
             ) : (

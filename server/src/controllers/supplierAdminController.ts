@@ -2,6 +2,7 @@ import pool from '../config/database';
 import path from 'path';
 import fs from 'fs/promises';
 import { enqueueVariants } from '../lib/variantWorker';
+import { processUploadedImage } from '../lib/imageVariants';
 
 /**
  * 管理员替换 catalog PDF 文件 —— 用于"把联系方式打白后回写"工作流。
@@ -62,16 +63,13 @@ export async function adminReplaceProductImage(req: any, res: any) {
       [productId, supplierId]);
     if ((prodRows as any[]).length === 0) return res.status(404).json({ error: 'product not found' });
 
-    const mimeToExt: Record<string, string> = {
-      'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
-    };
-    const ext = mimeToExt[req.file.mimetype] || 'jpg';
+    const { buffer: processedBuffer, ext: processedExt } = await processUploadedImage(req.file.buffer);
     const ts = Date.now();
     const dirSlug = (sup.slug || `id${sup.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-    const relPath = `suppliers/${dirSlug}/photos/${productId}_${ts}.${ext}`;
+    const relPath = `suppliers/${dirSlug}/photos/${productId}_${ts}.${processedExt}`;
     const absPath = path.resolve(process.cwd(), 'public/uploads', relPath);
     await fs.mkdir(path.dirname(absPath), { recursive: true });
-    await fs.writeFile(absPath, req.file.buffer, { mode: 0o644 });
+    await fs.writeFile(absPath, processedBuffer, { mode: 0o644 });
     enqueueVariants(absPath);
 
     const newUrl = `/uploads/${relPath}`;
@@ -298,16 +296,13 @@ export async function adminUploadProjectImage(req: any, res: any) {
     const sup = (supRows as any[])[0];
     if (!sup) return res.status(404).json({ error: 'supplier not found' });
 
-    const mimeToExt: Record<string, string> = {
-      'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
-    };
-    const ext = mimeToExt[req.file.mimetype] || 'jpg';
+    const { buffer: processedBuffer, ext: processedExt } = await processUploadedImage(req.file.buffer);
     const ts = Date.now();
     const dirSlug = (sup.slug || `id${sup.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-    const relPath = `suppliers/${dirSlug}/projects/${ts}.${ext}`;
+    const relPath = `suppliers/${dirSlug}/projects/${ts}.${processedExt}`;
     const absPath = path.resolve(process.cwd(), 'public/uploads', relPath);
     await fs.mkdir(path.dirname(absPath), { recursive: true, mode: 0o755 });
-    await fs.writeFile(absPath, req.file.buffer, { mode: 0o644 });
+    await fs.writeFile(absPath, processedBuffer, { mode: 0o644 });
     enqueueVariants(absPath);
 
     res.json({ url: `/uploads/${relPath}` });

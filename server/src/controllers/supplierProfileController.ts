@@ -2,6 +2,7 @@ import pool from '../config/database';
 import fs from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import { enqueueVariants } from '../lib/variantWorker';
 
 export async function uploadLicense(req: any, res: any) {
   try {
@@ -23,6 +24,7 @@ export async function uploadLicense(req: any, res: any) {
     await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
     const filePath = path.join(uploadDir, fileName);
     await fs.writeFile(filePath, buffer, { mode: 0o644 });
+    if (mimeType.startsWith('image/')) enqueueVariants(filePath);
     res.json({ url: `/uploads/suppliers/licenses/${fileName}` });
   } catch (error) {
     console.error('Upload license error:', error);

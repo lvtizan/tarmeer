@@ -4,6 +4,7 @@ import { createWriteStream } from 'fs';
 import path from 'path';
 import os from 'os';
 import { randomUUID } from 'crypto';
+import { enqueueVariants } from '../lib/variantWorker';
 
 async function getProfileId(supplierUserId: number): Promise<number | null> {
   const [rows] = await pool.execute(
@@ -33,6 +34,7 @@ export async function uploadCatalogFile(req: any, res: any) {
     await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
     const filePath = path.join(uploadDir, fileName);
     await fs.writeFile(filePath, file.buffer, { mode: 0o644 });
+    if (mimeType.startsWith('image/')) enqueueVariants(filePath);
     const originalName = req.body.original_name || file.originalname || '';
     const baseName = originalName ? path.basename(originalName, path.extname(originalName)) : '';
     res.json({ url: `/uploads/suppliers/catalogs/${fileName}`, original_name: baseName });

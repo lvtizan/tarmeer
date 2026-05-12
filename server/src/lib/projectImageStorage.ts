@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { enqueueVariants } from './variantWorker';
+import { processUploadedImage } from './imageVariants';
 import type { NormalizedImage } from './projectPersistence';
 
 const DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/;
@@ -70,15 +71,15 @@ async function persistSingleImageDataUrl(dataUrl: string, designerId: unknown, p
     throw new Error('Image payload is empty.');
   }
 
-  const extension = getFileExtensionByMime(mimeType);
+  const { buffer: processedBuffer, ext: processedExt } = await processUploadedImage(buffer);
   const subDirs = buildProjectImagePathSegments(designerId, projectId);
-  const fileName = `${randomUUID()}.${extension}`;
+  const fileName = `${randomUUID()}.${processedExt}`;
   const absoluteDir = path.join(PROJECT_UPLOADS_ABSOLUTE_DIR, ...subDirs);
   const absoluteFilePath = path.join(absoluteDir, fileName);
   const relativeUrl = `${PROJECT_UPLOADS_RELATIVE_DIR}/${subDirs.join('/')}/${fileName}`;
 
   await fs.mkdir(absoluteDir, { recursive: true, mode: 0o755 });
-  await fs.writeFile(absoluteFilePath, buffer, { mode: 0o644 });
+  await fs.writeFile(absoluteFilePath, processedBuffer, { mode: 0o644 });
   enqueueVariants(absoluteFilePath);
   return relativeUrl;
 }

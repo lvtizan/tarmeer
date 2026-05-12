@@ -2,6 +2,35 @@ import sharp from 'sharp';
 import path from 'path';
 import { promises as fs } from 'fs';
 
+/** Max long edge for stored originals (px). Prevents multi-MB originals on disk. */
+const MAX_ORIGINAL_LONG_EDGE = 2400;
+/** WebP quality for stored originals. */
+const ORIGINAL_QUALITY = 88;
+
+/**
+ * Process an uploaded image buffer before writing to disk:
+ * - Resizes so the long edge ≤ 2400px (never enlarges)
+ * - Converts to WebP at quality 88
+ *
+ * Returns the processed buffer and the fixed extension 'webp'.
+ * If sharp throws (e.g. corrupt or non-image data), returns the original buffer unchanged.
+ */
+export async function processUploadedImage(buffer: Buffer): Promise<{ buffer: Buffer; ext: 'webp' }> {
+  try {
+    const processed = await sharp(buffer)
+      .resize(MAX_ORIGINAL_LONG_EDGE, MAX_ORIGINAL_LONG_EDGE, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .webp({ quality: ORIGINAL_QUALITY })
+      .toBuffer();
+    return { buffer: processed, ext: 'webp' };
+  } catch {
+    // Fallback: return original unchanged (will still get variant generation)
+    return { buffer, ext: 'webp' };
+  }
+}
+
 const VARIANTS = [
   { suffix: '-blur', maxLongEdge: 40, quality: 20 },
   { suffix: '-thumb', maxLongEdge: 600, quality: 78 },    // mobile cards

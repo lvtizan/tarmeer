@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { enqueueVariants } from '../lib/variantWorker';
+import { processUploadedImage } from '../lib/imageVariants';
 
 export async function uploadProductImage(req: any, res: any) {
   try {
@@ -16,12 +17,12 @@ export async function uploadProductImage(req: any, res: any) {
       'image/webp': 'webp', 'image/gif': 'gif',
     };
     const ext = extMap[mimeType] || 'jpg';
-    const buffer = file.buffer;
-    const fileName = `${userId}-${randomUUID()}.${ext}`;
+    const { buffer: processedBuffer, ext: processedExt } = await processUploadedImage(file.buffer);
+    const fileName = `${userId}-${randomUUID()}.${processedExt}`;
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'suppliers', 'products');
     await fs.mkdir(uploadDir, { recursive: true, mode: 0o755 });
     const filePath = path.join(uploadDir, fileName);
-    await fs.writeFile(filePath, buffer, { mode: 0o644 });
+    await fs.writeFile(filePath, processedBuffer, { mode: 0o644 });
     enqueueVariants(filePath);
     res.json({ url: `/uploads/suppliers/products/${fileName}` });
   } catch (error) {
