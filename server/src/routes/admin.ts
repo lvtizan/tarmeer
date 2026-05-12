@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import crypto from 'crypto';
 import sharp from 'sharp';
 import pool from '../config/database';
+import { enqueueVariants } from '../lib/variantWorker';
 import { adminLoginRateLimit } from '../middleware/antiScraping';
 import { analyticsEvents } from '../lib/analyticsEvents';
 import {
@@ -394,6 +395,7 @@ router.post('/showcase-images/optimize', requireSuperAdmin, async (req: any, res
       .webp({ quality: 82 })
       .toFile(filePath);
     await fs.chmod(filePath, 0o644);
+    enqueueVariants(filePath);
     res.json({ optimizedUrl: `/uploads/showcase/${filename}` });
   } catch (err: any) {
     console.error('Showcase optimize error:', err);

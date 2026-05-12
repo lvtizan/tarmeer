@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { generateVariants } from './imageVariants';
+import { enqueueVariants } from './variantWorker';
 import type { NormalizedImage } from './projectPersistence';
 
 const DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/;
@@ -79,8 +79,7 @@ async function persistSingleImageDataUrl(dataUrl: string, designerId: unknown, p
 
   await fs.mkdir(absoluteDir, { recursive: true, mode: 0o755 });
   await fs.writeFile(absoluteFilePath, buffer, { mode: 0o644 });
-  // Generate thumbnail variants (blur, thumb, medium)
-  generateVariants(absoluteFilePath).catch(() => {});
+  enqueueVariants(absoluteFilePath);
   return relativeUrl;
 }
 

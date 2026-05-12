@@ -1,6 +1,7 @@
 import pool from '../config/database';
 import path from 'path';
 import fs from 'fs/promises';
+import { enqueueVariants } from '../lib/variantWorker';
 
 /**
  * 管理员替换 catalog PDF 文件 —— 用于"把联系方式打白后回写"工作流。
@@ -71,6 +72,7 @@ export async function adminReplaceProductImage(req: any, res: any) {
     const absPath = path.resolve(process.cwd(), 'public/uploads', relPath);
     await fs.mkdir(path.dirname(absPath), { recursive: true });
     await fs.writeFile(absPath, req.file.buffer, { mode: 0o644 });
+    enqueueVariants(absPath);
 
     const newUrl = `/uploads/${relPath}`;
     await pool.execute(
@@ -306,6 +308,7 @@ export async function adminUploadProjectImage(req: any, res: any) {
     const absPath = path.resolve(process.cwd(), 'public/uploads', relPath);
     await fs.mkdir(path.dirname(absPath), { recursive: true, mode: 0o755 });
     await fs.writeFile(absPath, req.file.buffer, { mode: 0o644 });
+    enqueueVariants(absPath);
 
     res.json({ url: `/uploads/${relPath}` });
   } catch (error) {

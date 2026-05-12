@@ -3,6 +3,7 @@ import axios from 'axios';
 import fs from 'fs/promises';
 import path from 'path';
 import pool from '../config/database';
+import { enqueueVariants } from './variantWorker';
 
 interface OAuthProfile {
   id: string;
@@ -60,6 +61,7 @@ export async function downloadAvatar(
       maxContentLength: 5 * 1024 * 1024, // 5MB max
     });
     await fs.writeFile(filepath, Buffer.from(response.data), { mode: 0o644 });
+    enqueueVariants(filepath);
     console.log('[avatar] Saved to:', filepath);
 
     return `/uploads/avatars/${filename}`;
