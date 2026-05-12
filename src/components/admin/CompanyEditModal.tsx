@@ -3,6 +3,7 @@ import { X, ChevronDown, Check } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { adminApi } from '../../lib/adminApi';
 import AdminSelect from '../ui/AdminSelect';
+import PhoneCountryInput from '../ui/PhoneCountryInput';
 
 interface Props {
   type: 'scraped' | 'profile';
@@ -234,7 +235,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       {/* 50vw width, min 640px, max 900px */}
       <div
-        className="bg-white rounded-2xl w-[50vw] min-w-[640px] max-w-[900px] max-h-[90vh] flex flex-col shadow-xl"
+        className="bg-white rounded-2xl w-[50vw] min-w-[640px] max-w-[900px] h-[90vh] flex flex-col shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -277,7 +278,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Phone</label>
-              <input className={inputCls} value={data.phone || ''} onChange={e => set('phone', e.target.value)} />
+              <PhoneCountryInput value={data.phone || ''} onChange={val => set('phone', val)} />
             </div>
             <div>
               <label className={labelCls}>{isScraped ? 'Email' : 'Website'}</label>
@@ -330,7 +331,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
             <label className={labelCls}>Description</label>
             <textarea
               className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none"
-              rows={3}
+              rows={5}
               value={data.description || ''}
               onChange={e => set('description', e.target.value)}
             />
@@ -407,7 +408,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                       key={cat.name}
                       type="button"
                       onClick={() => setActiveServiceTab(cat.name)}
-                      className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition ${
                         isActive
                           ? 'bg-[#b8864a] text-white'
                           : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
@@ -438,7 +439,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                         key={s}
                         type="button"
                         onClick={() => toggleArrayItem('services', s)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${
                           on ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                         }`}
                       >
