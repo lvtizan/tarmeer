@@ -11,6 +11,8 @@ interface ActivityLogEntry {
   user_id: number | null;
   user_name: string | null;
   user_role: string | null;
+  ip_hint_name: string | null;
+  ip_hint_role: string | null;
   action: string;
   target_type: string | null;
   target_id: number | null;
@@ -152,6 +154,21 @@ function extractDate(dateStr: string): string { return dateStr.slice(0, 10); }
 
 // ─── Event Card ──────────────────────────────────────────────────────────────
 
+function EntryDetail({ e }: { e: ActivityLogEntry }) {
+  const m = e.metadata as Record<string, string> | null;
+  if (e.target_type === 'inquiry' && m) {
+    const parts = [
+      m.company && `公司: ${m.company}`,
+      m.submitter && `提交人: ${m.submitter}`,
+      m.city && `城市: ${m.city}`,
+      m.area && `面积: ${m.area}`,
+      m.phone && `电话: ${m.phone}`,
+    ].filter(Boolean);
+    return <div className="text-xs text-[#6b6b6b]">{parts.join(' · ') || e.description || `#${e.target_id}`}</div>;
+  }
+  return <div className="text-xs text-[#6b6b6b]">{e.description || e.target_name || `#${e.target_id}`}</div>;
+}
+
 function AggregatedEntry({ group, onUserClick }: {
   group: AggregatedGroup;
   onUserClick: (userId: number, role: string | null) => void;
@@ -163,52 +180,61 @@ function AggregatedEntry({ group, onUserClick }: {
   const targetLabel = TARGET_TYPE_LABELS[group.target_type || ''] || group.target_type || '';
   const timeStr = formatAdminDateTime(group.latest.created_at).split(' ').slice(1).join(' ');
 
+  // Resolve anonymous users: use ip_hint or masked IP
+  const isAnon = !group.user_id;
+  const hintName = group.latest.ip_hint_name;
+  const hintRole = group.latest.ip_hint_role;
+  const maskedIp = group.latest.ip ? group.latest.ip.replace(/\.\d+$/, '.xxx') : null;
+  const displayName = group.user_id
+    ? (group.user_name || `用户 #${group.user_id}`)
+    : (hintName ? `访客（疑似 ${hintName}）` : (maskedIp ? `访客 ${maskedIp}` : '未知访客'));
+  const displayRole = group.user_role || (isAnon && hintRole) || null;
+
+  // Description line
+  const descLine = group.latest.description ||
+    (actionLabel + (targetLabel ? `了${targetLabel}` : '') + (group.latest.target_name ? ` — ${group.latest.target_name}` : ''));
+
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl p-4 flex gap-3 hover:border-[#d0b896] hover:shadow-sm transition-all">
-      {getAvatar(group.user_name, group.user_role)}
+    <div className="bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 flex gap-3 hover:border-[#d0b896] hover:shadow-sm transition-all">
+      {getAvatar(isAnon ? hintName : group.user_name, displayRole)}
 
       <div className="flex-1 min-w-0">
-        {/* User + time row */}
-        <div className="flex items-center">
+        {/* Row 1: user + time */}
+        <div className="flex items-center gap-1.5">
           {group.user_id ? (
-            <button onClick={() => onUserClick(group.user_id!, group.user_role)} className="text-sm font-semibold text-[#1c1917] hover:text-[#B8864A] transition-colors">
-              {group.user_name || `用户 #${group.user_id}`}
+            <button onClick={() => onUserClick(group.user_id!, group.user_role)} className="text-sm font-semibold text-[#1c1917] hover:text-[#B8864A] transition-colors leading-tight">
+              {displayName}
             </button>
           ) : (
-            <span className="text-sm font-semibold text-[#1c1917]">{group.user_name || '未知用户'}</span>
+            <span className={`text-sm font-semibold leading-tight ${hintName ? 'text-stone-400 italic' : 'text-stone-400'}`}>{displayName}</span>
           )}
-          {getRoleBadge(group.user_role)}
+          {getRoleBadge(displayRole)}
+          {isMultiple && <span className="text-[11px] text-stone-400 bg-stone-50 rounded px-1.5 py-0.5 ml-0.5">×{group.entries.length}</span>}
           <span className="ml-auto text-xs text-stone-400 tabular-nums shrink-0">{timeStr}</span>
         </div>
 
-        {/* Action description */}
-        <p className="text-sm text-[#44403c] mt-1">
-          {actionLabel}
-          {targetLabel ? `了${targetLabel}` : ''}
-          {!isMultiple && group.latest.target_name && (
-            <span className="text-[#B8864A]"> — {group.latest.target_name}</span>
-          )}
-          {isMultiple && <span className="text-stone-400">（共 {group.entries.length} 个）</span>}
-        </p>
-
-        {/* Meta chips row */}
-        <div className="flex flex-wrap gap-1.5 mt-1.5">
-          {loc && <span className="text-[11px] text-stone-500 bg-stone-50 rounded px-2 py-0.5">📍 {loc}</span>}
-          {group.latest.ip && <span className="text-[11px] text-stone-500 bg-stone-50 rounded px-2 py-0.5">🌐 {group.latest.ip}</span>}
+        {/* Row 2: description + meta inline */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+          <span className="text-[13px] text-[#44403c] leading-snug">
+            {descLine}
+            {isMultiple && !group.latest.description && <span className="text-stone-400 ml-1">（共 {group.entries.length} 个）</span>}
+          </span>
+          {loc && <span className="text-[11px] text-stone-400">📍 {loc}</span>}
+          {group.latest.ip && <span className="text-[11px] text-stone-400">🌐 {group.latest.ip}</span>}
           {group.entries.length > 1 && (
-            <span className="text-[11px] text-stone-500 bg-stone-50 rounded px-2 py-0.5">今日第 {group.entries.length} 次操作</span>
+            <span className="text-[11px] text-stone-400">今日第 {group.entries.length} 次</span>
           )}
           {isMultiple && (
-            <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-[#B8864A] bg-amber-50 rounded px-2 py-0.5 hover:bg-amber-100 transition-colors">
-              {expanded ? '收起' : '展开 diff'}
+            <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-[#B8864A] bg-amber-50 rounded px-1.5 py-0.5 hover:bg-amber-100 transition-colors">
+              {expanded ? '收起' : '展开'}
             </button>
           )}
         </div>
 
         {expanded && isMultiple && (
-          <div className="mt-2 ml-1 border-l-2 border-stone-200 pl-3 space-y-1">
+          <div className="mt-1.5 ml-1 border-l-2 border-stone-100 pl-3 space-y-1">
             {group.entries.map((e) => (
-              <div key={e.id} className="text-xs text-[#6b6b6b]">— {e.target_name || e.description || `#${e.target_id}`}</div>
+              <EntryDetail key={e.id} e={e} />
             ))}
           </div>
         )}

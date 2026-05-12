@@ -38,12 +38,11 @@ import {
   rejectProject,
   getRejectionTemplates,
   getStatsOverview,
-  getActivityLogs,
   getRegistrationStats,
   getRegistrationSources,
   getDailyStatsReport,
 } from '../controllers/designerAdminController';
-import { getActivityLogStats, exportActivityLogs, getTopActiveUsers, getUserTimeline } from '../controllers/activityLogController';
+import { getActivityLogs, getActivityLogStats, exportActivityLogs, getTopActiveUsers, getUserTimeline } from '../controllers/activityLogController';
 import { getVisitorOverview, listVisitors } from '../controllers/visitorAdminController';
 import { listUsers, getUserDetail, updateUserStatus, updateUserRole, editUser, deleteUser, restoreUser, getUserPermissions, updateUserPermissions } from '../controllers/userAdminController';
 import { getInquiries, updateInquiryStatus, exportInquiries, batchDeleteInquiries, batchRestoreInquiries, resendCrmSync } from '../controllers/inquiryController';

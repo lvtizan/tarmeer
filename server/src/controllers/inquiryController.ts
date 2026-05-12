@@ -63,8 +63,16 @@ export async function submitInquiry(req: any, res: any) {
       logActivity({
         userId: req.user?.userId || null, userName: req.body.name || 'Anonymous', userRole: 'homeowner',
         action: 'create', targetType: 'inquiry', targetId: inquiryId,
-        targetName: req.body.source_company_name || '', description: `提交了询盘`,
+        targetName: req.body.source_company_name || '',
+        description: `向「${req.body.source_company_name || '未知公司'}」提交了询盘`,
         ip: getClientIp(req),
+        metadata: {
+          submitter: req.body.name || null,
+          company: req.body.source_company_name || null,
+          city: req.body.city || null,
+          area: req.body.area_range || null,
+          phone: req.body.phone ? String(req.body.phone).slice(0, 4) + '****' : null,
+        },
       }).catch(() => {});
     });
 

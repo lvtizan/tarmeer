@@ -5,6 +5,7 @@ import pool from '../config/database';
 import config from '../config';
 import { AdminUser } from '../middleware/adminAuth';
 import { generatePasswordResetToken, sendAdminPasswordResetEmail } from '../services/emailService';
+import { logActivity as logActivityEvent, getClientIp } from '../lib/activityLogger';
 
 // Check if system is installed (has any admin)
 export async function checkInstallation(req: Request, res: Response) {
@@ -131,8 +132,16 @@ export async function login(req: Request, res: Response) {
       { expiresIn: '7d' }
     );
     
-    // Log activity
+    // Log activity (old admin_activity_logs)
     await logActivity(admin.id, 'login', 'admin', admin.id, { email: admin.email });
+    // Log to unified activity_log for monitoring dashboard
+    setImmediate(() => {
+      logActivityEvent({
+        userId: admin.id, userName: admin.full_name || admin.email, userRole: 'admin',
+        action: 'login', targetType: 'session', description: `管理员「${admin.full_name || admin.email}」登录后台`,
+        ip: getClientIp(req),
+      }).catch(() => {});
+    });
     
     res.json({
       token,

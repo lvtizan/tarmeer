@@ -79,10 +79,10 @@ export async function getTopActiveUsers(req: any, res: any) {
       `SELECT
         al.user_id,
         al.user_role,
-        COALESCE(NULLIF(al.user_name, ''), u.full_name, u.email) AS user_name,
+        COALESCE(NULLIF(ANY_VALUE(al.user_name), ''), ANY_VALUE(u.full_name), ANY_VALUE(u.email)) AS user_name,
         COUNT(*) as event_count,
         MAX(al.created_at) as last_seen,
-        GROUP_CONCAT(DISTINCT al.action ORDER BY al.created_at DESC SEPARATOR ',') as recent_actions
+        GROUP_CONCAT(al.action ORDER BY al.created_at DESC SEPARATOR ',') as recent_actions
        FROM activity_log al
        LEFT JOIN users u ON u.id = al.user_id AND al.user_role != 'admin'
        WHERE al.created_at > NOW() - INTERVAL ${days} DAY
@@ -163,31 +163,42 @@ export async function getActivityLogs(req: any, res: any) {
 
     const { role, action, target_type, search, start_date, end_date } = req.query;
 
-    let where = 'WHERE created_at > NOW() - INTERVAL 90 DAY';
+    let where = 'WHERE al.created_at > NOW() - INTERVAL 90 DAY';
     const params: any[] = [];
 
-    if (role) { where += ' AND user_role = ?'; params.push(role); }
-    if (action) { where += ' AND action = ?'; params.push(action); }
-    if (target_type) { where += ' AND target_type = ?'; params.push(target_type); }
+    if (role) { where += ' AND al.user_role = ?'; params.push(role); }
+    if (action) { where += ' AND al.action = ?'; params.push(action); }
+    if (target_type) { where += ' AND al.target_type = ?'; params.push(target_type); }
     if (search) {
-      where += ' AND (user_name LIKE ? OR target_name LIKE ? OR description LIKE ?)';
+      where += ' AND (al.user_name LIKE ? OR al.target_name LIKE ? OR al.description LIKE ?)';
       const s = `%${search}%`;
       params.push(s, s, s);
     }
-    if (start_date) { where += ' AND created_at >= ?'; params.push(start_date); }
-    if (end_date) { where += ' AND created_at <= ?'; params.push(`${end_date} 23:59:59`); }
+    if (start_date) { where += ' AND al.created_at >= ?'; params.push(start_date); }
+    if (end_date) { where += ' AND al.created_at <= ?'; params.push(`${end_date} 23:59:59`); }
 
     const [countRows] = await pool.execute(
-      `SELECT COUNT(*) as total FROM activity_log ${where}`, params
+      `SELECT COUNT(*) as total FROM activity_log al ${where}`, params
     );
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.query(
       `SELECT al.*,
-        COALESCE(NULLIF(al.user_name, ''), au.full_name, au.email, u.full_name, u.email) AS user_name
+        COALESCE(NULLIF(al.user_name, ''), au.full_name, au.email, u.full_name, u.email) AS user_name,
+        CASE WHEN al.user_id IS NULL THEN ip_hint.hint_name END AS ip_hint_name,
+        CASE WHEN al.user_id IS NULL THEN ip_hint.hint_role END AS ip_hint_role
        FROM activity_log al
        LEFT JOIN admin_users au ON au.id = al.user_id AND al.user_role = 'admin'
        LEFT JOIN users u ON u.id = al.user_id AND al.user_role != 'admin'
+       LEFT JOIN (
+         SELECT ip,
+           ANY_VALUE(user_name) AS hint_name,
+           ANY_VALUE(user_role) AS hint_role
+         FROM activity_log
+         WHERE user_id IS NOT NULL AND user_name IS NOT NULL AND ip IS NOT NULL
+           AND created_at > NOW() - INTERVAL 90 DAY
+         GROUP BY ip
+       ) ip_hint ON ip_hint.ip = al.ip AND al.user_id IS NULL
        ${where} ORDER BY al.created_at DESC LIMIT ${limit} OFFSET ${offset}`,
       params
     );
