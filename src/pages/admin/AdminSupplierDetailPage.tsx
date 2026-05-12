@@ -5,7 +5,7 @@ import { useAdminT } from '../../hooks/useAdminLang';
 import { showToast } from '../../components/ui/Toast';
 import SmartImage from '../../components/ui/SmartImage';
 import {
-  ArrowLeft, Trash2, ExternalLink, Pencil,
+  ArrowLeft, Trash2, ExternalLink, Pencil, Check,
   Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon,
   Plus, X, Upload,
 } from 'lucide-react';
@@ -302,7 +302,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
         </div>
         <div className="p-5 space-y-4">
           {product.image_url && (
-            <img src={product.image_url} alt="" className="w-full aspect-[4/3] object-cover rounded-lg bg-stone-100" />
+            <img src={product.image_url} alt="" className="w-full aspect-video object-cover rounded-lg bg-stone-100" />
           )}
           <div>
             <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title', '名称')}</label>
@@ -724,15 +724,23 @@ export default function AdminSupplierDetailPage() {
                             <Layers className="w-8 h-8" />
                           </div>
                         )}
-                        {imgs[0] && (
-                          <button
-                            onClick={() => setCover(imgs[0])}
-                            className="absolute inset-x-0 bottom-0 py-1.5 bg-black/60 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
-                          >
-                            <ImageIcon className="w-3 h-3" />
-                            {t('Set as Cover', '设为封面')}
-                          </button>
-                        )}
+                        {imgs[0] && (() => {
+                          const isCover = supplier.cover_image_url === imgs[0];
+                          return (
+                            <button
+                              onClick={() => setCover(imgs[0])}
+                              className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md transition ${
+                                isCover
+                                  ? 'bg-[#b8864a] text-white opacity-100'
+                                  : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
+                              }`}
+                              title={isCover ? t('Currently set as cover', '当前封面') : t('Set as Cover', '设为封面')}
+                            >
+                              {isCover ? <Check className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                              {isCover ? t('Cover', '封面') : t('Set as Cover', '设为封面')}
+                            </button>
+                          );
+                        })()}
                         {imgs.length > 1 && (
                           <span className="absolute bottom-2 right-2 text-[11px] bg-black/50 text-white px-1.5 py-0.5 rounded-md group-hover:opacity-0 transition-opacity">
                             {imgs.length} {t('photos', '张')}
@@ -841,7 +849,7 @@ export default function AdminSupplierDetailPage() {
                 <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
                   {products.map((p: any) => (
                     <div key={p.id} className="group">
-                      <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
+                      <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
                         <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
                         {/* Delete — top right */}
                         <button

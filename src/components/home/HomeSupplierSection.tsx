@@ -61,7 +61,7 @@ export default function HomeSupplierSection() {
               to={`/materials/suppliers/${s.slug}`}
               className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_12px_32px_rgba(28,25,23,0.08)]"
             >
-              <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+              <div className="relative aspect-video overflow-hidden bg-stone-100">
                 {s.cover_image_url ? (
                   <img
                     src={resolveVariantUrl(s.cover_image_url, 'thumb')}
