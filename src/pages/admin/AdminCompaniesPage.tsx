@@ -292,8 +292,14 @@ export default function AdminCompaniesPage() {
   };
 
   const [newAppCount, setNewAppCount] = useState(0);
+  const [pendingProjectsHint, setPendingProjectsHint] = useState<{ companies: number; projects: number } | null>(null);
   useEffect(() => {
-    adminApi.getNotificationCounts().then(d => setNewAppCount(d.newCompanyApps || 0)).catch(() => {});
+    adminApi.getNotificationCounts().then(d => {
+      setNewAppCount(d.newCompanyApps || 0);
+      const c = d.pendingProjectCompanies || 0;
+      const p = d.pendingProjectCount || 0;
+      setPendingProjectsHint(c > 0 ? { companies: c, projects: p } : null);
+    }).catch(() => {});
   }, [tab]);
   const hasNewApplications = newAppCount > 0;
 
@@ -313,10 +319,10 @@ export default function AdminCompaniesPage() {
       {/* ── Stat tab cards ── */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {([
-          { key: 'companies' as Tab, label: 'Companies', count: profileBadgeTotal, dot: false },
-          { key: 'directory' as Tab, label: 'Directory', count: directoryBadgeTotal, dot: false },
-          { key: 'applications' as Tab, label: 'Applications', count: pendingBadgeTotal, dot: hasNewApplications },
-        ]).map(({ key, label, count, dot }) => (
+          { key: 'companies' as Tab, label: 'Companies', count: profileBadgeTotal, dot: false, hint: null as string | null },
+          { key: 'directory' as Tab, label: 'Directory', count: directoryBadgeTotal, dot: false, hint: null as string | null },
+          { key: 'applications' as Tab, label: 'Applications', count: pendingBadgeTotal, dot: hasNewApplications, hint: pendingProjectsHint ? `${pendingProjectsHint.companies}个装企上传了${pendingProjectsHint.projects}个项目，待审核` : null },
+        ]).map(({ key, label, count, dot, hint }) => (
           <button
             key={key}
             onClick={() => {
@@ -340,6 +346,11 @@ export default function AdminCompaniesPage() {
             <p className={`text-[10px] sm:text-[11px] font-medium leading-tight ${tab === key ? 'text-white/75' : 'text-stone-400'}`}>
               {label}
             </p>
+            {hint && (
+              <p className={`text-[10px] leading-tight mt-1 ${tab === key ? 'text-white' : 'text-stone-500'}`}>
+                {hint}
+              </p>
+            )}
           </button>
         ))}
       </div>

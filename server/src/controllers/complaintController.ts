@@ -168,6 +168,8 @@ export async function getNewCounts(req: any, res: any) {
     let newInquiries = 0;
     let newUsers = 0;
     let newFeedback = 0;
+    let pendingProjectCompanies = 0;
+    let pendingProjectCount = 0;
 
     if (adminId) {
       const [seenInquiries, seenCompanies, seenComplaints, seenUsers] = await Promise.all([
@@ -261,7 +263,16 @@ export async function getNewCounts(req: any, res: any) {
 
     newFeedback = await getUnreadFeedbackCount();
 
-    res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers, newFeedback });
+    try {
+      const [rows] = await pool.execute(
+        `SELECT COUNT(DISTINCT company_profile_id) as companies, COUNT(*) as total
+         FROM projects WHERE status = 'pending' AND deleted_at IS NULL`
+      ) as any[];
+      pendingProjectCompanies = rows[0]?.companies || 0;
+      pendingProjectCount = rows[0]?.total || 0;
+    } catch { /* non-critical */ }
+
+    res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers, newFeedback, pendingProjectCompanies, pendingProjectCount });
   } catch (error) {
     console.error('Get new counts error:', error);
     res.status(500).json({ error: 'Failed to get notification counts.' });
