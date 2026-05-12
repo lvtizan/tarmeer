@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { resolveVariantUrl, resolveImageUrl } from '../../lib/imageUrl';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -63,7 +64,8 @@ export default function HomeSupplierSection() {
               <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
                 {s.cover_image_url ? (
                   <img
-                    src={s.cover_image_url}
+                    src={resolveVariantUrl(s.cover_image_url, 'thumb')}
+                    onError={(e) => { e.currentTarget.src = resolveImageUrl(s.cover_image_url); }}
                     alt={s.company_name}
                     loading="lazy"
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"

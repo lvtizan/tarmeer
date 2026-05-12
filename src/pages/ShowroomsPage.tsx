@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GOOGLE_MAPS_URL } from '../lib/constants'; // used in showroom infobox (Task 2)
 import { MapPin, Clock, Package } from 'lucide-react';
+import { resolveVariantUrl, resolveImageUrl } from '../lib/imageUrl';
 import SupplierLeadModal from '../components/suppliers/SupplierLeadModal';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '../lib/supplierConstants';
 import AdminSelect from '../components/ui/AdminSelect';
@@ -54,7 +55,8 @@ function SupplierCard({ s }: { s: Supplier }) {
       {/* Cover image */}
       <div className="w-full sm:w-[220px] md:w-[280px] h-[180px] flex-shrink-0 overflow-hidden bg-stone-100">
         <img
-          src={s.cover_image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
+          src={s.cover_image_url ? resolveVariantUrl(s.cover_image_url, 'thumb') : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
+          onError={(e) => { if (s.cover_image_url) e.currentTarget.src = resolveImageUrl(s.cover_image_url); }}
           alt={s.company_name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
