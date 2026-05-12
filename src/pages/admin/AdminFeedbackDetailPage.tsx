@@ -13,6 +13,8 @@ interface FeedbackDetail {
   user_id: number | null;
   user_name: string | null;
   user_email: string | null;
+  company_name: string | null;
+  company_type: string | null;
   is_read: 0 | 1;
   created_at: string;
 }
@@ -99,14 +101,24 @@ export default function AdminFeedbackDetailPage() {
         </div>
 
         {/* Sender info */}
-        {(item.user_name || item.user_email) && (
+        {(item.user_name || item.user_email || item.company_name) && (
           <div className="px-6 pb-6">
             <div className="flex items-start gap-3 bg-stone-50 rounded-xl p-4 border border-stone-100">
               <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center shrink-0">
                 <User className="w-4 h-4 text-stone-500" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-[#2c2c2c]">{item.user_name || t('Anonymous', '匿名')}</p>
+              <div className="min-w-0">
+                {item.company_name && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold text-[#2c2c2c]">{item.company_name}</p>
+                    {item.company_type && (
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 shrink-0">
+                        {item.company_type}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {item.user_name && <p className="text-sm text-stone-600">{item.user_name}</p>}
                 {item.user_email && <p className="text-xs text-stone-500 mt-0.5">{item.user_email}</p>}
                 {item.user_id && <p className="text-xs text-stone-400 mt-0.5">User ID: {item.user_id}</p>}
               </div>

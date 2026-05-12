@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { Outlet, Navigate, NavLink } from 'react-router-dom';
 import {
-  Home, User, FolderOpen, Settings,
+  Home, User, FolderOpen, Settings, MessageSquare,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 import PhoneRequiredModal from '../components/PhoneRequiredModal';
 import SidebarNavLink from '../components/ui/SidebarNavLink';
+import FeedbackModal from '../components/FeedbackModal';
 
 export default function UserDashboardLayout() {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   // Redirect company users to /company, unset users to /onboarding
   const activeRole = localStorage.getItem('active_role');
   if (activeRole === 'company') {
@@ -65,6 +68,17 @@ export default function UserDashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Feedback bubble — fixed bottom-right, above mobile nav */}
+      <button
+        onClick={() => setFeedbackOpen(true)}
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-20 w-14 rounded-2xl bg-[#1c1917] text-white shadow-lg hover:bg-[#2c2c2c] transition flex flex-col items-center justify-center gap-1 py-2.5"
+        aria-label="Send feedback"
+      >
+        <MessageSquare className="w-5 h-5" />
+        <span className="text-[10px] font-medium leading-none">Feedback</span>
+      </button>
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="homeowner_portal" />
 
       {/* Mobile bottom navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 z-20 flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)]">
