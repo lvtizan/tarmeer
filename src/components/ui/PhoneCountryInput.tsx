@@ -28,9 +28,11 @@ interface PhoneCountryInputProps {
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
+  /** 'sm' = h-9 rounded-lg (admin form); 'lg' = h-[50px] rounded-2xl (default) */
+  size?: 'sm' | 'lg';
 }
 
-export default function PhoneCountryInput({ value, onChange, placeholder }: PhoneCountryInputProps) {
+export default function PhoneCountryInput({ value, onChange, placeholder, size = 'lg' }: PhoneCountryInputProps) {
   const { code: initCode, digits: initDigits } = parsePhone(value);
   const initCountry = PHONE_COUNTRIES.find(c => c.code === initCode) ?? PHONE_COUNTRIES[0];
   const [code, setCode] = useState(initCode);
@@ -98,11 +100,11 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
 
   return (
     <div>
-      <div className={`flex h-[50px] rounded-2xl border bg-stone-50/80 overflow-visible focus-within:ring-2 focus-within:bg-white transition relative ${
+      <div className={`flex ${size === 'sm' ? 'h-9 rounded-lg' : 'h-[50px] rounded-2xl'} border bg-stone-50/80 overflow-visible focus-within:ring-2 focus-within:bg-white transition relative ${
         hasError
           ? 'border-red-400 focus-within:border-red-400 focus-within:ring-red-400/15'
           : isComplete
-          ? 'border-emerald-400 focus-within:border-[#B8864A] focus-within:ring-[#B8864A]/15'
+          ? 'border-[#B8864A]/60 focus-within:border-[#B8864A] focus-within:ring-[#B8864A]/15'
           : 'border-stone-200 focus-within:border-[#B8864A] focus-within:ring-[#B8864A]/15'
       }`}>
         {/* Country selector */}
@@ -110,7 +112,7 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
           <button
             type="button"
             onClick={() => setOpen(o => !o)}
-            className="flex items-center gap-1.5 h-full px-3 text-[15px] text-[#1c1917] border-r border-stone-200 hover:bg-stone-100/50 transition rounded-l-2xl"
+            className=`flex items-center gap-1.5 h-full px-3 ${size === 'sm' ? 'px-2.5 text-sm' : 'text-[15px]'} text-[#1c1917] border-r border-stone-200 hover:bg-stone-100/50 transition ${size === 'sm' ? 'rounded-l-lg' : 'rounded-l-2xl'}`
           >
             <span>{selected.flag}</span>
             <span className="text-sm text-stone-500">{selected.code}</span>
@@ -144,7 +146,7 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
           onBlur={() => setTouched(true)}
           placeholder={placeholder ?? defaultPlaceholder}
           maxLength={selected.maxDigits}
-          className="flex-1 h-full px-3 bg-transparent text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none min-w-0"
+          className=`flex-1 h-full px-3 bg-transparent ${size === 'sm' ? 'text-sm' : 'text-[15px]'} text-[#1c1917] placeholder:text-stone-400 focus:outline-none min-w-0`
         />
       </div>
 

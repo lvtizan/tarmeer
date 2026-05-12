@@ -235,7 +235,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       {/* 50vw width, min 640px, max 900px */}
       <div
-        className="bg-white rounded-2xl w-[50vw] min-w-[640px] max-w-[900px] h-[90vh] flex flex-col shadow-xl"
+        className="bg-white rounded-2xl w-[50vw] min-w-[640px] max-w-[900px] h-[80vh] flex flex-col shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -278,7 +278,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Phone</label>
-              <PhoneCountryInput value={data.phone || ''} onChange={val => set('phone', val)} />
+              <PhoneCountryInput value={data.phone || ''} onChange={val => set('phone', val)} size="sm" />
             </div>
             <div>
               <label className={labelCls}>{isScraped ? 'Email' : 'Website'}</label>
@@ -408,7 +408,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                       key={cat.name}
                       type="button"
                       onClick={() => setActiveServiceTab(cat.name)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
                         isActive
                           ? 'bg-[#b8864a] text-white'
                           : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
@@ -439,8 +439,8 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                         key={s}
                         type="button"
                         onClick={() => toggleArrayItem('services', s)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                          on ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
+                          on ? 'bg-[#b8864a] text-white border-[#b8864a]' : 'bg-white border-stone-200 text-stone-700 hover:border-[#b8864a]/60 hover:text-[#b8864a]'
                         }`}
                       >
                         {s}
