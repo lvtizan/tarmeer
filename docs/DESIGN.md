@@ -272,3 +272,47 @@ Common patterns:
 - Staggered items: `transition={{ duration: 0.35, delay: Math.min(i * 0.04, 0.5) }}`
 - Tab switch: `AnimatePresence mode="wait"` with exit animation
 - Hover scale: `transition-transform duration-300 group-hover:scale-105` (CSS only)
+
+---
+
+## Admin 弹层（Modal）规范
+
+### 尺寸与布局
+- **宽度**：`w-[50vw] min-w-[640px] max-w-[900px]` — 动态随屏幕宽度，不硬编码固定宽度
+- **高度**：`max-h-[90vh]` + 内容区 `flex-1 overflow-y-auto`，避免弹层溢出屏幕
+- **圆角**：外层容器必须 `rounded-2xl`（20px）
+- **遮罩**：`bg-black/50`，点击遮罩关闭弹层（`onClick={onClose}` + 内容 `stopPropagation`）
+
+### 内部结构（三段式）
+```
+<div class="bg-white rounded-2xl w-[50vw] ... flex flex-col shadow-xl">
+  <!-- 顶部固定 header -->
+  <div class="flex-shrink-0 border-b px-6 py-4 flex justify-between">
+    <h2>标题</h2> <X button>
+  </div>
+  <!-- 滚动内容区 -->
+  <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4"> ... </div>
+  <!-- 底部固定 footer -->
+  <div class="flex-shrink-0 border-t px-6 py-4 flex justify-end gap-3"> ... </div>
+</div>
+```
+
+### 表单元素高度统一
+- 所有 `<input>` 使用 `h-9` (36px)
+- 所有 `<AdminSelect>` 使用 `size="sm"` (h-9, rounded-lg)
+- 多选下拉按钮同样 `h-9`
+- `<textarea>` 用 `rows={3}`，不设固定高度
+
+### Multi-Select 下拉规范
+- 禁止使用原生 `<select multiple>`；使用 Portal 下拉 + 复选框样式
+- 选中项用 `bg-[#b8864a] border-[#b8864a]` 勾选框 + `text-[#b8864a] font-medium` 文字
+- 触发按钮展示所选项 label 以 `, ` 分隔，超长截断（`truncate`）
+- 点击下拉列表外部自动收起（`mousedown` 事件监听）
+- 下拉列表通过 `createPortal(document.body)` 渲染，避免 overflow 裁剪
+
+### 服务/分类 Tab 规范
+- 一级 Tab（服务类别）从后端 `/enums/service-categories` 动态加载，非硬编码
+- 已选中该类别的服务数，在 tab 右侧显示数字徽章：
+  - 激活 tab：`bg-white/30 text-white`；非激活：`bg-[#b8864a] text-white`
+- 切换 tab 即时展示对应二级服务，不做动画
+- 二级服务从 `/enums/company-services` 按 `category` 字段分组，非硬编码
