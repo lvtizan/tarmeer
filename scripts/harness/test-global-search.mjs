@@ -20,6 +20,10 @@
  *   TC8: homeownerLeads included in results shape
  *   TC9: companyLeads included in results shape
  *   TC10: Search with known company name returns directoryCompanies hits
+ *   TC11: activity-log/user/0 → 400
+ *   TC12: activity-log/user/999999 → 200 with correct shape
+ *   TC13: activity-log/user/:id without token → 401
+ *   TC14: activity-log/user pagination params respected
  */
 
 const args = process.argv.slice(2);
@@ -102,7 +106,7 @@ await test('TC1', 'No token returns 401', async () => {
 });
 
 if (!TOKEN) {
-  for (const tc of ['TC2','TC3','TC4','TC5','TC6','TC7','TC8','TC9','TC10']) {
+  for (const tc of ['TC2','TC3','TC4','TC5','TC6','TC7','TC8','TC9','TC10','TC11','TC12','TC13','TC14']) {
     skip(tc, 'Requires admin token', 'Pass --token <jwt>');
   }
 } else {
@@ -161,6 +165,38 @@ if (!TOKEN) {
     assertShape(data);
     const total = REQUIRED_KEYS.reduce((sum, k) => sum + data[k].length, 0);
     if (total === 0) throw new Error('Search for "design" returned 0 results across all categories — DB may be empty or query broken');
+  });
+
+  // TC11–TC14: GET /activity-log/user/:userId
+  await test('TC11', 'activity-log/user/0 returns 400', async () => {
+    const res = await fetch(`${API}/admin/activity-log/user/0`, { headers: authHeaders(TOKEN) });
+    if (res.status !== 400) throw new Error(`Expected 400, got ${res.status}`);
+  });
+
+  await test('TC12', 'activity-log/user/999999 returns 200 with empty logs', async () => {
+    const res = await fetch(`${API}/admin/activity-log/user/999999`, { headers: authHeaders(TOKEN) });
+    if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data.logs)) throw new Error('Missing logs array');
+    if (typeof data.summary !== 'object') throw new Error('Missing summary object');
+    if (typeof data.pagination !== 'object') throw new Error('Missing pagination object');
+    if (!('total_events' in data.summary)) throw new Error('summary.total_events missing');
+    if (!('first_seen' in data.summary)) throw new Error('summary.first_seen missing');
+    if (!('last_seen' in data.summary)) throw new Error('summary.last_seen missing');
+    if (!('distinct_actions' in data.summary)) throw new Error('summary.distinct_actions missing');
+  });
+
+  await test('TC13', 'activity-log/user/:id without token returns 401', async () => {
+    const res = await fetch(`${API}/admin/activity-log/user/1`, { headers: {} });
+    if (res.status !== 401) throw new Error(`Expected 401, got ${res.status}`);
+  });
+
+  await test('TC14', 'activity-log/user pagination params respected', async () => {
+    const res = await fetch(`${API}/admin/activity-log/user/999999?page=2&limit=10`, { headers: authHeaders(TOKEN) });
+    if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
+    const data = await res.json();
+    if (data.pagination.limit !== 10) throw new Error(`Expected limit=10, got ${data.pagination.limit}`);
+    if (data.pagination.page !== 2) throw new Error(`Expected page=2, got ${data.pagination.page}`);
   });
 }
 

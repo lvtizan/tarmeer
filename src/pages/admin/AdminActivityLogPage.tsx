@@ -305,7 +305,6 @@ export default function AdminActivityLogPage() {
 
   const [roleFilter, setRoleFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
   // ── Fetch stats ─────────────────────────────────────────────────────────
@@ -337,17 +336,17 @@ export default function AdminActivityLogPage() {
 
   const fetchLogs = useCallback(() => {
     setLogsLoading(true);
-    adminApi.getActivityLog({ page, limit: PAGE_SIZE, role: roleFilter || undefined, action: actionFilter || undefined, search: searchQuery || undefined })
+    adminApi.getActivityLog({ page, limit: PAGE_SIZE, role: roleFilter || undefined, action: actionFilter || undefined })
       .then((data) => {
         setLogs(data.logs || []);
         setPagination({ page: data.pagination?.page ?? 1, total: data.pagination?.total ?? 0, totalPages: data.pagination?.totalPages ?? 0 });
       })
       .catch(() => setLogs([]))
       .finally(() => setLogsLoading(false));
-  }, [page, roleFilter, actionFilter, searchQuery]);
+  }, [page, roleFilter, actionFilter]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
-  useEffect(() => { setPage(1); }, [roleFilter, actionFilter, searchQuery]);
+  useEffect(() => { setPage(1); }, [roleFilter, actionFilter]);
 
   // ── Aggregate + group by date ────────────────────────────────────────────
 
@@ -456,14 +455,6 @@ export default function AdminActivityLogPage() {
                 </button>
               ))}
             </div>
-            {/* Search */}
-            <input
-              type="text"
-              placeholder="🔍  搜索用户名、操作、目标..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="basis-full sm:basis-auto sm:flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white min-w-0"
-            />
             {/* Action filter */}
             <AdminSelect size="sm" value={actionFilter} onChange={setActionFilter} options={ACTION_OPTIONS} />
           </div>

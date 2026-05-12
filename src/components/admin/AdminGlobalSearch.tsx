@@ -78,7 +78,7 @@ export default function AdminGlobalSearch() {
     setResults(null);
     if (r.kind === 'homeowner') navigate(`/admin/inquiries?type=homeowner&search=${encodeURIComponent(r.item.phone)}`);
     else if (r.kind === 'company') navigate(`/admin/inquiries?type=company&search=${encodeURIComponent(r.item.phone)}`);
-    else if (r.kind === 'user') navigate(`/admin/users?search=${encodeURIComponent(r.item.phone || r.item.email)}`);
+    else if (r.kind === 'user') navigate(`/admin/activity-log/user/${r.item.id}`);
     else if (r.kind === 'registeredCompany') navigate(`/admin/profile-companies/${r.item.id}`);
     else if (r.kind === 'directoryCompany') navigate(`/admin/companies/${r.item.id}`);
     else if (r.kind === 'supplier') navigate(`/admin/suppliers/${r.item.id}`);
