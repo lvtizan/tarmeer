@@ -285,6 +285,15 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
     )`,
   },
   {
+    name: 'company_service_categories',
+    sql: `CREATE TABLE IF NOT EXISTS company_service_categories (
+      name VARCHAR(100) NOT NULL PRIMARY KEY,
+      sort_order INT DEFAULT 0,
+      is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  {
     name: 'feedback',
     sql: `CREATE TABLE IF NOT EXISTS feedback (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -626,6 +635,23 @@ export async function runAutoMigrate(): Promise<void> {
           [cat, ...names]
         );
       }
+    } catch { /* ignore */ }
+
+    // 7c. Seed company_service_categories from known category list (idempotent)
+    try {
+      await pool.execute(
+        `INSERT IGNORE INTO company_service_categories (name, sort_order, is_enabled) VALUES
+          ('Design & Planning',    1, 1),
+          ('Construction',         2, 1),
+          ('Design & Build',       3, 1),
+          ('Renovation',           4, 1),
+          ('Extensions',           5, 1),
+          ('Outdoor & Pools',      6, 1),
+          ('Home Systems',         7, 1),
+          ('Interiors & Furniture',8, 1),
+          ('Maintenance',          9, 1),
+          ('Specialty Works',     10, 1)`
+      );
     } catch { /* ignore */ }
 
     // 8. Add field_staff role to admin_users ENUM

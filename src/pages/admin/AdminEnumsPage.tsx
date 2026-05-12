@@ -4,8 +4,13 @@ import { adminApi } from '../../lib/adminApi';
 import { showToast } from '../../components/ui/Toast';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { SERVICE_CATEGORIES } from '../../lib/serviceCategories';
-import { Pencil } from 'lucide-react';
 import AdminSelect from '../../components/ui/AdminSelect';
+
+interface ServiceCategory {
+  name: string;
+  sort_order: number;
+  is_enabled: number;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,7 +107,7 @@ function ServiceRow({
       {/* Toggle */}
       <button
         onClick={onToggle}
-        className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+        className={`shrink-0 inline-flex items-center justify-center text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
           svc.active
             ? 'bg-green-50 text-green-700 hover:bg-green-100'
             : 'bg-stone-100 text-stone-400 hover:bg-stone-200'
@@ -114,7 +119,7 @@ function ServiceRow({
       {/* Delete */}
       <button
         onClick={onDelete}
-        className="shrink-0 text-xs text-red-400 hover:text-red-600 transition-colors"
+        className="shrink-0 inline-flex items-center justify-center text-xs text-red-400 hover:text-red-600 transition-colors"
       >
         删除
       </button>
@@ -137,18 +142,30 @@ function ServicesTab({
   const [selectedCat, setSelectedCat] = useState<string>('');
   const [newServiceName, setNewServiceName] = useState('');
   const [addingService, setAddingService] = useState(false);
-  const [editingCat, setEditingCat] = useState<string | null>(null);
-  const [editingCatValue, setEditingCatValue] = useState('');
   const dragIndex = useRef<number>(-1);
   const overIndex = useRef<number>(-1);
   const [draggingIdx, setDraggingIdx] = useState<number>(-1);
   const [overIdx, setOverIdx] = useState<number>(-1);
 
-  // Build category list from DB + static
-  const dbCategories = Array.from(new Set(
+  // Category-level state
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const catDragIndex = useRef<number>(-1);
+  const catOverIndex = useRef<number>(-1);
+  const [catDraggingIdx, setCatDraggingIdx] = useState<number>(-1);
+  const [catOverIdx, setCatOverIdx] = useState<number>(-1);
+
+  useEffect(() => {
+    adminApi.request('/enums/service-categories').then((d) => {
+      setCategories(d.categories || []);
+    }).catch(() => {});
+  }, []);
+
+  // Build category list: DB-order first, then add any orphan categories from services
+  const dbCatNames = categories.map((c) => c.name);
+  const extraCats = Array.from(new Set(
     services.map((s) => s.category).filter(Boolean) as string[]
-  ));
-  const allCats = Array.from(new Set([...ALL_CATEGORIES, ...dbCategories])).filter(Boolean);
+  )).filter((c) => !dbCatNames.includes(c));
+  const allCats = [...dbCatNames, ...extraCats, ...ALL_CATEGORIES.filter((c) => !dbCatNames.includes(c) && !extraCats.includes(c))].filter(Boolean);
   const orphans = services.filter((s) => !s.category);
 
   // Auto-select first category
@@ -271,20 +288,74 @@ function ServicesTab({
     }
   }
 
-  async function commitCatRename(oldName: string) {
-    const newName = editingCatValue.trim();
-    setEditingCat(null);
-    if (!newName || newName === oldName) return;
+  async function commitCatRename(oldName: string, newName: string) {
+    if (!newName.trim() || newName.trim() === oldName) return;
     try {
-      await adminApi.request('/enums/company-services/rename-category', {
+      await adminApi.request(`/enums/service-categories/${encodeURIComponent(oldName)}/rename`, {
         method: 'PUT',
-        body: JSON.stringify({ oldName, newName }),
+        body: JSON.stringify({ newName: newName.trim() }),
       });
-      if (selectedCat === oldName) setSelectedCat(newName);
+      if (selectedCat === oldName) setSelectedCat(newName.trim());
+      setCategories((prev) => prev.map((c) => c.name === oldName ? { ...c, name: newName.trim() } : c));
       showToast('分类已重命名', 'success');
       onReload();
     } catch {
       showToast('重命名失败', 'error');
+    }
+  }
+
+  async function deleteCategory(cat: ServiceCategory) {
+    if (!confirm(`确定删除分类 "${cat.name}"？子服务不会被删除，但会变为未分类。`)) return;
+    try {
+      await adminApi.request(`/enums/service-categories/${encodeURIComponent(cat.name)}`, { method: 'DELETE' });
+      setCategories((prev) => prev.filter((c) => c.name !== cat.name));
+      if (selectedCat === cat.name) setSelectedCat(allCats.filter((c) => c !== cat.name)[0] || '');
+      showToast('已删除', 'success');
+    } catch {
+      showToast('删除失败', 'error');
+    }
+  }
+
+  // ── Category-level drag + toggle ──
+
+  function handleCatDragStart(idx: number) {
+    catDragIndex.current = idx;
+    setCatDraggingIdx(idx);
+  }
+
+  function handleCatDragEnter(idx: number) {
+    catOverIndex.current = idx;
+    setCatOverIdx(idx);
+  }
+
+  async function handleCatDragEnd() {
+    const from = catDragIndex.current;
+    const to = catOverIndex.current;
+    setCatDraggingIdx(-1);
+    setCatOverIdx(-1);
+    catDragIndex.current = -1;
+    catOverIndex.current = -1;
+    if (from === to || from < 0 || to < 0) return;
+    const reordered = [...categories];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    setCategories(reordered);
+    try {
+      await adminApi.request('/enums/service-categories/reorder', {
+        method: 'PUT',
+        body: JSON.stringify({ names: reordered.map((c) => c.name) }),
+      });
+    } catch {
+      showToast('排序保存失败', 'error');
+    }
+  }
+
+  async function toggleCategory(cat: ServiceCategory) {
+    try {
+      await adminApi.request(`/enums/service-categories/${encodeURIComponent(cat.name)}/toggle`, { method: 'PUT' });
+      setCategories((prev) => prev.map((c) => c.name === cat.name ? { ...c, is_enabled: c.is_enabled ? 0 : 1 } : c));
+    } catch {
+      showToast('更新失败', 'error');
     }
   }
 
@@ -294,63 +365,85 @@ function ServicesTab({
 
   return (
     <div className="flex gap-4 items-start min-h-[500px]">
-      {/* Left: category nav */}
-      <div className="w-48 shrink-0 bg-white rounded-2xl border border-stone-200 overflow-hidden">
+      {/* Left: category nav — mirrors ServiceRow style */}
+      <div className="w-[420px] shrink-0 bg-white rounded-2xl border border-stone-200 overflow-hidden">
         <div className="px-3 pt-3 pb-1">
-          <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">分类</p>
+          <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">分类（拖动排序）</p>
         </div>
         <div className="p-2 space-y-0.5">
-          {allCats.map((cat) => {
+          {allCats.map((cat, catIdx) => {
             const count = services.filter((s) => s.category === cat).length;
             const activeCount = services.filter((s) => s.category === cat && s.active).length;
             const isSelected = selectedCat === cat;
-            const isEditing = editingCat === cat;
+            const catMeta = categories.find((c) => c.name === cat);
+            const isEnabled = catMeta ? !!catMeta.is_enabled : true;
+            const isDragging = catDraggingIdx === catIdx;
+            const isOver = catOverIdx === catIdx && catDraggingIdx !== catIdx;
             return (
-              <div key={cat} className="group relative">
-                {isEditing ? (
-                  <input
-                    autoFocus
-                    className="w-full h-8 px-2.5 rounded-lg text-sm border border-[#b8864a] bg-[#b8864a]/5 text-[#b8864a] font-medium focus:outline-none"
-                    value={editingCatValue}
-                    onChange={(e) => setEditingCatValue(e.target.value)}
-                    onBlur={() => commitCatRename(cat)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                      if (e.key === 'Escape') { setEditingCat(null); }
-                    }}
-                  />
-                ) : (
+              <div
+                key={cat}
+                draggable={!!catMeta}
+                onDragStart={() => catMeta && handleCatDragStart(catIdx)}
+                onDragEnter={() => catMeta && handleCatDragEnter(catIdx)}
+                onDragEnd={handleCatDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                onClick={() => setSelectedCat(cat)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-colors select-none ${
+                  isSelected ? 'bg-[#b8864a]/8' : 'hover:bg-stone-50'
+                } ${isDragging ? 'opacity-40' : ''} ${isOver ? 'bg-amber-50 ring-1 ring-[#B8864A]/30' : ''}`}
+              >
+                {/* Drag handle */}
+                <span className={`cursor-grab text-[18px] leading-none shrink-0 ${catMeta ? 'text-stone-300 hover:text-stone-400' : 'invisible'}`} title="拖动排序">⠿</span>
+
+                {/* Name input — always shown, blur to rename */}
+                <input
+                  key={cat}
+                  className={`${inputCls} flex-1 min-w-0 cursor-pointer focus:cursor-text ${!isEnabled ? 'opacity-50' : ''}`}
+                  defaultValue={cat}
+                  onClick={(e) => e.stopPropagation()}
+                  onBlur={(e) => commitCatRename(cat, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    if (e.key === 'Escape') { (e.target as HTMLInputElement).value = cat; (e.target as HTMLInputElement).blur(); }
+                  }}
+                />
+
+                {/* Count badge */}
+                <span className={`text-[11px] shrink-0 tabular-nums ${isSelected ? 'text-[#b8864a]/70' : 'text-stone-400'}`}>
+                  {activeCount}/{count}
+                </span>
+
+                {/* Toggle */}
+                {catMeta ? (
                   <button
-                    onClick={() => setSelectedCat(cat)}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-sm transition-colors ${
-                      isSelected
-                        ? 'bg-[#b8864a]/10 text-[#b8864a] font-medium'
-                        : 'text-stone-600 hover:bg-stone-50'
+                    onClick={(e) => { e.stopPropagation(); toggleCategory(catMeta); }}
+                    className={`shrink-0 inline-flex items-center justify-center text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                      isEnabled
+                        ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                        : 'bg-stone-100 text-stone-400 hover:bg-stone-200'
                     }`}
+                    title={isEnabled ? '停用（首页导航不显示）' : '启用'}
                   >
-                    <span className="truncate">{cat}</span>
-                    <span className={`text-[11px] shrink-0 ml-1 ${isSelected ? 'text-[#b8864a]/70' : 'text-stone-400'}`}>
-                      {activeCount}/{count}
-                    </span>
+                    {isEnabled ? '启用' : '停用'}
                   </button>
-                )}
-                {/* Pencil edit button — visible on row hover */}
-                {!isEditing && (
+                ) : <span className="w-[42px] shrink-0" />}
+
+                {/* Delete */}
+                {catMeta ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setEditingCat(cat); setEditingCatValue(cat); setSelectedCat(cat); }}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center justify-center w-5 h-5 rounded hover:bg-[#b8864a]/10 text-stone-400 hover:text-[#b8864a] transition-colors"
-                    title="重命名分类"
+                    onClick={(e) => { e.stopPropagation(); deleteCategory(catMeta); }}
+                    className="shrink-0 inline-flex items-center justify-center text-xs text-red-400 hover:text-red-600 transition-colors"
                   >
-                    <Pencil className="w-3 h-3" />
+                    删除
                   </button>
-                )}
+                ) : <span className="w-[28px] shrink-0" />}
               </div>
             );
           })}
           {orphans.length > 0 && (
             <button
               onClick={() => setSelectedCat('__orphans__')}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-sm transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-sm transition-colors ${
                 selectedCat === '__orphans__'
                   ? 'bg-amber-50 text-amber-700 font-medium'
                   : 'text-amber-600 hover:bg-amber-50'
@@ -387,7 +480,7 @@ function ServicesTab({
             <button
               onClick={addService}
               disabled={addingService || !newServiceName.trim()}
-              className="btn-primary h-[36px] px-4 text-sm disabled:opacity-40"
+              className="btn-primary inline-flex items-center justify-center h-[36px] px-4 text-sm disabled:opacity-40"
             >
               {t('Add', '添加')}
             </button>
@@ -565,7 +658,7 @@ export default function AdminEnumsPage() {
                 <button
                   onClick={addType}
                   disabled={addingType || !newTypeSlug.trim() || !newTypeLabel.trim()}
-                  className="btn-primary h-[36px] px-4 text-sm disabled:opacity-40"
+                  className="btn-primary inline-flex items-center justify-center h-[36px] px-4 text-sm disabled:opacity-40"
                 >
                   {t('Add', '添加')}
                 </button>
@@ -599,7 +692,7 @@ export default function AdminEnumsPage() {
                         <td className="px-4 py-2.5">
                           <button
                             onClick={() => toggleTypeActive(type)}
-                            className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                            className={`inline-flex items-center justify-center text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                               type.active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-stone-100 text-stone-400 hover:bg-stone-200'
                             }`}
                           >
@@ -607,7 +700,7 @@ export default function AdminEnumsPage() {
                           </button>
                         </td>
                         <td className="px-4 py-2.5 text-right">
-                          <button onClick={() => deleteType(type.slug)} className="text-xs text-red-400 hover:text-red-600 transition-colors">
+                          <button onClick={() => deleteType(type.slug)} className="inline-flex items-center justify-center text-xs text-red-400 hover:text-red-600 transition-colors">
                             删除
                           </button>
                         </td>

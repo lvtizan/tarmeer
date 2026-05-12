@@ -183,42 +183,126 @@ export async function reorderCompanyServices(req: any, res: any) {
   }
 }
 
-// ── Public: grouped service categories ───────────────────────────────────────
+// ── Service Category Management (admin) ───────────────────────────────────────
 
-const CATEGORY_ORDER = [
-  'Design & Planning', 'Construction', 'Design & Build', 'Renovation',
-  'Outdoor & Pools', 'Home Systems', 'Interiors & Furniture', 'Maintenance', 'Specialty Works',
-];
+export async function listServiceCategories(req: any, res: any) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT name, sort_order, is_enabled FROM company_service_categories ORDER BY sort_order, name'
+    );
+    res.json({ categories: rows });
+  } catch (error) {
+    console.error('listServiceCategories error:', error);
+    res.status(500).json({ error: 'Failed to load categories.' });
+  }
+}
+
+export async function toggleServiceCategory(req: any, res: any) {
+  try {
+    const name = decodeURIComponent(req.params.name);
+    await pool.execute(
+      'UPDATE company_service_categories SET is_enabled = 1 - is_enabled WHERE name = ?',
+      [name]
+    );
+    invalidateEnumCache();
+    res.json({ message: 'Toggled.' });
+  } catch (error) {
+    console.error('toggleServiceCategory error:', error);
+    res.status(500).json({ error: 'Failed to toggle category.' });
+  }
+}
+
+export async function reorderServiceCategories(req: any, res: any) {
+  try {
+    const { names } = req.body;
+    if (!Array.isArray(names) || names.length === 0) {
+      return res.status(400).json({ error: 'names array is required.' });
+    }
+    for (let i = 0; i < names.length; i++) {
+      await pool.execute(
+        'UPDATE company_service_categories SET sort_order = ? WHERE name = ?',
+        [i, names[i]]
+      );
+    }
+    invalidateEnumCache();
+    res.json({ message: 'Reordered.' });
+  } catch (error) {
+    console.error('reorderServiceCategories error:', error);
+    res.status(500).json({ error: 'Failed to reorder categories.' });
+  }
+}
+
+export async function renameServiceCategory2(req: any, res: any) {
+  try {
+    const oldName = decodeURIComponent(req.params.name);
+    const { newName } = req.body;
+    if (!newName?.trim()) return res.status(400).json({ error: 'newName is required.' });
+    const cleanNew = newName.trim().slice(0, 100);
+    await pool.execute(
+      'UPDATE company_service_categories SET name = ? WHERE name = ?',
+      [cleanNew, oldName]
+    );
+    await pool.execute(
+      'UPDATE company_services SET category = ? WHERE category = ?',
+      [cleanNew, oldName]
+    );
+    invalidateEnumCache();
+    res.json({ message: 'Renamed.', newName: cleanNew });
+  } catch (error) {
+    console.error('renameServiceCategory2 error:', error);
+    res.status(500).json({ error: 'Failed to rename category.' });
+  }
+}
+
+export async function deleteServiceCategory(req: any, res: any) {
+  try {
+    const name = decodeURIComponent(req.params.name);
+    await pool.execute('DELETE FROM company_service_categories WHERE name = ?', [name]);
+    invalidateEnumCache();
+    res.json({ message: 'Deleted.' });
+  } catch (error) {
+    console.error('deleteServiceCategory error:', error);
+    res.status(500).json({ error: 'Failed to delete category.' });
+  }
+}
+
+// ── Public: grouped service categories ───────────────────────────────────────
 
 export async function getPublicServiceCategories(req: any, res: any) {
   try {
-    const [rows] = await pool.execute(
+    // Get enabled categories in DB-defined order
+    const [catRows] = await pool.execute(
+      'SELECT name FROM company_service_categories WHERE is_enabled = 1 ORDER BY sort_order, name'
+    );
+    const orderedCats = (catRows as { name: string }[]).map((r) => r.name);
+
+    // Get all active sub-services
+    const [svcRows] = await pool.execute(
       'SELECT name, category FROM company_services WHERE active = 1 ORDER BY sort_order, name'
     );
     const grouped = new Map<string, string[]>();
-    const uncategorised: string[] = [];
-    for (const row of rows as { name: string; category: string | null }[]) {
+    for (const row of svcRows as { name: string; category: string | null }[]) {
       const cat = row.category?.trim() || null;
       if (cat) {
         if (!grouped.has(cat)) grouped.set(cat, []);
         grouped.get(cat)!.push(row.name);
-      } else {
-        uncategorised.push(row.name);
       }
     }
-    // Build ordered result
+
+    // Build result following enabled-category order, skip empty categories
     const categories: { name: string; subs: string[] }[] = [];
-    for (const catName of CATEGORY_ORDER) {
+    for (const catName of orderedCats) {
       const subs = grouped.get(catName);
-      if (subs && subs.length > 0) {
-        categories.push({ name: catName, subs });
-        grouped.delete(catName);
+      if (subs && subs.length > 0) categories.push({ name: catName, subs });
+    }
+
+    // Fallback: if categories table is empty, include any remaining grouped subs
+    if (orderedCats.length === 0) {
+      for (const [catName, subs] of grouped.entries()) {
+        if (subs.length > 0) categories.push({ name: catName, subs });
       }
     }
-    // Any remaining categories not in CATEGORY_ORDER
-    for (const [catName, subs] of grouped.entries()) {
-      if (subs.length > 0) categories.push({ name: catName, subs });
-    }
+
     res.json({ categories });
   } catch (error) {
     console.error('getPublicServiceCategories error:', error);

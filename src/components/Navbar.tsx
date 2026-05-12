@@ -16,29 +16,7 @@ const spaceTypeItems = [
   { label: 'Outdoor / Landscape', to: '/companies?service=Landscape' },
 ];
 
-const navServiceTypeItems = [
-  'Design & Planning',
-  'Construction',
-  'Design & Build',
-  'Renovation',
-  'Extensions',
-  'Outdoor & Pools',
-  'Home Systems',
-  'Interiors & Furniture',
-  'Maintenance & Repairs',
-];
-
-const SERVICE_CATEGORY_MAP: Record<string, string[]> = {
-  'Design & Planning': ['Interior Design', 'Architecture', 'Project Management'],
-  'Construction': ['Construction', 'Fit-Out', 'Demolition', 'Scaffolding', 'Gypsum & Partitions', 'Steel & Fabrication'],
-  'Design & Build': ['Design & Build', 'Turnkey Solutions'],
-  'Renovation': ['Renovation', 'Painting & Finishing', 'Flooring & Tiling', 'Joinery', 'Glass & Aluminium'],
-  'Extensions': ['Construction', 'Gypsum & Partitions'],
-  'Outdoor & Pools': ['Landscape', 'Pools'],
-  'Home Systems': ['MEP', 'HVAC & Ducting', 'Smart Home & Automation', 'Fire Fighting', 'Solar Systems', 'Waterproofing'],
-  'Interiors & Furniture': ['Furniture', 'Curtains & Blinds', 'Lighting Installation', 'Stone & Marble Fixing', 'Epoxy & PU Flooring'],
-  'Maintenance & Repairs': ['Maintenance', 'Cleaning Services', 'Deep Cleaning'],
-};
+const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
 
 const portfolioCategories = {
   'By Room': [
@@ -100,6 +78,7 @@ export default function Navbar({
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
@@ -107,6 +86,13 @@ export default function Navbar({
   useEffect(() => {
     if (!dropdownOpen) setHoveredCategory(null);
   }, [dropdownOpen]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/public/service-categories`)
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d?.categories)) setNavCategories(d.categories); })
+      .catch(() => {});
+  }, []);
 
   // Hide navbar completely on auth page
   if (isAuthPage && !forceShowOnAuth) return null;
@@ -225,7 +211,7 @@ export default function Navbar({
           <div
             className="relative"
             onMouseEnter={() => setDropdownOpen(true)}
-            onMouseLeave={() => setDropdownOpen(false)}
+            onMouseLeave={() => { setDropdownOpen(false); setHoveredCategory(null); }}
           >
             <Link
               to="/companies"
@@ -237,81 +223,91 @@ export default function Navbar({
             </Link>
 
             <div
-                className={`absolute top-full right-0 pt-2 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
-              >
-              <div className="relative">
-                <div className="bg-white shadow-xl rounded-lg border border-stone-200">
-                  <div className="flex">
-                    {/* SPACE TYPE */}
-                    <div className="p-6 w-48 border-r border-stone-100 flex-shrink-0">
-                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Space Type</h3>
-                      <ul className="space-y-2">
-                        {spaceTypeItems.map((item) => (
-                          <li key={item.to}>
-                            <Link
-                              to={item.to}
-                              onClick={() => handleClick(item.to)}
-                              className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
-                            >
-                              {item.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    {/* SERVICE TYPE */}
-                    <div className="p-6 w-52 flex-shrink-0">
-                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Service Type</h3>
-                      <ul className="space-y-1">
-                        {navServiceTypeItems.map((cat) => (
-                          <li key={cat}>
-                            <button
-                              onMouseEnter={() => setHoveredCategory(cat)}
-                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-sm transition text-left ${
-                                hoveredCategory === cat
-                                  ? 'bg-stone-50 text-[#b8864a]'
-                                  : 'text-stone-600 hover:bg-stone-50 hover:text-[#b8864a]'
-                              }`}
-                            >
-                              {cat}
-                              <span className="text-stone-300 text-xs ml-2">›</span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <div className="border-t border-stone-200 px-6 py-3 bg-stone-50 rounded-b-lg">
-                    <Link
-                      to="/companies"
-                      onClick={() => handleClick('/companies')}
-                      className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition"
-                    >
-                      All Companies {'>'}
-                    </Link>
-                  </div>
-                </div>
-                {/* SUB-SERVICES — absolute panel to the right, no layout shift */}
-                {hoveredCategory && (
-                  <div className="absolute top-0 left-full ml-1 bg-white shadow-xl rounded-lg border border-stone-200 w-52 p-6">
-                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">
-                      {hoveredCategory}
-                    </h3>
+              className={`absolute top-full right-0 pt-2 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+            >
+              <div className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
+                <div className="flex">
+                  {/* SPACE TYPE */}
+                  <div className="p-6 w-48 border-r border-stone-100 flex-shrink-0">
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Space Type</h3>
                     <ul className="space-y-2">
-                      {SERVICE_CATEGORY_MAP[hoveredCategory]?.map((svc) => (
-                        <li key={svc}>
+                      {spaceTypeItems.map((item) => (
+                        <li key={item.to}>
                           <Link
-                            to={`/companies?service=${encodeURIComponent(svc)}`}
-                            onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
+                            to={item.to}
+                            onClick={() => handleClick(item.to)}
                             className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
                           >
-                            {svc}
+                            {item.label}
                           </Link>
                         </li>
                       ))}
                     </ul>
                   </div>
-                )}
+
+                  {/* SERVICE TYPE */}
+                  <div className="p-6 w-52 border-r border-stone-100 flex-shrink-0">
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Service Type</h3>
+                    <ul className="space-y-1">
+                      {navCategories.map((cat) => (
+                        <li key={cat.name}>
+                          <button
+                            onMouseEnter={() => setHoveredCategory(cat.name)}
+                            className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-sm transition text-left ${
+                              hoveredCategory === cat.name
+                                ? 'bg-stone-50 text-[#b8864a]'
+                                : 'text-stone-600 hover:bg-stone-50 hover:text-[#b8864a]'
+                            }`}
+                          >
+                            {cat.name}
+                            {cat.subs.length > 0 && <span className="text-stone-300 text-xs ml-2">›</span>}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* SUB-SERVICES — inline third column, slides in */}
+                  <div
+                    className={`overflow-hidden transition-all duration-200 ease-out flex-shrink-0 ${hoveredCategory ? 'max-w-[220px]' : 'max-w-0'}`}
+                  >
+                    <div className="w-[220px] p-6">
+                      {hoveredCategory && (() => {
+                        const cat = navCategories.find((c) => c.name === hoveredCategory);
+                        return cat ? (
+                          <>
+                            <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">
+                              {cat.name}
+                            </h3>
+                            <ul className="space-y-2">
+                              {cat.subs.map((svc) => (
+                                <li key={svc}>
+                                  <Link
+                                    to={`/companies?service=${encodeURIComponent(svc)}`}
+                                    onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
+                                    className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
+                                  >
+                                    {svc}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-stone-200 px-6 py-3 bg-stone-50">
+                  <Link
+                    to="/companies"
+                    onClick={() => handleClick('/companies')}
+                    className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition"
+                  >
+                    All Companies {'>'}
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -502,10 +498,10 @@ export default function Navbar({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Service Type</h4>
-                      {navServiceTypeItems.map((cat) => (
-                        <div key={cat} className="py-1">
-                          <p className="text-xs font-semibold text-stone-500 mb-1">{cat}</p>
-                          {SERVICE_CATEGORY_MAP[cat]?.map((svc) => (
+                      {navCategories.map((cat) => (
+                        <div key={cat.name} className="py-1">
+                          <p className="text-xs font-semibold text-stone-500 mb-1">{cat.name}</p>
+                          {cat.subs.map((svc: string) => (
                             <Link key={svc} to={`/companies?service=${encodeURIComponent(svc)}`}
                               onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
                               className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
