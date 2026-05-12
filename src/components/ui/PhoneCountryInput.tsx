@@ -112,7 +112,7 @@ export default function PhoneCountryInput({ value, onChange, placeholder, size =
           <button
             type="button"
             onClick={() => setOpen(o => !o)}
-            className=`flex items-center gap-1.5 h-full px-3 ${size === 'sm' ? 'px-2.5 text-sm' : 'text-[15px]'} text-[#1c1917] border-r border-stone-200 hover:bg-stone-100/50 transition ${size === 'sm' ? 'rounded-l-lg' : 'rounded-l-2xl'}`
+            className={`flex items-center gap-1.5 h-full px-3 ${size === 'sm' ? 'px-2.5 text-sm' : 'text-[15px]'} text-[#1c1917] border-r border-stone-200 hover:bg-stone-100/50 transition ${size === 'sm' ? 'rounded-l-lg' : 'rounded-l-2xl'}`}
           >
             <span>{selected.flag}</span>
             <span className="text-sm text-stone-500">{selected.code}</span>
@@ -146,7 +146,7 @@ export default function PhoneCountryInput({ value, onChange, placeholder, size =
           onBlur={() => setTouched(true)}
           placeholder={placeholder ?? defaultPlaceholder}
           maxLength={selected.maxDigits}
-          className=`flex-1 h-full px-3 bg-transparent ${size === 'sm' ? 'text-sm' : 'text-[15px]'} text-[#1c1917] placeholder:text-stone-400 focus:outline-none min-w-0`
+          className={`flex-1 h-full px-3 bg-transparent ${size === 'sm' ? 'text-sm' : 'text-[15px]'} text-[#1c1917] placeholder:text-stone-400 focus:outline-none min-w-0`}
         />
       </div>
 
