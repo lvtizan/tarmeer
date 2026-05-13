@@ -110,11 +110,11 @@ function ServiceRow({
         onClick={onToggle}
         className={`shrink-0 inline-flex items-center justify-center text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
           svc.active
-            ? 'bg-green-50 text-green-700 hover:bg-green-100'
-            : 'bg-stone-100 text-stone-400 hover:bg-stone-200'
+            ? 'bg-stone-100 text-stone-400 hover:bg-stone-200'
+            : 'bg-green-50 text-green-700 hover:bg-green-100'
         }`}
       >
-        {svc.active ? '启用' : '停用'}
+        {svc.active ? '停用' : '启用'}
       </button>
 
       {/* Delete */}
@@ -775,10 +775,10 @@ export default function AdminEnumsPage() {
                           <button
                             onClick={() => toggleTypeActive(type)}
                             className={`inline-flex items-center justify-center text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
-                              type.active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-stone-100 text-stone-400 hover:bg-stone-200'
+                              type.active ? 'bg-stone-100 text-stone-400 hover:bg-stone-200' : 'bg-green-50 text-green-700 hover:bg-green-100'
                             }`}
                           >
-                            {type.active ? '启用' : '停用'}
+                            {type.active ? '停用' : '启用'}
                           </button>
                         </td>
                         <td className="px-4 py-2.5 text-right">
