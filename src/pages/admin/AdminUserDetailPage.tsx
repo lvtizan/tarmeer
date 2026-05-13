@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { resolveImageUrl } from '../../lib/imageUrl';
 import { adminApi } from '../../lib/adminApi';
@@ -22,6 +22,8 @@ export default function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useAdminT();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromState = (location.state || {}) as { from?: string; fromLabel?: string };
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,9 +63,9 @@ export default function AdminUserDetailPage() {
   if (error || !data) {
     return (
       <div className="space-y-4">
-        <Link to="/admin/users" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
-          <ArrowLeft className="w-4 h-4" /> {t('Back to users', '返回用户列表')}
-        </Link>
+        <button onClick={() => navigate(fromState.from || '/admin/users')} className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+          <ArrowLeft className="w-4 h-4" /> {fromState.fromLabel ? `返回${fromState.fromLabel}` : t('Back to users', '返回用户列表')}
+        </button>
         <div className="text-red-600 bg-red-50 px-4 py-3 rounded-lg text-sm">{error || t('User not found.', '用户未找到')}</div>
       </div>
     );
