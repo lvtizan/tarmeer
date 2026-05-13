@@ -89,6 +89,7 @@ const CRITICAL_ROUTES = [
   '/companies',
   '/designers',
   '/users',
+  '/profile-companies',
 ];
 
 for (const route of CRITICAL_ROUTES) {

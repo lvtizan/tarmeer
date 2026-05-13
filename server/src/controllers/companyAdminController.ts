@@ -1155,3 +1155,30 @@ export async function triggerWeightRecalculation(req: any, res: any) {
     res.status(500).json({ error: 'Failed to recalculate weights.' });
   }
 }
+
+/**
+ * POST /api/admin/profile-companies/:id/crm-provision
+ * Admin manually provisions a registered company into CRM.
+ * Idempotent: safe to call again if crm_tenant_id already set.
+ */
+export async function adminCrmProvisionCompany(req: any, res: any) {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid company id' });
+
+    const [rows] = await pool.execute(
+      'SELECT id, crm_tenant_id, status FROM company_profiles WHERE id = ? AND deleted_at IS NULL',
+      [id]
+    );
+    const company = (rows as any[])[0];
+    if (!company) return res.status(404).json({ error: 'Company not found' });
+    if (company.status !== 'approved') return res.status(400).json({ error: 'Company must be approved before CRM provisioning' });
+
+    const { provision } = await import('../lib/crmIntegrationService');
+    const result = await provision(id);
+    res.json({ crm_tenant_id: result.crm_tenant_id });
+  } catch (err: any) {
+    console.error('[Admin CRM] provision error:', err);
+    res.status(502).json({ error: err.message || 'CRM provision failed' });
+  }
+}

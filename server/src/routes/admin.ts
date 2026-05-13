@@ -77,6 +77,7 @@ import {
   getWeightConfigList,
   updateWeightConfig,
   triggerWeightRecalculation,
+  adminCrmProvisionCompany,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
 import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminReplaceProductImage, adminUpdateProduct, adminUploadProjectImage, adminAddProject, adminUpdateProject, adminDeleteProject, setSupplierHomeOrder, setSupplierListOrder } from '../controllers/supplierAdminController';
@@ -274,6 +275,9 @@ router.get('/signed-companies', listSignedCompanies);
 router.get('/weight-config', requireSuperAdmin, getWeightConfigList);
 router.put('/weight-config/:key', requireSuperAdmin, updateWeightConfig);
 router.post('/weight-config/recalculate', requireSuperAdmin, triggerWeightRecalculation);
+
+// CRM provisioning (admin)
+router.post('/profile-companies/:id/crm-provision', adminCrmProvisionCompany);
 
 // Company merge/claim
 router.get('/companies/merge-candidates', listMergeCandidates);
