@@ -553,7 +553,7 @@ function ServicesTab({
           {/* Inline add */}
           <div className="flex items-center gap-2">
             <input
-              className={`${inputCls} w-44`}
+              className={`${inputCls} flex-1 min-w-0`}
               placeholder="新服务名称…"
               value={newServiceName}
               onChange={(e) => setNewServiceName(e.target.value)}

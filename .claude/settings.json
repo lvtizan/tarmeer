@@ -55,6 +55,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PITFALLS=$(cat '/Users/kp/.claude/projects/-Users-kp-Code-tarmeer-4-0-local/memory/pitfalls.md' 2>/dev/null) && jq -n --arg content \"$PITFALLS\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"[开发前必读：踩坑记录]\\n\" + $content)}}'",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
