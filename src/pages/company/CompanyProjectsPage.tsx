@@ -505,7 +505,11 @@ export default function CompanyProjectsPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className={labelCls}>Project Title <span className="text-red-500">*</span></label>
-                <input type="text" value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Enter project title" className={`${fieldCls} ${tried&&!form.title.trim()?'!border-red-400':''}`}/>
+                <p className="mb-1.5 text-xs text-stone-400">
+                  Tips: Use the format — <span className="font-medium text-stone-500">Neighborhood + Property Type + Renovation Scope</span><br/>
+                  e.g. Palm Jumeirah - Villa - Full Renovation &nbsp;·&nbsp; Emirates Hills - Villa - Kitchen Remodel &nbsp;·&nbsp; JVC - Apartment - Window &amp; Door Replacement
+                </p>
+                <input type="text" value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="e.g. Palm Jumeirah - Villa - Full Renovation" className={`${fieldCls} ${tried&&!form.title.trim()?'!border-red-400':''}`}/>
                 {tried&&!form.title.trim()&&<p className="mt-1 text-xs text-red-500">Project title is required</p>}
               </div>
               <div className="md:col-span-2">
