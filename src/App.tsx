@@ -122,6 +122,7 @@ const AdminVisitRecordsPage = lazyRetry(() => import('./pages/admin/AdminVisitRe
 const AdminStaffPage = lazyRetry(() => import('./pages/admin/AdminStaffPage'));
 const AdminEnumsPage = lazyRetry(() => import('./pages/admin/AdminEnumsPage'));
 const AdminShowcaseImagesPage = lazyRetry(() => import('./pages/admin/AdminShowcaseImagesPage'));
+const SsoConsumePage = lazyRetry(() => import('./pages/SsoConsumePage'));
 
 // Field
 const FieldSurveyPage = lazyRetry(() => import('./pages/field/FieldSurveyPage'));
@@ -314,6 +315,7 @@ function App() {
           {/* ====== Auth ====== */}
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/sso/consume" element={<SsoConsumePage />} />
 
           {/* ====== Supplier Dashboard (own layout, no main Navbar) ====== */}
           <Route path="/supplier" element={<SupplierLayout />}>

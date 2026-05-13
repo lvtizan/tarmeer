@@ -22,6 +22,8 @@ import supplierAuthRoutes from './routes/supplierAuth';
 import supplierRoutes from './routes/suppliers';
 import fieldRoutes from './routes/field';
 import siteRoutes from './routes/site';
+import integrationRoutes from './routes/integration';
+import { ssoConsume } from './controllers/integrationController';
 import { trackEvent } from './controllers/activityLogController';
 import config from './config';
 import {
@@ -392,6 +394,8 @@ app.use('/api/supplier/auth', supplierAuthRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/field', fieldRoutes);
 app.use('/api/site', siteRoutes);
+app.use('/api/integration', integrationRoutes);
+app.get('/api/sso/consume', ssoConsume);
 app.get('/api/public/service-categories', getPublicServiceCategories);
 app.post('/api/feedback', submitFeedback);
 app.post('/api/track', trackEvent);

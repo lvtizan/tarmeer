@@ -48,6 +48,8 @@ interface Company {
   displayOrder: number;
   date: string;
   company_type?: 'design_studio' | 'renovation_company';
+  crm_tenant_id?: string | null;
+  crm_first_login_at?: string | null;
 }
 
 interface UAECompany {
@@ -821,13 +823,20 @@ const CompaniesTab: React.FC<{
                   <p className="text-[13px] text-stone-500">{company.contact} · {company.phone}</p>
                   <p className="text-[12px] text-stone-400">{company.city}</p>
                 </div>
-                <span className={`shrink-0 px-2 py-1 rounded-full text-[11px] font-semibold ${
-                  company.status === 'approved' ? 'bg-green-100 text-green-800'
-                  : company.status === 'pending' ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
-                }`}>
-                  {company.status}
-                </span>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={`px-2 py-1 rounded-full text-[11px] font-semibold ${
+                    company.status === 'approved' ? 'bg-green-100 text-green-800'
+                    : company.status === 'pending' ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+                  }`}>
+                    {company.status}
+                  </span>
+                  {company.crm_tenant_id && (
+                    <span className="text-[10px] text-green-700 font-medium">
+                      CRM {company.crm_first_login_at ? '已激活' : '未激活'}
+                    </span>
+                  )}
+                </div>
               </div>
               {company.status === 'pending' && (
                 <div className="flex gap-2 mt-3">
@@ -891,6 +900,9 @@ const CompaniesTab: React.FC<{
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                   {t('Display Order', '展示顺序')}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                  CRM
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
                   {t('Actions', '操作')}
@@ -965,6 +977,20 @@ const CompaniesTab: React.FC<{
                       }
                       className="w-16 px-2 py-1 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {company.crm_tenant_id ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-green-700 font-medium text-xs">已开通</span>
+                        {company.crm_first_login_at ? (
+                          <span className="text-xs text-stone-400">已激活</span>
+                        ) : (
+                          <span className="text-xs text-amber-600">未激活</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-stone-400">未开通</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                     {company.status === 'pending' && (

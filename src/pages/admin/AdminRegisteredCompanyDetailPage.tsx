@@ -32,6 +32,9 @@ interface CompanyProfile {
   user_id: number;
   user_email: string;
   user_name: string;
+  crm_tenant_id: string | null;
+  crm_provisioned_at: string | null;
+  crm_first_login_at: string | null;
 }
 
 interface Project {
@@ -77,6 +80,7 @@ export default function AdminRegisteredCompanyDetailPage() {
   const [activeStyle, setActiveStyle] = useState<string>('all');
   const [actionError, setActionError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [crmProvisioning, setCrmProvisioning] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectingProjectId, setRejectingProjectId] = useState<number | null>(null);
@@ -249,6 +253,20 @@ export default function AdminRegisteredCompanyDetailPage() {
     }
   };
 
+  const handleCrmProvision = async () => {
+    if (!company) return;
+    setCrmProvisioning(true);
+    try {
+      const result = await adminApi.request(`/profile-companies/${company.id}/crm-provision`, { method: 'POST' });
+      setCompany((prev) => prev ? { ...prev, crm_tenant_id: result.crm_tenant_id } : prev);
+      showToast('CRM 已开通', 'success');
+    } catch (err: any) {
+      showToast(err.message || '开通 CRM 失败', 'error');
+    } finally {
+      setCrmProvisioning(false);
+    }
+  };
+
   const backTab = (() => {
     const tab = searchParams.get('tab');
     if (tab === 'applications' || tab === 'directory') return tab;
@@ -348,6 +366,35 @@ export default function AdminRegisteredCompanyDetailPage() {
           {company.admin_notes && (
             <div className="mt-2 text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
               <span className="font-medium">{t('Admin notes:', '管理员备注:')}</span> {company.admin_notes}
+            </div>
+          )}
+        </div>
+
+        {/* CRM card (mobile) */}
+        <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
+          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">CRM</h2>
+          {company.crm_tenant_id ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-green-700 font-medium">已开通</span>
+                {company.crm_first_login_at ? (
+                  <span className="text-stone-400 text-xs">· 已激活</span>
+                ) : (
+                  <span className="text-amber-600 text-xs">· 未激活</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-stone-400">未开通</span>
+              <button
+                onClick={handleCrmProvision}
+                disabled={crmProvisioning || company.status !== 'approved'}
+                className="px-3 py-1 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07040] disabled:opacity-50 transition"
+              >
+                {crmProvisioning ? '开通中…' : '开通'}
+              </button>
             </div>
           )}
         </div>
@@ -646,6 +693,47 @@ export default function AdminRegisteredCompanyDetailPage() {
             <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Owner Account', '所有者账户')}</h2>
             <div className="font-medium text-stone-800">{company.user_name}</div>
             <div className="text-stone-500">{company.user_email}</div>
+          </div>
+
+          {/* CRM status card */}
+          <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">CRM</h2>
+            {company.crm_tenant_id ? (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-green-700 font-medium">已开通</span>
+                </div>
+                {company.crm_first_login_at ? (
+                  <div className="text-stone-500">
+                    首次登录：{new Date(company.crm_first_login_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+                    <span className="text-amber-700">未激活</span>
+                  </div>
+                )}
+                <div className="text-stone-400 text-xs break-all">tenant: {company.crm_tenant_id}</div>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-1.5 text-stone-400">
+                  <span className="inline-block w-2 h-2 rounded-full bg-stone-300" />
+                  未开通
+                </div>
+                <button
+                  onClick={handleCrmProvision}
+                  disabled={crmProvisioning || company.status !== 'approved'}
+                  className="w-full py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07040] disabled:opacity-50 transition"
+                >
+                  {crmProvisioning ? '开通中…' : '开通 CRM'}
+                </button>
+                {company.status !== 'approved' && (
+                  <p className="text-xs text-stone-400">审批通过后可开通</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

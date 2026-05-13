@@ -5,6 +5,7 @@ import * as userAuth from '../controllers/userAuthController';
 import * as onboarding from '../controllers/onboardingController';
 import * as homeowner from '../controllers/homeownerController';
 import * as companyProfile from '../controllers/companyProfileController';
+import { issueCrmSso } from '../controllers/companyCrmController';
 import rateLimit from 'express-rate-limit';
 import { authRateLimit, checkAccountLock } from '../middleware/authRateLimit';
 import { authenticate } from '../middleware/auth';
@@ -145,6 +146,8 @@ router.post('/company/profile', authenticate, companyProfile.upsertProfile);
 router.get('/company/profile', authenticate, companyProfile.getProfile);
 router.get('/company/projects', authenticate, companyProfile.getCompanyProjects);
 router.get('/company/services', companyProfile.getServiceOptions);
+// CRM SSO — issue a consume URL for the logged-in company user
+router.post('/company/crm-sso', authenticate, issueCrmSso);
 
 // Portfolio scrape from URL
 router.post('/company/scrape-portfolio', authenticate, async (req: any, res: any) => {

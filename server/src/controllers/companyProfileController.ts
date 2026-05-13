@@ -9,6 +9,7 @@ import { generateEmailHandle, slugify } from '../lib/slugify';
 import { parseJsonField } from '../lib/parseJsonField';
 import { logActivity, getClientIp } from '../lib/activityLogger';
 import { getValidServices } from '../lib/enumCache';
+import { partnerSync } from '../lib/crmIntegrationService';
 
 /**
  * POST /api/company/profile
@@ -129,6 +130,10 @@ export async function upsertProfile(req: any, res: any) {
     );
 
     const [rows] = await pool.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+    const profile = (rows as any[])[0];
+
+    // CRM profile sync (fire-and-forget, only if already provisioned)
+    if (profile?.crm_tenant_id) partnerSync(profile.id);
 
     setImmediate(() => {
       logActivity({
@@ -139,7 +144,7 @@ export async function upsertProfile(req: any, res: any) {
       }).catch(() => {});
     });
 
-    res.json({ profile: (rows as any[])[0] });
+    res.json({ profile });
   } catch (error) {
     console.error('Upsert company profile error:', error);
     res.status(500).json({ error: 'Failed to save company profile.' });

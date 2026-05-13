@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare } from 'lucide-react';
+import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare, ExternalLink } from 'lucide-react';
 import Navbar from '../Navbar';
 import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
@@ -19,6 +19,8 @@ export default function CompanyLayout() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [companyType, setCompanyType] = useState('');
+  const [crmEnabled, setCrmEnabled] = useState(false);
+  const [crmOpening, setCrmOpening] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -36,6 +38,7 @@ export default function CompanyLayout() {
           if (!mounted) return;
           setCompanyName(res?.company_name || '');
           setCompanyType(res?.company_type || '');
+          setCrmEnabled(!!res?.crm_tenant_id);
         }).catch(() => {});
       })
       .catch(() => {
@@ -49,6 +52,15 @@ export default function CompanyLayout() {
 
     return () => { mounted = false; };
   }, [token, navigate]);
+
+  const handleOpenCrm = async () => {
+    if (crmOpening) return;
+    setCrmOpening(true);
+    try {
+      const res: any = await api.post('/auth/company/crm-sso', {});
+      if (res?.consumeUrl) window.open(res.consumeUrl, '_blank');
+    } catch { } finally { setCrmOpening(false); }
+  };
 
   if (!token) return <Navigate to="/auth" replace />;
   if (authValid !== true) {
@@ -85,6 +97,12 @@ export default function CompanyLayout() {
                 <Settings className="w-5 h-5" />
                 <span className="text-sm font-medium">Settings</span>
               </NavLink>
+              {crmEnabled && (
+                <button onClick={handleOpenCrm} disabled={crmOpening} className={navCls({ isActive: false }) + ' w-full text-left'}>
+                  <ExternalLink className="w-5 h-5" />
+                  <span className="text-sm font-medium">{crmOpening ? 'Opening…' : 'Open CRM'}</span>
+                </button>
+              )}
             </nav>
           </div>
         </aside>
@@ -131,6 +149,12 @@ export default function CompanyLayout() {
           <User className="w-5 h-5" />
           Profile
         </NavLink>
+        {crmEnabled && (
+          <button onClick={handleOpenCrm} disabled={crmOpening} className="flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] text-stone-500 disabled:opacity-50">
+            <ExternalLink className="w-5 h-5" />
+            CRM
+          </button>
+        )}
       </nav>
     </div>
   );

@@ -7,6 +7,7 @@ import { sendVerificationEmail, generateVerificationToken, sendPasswordResetEmai
 import { notifyUserRegistration } from '../services/notificationService';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
 import { logActivity, getClientIp } from '../lib/activityLogger';
+import { passwordSync } from '../lib/crmIntegrationService';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email',
@@ -700,6 +701,9 @@ export async function changePassword(req: any, res: any) {
 
     const hashedPassword = await bcrypt.hash(new_password, 10);
     await pool.execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+
+    // CRM password sync (fire-and-forget)
+    passwordSync(userId, hashedPassword);
 
     res.json({ message: 'Password changed successfully.' });
   } catch (error) {
