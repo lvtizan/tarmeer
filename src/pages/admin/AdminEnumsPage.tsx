@@ -157,6 +157,7 @@ function ServicesTab({
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const newCatInputRef = useRef<HTMLInputElement>(null);
+  const catSubmittingRef = useRef(false);
 
   const loadCats = useCallback(async () => {
     try {
@@ -385,8 +386,10 @@ function ServicesTab({
   }
 
   async function commitNewCategory() {
+    if (catSubmittingRef.current) return;
     const name = newCategoryName.trim();
     if (!name) { setAddingCategory(false); setNewCategoryName(''); return; }
+    catSubmittingRef.current = true;
     try {
       await adminApi.request('/enums/service-categories', {
         method: 'POST',
@@ -398,6 +401,7 @@ function ServicesTab({
     } catch {
       showToast('创建失败', 'error');
     } finally {
+      catSubmittingRef.current = false;
       setAddingCategory(false);
       setNewCategoryName('');
     }
@@ -473,12 +477,12 @@ function ServicesTab({
                     onClick={(e) => { e.stopPropagation(); toggleCategory(catMeta); }}
                     className={`shrink-0 inline-flex items-center justify-center text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                       isEnabled
-                        ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                        : 'bg-stone-100 text-stone-400 hover:bg-stone-200'
+                        ? 'bg-stone-100 text-stone-400 hover:bg-stone-200'
+                        : 'bg-green-50 text-green-700 hover:bg-green-100'
                     }`}
-                    title={isEnabled ? '停用（首页导航不显示）' : '启用'}
+                    title={isEnabled ? '停用（首页导航不显示）' : '启用（首页导航显示）'}
                   >
-                    {isEnabled ? '启用' : '停用'}
+                    {isEnabled ? '停用' : '启用'}
                   </button>
                 ) : <span className="w-[42px] shrink-0" />}
 

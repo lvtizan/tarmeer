@@ -644,7 +644,7 @@ export async function runAutoMigrate(): Promise<void> {
     // 7c. Seed company_service_categories from known category list (idempotent)
     try {
       await pool.execute(
-        `INSERT IGNORE INTO company_service_categories (name, sort_order, is_enabled) VALUES
+        `INSERT INTO company_service_categories (name, sort_order, is_enabled) VALUES
           ('Design & Planning',    1, 1),
           ('Construction',         2, 1),
           ('Design & Build',       3, 1),
@@ -654,7 +654,8 @@ export async function runAutoMigrate(): Promise<void> {
           ('Home Systems',         7, 1),
           ('Interiors & Furniture',8, 1),
           ('Maintenance',          9, 1),
-          ('Specialty Works',     10, 1)`
+          ('Specialty Works',     10, 1)
+         ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`
       );
     } catch { /* ignore */ }
 
