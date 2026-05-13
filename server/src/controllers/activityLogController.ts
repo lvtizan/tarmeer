@@ -124,7 +124,7 @@ export async function getUserTimeline(req: any, res: any) {
         COALESCE(NULLIF(al.user_name, ''), u.full_name, u.email) AS user_name,
         CASE
           WHEN al.target_name IS NULL AND al.target_id IS NOT NULL AND al.action IN ('view_company','submit_inquiry')
-          THEN COALESCE(uc.name_en, uc.name, cp.company_name)
+          THEN COALESCE(uc.name_en, uc.name_ar, cp.company_name)
           ELSE al.target_name
         END AS target_name
        FROM activity_log al
@@ -196,7 +196,7 @@ export async function getActivityLogs(req: any, res: any) {
         CASE WHEN al.user_id IS NULL THEN ip_hint.hint_role END AS ip_hint_role,
         CASE
           WHEN al.target_name IS NULL AND al.target_id IS NOT NULL AND al.action IN ('view_company','submit_inquiry')
-          THEN COALESCE(uc.name_en, uc.name, cp.company_name)
+          THEN COALESCE(uc.name_en, uc.name_ar, cp.company_name)
           ELSE al.target_name
         END AS target_name
        FROM activity_log al

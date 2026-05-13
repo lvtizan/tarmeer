@@ -419,6 +419,8 @@ export default function AdminActivityLogPage() {
 
   const [roleFilter, setRoleFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
   const [page, setPage] = useState(1);
 
   // ── Fetch stats ─────────────────────────────────────────────────────────
@@ -450,17 +452,17 @@ export default function AdminActivityLogPage() {
 
   const fetchLogs = useCallback(() => {
     setLogsLoading(true);
-    adminApi.getActivityLog({ page, limit: PAGE_SIZE, role: roleFilter || undefined, action: actionFilter || undefined })
+    adminApi.getActivityLog({ page, limit: PAGE_SIZE, role: roleFilter || undefined, action: actionFilter || undefined, start_date: dateStart || undefined, end_date: dateEnd || undefined })
       .then((data) => {
         setLogs(data.logs || []);
         setPagination({ page: data.pagination?.page ?? 1, total: data.pagination?.total ?? 0, totalPages: data.pagination?.totalPages ?? 0 });
       })
       .catch(() => setLogs([]))
       .finally(() => setLogsLoading(false));
-  }, [page, roleFilter, actionFilter]);
+  }, [page, roleFilter, actionFilter, dateStart, dateEnd]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
-  useEffect(() => { setPage(1); }, [roleFilter, actionFilter]);
+  useEffect(() => { setPage(1); }, [roleFilter, actionFilter, dateStart, dateEnd]);
 
   // ── Aggregate + group by date ────────────────────────────────────────────
 
@@ -480,7 +482,7 @@ export default function AdminActivityLogPage() {
     return Array.from(byDate.entries()).sort((a, b) => b[0].localeCompare(a[0]));
   }, [logs]);
 
-  const handleExport = () => window.open(adminApi.getActivityLogExportUrl({ role: roleFilter || undefined, action: actionFilter || undefined }), '_blank');
+  const handleExport = () => window.open(adminApi.getActivityLogExportUrl({ role: roleFilter || undefined, action: actionFilter || undefined, start_date: dateStart || undefined, end_date: dateEnd || undefined }), '_blank');
 
   // Detect "anomalous" users (edited > 2 times today in top users)
   const warningUser = topUsers.find((u) => u.event_count >= 3 && u.user_role === 'company');
@@ -571,6 +573,29 @@ export default function AdminActivityLogPage() {
             </div>
             {/* Action filter */}
             <AdminSelect size="sm" value={actionFilter} onChange={setActionFilter} options={ACTION_OPTIONS} />
+            {/* Date range */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <input
+                type="date"
+                value={dateStart}
+                onChange={(e) => setDateStart(e.target.value)}
+                className="h-8 px-2 rounded-lg border border-stone-200 bg-stone-50 text-xs text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+              />
+              <span className="text-xs text-stone-400">—</span>
+              <input
+                type="date"
+                value={dateEnd}
+                min={dateStart || undefined}
+                onChange={(e) => setDateEnd(e.target.value)}
+                className="h-8 px-2 rounded-lg border border-stone-200 bg-stone-50 text-xs text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+              />
+              {(dateStart || dateEnd) && (
+                <button
+                  onClick={() => { setDateStart(''); setDateEnd(''); }}
+                  className="h-8 px-2 rounded-lg border border-stone-200 bg-white text-xs text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-colors"
+                >✕</button>
+              )}
+            </div>
           </div>
 
           {/* Feed */}
