@@ -34,22 +34,6 @@ const navItems = [
     infoEn: 'Review customer leads, update follow-up status, and keep conversion notes synchronized.',
     infoZh: '查看客户线索、更新跟进状态，并同步转化备注。',
   },
-  {
-    to: '/admin/activity-log', labelEn: 'Activity Log', labelZh: '操作记录', icon: ClipboardList, permission: 'can_view_stats' as const,
-    infoEn: 'Track all user and admin operations with IP, location, and timestamps.',
-    infoZh: '追踪所有用户和管理员的操作记录，含 IP、地区和时间。',
-  },
-  // ── Other ──
-  {
-    to: '/admin/complaints', labelEn: 'Complaints', labelZh: '投诉', icon: ShieldAlert,
-    infoEn: 'Handle abuse/report tickets, complete investigation notes, and close complaint workflows.',
-    infoZh: '处理举报/投诉工单，补全调查记录并完成闭环。',
-  },
-  {
-    to: '/admin/feedback', labelEn: 'Feedback', labelZh: '用户反馈', icon: MessageSquare,
-    infoEn: 'View feedback and suggestions submitted via the website footer and company portal.',
-    infoZh: '查看通过官网底部和装企后台提交的反馈意见。',
-  },
 ];
 
 const adminItems = [
@@ -62,6 +46,21 @@ const adminItems = [
     to: '/admin/enums', labelEn: 'Types & Services', labelZh: '类型与服务', icon: Tags,
     infoEn: 'Manage company type slugs and service names used in registration and filtering.',
     infoZh: '管理公司类型和服务分类，用于注册表单和筛选器。',
+  },
+  {
+    to: '/admin/activity-log', labelEn: 'Activity Log', labelZh: '操作记录', icon: ClipboardList, permission: 'can_view_stats' as const,
+    infoEn: 'Track all user and admin operations with IP, location, and timestamps.',
+    infoZh: '追踪所有用户和管理员的操作记录，含 IP、地区和时间。',
+  },
+  {
+    to: '/admin/complaints', labelEn: 'Complaints', labelZh: '投诉', icon: ShieldAlert,
+    infoEn: 'Handle abuse/report tickets, complete investigation notes, and close complaint workflows.',
+    infoZh: '处理举报/投诉工单，补全调查记录并完成闭环。',
+  },
+  {
+    to: '/admin/feedback', labelEn: 'Feedback', labelZh: '用户反馈', icon: MessageSquare,
+    infoEn: 'View feedback and suggestions submitted via the website footer and company portal.',
+    infoZh: '查看通过官网底部和装企后台提交的反馈意见。',
   },
   {
     to: '/admin/visit-records', labelEn: 'Visit Records', labelZh: '访谈记录', icon: MapPin, superAdminOnly: true,
@@ -210,8 +209,8 @@ export default function AdminLayout() {
     return null;
   }
 
-  const filteredNavItems = navItems.filter(item => 
-    !item.permission || hasPermission(item.permission)
+  const filteredNavItems = navItems.filter(item =>
+    (!('permission' in item) || !(item as any).permission || hasPermission((item as any).permission))
   );
 
   const filteredAdminItems = adminItems.filter(item =>
