@@ -126,7 +126,7 @@ export default function AdminCompaniesPage() {
         page: pendingPage, limit: 20,
         status: pendingStatusFilter === 'all' ? undefined : pendingStatusFilter,
         search: pendingSearch || undefined,
-        sort_by: pendingSortActive ? 'project_count' : undefined,
+        sort_by: pendingSortActive ? 'project_count' : 'pending_projects',
         sort_dir: pendingSortActive ? pendingSortDir : undefined,
       });
       setPendingProfiles(result.companies);
