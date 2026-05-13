@@ -15,7 +15,8 @@ import {
   MAX_ESTIMATED_PAYLOAD_BYTES, MAX_TOTAL_UPLOAD_BYTES, buildUploadSizeMessage,
 } from '../../lib/projectImageUpload';
 import { findDuplicates } from '../../lib/imageDedup';
-import { SPACE_TAXONOMY, SERVICE_GROUPS } from '../../lib/tagTaxonomy';
+import { SPACE_TAXONOMY } from '../../lib/tagTaxonomy';
+import { useServiceCategories } from '../../hooks/useServiceCategories';
 
 const PRIMARY = '#b8864a';
 const STYLES = [{ value:'', label:'Select a style' },{ value:'modern', label:'Modern Contemporary' },{ value:'islamic', label:'Modern Islamic' },{ value:'classic', label:'Neo-Classic' },{ value:'minimalist', label:'Minimalist' },{ value:'industrial', label:'Industrial' }];
@@ -66,6 +67,8 @@ function parseImageEntries(value: unknown): ImageEntry[] {
 }
 
 export default function CompanyProjectsPage() {
+  const dynamicServiceCategories = useServiceCategories();
+
   /* ── view mode ── */
   const [mode, setMode] = useState<'list' | 'form'>('list');
 
@@ -216,7 +219,7 @@ export default function CompanyProjectsPage() {
   /* ── submit project ── */
   const submit = async (publish: boolean) => {
     setTried(true);
-    if(!form.title.trim()||!form.style||!form.location||imgs.length===0){
+    if(!form.title.trim()||!form.location||imgs.length===0){
       showToast('Please complete all required fields', 'error');
       return;
     }
@@ -325,11 +328,10 @@ export default function CompanyProjectsPage() {
     }
   };
 
-  const canPublish = !!(form.title.trim()&&form.style&&form.location&&imgs.length>0);
+  const canPublish = !!(form.title.trim()&&form.location&&imgs.length>0);
   const gb = imgs.reduce((s,u)=>s+estimateDataUrlBytes(u),0);
   const missingFields:string[] = [];
   if(!form.title.trim()) missingFields.push('title');
-  if(!form.style) missingFields.push('style');
   if(!form.location) missingFields.push('city');
   if(imgs.length===0) missingFields.push('images');
 
@@ -520,9 +522,8 @@ export default function CompanyProjectsPage() {
                 <p className="mt-1 text-xs text-stone-500">Optional. Video will be embedded on the project page.</p>
               </div>
               <div>
-                <label className={labelCls}>Style <span className="text-red-500">*</span></label>
-                <SelectField name="style" value={form.style} onChange={e=>setForm(p=>({...p,style:(e.target as any).value}))} className={tried&&!form.style?'!border-red-400':''}>{STYLES.map(s=><option key={s.value||'e'} value={s.value}>{s.label}</option>)}</SelectField>
-                {tried&&!form.style&&<p className="mt-1 text-xs text-red-500">Please select a style</p>}
+                <label className={labelCls}>Style <span className="text-stone-400 font-normal">(optional)</span></label>
+                <SelectField name="style" value={form.style} onChange={e=>setForm(p=>({...p,style:(e.target as any).value}))}>{STYLES.map(s=><option key={s.value||'e'} value={s.value}>{s.label}</option>)}</SelectField>
               </div>
               <div>
                 <label className={labelCls}>Location (City) <span className="text-red-500">*</span></label>
@@ -572,11 +573,11 @@ export default function CompanyProjectsPage() {
                 <label className={labelCls}>Service Tags <span className="font-normal text-stone-400">(optional)</span></label>
                 <p className="mb-2 text-xs text-stone-500">Select the services involved in this project.</p>
                 <div className="space-y-2">
-                  {SERVICE_GROUPS.map(({ group, tags: stags }) => (
-                    <div key={group}>
-                      <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1.5">{group}</p>
+                  {dynamicServiceCategories.map(cat => (
+                    <div key={cat.name}>
+                      <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1.5">{cat.name}</p>
                       <div className="flex flex-wrap gap-2">
-                        {stags.map(t => {
+                        {cat.subs.map(t => {
                           const on = serviceTags.includes(t);
                           return (
                             <button key={t} type="button"
