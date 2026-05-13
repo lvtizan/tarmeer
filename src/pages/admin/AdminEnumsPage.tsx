@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { adminApi } from '../../lib/adminApi';
 import { showToast } from '../../components/ui/Toast';
@@ -153,20 +153,41 @@ function ServicesTab({
   const catOverIndex = useRef<number>(-1);
   const [catDraggingIdx, setCatDraggingIdx] = useState<number>(-1);
   const [catOverIdx, setCatOverIdx] = useState<number>(-1);
+  const autoRegistered = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    adminApi.request('/enums/service-categories').then((d) => {
+  const loadCats = useCallback(async () => {
+    try {
+      const d = await adminApi.request('/enums/service-categories');
       setCategories(d.categories || []);
-    }).catch(() => {});
+    } catch {}
   }, []);
+
+  useEffect(() => { loadCats(); }, [loadCats]);
 
   // Build category list: DB-order first, then add any orphan categories from services
   const dbCatNames = categories.map((c) => c.name);
-  const extraCats = Array.from(new Set(
+  const extraCats = useMemo(() => Array.from(new Set(
     services.map((s) => s.category).filter(Boolean) as string[]
-  )).filter((c) => !dbCatNames.includes(c));
+  )).filter((c) => !dbCatNames.includes(c)), [services, dbCatNames.join(',')]);
+
   const allCats = [...dbCatNames, ...extraCats, ...ALL_CATEGORIES.filter((c) => !dbCatNames.includes(c) && !extraCats.includes(c))].filter(Boolean);
   const orphans = services.filter((s) => !s.category);
+
+  // Auto-register orphan categories (services with category strings not in company_service_categories)
+  useEffect(() => {
+    const unregistered = extraCats.filter((c) => !autoRegistered.current.has(c));
+    if (unregistered.length === 0) return;
+    unregistered.forEach((c) => autoRegistered.current.add(c));
+    const maxOrder = categories.length;
+    Promise.all(
+      unregistered.map((cat, i) =>
+        adminApi.request('/enums/service-categories', {
+          method: 'POST',
+          body: JSON.stringify({ name: cat, sort_order: maxOrder + i }),
+        }).catch(() => {})
+      )
+    ).then(() => loadCats());
+  }, [extraCats.join(','), categories.length]);
 
   // Auto-select first category
   useEffect(() => {
@@ -230,6 +251,7 @@ function ServicesTab({
       setNewServiceName('');
       showToast('已添加', 'success');
       onReload();
+      loadCats();
     } catch (e: any) {
       showToast(e.message || '添加失败', 'error');
     } finally {

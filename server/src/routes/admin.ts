@@ -86,7 +86,7 @@ import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '..
 import {
   listCompanyTypes, createCompanyType, updateCompanyType, deleteCompanyType,
   listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService, reorderCompanyServices, renameServiceCategory,
-  listServiceCategories, toggleServiceCategory, reorderServiceCategories, renameServiceCategory2, deleteServiceCategory,
+  listServiceCategories, createServiceCategory, toggleServiceCategory, reorderServiceCategories, renameServiceCategory2, deleteServiceCategory,
 } from '../controllers/enumAdminController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
@@ -450,6 +450,7 @@ router.put('/enums/company-services/:name', requireAdmin, updateCompanyService);
 router.delete('/enums/company-services/:name', requireAdmin, deleteCompanyService);
 // Enum management — service categories (parent level)
 router.get('/enums/service-categories', listServiceCategories);
+router.post('/enums/service-categories', requireAdmin, createServiceCategory);
 router.put('/enums/service-categories/reorder', requireAdmin, reorderServiceCategories);
 router.put('/enums/service-categories/:name/toggle', requireAdmin, toggleServiceCategory);
 router.put('/enums/service-categories/:name/rename', requireAdmin, renameServiceCategory2);

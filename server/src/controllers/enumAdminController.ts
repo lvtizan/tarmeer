@@ -93,10 +93,19 @@ export async function createCompanyService(req: any, res: any) {
   try {
     const { name, sort_order = 0, category } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'name is required.' });
+    const cleanCat = category?.trim() || null;
     await pool.execute(
       'INSERT INTO company_services (name, sort_order, active, category) VALUES (?, ?, 1, ?)',
-      [name.trim(), Number(sort_order) || 0, category?.trim() || null]
+      [name.trim(), Number(sort_order) || 0, cleanCat]
     );
+    // Auto-register the category in company_service_categories if it doesn't exist yet
+    if (cleanCat) {
+      await pool.execute(
+        `INSERT IGNORE INTO company_service_categories (name, sort_order, is_enabled)
+         VALUES (?, COALESCE((SELECT MAX(sort_order) + 1 FROM company_service_categories AS _t), 0), 1)`,
+        [cleanCat]
+      );
+    }
     invalidateEnumCache();
     res.status(201).json({ name: name.trim() });
   } catch (error: any) {
@@ -105,6 +114,22 @@ export async function createCompanyService(req: any, res: any) {
     }
     console.error('createCompanyService error:', error);
     res.status(500).json({ error: 'Failed to create service.' });
+  }
+}
+
+export async function createServiceCategory(req: any, res: any) {
+  try {
+    const { name, sort_order = 0 } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'name is required.' });
+    await pool.execute(
+      'INSERT IGNORE INTO company_service_categories (name, sort_order, is_enabled) VALUES (?, ?, 1)',
+      [name.trim(), Number(sort_order) || 0]
+    );
+    invalidateEnumCache();
+    res.status(201).json({ name: name.trim() });
+  } catch (error) {
+    console.error('createServiceCategory error:', error);
+    res.status(500).json({ error: 'Failed to create category.' });
   }
 }
 
