@@ -117,22 +117,6 @@ export async function createCompanyService(req: any, res: any) {
   }
 }
 
-export async function createServiceCategory(req: any, res: any) {
-  try {
-    const { name, sort_order = 0 } = req.body;
-    if (!name?.trim()) return res.status(400).json({ error: 'name is required.' });
-    await pool.execute(
-      'INSERT IGNORE INTO company_service_categories (name, sort_order, is_enabled) VALUES (?, ?, 1)',
-      [name.trim(), Number(sort_order) || 0]
-    );
-    invalidateEnumCache();
-    res.status(201).json({ name: name.trim() });
-  } catch (error) {
-    console.error('createServiceCategory error:', error);
-    res.status(500).json({ error: 'Failed to create category.' });
-  }
-}
-
 export async function updateCompanyService(req: any, res: any) {
   try {
     const name = decodeURIComponent(req.params.name);

@@ -144,15 +144,6 @@ const PAGE_SIZE = 30;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Build admin detail path from target_type + target_id */
-function getTargetPath(targetType: string | null, targetId: number | null): string | null {
-  if (!targetId) return null;
-  if (targetType === 'company_profile') return `/admin/profile-companies/${targetId}`;
-  if (targetType === 'company' || targetType === 'uae_company') return `/admin/companies/${targetId}`;
-  if (targetType === 'user') return `/admin/users/${targetId}`;
-  return null;
-}
-
 /** Build actor (user) detail path based on role */
 function getUserPath(userId: number, role: string | null): string {
   if (role === 'admin') return `/admin/activity-log/user/${userId}?role=admin`;
@@ -182,39 +173,6 @@ function formatDateLabel(dateStr: string): string {
 function extractDate(dateStr: string | null | undefined): string { return dateStr ? dateStr.slice(0, 10) : '1970-01-01'; }
 
 // ─── Event Card ──────────────────────────────────────────────────────────────
-
-function EntryDetail({ e }: { e: ActivityLogEntry }) {
-  const m = e.metadata as Record<string, string> | null;
-  const targetPath = getTargetPath(e.target_type, e.target_id);
-
-  if (e.target_type === 'inquiry' && m) {
-    const parts = [
-      m.company && `公司: ${m.company}`,
-      m.submitter && `提交人: ${m.submitter}`,
-      m.city && `城市: ${m.city}`,
-      m.area && `面积: ${m.area}`,
-      m.phone && `电话: ${m.phone}`,
-    ].filter(Boolean);
-    return <div className="text-xs text-[#6b6b6b]">{parts.join(' · ') || e.description || `#${e.target_id}`}</div>;
-  }
-
-  const label = e.target_name || e.description || `#${e.target_id}`;
-  if (targetPath && label) {
-    return (
-      <div className="text-xs">
-        <Link
-          to={targetPath}
-          state={{ from: '/admin/activity-log', fromLabel: '操作记录' }}
-          className="text-[#B8864A] hover:underline"
-          onClick={(ev) => ev.stopPropagation()}
-        >
-          {label}
-        </Link>
-      </div>
-    );
-  }
-  return <div className="text-xs text-[#6b6b6b]">{e.description || label}</div>;
-}
 
 // Safely parse metadata — MySQL TEXT column may arrive as a JSON string
 function parseMeta(raw: unknown): Record<string, any> | null {
