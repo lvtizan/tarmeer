@@ -7,6 +7,7 @@ import Avatar from '../ui/Avatar';
 import SidebarNavLink from '../ui/SidebarNavLink';
 import TarmeerLogo from '../TarmeerLogo';
 import ToastContainer from '../ui/Toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import { AdminLangContext, type AdminLang } from '../../hooks/useAdminLang';
 import AdminGlobalSearch from './AdminGlobalSearch';
 
@@ -389,6 +390,7 @@ export default function AdminLayout() {
       </main>
       </div>
       <ToastContainer />
+      <ConfirmModal />
       {tooltip && (
         <div
           className="pointer-events-none fixed z-[9999] w-80 -translate-y-1/2 rounded-md border border-stone-200 bg-white p-3 text-sm leading-relaxed text-stone-700 shadow-xl"

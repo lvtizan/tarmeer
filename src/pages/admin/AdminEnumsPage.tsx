@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { adminApi } from '../../lib/adminApi';
 import { showToast } from '../../components/ui/Toast';
+import { showConfirm } from '../../components/ui/ConfirmModal';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { SERVICE_CATEGORIES } from '../../lib/serviceCategories';
 import AdminSelect from '../../components/ui/AdminSelect';
@@ -330,16 +331,23 @@ function ServicesTab({
     }
   }
 
-  async function deleteCategory(cat: ServiceCategory) {
-    if (!confirm(`确定删除分类 "${cat.name}"？子服务不会被删除，但会变为未分类。`)) return;
-    try {
-      await adminApi.request(`/enums/service-categories/${encodeURIComponent(cat.name)}`, { method: 'DELETE' });
-      setCategories((prev) => prev.filter((c) => c.name !== cat.name));
-      if (selectedCat === cat.name) setSelectedCat(allCats.filter((c) => c !== cat.name)[0] || '');
-      showToast('已删除', 'success');
-    } catch {
-      showToast('删除失败', 'error');
-    }
+  function deleteCategory(cat: ServiceCategory) {
+    showConfirm({
+      title: `删除分类「${cat.name}」`,
+      message: '该分类下的所有子服务不会被删除，但会变为未分类，首页导航将不再显示此分类。此操作不可恢复。',
+      requireText: '我已知道删除对系统的影响',
+      confirmLabel: '确认删除',
+      onConfirm: async () => {
+        try {
+          await adminApi.request(`/enums/service-categories/${encodeURIComponent(cat.name)}`, { method: 'DELETE' });
+          setCategories((prev) => prev.filter((c) => c.name !== cat.name));
+          if (selectedCat === cat.name) setSelectedCat(allCats.filter((c) => c !== cat.name)[0] || '');
+          showToast('已删除', 'success');
+        } catch {
+          showToast('删除失败', 'error');
+        }
+      },
+    });
   }
 
   // ── Category-level drag + toggle ──

@@ -5,6 +5,7 @@ import { api } from './lib/api';
 import SeoManager from './components/SeoManager';
 import GoogleOneTap from './components/GoogleOneTap';
 import ToastContainer from './components/ui/Toast';
+import ConfirmModal from './components/ui/ConfirmModal';
 import { useMetaPixelPageView } from './hooks/useMetaPixelPageView';
 
 // Retry dynamic import up to 2 times before giving up.
@@ -226,6 +227,7 @@ function App() {
       <SeoManager />
       <GoogleOneTap />
       <ToastContainer />
+      <ConfirmModal />
       <ChunkErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
