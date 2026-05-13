@@ -154,6 +154,9 @@ function ServicesTab({
   const [catDraggingIdx, setCatDraggingIdx] = useState<number>(-1);
   const [catOverIdx, setCatOverIdx] = useState<number>(-1);
   const autoRegistered = useRef<Set<string>>(new Set());
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const newCatInputRef = useRef<HTMLInputElement>(null);
 
   const loadCats = useCallback(async () => {
     try {
@@ -381,6 +384,25 @@ function ServicesTab({
     }
   }
 
+  async function commitNewCategory() {
+    const name = newCategoryName.trim();
+    if (!name) { setAddingCategory(false); setNewCategoryName(''); return; }
+    try {
+      await adminApi.request('/enums/service-categories', {
+        method: 'POST',
+        body: JSON.stringify({ name, sort_order: categories.length }),
+      });
+      await loadCats();
+      setSelectedCat(name);
+      showToast('分类已创建', 'success');
+    } catch {
+      showToast('创建失败', 'error');
+    } finally {
+      setAddingCategory(false);
+      setNewCategoryName('');
+    }
+  }
+
   if (loading) {
     return <div className="p-8 text-center text-stone-400 text-sm">加载中…</div>;
   }
@@ -389,8 +411,18 @@ function ServicesTab({
     <div className="flex gap-4 items-start min-h-[500px]">
       {/* Left: category nav — mirrors ServiceRow style */}
       <div className="w-[420px] shrink-0 bg-white rounded-2xl border border-stone-200 overflow-hidden">
-        <div className="px-3 pt-3 pb-1">
+        <div className="px-3 pt-3 pb-1 flex items-center justify-between">
           <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">分类（拖动排序）</p>
+          <button
+            onClick={() => {
+              setAddingCategory(true);
+              setNewCategoryName('');
+              setTimeout(() => newCatInputRef.current?.focus(), 50);
+            }}
+            className="text-xs text-[#b8864a] hover:text-[#a07040] font-medium transition-colors"
+          >
+            + 新增
+          </button>
         </div>
         <div className="p-2 space-y-0.5">
           {allCats.map((cat, catIdx) => {
@@ -474,6 +506,22 @@ function ServicesTab({
               <span>其他（未分类）</span>
               <span className="text-[11px] shrink-0 ml-1">{orphans.length}</span>
             </button>
+          )}
+          {addingCategory && (
+            <div className="flex items-center gap-1.5 px-2 py-1">
+              <input
+                ref={newCatInputRef}
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitNewCategory();
+                  if (e.key === 'Escape') { setAddingCategory(false); setNewCategoryName(''); }
+                }}
+                onBlur={commitNewCategory}
+                placeholder="分类名称…"
+                className="flex-1 min-w-0 h-8 px-3 text-sm rounded-xl border border-[#b8864a]/40 bg-white focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+              />
+            </div>
           )}
         </div>
       </div>
