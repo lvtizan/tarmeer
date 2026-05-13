@@ -112,6 +112,21 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
     )`,
   },
   {
+    name: 'mall_sso_tokens',
+    sql: `CREATE TABLE IF NOT EXISTS mall_sso_tokens (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      token_hash VARCHAR(64) NOT NULL UNIQUE,
+      partner_id INT NOT NULL,
+      admin_email VARCHAR(255),
+      redirect_url VARCHAR(500),
+      expires_at DATETIME NOT NULL,
+      consumed_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_partner_id (partner_id),
+      INDEX idx_expires_at (expires_at)
+    )`,
+  },
+  {
     name: 'activity_log',
     sql: `CREATE TABLE IF NOT EXISTS activity_log (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -412,6 +427,12 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
 
   // Service parent category (e.g. 'Design & Planning') — drives public grouped endpoint
   { table: 'company_services', column: 'category', type: 'VARCHAR(100) NULL' },
+
+  // CRM/Mall integration — company provisioning state
+  { table: 'company_profiles', column: 'crm_tenant_id', type: 'VARCHAR(64) NULL' },
+  { table: 'company_profiles', column: 'crm_provisioned_at', type: 'DATETIME NULL' },
+  { table: 'company_profiles', column: 'crm_mall_partner_id', type: 'VARCHAR(64) NULL' },
+  { table: 'company_profiles', column: 'crm_first_login_at', type: 'DATETIME NULL' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）
