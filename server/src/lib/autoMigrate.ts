@@ -641,20 +641,32 @@ export async function runAutoMigrate(): Promise<void> {
       }
     } catch { /* ignore */ }
 
+    // 7c-fix. Revert wrongly-renamed categories back to admin-established names (idempotent)
+    // These renames happened in a previous autoMigrate seed change and must be undone.
+    try {
+      await pool.execute(`UPDATE company_service_categories SET name = 'Build Only'    WHERE name = 'Construction'`);
+      await pool.execute(`UPDATE company_services SET category = 'Build Only'          WHERE category = 'Construction'`);
+      await pool.execute(`UPDATE company_service_categories SET name = 'Design Only'   WHERE name = 'Design & Planning'`);
+      await pool.execute(`UPDATE company_services SET category = 'Design Only'         WHERE category = 'Design & Planning'`);
+      await pool.execute(`UPDATE company_service_categories SET name = 'Extension'     WHERE name = 'Extensions'`);
+      await pool.execute(`UPDATE company_services SET category = 'Extension'           WHERE category = 'Extensions'`);
+    } catch { /* ignore */ }
+
     // 7c. Seed company_service_categories from known category list (idempotent)
     try {
       await pool.execute(
         `INSERT INTO company_service_categories (name, sort_order, is_enabled) VALUES
-          ('Design & Planning',    1, 1),
-          ('Construction',         2, 1),
+          ('Design Only',          1, 1),
+          ('Build Only',           2, 1),
           ('Design & Build',       3, 1),
           ('Renovation',           4, 1),
-          ('Extensions',           5, 1),
+          ('Extension',            5, 1),
           ('Outdoor & Pools',      6, 1),
           ('Home Systems',         7, 1),
           ('Interiors & Furniture',8, 1),
           ('Maintenance',          9, 1),
-          ('Specialty Works',     10, 1)
+          ('Specialty Works',     10, 1),
+          ('Other Services',      11, 1)
          ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`
       );
     } catch { /* ignore */ }
