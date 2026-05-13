@@ -89,12 +89,15 @@ export default function Navbar({
 
   useEffect(() => {
     if (!dropdownOpen) { setHoveredCategory(null); return; }
-    const el = dropdownPanelRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const overflow = rect.right - (window.innerWidth - 40);
-    setDropdownLeft(overflow > 0 ? -overflow : 0);
-  }, [dropdownOpen, hoveredCategory]);
+    // Measure once after the panel renders at full fixed width — not on every hover
+    requestAnimationFrame(() => {
+      const el = dropdownPanelRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const overflow = rect.right - (window.innerWidth - 60);
+      setDropdownLeft(overflow > 0 ? -overflow : 0);
+    });
+  }, [dropdownOpen]);
 
   useEffect(() => {
     fetch(`${API_BASE}/public/service-categories`)
@@ -277,15 +280,28 @@ export default function Navbar({
                     </ul>
                   </div>
 
-                  {/* SUB-SERVICES — inline third column, slides in */}
-                  <div
-                    className={`overflow-hidden transition-all duration-200 ease-out flex-shrink-0 ${hoveredCategory ? 'max-w-[220px]' : 'max-w-0'}`}
-                  >
-                    <div className="w-[220px] p-6">
-                      {hoveredCategory && (() => {
-                        const cat = navCategories.find((c) => c.name === hoveredCategory);
-                        return cat ? (
-                          <>
+                  {/* SUB-SERVICES — invisible spacer (normal flow) sets height = tallest category; actual content absolute + crossfades */}
+                  {(() => {
+                    const tallest = navCategories.reduce((a, b) => b.subs.length > a.subs.length ? b : a, { name: '', subs: [] as string[] });
+                    return (
+                      <div className="w-[220px] flex-shrink-0 border-l border-stone-100 relative">
+                        {/* Spacer: invisible, in normal flow — makes container as tall as the tallest category */}
+                        <div className="p-6 invisible pointer-events-none" aria-hidden="true">
+                          <h3 className="text-xs font-bold uppercase tracking-wider mb-3">x</h3>
+                          <ul className="space-y-2">
+                            {tallest.subs.map((svc) => (
+                              <li key={svc}><span className="text-sm block">{svc}</span></li>
+                            ))}
+                          </ul>
+                        </div>
+                        {/* Actual content: absolute, crossfades between categories */}
+                        {navCategories.map((cat) => (
+                          <div
+                            key={cat.name}
+                            className={`absolute inset-0 p-6 transition-opacity duration-150 ${
+                              hoveredCategory === cat.name ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                            }`}
+                          >
                             <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">
                               {cat.name}
                             </h3>
@@ -302,11 +318,11 @@ export default function Navbar({
                                 </li>
                               ))}
                             </ul>
-                          </>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="border-t border-stone-200 px-6 py-3 bg-stone-50">
