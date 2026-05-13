@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { formatAdminDateTime } from '../../lib/formatTime';
 import AdminSelect from '../../components/ui/AdminSelect';
@@ -123,6 +123,21 @@ const PAGE_SIZE = 30;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+/** Build admin detail path from target_type + target_id */
+function getTargetPath(targetType: string | null, targetId: number | null): string | null {
+  if (!targetId) return null;
+  if (targetType === 'company_profile') return `/admin/profile-companies/${targetId}`;
+  if (targetType === 'company' || targetType === 'uae_company') return `/admin/companies/${targetId}`;
+  if (targetType === 'user') return `/admin/users/${targetId}`;
+  return null;
+}
+
+/** Build actor (user) detail path based on role */
+function getUserPath(userId: number, role: string | null): string {
+  if (role === 'admin') return `/admin/activity-log/user/${userId}?role=admin`;
+  return `/admin/users/${userId}`;
+}
+
 function getRoleBadge(role: string | null) {
   if (role === 'admin') return <span className="ml-1.5 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">超管</span>;
   if (role === 'company') return <span className="ml-1.5 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">装企</span>;
@@ -156,6 +171,8 @@ function extractDate(dateStr: string): string { return dateStr.slice(0, 10); }
 
 function EntryDetail({ e }: { e: ActivityLogEntry }) {
   const m = e.metadata as Record<string, string> | null;
+  const targetPath = getTargetPath(e.target_type, e.target_id);
+
   if (e.target_type === 'inquiry' && m) {
     const parts = [
       m.company && `公司: ${m.company}`,
@@ -166,7 +183,23 @@ function EntryDetail({ e }: { e: ActivityLogEntry }) {
     ].filter(Boolean);
     return <div className="text-xs text-[#6b6b6b]">{parts.join(' · ') || e.description || `#${e.target_id}`}</div>;
   }
-  return <div className="text-xs text-[#6b6b6b]">{e.description || e.target_name || `#${e.target_id}`}</div>;
+
+  const label = e.target_name || e.description || `#${e.target_id}`;
+  if (targetPath && label) {
+    return (
+      <div className="text-xs">
+        <Link
+          to={targetPath}
+          state={{ from: '/admin/activity-log', fromLabel: '操作记录' }}
+          className="text-[#B8864A] hover:underline"
+          onClick={(ev) => ev.stopPropagation()}
+        >
+          {label}
+        </Link>
+      </div>
+    );
+  }
+  return <div className="text-xs text-[#6b6b6b]">{e.description || label}</div>;
 }
 
 function AggregatedEntry({ group, onUserClick }: {
@@ -190,9 +223,33 @@ function AggregatedEntry({ group, onUserClick }: {
     : (hintName ? `访客（疑似 ${hintName}）` : (maskedIp ? `访客 ${maskedIp}` : '未知访客'));
   const displayRole = group.user_role || (isAnon && hintRole) || null;
 
-  // Description line
-  const descLine = group.latest.description ||
-    (actionLabel + (targetLabel ? `了${targetLabel}` : '') + (group.latest.target_name ? ` — ${group.latest.target_name}` : ''));
+  // Target entity link
+  const targetPath = getTargetPath(group.latest.target_type, group.latest.target_id);
+  const targetName = group.latest.target_name;
+
+  // Description line — build as JSX so target_name can be a link
+  const rawDesc = group.latest.description ||
+    (actionLabel + (targetLabel ? `了${targetLabel}` : '') + (targetName ? ` — ${targetName}` : ''));
+
+  const descNode = useMemo(() => {
+    if (!targetPath || !targetName) return <>{rawDesc}</>;
+    const idx = rawDesc.indexOf(targetName);
+    if (idx === -1) return <>{rawDesc}</>;
+    return (
+      <>
+        {rawDesc.slice(0, idx)}
+        <Link
+          to={targetPath}
+          state={{ from: '/admin/activity-log', fromLabel: '操作记录' }}
+          className="text-[#B8864A] hover:underline font-medium"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {targetName}
+        </Link>
+        {rawDesc.slice(idx + targetName.length)}
+      </>
+    );
+  }, [rawDesc, targetPath, targetName]);
 
   return (
     <div className="bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 flex gap-3 hover:border-[#d0b896] hover:shadow-sm transition-all">
@@ -202,9 +259,19 @@ function AggregatedEntry({ group, onUserClick }: {
         {/* Row 1: user + time */}
         <div className="flex items-center gap-1.5">
           {group.user_id ? (
-            <button onClick={() => onUserClick(group.user_id!, group.user_role)} className="text-sm font-semibold text-[#1c1917] hover:text-[#B8864A] transition-colors leading-tight">
+            <Link
+              to={getUserPath(group.user_id, group.user_role)}
+              className="text-sm font-semibold text-[#1c1917] hover:text-[#B8864A] transition-colors leading-tight"
+              onClick={(e) => {
+                // For non-admin, Link handles navigation; for admin keep timeline
+                if (group.user_role === 'admin') {
+                  e.preventDefault();
+                  onUserClick(group.user_id!, group.user_role);
+                }
+              }}
+            >
               {displayName}
-            </button>
+            </Link>
           ) : (
             <span className={`text-sm font-semibold leading-tight ${hintName ? 'text-stone-400 italic' : 'text-stone-400'}`}>{displayName}</span>
           )}
@@ -216,7 +283,7 @@ function AggregatedEntry({ group, onUserClick }: {
         {/* Row 2: description + meta inline */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
           <span className="text-[13px] text-[#44403c] leading-snug">
-            {descLine}
+            {descNode}
             {isMultiple && !group.latest.description && <span className="text-stone-400 ml-1">（共 {group.entries.length} 个）</span>}
           </span>
           {loc && <span className="text-[11px] text-stone-400">📍 {loc}</span>}
