@@ -121,9 +121,16 @@ export async function getUserTimeline(req: any, res: any) {
 
     const [rows] = await pool.query(
       `SELECT al.*,
-        COALESCE(NULLIF(al.user_name, ''), u.full_name, u.email) AS user_name
+        COALESCE(NULLIF(al.user_name, ''), u.full_name, u.email) AS user_name,
+        CASE
+          WHEN al.target_name IS NULL AND al.target_id IS NOT NULL AND al.action IN ('view_company','submit_inquiry')
+          THEN COALESCE(uc.name_en, uc.name, cp.company_name)
+          ELSE al.target_name
+        END AS target_name
        FROM activity_log al
        LEFT JOIN users u ON u.id = al.user_id AND al.user_role != 'admin'
+       LEFT JOIN uae_companies uc ON uc.id = al.target_id AND al.target_name IS NULL AND al.action IN ('view_company','submit_inquiry')
+       LEFT JOIN company_profiles cp ON cp.id = al.target_id AND al.target_name IS NULL AND al.action IN ('view_company','submit_inquiry') AND uc.id IS NULL
        ${where}
        ORDER BY al.created_at DESC LIMIT ${limit} OFFSET ${offset}`,
       params
@@ -186,10 +193,17 @@ export async function getActivityLogs(req: any, res: any) {
       `SELECT al.*,
         COALESCE(NULLIF(al.user_name, ''), au.full_name, au.email, u.full_name, u.email) AS user_name,
         CASE WHEN al.user_id IS NULL THEN ip_hint.hint_name END AS ip_hint_name,
-        CASE WHEN al.user_id IS NULL THEN ip_hint.hint_role END AS ip_hint_role
+        CASE WHEN al.user_id IS NULL THEN ip_hint.hint_role END AS ip_hint_role,
+        CASE
+          WHEN al.target_name IS NULL AND al.target_id IS NOT NULL AND al.action IN ('view_company','submit_inquiry')
+          THEN COALESCE(uc.name_en, uc.name, cp.company_name)
+          ELSE al.target_name
+        END AS target_name
        FROM activity_log al
        LEFT JOIN admin_users au ON au.id = al.user_id AND al.user_role = 'admin'
        LEFT JOIN users u ON u.id = al.user_id AND al.user_role != 'admin'
+       LEFT JOIN uae_companies uc ON uc.id = al.target_id AND al.target_name IS NULL AND al.action IN ('view_company','submit_inquiry')
+       LEFT JOIN company_profiles cp ON cp.id = al.target_id AND al.target_name IS NULL AND al.action IN ('view_company','submit_inquiry') AND uc.id IS NULL
        LEFT JOIN (
          SELECT ip,
            ANY_VALUE(user_name) AS hint_name,

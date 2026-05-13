@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Layers, FolderOpen, LogOut, ExternalLink, User } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, FolderOpen, LogOut, ExternalLink, User, MessageSquare } from 'lucide-react';
 import TarmeerLogo from '../TarmeerLogo';
 import { AdminLangContext, type AdminLang } from '../../hooks/useAdminLang';
 
@@ -119,6 +119,18 @@ export default function SupplierLayout() {
                 <FolderOpen className="w-5 h-5" />
                 <span>{t('Catalogs', '目录')}</span>
               </NavLink>
+
+              {/* CRM 入口 */}
+              <a
+                href="https://crm.tarmeer.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3 rounded-full transition cursor-pointer text-sm font-medium text-stone-600 hover:bg-stone-50"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>{t('Inquiries (CRM)', '询盘 CRM')}</span>
+                <ExternalLink className="w-3.5 h-3.5 ml-auto text-stone-400" />
+              </a>
             </nav>
           </div>
 
@@ -166,6 +178,15 @@ export default function SupplierLayout() {
           <FolderOpen className="w-5 h-5" />
           {t('Catalogs', '目录')}
         </NavLink>
+        <a
+          href="https://crm.tarmeer.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[11px] text-stone-500"
+        >
+          <MessageSquare className="w-5 h-5" />
+          CRM
+        </a>
       </nav>
     </div>
   );

@@ -210,6 +210,31 @@ export async function reorderCompanyServices(req: any, res: any) {
 
 // ── Service Category Management (admin) ───────────────────────────────────────
 
+export async function createServiceCategory(req: any, res: any) {
+  try {
+    const { name } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'name is required.' });
+    const cleanName = name.trim().slice(0, 100);
+    const [existing] = await pool.execute(
+      'SELECT name FROM company_service_categories WHERE name = ?', [cleanName]
+    );
+    if ((existing as any[]).length > 0) {
+      return res.status(200).json({ name: cleanName, existed: true });
+    }
+    const [allRows] = await pool.execute('SELECT MAX(sort_order) AS maxOrd FROM company_service_categories');
+    const maxOrd = (allRows as any[])[0]?.maxOrd ?? -1;
+    await pool.execute(
+      'INSERT INTO company_service_categories (name, sort_order, is_enabled) VALUES (?, ?, 1)',
+      [cleanName, maxOrd + 1]
+    );
+    invalidateEnumCache();
+    res.status(201).json({ name: cleanName });
+  } catch (error) {
+    console.error('createServiceCategory error:', error);
+    res.status(500).json({ error: 'Failed to create category.' });
+  }
+}
+
 export async function listServiceCategories(req: any, res: any) {
   try {
     const [rows] = await pool.execute(

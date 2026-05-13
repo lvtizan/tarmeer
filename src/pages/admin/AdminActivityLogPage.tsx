@@ -106,6 +106,27 @@ const ACTION_BAR_COLORS: Record<string, string> = {
   default: '#a8a29e',
 };
 
+// Emoji per action × target type
+function getActionEmoji(action: string, targetType: string | null): string {
+  if (action === 'login') return '🔑';
+  if (action === 'register') return '✅';
+  if (action === 'create' && targetType === 'inquiry') return '📩';
+  if (action === 'create' && targetType === 'project') return '📸';
+  if (action === 'create') return '✅';
+  if (action === 'update' || action === 'edit') return '✏️';
+  if (action === 'approve') return '✅';
+  if (action === 'reject') return '❌';
+  if (action === 'delete') return '🗑️';
+  if (action === 'view_company' || action === 'view_project') return '👁';
+  if (action === 'bind') return '🔗';
+  return '📋';
+}
+
+// Whether entry is "new" (created within last 2 hours)
+function isNew(createdAt: string): boolean {
+  return (Date.now() - new Date(createdAt).getTime()) < 2 * 60 * 60 * 1000;
+}
+
 const TARGET_TYPE_LABELS: Record<string, string> = {
   project: '项目',
   company_profile: '装企资料',
@@ -145,13 +166,6 @@ function getRoleBadge(role: string | null) {
   return null;
 }
 
-function getAvatar(name: string | null, role: string | null) {
-  const letter = (name || '?')[0].toUpperCase();
-  if (role === 'admin') return <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm font-bold shrink-0">{letter}</div>;
-  if (role === 'company') return <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center text-sm font-bold shrink-0">{letter}</div>;
-  if (role === 'homeowner') return <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0">{letter}</div>;
-  return <div className="w-9 h-9 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center text-sm font-bold shrink-0">{letter}</div>;
-}
 
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr);
@@ -165,7 +179,7 @@ function formatDateLabel(dateStr: string): string {
   return `${d.getFullYear()}年${m}月${day}日`;
 }
 
-function extractDate(dateStr: string): string { return dateStr.slice(0, 10); }
+function extractDate(dateStr: string | null | undefined): string { return dateStr ? dateStr.slice(0, 10) : '1970-01-01'; }
 
 // ─── Event Card ──────────────────────────────────────────────────────────────
 
@@ -202,16 +216,64 @@ function EntryDetail({ e }: { e: ActivityLogEntry }) {
   return <div className="text-xs text-[#6b6b6b]">{e.description || label}</div>;
 }
 
+// Safely parse metadata — MySQL TEXT column may arrive as a JSON string
+function parseMeta(raw: unknown): Record<string, any> | null {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw as Record<string, any>;
+  if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return null; } }
+  return null;
+}
+
+// Build rich description with metadata — returns { main, detail } parts
+function buildRichDesc(e: ActivityLogEntry): { main: string; detail: string | null; entityName: string | null } {
+  const m = parseMeta(e.metadata);
+  const title = e.target_name || (m?.title as string | null) || null;
+
+  if (e.action === 'create' && e.target_type === 'project') {
+    const count = m?.image_count ? `，含 ${m.image_count} 张图片` : '';
+    return { main: `上传了新项目${title ? `「${title}」` : ''}${count}`, detail: null, entityName: title };
+  }
+  if (e.action === 'update' && e.target_type === 'project') {
+    return { main: `编辑了项目${title ? `「${title}」` : ''}`, detail: null, entityName: title };
+  }
+  if (e.action === 'delete' && e.target_type === 'project') {
+    return { main: `删除了项目${title ? `「${title}」` : ''}`, detail: null, entityName: title };
+  }
+  if (e.action === 'create' && e.target_type === 'inquiry') {
+    const company = m?.company as string | null;
+    const area = m?.area as string | null;
+    const detail = [area && `空间 ${area}`, m?.city && `${m.city}`].filter(Boolean).join('，') || null;
+    return { main: `向公司提交了询价`, detail, entityName: company };
+  }
+  if (e.action === 'login') {
+    return { main: '登录了系统', detail: null, entityName: null };
+  }
+  if (e.action === 'approve') {
+    const count = m?.count ? ` ${m.count} 个` : '';
+    const targetLabel = TARGET_TYPE_LABELS[e.target_type || ''] || e.target_type || '';
+    return { main: `批准了${count}${targetLabel}`, detail: m?.reason as string | null, entityName: title };
+  }
+  if (e.action === 'reject') {
+    const targetLabel = TARGET_TYPE_LABELS[e.target_type || ''] || e.target_type || '';
+    return { main: `拒绝了${targetLabel}`, detail: m?.reason as string | null, entityName: title };
+  }
+  if (e.action === 'update') {
+    const targetLabel = TARGET_TYPE_LABELS[e.target_type || ''] || e.target_type || '';
+    return { main: `编辑了${targetLabel}${title ? ` — ${title}` : ''}`, detail: null, entityName: title };
+  }
+  // Fallback to stored description
+  const fallbackDesc = e.description || `${ACTION_LABELS[e.action] || e.action}了${TARGET_TYPE_LABELS[e.target_type || ''] || e.target_type || ''}`;
+  return { main: fallbackDesc, detail: null, entityName: title };
+}
+
 function AggregatedEntry({ group, onUserClick }: {
   group: AggregatedGroup;
   onUserClick: (userId: number, role: string | null) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isMultiple = group.entries.length > 1;
-  const loc = [group.latest.city, group.latest.country].filter(Boolean).join(', ');
-  const actionLabel = ACTION_LABELS[group.action] || group.action;
-  const targetLabel = TARGET_TYPE_LABELS[group.target_type || ''] || group.target_type || '';
   const timeStr = formatAdminDateTime(group.latest.created_at).split(' ').slice(1).join(' ');
+  const showNew = isNew(group.latest.created_at);
 
   // Resolve anonymous users: use ip_hint or masked IP
   const isAnon = !group.user_id;
@@ -223,47 +285,26 @@ function AggregatedEntry({ group, onUserClick }: {
     : (hintName ? `访客（疑似 ${hintName}）` : (maskedIp ? `访客 ${maskedIp}` : '未知访客'));
   const displayRole = group.user_role || (isAnon && hintRole) || null;
 
-  // Target entity link
-  const targetPath = getTargetPath(group.latest.target_type, group.latest.target_id);
-  const targetName = group.latest.target_name;
-
-  // Description line — build as JSX so target_name can be a link
-  const rawDesc = group.latest.description ||
-    (actionLabel + (targetLabel ? `了${targetLabel}` : '') + (targetName ? ` — ${targetName}` : ''));
-
-  const descNode = useMemo(() => {
-    if (!targetPath || !targetName) return <>{rawDesc}</>;
-    const idx = rawDesc.indexOf(targetName);
-    if (idx === -1) return <>{rawDesc}</>;
-    return (
-      <>
-        {rawDesc.slice(0, idx)}
-        <Link
-          to={targetPath}
-          state={{ from: '/admin/activity-log', fromLabel: '操作记录' }}
-          className="text-[#B8864A] hover:underline font-medium"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {targetName}
-        </Link>
-        {rawDesc.slice(idx + targetName.length)}
-      </>
-    );
-  }, [rawDesc, targetPath, targetName]);
+  const emoji = getActionEmoji(group.action, group.target_type);
+  const { main, detail, entityName } = buildRichDesc(group.latest);
+  const m = parseMeta(group.latest.metadata);
+  const uaBrowser = m?.ua_browser as string | null;
+  const uaOs = m?.ua_os as string | null;
+  const projStatus = m?.status as string | null;
 
   return (
-    <div className="bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 flex gap-3 hover:border-[#d0b896] hover:shadow-sm transition-all">
-      {getAvatar(isAnon ? hintName : group.user_name, displayRole)}
+    <div className="flex gap-3 py-2.5 border-b border-stone-100 last:border-0 hover:bg-stone-50/60 transition-colors px-1 rounded-lg">
+      {/* Emoji circle */}
+      <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-base shrink-0 mt-0.5 select-none">{emoji}</div>
 
       <div className="flex-1 min-w-0">
-        {/* Row 1: user + time */}
-        <div className="flex items-center gap-1.5">
+        {/* Row 1: user + badges + time */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           {group.user_id ? (
             <Link
               to={getUserPath(group.user_id, group.user_role)}
               className="text-sm font-semibold text-[#1c1917] hover:text-[#B8864A] transition-colors leading-tight"
               onClick={(e) => {
-                // For non-admin, Link handles navigation; for admin keep timeline
                 if (group.user_role === 'admin') {
                   e.preventDefault();
                   onUserClick(group.user_id!, group.user_role);
@@ -273,36 +314,84 @@ function AggregatedEntry({ group, onUserClick }: {
               {displayName}
             </Link>
           ) : (
-            <span className={`text-sm font-semibold leading-tight ${hintName ? 'text-stone-400 italic' : 'text-stone-400'}`}>{displayName}</span>
+            <span className={`text-[13px] font-semibold leading-tight ${hintName ? 'text-stone-400 italic' : 'text-stone-400'}`}>{displayName}</span>
           )}
           {getRoleBadge(displayRole)}
-          {isMultiple && <span className="text-[11px] text-stone-400 bg-stone-50 rounded px-1.5 py-0.5 ml-0.5">×{group.entries.length}</span>}
-          <span className="ml-auto text-xs text-stone-400 tabular-nums shrink-0">{timeStr}</span>
+          {isMultiple && <span className="text-[11px] text-stone-400 bg-stone-50 border border-stone-200 rounded px-1.5 py-0.5">×{group.entries.length}</span>}
+          {showNew && <span className="text-[10px] font-bold text-white bg-[#B8864A] rounded px-1.5 py-0.5">新</span>}
+          <span className="ml-auto text-[11px] text-stone-400 tabular-nums shrink-0">{timeStr}</span>
         </div>
 
-        {/* Row 2: description + meta inline */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-          <span className="text-[13px] text-[#44403c] leading-snug">
-            {descNode}
-            {isMultiple && !group.latest.description && <span className="text-stone-400 ml-1">（共 {group.entries.length} 个）</span>}
+        {/* Row 2: rich description + chips */}
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1">
+          {/* Main description text */}
+          <span className="text-[12.5px] text-[#44403c] leading-snug">
+            {main}
+            {entityName && group.action !== 'create' && group.action !== 'update' && group.action !== 'delete' && (
+              <span className="ml-1 text-[#B8864A] font-medium">{entityName}</span>
+            )}
           </span>
-          {loc && <span className="text-[11px] text-stone-400">📍 {loc}</span>}
-          {group.latest.ip && <span className="text-[11px] text-stone-400">🌐 {group.latest.ip}</span>}
-          {group.entries.length > 1 && (
-            <span className="text-[11px] text-stone-400">今日第 {group.entries.length} 次</span>
+          {/* Extra detail (area, reason, etc.) */}
+          {detail && <span className="text-[11px] text-stone-500">— {detail}</span>}
+
+          {/* Chips */}
+          {group.action === 'submit_inquiry' && (
+            <Link
+              to={`/admin/inquiries?search=${encodeURIComponent(group.user_name || group.latest.target_name || '')}`}
+              className="text-[10px] bg-violet-50 text-violet-600 border border-violet-200 rounded px-1.5 py-0.5 font-medium hover:bg-violet-100 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              查看询盘 →
+            </Link>
+          )}
+          {group.latest.target_id && group.target_type === 'inquiry' && (
+            <span className="text-[10px] bg-violet-50 text-violet-600 border border-violet-200 rounded px-1.5 py-0.5 font-medium">线索 #{group.latest.target_id}</span>
+          )}
+          {group.latest.target_id && group.target_type === 'project' && (
+            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium">项目 #{group.latest.target_id}</span>
+          )}
+          {projStatus === 'pending' && (
+            <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 rounded px-1.5 py-0.5 font-medium">待审批</span>
           )}
           {isMultiple && (
-            <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-[#B8864A] bg-amber-50 rounded px-1.5 py-0.5 hover:bg-amber-100 transition-colors">
-              {expanded ? '收起' : '展开'}
+            <span className="text-[10px] bg-stone-50 text-stone-500 border border-stone-200 rounded px-1.5 py-0.5">批量操作</span>
+          )}
+          {uaBrowser && uaOs && (
+            <span className="text-[10px] bg-stone-50 text-stone-500 border border-stone-200 rounded px-1.5 py-0.5">{uaBrowser} · {uaOs}</span>
+          )}
+
+          {/* Expand button */}
+          {isMultiple && (
+            <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-[#B8864A] bg-amber-50 rounded px-1.5 py-0.5 hover:bg-amber-100 transition-colors ml-auto">
+              {expanded ? '收起' : '展开 ▾'}
             </button>
           )}
         </div>
 
+        {/* Expanded sub-list */}
         {expanded && isMultiple && (
-          <div className="mt-1.5 ml-1 border-l-2 border-stone-100 pl-3 space-y-1">
-            {group.entries.map((e) => (
-              <EntryDetail key={e.id} e={e} />
-            ))}
+          <div className="mt-2 ml-1 border-l-2 border-stone-100 pl-3 space-y-1">
+            {group.entries.map((e) => {
+              const { main: em, detail: ed, entityName: en } = buildRichDesc(e);
+              const isViewCompany = e.action === 'view_company';
+              return (
+                <div key={e.id} className="text-[11px] text-[#6b6b6b]">
+                  {em}
+                  {en ? (
+                    isViewCompany ? (
+                      <Link
+                        to={`/admin/companies?search=${encodeURIComponent(en)}`}
+                        className="text-[#B8864A] ml-1 hover:underline"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >{en}</Link>
+                    ) : (
+                      <span className="text-[#B8864A] ml-1">{en}</span>
+                    )
+                  ) : null}
+                  {ed ? <span className="text-stone-400"> — {ed}</span> : null}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -528,17 +617,17 @@ export default function AdminActivityLogPage() {
 
           {/* Feed */}
           {logsLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-[78px] rounded-2xl bg-stone-100 animate-pulse" />)}
+            <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-100">
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => <div key={i} className="h-[62px] px-4 py-3 flex gap-3 items-center"><div className="w-8 h-8 rounded-full bg-stone-100 animate-pulse shrink-0" /><div className="flex-1 space-y-1.5"><div className="h-3 bg-stone-100 rounded animate-pulse w-2/5" /><div className="h-2.5 bg-stone-100 rounded animate-pulse w-3/4" /></div></div>)}
             </div>
           ) : groupedByDate.length === 0 ? (
             <div className="bg-white rounded-2xl border border-stone-200 p-12 text-center text-sm text-stone-400">暂无操作记录</div>
           ) : (
-            <div>
+            <div className="space-y-4">
               {groupedByDate.map(([date, groups]) => (
-                <div key={date}>
-                  <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wide py-2.5 px-1">{formatDateLabel(date)}</p>
-                  <div className="space-y-2">
+                <div key={date} className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                  <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wide py-2 px-4 border-b border-stone-100 bg-stone-50/60">{formatDateLabel(date)}</p>
+                  <div className="px-3">
                     {groups.map((g) => (
                       <AggregatedEntry
                         key={g.key}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { formatAdminDateTime } from '../../lib/formatTime';
 
@@ -381,14 +381,34 @@ export default function AdminUserTimelinePage() {
                                 <p className="text-[13.5px] text-[#1c1917]">
                                   <span className="font-semibold">{actionLabel}</span>
                                   {targetLabel && <span className="text-stone-500">了{targetLabel}</span>}
-                                  {entry.target_name && (
+                                  {entry.action === 'view_company' && entry.target_name ? (
+                                    <Link
+                                      to={`/admin/companies?search=${encodeURIComponent(entry.target_name)}`}
+                                      className="text-[#B8864A] hover:underline ml-1"
+                                      onClick={(e) => e.stopPropagation()}
+                                    > — {entry.target_name}</Link>
+                                  ) : entry.target_name ? (
                                     <span className="text-[#B8864A]"> — {entry.target_name}</span>
-                                  )}
+                                  ) : null}
                                 </p>
                                 <span className="ml-auto text-[11px] text-stone-400 shrink-0">{timeStr}</span>
                               </div>
                               {entry.description && (
                                 <p className="text-xs text-[#6b6b6b] mt-1">{entry.description}</p>
+                              )}
+                              {entry.action === 'submit_inquiry' && (
+                                <div className="mt-1.5">
+                                  <Link
+                                    to={`/admin/inquiries?search=${encodeURIComponent(entry.user_name || '')}`}
+                                    className="text-[11px] text-violet-600 bg-violet-50 border border-violet-200 rounded px-1.5 py-0.5 hover:bg-violet-100 transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    查看询盘内容 →
+                                  </Link>
+                                  {entry.target_name && (
+                                    <span className="ml-1.5 text-[11px] text-stone-400">向「{entry.target_name}」</span>
+                                  )}
+                                </div>
                               )}
                               {(loc || entry.ip) && (
                                 <div className="flex gap-2 mt-1.5">
