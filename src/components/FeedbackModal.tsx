@@ -10,9 +10,11 @@ interface FeedbackModalProps {
   userId?: number;
   userName?: string;
   userEmail?: string;
+  companyName?: string;
+  companyType?: string;
 }
 
-export default function FeedbackModal({ open, onClose, source = 'website', userId, userName, userEmail }: FeedbackModalProps) {
+export default function FeedbackModal({ open, onClose, source = 'website', userId, userName, userEmail, companyName, companyType }: FeedbackModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -30,7 +32,7 @@ export default function FeedbackModal({ open, onClose, source = 'website', userI
       const res = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), content: content.trim(), source, user_id: userId, user_name: userName, user_email: userEmail }),
+        body: JSON.stringify({ title: title.trim(), content: content.trim(), source, user_id: userId, user_name: userName, user_email: userEmail, company_name: companyName, company_type: companyType }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

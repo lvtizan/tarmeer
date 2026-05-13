@@ -334,6 +334,10 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'company_leads', column: 'city', type: 'VARCHAR(100) NULL' },
   { table: 'company_leads', column: 'email', type: 'VARCHAR(255) NULL' },
 
+  // feedback — sender identity for company portal submissions
+  { table: 'feedback', column: 'company_name', type: 'VARCHAR(255) NULL' },
+  { table: 'feedback', column: 'company_type', type: 'VARCHAR(100) NULL' },
+
   // design_inquiries soft-delete + CRM sync
   { table: 'design_inquiries', column: 'deleted_at', type: 'DATETIME NULL' },
   { table: 'design_inquiries', column: 'deleted_by', type: 'INT NULL' },

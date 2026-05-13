@@ -14,6 +14,8 @@ interface FeedbackRecord {
   user_id: number | null;
   user_name: string | null;
   user_email: string | null;
+  company_name: string | null;
+  company_type: string | null;
   is_read: 0 | 1;
   created_at: string;
 }
@@ -129,13 +131,23 @@ export default function AdminFeedbackPage() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className={`text-sm font-semibold ${item.is_read ? 'text-stone-700' : 'text-[#1c1917]'}`}>
                       {item.title}
                     </span>
                     <span className="text-[11px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 shrink-0">
                       {SOURCE_LABEL[item.source] || item.source}
                     </span>
+                    {item.company_name && (
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 shrink-0 font-medium">
+                        {item.company_name}
+                      </span>
+                    )}
+                    {item.company_type && (
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-stone-50 text-stone-500 border border-stone-100 shrink-0">
+                        {item.company_type}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-stone-500 leading-relaxed">
                     {truncate(item.content, 100)}

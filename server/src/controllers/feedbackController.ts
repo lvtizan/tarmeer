@@ -3,15 +3,15 @@ import pool from '../config/database';
 // Submit feedback (public, no auth required)
 export async function submitFeedback(req: any, res: any) {
   try {
-    const { title, content, source, user_id, user_name, user_email } = req.body;
+    const { title, content, source, user_id, user_name, user_email, company_name, company_type } = req.body;
 
     if (!title?.trim() || !content?.trim()) {
       return res.status(400).json({ error: 'Title and content are required.' });
     }
 
     await pool.execute(
-      `INSERT INTO feedback (title, content, source, user_id, user_name, user_email)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO feedback (title, content, source, user_id, user_name, user_email, company_name, company_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         title.trim().slice(0, 200),
         content.trim().slice(0, 2000),
@@ -19,6 +19,8 @@ export async function submitFeedback(req: any, res: any) {
         user_id || null,
         user_name?.trim().slice(0, 100) || null,
         user_email?.trim().slice(0, 255) || null,
+        company_name?.trim().slice(0, 255) || null,
+        company_type?.trim().slice(0, 100) || null,
       ]
     );
 
@@ -51,7 +53,7 @@ export async function listFeedback(req: any, res: any) {
     const total = (countRows as any[])[0].total;
 
     const [rows] = await pool.execute(
-      `SELECT id, title, content, source, user_id, user_name, user_email, is_read, created_at
+      `SELECT id, title, content, source, user_id, user_name, user_email, company_name, company_type, is_read, created_at
        FROM feedback ${where}
        ORDER BY created_at DESC
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
@@ -81,7 +83,7 @@ export async function getFeedback(req: any, res: any) {
     const { id } = req.params;
 
     const [rows] = await pool.execute(
-      `SELECT id, title, content, source, user_id, user_name, user_email, is_read, created_at
+      `SELECT id, title, content, source, user_id, user_name, user_email, company_name, company_type, is_read, created_at
        FROM feedback WHERE id = ?`,
       [id]
     );

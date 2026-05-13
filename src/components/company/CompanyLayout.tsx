@@ -17,6 +17,8 @@ export default function CompanyLayout() {
   const token = api.getToken();
   const [authValid, setAuthValid] = useState<boolean | null>(token ? null : false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+  const [companyType, setCompanyType] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -27,7 +29,14 @@ export default function CompanyLayout() {
     let mounted = true;
     api.get('/auth/me')
       .then(() => {
-        if (mounted) setAuthValid(true);
+        if (!mounted) return;
+        setAuthValid(true);
+        // 拿公司名和类型用于反馈标识
+        api.get('/auth/company/profile').then((res: any) => {
+          if (!mounted) return;
+          setCompanyName(res?.company_name || '');
+          setCompanyType(res?.company_type || '');
+        }).catch(() => {});
       })
       .catch(() => {
         if (!mounted) return;
@@ -90,13 +99,19 @@ export default function CompanyLayout() {
       {/* Feedback bubble — fixed bottom-right, above mobile nav */}
       <button
         onClick={() => setFeedbackOpen(true)}
-        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-20 w-12 h-12 rounded-full bg-[#1c1917] text-white shadow-lg hover:bg-[#2c2c2c] transition flex items-center justify-center"
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-20 w-14 rounded-2xl bg-[#1c1917] text-white shadow-lg hover:bg-[#2c2c2c] transition flex flex-col items-center justify-center gap-1 py-2.5"
         aria-label="Send feedback"
-        title="Share feedback"
       >
         <MessageSquare className="w-5 h-5" />
+        <span className="text-[10px] font-medium leading-none">Feedback</span>
       </button>
-      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="company_portal" />
+      <FeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        source="company_portal"
+        companyName={companyName}
+        companyType={companyType}
+      />
 
       {/* Mobile bottom navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex items-center justify-around px-2 py-2 safe-area-pb">
