@@ -56,7 +56,14 @@ function SupplierCard({ s }: { s: Supplier }) {
       <div className="w-full sm:w-[220px] md:w-[280px] h-[180px] flex-shrink-0 overflow-hidden bg-stone-100">
         <img
           src={s.cover_image_url ? resolveVariantUrl(s.cover_image_url, 'thumb') : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
-          onError={(e) => { if (s.cover_image_url) e.currentTarget.src = resolveImageUrl(s.cover_image_url); }}
+          onError={(e) => {
+            const fallback = resolveImageUrl(s.cover_image_url);
+            if (fallback && e.currentTarget.src !== fallback) {
+              e.currentTarget.src = fallback;
+            } else {
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80';
+            }
+          }}
           alt={s.company_name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />

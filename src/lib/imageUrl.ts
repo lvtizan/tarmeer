@@ -105,6 +105,8 @@ export function resolveVariantUrl(
   const resolved = resolveImageUrl(url);
   if (!resolved) return '';
   if (resolved.startsWith('data:')) return resolved;
+  // External URLs (Alibaba CDN, etc.) don't have local variants — return as-is
+  if (resolved.startsWith('http://') || resolved.startsWith('https://')) return resolved;
   const dotIndex = resolved.lastIndexOf('.');
   const slashIndex = resolved.lastIndexOf('/');
   if (dotIndex === -1 || dotIndex < slashIndex) return resolved;
