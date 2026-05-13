@@ -83,9 +83,18 @@ export default function Navbar({
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
 
+  // Dropdown overflow fix: measure panel width and clamp so right edge stays 40px from viewport
+  const dropdownPanelRef = useRef<HTMLDivElement>(null);
+  const [dropdownLeft, setDropdownLeft] = useState(0);
+
   useEffect(() => {
-    if (!dropdownOpen) setHoveredCategory(null);
-  }, [dropdownOpen]);
+    if (!dropdownOpen) { setHoveredCategory(null); return; }
+    const el = dropdownPanelRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const overflow = rect.right - (window.innerWidth - 40);
+    setDropdownLeft(overflow > 0 ? -overflow : 0);
+  }, [dropdownOpen, hoveredCategory]);
 
   useEffect(() => {
     fetch(`${API_BASE}/public/service-categories`)
@@ -223,9 +232,10 @@ export default function Navbar({
             </Link>
 
             <div
-              className={`absolute top-full left-0 pt-2 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              className={`absolute top-full pt-2 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              style={{ left: dropdownLeft }}
             >
-              <div className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
+              <div ref={dropdownPanelRef} className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
                 <div className="flex">
                   {/* SPACE TYPE */}
                   <div className="p-6 w-48 border-r border-stone-100 flex-shrink-0">
