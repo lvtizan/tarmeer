@@ -127,6 +127,8 @@ export async function listCompanies(req: any, res: any) {
       ? `ORDER BY project_count ${sortDir}, cp.id DESC`
       : sortBy === 'updated_at'
       ? `ORDER BY cp.updated_at ${sortDir}, cp.id DESC`
+      : sortBy === 'pending_projects'
+      ? 'ORDER BY pending_project_count DESC, cp.created_at DESC'
       : 'ORDER BY CASE WHEN GREATEST(COALESCE(cp.home_display_order, 0), COALESCE(cp.list_display_order, 0)) > 0 THEN 0 ELSE 1 END, LEAST(CASE WHEN cp.home_display_order > 0 THEN cp.home_display_order ELSE 999999 END, CASE WHEN cp.list_display_order > 0 THEN cp.list_display_order ELSE 999999 END) ASC, cp.display_order DESC, cp.created_at DESC';
 
     const [rows] = await pool.execute(
