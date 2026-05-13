@@ -113,6 +113,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
   const [serviceCategories, setServiceCategories] = useState<{ name: string; is_enabled: boolean }[]>([]);
   const [allServices, setAllServices] = useState<{ name: string; category: string | null; active: boolean }[]>([]);
   const [activeServiceTab, setActiveServiceTab] = useState('');
+  const descRef = useRef<HTMLTextAreaElement>(null);
 
   // Load enums in parallel
   useEffect(() => {
@@ -168,6 +169,14 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
     };
     fetchData();
   }, [type, id]);
+
+  // Auto-resize description textarea
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.max(el.scrollHeight, 120) + 'px';
+  }, [data.description]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -330,8 +339,9 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           <div>
             <label className={labelCls}>Description</label>
             <textarea
-              className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none"
-              rows={5}
+              ref={descRef}
+              className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none overflow-hidden"
+              style={{ minHeight: '120px' }}
               value={data.description || ''}
               onChange={e => set('description', e.target.value)}
             />
