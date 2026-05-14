@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useEffect } from 'react';
+import { Fragment, useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, User, Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
 import { api } from '../lib/api';
@@ -87,16 +87,14 @@ export default function Navbar({
   const dropdownPanelRef = useRef<HTMLDivElement>(null);
   const [dropdownLeft, setDropdownLeft] = useState(0);
 
-  useEffect(() => {
-    if (!dropdownOpen) { setHoveredCategory(null); return; }
-    // Measure once after the panel renders at full fixed width — not on every hover
-    requestAnimationFrame(() => {
-      const el = dropdownPanelRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const overflow = rect.right - (window.innerWidth - 60);
-      setDropdownLeft(overflow > 0 ? -overflow : 0);
-    });
+  // useLayoutEffect runs synchronously before browser paint — no visible jump
+  useLayoutEffect(() => {
+    if (!dropdownOpen) { setHoveredCategory(null); setDropdownLeft(0); return; }
+    const el = dropdownPanelRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const overflow = rect.right - (window.innerWidth - 60);
+    setDropdownLeft(overflow > 0 ? -overflow : 0);
   }, [dropdownOpen]);
 
   useEffect(() => {

@@ -182,6 +182,23 @@ function parseMeta(raw: unknown): Record<string, any> | null {
   return null;
 }
 
+/** Return admin link for a named entity based on action + target, or null if no link applies */
+function getEntityLink(group: AggregatedGroup, entityName: string): string | null {
+  const { action, target_type, latest } = group;
+  if (action === 'view_company') {
+    return `/admin/companies?search=${encodeURIComponent(entityName)}`;
+  }
+  if (action === 'submit_inquiry') {
+    return `/admin/companies?search=${encodeURIComponent(entityName)}`;
+  }
+  if ((action === 'approve' || action === 'reject') &&
+      (target_type === 'company_profile' || target_type === 'company')) {
+    if (latest.target_id) return `/admin/profile-companies/${latest.target_id}`;
+    return `/admin/profile-companies?search=${encodeURIComponent(entityName)}`;
+  }
+  return null;
+}
+
 // Build rich description with metadata — returns { main, detail } parts
 function buildRichDesc(e: ActivityLogEntry): { main: string; detail: string | null; entityName: string | null } {
   const m = parseMeta(e.metadata);
@@ -285,9 +302,14 @@ function AggregatedEntry({ group, onUserClick }: {
           {/* Main description text */}
           <span className="text-[12.5px] text-[#44403c] leading-snug">
             {main}
-            {entityName && group.action !== 'create' && group.action !== 'update' && group.action !== 'delete' && (
-              <span className="ml-1 text-[#B8864A] font-medium">{entityName}</span>
-            )}
+            {entityName && group.action !== 'create' && group.action !== 'update' && group.action !== 'delete' && (() => {
+              const link = getEntityLink(group, entityName);
+              return link ? (
+                <Link to={link} className="ml-1 text-[#B8864A] font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{entityName}</Link>
+              ) : (
+                <span className="ml-1 text-[#B8864A] font-medium">{entityName}</span>
+              );
+            })()}
           </span>
           {/* Extra detail (area, reason, etc.) */}
           {detail && <span className="text-[11px] text-stone-500">— {detail}</span>}
@@ -331,21 +353,22 @@ function AggregatedEntry({ group, onUserClick }: {
           <div className="mt-2 ml-1 border-l-2 border-stone-100 pl-3 space-y-1">
             {group.entries.map((e) => {
               const { main: em, detail: ed, entityName: en } = buildRichDesc(e);
-              const isViewCompany = e.action === 'view_company';
+              const subGroup: AggregatedGroup = { ...group, latest: e };
               return (
                 <div key={e.id} className="text-[11px] text-[#6b6b6b]">
                   {em}
-                  {en ? (
-                    isViewCompany ? (
+                  {en ? (() => {
+                    const link = getEntityLink(subGroup, en);
+                    return link ? (
                       <Link
-                        to={`/admin/companies?search=${encodeURIComponent(en)}`}
+                        to={link}
                         className="text-[#B8864A] ml-1 hover:underline"
                         onClick={(ev) => ev.stopPropagation()}
                       >{en}</Link>
                     ) : (
                       <span className="text-[#B8864A] ml-1">{en}</span>
-                    )
-                  ) : null}
+                    );
+                  })() : null}
                   {ed ? <span className="text-stone-400"> — {ed}</span> : null}
                 </div>
               );
