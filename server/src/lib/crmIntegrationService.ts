@@ -114,6 +114,19 @@ function parseJsonSafe(v: any): string[] {
  * Saves crm_tenant_id + crm_provisioned_at + crm_mall_partner_id on success.
  * Idempotent by mallPartnerId on the CRM side.
  */
+
+/** Normalize phone to E.164. Handles UAE numbers: +971XXXXXXXXX, 05XXXXXXXX, 009715XXXXXXXX */
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/[\s\-().+]/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00971')) return '+971' + digits.slice(5);
+  if (digits.startsWith('971') && digits.length === 12) return '+' + digits;
+  if (digits.startsWith('05') && digits.length === 10) return '+971' + digits.slice(1);
+  if (digits.startsWith('5') && digits.length === 9) return '+971' + digits;
+  // Return as-is if already has + or unknown format
+  return raw.startsWith('+') ? raw : '+' + digits;
+}
+
 export async function provision(companyId: number): Promise<{ crm_tenant_id: string }> {
   const row = await getCompanyForCRM(companyId);
 
@@ -124,11 +137,11 @@ export async function provision(companyId: number): Promise<{ crm_tenant_id: str
   const payload = {
     mallPartnerId: String(row.id),
     partnerName: row.company_name || '',
-    adminEmail: row.email,
+    adminEmail: (row.email || '').trim().toLowerCase(),
     adminPasswordHash: row.password_hash || null,
     adminGoogleId: row.google_id || null,
     adminName: row.full_name || '',
-    adminPhone: row.phone || row.user_phone || '',
+    adminPhone: normalizePhone(row.phone || row.user_phone || ''),
     businessName: row.company_name || '',
     businessType: companyTypes[0] || row.company_type || '',
     city: row.city || '',
@@ -240,7 +253,7 @@ export async function ssoIssue(companyId: number): Promise<{ consumeUrl: string 
   const data = await withRetry(
     () => crmPost('/api/integration/mall/sso/issue', {
       tenantId: row.crm_tenant_id,
-      adminEmail: row.email,
+      adminEmail: (row.email || '').trim().toLowerCase(),
     }),
     3
   );

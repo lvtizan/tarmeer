@@ -9,7 +9,7 @@ import pool from '../config/database';
 import config from '../config';
 import { verifyCrmRequest } from '../lib/crmIntegrationService';
 
-const MALL_ORIGIN = (process.env.MALL_ORIGIN || 'https://www.tarmeer.com').replace(/\/+$/, '');
+const MALL_ORIGIN = (process.env.MALL_BASE_URL || 'https://mall.tarmeer.com').replace(/\/+$/, '');
 
 function generateCompanyToken(user: { id: number; email: string; role: string }) {
   return jwt.sign(

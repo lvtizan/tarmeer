@@ -116,7 +116,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: UPLOAD_REQUEST_BODY_LIMIT }));
+app.use(express.json({
+  limit: UPLOAD_REQUEST_BODY_LIMIT,
+  verify: (req: any, _res, buf) => { req.rawBody = buf.toString('utf8'); },
+}));
 app.use(express.urlencoded({ extended: true, limit: UPLOAD_REQUEST_BODY_LIMIT }));
 
 app.get('/', (req, res) => {
