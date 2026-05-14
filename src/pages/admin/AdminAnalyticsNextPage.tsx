@@ -63,8 +63,9 @@ function withTotalsAndMA(rows: DayRow[]): (DayRow & { total: number; ma_total: n
 }
 
 // ─── KPI card. If `ma7` provided, shows %-diff vs 7d avg as up/down badge.
+// If `week7Count` provided, shows "近7天 · N" as a secondary stat line.
 // If `href` provided, the whole card is a clickable link with hover/cursor styles.
-function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href }: {
+function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href, week7Count }: {
   icon: React.ReactNode;
   label: string;
   value: number;
@@ -73,6 +74,7 @@ function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href }: 
   accent: string;
   valueOverride?: string;
   href?: string;
+  week7Count?: number;
 }) {
   let diffPct: number | null = null;
   if (typeof ma7 === 'number' && ma7 > 0) {
@@ -102,7 +104,12 @@ function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href }: 
           </span>
         )}
       </div>
-      <div className="text-[10px] text-stone-400 mt-1">{sub ?? '相比近 7 日均值'}</div>
+      <div className="text-[10px] text-stone-400 mt-1 flex items-center gap-2 flex-wrap">
+        <span>{sub ?? '相比近 7 日均值'}</span>
+        {typeof week7Count === 'number' && (
+          <span className="text-stone-500 font-medium" style={{ color: accent }}>近7天 · {week7Count}</span>
+        )}
+      </div>
     </Wrapper>
   );
 }
@@ -340,8 +347,8 @@ export default function AdminAnalyticsNextPage() {
         </div>
       </div>
 
-      {/* KPI cards — 7 张，可穿透到对应列表页 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
+      {/* KPI cards — 8 张，可穿透到对应列表页 */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
         <KpiCard icon={<Globe className="w-4 h-4" />}      label="独立访客"    value={uniqueIps}        accent="#5b7fcb"          sub="visitor_logs · 累计" href="/admin/visitors" />
         <KpiCard
           icon={<Eye className="w-4 h-4" />}
@@ -365,10 +372,11 @@ export default function AdminAnalyticsNextPage() {
             </span>
           }
         />
-        <KpiCard icon={<Users className="w-4 h-4" />}      label="新增业主"    value={totals.homeowner} ma7={last7Avg.homeowner} accent={COLOR_HOMEOWNER} href="/admin/users" />
-        <KpiCard icon={<Building2 className="w-4 h-4" />}  label="新增装企"    value={totals.company}   ma7={last7Avg.company}   accent={COLOR_COMPANY}   href="/admin/companies" />
-        <KpiCard icon={<BadgeCheck className="w-4 h-4" />} label="已签约装企"  value={signedCount}      accent="#0d7c54"          sub="is_signed=1"         href="/admin/signed-companies" />
-        <KpiCard icon={<HandCoins className="w-4 h-4" />}  label="新增询盘"    value={totals.inquiry}   ma7={last7Avg.inquiry}   accent={COLOR_INQUIRY}   href="/admin/inquiries" />
+        <KpiCard icon={<Users className="w-4 h-4" />}      label="新增业主"    value={totals.homeowner} ma7={last7Avg.homeowner} week7Count={last7Tot.homeowner} accent={COLOR_HOMEOWNER} href="/admin/users" />
+        <KpiCard icon={<Building2 className="w-4 h-4" />}  label="新增装企"    value={totals.company}   ma7={last7Avg.company}   week7Count={last7Tot.company}   accent={COLOR_COMPANY}   href="/admin/companies" />
+        <KpiCard icon={<BadgeCheck className="w-4 h-4" />} label="已签约装企"  value={signedCount}      accent="#0d7c54"          sub="is_signed=1"               href="/admin/signed-companies" />
+        <KpiCard icon={<HandCoins className="w-4 h-4" />}  label="新增询盘"    value={totals.inquiry}   ma7={last7Avg.inquiry}   week7Count={last7Tot.inquiry}   accent={COLOR_INQUIRY}   href="/admin/inquiries" />
+        <KpiCard icon={<Package className="w-4 h-4" />}    label="新增供应商"  value={last7Tot.supplier} week7Count={last7Tot.supplier} accent="#0ea5e9" sub="近7天" href="/admin/suppliers" />
         <KpiCard
           icon={<TrendingUp className="w-4 h-4" />}
           label="综合转化率"
@@ -383,40 +391,6 @@ export default function AdminAnalyticsNextPage() {
           })()}%`}
           sub="（装企+询盘）/ 总注册"
         />
-      </div>
-
-      {/* 最近 7 天新增 */}
-      <div className="mb-6">
-        <h2 className="text-sm font-bold text-[#2c2c2c] mb-3">最近 7 天新增</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${COLOR_COMPANY}18` }}>
-              <Building2 className="w-5 h-5" style={{ color: COLOR_COMPANY }} />
-            </div>
-            <div>
-              <p className="text-xs text-stone-500">近7天新增装企</p>
-              <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums leading-tight">{last7Tot.company}</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${COLOR_HOMEOWNER}18` }}>
-              <Users className="w-5 h-5" style={{ color: COLOR_HOMEOWNER }} />
-            </div>
-            <div>
-              <p className="text-xs text-stone-500">近7天新增业主</p>
-              <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums leading-tight">{last7Tot.homeowner}</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#0ea5e918' }}>
-              <Package className="w-5 h-5" style={{ color: '#0ea5e9' }} />
-            </div>
-            <div>
-              <p className="text-xs text-stone-500">近7天新增供应商</p>
-              <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums leading-tight">{last7Tot.supplier}</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Daily trend — Google Analytics 风：总计面积 + 各分类细线 + 平滑曲线 + endpoint marker + 周末浅蓝 */}

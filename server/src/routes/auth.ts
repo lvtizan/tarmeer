@@ -135,6 +135,10 @@ router.put('/change-password',
 // ====== Role Selection & Switching ======
 router.post('/select-role', authenticate, onboarding.selectRole);
 router.post('/switch-role', authenticate, onboarding.switchRole);
+// Returns other portals this user can access (same email in admin_users/supplier_users/users)
+router.get('/linked-portals', authenticate, userAuth.getLinkedPortals);
+// Exchange current token for another portal's token (no re-login)
+router.post('/cross-portal-token', authenticate, userAuth.crossPortalToken);
 
 // ====== Homeowner Routes ======
 router.post('/homeowner/profile', authenticate, homeowner.upsertProfile);

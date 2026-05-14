@@ -23,7 +23,7 @@ BODY=$(node -e "process.stdout.write(JSON.stringify({
   adminGoogleId: null,
   adminName: 'Dev Tester',
   adminPhone: '+971501234567',
-  businessName: 'Dev Test Company LLC',
+  companyName: 'Dev Test Company LLC',
   businessType: 'interior_designer',
   city: 'Dubai',
   address: 'Test Address, Dubai',

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare, ExternalLink } from 'lucide-react';
+import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare, ExternalLink, ArrowRightLeft } from 'lucide-react';
 import Navbar from '../Navbar';
 import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
 import FeedbackModal from '../FeedbackModal';
+
+interface LinkedPortal { type: string; label: string; url: string; }
 
 const navCls = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-4 py-3 rounded-full transition cursor-pointer ${
@@ -21,6 +23,8 @@ export default function CompanyLayout() {
   const [companyType, setCompanyType] = useState('');
   const [crmEnabled, setCrmEnabled] = useState(false);
   const [crmOpening, setCrmOpening] = useState(false);
+  const [linkedPortals, setLinkedPortals] = useState<LinkedPortal[]>([]);
+  const [switchingPortal, setSwitchingPortal] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -40,6 +44,11 @@ export default function CompanyLayout() {
           setCompanyType(res?.company_type || '');
           setCrmEnabled(!!res?.crm_tenant_id);
         }).catch(() => {});
+        // 拿关联入口（admin / supplier portal）
+        api.get('/auth/linked-portals').then((res: any) => {
+          if (!mounted) return;
+          setLinkedPortals(res?.portals || []);
+        }).catch(() => {});
       })
       .catch(() => {
         if (!mounted) return;
@@ -52,6 +61,19 @@ export default function CompanyLayout() {
 
     return () => { mounted = false; };
   }, [token, navigate]);
+
+  const handleSwitchPortal = async (portal: LinkedPortal) => {
+    if (switchingPortal) return;
+    setSwitchingPortal(portal.type);
+    try {
+      const res: any = await api.post('/auth/cross-portal-token', { target: portal.type });
+      if (res?.token) {
+        const keyMap: Record<string, string> = { company: 'token', supplier: 'supplier_token', admin: 'admin_token' };
+        localStorage.setItem(keyMap[portal.type] || portal.type, res.token);
+        window.location.href = res.redirectUrl || portal.url;
+      }
+    } catch { } finally { setSwitchingPortal(''); }
+  };
 
   const handleOpenCrm = async () => {
     if (crmOpening) return;
@@ -102,6 +124,22 @@ export default function CompanyLayout() {
                   <ExternalLink className="w-5 h-5" />
                   <span className="text-sm font-medium">{crmOpening ? 'Opening…' : 'Open CRM'}</span>
                 </button>
+              )}
+              {linkedPortals.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-stone-100">
+                  <p className="text-[11px] text-stone-400 px-4 mb-1">切换身份</p>
+                  {linkedPortals.map(p => (
+                    <button
+                      key={p.type}
+                      onClick={() => handleSwitchPortal(p)}
+                      disabled={!!switchingPortal}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full w-full text-left text-[13px] text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition disabled:opacity-50"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+                      <span>{switchingPortal === p.type ? '跳转中…' : p.label}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </nav>
           </div>

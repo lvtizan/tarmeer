@@ -90,9 +90,11 @@ async function getCompanyForCRM(companyId: number) {
             cp.establishment_year, cp.company_type, cp.company_types,
             cp.services, cp.emirates_served, cp.crm_tenant_id,
             u.id AS user_id, u.email, u.password AS password_hash,
-            u.full_name, u.phone AS user_phone, u.google_id
+            u.full_name, u.phone AS user_phone,
+            COALESCE(u.google_id, d.google_id) AS google_id
      FROM company_profiles cp
      JOIN users u ON u.id = cp.user_id
+     LEFT JOIN designers d ON d.user_id = u.id AND d.deleted_at IS NULL
      WHERE cp.id = ?`,
     [companyId]
   );
@@ -142,7 +144,7 @@ export async function provision(companyId: number): Promise<{ crm_tenant_id: str
     adminGoogleId: row.google_id || null,
     adminName: row.full_name || '',
     adminPhone: normalizePhone(row.phone || row.user_phone || ''),
-    businessName: row.company_name || '',
+    companyName: row.company_name || '',
     businessType: companyTypes[0] || row.company_type || '',
     city: row.city || '',
     address: row.address || '',
@@ -153,9 +155,11 @@ export async function provision(companyId: number): Promise<{ crm_tenant_id: str
     services,
   };
 
-  const data = await withRetry(() => crmPost('/api/integration/mall/partner/provision', payload));
+  const resp = await withRetry(() => crmPost('/api/integration/mall/partner/provision', payload));
 
-  if (!data.tenantId) throw new Error('CRM provision response missing tenantId');
+  // CRM wraps response: { code: 0, data: { tenantId, ... }, message: "..." }
+  const data = resp.data ?? resp;
+  if (!data.tenantId) throw new Error(`CRM provision response missing tenantId. Got: ${JSON.stringify(resp)}`);
 
   await pool.execute(
     `UPDATE company_profiles
@@ -250,7 +254,7 @@ export async function ssoIssue(companyId: number): Promise<{ consumeUrl: string 
   const row = (rows as any[])[0];
   if (!row?.crm_tenant_id) throw new Error('Company not provisioned in CRM');
 
-  const data = await withRetry(
+  const resp = await withRetry(
     () => crmPost('/api/integration/mall/sso/issue', {
       tenantId: row.crm_tenant_id,
       adminEmail: (row.email || '').trim().toLowerCase(),
@@ -258,6 +262,8 @@ export async function ssoIssue(companyId: number): Promise<{ consumeUrl: string 
     3
   );
 
+  // CRM wraps response: { code: 0, data: { consumeUrl, ... } }
+  const data = resp.data ?? resp;
   if (!data.consumeUrl) throw new Error('CRM SSO issue: missing consumeUrl');
   return { consumeUrl: data.consumeUrl };
 }

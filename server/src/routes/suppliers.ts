@@ -2,6 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import { authenticateSupplier } from '../middleware/supplierAuth';
+import * as userAuth from '../controllers/userAuthController';
 import * as profile from '../controllers/supplierProfileController';
 import * as products from '../controllers/supplierProductController';
 import * as catalogs from '../controllers/supplierCatalogController';
@@ -27,6 +28,8 @@ router.get('/detail/:slug/projects/:id', projects.getPublicProject);
 router.post('/leads', leadLimiter, leads.submitLead);
 
 // ── Authenticated supplier ──
+router.get('/me/linked-portals', authenticateSupplier, userAuth.getLinkedPortals);
+router.post('/me/cross-portal-token', authenticateSupplier, userAuth.crossPortalToken);
 router.get('/me/profile', authenticateSupplier, profile.getMyProfile);
 router.post('/me/profile', authenticateSupplier, profile.upsertProfile);
 router.post('/me/upload-license', authenticateSupplier, profile.uploadLicense);

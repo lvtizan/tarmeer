@@ -77,6 +77,7 @@ export default function CompanyProjectsPage() {
   const [spaceL1, setSpaceL1] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [serviceTags, setServiceTags] = useState<string[]>([]);
+  const [serviceNavCat, setServiceNavCat] = useState(0);
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
 
   /* ── image board ── */
@@ -285,7 +286,10 @@ export default function CompanyProjectsPage() {
     const spaceTags = parseMaybeArray(project.tags);
     const mergedTags = aiCategories.length > 0 ? [...new Set([...spaceTags, ...aiCategories])] : spaceTags;
     setTags(mergedTags);
-    setServiceTags(parseMaybeArray(project.service_tags));
+    const loadedServiceTags = parseMaybeArray(project.service_tags);
+    setServiceTags(loadedServiceTags);
+    const firstActiveCatIdx = dynamicServiceCategories.findIndex(c => c.subs.some(s => loadedServiceTags.includes(s)));
+    if (firstActiveCatIdx >= 0) setServiceNavCat(firstActiveCatIdx);
     // Derive L1 from the first existing space tag
     const firstSpaceTag = mergedTags.find((t: string) => SPACE_TAXONOMY.some(g => (g.tags as readonly string[]).includes(t)));
     const derivedL1 = firstSpaceTag ? SPACE_TAXONOMY.find(g => (g.tags as readonly string[]).includes(firstSpaceTag))?.id || '' : '';
@@ -576,26 +580,57 @@ export default function CompanyProjectsPage() {
               <div className="md:col-span-2">
                 <label className={labelCls}>Service Tags <span className="font-normal text-stone-400">(optional)</span></label>
                 <p className="mb-2 text-xs text-stone-500">Select the services involved in this project.</p>
-                <div className="space-y-2">
-                  {dynamicServiceCategories.map(cat => (
-                    <div key={cat.name}>
-                      <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1.5">{cat.name}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {cat.subs.map(t => {
-                          const on = serviceTags.includes(t);
-                          return (
-                            <button key={t} type="button"
-                              onClick={() => setServiceTags(p => on ? p.filter(x => x !== t) : [...p, t])}
-                              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? tagOn : tagOff}`}
-                            >
-                              {t}
-                            </button>
-                          );
-                        })}
-                      </div>
+                {/* Cascading navigator */}
+                <div className="flex rounded-xl border border-stone-200 overflow-hidden h-52 text-sm">
+                  {/* Left: category list */}
+                  <div className="w-36 flex-shrink-0 border-r border-stone-100 overflow-y-auto bg-stone-50">
+                    {dynamicServiceCategories.map((cat, i) => {
+                      const hasSelected = cat.subs.some(s => serviceTags.includes(s));
+                      return (
+                        <button
+                          key={cat.name}
+                          type="button"
+                          onClick={() => setServiceNavCat(i)}
+                          className={`w-full text-left px-3 py-2.5 text-xs leading-snug transition flex items-center justify-between gap-1 ${
+                            serviceNavCat === i
+                              ? 'bg-white font-semibold text-[#2c2c2c] border-l-2 border-[#b8864a]'
+                              : 'text-stone-500 hover:bg-white'
+                          }`}
+                        >
+                          <span className="flex-1">{cat.name}</span>
+                          {hasSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#b8864a] shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Right: subs for selected category */}
+                  <div className="flex-1 overflow-y-auto p-3">
+                    <div className="flex flex-wrap gap-2">
+                      {(dynamicServiceCategories[serviceNavCat]?.subs ?? []).map(t => {
+                        const on = serviceTags.includes(t);
+                        return (
+                          <button key={t} type="button"
+                            onClick={() => setServiceTags(p => on ? p.filter(x => x !== t) : [...p, t])}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? tagOn : tagOff}`}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
+                  </div>
                 </div>
+                {/* Selected tags summary */}
+                {serviceTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {serviceTags.map(t => (
+                      <span key={t} className="flex items-center gap-1 rounded-full bg-[#b8864a]/10 text-[#b8864a] text-xs px-2.5 py-1 font-medium">
+                        {t}
+                        <button type="button" onClick={() => setServiceTags(p => p.filter(x => x !== t))} className="hover:text-red-500 transition">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>

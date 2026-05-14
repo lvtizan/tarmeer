@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Layers, FolderOpen, LogOut, ExternalLink, User, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, FolderOpen, LogOut, ExternalLink, User, MessageSquare, ArrowRightLeft } from 'lucide-react';
 import TarmeerLogo from '../TarmeerLogo';
 import { AdminLangContext, type AdminLang } from '../../hooks/useAdminLang';
 
@@ -20,6 +20,8 @@ export default function SupplierLayout() {
   const [companyName, setCompanyName] = useState('');
   const [slug, setSlug] = useState('');
   const [status, setStatus] = useState('');
+  const [linkedPortals, setLinkedPortals] = useState<Array<{type:string;label:string;url:string}>>([]);
+  const [switchingPortal, setSwitchingPortal] = useState('');
   const [lang, setLang] = useState<AdminLang>(() => {
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem(SUPPLIER_LANG_KEY) : null;
     return saved === 'en' ? 'en' : 'zh';
@@ -54,9 +56,32 @@ export default function SupplierLayout() {
           setSlug(p.slug || '');
           setStatus(p.status || '');
         }
+        // 拉关联入口
+        fetch(`${API_BASE}/suppliers/me/linked-portals`, { headers: authHeaders() as any })
+          .then(r => r.ok ? r.json() : { portals: [] })
+          .then(d => setLinkedPortals(d?.portals || []))
+          .catch(() => {});
       })
       .catch(() => {});
   }, [navigate]);
+
+  const handleSwitchPortal = async (portal: {type:string;label:string;url:string}) => {
+    if (switchingPortal) return;
+    setSwitchingPortal(portal.type);
+    try {
+      const r = await fetch(`${API_BASE}/suppliers/me/cross-portal-token`, {
+        method: 'POST',
+        headers: { ...(authHeaders() as any), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: portal.type }),
+      });
+      const data = await r.json();
+      if (data?.token) {
+        const keyMap: Record<string, string> = { company: 'token', supplier: 'supplier_token', admin: 'admin_token' };
+        localStorage.setItem(keyMap[portal.type] || portal.type, data.token);
+        window.location.href = data.redirectUrl || portal.url;
+      }
+    } catch { } finally { setSwitchingPortal(''); }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('supplier_token');
@@ -131,6 +156,23 @@ export default function SupplierLayout() {
                 <span>{t('Inquiries (CRM)', '询盘 CRM')}</span>
                 <ExternalLink className="w-3.5 h-3.5 ml-auto text-stone-400" />
               </a>
+
+              {linkedPortals.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-stone-100">
+                  <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider px-4 mb-1">切换身份</p>
+                  {linkedPortals.map(p => (
+                    <button
+                      key={p.type}
+                      onClick={() => handleSwitchPortal(p)}
+                      disabled={!!switchingPortal}
+                      className="flex items-center gap-3 px-4 py-3 rounded-full transition cursor-pointer text-sm font-medium text-stone-600 hover:bg-stone-50 w-full text-left disabled:opacity-50"
+                    >
+                      <ArrowRightLeft className="w-4 h-4 shrink-0" />
+                      <span>{switchingPortal === p.type ? '跳转中…' : p.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </nav>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
 import { formatAdminDateTime } from '../../lib/formatTime';
 import AdminSelect from '../../components/ui/AdminSelect';
@@ -191,8 +191,7 @@ function getEntityLink(group: AggregatedGroup, entityName: string): string | nul
   if (action === 'submit_inquiry') {
     return `/admin/companies?search=${encodeURIComponent(entityName)}`;
   }
-  if ((action === 'approve' || action === 'reject') &&
-      (target_type === 'company_profile' || target_type === 'company')) {
+  if (target_type === 'company_profile' || target_type === 'company') {
     if (latest.target_id) return `/admin/profile-companies/${latest.target_id}`;
     return `/admin/profile-companies?search=${encodeURIComponent(entityName)}`;
   }
@@ -223,6 +222,12 @@ function buildRichDesc(e: ActivityLogEntry): { main: string; detail: string | nu
   if (e.action === 'login') {
     return { main: '登录了系统', detail: null, entityName: null };
   }
+  if (e.action === 'create' && e.target_type === 'company_profile') {
+    return { main: '创建了公司资料', detail: null, entityName: title };
+  }
+  if (e.action === 'update' && e.target_type === 'company_profile') {
+    return { main: '编辑了装企资料', detail: null, entityName: title };
+  }
   if (e.action === 'approve') {
     const count = m?.count ? ` ${m.count} 个` : '';
     const targetLabel = TARGET_TYPE_LABELS[e.target_type || ''] || e.target_type || '';
@@ -246,6 +251,7 @@ function AggregatedEntry({ group, onUserClick }: {
   onUserClick: (userId: number, role: string | null) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const location = useLocation();
   const isMultiple = group.entries.length > 1;
   const timeStr = formatAdminDateTime(group.latest.created_at).split(' ').slice(1).join(' ');
   const showNew = isNew(group.latest.created_at);
@@ -302,10 +308,19 @@ function AggregatedEntry({ group, onUserClick }: {
           {/* Main description text */}
           <span className="text-[12.5px] text-[#44403c] leading-snug">
             {main}
-            {entityName && group.action !== 'create' && group.action !== 'update' && group.action !== 'delete' && (() => {
+            {entityName && (() => {
+              // Allow entity links for company_profile regardless of action type
+              const isCompanyProfileAction = group.target_type === 'company_profile' || group.target_type === 'company';
+              const blockLink = !isCompanyProfileAction && (group.action === 'create' || group.action === 'update' || group.action === 'delete');
+              if (blockLink) return <span className="ml-1 text-[#B8864A] font-medium">{entityName}</span>;
               const link = getEntityLink(group, entityName);
               return link ? (
-                <Link to={link} className="ml-1 text-[#B8864A] font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{entityName}</Link>
+                <Link
+                  to={link}
+                  state={{ from: location.pathname + location.search }}
+                  className="ml-1 text-[#B8864A] font-medium hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >{entityName}</Link>
               ) : (
                 <span className="ml-1 text-[#B8864A] font-medium">{entityName}</span>
               );

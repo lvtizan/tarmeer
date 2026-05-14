@@ -390,6 +390,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // User permissions (JSON array of permission strings)
   { table: 'users', column: 'permissions', type: 'JSON NULL' },
 
+  // Google OAuth ID (for SSO / CRM provision)
+  { table: 'users', column: 'google_id', type: 'VARCHAR(255) NULL', unique: true },
+
   // YouTube / external video link per project
   { table: 'projects', column: 'video_url', type: 'VARCHAR(500) NULL' },
 

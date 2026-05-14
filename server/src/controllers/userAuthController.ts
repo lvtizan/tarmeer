@@ -712,6 +712,113 @@ export async function changePassword(req: any, res: any) {
   }
 }
 
+/**
+ * GET /api/auth/linked-portals
+ * Returns which other portals the current user can access (same email in other tables).
+ * Used to show "Switch identity" buttons in company/supplier dashboards.
+ */
+export async function getLinkedPortals(req: any, res: any) {
+  try {
+    // Works for both authenticate (req.user) and authenticateSupplier (req.supplierUser)
+    const email: string = req.user?.email || req.supplierUser?.email || '';
+    if (!email) return res.json({ portals: [] });
+
+    const callerIsUser     = !!req.user?.userId;       // came from users table token
+    const callerIsSupplier = !!req.supplierUser?.id;    // came from supplier_users token
+
+    const portals: Array<{ type: string; label: string; url: string }> = [];
+
+    // Check admin_users
+    const [adminRows] = await pool.execute(
+      'SELECT id FROM admin_users WHERE email = ? AND is_active = 1 LIMIT 1',
+      [email]
+    );
+    if ((adminRows as any[]).length > 0) {
+      portals.push({ type: 'admin', label: '管理员后台', url: '/admin' });
+    }
+
+    // Check users table (company/homeowner portal) — skip if the caller IS already a company user
+    if (!callerIsUser) {
+      const [userRows] = await pool.execute(
+        'SELECT id, role FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1',
+        [email]
+      );
+      if ((userRows as any[]).length > 0) {
+        const u = (userRows as any[])[0];
+        const label = u.role === 'company' ? '装企个人中心' : '业主个人中心';
+        portals.push({ type: 'company', label, url: '/company/dashboard' });
+      }
+    }
+
+    // Check supplier_users table — skip if the caller IS already a supplier
+    if (!callerIsSupplier) {
+      const [supplierRows] = await pool.execute(
+        'SELECT id FROM supplier_users WHERE email = ? LIMIT 1',
+        [email]
+      );
+      if ((supplierRows as any[]).length > 0) {
+        portals.push({ type: 'supplier', label: '供应商个人中心', url: '/supplier/dashboard' });
+      }
+    }
+
+    res.json({ portals });
+  } catch (error) {
+    console.error('getLinkedPortals error:', error);
+    res.status(500).json({ error: 'Failed to get linked portals.' });
+  }
+}
+
+// Cross-portal token exchange — issue a token for another portal without re-login
+export async function crossPortalToken(req: any, res: any) {
+  try {
+    const { target } = req.body; // 'company' | 'supplier' | 'admin'
+    const email: string = req.user?.email || req.supplierUser?.email || '';
+    if (!email) return res.status(401).json({ error: 'Not authenticated.' });
+    if (!['company', 'supplier', 'admin'].includes(target)) {
+      return res.status(400).json({ error: 'Invalid target portal.' });
+    }
+
+    if (target === 'company') {
+      const [rows] = await pool.execute(
+        'SELECT id, email, full_name, role, active_role FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1',
+        [email]
+      );
+      const users = rows as any[];
+      if (!users.length) return res.status(404).json({ error: 'No company account found for this email.' });
+      const u = users[0];
+      const token = jwt.sign({ userId: u.id, type: 'user' }, config.jwt.secret, { expiresIn: '7d' });
+      return res.json({ token, redirectUrl: '/company/dashboard' });
+    }
+
+    if (target === 'supplier') {
+      const [rows] = await pool.execute(
+        'SELECT id, email, full_name FROM supplier_users WHERE email = ? LIMIT 1',
+        [email]
+      );
+      const users = rows as any[];
+      if (!users.length) return res.status(404).json({ error: 'No supplier account found for this email.' });
+      const u = users[0];
+      const token = jwt.sign({ supplierUserId: u.id, email: u.email, type: 'supplier' }, config.jwt.secret, { expiresIn: '7d' });
+      return res.json({ token, redirectUrl: '/supplier/dashboard' });
+    }
+
+    if (target === 'admin') {
+      const [rows] = await pool.execute(
+        'SELECT id, email, full_name, role FROM admin_users WHERE email = ? AND is_active = 1 LIMIT 1',
+        [email]
+      );
+      const users = rows as any[];
+      if (!users.length) return res.status(404).json({ error: 'No admin account found for this email.' });
+      const u = users[0];
+      const token = jwt.sign({ adminId: u.id, email: u.email, role: u.role, type: 'admin' }, config.jwt.secret, { expiresIn: '7d' });
+      return res.json({ token, redirectUrl: '/admin' });
+    }
+  } catch (error) {
+    console.error('crossPortalToken error:', error);
+    res.status(500).json({ error: 'Failed to exchange token.' });
+  }
+}
+
 // Google One Tap login — creates user (not designer)
 export async function googleOneTap(req: any, res: any) {
   try {
@@ -837,11 +944,18 @@ export async function oauthCallback(req: any, res: any) {
         if ((phoneRows as any[]).length > 0) safePhone = null;
       }
 
+      // Fetch google_id from designers table (passport strategy stores it there)
+      let oauthGoogleId: string | null = null;
+      if (passportUser.id) {
+        const [dgRows] = await pool.execute('SELECT google_id FROM designers WHERE id = ? LIMIT 1', [passportUser.id]);
+        oauthGoogleId = ((dgRows as any[])[0]?.google_id) || null;
+      }
+
       const [result] = await pool.execute(
-        `INSERT INTO users (email, password, full_name, phone, avatar_url, role, active_role, onboarding_completed, email_verified, status, signup_source)
-         VALUES (?, '', ?, ?, ?, ?, ?, ?, TRUE, 'active', ?)`,
+        `INSERT INTO users (email, password, full_name, phone, avatar_url, role, active_role, onboarding_completed, email_verified, status, signup_source, google_id)
+         VALUES (?, '', ?, ?, ?, ?, ?, ?, TRUE, 'active', ?, ?)`,
         [passportUser.email, passportUser.full_name, safePhone, passportUser.avatar_url || '',
-         assignRole || 'user', assignRole || null, assignRole ? 1 : 0, googleSource]
+         assignRole || 'user', assignRole || null, assignRole ? 1 : 0, googleSource, oauthGoogleId]
       );
       const userId = (result as any).insertId;
       // Link legacy designer row if it exists (passport strategy may have created one)
