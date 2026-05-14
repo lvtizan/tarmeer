@@ -355,7 +355,15 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         navigate('/company');
       }
     } catch (err: any) {
-      setRegError(err.message || (regIsNewEmail ? 'Registration failed.' : 'Invalid email or password.'));
+      const msg: string = err.message || '';
+      // If registration failed because email already exists, switch to login mode
+      if (regIsNewEmail && /already registered/i.test(msg)) {
+        setRegIsNewEmail(false);
+        setRegPassword('');
+        setRegError(lang === 'ar' ? 'هذا البريد مسجّل بالفعل. أدخل كلمة المرور لتسجيل الدخول.' : 'This email already has an account. Enter your password to sign in.');
+      } else {
+        setRegError(msg || (regIsNewEmail ? 'Registration failed.' : 'Invalid email or password.'));
+      }
     } finally {
       setRegSubmitting(false);
     }
