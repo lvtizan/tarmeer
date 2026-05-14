@@ -108,6 +108,14 @@ export async function upsertProfile(req: any, res: any) {
       );
     }
 
+    // Sync phone back to users table if not already set (PhoneRequiredModal reads users.phone)
+    if (payload.phone) {
+      await pool.execute(
+        "UPDATE users SET phone = ? WHERE id = ? AND (phone IS NULL OR phone = '')",
+        [payload.phone, userId]
+      );
+    }
+
     // Notify admins when onboarding reaches step 2+ (user has filled all info + uploaded project)
     const newStep = Math.max(onboardingStep || 0, oldStep);
     if (oldStep < 2 && newStep >= 2) {
