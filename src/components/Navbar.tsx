@@ -90,12 +90,14 @@ export default function Navbar({
   // useLayoutEffect runs synchronously before browser paint — no visible jump
   useLayoutEffect(() => {
     if (!dropdownOpen) { setHoveredCategory(null); setDropdownLeft(0); return; }
+    // Auto-select first category so the third column is never blank (industry standard)
+    setHoveredCategory((prev) => prev ?? navCategories[0]?.name ?? null);
     const el = dropdownPanelRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const overflow = rect.right - (window.innerWidth - 60);
     setDropdownLeft(overflow > 0 ? -overflow : 0);
-  }, [dropdownOpen]);
+  }, [dropdownOpen, navCategories]);
 
   useEffect(() => {
     fetch(`${API_BASE}/public/service-categories`)

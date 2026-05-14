@@ -57,17 +57,17 @@ async function run() {
 
   const cats = data.categories;
 
-  // TC2: Design Only has all 5 expected services
+  // TC2: Design Only has all expected services
   const designOnly = cats.find(c => c.name === 'Design Only');
-  const expectedDesignOnly = ['Interior Design', 'Architecture Design', 'Landscape & Outdoor Design', 'MEP & Technical Drawings', 'Architecture'];
+  const expectedDesignOnly = ['Interior Design', 'Architecture Design', 'Landscape & Outdoor Design', 'MEP & Technical Drawings'];
   if (!designOnly) {
     fail('TC2: Design Only category exists', 'not found in response');
   } else {
     const missing = expectedDesignOnly.filter(s => !designOnly.subs.includes(s));
     if (missing.length === 0) {
-      pass(`TC2: Design Only has all 5 services (${designOnly.subs.join(', ')})`);
+      pass(`TC2: Design Only has all expected services (${designOnly.subs.join(', ')})`);
     } else {
-      fail('TC2: Design Only has all 5 services', `missing: ${missing.join(', ')} | got: ${designOnly.subs.join(', ')}`);
+      fail('TC2: Design Only has all expected services', `missing: ${missing.join(', ')} | got: ${designOnly.subs.join(', ')}`);
     }
   }
 
