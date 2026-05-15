@@ -22,25 +22,23 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check both localStorage AND API for phone
+    // Always verify with API — localStorage may be stale (e.g. after email verification auto-login)
     async function checkPhone() {
-      // Quick check from localStorage first
-      try {
-        const raw = localStorage.getItem('user');
-        if (raw) {
-          const user = JSON.parse(raw);
-          if (!user.phone) {
-            setVisible(true);
-            return;
-          }
-        }
-      } catch { /* ignore */ }
-
-      // Verify from API (handles stale localStorage)
       try {
         const res = await api.get('/auth/me');
-        if (res.user && !res.user.phone) {
-          setVisible(true);
+        if (res.user) {
+          if (!res.user.phone) {
+            setVisible(true);
+          } else {
+            // Backfill phone into localStorage if missing
+            try {
+              const raw = localStorage.getItem('user');
+              if (raw) {
+                const u = JSON.parse(raw);
+                if (!u.phone) { u.phone = res.user.phone; localStorage.setItem('user', JSON.stringify(u)); }
+              }
+            } catch { /* ignore */ }
+          }
         }
       } catch { /* not logged in, skip */ }
     }

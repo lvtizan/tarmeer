@@ -343,7 +343,7 @@ export default function CompanyProjectsPage() {
   if (mode === 'list') {
     return (
       <div className="w-full">
-          <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-7">
+          <div className="w-full">
           {/* Rejected projects banner */}
           {projects.filter(p => p.status === 'rejected').length > 0 && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
@@ -467,35 +467,35 @@ export default function CompanyProjectsPage() {
     <div className="w-full">
       <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-7">
 
-        {/* ── Sticky top bar ── */}
-        <div className="sticky top-3 z-20 mb-4 w-full rounded-[24px] border border-stone-200 bg-[#faf9f7]/95 px-5 py-3.5 shadow-[0_12px_30px_rgba(28,18,8,0.08)] backdrop-blur md:px-6">
-          <div className="flex w-full flex-wrap items-start justify-between gap-5">
-            <div className="min-w-0 flex-1">
-              <button
-                type="button"
-                onClick={cancelEdit}
-                className="mb-1 inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-700 transition"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                Back to Projects
-              </button>
-              <h1 className="text-2xl font-bold text-[#2c2c2c]">{editingProjectId ? 'Edit Project' : 'Upload New Project'}</h1>
-              <p className="text-sm text-stone-500">Complete your project and submit it for review.</p>
+        {/* ── Page title (static, scrolls away) ── */}
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={cancelEdit}
+            className="mb-1 inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-700 transition"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Back to Projects
+          </button>
+          <h1 className="text-2xl font-bold text-[#2c2c2c]">{editingProjectId ? 'Edit Project' : 'Upload New Project'}</h1>
+          <p className="text-sm text-stone-500">Complete your project and submit it for review.</p>
+        </div>
+
+        {/* ── Sticky action bar (slim, ~52px) ── */}
+        <div className="sticky top-0 z-20 mb-4 w-full rounded-[20px] border border-stone-200 bg-[#faf9f7]/95 px-4 py-2.5 shadow-[0_8px_24px_rgba(28,18,8,0.07)] backdrop-blur">
+          <div className="flex items-center gap-3">
+            <div className={`flex-1 text-sm font-medium truncate ${canPublish ? 'text-green-700' : 'text-stone-500'}`}>
+              {canPublish ? '✓ Ready to submit' : missingFields.length > 0 ? `Missing: ${missingFields.join(', ')}` : 'Complete required fields'}
             </div>
-            <div className="flex w-full shrink-0 gap-3 sm:w-auto">
-              <button type="button" onClick={()=>submit(false)} disabled={submitting||imgs.length===0}
-                className="h-10 flex-1 rounded-lg border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 sm:flex-none disabled:opacity-50">
-                {submitting ? 'Saving...' : editingProjectId ? 'Update Draft' : 'Save Draft'}
-              </button>
-              <button type="button" onClick={()=>submit(true)} disabled={submitting||!canPublish}
-                className="h-10 flex-1 rounded-lg px-5 text-sm font-bold text-white transition disabled:opacity-60 sm:flex-none"
-                style={{backgroundColor:PRIMARY}}>
-                {submitting ? 'Submitting...' : editingProjectId ? 'Update & Submit' : 'Submit for Review'}
-              </button>
-            </div>
-          </div>
-          <div className={`mt-3 block w-full rounded-lg border px-4 py-2.5 text-sm ${canPublish?'border-green-200 bg-green-50 text-green-800':'border-stone-200 bg-stone-50 text-stone-600'}`}>
-            <div className="font-semibold">{canPublish?'Ready to submit':'Complete all required fields to submit'}</div>
+            <button type="button" onClick={()=>submit(false)} disabled={submitting||imgs.length===0}
+              className="h-9 shrink-0 rounded-lg border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 disabled:opacity-50">
+              {submitting ? 'Saving...' : editingProjectId ? 'Update Draft' : 'Save Draft'}
+            </button>
+            <button type="button" onClick={()=>submit(true)} disabled={submitting||!canPublish}
+              className="h-9 shrink-0 rounded-lg px-5 text-sm font-bold text-white transition disabled:opacity-60"
+              style={{backgroundColor:PRIMARY}}>
+              {submitting ? 'Submitting...' : editingProjectId ? 'Update & Submit' : 'Submit for Review'}
+            </button>
           </div>
         </div>
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare, ExternalLink, ArrowRightLeft } from 'lucide-react';
-import Navbar from '../Navbar';
+import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare, ExternalLink, ArrowRightLeft, LogOut } from 'lucide-react';
+import TarmeerLogo from '../TarmeerLogo';
 import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
 import FeedbackModal from '../FeedbackModal';
@@ -62,6 +62,13 @@ export default function CompanyLayout() {
     return () => { mounted = false; };
   }, [token, navigate]);
 
+  const handleLogout = () => {
+    api.clearToken();
+    safeRemoveItem('user');
+    safeRemoveItem('active_role');
+    navigate('/auth');
+  };
+
   const handleSwitchPortal = async (portal: LinkedPortal) => {
     if (switchingPortal) return;
     setSwitchingPortal(portal.type);
@@ -92,11 +99,20 @@ export default function CompanyLayout() {
   return (
     <div className="h-screen bg-stone-50 flex flex-col overflow-hidden">
       <PhoneRequiredModal blocking />
-      <Navbar />
+      {/* Portal header */}
+      <header className="bg-white border-b border-stone-200 sticky top-0 z-30 h-14 flex items-center px-4 sm:px-6 justify-between shrink-0">
+        <TarmeerLogo className="h-6" />
+        <div className="flex items-center gap-3">
+          {companyName && <span className="text-sm font-medium text-[#2c2c2c] hidden sm:block">{companyName}</span>}
+          <button onClick={handleLogout} className="text-stone-400 hover:text-stone-600 transition p-1" title="Log out">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-14 sm:top-16 bottom-0 left-0 z-10 overflow-y-auto">
+        <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-14 bottom-0 left-0 z-10 overflow-y-auto">
           <div className="p-6">
             <nav className="flex flex-col gap-1">
               <NavLink to="/company/dashboard" end className={navCls}>
@@ -146,7 +162,7 @@ export default function CompanyLayout() {
         </aside>
 
         <main className="flex-1 overflow-y-auto md:ml-64 pb-20 md:pb-0 [scrollbar-gutter:stable]">
-          <div className="p-4 sm:p-6 lg:p-10 max-w-4xl mx-auto">
+          <div className="p-4 sm:p-6 lg:p-6">
             <Outlet />
           </div>
         </main>
