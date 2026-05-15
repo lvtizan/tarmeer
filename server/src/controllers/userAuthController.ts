@@ -920,14 +920,16 @@ export async function oauthCallback(req: any, res: any) {
       return res.redirect(`${frontendUrl}/auth?error=oauth_failed`);
     }
 
-    // Role (and optional phone) passed via OAuth state parameter
+    // Role, phone, and source passed via OAuth state parameter
     const rawState = req.query.state;
     let oauthRole: string | undefined;
     let oauthPhone: string | undefined;
+    let oauthSource: string | undefined;
     try {
       const parsed = JSON.parse(rawState);
       oauthRole = parsed.role;
       oauthPhone = parsed.phone;
+      oauthSource = parsed.source;
     } catch {
       // Legacy plain string state (e.g. "company")
       oauthRole = rawState;
@@ -947,7 +949,7 @@ export async function oauthCallback(req: any, res: any) {
         return res.redirect(`${frontendUrl}/auth?error=supplier_account`);
       }
 
-      const googleSource = assignRole === 'company' ? 'google-oauth-company' : 'google-oauth';
+      const googleSource = oauthSource || (assignRole === 'company' ? 'google-oauth-company' : 'google-oauth');
 
       // Don't store a phone that's already taken — NULL it out rather than blocking OAuth sign-in
       let safePhone: string | null = oauthPhone || null;

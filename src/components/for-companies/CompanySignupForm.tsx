@@ -510,7 +510,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       signup_source: 'for-companies-landing',
                     }));
                     const phoneFull = encodeURIComponent(`${phoneRegion.code}${phoneDigits}`);
-                    window.location.href = `${apiBase}/auth/google?role=company&phone=${phoneFull}`;
+                    window.location.href = `${apiBase}/auth/google?role=company&phone=${phoneFull}&source=company_form`;
                   }}
                   className="flex h-12 w-full items-center justify-center gap-3 rounded-[20px] border border-stone-200 bg-white text-[15px] font-medium text-[#1c1917] shadow-sm transition hover:bg-stone-50"
                 >

@@ -176,15 +176,23 @@ router.post('/google/one-tap',
   userAuth.googleOneTap
 );
 
-// Google OAuth — accepts ?role=company|homeowner and optional ?phone via state param
+// Google OAuth — accepts ?role=company|homeowner, optional ?phone, optional ?source via state param
 router.get('/google', (req: any, res: any, next: any) => {
   const role = req.query.role;
   const phone = req.query.phone;
+  const source = req.query.source;
   const validRole = role === 'company' || role === 'homeowner' ? role : undefined;
-  // Encode role + phone into state as JSON when phone is present, otherwise plain role string for backwards compat
-  const state = phone && validRole
-    ? JSON.stringify({ role: validRole, phone })
-    : validRole;
+  // Encode role + phone + source into state JSON; fallback to plain role string for backwards compat
+  let state: string | undefined;
+  if (phone || source) {
+    const s: Record<string, string> = {};
+    if (validRole) s.role = validRole;
+    if (phone) s.phone = String(phone);
+    if (source) s.source = String(source);
+    state = JSON.stringify(s);
+  } else {
+    state = validRole;
+  }
   passport.authenticate('google', {
     scope: ['profile', 'email'],
     state,

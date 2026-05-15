@@ -385,7 +385,7 @@ export default function HomeownerAuthPage() {
                         try {
                           // Pre-check: verify the OAuth endpoint is reachable before redirecting
                           const apiBase = import.meta.env.VITE_API_URL || '/api';
-                          const googleUrl = `${apiBase}/auth/google?role=${authRole}`;
+                          const googleUrl = `${apiBase}/auth/google?role=${authRole}&source=homeowner_auth`;
                           const resp = await fetch(googleUrl, {
                             method: 'GET',
                             redirect: 'manual',
@@ -398,7 +398,7 @@ export default function HomeownerAuthPage() {
                             setError('Google sign-in is temporarily unavailable. Please use email instead.');
                           }
                         } catch {
-                          window.location.href = `${import.meta.env.VITE_API_URL || '/api'}/auth/google?role=${authRole}`;
+                          window.location.href = `${import.meta.env.VITE_API_URL || '/api'}/auth/google?role=${authRole}&source=homeowner_auth`;
                         }
                       }}
                       className={AUTH_SOCIAL_BUTTON_CLASS}
