@@ -5,6 +5,19 @@ import AdminSelect from '../ui/AdminSelect';
 import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
 import { api } from '../../lib/api';
 import { useVerificationPoller } from '../../hooks/useVerificationPoller';
+import { registerPendingAction } from '../../lib/pendingActionsRegistry';
+
+// Register the company-profile carry-over handler once.
+// When a new user verifies their email (on any device/browser),
+// the poller will call this with the data they filled in the form.
+registerPendingAction('create_company_profile', async (data, token) => {
+  const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
+  await fetch(`${API_BASE}/auth/company/profile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+});
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },

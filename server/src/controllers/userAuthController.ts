@@ -8,6 +8,7 @@ import { notifyUserRegistration } from '../services/notificationService';
 import { recordAuthFailure, recordAuthSuccess } from '../middleware/authRateLimit';
 import { logActivity, getClientIp } from '../lib/activityLogger';
 import { passwordSync } from '../lib/crmIntegrationService';
+import * as pendingActions from '../lib/pendingActions';
 
 const TEMP_EMAIL_DOMAINS = [
   'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email',
@@ -129,11 +130,10 @@ export async function register(req: any, res: any) {
 
     const userId = (result as any).insertId;
 
-    // Store pending company profile so it can be auto-applied after email verification
-    // (works cross-device/cross-browser, unlike sessionStorage)
+    // Store pending actions so they auto-apply after email verification (cross-device)
     const pendingProfileRaw = req.body.pending_profile;
     if (assignRole === 'company' && pendingProfileRaw && typeof pendingProfileRaw === 'object') {
-      pool.execute('UPDATE users SET pending_profile = ? WHERE id = ?', [JSON.stringify(pendingProfileRaw), userId]).catch(() => {});
+      pendingActions.save(userId, 'create_company_profile', pendingProfileRaw).catch(() => {});
     }
 
     setImmediate(() => {
@@ -442,7 +442,7 @@ export async function checkVerified(req: any, res: any) {
     if (!email) return res.status(400).json({ verified: false });
 
     const [rows] = await pool.execute(
-      'SELECT id, email_verified, role, active_role, full_name, phone, pending_profile FROM users WHERE email = ? LIMIT 1',
+      'SELECT id, email_verified, role, active_role, full_name, phone FROM users WHERE email = ? LIMIT 1',
       [email]
     );
     const user = (rows as any[])[0];
@@ -452,20 +452,14 @@ export async function checkVerified(req: any, res: any) {
     // Verified — issue a login token so the polling page can auto-login
     const token = generateToken(user);
 
-    // Return and clear pending company profile (stored server-side during registration)
-    let pendingProfile: any = null;
-    if (user.pending_profile) {
-      try {
-        pendingProfile = typeof user.pending_profile === 'string' ? JSON.parse(user.pending_profile) : user.pending_profile;
-        pool.execute('UPDATE users SET pending_profile = NULL WHERE id = ?', [user.id]).catch(() => {});
-      } catch { /* ignore */ }
-    }
+    // Pop pending actions (stored server-side during registration, works cross-device)
+    const actions = await pendingActions.pop(user.id).catch(() => []);
 
     res.json({
       verified: true,
       token,
       user: { id: user.id, email, full_name: user.full_name, role: user.role, active_role: user.active_role, phone: user.phone || null },
-      pendingProfile,
+      pendingActions: actions,
     });
   } catch {
     res.json({ verified: false });

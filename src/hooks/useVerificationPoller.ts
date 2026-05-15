@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { applyPendingActions } from '../lib/pendingActionsRegistry';
 
 /**
  * Polls /auth/check-verified every 3s after registration.
@@ -37,27 +38,21 @@ export function useVerificationPoller(email: string | null, role?: string) {
             localStorage.setItem('active_role', data.user.active_role || role || '');
           }
 
-          // Apply pending company profile (server-side first, sessionStorage as fallback)
+          // Apply pending actions (server-side first, sessionStorage as fallback for same-tab)
           const activeRole = data.user?.active_role || role;
+          try {
+            // Server-side: works cross-device/cross-browser
+            let actions: Array<{ type: string; data: unknown }> = data.pendingActions || [];
+            // Same-tab fallback: legacy sessionStorage key
+            if (!actions.length) {
+              const raw = sessionStorage.getItem('pending_company_profile');
+              if (raw) { actions = [{ type: 'create_company_profile', data: JSON.parse(raw) }]; }
+            }
+            sessionStorage.removeItem('pending_company_profile');
+            await applyPendingActions(actions, data.token);
+          } catch { /* ignore */ }
+
           if (activeRole === 'company') {
-            try {
-              // Server-side pending_profile (works across devices/browsers)
-              let pending = data.pendingProfile || null;
-              // Fallback: sessionStorage (same tab, same browser)
-              if (!pending) {
-                const raw = sessionStorage.getItem('pending_company_profile');
-                if (raw) { pending = JSON.parse(raw); }
-              }
-              sessionStorage.removeItem('pending_company_profile');
-              if (pending) {
-                const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
-                await fetch(`${API_BASE}/auth/company/profile`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.token}` },
-                  body: JSON.stringify(pending),
-                });
-              }
-            } catch { /* ignore — profile can be filled later */ }
             navigate('/company');
           } else {
             navigate('/dashboard');
