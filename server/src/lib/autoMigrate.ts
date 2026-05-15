@@ -393,6 +393,9 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   // Google OAuth ID (for SSO / CRM provision)
   { table: 'users', column: 'google_id', type: 'VARCHAR(255) NULL', unique: true },
 
+  // Pending company profile (saved during /for-companies registration before email verified)
+  { table: 'users', column: 'pending_profile', type: 'JSON NULL' },
+
   // YouTube / external video link per project
   { table: 'projects', column: 'video_url', type: 'VARCHAR(500) NULL' },
 

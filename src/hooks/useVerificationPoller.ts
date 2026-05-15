@@ -37,9 +37,27 @@ export function useVerificationPoller(email: string | null, role?: string) {
             localStorage.setItem('active_role', data.user.active_role || role || '');
           }
 
-          // Redirect
+          // Apply pending company profile (server-side first, sessionStorage as fallback)
           const activeRole = data.user?.active_role || role;
           if (activeRole === 'company') {
+            try {
+              // Server-side pending_profile (works across devices/browsers)
+              let pending = data.pendingProfile || null;
+              // Fallback: sessionStorage (same tab, same browser)
+              if (!pending) {
+                const raw = sessionStorage.getItem('pending_company_profile');
+                if (raw) { pending = JSON.parse(raw); }
+              }
+              sessionStorage.removeItem('pending_company_profile');
+              if (pending) {
+                const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
+                await fetch(`${API_BASE}/auth/company/profile`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.token}` },
+                  body: JSON.stringify(pending),
+                });
+              }
+            } catch { /* ignore — profile can be filled later */ }
             navigate('/company');
           } else {
             navigate('/dashboard');

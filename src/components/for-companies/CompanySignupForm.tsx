@@ -322,6 +322,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           city,
           role: 'company',
           signup_source: source,
+          pending_profile: profileData,  // stored server-side, applied after email verification
         });
 
         try {
