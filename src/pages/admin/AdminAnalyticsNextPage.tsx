@@ -314,8 +314,23 @@ export default function AdminAnalyticsNextPage() {
     value: t.count,
   })).sort((a, b) => b.value - a.value);
 
-  // (signupSources unused now — kept the state for future use)
-  void signupSources;
+  const SOURCE_LABEL: Record<string, string> = {
+    company_form:          '装企表单（谷歌）',
+    company_auth:          '装企登录页（谷歌）',
+    homeowner_auth:        '业主登录页（谷歌）',
+    'google-oauth-company':'谷歌 OAuth（旧装企）',
+    'google-oauth':        '谷歌 OAuth（旧）',
+    'one-tap':             '谷歌 One Tap',
+    direct:                '邮箱直接注册',
+    'for-companies-landing': '装企落地页',
+  };
+  const sourceTotal = signupSources.reduce((s, x) => s + x.count, 0);
+  const sourceItems: LBItem[] = signupSources.map(s => ({
+    key: s.source || 'direct',
+    primary: SOURCE_LABEL[s.source || 'direct'] || s.source || '未知',
+    secondary: sourceTotal > 0 ? `${Math.round((s.count / sourceTotal) * 100)}%` : undefined,
+    value: s.count,
+  }));
 
   return (
     <div className="w-full">
@@ -459,8 +474,8 @@ export default function AdminAnalyticsNextPage() {
         )}
       </div>
 
-      {/* 最受关注的 10 家公司 + 装企类型分布 — 都用 leaderboard 风格 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* 最受关注的 10 家公司 + 装企类型分布 + 注册来源 — 都用 leaderboard 风格 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 flex flex-col">
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <div>
@@ -485,6 +500,19 @@ export default function AdminAnalyticsNextPage() {
             </div>
           </div>
           <LeaderboardBars items={typeItems} max={10} labelWidth={148} colors="multi" />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 flex flex-col">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-[#2c2c2c]">注册来源分布</h2>
+              <p className="text-[11px] text-stone-500 mt-0.5">用户从哪个入口完成注册</p>
+            </div>
+            <div className="text-[11px] text-stone-500 tabular-nums shrink-0">
+              合计 <span className="font-bold text-[#1c1917] text-[14px]">{sourceTotal.toLocaleString()}</span>
+            </div>
+          </div>
+          <LeaderboardBars items={sourceItems} max={10} labelWidth={160} colors="multi" />
         </div>
       </div>
 
