@@ -40,9 +40,10 @@ export default function CompanyLayout() {
         // 拿公司名和类型用于反馈标识
         api.get('/auth/company/profile').then((res: any) => {
           if (!mounted) return;
-          setCompanyName(res?.company_name || '');
-          setCompanyType(res?.company_type || '');
-          setCrmEnabled(!!res?.crm_tenant_id);
+          const p = res?.profile ?? res;
+          setCompanyName(p?.company_name || '');
+          setCompanyType(p?.company_type || '');
+          setCrmEnabled(!!p?.crm_tenant_id);
         }).catch(() => {});
         // 拿关联入口（admin / supplier portal）
         api.get('/auth/linked-portals').then((res: any) => {
