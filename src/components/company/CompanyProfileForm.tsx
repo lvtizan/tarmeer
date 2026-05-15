@@ -108,7 +108,139 @@ export interface CompanyProfileFormRef {
   saveText: string;
 }
 
-/* ── Service Category Picker ── */
+/* ── Generic flat multi-select with search (fixed positioning) ── */
+function MultiSelectDropdown({
+  options, selected, onChange, max, placeholder = 'Select…',
+}: {
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  max?: number;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const filtered = query.trim()
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  const recalc = () => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    setPanelPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  };
+
+  const handleOpen = () => {
+    recalc();
+    setOpen(p => !p);
+    if (!open) setTimeout(() => searchRef.current?.focus(), 50);
+  };
+
+  useEffect(() => {
+    if (!open) { setQuery(''); return; }
+    const close = (e: MouseEvent) => {
+      if (!triggerRef.current?.contains(e.target as Node) && !panelRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onScroll = () => recalc();
+    document.addEventListener('mousedown', close);
+    document.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [open]);
+
+  const toggle = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter(v => v !== value));
+    } else {
+      if (max && selected.length >= max) return;
+      onChange([...selected, value]);
+    }
+  };
+
+  const selectedLabels = selected.map(v => options.find(o => o.value === v)?.label).filter(Boolean).join(', ');
+
+  return (
+    <div>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={handleOpen}
+        className={`flex h-[50px] w-full items-center justify-between rounded-2xl border px-5 text-[15px] transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 ${
+          open ? 'border-[#b8864a] bg-white' : 'border-stone-200 bg-stone-50/80 hover:bg-white'
+        }`}
+      >
+        <span className={`truncate ${selected.length > 0 ? 'text-[#1c1917]' : 'text-stone-400'}`}>
+          {selected.length > 0 ? selectedLabels : placeholder}
+        </span>
+        <ChevronDown className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {max && selected.length >= max && (
+        <p className="mt-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+          Max {max} selected. Deselect one to change.
+        </p>
+      )}
+
+      {open && (
+        <div
+          ref={panelRef}
+          className="fixed z-50 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg"
+          style={{ top: panelPos.top, left: panelPos.left, width: Math.max(panelPos.width, 320) }}
+        >
+          {/* Search */}
+          <div className="p-2 border-b border-stone-100">
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="w-full h-8 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
+            />
+          </div>
+          {/* List */}
+          <div className="max-h-60 overflow-y-auto">
+            {filtered.length === 0 && (
+              <p className="px-4 py-3 text-sm text-stone-400">No results</p>
+            )}
+            {filtered.map(o => {
+              const on = selected.includes(o.value);
+              const locked = !on && !!max && selected.length >= max;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => toggle(o.value)}
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-left transition ${
+                    on ? 'bg-[#b8864a]/5 text-[#b8864a] font-medium' : 'text-[#2c2c2c] hover:bg-stone-50'
+                  } disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                    on ? 'border-[#b8864a] bg-[#b8864a]' : 'border-stone-300 bg-white'
+                  }`}>
+                    {on && <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </span>
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Service Category Picker — cascading dropdown (fixed positioning) ── */
 function ServiceCategoryPicker({
   selected,
   onChange,
@@ -116,115 +248,221 @@ function ServiceCategoryPicker({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState(false);
+  const [hoveredCat, setHoveredCat] = useState(0);
+  const [query, setQuery] = useState('');
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number; openUp: boolean }>({ top: 0, left: 0, width: 0, openUp: false });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const dynamicCategories = useServiceCategories();
   const activeParents = getActiveParentsDynamic(selected, dynamicCategories);
 
-  const toggleExpand = (name: string) => {
-    setExpanded(prev => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name); else next.add(name);
-      return next;
+  // Flat search results across all categories
+  const searchResults = query.trim()
+    ? dynamicCategories.flatMap(cat => cat.subs.filter(s => s.toLowerCase().includes(query.toLowerCase())).map(s => ({ sub: s, cat: cat.name })))
+    : [];
+
+  const PANEL_HEIGHT = 420;
+
+  const recalcPos = () => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom;
+    const openUp = spaceBelow < PANEL_HEIGHT + 8 && r.top > PANEL_HEIGHT + 8;
+    setPanelPos({
+      top: openUp ? r.top - PANEL_HEIGHT - 4 : r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      openUp,
     });
   };
+
+  const handleOpen = () => {
+    recalcPos();
+    setOpen(p => !p);
+    if (!open) setTimeout(() => searchRef.current?.focus(), 50);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!triggerRef.current?.contains(e.target as Node) && !panelRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onScroll = () => { recalcPos(); };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [open]);
 
   const toggleSub = (sub: string, parentName: string) => {
     const isSelected = selected.includes(sub);
     if (isSelected) {
       onChange(selected.filter(s => s !== sub));
     } else {
-      // Check parent limit
       const isNewParent = !activeParents.includes(parentName);
       if (isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES) return;
       onChange([...selected, sub]);
     }
   };
 
-  const toggleAllInCategory = (cat: { name: string; subs: string[] }) => {
-    const catSubs = cat.subs;
-    const allSelected = catSubs.every(s => selected.includes(s));
-    if (allSelected) {
-      // Deselect all in this category
-      onChange(selected.filter(s => !catSubs.includes(s)));
-    } else {
-      // Select all — check parent limit first
-      const isNewParent = !activeParents.includes(cat.name);
-      if (isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES) return;
-      const newSubs = catSubs.filter(s => !selected.includes(s));
-      onChange([...selected, ...newSubs]);
-    }
-  };
+  const currentCat = dynamicCategories[hoveredCat];
 
   return (
-    <div className="space-y-1.5">
+    <div>
+      {/* Trigger */}
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={handleOpen}
+        className={`flex h-[50px] w-full items-center justify-between rounded-2xl border px-5 text-[15px] transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 ${
+          open ? 'border-[#b8864a] bg-white' : 'border-stone-200 bg-stone-50/80 hover:bg-white'
+        }`}
+      >
+        <span className={`truncate ${selected.length > 0 ? 'text-[#1c1917]' : 'text-stone-400'}`}>
+          {selected.length > 0 ? selected.join(', ') : 'Select services…'}
+        </span>
+        <ChevronDown className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* Limit warning */}
       {activeParents.length >= MAX_SERVICE_CATEGORIES && (
-        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+        <p className="mt-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
           Max {MAX_SERVICE_CATEGORIES} categories selected. Deselect from an existing category to add another.
         </p>
       )}
-      {dynamicCategories.map(cat => {
-        const catSelected = cat.subs.filter(s => selected.includes(s));
-        const isOpen = expanded.has(cat.name);
-        const isActive = activeParents.includes(cat.name);
-        const isLocked = !isActive && activeParents.length >= MAX_SERVICE_CATEGORIES;
 
-        return (
-          <div key={cat.name} className={`rounded-xl border transition-colors ${isActive ? 'border-[#b8864a]/40 bg-[#b8864a]/3' : 'border-stone-200 bg-white'} ${isLocked ? 'opacity-50' : ''}`}>
-            {/* Category header */}
-            <button
-              type="button"
-              onClick={() => toggleExpand(cat.name)}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-left"
-            >
-              <div className="flex items-center gap-2">
-                {isOpen ? <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />}
-                <span className={`text-sm font-medium ${isActive ? 'text-[#b8864a]' : 'text-stone-700'}`}>{cat.name}</span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {catSelected.length > 0 && (
-                  <span className="text-xs bg-[#b8864a] text-white rounded-full px-2 py-0.5">
-                    {catSelected.length}/{cat.subs.length}
-                  </span>
-                )}
-                {!isLocked && (
-                  <button
-                    type="button"
-                    onClick={e => { e.stopPropagation(); toggleAllInCategory(cat); }}
-                    className="text-xs text-stone-400 hover:text-[#b8864a] transition-colors px-1"
+      {/* Panel — fixed positioning to avoid overflow clipping */}
+      {open && (
+        <div
+          ref={panelRef}
+          className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg"
+          style={{ top: panelPos.top, left: panelPos.left, width: Math.max(panelPos.width, 480) }}
+        >
+          {/* Search input */}
+          <div className="shrink-0 p-2 border-b border-stone-100">
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search services…"
+              className="w-full h-8 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
+            />
+          </div>
+
+          {query.trim() ? (
+            /* Flat search results */
+            <div className="overflow-y-auto max-h-[360px]">
+              {searchResults.length === 0 && (
+                <p className="px-4 py-3 text-sm text-stone-400">No results</p>
+              )}
+              {searchResults.map(({ sub, cat: catName }) => {
+                const on = selected.includes(sub);
+                const isNewParent = !activeParents.includes(catName);
+                const locked = !on && isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES;
+                return (
+                  <button key={sub} type="button"
+                    disabled={locked}
+                    onClick={() => toggleSub(sub, catName)}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-left transition border-b border-stone-50 last:border-0 ${
+                      on ? 'text-[#b8864a] font-semibold bg-[#b8864a]/5' : 'text-[#2c2c2c] hover:bg-stone-50'
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
                   >
-                    {catSelected.length === cat.subs.length ? 'Clear' : 'All'}
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                      on ? 'border-[#b8864a] bg-[#b8864a]' : 'border-stone-300 bg-white'
+                    }`}>
+                      {on && <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </span>
+                    <span className="flex-1">{sub}</span>
+                    <span className="text-xs text-stone-400 shrink-0">{catName}</span>
                   </button>
-                )}
-              </div>
-            </button>
-
-            {/* Subcategories */}
-            {isOpen && (
-              <div className="px-3 pb-3 flex flex-wrap gap-2">
-                {cat.subs.map(sub => {
-                  const active = selected.includes(sub);
+                );
+              })}
+            </div>
+          ) : (
+            /* Normal cascading L1 / L2 view */
+            <div className="flex overflow-hidden" style={{ maxHeight: 420 }}>
+              {/* L1 list */}
+              <div className="w-52 flex-shrink-0 border-r border-stone-100 overflow-y-auto">
+                <div className="px-3 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-[#b8864a]">Service Type</div>
+                {dynamicCategories.map((cat, i) => {
+                  const hasSelected = cat.subs.some(s => selected.includes(s));
+                  const isActive = activeParents.includes(cat.name);
                   return (
                     <button
-                      key={sub}
+                      key={cat.name}
                       type="button"
-                      disabled={isLocked && !active}
-                      onClick={() => toggleSub(sub, cat.name)}
-                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                        active
-                          ? 'bg-[#b8864a] text-white border-[#b8864a]'
-                          : 'bg-white text-stone-600 border-stone-200 hover:border-[#b8864a]/60'
-                      } disabled:opacity-40 disabled:cursor-not-allowed`}
+                      onMouseEnter={() => setHoveredCat(i)}
+                      onClick={() => setHoveredCat(i)}
+                      className={`flex w-full items-center justify-between gap-1 px-3 py-2.5 text-sm leading-snug transition ${
+                        hoveredCat === i ? 'bg-stone-50 font-semibold text-[#b8864a]' : isActive ? 'text-[#b8864a]' : 'text-[#2c2c2c] hover:bg-stone-50'
+                      }`}
                     >
-                      {sub}
+                      <span className="flex-1 text-left">{cat.name}</span>
+                      {hasSelected && <span className="h-1.5 w-1.5 rounded-full bg-[#b8864a] shrink-0 mr-1" />}
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stone-300" />
                     </button>
                   );
                 })}
+                <div className="h-3" />
               </div>
-            )}
-          </div>
-        );
-      })}
+
+              {/* L2 subs */}
+              {currentCat && (
+                <div className="flex-1 overflow-y-auto">
+                  <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-[#b8864a]">{currentCat.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allOn = currentCat.subs.every(s => selected.includes(s));
+                        if (allOn) {
+                          onChange(selected.filter(s => !currentCat.subs.includes(s)));
+                        } else {
+                          const isNewParent = !activeParents.includes(currentCat.name);
+                          if (isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES) return;
+                          onChange([...new Set([...selected, ...currentCat.subs])]);
+                        }
+                      }}
+                      className="text-xs text-stone-400 hover:text-[#b8864a] transition-colors"
+                    >
+                      {currentCat.subs.every(s => selected.includes(s)) ? 'Clear' : 'All'}
+                    </button>
+                  </div>
+                  {currentCat.subs.map(t => {
+                    const on = selected.includes(t);
+                    const isNewParent = !activeParents.includes(currentCat.name);
+                    const locked = !on && isNewParent && activeParents.length >= MAX_SERVICE_CATEGORIES;
+                    return (
+                      <button key={t} type="button"
+                        disabled={locked}
+                        onClick={() => toggleSub(t, currentCat.name)}
+                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-left transition border-b border-stone-50 last:border-0 ${
+                          on ? 'text-[#b8864a] font-semibold bg-[#b8864a]/5' : 'text-[#2c2c2c] hover:bg-stone-50'
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >
+                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                          on ? 'border-[#b8864a] bg-[#b8864a]' : 'border-stone-300 bg-white'
+                        }`}>
+                          {on && <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </span>
+                        <span>{t}</span>
+                      </button>
+                    );
+                  })}
+                  <div className="h-3" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -487,15 +725,14 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
         {/* Company Type multiselect */}
         <div className="mt-3">
           <FormLabel>Company Type <span className="text-stone-400 font-normal">(select up to 5)</span></FormLabel>
-          <div className="flex flex-wrap gap-2 mt-1.5">
-            {TYPE_OPTIONS.map(o => (
-              <FormTag
-                key={o.value}
-                label={o.label}
-                active={profile.company_types.includes(o.value)}
-                onClick={() => toggleTag('company_types', o.value, 5)}
-              />
-            ))}
+          <div className="mt-1.5">
+            <MultiSelectDropdown
+              options={TYPE_OPTIONS}
+              selected={profile.company_types}
+              onChange={v => set('company_types', v)}
+              max={5}
+              placeholder="Select company types…"
+            />
           </div>
         </div>
 
