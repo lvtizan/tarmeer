@@ -106,6 +106,13 @@ export default function CompanyLayout() {
   return (
     <div className="h-screen bg-stone-50 flex flex-col overflow-hidden">
       <PhoneRequiredModal blocking />
+      {/* CRM loading overlay */}
+      {crmOpening && (
+        <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+          <p className="text-[15px] font-medium text-violet-700">Logging into CRM, please stay on this page…</p>
+        </div>
+      )}
       {/* Portal header */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-30 h-14 flex items-center px-4 sm:px-6 justify-between shrink-0">
         <TarmeerLogo className="h-6" />
