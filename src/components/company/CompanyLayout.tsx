@@ -86,10 +86,16 @@ export default function CompanyLayout() {
   const handleOpenCrm = async () => {
     if (crmOpening) return;
     setCrmOpening(true);
+    // Open window synchronously (before await) to avoid popup blocker
+    const win = window.open('', '_blank');
     try {
       const res: any = await api.post('/auth/company/crm-sso', {});
-      if (res?.consumeUrl) window.open(res.consumeUrl, '_blank');
-    } catch { } finally { setCrmOpening(false); }
+      if (res?.consumeUrl && win) {
+        win.location.href = res.consumeUrl;
+      } else {
+        win?.close();
+      }
+    } catch { win?.close(); } finally { setCrmOpening(false); }
   };
 
   if (!token) return <Navigate to="/auth" replace />;
@@ -137,8 +143,8 @@ export default function CompanyLayout() {
                 <span className="text-sm font-medium">Settings</span>
               </NavLink>
               {crmEnabled && (
-                <button onClick={handleOpenCrm} disabled={crmOpening} className={navCls({ isActive: false }) + ' w-full text-left'}>
-                  <ExternalLink className="w-5 h-5" />
+                <button onClick={handleOpenCrm} disabled={crmOpening} className="flex items-center gap-3 px-4 py-3 rounded-full transition w-full text-left bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 disabled:opacity-50">
+                  <ExternalLink className="w-5 h-5 shrink-0" />
                   <span className="text-sm font-medium">{crmOpening ? 'Opening…' : 'Open CRM'}</span>
                 </button>
               )}
@@ -205,7 +211,7 @@ export default function CompanyLayout() {
           Profile
         </NavLink>
         {crmEnabled && (
-          <button onClick={handleOpenCrm} disabled={crmOpening} className="flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] text-stone-500 disabled:opacity-50">
+          <button onClick={handleOpenCrm} disabled={crmOpening} className="flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] text-violet-600 font-medium disabled:opacity-50">
             <ExternalLink className="w-5 h-5" />
             CRM
           </button>
