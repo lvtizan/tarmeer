@@ -22,6 +22,9 @@ export default function CompanyDashboardPage() {
   const [rejectedProjects, setRejectedProjects] = useState<Array<{ id: number; title: string; rejection_reason: string | null }>>([]);
   const [hasPendingProjects, setHasPendingProjects] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [approvedBannerDismissed, setApprovedBannerDismissed] = useState(
+    !!sessionStorage.getItem('tarmeer_approved_banner_dismissed')
+  );
 
   useEffect(() => {
     if (sessionStorage.getItem('tarmeer_pending_banner_dismissed')) {
@@ -213,13 +216,24 @@ export default function CompanyDashboardPage() {
       )}
 
       {/* ── Approved banner ── */}
-      {step3Done && (
+      {step3Done && !approvedBannerDismissed && (
         <div className="rounded-2xl border border-green-200 bg-green-50 px-6 py-4 flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-semibold text-green-800">Profile Approved</p>
             <p className="text-xs text-green-700">Your company is live and discoverable by clients.</p>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setApprovedBannerDismissed(true);
+              sessionStorage.setItem('tarmeer_approved_banner_dismissed', '1');
+            }}
+            className="text-green-500 hover:text-green-700 shrink-0"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
       )}
 

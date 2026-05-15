@@ -77,7 +77,9 @@ export default function CompanyProjectsPage() {
   const [spaceL1, setSpaceL1] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [serviceTags, setServiceTags] = useState<string[]>([]);
-  const [serviceNavCat, setServiceNavCat] = useState(0);
+  const [serviceDropOpen, setServiceDropOpen] = useState(false);
+  const [hoveredCat, setHoveredCat] = useState(0);
+  const serviceDropRef = useRef<HTMLDivElement>(null);
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
 
   /* ── image board ── */
@@ -127,6 +129,16 @@ export default function CompanyProjectsPage() {
       .catch(() => setProjectsLoadError('Failed to load projects. Please refresh the page.'));
   }, []);
   useEffect(() => { refreshProjects(); }, [refreshProjects]);
+
+  /* ── service dropdown click-outside ── */
+  useEffect(() => {
+    if (!serviceDropOpen) return;
+    const h = (e: MouseEvent) => {
+      if (!serviceDropRef.current?.contains(e.target as Node)) setServiceDropOpen(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [serviceDropOpen]);
 
   /* ── scroll highlight effect ── */
   useEffect(() => {
@@ -237,6 +249,7 @@ export default function CompanyProjectsPage() {
         title: form.title,
         description: form.description,
         style: form.style,
+        space_type: spaceL1 || null,
         location: form.location,
         area: form.area,
         video_url: form.video_url || null,
@@ -289,11 +302,9 @@ export default function CompanyProjectsPage() {
     const loadedServiceTags = parseMaybeArray(project.service_tags);
     setServiceTags(loadedServiceTags);
     const firstActiveCatIdx = dynamicServiceCategories.findIndex(c => c.subs.some(s => loadedServiceTags.includes(s)));
-    if (firstActiveCatIdx >= 0) setServiceNavCat(firstActiveCatIdx);
-    // Derive L1 from the first existing space tag
-    const firstSpaceTag = mergedTags.find((t: string) => SPACE_TAXONOMY.some(g => (g.tags as readonly string[]).includes(t)));
-    const derivedL1 = firstSpaceTag ? SPACE_TAXONOMY.find(g => (g.tags as readonly string[]).includes(firstSpaceTag))?.id || '' : '';
-    setSpaceL1(derivedL1);
+    if (firstActiveCatIdx >= 0) setHoveredCat(firstActiveCatIdx);
+    // Load L1 from space_type field directly
+    setSpaceL1(project.space_type || '');
     setImgs(projectImages);
     setFps(projectImages.map((url, index) => `existing:${project.id}:${index}:${url.slice(-30)}`));
     setCover(0);
@@ -465,7 +476,7 @@ export default function CompanyProjectsPage() {
   /* ── Form view ── */
   return (
     <div className="w-full">
-      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-7">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-7 pb-24">
 
         {/* ── Page title (static, scrolls away) ── */}
         <div className="mb-3">
@@ -481,9 +492,9 @@ export default function CompanyProjectsPage() {
           <p className="text-sm text-stone-500">Complete your project and submit it for review.</p>
         </div>
 
-        {/* ── Sticky action bar (slim, ~52px) ── */}
-        <div className="sticky top-0 z-20 mb-4 w-full rounded-[20px] border border-stone-200 bg-[#faf9f7]/95 px-4 py-2.5 shadow-[0_8px_24px_rgba(28,18,8,0.07)] backdrop-blur">
-          <div className="flex items-center gap-3">
+        {/* ── Fixed bottom action bar ── */}
+        <div className="fixed left-0 right-0 bottom-[62px] md:bottom-0 md:left-64 z-30 border-t border-stone-200 bg-white px-6 py-3 shadow-[0_-4px_16px_rgba(28,18,8,0.07)]">
+          <div className="mx-auto flex max-w-[1440px] items-center gap-3">
             <div className={`flex-1 text-sm font-medium truncate ${canPublish ? 'text-green-700' : 'text-stone-500'}`}>
               {canPublish ? '✓ Ready to submit' : missingFields.length > 0 ? `Missing: ${missingFields.join(', ')}` : 'Complete required fields'}
             </div>
@@ -509,10 +520,6 @@ export default function CompanyProjectsPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className={labelCls}>Project Title <span className="text-red-500">*</span></label>
-                <p className="mb-1.5 text-xs text-stone-400">
-                  Tips: Use the format — <span className="font-medium text-stone-500">Neighborhood + Property Type + Renovation Scope</span><br/>
-                  e.g. Palm Jumeirah - Villa - Full Renovation &nbsp;·&nbsp; Emirates Hills - Villa - Kitchen Remodel &nbsp;·&nbsp; JVC - Apartment - Window &amp; Door Replacement
-                </p>
                 <input type="text" value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="e.g. Palm Jumeirah - Villa - Full Renovation" className={`${fieldCls} ${tried&&!form.title.trim()?'!border-red-400':''}`}/>
                 {tried&&!form.title.trim()&&<p className="mt-1 text-xs text-red-500">Project title is required</p>}
               </div>
@@ -520,14 +527,6 @@ export default function CompanyProjectsPage() {
                 <label className={labelCls}>Description</label>
                 <textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Briefly describe project highlights or design intent (recommended)." rows={3} className={textareaCls}/>
                 <p className="mt-1 text-xs text-stone-500">Recommended: 50–200 characters.</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className={labelCls}>Video URL (YouTube)</label>
-                <div className="relative">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.5V8.5l6.5 3.5-6.5 3.5z"/></svg>
-                  <input type="url" value={form.video_url} onChange={e=>setForm(p=>({...p,video_url:e.target.value}))} placeholder="https://www.youtube.com/watch?v=..." className={`${fieldCls} pl-9`}/>
-                </div>
-                <p className="mt-1 text-xs text-stone-500">Optional. Video will be embedded on the project page.</p>
               </div>
               <div>
                 <label className={labelCls}>Style <span className="text-stone-400 font-normal">(optional)</span></label>
@@ -541,87 +540,96 @@ export default function CompanyProjectsPage() {
                 </SelectField>
                 {tried&&!form.location&&<p className="mt-1 text-xs text-red-500">City is required</p>}
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className={labelCls}>Project Area</label>
                 <div className="flex h-11 items-center rounded-lg border border-stone-200 bg-stone-50 px-4"><input type="text" value={form.area} onChange={e=>setForm(p=>({...p,area:e.target.value}))} placeholder="e.g. 450" inputMode="decimal" className="h-full w-full bg-transparent text-[#2c2c2c] outline-none"/><span className="text-xs text-stone-500">sqm</span></div>
               </div>
-              <div className="md:col-span-2">
+              <div>
                 <label className={labelCls}>Space Type</label>
-                <p className="mb-2 text-xs text-stone-500">Select a project category, then pick the specific types that apply.</p>
                 <AdminSelect
                   value={spaceL1}
-                  onChange={(v) => {
-                    setSpaceL1(v);
-                    setTags([]); // reset L2 when L1 changes
-                  }}
+                  onChange={(v) => setSpaceL1(v)}
                   options={SPACE_L1_OPTIONS}
-                  className="w-full mb-3"
+                  className="w-full"
                 />
-                {spaceL1 && (() => {
-                  const group = SPACE_TAXONOMY.find(g => g.id === spaceL1);
-                  if (!group) return null;
-                  return (
-                    <div className="flex flex-wrap gap-2">
-                      {group.tags.map(t => {
-                        const on = tags.includes(t);
-                        return (
-                          <button key={t} type="button"
-                            onClick={() => setTags(p => on ? p.filter(x => x !== t) : [...p, t])}
-                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? tagOn : tagOff}`}
-                          >
-                            {t}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
               </div>
-              <div className="md:col-span-2">
+              <div>
                 <label className={labelCls}>Service Tags <span className="font-normal text-stone-400">(optional)</span></label>
-                <p className="mb-2 text-xs text-stone-500">Select the services involved in this project.</p>
-                {/* Cascading navigator */}
-                <div className="flex rounded-xl border border-stone-200 overflow-hidden h-52 text-sm">
-                  {/* Left: category list */}
-                  <div className="w-36 flex-shrink-0 border-r border-stone-100 overflow-y-auto bg-stone-50">
-                    {dynamicServiceCategories.map((cat, i) => {
-                      const hasSelected = cat.subs.some(s => serviceTags.includes(s));
-                      return (
-                        <button
-                          key={cat.name}
-                          type="button"
-                          onClick={() => setServiceNavCat(i)}
-                          className={`w-full text-left px-3 py-2.5 text-xs leading-snug transition flex items-center justify-between gap-1 ${
-                            serviceNavCat === i
-                              ? 'bg-white font-semibold text-[#2c2c2c] border-l-2 border-[#b8864a]'
-                              : 'text-stone-500 hover:bg-white'
-                          }`}
-                        >
-                          <span className="flex-1">{cat.name}</span>
-                          {hasSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#b8864a] shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {/* Right: subs for selected category */}
-                  <div className="flex-1 overflow-y-auto p-3">
-                    <div className="flex flex-wrap gap-2">
-                      {(dynamicServiceCategories[serviceNavCat]?.subs ?? []).map(t => {
-                        const on = serviceTags.includes(t);
-                        return (
-                          <button key={t} type="button"
-                            onClick={() => setServiceTags(p => on ? p.filter(x => x !== t) : [...p, t])}
-                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? tagOn : tagOff}`}
-                          >
-                            {t}
-                          </button>
-                        );
-                      })}
+                {/* Cascading dropdown */}
+                <div className="relative" ref={serviceDropRef}>
+                  <button
+                    type="button"
+                    onClick={() => setServiceDropOpen(p => !p)}
+                    className={`flex h-[50px] w-full items-center justify-between rounded-2xl border px-5 text-[15px] transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 ${
+                      serviceDropOpen ? 'border-[#b8864a] bg-white' : 'border-stone-200 bg-stone-50/80 hover:bg-white'
+                    }`}
+                  >
+                    <span className={`truncate ${serviceTags.length > 0 ? 'text-[#1c1917]' : 'text-stone-400'}`}>
+                      {serviceTags.length > 0 ? serviceTags.join(', ') : 'Select services…'}
+                    </span>
+                    <svg className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${serviceDropOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 7.5l5 5 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  {serviceDropOpen && (
+                    <div className="absolute left-0 top-full z-20 mt-1 min-w-[480px] w-full flex overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg">
+                      {/* L1 categories — full height, no scroll */}
+                      <div className="w-48 flex-shrink-0 border-r border-stone-100">
+                        <div className="px-3 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-[#b8864a]">Service Type</div>
+                        {dynamicServiceCategories.map((cat, i) => {
+                          const hasSelected = cat.subs.some(s => serviceTags.includes(s));
+                          return (
+                            <button
+                              key={cat.name}
+                              type="button"
+                              onMouseEnter={() => setHoveredCat(i)}
+                              onClick={() => setHoveredCat(i)}
+                              className={`flex w-full items-center justify-between gap-1 px-3 py-2.5 text-sm leading-snug transition ${
+                                hoveredCat === i
+                                  ? 'bg-stone-50 font-semibold text-[#b8864a]'
+                                  : 'text-[#2c2c2c] hover:bg-stone-50'
+                              }`}
+                            >
+                              <span className="flex-1 text-left">{cat.name}</span>
+                              {hasSelected && <span className="h-1.5 w-1.5 rounded-full bg-[#b8864a] shrink-0 mr-1" />}
+                              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stone-300" />
+                            </button>
+                          );
+                        })}
+                        <div className="h-3" />
+                      </div>
+                      {/* L2 subs — single column list, click to select & close */}
+                      <div className="flex-1 overflow-y-auto max-h-[420px]">
+                        {dynamicServiceCategories[hoveredCat] && (
+                          <>
+                            <div className="px-4 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-[#b8864a]">
+                              {dynamicServiceCategories[hoveredCat].name}
+                            </div>
+                            {(dynamicServiceCategories[hoveredCat].subs ?? []).map(t => {
+                              const on = serviceTags.includes(t);
+                              return (
+                                <button key={t} type="button"
+                                  onClick={() => setServiceTags(p => on ? p.filter(x => x !== t) : [...p, t])}
+                                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-left transition border-b border-stone-50 last:border-0 ${
+                                    on ? 'text-[#b8864a] font-semibold bg-[#b8864a]/5' : 'text-[#2c2c2c] hover:bg-stone-50'
+                                  }`}
+                                >
+                                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                                    on ? 'border-[#b8864a] bg-[#b8864a]' : 'border-stone-300 bg-white'
+                                  }`}>
+                                    {on && <Check className="h-3 w-3 text-white" />}
+                                  </span>
+                                  <span>{t}</span>
+                                </button>
+                              );
+                            })}
+                            <div className="h-3" />
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-                {/* Selected tags summary */}
-                {serviceTags.length > 0 && (
+                {/* Selected tags chips — hidden once selected; trigger button shows names */}
+                {false && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {serviceTags.map(t => (
                       <span key={t} className="flex items-center gap-1 rounded-full bg-[#b8864a]/10 text-[#b8864a] text-xs px-2.5 py-1 font-medium">
@@ -803,6 +811,17 @@ export default function CompanyProjectsPage() {
                   )}
                 </div>
               )}
+            </section>
+
+            {/* Video URL */}
+            <section className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-[0_20px_60px_rgba(28,18,8,0.05)]">
+              <div className="mb-3"><h2 className="text-base font-bold text-[#2c2c2c]">Video</h2></div>
+              <label className={labelCls}>YouTube URL <span className="text-stone-400 font-normal">(optional)</span></label>
+              <div className="relative mt-1">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.5V8.5l6.5 3.5-6.5 3.5z"/></svg>
+                <input type="url" value={form.video_url} onChange={e=>setForm(p=>({...p,video_url:e.target.value}))} placeholder="https://www.youtube.com/watch?v=..." className={`${fieldCls} pl-9`}/>
+              </div>
+              <p className="mt-1 text-xs text-stone-500">Optional. Video will be embedded on the project page.</p>
             </section>
           </aside>
         </form>
