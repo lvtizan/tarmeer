@@ -257,6 +257,7 @@ export async function ssoIssue(companyId: number): Promise<{ consumeUrl: string 
   const resp = await withRetry(
     () => crmPost('/api/integration/mall/sso/issue', {
       tenantId: row.crm_tenant_id,
+      mallPartnerId: String(companyId),
       adminEmail: (row.email || '').trim().toLowerCase(),
     }),
     3
