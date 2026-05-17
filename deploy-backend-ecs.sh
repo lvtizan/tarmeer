@@ -14,9 +14,19 @@ BACKEND_PATH="${BACKEND_PATH:-/tarmeer/tarmeer_api}"
 SSH_PORT="${SSH_PORT:-22}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/tarmeer_ecs}"
 API_PORT="${API_PORT:-3002}"
+DEPLOY_SSH_PASSWORD="${DEPLOY_SSH_PASSWORD:-}"
 
 SSH_OPTS="-p $SSH_PORT -o StrictHostKeyChecking=accept-new"
 [[ -f "$SSH_KEY" ]] && SSH_OPTS="$SSH_OPTS -i $SSH_KEY"
+
+# sshpass fallback：当 key 不存在但提供了密码时使用
+SSH_CMD="ssh"
+SCP_CMD="rsync"
+if [[ ! -f "$SSH_KEY" && -n "$DEPLOY_SSH_PASSWORD" ]]; then
+  SSH_CMD="sshpass -p ${DEPLOY_SSH_PASSWORD} ssh"
+  SCP_CMD="sshpass -p ${DEPLOY_SSH_PASSWORD} rsync"
+  echo "Using password authentication (sshpass)"
+fi
 
 echo "Building backend..."
 cd server
@@ -33,12 +43,12 @@ cp server/.env.example "$TMP_DEPLOY/.env.example" 2>/dev/null || true
 
 echo "Deploying backend to ${DEPLOY_USER}@${DEPLOY_HOST}:${BACKEND_PATH}..."
 # 只清理代码目录，保留 public/uploads（用户上传的文件）和 .env（环境配置）
-ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${BACKEND_PATH} && cd ${BACKEND_PATH} && rm -rf dist schema node_modules package.json package-lock.json .env.example"
-(cd "$TMP_DEPLOY" && tar czf - .) | ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "cd ${BACKEND_PATH} && tar xzf -"
+$SSH_CMD $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${BACKEND_PATH} && cd ${BACKEND_PATH} && rm -rf dist schema node_modules package.json package-lock.json .env.example"
+(cd "$TMP_DEPLOY" && tar czf - .) | $SSH_CMD $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "cd ${BACKEND_PATH} && tar xzf -"
 rm -rf "$TMP_DEPLOY"
 
 echo "Installing production deps and starting process on server..."
-ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "cd ${BACKEND_PATH} && \
+$SSH_CMD $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "cd ${BACKEND_PATH} && \
   npm ci --omit=dev && \
   ([ -f .env ] || { cp .env.example .env 2>/dev/null || touch .env; echo 'Created .env from .env.example - please set JWT_SECRET and DB_* on server.'; }) && \
   if command -v pm2 >/dev/null 2>&1; then \
@@ -51,7 +61,7 @@ ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "cd ${BACKEND_PATH} && \
   fi"
 
 echo "Fixing uploads directory permissions (prevent nginx 403)..."
-ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "\
+$SSH_CMD $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" "\
   find ${BACKEND_PATH}/public/uploads -type d -exec chmod a+x {} \; 2>/dev/null || true; \
   find ${BACKEND_PATH}/public/uploads -type f -exec chmod a+r {} \; 2>/dev/null || true; \
   chmod o+x ${BACKEND_PATH} 2>/dev/null || true"
