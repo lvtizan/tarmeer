@@ -23,6 +23,7 @@ interface ActivityLogEntry {
   city: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
+  actor_company_profile_id: number | null;
 }
 
 interface TodayStats {
@@ -43,6 +44,7 @@ interface AggregatedGroup {
   user_id: number | null;
   user_name: string | null;
   user_role: string | null;
+  actor_company_profile_id: number | null;
   action: string;
   target_type: string | null;
   date: string;
@@ -145,8 +147,9 @@ const PAGE_SIZE = 30;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Build actor (user) detail path based on role */
-function getUserPath(userId: number, role: string | null): string {
+function getUserPath(userId: number, role: string | null, companyProfileId?: number | null): string {
   if (role === 'admin') return `/admin/activity-log/user/${userId}?role=admin`;
+  if (role === 'company' && companyProfileId) return `/admin/profile-companies/${companyProfileId}`;
   return `/admin/users/${userId}`;
 }
 
@@ -184,7 +187,7 @@ function parseMeta(raw: unknown): Record<string, any> | null {
 
 /** Return admin link for a named entity based on action + target, or null if no link applies */
 function getEntityLink(group: AggregatedGroup, entityName: string): string | null {
-  const { action, target_type, latest } = group;
+  const { action, target_type, latest, actor_company_profile_id } = group;
   if (action === 'view_company') {
     return `/admin/companies?search=${encodeURIComponent(entityName)}`;
   }
@@ -194,6 +197,9 @@ function getEntityLink(group: AggregatedGroup, entityName: string): string | nul
   if (target_type === 'company_profile' || target_type === 'company') {
     if (latest.target_id) return `/admin/profile-companies/${latest.target_id}`;
     return `/admin/profile-companies?search=${encodeURIComponent(entityName)}`;
+  }
+  if (target_type === 'project' && latest.target_id && actor_company_profile_id) {
+    return `/admin/profile-companies/${actor_company_profile_id}/projects/${latest.target_id}`;
   }
   return null;
 }
@@ -283,7 +289,8 @@ function AggregatedEntry({ group, onUserClick }: {
         <div className="flex items-center gap-1.5 flex-wrap">
           {group.user_id ? (
             <Link
-              to={getUserPath(group.user_id, group.user_role)}
+              to={getUserPath(group.user_id, group.user_role, group.actor_company_profile_id)}
+              state={{ from: location.pathname + location.search }}
               className="text-sm font-semibold text-[#1c1917] hover:text-[#B8864A] transition-colors leading-tight"
               onClick={(e) => {
                 if (group.user_role === 'admin') {
@@ -309,10 +316,6 @@ function AggregatedEntry({ group, onUserClick }: {
           <span className="text-[12.5px] text-[#44403c] leading-snug">
             {main}
             {entityName && (() => {
-              // Allow entity links for company_profile regardless of action type
-              const isCompanyProfileAction = group.target_type === 'company_profile' || group.target_type === 'company';
-              const blockLink = !isCompanyProfileAction && (group.action === 'create' || group.action === 'update' || group.action === 'delete');
-              if (blockLink) return <span className="ml-1 text-[#B8864A] font-medium">{entityName}</span>;
               const link = getEntityLink(group, entityName);
               return link ? (
                 <Link
@@ -343,7 +346,16 @@ function AggregatedEntry({ group, onUserClick }: {
             <span className="text-[10px] bg-violet-50 text-violet-600 border border-violet-200 rounded px-1.5 py-0.5 font-medium">线索 #{group.latest.target_id}</span>
           )}
           {group.latest.target_id && group.target_type === 'project' && (
-            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium">项目 #{group.latest.target_id}</span>
+            group.actor_company_profile_id ? (
+              <Link
+                to={`/admin/profile-companies/${group.actor_company_profile_id}/projects/${group.latest.target_id}`}
+                state={{ from: location.pathname + location.search }}
+                className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium hover:bg-blue-100 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >项目 #{group.latest.target_id}</Link>
+            ) : (
+              <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 font-medium">项目 #{group.latest.target_id}</span>
+            )
           )}
           {projStatus === 'pending' && (
             <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 rounded px-1.5 py-0.5 font-medium">待审批</span>
@@ -513,7 +525,7 @@ export default function AdminActivityLogPage() {
     const groups: AggregatedGroup[] = [];
     for (const [key, entries] of agg) {
       const l = entries[0];
-      groups.push({ key, entries, user_id: l.user_id, user_name: l.user_name, user_role: l.user_role, action: l.action, target_type: l.target_type, date: extractDate(l.created_at), latest: l });
+      groups.push({ key, entries, user_id: l.user_id, user_name: l.user_name, user_role: l.user_role, actor_company_profile_id: l.actor_company_profile_id ?? null, action: l.action, target_type: l.target_type, date: extractDate(l.created_at), latest: l });
     }
     const byDate = new Map<string, AggregatedGroup[]>();
     for (const g of groups) { const a = byDate.get(g.date) || []; a.push(g); byDate.set(g.date, a); }

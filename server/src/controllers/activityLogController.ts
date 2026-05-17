@@ -198,12 +198,14 @@ export async function getActivityLogs(req: any, res: any) {
           WHEN al.target_name IS NULL AND al.target_id IS NOT NULL AND al.action IN ('view_company','submit_inquiry')
           THEN COALESCE(uc.name_en, uc.name_ar, cp.company_name)
           ELSE al.target_name
-        END AS target_name
+        END AS target_name,
+        cp_actor.id AS actor_company_profile_id
        FROM activity_log al
        LEFT JOIN admin_users au ON au.id = al.user_id AND al.user_role = 'admin'
        LEFT JOIN users u ON u.id = al.user_id AND al.user_role != 'admin'
        LEFT JOIN uae_companies uc ON uc.id = al.target_id AND al.target_name IS NULL AND al.action IN ('view_company','submit_inquiry')
        LEFT JOIN company_profiles cp ON cp.id = al.target_id AND al.target_name IS NULL AND al.action IN ('view_company','submit_inquiry') AND uc.id IS NULL
+       LEFT JOIN company_profiles cp_actor ON cp_actor.user_id = al.user_id AND al.user_role = 'company'
        LEFT JOIN (
          SELECT ip,
            ANY_VALUE(user_name) AS hint_name,

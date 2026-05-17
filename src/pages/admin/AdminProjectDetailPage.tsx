@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation as useRouterLocation } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -45,6 +45,8 @@ export default function AdminProjectDetailPage() {
   const { companyId, projectId } = useParams<{ companyId: string; projectId: string }>();
   const { t } = useAdminT();
   const navigate = useNavigate();
+  const routerLocation = useRouterLocation();
+  const fromPath = (routerLocation.state as { from?: string } | null)?.from;
 
   const isNew = projectId === 'new';
 
@@ -203,11 +205,11 @@ export default function AdminProjectDetailPage() {
     <div className="space-y-4 max-w-4xl mx-auto">
       {/* Back button */}
       <button
-        onClick={() => navigate(`/admin/profile-companies/${companyId}`)}
+        onClick={() => navigate(fromPath || `/admin/profile-companies/${companyId}`)}
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        {t('Back to Company', '返回公司')}
+        {fromPath ? t('Back to Activity Log', '返回行为监控') : t('Back to Company', '返回公司')}
       </button>
 
       {/* Navigation bar: prev / title / next */}
