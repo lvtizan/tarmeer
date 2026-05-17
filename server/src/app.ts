@@ -88,6 +88,18 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// 公共只读 API 独立限速：每 IP 每分钟最多 120 次（防爬虫/扫描）
+const publicReadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: 'Too many requests, please slow down.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/companies', publicReadLimiter);
+app.use('/api/public/companies', publicReadLimiter);
+app.use('/api/designers', publicReadLimiter);
+
 // 使用新的CORS配置
 const corsConfig = getCorsConfig(config.frontendUrl);
 app.use(cors(corsConfig));
