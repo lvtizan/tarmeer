@@ -92,6 +92,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         cp.list_display_order,
         cp.is_signed,
         cp.cover_image_url,
+        cp.establishment_year,
         (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count
       FROM company_profiles cp
       WHERE ${whereClause}
@@ -155,6 +156,7 @@ export async function listApprovedCompanies(req: any, res: any) {
         is_claimed: true,
         is_registered: true,
         is_signed: !!(company.is_signed),
+        establishment_year: company.establishment_year || null,
       };
     });
 

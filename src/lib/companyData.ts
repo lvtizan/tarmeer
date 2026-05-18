@@ -86,5 +86,5 @@ export function summarizeCompanyDescription(description: string): string {
 
 export function normalizeFoundedYear(value: string | number | null | undefined): number {
   const numeric = Number(value);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : 2000;
+  return Number.isFinite(numeric) && numeric >= 1900 && numeric <= 2100 ? numeric : 0;
 }

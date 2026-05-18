@@ -426,13 +426,13 @@ export default function CompanyDetailPage() {
                   <span className="text-[#b8864a] font-medium">{company.projectCount}+ projects</span>
                   <span className="text-stone-300">&middot;</span>
                   <span className="text-stone-500">{company.city}, UAE</span>
-                  <span className="text-stone-300">&middot;</span>
-                  <span className="text-stone-500">Since {company.foundedYear}</span>
+                  {company.foundedYear > 0 && <><span className="text-stone-300">&middot;</span>
+                  <span className="text-stone-500">Since {company.foundedYear}</span></>}
                 </div>
                 {/* Stats row */}
                 <div className="flex items-center gap-4 mt-2 text-xs text-stone-500">
                   <span className="flex items-center gap-1"><FolderOpen className="w-3.5 h-3.5 text-[#c6a065]" />{company.projectCount}+ Projects</span>
-                  <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-[#c6a065]" />{yearsExp} Years</span>
+                  {company.foundedYear > 0 && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-[#c6a065]" />{yearsExp} Years</span>}
                   <span className="flex items-center gap-1"><Briefcase className="w-3.5 h-3.5 text-[#c6a065]" />{company.services.length} Services</span>
                 </div>
               </div>
@@ -715,10 +715,12 @@ export default function CompanyDetailPage() {
                     <dt className="text-stone-500">Location</dt>
                     <dd className="text-[#1c1917]">{company.city}, UAE</dd>
                   </div>
+                  {company.foundedYear > 0 && (
                   <div className="flex justify-between">
                     <dt className="text-stone-500">Established</dt>
                     <dd className="text-[#1c1917]">{company.foundedYear}</dd>
                   </div>
+                  )}
                   <div className="flex justify-between">
                     <dt className="text-stone-500">Projects</dt>
                     <dd className="text-[#1c1917]">{company.projectCount}+</dd>

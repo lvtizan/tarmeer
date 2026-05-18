@@ -24,11 +24,27 @@ function FilterOption({
   selected,
   onClick,
   children,
+  compact,
 }: {
   selected: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <button
+        onClick={onClick}
+        className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 ${
+          selected
+            ? 'bg-[#b8864a] border-[#b8864a] text-white'
+            : 'border-stone-200 text-stone-600 bg-white hover:bg-stone-50'
+        }`}
+      >
+        {children}
+      </button>
+    );
+  }
   return (
     <button
       onClick={onClick}
@@ -250,7 +266,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     let active = true;
-    fetchPublicCompanies(100)
+    fetchPublicCompanies(300)
       .then((items) => {
         if (!active) return;
         setCompanies(items);
@@ -331,15 +347,15 @@ export default function CompaniesPage() {
     return labels[range] || range;
   };
 
-  const renderFilters = () => (
+  const renderFilters = (compact = false) => (
     <>
       {/* City */}
       <div>
         <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">City</h4>
-        <div className="space-y-1">
-          <FilterOption selected={!selectedCity} onClick={() => setSelectedCity('')}>All Cities</FilterOption>
+        <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+          <FilterOption compact={compact} selected={!selectedCity} onClick={() => setSelectedCity('')}>All Cities</FilterOption>
           {cityOptions.map((city) => (
-            <FilterOption key={city} selected={selectedCity === city} onClick={() => setSelectedCity(city)}>
+            <FilterOption compact={compact} key={city} selected={selectedCity === city} onClick={() => setSelectedCity(city)}>
               {city}
             </FilterOption>
           ))}
@@ -353,10 +369,10 @@ export default function CompaniesPage() {
         <>
           <div>
             <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Company Type</h4>
-            <div className="space-y-1">
-              <FilterOption selected={!selectedType} onClick={() => setSelectedType('')}>All Types</FilterOption>
+            <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+              <FilterOption compact={compact} selected={!selectedType} onClick={() => setSelectedType('')}>All Types</FilterOption>
               {typeOptions.map((type) => (
-                <FilterOption key={type} selected={selectedType === type} onClick={() => setSelectedType(type)}>
+                <FilterOption compact={compact} key={type} selected={selectedType === type} onClick={() => setSelectedType(type)}>
                   {getCompanyTypeLabel(type)}
                 </FilterOption>
               ))}
@@ -369,11 +385,11 @@ export default function CompaniesPage() {
       {/* Founded */}
       <div>
         <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Founded</h4>
-        <div className="space-y-1">
-          <FilterOption selected={!foundedRange} onClick={() => setFoundedRange('')}>Any</FilterOption>
-          <FilterOption selected={foundedRange === '2015-2026'} onClick={() => setFoundedRange('2015-2026')}>10+ years</FilterOption>
-          <FilterOption selected={foundedRange === '2010-2014'} onClick={() => setFoundedRange('2010-2014')}>15+ years</FilterOption>
-          <FilterOption selected={foundedRange === '2000-2009'} onClick={() => setFoundedRange('2000-2009')}>25+ years</FilterOption>
+        <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+          <FilterOption compact={compact} selected={!foundedRange} onClick={() => setFoundedRange('')}>Any</FilterOption>
+          <FilterOption compact={compact} selected={foundedRange === '2015-2026'} onClick={() => setFoundedRange('2015-2026')}>10+ years</FilterOption>
+          <FilterOption compact={compact} selected={foundedRange === '2010-2014'} onClick={() => setFoundedRange('2010-2014')}>15+ years</FilterOption>
+          <FilterOption compact={compact} selected={foundedRange === '2000-2009'} onClick={() => setFoundedRange('2000-2009')}>25+ years</FilterOption>
         </div>
       </div>
 
@@ -382,9 +398,10 @@ export default function CompaniesPage() {
       {/* Style */}
       <div>
         <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Style</h4>
-        <div className="space-y-1">
-          {(showAllStyles ? styleOptions : styleOptions.slice(0, SHOW_LIMIT)).map((style) => (
+        <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+          {(showAllStyles ? styleOptions : styleOptions.slice(0, compact ? styleOptions.length : SHOW_LIMIT)).map((style) => (
             <FilterOption
+              compact={compact}
               key={style}
               selected={selectedStyles.includes(style)}
               onClick={() => setSelectedStyles((prev) =>
@@ -395,7 +412,7 @@ export default function CompaniesPage() {
             </FilterOption>
           ))}
         </div>
-        {styleOptions.length > SHOW_LIMIT && (
+        {!compact && styleOptions.length > SHOW_LIMIT && (
           <button
             onClick={() => setShowAllStyles((v) => !v)}
             className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
@@ -410,9 +427,10 @@ export default function CompaniesPage() {
       {/* Services */}
       <div>
         <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Services</h4>
-        <div className="space-y-1">
-          {(showAllServices ? serviceOptions : serviceOptions.slice(0, SHOW_LIMIT)).map((service) => (
+        <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+          {(showAllServices ? serviceOptions : serviceOptions.slice(0, compact ? serviceOptions.length : SHOW_LIMIT)).map((service) => (
             <FilterOption
+              compact={compact}
               key={service}
               selected={selectedServices.includes(service)}
               onClick={() => setSelectedServices((prev) =>
@@ -423,7 +441,7 @@ export default function CompaniesPage() {
             </FilterOption>
           ))}
         </div>
-        {serviceOptions.length > SHOW_LIMIT && (
+        {!compact && serviceOptions.length > SHOW_LIMIT && (
           <button
             onClick={() => setShowAllServices((v) => !v)}
             className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
@@ -579,7 +597,7 @@ export default function CompaniesPage() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-5 space-y-6">{renderFilters()}</div>
+              <div className="p-5 space-y-6">{renderFilters(true)}</div>
               {hasActiveFilters && (
                 <div className="sticky bottom-0 bg-white border-t border-stone-200 p-4">
                   <button

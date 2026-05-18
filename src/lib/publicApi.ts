@@ -49,6 +49,7 @@ interface PublicCompanyRecord {
   city?: string;
   address?: string;
   year_established?: string | number;
+  establishment_year?: string | number;
   website?: string;
   instagram?: string;
   phone?: string;
@@ -305,7 +306,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     shortDescription: summarizeCompanyDescription(description),
     city: company.city || 'UAE',
     address: company.address || 'UAE',
-    foundedYear: normalizeFoundedYear(company.year_established),
+    foundedYear: normalizeFoundedYear(company.year_established ?? company.establishment_year),
     website: company.website || '',
     instagram: company.instagram || '',
     phone: company.phone || '',
