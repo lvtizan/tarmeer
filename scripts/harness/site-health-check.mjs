@@ -53,7 +53,12 @@ async function fetchHtml(url) {
   const html = await r.text();
   const title = html.match(/<title>([^<]*)<\/title>/)?.[1] || '';
   const canonical = html.match(/canonical" href="([^"]*)"/)?.[1] || '';
-  return { status: r.status, title, canonical };
+  const description = /<meta name="description"[^>]+content="[^"]+"/.test(html);
+  const ogTitle = /<meta property="og:title"[^>]+content="[^"]+"/.test(html);
+  const ogDescription = /<meta property="og:description"[^>]+content="[^"]+"/.test(html);
+  const ogImage = /<meta property="og:image"[^>]+content="https:\/\/www\.tarmeer\.com\/[^"]+"/.test(html);
+  const jsonLd = /<script type="application\/ld\+json">/.test(html);
+  return { status: r.status, title, canonical, description, ogTitle, ogDescription, ogImage, jsonLd };
 }
 
 async function main() {
@@ -120,9 +125,21 @@ async function main() {
 
     for (const url of pagesToCheck) {
       try {
-        const { title, canonical } = await fetchHtml(url);
+        const meta = await fetchHtml(url);
+        const { title, canonical } = meta;
         titles.add(title);
         canonicals.add(canonical);
+        const missing = [];
+        if (!title) missing.push('title');
+        if (!meta.description) missing.push('description');
+        if (!canonical) missing.push('canonical');
+        if (!meta.ogTitle) missing.push('og:title');
+        if (!meta.ogDescription) missing.push('og:description');
+        if (!meta.ogImage) missing.push('og:image');
+        if (!meta.jsonLd) missing.push('JSON-LD');
+        if (missing.length > 0) {
+          log(false, 'Crawler SEO tags missing', `${url} → ${missing.join(', ')}`);
+        }
       } catch {}
     }
     log(titles.size === pagesToCheck.length, 'Unique titles', `${titles.size}/${pagesToCheck.length} unique`);

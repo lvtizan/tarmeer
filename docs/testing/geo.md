@@ -12,6 +12,7 @@
 - Has `<meta property="og:title">`
 - Has `<link rel="canonical">` = https://www.tarmeer.com/faq
 - Has `<script type="application/ld+json">` with FAQPage schema
+- Googlebot/GPTBot first HTML response includes the same canonical, Open Graph tags, and FAQPage JSON-LD without requiring client-side JavaScript
 
 ## TC-G.3: Homepage JSON-LD
 - / has 2 JSON-LD blocks: WebSite + Organization
@@ -42,6 +43,13 @@
 
 ## TC-G.10: Dynamic sitemap
 - GET /api/sitemap.xml → contains /faq, /portfolio, /services/*, company URLs
+- Company URLs must use canonical `/companies/:slug` form, not legacy `/@:slug`
+
+## TC-G.10.1: Server-rendered SEO shell
+- GET /api/seo-render?path=/faq → HTML contains FAQ title, description, canonical, `og:title`, `og:description`, `og:image`, and FAQPage JSON-LD
+- GET /api/seo-render?path=/portfolio → HTML contains Portfolio title, canonical, Open Graph tags, and CollectionPage JSON-LD
+- GET /api/seo-render?path=/companies/:slug → HTML contains company-specific title, canonical, Open Graph tags, and LocalBusiness JSON-LD
+- Missing slug pages return HTTP 404 with `X-Robots-Tag: noindex`
 
 ## TC-G.11: SEO linter passes
 - `node scripts/harness/lint-seo.mjs` → all checks passed (10 pages)

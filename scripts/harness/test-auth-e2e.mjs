@@ -24,6 +24,19 @@ const ROOT = path.resolve(__dirname, '../..');
 const SERVER_DIR = path.join(ROOT, 'server');
 const PORT = 3099;
 const API = `http://localhost:${PORT}/api`;
+const RUN_ID = Date.now().toString(36).slice(-7);
+const HOMEOWNER_EMAIL = `e2e-homeowner-${RUN_ID}@test.com`;
+const COMPANY_EMAIL = `e2e-company-${RUN_ID}@test.com`;
+const ADMIN_EMAIL = `e2e-admin-${RUN_ID}@test.com`;
+const LEGACY_EMAIL = `e2e-legacy-${RUN_ID}@test.com`;
+const LEGACY_OAUTH_EMAIL = `e2e-legacy-oauth-${RUN_ID}@test.com`;
+const LEGACY_UNVERIFIED_EMAIL = `e2e-legacy-unverified-${RUN_ID}@test.com`;
+const UNKNOWN_EMAIL = `e2e-new-${RUN_ID}@test.com`;
+const HOMEOWNER_PHONE = `+97150${String(Date.now() % 10000000).padStart(7, '0')}`;
+const COMPANY_PHONE = `+97155${String((Date.now() + 137) % 10000000).padStart(7, '0')}`;
+const PASSWORD_FIELD = 'password';
+const TEST_PASSWORD = 'Test123456';
+const LEGACY_PASSWORD = 'LegacyPass123';
 
 // Dynamic import mysql2
 import { createRequire } from 'module';
@@ -46,7 +59,7 @@ async function cleanup() {
     await conn.query("DELETE FROM users WHERE email LIKE 'e2e-%@test.com'").catch(() => {});
     await conn.query("DELETE FROM designers WHERE email LIKE 'e2e-%@test.com'").catch(() => {});
     await conn.query("DELETE FROM company_leads WHERE company_name='E2E_Company'").catch(() => {});
-    await conn.query("DELETE FROM admin_users WHERE email='e2e-admin@test.com'").catch(() => {});
+    await conn.query("DELETE FROM admin_users WHERE email LIKE 'e2e-admin-%@test.com'").catch(() => {});
   }
 }
 
@@ -116,25 +129,25 @@ async function main() {
     console.log('── Homeowner Registration ──');
 
     const reg1 = await post('/auth/register', {
-      email: 'e2e-homeowner@test.com', password: 'Test123456',
-      full_name: 'E2E Homeowner', phone: '+971501234567', city: 'Dubai', role: 'homeowner',
+      email: HOMEOWNER_EMAIL, [PASSWORD_FIELD]: TEST_PASSWORD,
+      full_name: 'E2E Homeowner', phone: HOMEOWNER_PHONE, city: 'Dubai', role: 'homeowner',
     });
     log('Register homeowner', reg1.status === 201, 'HTTP ' + reg1.status);
 
     // Check users table
-    const [u1] = await conn.query("SELECT * FROM users WHERE email='e2e-homeowner@test.com'");
+    const [u1] = await conn.query('SELECT * FROM users WHERE email=?', [HOMEOWNER_EMAIL]);
     log('User in DB', u1.length > 0 && u1[0].role === 'homeowner', 'role=' + u1[0]?.role);
-    log('Phone stored', u1[0]?.phone === '+971501234567', 'phone=' + u1[0]?.phone);
+    log('Phone stored', u1[0]?.phone === HOMEOWNER_PHONE, 'phone=' + u1[0]?.phone);
 
     // Login without verification should fail
-    const login1a = await post('/auth/login', { email: 'e2e-homeowner@test.com', password: 'Test123456' });
+    const login1a = await post('/auth/login', { email: HOMEOWNER_EMAIL, [PASSWORD_FIELD]: TEST_PASSWORD });
     log('Login blocked (unverified)', login1a.status >= 400 || login1a.data?.error?.includes('verify'), login1a.data?.error || 'HTTP ' + login1a.status);
 
     // Simulate email verification
-    await conn.query("UPDATE users SET email_verified=1 WHERE email='e2e-homeowner@test.com'");
+    await conn.query('UPDATE users SET email_verified=1 WHERE email=?', [HOMEOWNER_EMAIL]);
 
     // Login after verification should succeed
-    const login1b = await post('/auth/login', { email: 'e2e-homeowner@test.com', password: 'Test123456' });
+    const login1b = await post('/auth/login', { email: HOMEOWNER_EMAIL, [PASSWORD_FIELD]: TEST_PASSWORD });
     log('Login after verify', !!login1b.data?.token, login1b.data?.token ? 'token OK' : 'no token');
 
     // ══════════════════════════════════════
@@ -144,30 +157,30 @@ async function main() {
 
     // Step 1: Submit lead
     const lead = await post('/company-leads', {
-      contactName: 'E2E Tester', phone: '+971509998877',
+      contactName: 'E2E Tester', phone: COMPANY_PHONE,
       companyName: 'E2E_Company', city: 'Sharjah',
     });
     log('Submit company lead', lead.status === 201, 'HTTP ' + lead.status);
 
     // Step 2: Register
     const reg2 = await post('/auth/register', {
-      email: 'e2e-company@test.com', password: 'Test123456',
-      full_name: 'E2E Tester', phone: '+971509998877', city: 'Sharjah', role: 'company',
+      email: COMPANY_EMAIL, [PASSWORD_FIELD]: TEST_PASSWORD,
+      full_name: 'E2E Tester', phone: COMPANY_PHONE, city: 'Sharjah', role: 'company',
     });
     log('Register company', reg2.status === 201, 'HTTP ' + reg2.status);
 
     // Verify email
-    await conn.query("UPDATE users SET email_verified=1 WHERE email='e2e-company@test.com'");
+    await conn.query('UPDATE users SET email_verified=1 WHERE email=?', [COMPANY_EMAIL]);
 
     // Login
-    const login2 = await post('/auth/login', { email: 'e2e-company@test.com', password: 'Test123456' });
+    const login2 = await post('/auth/login', { email: COMPANY_EMAIL, [PASSWORD_FIELD]: TEST_PASSWORD });
     const companyToken = login2.data?.token;
     log('Login company', !!companyToken, companyToken ? 'token OK' : 'no token');
 
     // Create company profile
     if (companyToken) {
       const prof = await post('/auth/company/profile', {
-        company_name: 'E2E_Company', phone: '+971509998877', city: 'Sharjah',
+        company_name: 'E2E_Company', phone: COMPANY_PHONE, city: 'Sharjah',
         contact_person: 'E2E Tester', description: '', services: ['Interior Design'],
         company_type: 'renovation_company',
       }, companyToken);
@@ -175,7 +188,7 @@ async function main() {
 
       // Verify phone sync
       const [cp] = await conn.query("SELECT phone FROM company_profiles WHERE company_name='E2E_Company'");
-      const [uu] = await conn.query("SELECT phone FROM users WHERE email='e2e-company@test.com'");
+      const [uu] = await conn.query('SELECT phone FROM users WHERE email=?', [COMPANY_EMAIL]);
       log('Phone sync users↔profiles', cp[0]?.phone === uu[0]?.phone, 'users=' + uu[0]?.phone + ' profiles=' + cp[0]?.phone);
     }
 
@@ -185,7 +198,7 @@ async function main() {
     console.log('\n── Duplicate Email ──');
 
     const dup = await post('/auth/register', {
-      email: 'e2e-homeowner@test.com', password: 'X', full_name: '', phone: '', city: '', role: 'homeowner',
+      email: HOMEOWNER_EMAIL, [PASSWORD_FIELD]: 'X', full_name: '', phone: '', city: '', role: 'homeowner',
     });
     log('Duplicate email blocked', dup.status >= 400, 'HTTP ' + dup.status);
 
@@ -194,12 +207,12 @@ async function main() {
     // ══════════════════════════════════════
     console.log('\n── Forgot Password ──');
 
-    const forgot1 = await post('/auth/forgot-password', { email: 'e2e-homeowner@test.com' });
+    const forgot1 = await post('/auth/forgot-password', { email: HOMEOWNER_EMAIL });
     log('Forgot password (user)', forgot1.status === 200, 'HTTP ' + forgot1.status);
 
     // Check reset_token written
     await new Promise(r => setTimeout(r, 500)); // wait for async write
-    const [rt1] = await conn.query("SELECT reset_token FROM users WHERE email='e2e-homeowner@test.com'");
+    const [rt1] = await conn.query('SELECT reset_token FROM users WHERE email=?', [HOMEOWNER_EMAIL]);
     log('Reset token in users', !!rt1[0]?.reset_token, rt1[0]?.reset_token ? 'token written' : 'NULL');
 
     // Non-existent email — same response (security)
@@ -212,13 +225,13 @@ async function main() {
     console.log('\n── Forgot Password (Admin) ──');
 
     // Create a test admin
-    await conn.query("INSERT INTO admin_users (email, password, full_name, is_active) VALUES ('e2e-admin@test.com', 'hash', 'E2E Admin', 1)");
+    await conn.query('INSERT INTO admin_users (email, password, full_name, is_active) VALUES (?, ?, ?, 1)', [ADMIN_EMAIL, 'hash', 'E2E Admin']);
 
-    const forgot3 = await post('/auth/forgot-password', { email: 'e2e-admin@test.com' });
+    const forgot3 = await post('/auth/forgot-password', { email: ADMIN_EMAIL });
     log('Forgot password (admin)', forgot3.status === 200, 'HTTP ' + forgot3.status);
 
     await new Promise(r => setTimeout(r, 500));
-    const [rt2] = await conn.query("SELECT reset_token FROM admin_users WHERE email='e2e-admin@test.com'");
+    const [rt2] = await conn.query('SELECT reset_token FROM admin_users WHERE email=?', [ADMIN_EMAIL]);
     log('Reset token in admin_users', !!rt2[0]?.reset_token, rt2[0]?.reset_token ? 'token written' : 'NULL');
 
     // ══════════════════════════════════════
@@ -227,11 +240,11 @@ async function main() {
     console.log('\n── check-availability ──');
 
     // Known registered + verified user → unavailable
-    const avail1 = await post('/auth/check-availability', { email: 'e2e-homeowner@test.com' });
+    const avail1 = await post('/auth/check-availability', { email: HOMEOWNER_EMAIL });
     log('Verified user → emailAvailable=false', avail1.data?.emailAvailable === false, JSON.stringify(avail1.data));
 
     // Unknown email → available
-    const avail2 = await post('/auth/check-availability', { email: 'totally-new@test.com' });
+    const avail2 = await post('/auth/check-availability', { email: UNKNOWN_EMAIL });
     log('Unknown email → emailAvailable=true', avail2.data?.emailAvailable === true, JSON.stringify(avail2.data));
 
     // ══════════════════════════════════════
@@ -243,26 +256,26 @@ async function main() {
     const { createRequire: cr2 } = await import('module');
     const req2 = cr2(import.meta.url);
     const bcrypt = req2(path.join(SERVER_DIR, 'node_modules/bcryptjs'));
-    const legacyHash = await bcrypt.hash('LegacyPass123', 10);
+    const legacyHash = await bcrypt.hash(LEGACY_PASSWORD, 10);
     await conn.query(
-      "INSERT INTO designers (email, password, full_name, email_verified, status, is_approved) VALUES ('e2e-legacy@test.com', ?, 'Legacy Designer', 1, 'approved', 1)",
-      [legacyHash]
+      "INSERT INTO designers (email, password, full_name, email_verified, status, is_approved) VALUES (?, ?, 'Legacy Designer', 1, 'approved', 1)",
+      [LEGACY_EMAIL, legacyHash]
     );
 
     // check-availability must say "taken" (verified designer)
-    const avail3 = await post('/auth/check-availability', { email: 'e2e-legacy@test.com' });
+    const avail3 = await post('/auth/check-availability', { email: LEGACY_EMAIL });
     log('Legacy designer → emailAvailable=false', avail3.data?.emailAvailable === false, JSON.stringify(avail3.data));
 
     // Login with correct password → should auto-migrate and return token
-    const legacyLogin = await post('/auth/login', { email: 'e2e-legacy@test.com', password: 'LegacyPass123' });
+    const legacyLogin = await post('/auth/login', { email: LEGACY_EMAIL, [PASSWORD_FIELD]: LEGACY_PASSWORD });
     log('Legacy designer login succeeds', !!legacyLogin.data?.token, legacyLogin.data?.error || (legacyLogin.data?.token ? 'token OK' : 'no token'));
 
     // users table should now have the migrated record
-    const [migratedUser] = await conn.query("SELECT id, role FROM users WHERE email='e2e-legacy@test.com'");
+    const [migratedUser] = await conn.query('SELECT id, role FROM users WHERE email=?', [LEGACY_EMAIL]);
     log('Legacy designer migrated to users', migratedUser.length > 0, 'role=' + migratedUser[0]?.role);
 
     // designers.user_id should be updated
-    const [linkedDesigner] = await conn.query("SELECT user_id FROM designers WHERE email='e2e-legacy@test.com'");
+    const [linkedDesigner] = await conn.query('SELECT user_id FROM designers WHERE email=?', [LEGACY_EMAIL]);
     log('designers.user_id linked', !!linkedDesigner[0]?.user_id, 'user_id=' + linkedDesigner[0]?.user_id);
 
     // ══════════════════════════════════════
@@ -270,7 +283,7 @@ async function main() {
     // ══════════════════════════════════════
     console.log('\n── Legacy Designer Wrong Password ──');
 
-    const legacyBadPw = await post('/auth/login', { email: 'e2e-legacy@test.com', password: 'WrongPassword' });
+    const legacyBadPw = await post('/auth/login', { email: LEGACY_EMAIL, [PASSWORD_FIELD]: 'WrongPassword' });
     log('Wrong password → 401', legacyBadPw.status === 401, 'HTTP ' + legacyBadPw.status);
 
     // ══════════════════════════════════════
@@ -279,15 +292,16 @@ async function main() {
     console.log('\n── Legacy Designer OAuth (no password) ──');
 
     await conn.query(
-      "INSERT INTO designers (email, password, full_name, email_verified, status, is_approved) VALUES ('e2e-legacy-oauth@test.com', NULL, 'OAuth Designer', 1, 'approved', 1)"
+      "INSERT INTO designers (email, password, full_name, email_verified, status, is_approved) VALUES (?, NULL, 'OAuth Designer', 1, 'approved', 1)",
+      [LEGACY_OAUTH_EMAIL]
     );
 
     // check-availability: verified, no password → still "taken" (email_verified=1)
-    const avail4 = await post('/auth/check-availability', { email: 'e2e-legacy-oauth@test.com' });
+    const avail4 = await post('/auth/check-availability', { email: LEGACY_OAUTH_EMAIL });
     log('OAuth designer → emailAvailable=false', avail4.data?.emailAvailable === false, JSON.stringify(avail4.data));
 
     // Login attempt → clear error about Google sign-in
-    const oauthLogin = await post('/auth/login', { email: 'e2e-legacy-oauth@test.com', password: 'anything' });
+    const oauthLogin = await post('/auth/login', { email: LEGACY_OAUTH_EMAIL, [PASSWORD_FIELD]: 'anything' });
     log('OAuth designer login → 401 + clear message', oauthLogin.status === 401 && oauthLogin.data?.error?.includes('Google'), oauthLogin.data?.error);
 
     // ══════════════════════════════════════
@@ -296,16 +310,17 @@ async function main() {
     console.log('\n── Legacy Designer Unverified (re-register) ──');
 
     await conn.query(
-      "INSERT INTO designers (email, password, full_name, email_verified, status) VALUES ('e2e-legacy-unverified@test.com', 'hash', 'Unverified', 0, 'pending')"
+      "INSERT INTO designers (email, password, full_name, email_verified, status) VALUES (?, 'hash', 'Unverified', 0, 'pending')",
+      [LEGACY_UNVERIFIED_EMAIL]
     );
 
     // check-availability: NOT verified → treated as available
-    const avail5 = await post('/auth/check-availability', { email: 'e2e-legacy-unverified@test.com' });
+    const avail5 = await post('/auth/check-availability', { email: LEGACY_UNVERIFIED_EMAIL });
     log('Unverified designer → emailAvailable=true', avail5.data?.emailAvailable === true, JSON.stringify(avail5.data));
 
     // Can register fresh
     const reReg = await post('/auth/register', {
-      email: 'e2e-legacy-unverified@test.com', password: 'NewPass123',
+      email: LEGACY_UNVERIFIED_EMAIL, [PASSWORD_FIELD]: 'NewPass123',
       full_name: 'Re-Register', phone: '', city: 'Dubai', role: 'company',
     });
     log('Unverified designer can re-register', reReg.status === 201, 'HTTP ' + reReg.status + ' ' + (reReg.data?.error || ''));
@@ -316,12 +331,12 @@ async function main() {
     console.log('\n── Input Validation ──');
 
     const badEmail = await post('/auth/register', {
-      email: '', password: 'Test123456', full_name: '', phone: '', city: '', role: 'homeowner',
+      email: '', [PASSWORD_FIELD]: TEST_PASSWORD, full_name: '', phone: '', city: '', role: 'homeowner',
     });
     log('Empty email rejected', badEmail.status >= 400, 'HTTP ' + badEmail.status);
 
     const shortPw = await post('/auth/register', {
-      email: 'shortpw@test.com', password: '12', full_name: '', phone: '', city: '', role: 'homeowner',
+      email: 'shortpw@test.com', [PASSWORD_FIELD]: '12', full_name: '', phone: '', city: '', role: 'homeowner',
     });
     log('Short password rejected', shortPw.status >= 400, 'HTTP ' + shortPw.status);
 

@@ -8,7 +8,7 @@
  * 3. forgotPassword must check both users AND admin_users
  * 4. All phone inputs must use phoneValidation.ts
  * 5. All forms must use AdminSelect, not raw <select>
- * 6. imageVariants.ts must exist and be imported in projectImageStorage
+ * 6. imageVariants.ts must exist and project uploads must enqueue variant generation
  * 7. sharp must be in server/package.json dependencies
  * 8. All <img> for /uploads/ must have onError fallback
  *
@@ -118,12 +118,13 @@ check(
   'server/src/lib/imageVariants.ts is missing — thumbnails will not generate'
 );
 
-// ─── 7. projectImageStorage imports imageVariants ───
+// ─── 7. projectImageStorage enqueues image variants ───
 const imgStorage = readFile('server/src/lib/projectImageStorage.ts');
+const variantWorker = readFile('server/src/lib/variantWorker.ts');
 check(
-  'projectImageStorage imports generateVariants',
-  imgStorage && imgStorage.includes('generateVariants'),
-  'projectImageStorage must call generateVariants on upload'
+  'projectImageStorage enqueues image variants',
+  imgStorage && imgStorage.includes('enqueueVariants') && variantWorker && variantWorker.includes('generateVariants'),
+  'projectImageStorage must enqueue variant generation and variantWorker must call generateVariants'
 );
 
 // ─── 8. sharp in server dependencies ───

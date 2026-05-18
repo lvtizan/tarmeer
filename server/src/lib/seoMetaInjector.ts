@@ -21,6 +21,7 @@ interface PageMeta {
   canonical: string;
   ogImage: string;
   jsonLd?: Record<string, unknown>;
+  robots?: string;
 }
 
 function escapeHtml(str: string): string {
@@ -35,54 +36,224 @@ export async function getPageMeta(pathname: string): Promise<PageMeta | null> {
       description: 'Find top renovation companies in UAE. Browse portfolios, compare services, and get quotes.',
       canonical: BASE_URL,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: `${BASE_URL}/`,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${BASE_URL}/companies?search={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
     },
     '/companies': {
       title: 'Renovation Companies in UAE | Tarmeer',
       description: 'Browse 100+ renovation and interior design companies across UAE. Compare portfolios, services, and reviews.',
       canonical: `${BASE_URL}/companies`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Renovation Companies in UAE',
+        url: `${BASE_URL}/companies`,
+        description: 'Browse renovation and interior design companies across the UAE.',
+      },
     },
     '/portfolio': {
       title: 'Interior Design Portfolio | Tarmeer',
       description: 'Explore stunning interior design projects from top UAE companies. Residential, commercial, hospitality.',
       canonical: `${BASE_URL}/portfolio`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Interior Design Portfolio',
+        url: `${BASE_URL}/portfolio`,
+        description: 'Interior design and renovation project inspiration from UAE companies.',
+      },
     },
     '/faq': {
       title: 'FAQ — Tarmeer',
       description: 'Frequently asked questions about interior design and renovation in UAE.',
       canonical: `${BASE_URL}/faq`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'How does Tarmeer help homeowners in the UAE?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Tarmeer helps homeowners browse portfolios, compare renovation companies, and send project inquiries to relevant providers in the UAE.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Can companies and suppliers join Tarmeer?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Approved renovation companies and material suppliers can create profiles, publish work, and receive relevant inquiries through Tarmeer.',
+            },
+          },
+        ],
+      },
     },
     '/contact': {
       title: 'Contact Us — Tarmeer',
       description: 'Get in touch with the Tarmeer team for renovation inquiries.',
       canonical: `${BASE_URL}/contact`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'ContactPage',
+        name: 'Contact Tarmeer',
+        url: `${BASE_URL}/contact`,
+        mainEntity: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
+      },
     },
     '/blog': {
       title: 'Interior Design Blog | Tarmeer',
       description: 'Tips, trends, and insights on interior design and renovation in UAE.',
       canonical: `${BASE_URL}/blog`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Interior Design Blog',
+        url: `${BASE_URL}/blog`,
+        description: 'Interior design and renovation articles for UAE homeowners and companies.',
+      },
     },
     '/for-companies': {
       title: 'Join Tarmeer — Get More Clients in UAE',
-      description: 'Free company page, GEO & SEO optimization, smart photo tagging — all included.',
+      description: 'Create a company page with GEO and SEO optimization, smart photo tagging, and portfolio discovery on Tarmeer.',
       canonical: `${BASE_URL}/for-companies`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: 'Join Tarmeer for Companies',
+        url: `${BASE_URL}/for-companies`,
+        description: 'Tarmeer helps UAE renovation and design companies publish profiles, portfolios, and service pages for customer discovery.',
+      },
     },
     '/for-homeowners': {
-      title: 'Find Renovation Companies in UAE | Free Quotes | Tarmeer',
-      description: 'Compare verified renovation companies, browse real portfolios, and get free quotes. Transform your home with Tarmeer.',
+      title: 'Find Renovation Companies in UAE | Tarmeer',
+      description: 'Compare verified renovation companies, browse real portfolios, and send your project inquiry through Tarmeer.',
       canonical: `${BASE_URL}/for-homeowners`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: 'Tarmeer for Homeowners',
+        url: `${BASE_URL}/for-homeowners`,
+        description: 'Compare UAE renovation companies and start a home renovation inquiry with Tarmeer.',
+      },
+    },
+    '/for-suppliers': {
+      title: 'List Your Showroom on Tarmeer — Supplier Portal',
+      description: 'List your furniture, stone, lighting, or materials showroom on Tarmeer and get discovered by interior designers across UAE.',
+      canonical: `${BASE_URL}/for-suppliers`,
+      ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: 'Tarmeer Supplier Portal',
+        url: `${BASE_URL}/for-suppliers`,
+        description: 'Material suppliers can list products, catalogs, and showroom information for UAE design firms on Tarmeer.',
+      },
+    },
+    '/start': {
+      title: 'How to Start a Renovation Project in UAE | Tarmeer',
+      description: 'A step-by-step guide for homeowners starting a renovation or interior design project with Tarmeer in the UAE.',
+      canonical: `${BASE_URL}/start`,
+      ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: 'How to start a renovation project with Tarmeer',
+        description: 'A practical guide for homeowners planning renovation and design work in the UAE.',
+      },
+    },
+    '/start-suppliers': {
+      title: 'How to Get Started as a Supplier on Tarmeer | Material Supplier Onboarding',
+      description: 'Step-by-step guide for material suppliers joining Tarmeer UAE. List products and catalogs, get matched to design firms, and receive verified inquiries.',
+      canonical: `${BASE_URL}/start-suppliers`,
+      ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: 'How to join Tarmeer as a material supplier',
+        description: 'Step-by-step onboarding guide for material suppliers joining Tarmeer UAE.',
+      },
     },
     '/materials': {
       title: 'Material Suppliers in UAE — Furniture, Stone, Lighting | Tarmeer',
       description: 'Browse verified building material suppliers from China and Dubai. Furniture, marble, lighting, flooring and more for UAE renovation projects.',
       canonical: `${BASE_URL}/materials`,
       ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Material Suppliers in UAE',
+        url: `${BASE_URL}/materials`,
+        description: 'Browse furniture, stone, lighting, flooring, and building material suppliers for UAE renovation projects.',
+      },
+    },
+    '/services/new-home-design': {
+      title: 'New Home Design Service - Floor Plans & 3D Renderings | Tarmeer',
+      description: 'Explore Tarmeer new home design packages with floor plans, visuals, construction drawings, and UAE renovation company matching.',
+      canonical: `${BASE_URL}/services/new-home-design`,
+      ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Service',
+        name: 'New Home Design Service',
+        provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
+        areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+      },
+    },
+    '/services/soft-decoration': {
+      title: 'Soft Decoration & Furniture Design Service | Tarmeer',
+      description: 'Explore soft decoration, furniture selection, and interior styling services for villas, apartments, and family homes in the UAE.',
+      canonical: `${BASE_URL}/services/soft-decoration`,
+      ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Service',
+        name: 'Soft Decoration Design Service',
+        provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
+        areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+      },
+    },
+    '/services/house-exterior': {
+      title: 'House Exterior Design Service - Facade & Landscape | Tarmeer',
+      description: 'Explore exterior design services for UAE villas and standalone homes, including facade direction and landscape-ready documentation.',
+      canonical: `${BASE_URL}/services/house-exterior`,
+      ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Service',
+        name: 'House Exterior Design Service',
+        provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
+        areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+      },
+    },
+    '/privacy': {
+      title: 'Privacy Policy | Tarmeer',
+      description: 'Tarmeer privacy policy covering personal data, cookies, contact information, and service inquiry data.',
+      canonical: `${BASE_URL}/privacy`,
+      ogImage: DEFAULT_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: 'Privacy Policy',
+        url: `${BASE_URL}/privacy`,
+      },
     },
   };
 
@@ -176,7 +347,7 @@ export async function getPageMeta(pathname: string): Promise<PageMeta | null> {
   if (supplierMatch) {
     const slug = supplierMatch[1];
     const [rows] = await pool.execute(
-      "SELECT company_name, description, logo_url, origin, store_address, has_physical_store FROM supplier_profiles WHERE slug = ? AND status = 'active' LIMIT 1",
+      "SELECT company_name, description, logo_url, origin, store_address, has_physical_store FROM supplier_profiles WHERE slug = ? AND status IN ('approved', 'active') LIMIT 1",
       [slug]
     );
     const sup = (rows as any[])[0];
@@ -212,24 +383,31 @@ export function injectMeta(html: string, meta: PageMeta): string {
   const desc = escapeHtml(meta.description);
   const canonical = escapeHtml(meta.canonical);
   const ogImage = escapeHtml(meta.ogImage);
+  const robots = escapeHtml(meta.robots || 'index,follow,max-image-preview:large');
 
   let result = html;
 
-  // Replace title
-  result = result.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
+  const upsertHeadTag = (pattern: RegExp, tag: string) => {
+    if (pattern.test(result)) {
+      result = result.replace(pattern, tag);
+      return;
+    }
+    result = result.replace('</head>', `  ${tag}\n</head>`);
+  };
 
-  // Replace canonical
-  result = result.replace(
-    /<link rel="canonical"[^>]*>/,
-    `<link rel="canonical" href="${canonical}" />`
-  );
+  // Replace or insert crawler-visible head tags.
+  upsertHeadTag(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
+  upsertHeadTag(/<meta name="description"[^>]*>/, `<meta name="description" content="${desc}" />`);
+  upsertHeadTag(/<meta name="robots"[^>]*>/, `<meta name="robots" content="${robots}" />`);
+  upsertHeadTag(/<link rel="canonical"[^>]*>/, `<link rel="canonical" href="${canonical}" />`);
 
-  // Replace og tags
-  result = result.replace(/(<meta property="og:title" content=")[^"]*(")/,  `$1${title}$2`);
-  result = result.replace(/(<meta property="og:description" content=")[^"]*(")/,  `$1${desc}$2`);
-  result = result.replace(/(<meta property="og:url" content=")[^"]*(")/,  `$1${canonical}$2`);
-  result = result.replace(/(<meta property="og:image" content=")[^"]*(")/,  `$1${ogImage}$2`);
-  result = result.replace(/(<meta name="description" content=")[^"]*(")/,  `$1${desc}$2`);
+  upsertHeadTag(/<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${title}" />`);
+  upsertHeadTag(/<meta property="og:description"[^>]*>/, `<meta property="og:description" content="${desc}" />`);
+  upsertHeadTag(/<meta property="og:url"[^>]*>/, `<meta property="og:url" content="${canonical}" />`);
+  upsertHeadTag(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="${ogImage}" />`);
+  upsertHeadTag(/<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${title}" />`);
+  upsertHeadTag(/<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${desc}" />`);
+  upsertHeadTag(/<meta name="twitter:image"[^>]*>/, `<meta name="twitter:image" content="${ogImage}" />`);
 
   // Inject JSON-LD if present
   if (meta.jsonLd) {
