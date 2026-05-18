@@ -306,7 +306,10 @@ function ServicesTab({
 
   function deleteSvc(name: string) {
     showConfirm({
-      title: `确定删除 "${name}"？`,
+      title: `删除服务类型「${name}」`,
+      message: '该服务类型删除后，已关联此类型的公司服务数据将变为未分类，此操作不可恢复。',
+      requireText: '我已清楚知道删除服务类型对网站造成的影响',
+      confirmLabel: '确认删除',
       onConfirm: async () => {
         try {
           await adminApi.request(`/enums/company-services/${encodeURIComponent(name)}`, { method: 'DELETE' });
@@ -925,7 +928,10 @@ export default function AdminEnumsPage() {
 
   function deleteType(slug: string) {
     showConfirm({
-      title: `确定删除类型 "${slug}"？`,
+      title: `删除公司类型「${slug}」`,
+      message: '该公司类型删除后，已使用此类型的公司数据将受到影响，筛选器中的类型将消失。此操作不可恢复。',
+      requireText: '我已清楚知道删除公司类型对网站造成的影响',
+      confirmLabel: '确认删除',
       onConfirm: async () => {
         try {
           await adminApi.request(`/enums/company-types/${slug}`, { method: 'DELETE' });
