@@ -1121,6 +1121,45 @@ export async function toggleDirectorySigned(req: any, res: any) {
   }
 }
 
+// PUT /admin/roles/companies/:id/toggle-published
+export async function toggleCompanyProfilePublished(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const { is_published } = req.body;
+    await pool.execute('UPDATE company_profiles SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, id]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Toggle company profile published error:', error);
+    res.status(500).json({ error: 'Failed to update published status.' });
+  }
+}
+
+// PUT /admin/companies/:companyId/toggle-published (for directory companies)
+export async function toggleDirectoryPublished(req: any, res: any) {
+  try {
+    const { companyId } = req.params;
+    const { is_published } = req.body;
+    await pool.execute('UPDATE uae_companies SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, companyId]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Toggle directory published error:', error);
+    res.status(500).json({ error: 'Failed to update published status.' });
+  }
+}
+
+// PUT /admin/roles/companies/:companyId/projects/:projectId/toggle-published
+export async function toggleProjectPublished(req: any, res: any) {
+  try {
+    const { projectId } = req.params;
+    const { is_published } = req.body;
+    await pool.execute('UPDATE projects SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, projectId]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Toggle project published error:', error);
+    res.status(500).json({ error: 'Failed to update project published status.' });
+  }
+}
+
 // GET /admin/weight-config
 export async function getWeightConfigList(req: any, res: any) {
   try {

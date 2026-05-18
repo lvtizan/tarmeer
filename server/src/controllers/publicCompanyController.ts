@@ -39,7 +39,11 @@ export async function listApprovedCompanies(req: any, res: any) {
     const offset = (pageNum - 1) * limitNum;
 
     // Build WHERE clause
-    const conditions = ['cp.status = ?'];
+    const conditions = [
+      'cp.status = ?',
+      'cp.is_published = 1',
+      '(SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id AND p.deleted_at IS NULL AND p.is_published = 1) > 0',
+    ];
     const params: any[] = ['approved'];
 
     if (service) {
@@ -185,7 +189,7 @@ export async function getCompanyDetail(req: any, res: any) {
 
     // Fetch company profile - try by slug first, then by ID
     const [companyRows] = await pool.execute(
-      `SELECT cp.* FROM company_profiles cp WHERE (cp.slug = ? OR cp.id = ?) AND cp.status = ?`,
+      `SELECT cp.* FROM company_profiles cp WHERE (cp.slug = ? OR cp.id = ?) AND cp.status = ? AND cp.is_published = 1`,
       [id, isNaN(Number(id)) ? 0 : Number(id), 'approved']
     );
 
@@ -197,7 +201,7 @@ export async function getCompanyDetail(req: any, res: any) {
 
     // Fetch projects (use company.id, not URL param which may be a slug)
     const [projects] = await pool.execute(
-      `SELECT * FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`,
+      `SELECT * FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL AND is_published = 1 ORDER BY created_at DESC`,
       [company.id]
     );
 

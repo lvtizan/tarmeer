@@ -444,3 +444,34 @@ export async function setSupplierListOrder(req: any, res: any) {
     res.status(500).json({ error: 'Failed to update list display order.' });
   }
 }
+
+// PUT /admin/suppliers/:id/toggle-published
+export async function toggleSupplierPublished(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const { is_published } = req.body;
+    await pool.execute('UPDATE supplier_profiles SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, id]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Toggle supplier published error:', error);
+    res.status(500).json({ error: 'Failed to update published status.' });
+  }
+}
+
+// PUT /admin/suppliers/:id/projects/:projectId/toggle-published
+export async function toggleSupplierProjectPublished(req: any, res: any) {
+  try {
+    const { id, projectId } = req.params;
+    const { is_published } = req.body;
+    const [rows] = await pool.execute(
+      'SELECT id FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?',
+      [projectId, id]
+    );
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'Project not found.' });
+    await pool.execute('UPDATE supplier_projects SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, projectId]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Toggle supplier project published error:', error);
+    res.status(500).json({ error: 'Failed to update project published status.' });
+  }
+}

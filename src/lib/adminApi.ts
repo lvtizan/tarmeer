@@ -867,6 +867,47 @@ class AdminApiClient {
     });
   }
 
+  // Unpublish toggles
+  async toggleCompanyPublished(id: number, isPublished: boolean) {
+    return this.request(`/roles/companies/${id}/toggle-published`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published: isPublished }),
+    });
+  }
+
+  async toggleDirectoryPublished(id: number, isPublished: boolean) {
+    return this.request(`/companies/${id}/toggle-published`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published: isPublished }),
+    });
+  }
+
+  async toggleProjectPublished(companyId: number, projectId: number, isPublished: boolean) {
+    return this.request(`/roles/companies/${companyId}/projects/${projectId}/toggle-published`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published: isPublished }),
+    });
+  }
+
+  async toggleSupplierPublished(id: number, isPublished: boolean) {
+    return this.request(`/suppliers/${id}/toggle-published`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published: isPublished }),
+    });
+  }
+
+  async toggleSupplierProjectPublished(supplierId: number, projectId: number, isPublished: boolean) {
+    return this.request(`/suppliers/${supplierId}/projects/${projectId}/toggle-published`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published: isPublished }),
+    });
+  }
+
   async getWeightConfig(): Promise<{ configs: Array<{ key: string; value: number; updated_at: string }> }> {
     return this.request('/weight-config');
   }

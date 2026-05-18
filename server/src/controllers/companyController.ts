@@ -26,7 +26,7 @@ export async function getCompanies(req: any, res: any) {
       : '';
 
     const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as total FROM uae_companies WHERE is_active = 1${spaceWhere}`
+      `SELECT COUNT(*) as total FROM uae_companies WHERE is_active = 1 AND is_published = 1${spaceWhere}`
     );
     const total = (countResult as any[])[0]?.total || 0;
 

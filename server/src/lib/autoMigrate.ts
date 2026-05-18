@@ -449,6 +449,13 @@ const REQUIRED_COLUMNS: ColumnDef[] = [
   { table: 'company_profiles', column: 'crm_provisioned_at', type: 'DATETIME NULL' },
   { table: 'company_profiles', column: 'crm_mall_partner_id', type: 'VARCHAR(64) NULL' },
   { table: 'company_profiles', column: 'crm_first_login_at', type: 'DATETIME NULL' },
+
+  // Admin unpublish — allows taking content off the public site without changing status
+  { table: 'company_profiles', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
+  { table: 'uae_companies', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
+  { table: 'supplier_profiles', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
+  { table: 'projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
+  { table: 'supplier_projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
 ];
 
 // 需要确保 NULL 的字段（OAuth 用户没有密码）

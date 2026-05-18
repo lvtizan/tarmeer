@@ -73,6 +73,9 @@ import {
   restoreAdminProject,
   toggleCompanyProfileSigned,
   toggleDirectorySigned,
+  toggleCompanyProfilePublished,
+  toggleDirectoryPublished,
+  toggleProjectPublished,
   listSignedCompanies,
   getWeightConfigList,
   updateWeightConfig,
@@ -80,7 +83,7 @@ import {
   adminCrmProvisionCompany,
 } from '../controllers/companyAdminController';
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
-import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminReplaceProductImage, adminUpdateProduct, adminUploadProjectImage, adminAddProject, adminUpdateProject, adminDeleteProject, setSupplierHomeOrder, setSupplierListOrder } from '../controllers/supplierAdminController';
+import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminReplaceProductImage, adminUpdateProduct, adminUploadProjectImage, adminAddProject, adminUpdateProject, adminDeleteProject, setSupplierHomeOrder, setSupplierListOrder, toggleSupplierPublished, toggleSupplierProjectPublished } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
@@ -270,6 +273,11 @@ router.put('/roles/companies/:companyId/projects/:projectId/restore', restoreAdm
 // Weight system: toggle signed status
 router.put('/roles/companies/:id/toggle-signed', toggleCompanyProfileSigned);
 router.put('/companies/:companyId/toggle-signed', toggleDirectorySigned);
+
+// Admin unpublish: toggle visibility on public site
+router.put('/roles/companies/:id/toggle-published', toggleCompanyProfilePublished);
+router.put('/companies/:companyId/toggle-published', toggleDirectoryPublished);
+router.put('/roles/companies/:companyId/projects/:projectId/toggle-published', toggleProjectPublished);
 router.get('/signed-companies', listSignedCompanies);
 
 // Weight config management
@@ -425,6 +433,8 @@ router.put('/suppliers/:id/projects/:projectId', adminUpdateProject);
 router.delete('/suppliers/:id/projects/:projectId', adminDeleteProject);
 router.put('/suppliers/:id/home-order', setSupplierHomeOrder);
 router.put('/suppliers/:id/list-order', setSupplierListOrder);
+router.put('/suppliers/:id/toggle-published', toggleSupplierPublished);
+router.put('/suppliers/:id/projects/:projectId/toggle-published', toggleSupplierProjectPublished);
 
 // Admin management (super admin only)
 router.get('/admins', requireSuperAdmin, listAdmins);

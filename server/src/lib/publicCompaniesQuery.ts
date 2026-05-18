@@ -43,7 +43,7 @@ export function buildPublicCompaniesListQuery(input: { limit: number; offset: nu
          owner_user_id,
          is_signed
        FROM uae_companies
-       WHERE is_active = 1 ${spaceWhere}
+       WHERE is_active = 1 AND is_published = 1 ${spaceWhere}
        ORDER BY ${orderBy}
        LIMIT ${input.limit} OFFSET ${input.offset}`,
     params,
@@ -77,6 +77,7 @@ export function buildPublicCompanyDetailQuery(slug: string) {
        FROM uae_companies
        WHERE slug = ?
          AND is_active = 1
+         AND is_published = 1
        LIMIT 1`,
     params: [slug],
   };

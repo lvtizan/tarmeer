@@ -7,7 +7,7 @@ import SmartImage from '../../components/ui/SmartImage';
 import {
   ArrowLeft, Trash2, ExternalLink, Pencil, Check,
   Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon,
-  Plus, X, Upload,
+  Plus, X, Upload, Eye, EyeOff,
 } from 'lucide-react';
 
 // ── InfoRow ───────────────────────────────────────────────────────────────────
@@ -357,6 +357,7 @@ export default function AdminSupplierDetailPage() {
   // Project modal state
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<any | null>(null);
+  const [togglingPublished, setTogglingPublished] = useState(false);
 
   // Product edit modal state
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
@@ -476,6 +477,31 @@ export default function AdminSupplierDetailPage() {
       showToast(t('Project deleted', '项目已删除'), 'success');
     } catch {
       showToast(t('Failed to delete', '删除失败'), 'error');
+    }
+  };
+
+  const handleTogglePublished = async (isPublished: boolean) => {
+    if (!supplier) return;
+    setTogglingPublished(true);
+    try {
+      await adminApi.toggleSupplierPublished(supplier.id, isPublished);
+      setSupplier((s: any) => ({ ...s, is_published: isPublished ? 1 : 0 }));
+      showToast(isPublished ? t('Supplier published', '供应商已上架') : t('Supplier unpublished', '供应商已下架'), 'success');
+    } catch {
+      showToast(t('Failed to update', '操作失败'), 'error');
+    } finally {
+      setTogglingPublished(false);
+    }
+  };
+
+  const handleToggleProjectPublished = async (projectId: number, isPublished: boolean) => {
+    if (!supplier) return;
+    try {
+      await adminApi.toggleSupplierProjectPublished(supplier.id, projectId, isPublished);
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, is_published: isPublished ? 1 : 0 } : p));
+      showToast(isPublished ? t('Project published', '项目已上架') : t('Project hidden', '项目已隐藏'), 'success');
+    } catch {
+      showToast(t('Failed to update', '操作失败'), 'error');
     }
   };
 
@@ -622,6 +648,23 @@ export default function AdminSupplierDetailPage() {
                 {t('Approve', '通过')}
               </button>
             )}
+            {/* Published toggle — only show for approved suppliers */}
+            {supplier.status === 'approved' && (
+              <button
+                onClick={() => handleTogglePublished(!(supplier.is_published !== 0))}
+                disabled={togglingPublished}
+                className={`w-full py-2 rounded-lg text-sm font-medium border transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
+                  supplier.is_published !== 0
+                    ? 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700'
+                    : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-stone-50 hover:border-stone-200 hover:text-stone-600'
+                }`}
+              >
+                {supplier.is_published !== 0
+                  ? <><EyeOff size={14} />{t('Unpublish', '下架')}</>
+                  : <><Eye size={14} />{t('Re-publish', '上架')}</>
+                }
+              </button>
+            )}
           </div>
 
           {/* Card 2: Details */}
@@ -746,8 +789,19 @@ export default function AdminSupplierDetailPage() {
                             {imgs.length} {t('photos', '张')}
                           </span>
                         )}
-                        {/* Edit + Delete overlay */}
+                        {/* Edit + Delete + Visibility overlay */}
                         <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleToggleProjectPublished(proj.id, !proj.is_published)}
+                            className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
+                              proj.is_published !== 0
+                                ? 'bg-white/95 text-stone-700 hover:bg-amber-500 hover:text-white'
+                                : 'bg-amber-500 text-white hover:bg-white/95 hover:text-amber-600'
+                            }`}
+                            title={proj.is_published !== 0 ? t('Hide project', '隐藏项目') : t('Show project', '显示项目')}
+                          >
+                            {proj.is_published !== 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                          </button>
                           <button
                             onClick={() => { setEditingProject(proj); setShowProjectModal(true); }}
                             className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
@@ -763,6 +817,14 @@ export default function AdminSupplierDetailPage() {
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
+                        {/* Hidden project badge */}
+                        {proj.is_published === 0 && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+                            <span className="bg-amber-500 text-white text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1">
+                              <EyeOff className="w-3 h-3" />{t('Hidden', '已隐藏')}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="p-3 space-y-1">
                         <h3 className="text-sm font-medium text-stone-800 line-clamp-1">{proj.title}</h3>
