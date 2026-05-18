@@ -773,30 +773,29 @@ export default function AdminSupplierDetailPage() {
                             <Layers className="w-8 h-8" />
                           </div>
                         )}
-                        {imgs[0] && (() => {
-                          const isCover = supplier.cover_image_url === imgs[0];
-                          return (
-                            <button
-                              onClick={() => setCover(imgs[0])}
-                              className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md transition ${
-                                isCover
-                                  ? 'bg-[#b8864a] text-white opacity-100'
-                                  : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
-                              }`}
-                              title={isCover ? t('Currently set as cover', '当前封面') : t('Set as Cover', '设为封面')}
-                            >
-                              {isCover ? <Check className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
-                              {isCover ? t('Cover', '封面') : t('Set as Cover', '设为封面')}
-                            </button>
-                          );
-                        })()}
                         {imgs.length > 1 && (
                           <span className="absolute bottom-2 right-2 text-[11px] bg-black/50 text-white px-1.5 py-0.5 rounded-md group-hover:opacity-0 transition-opacity">
                             {imgs.length} {t('photos', '张')}
                           </span>
                         )}
-                        {/* Edit + Delete + Visibility overlay */}
+                        {/* Action buttons overlay */}
                         <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {imgs[0] && (() => {
+                            const isCover = supplier.cover_image_url === imgs[0];
+                            return (
+                              <button
+                                onClick={() => setCover(imgs[0])}
+                                className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
+                                  isCover
+                                    ? 'bg-[#b8864a] text-white opacity-100'
+                                    : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
+                                }`}
+                                title={isCover ? t('Currently set as cover', '当前封面') : t('Set as Cover', '设为封面')}
+                              >
+                                {isCover ? <Check className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                              </button>
+                            );
+                          })()}
                           <button
                             onClick={() => handleToggleProjectPublished(proj.id, !proj.is_published)}
                             className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${

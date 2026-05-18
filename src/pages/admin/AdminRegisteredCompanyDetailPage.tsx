@@ -502,30 +502,31 @@ export default function AdminRegisteredCompanyDetailPage() {
                       {project.images[0] && (() => {
                         const isCover = company.cover_image_url === project.images[0];
                         return (
-                          <>
+                          <div
+                            className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
-                              className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md transition ${
+                              onClick={() => handleSetCover(project.images[0])}
+                              className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
                                 isCover
-                                  ? 'bg-[#b8864a] text-white opacity-100'
-                                  : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
+                                  ? 'bg-[#b8864a] text-white !opacity-100'
+                                  : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
                               }`}
                               title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
                             >
                               {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
-                              {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
                             </button>
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); handleAddToShowcase(project.images[0]); }}
-                              className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100 transition"
+                              onClick={() => handleAddToShowcase(project.images[0])}
+                              className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
                               title={t('Add to login page showcase', '添加到登录页展示')}
                             >
                               <ImagePlus className="w-3 h-3" />
-                              {t('Showcase', '用作展示')}
                             </button>
-                          </>
+                          </div>
                         );
                       })()}
                     </div>
@@ -885,30 +886,31 @@ export default function AdminRegisteredCompanyDetailPage() {
                         {project.images[0] && (() => {
                           const isCover = company.cover_image_url === project.images[0];
                           return (
-                            <>
+                            <div
+                              className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
-                                className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium shadow-md transition ${
+                                onClick={() => handleSetCover(project.images[0])}
+                                className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
                                   isCover
-                                    ? 'bg-[#b8864a] text-white opacity-100'
-                                    : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
+                                    ? 'bg-[#b8864a] text-white !opacity-100'
+                                    : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
                                 }`}
                                 title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
                               >
-                                {isCover ? <Check className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
-                                {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
+                                {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
                               </button>
                               <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); handleAddToShowcase(project.images[0]); }}
-                                className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium shadow-md bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100 transition"
+                                onClick={() => handleAddToShowcase(project.images[0])}
+                                className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
                                 title={t('Add to login page showcase', '添加到登录页展示')}
                               >
-                                <ImagePlus className="w-3.5 h-3.5" />
-                                {t('Showcase', '用作展示')}
+                                <ImagePlus className="w-3 h-3" />
                               </button>
-                            </>
+                            </div>
                           );
                         })()}
                       </div>
