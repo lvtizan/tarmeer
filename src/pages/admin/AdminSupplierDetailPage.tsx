@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../lib/adminApi';
+import SupplierEditModal from '../../components/admin/SupplierEditModal';
 import { useAdminT } from '../../hooks/useAdminLang';
 import { showToast } from '../../components/ui/Toast';
 import SmartImage from '../../components/ui/SmartImage';
@@ -362,6 +363,9 @@ export default function AdminSupplierDetailPage() {
   // Product edit modal state
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
+  // Supplier edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+
   const handleReplaceImage = async (file: File, productId: number) => {
     if (!supplier) return;
     setReplacingId(productId);
@@ -378,7 +382,7 @@ export default function AdminSupplierDetailPage() {
     }
   };
 
-  useEffect(() => {
+  const fetchSupplier = useCallback(() => {
     if (!id) return;
     adminApi.request(`/suppliers/${id}`)
       .then(data => {
@@ -395,7 +399,9 @@ export default function AdminSupplierDetailPage() {
       })
       .catch(() => showToast(t('Failed to load supplier', '加载失败'), 'error'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, t]);
+
+  useEffect(() => { fetchSupplier(); }, [fetchSupplier]);
 
   const handleStatus = async (status: string) => {
     setIsSubmitting(true);
@@ -600,7 +606,7 @@ export default function AdminSupplierDetailPage() {
             </div>
             <div className="flex flex-wrap gap-1">
               <button
-                onClick={() => showToast(t('Edit not yet available', '编辑功能待开发'), 'error')}
+                onClick={() => setShowEditModal(true)}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition-colors"
               >
                 <Pencil size={14} /> {t('Edit', '编辑')}
@@ -995,6 +1001,18 @@ export default function AdminSupplierDetailPage() {
 
         </div>
       </div>
+
+      {/* Supplier edit modal */}
+      {showEditModal && supplier && (
+        <SupplierEditModal
+          supplierId={supplier.id}
+          onClose={() => setShowEditModal(false)}
+          onSaved={() => {
+            setShowEditModal(false);
+            fetchSupplier();
+          }}
+        />
+      )}
 
       {/* Delete Supplier confirm modal */}
       {showDeleteModal && (
