@@ -20,6 +20,32 @@
 
 ---
 
+## Deployment Rules
+
+- NEVER deploy without explicit user approval. Always ask 'Ready to deploy?' before running any deploy command.
+- After deploying, verify the production site loads correctly and key features work.
+- Always run tests/type-checks before deploying.
+
+## Code Quality
+
+- Never introduce regressions. Before editing a file, read the existing behavior and preserve it unless explicitly asked to change it.
+- When fixing a bug, verify the fix handles edge cases (empty data, null values, fallback paths) in the same commit.
+- Do not overcomplicate solutions — prefer the simplest approach that works.
+
+## Git Operations
+
+- Before pushing, always pull and resolve any merge conflicts.
+- Never delete or clear dist/images or user-uploaded content without explicit approval.
+- When resolving merge conflicts, show the user which version you're keeping.
+
+## Structured Output Tasks
+
+- When extracting data from text, output ONLY facts present in the source — never fabricate or hallucinate content.
+- Always follow the required output format/tool call pattern exactly.
+- If the source text is ambiguous, flag it rather than guessing.
+
+---
+
 ## Language Rule (ABSOLUTE)
 
 **NO CHINESE ON THE PUBLIC-FACING FRONTEND.** This applies to all pages visible to end users (everything outside `/admin`). Specifically:
@@ -194,6 +220,7 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 - **Select/Dropdown**: Always use `<AdminSelect />` from `src/components/ui/AdminSelect.tsx`. NEVER use raw `<select>` tags.
 - **Phone Validation**: Always use `validatePhone()` + `isPhoneComplete()` from `src/lib/phoneValidation.ts`. All phone inputs MUST have inline validation (fake number rejection, UAE prefix check).
 - **Lead/Inquiry Forms**: Use `<LeadForm />` from `src/components/form/LeadForm.tsx` (when available). Configure via `fields` prop, NEVER duplicate form logic across pages. Existing forms (Banner, InquiryForm, CompanySignupForm) should be migrated to LeadForm when touched.
+- **Confirm/Delete dialogs**: ALWAYS use `showConfirm()` from `src/components/ui/ConfirmModal.tsx`. NEVER use `window.confirm()` or `confirm()`. For destructive operations add `requireText: '我已知道删除对系统的影响'`.
 
 ### Rules
 1. NEVER create local `inputClass` constants — use the standard pattern above
@@ -205,6 +232,7 @@ All interactive elements use `rounded-2xl` (20px) to match global `--radius-2xl`
 7. NEVER use raw `<select>` — use `<AdminSelect />`
 8. NEVER create new phone input without `phoneValidation.ts` validation
 9. NEVER duplicate form logic — new lead/inquiry forms MUST use the shared `<LeadForm />` component (when built), or at minimum reuse `phoneValidation.ts` and `AdminSelect`
+10. NEVER use `window.confirm()` — use `showConfirm()` from `ConfirmModal.tsx`
 10. **移动端按钮与卡片必须适配移动端布局**：任何按钮或卡片在移动端（< sm/640px）必须满足以下要求：
     - 按钮：在 hero 或固定区域内，移动端不可见的按钮用 `hidden sm:inline-flex`；移动端底部单独提供全宽 CTA（`w-full sm:hidden`）；绝不在小屏幕上让按钮与标题文字并排挤压
     - 卡片：移动端单列（`grid-cols-1 sm:grid-cols-2`），内边距适当缩小（`p-4 sm:p-6`），图片高度用 `aspect-ratio` 而非固定高度
