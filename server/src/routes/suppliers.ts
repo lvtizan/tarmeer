@@ -7,6 +7,7 @@ import * as profile from '../controllers/supplierProfileController';
 import * as products from '../controllers/supplierProductController';
 import * as catalogs from '../controllers/supplierCatalogController';
 import * as leads from '../controllers/supplierLeadController';
+import { getPublicSupplierCategories } from '../controllers/enumAdminController';
 import * as projects from '../controllers/supplierProjectController';
 
 const router = Router();
@@ -19,6 +20,7 @@ const leadLimiter = rateLimit({
 });
 
 // ── Public ──
+router.get('/categories', getPublicSupplierCategories);
 router.get('/', profile.listPublicSuppliers);
 router.get('/detail/:slug', profile.getPublicProfile);
 router.get('/detail/:slug/products', products.listProducts);

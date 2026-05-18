@@ -10,17 +10,16 @@ import AdminSelect from '../components/ui/AdminSelect';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
-const CATEGORY_OPTIONS = [
-  { value: '', label: 'All Categories' },
+const CATEGORY_OPTIONS_FALLBACK = [
   { value: 'furniture', label: 'Furniture' },
-  { value: 'stone', label: 'Stone & Marble' },
+  { value: 'stone', label: 'Tile & Stone' },
   { value: 'lighting', label: 'Lighting' },
   { value: 'plants', label: 'Plants & Landscaping' },
   { value: 'flooring', label: 'Flooring' },
   { value: 'kitchen', label: 'Kitchen & Bath' },
   { value: 'curtains', label: 'Curtains & Textiles' },
   { value: 'paint', label: 'Paint & Coatings' },
-  { value: 'hardware', label: 'Hardware & Fittings' },
+  { value: 'hardware', label: 'Doors & Windows' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -133,6 +132,7 @@ export default function ShowroomsPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState(CATEGORY_OPTIONS_FALLBACK);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const originFilter = searchParams.get('origin') || '';
@@ -153,6 +153,17 @@ export default function ShowroomsPage() {
       return next;
     }, { replace: true });
   }
+
+  useEffect(() => {
+    fetch(`${API_BASE}/suppliers/categories`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.categories?.length) {
+          setCategoryOptions(data.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -268,7 +279,7 @@ export default function ShowroomsPage() {
               <div>
                 <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Category</h4>
                 <div className="space-y-1">
-                  {CATEGORY_OPTIONS.map(opt => (
+                  {[{ value: '', label: 'All Categories' }, ...categoryOptions].map(opt => (
                     <FilterOption
                       key={opt.value}
                       selected={categoryFilter === opt.value}
@@ -336,7 +347,7 @@ export default function ShowroomsPage() {
               size="sm"
               value={categoryFilter}
               onChange={setCategoryFilter}
-              options={CATEGORY_OPTIONS}
+              options={[{ value: '', label: 'All Categories' }, ...categoryOptions]}
             />
           </div>
 
@@ -345,7 +356,7 @@ export default function ShowroomsPage() {
             <p className="text-sm text-stone-500 mb-4">
               {suppliers.length} verified supplier{suppliers.length !== 1 ? 's' : ''}
               {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}`}
-              {categoryFilter && ` · ${CATEGORY_OPTIONS.find(o => o.value === categoryFilter)?.label}`}
+              {categoryFilter && ` · ${categoryOptions.find(o => o.value === categoryFilter)?.label}`}
             </p>
           )}
 

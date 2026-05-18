@@ -309,6 +309,16 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
     )`,
   },
   {
+    name: 'supplier_categories',
+    sql: `CREATE TABLE IF NOT EXISTS supplier_categories (
+      value VARCHAR(50) NOT NULL PRIMARY KEY,
+      label VARCHAR(100) NOT NULL,
+      sort_order INT DEFAULT 0,
+      is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  {
     name: 'feedback',
     sql: `CREATE TABLE IF NOT EXISTS feedback (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -694,6 +704,24 @@ export async function runAutoMigrate(): Promise<void> {
           ('Maintenance',          9, 1),
           ('Specialty Works',     10, 1),
           ('Other Services',      11, 1)
+         ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`
+      );
+    } catch { /* ignore */ }
+
+    // 7d. Seed supplier_categories
+    try {
+      await pool.execute(
+        `INSERT INTO supplier_categories (value, label, sort_order, is_enabled) VALUES
+          ('furniture',  'Furniture',              1, 1),
+          ('stone',      'Tile & Stone',            2, 1),
+          ('lighting',   'Lighting',               3, 1),
+          ('plants',     'Plants & Landscaping',   4, 1),
+          ('flooring',   'Flooring',               5, 1),
+          ('kitchen',    'Kitchen & Bath',         6, 1),
+          ('curtains',   'Curtains & Textiles',    7, 1),
+          ('paint',      'Paint & Coatings',       8, 1),
+          ('hardware',   'Doors & Windows',        9, 1),
+          ('other',      'Other',                 10, 1)
          ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`
       );
     } catch { /* ignore */ }

@@ -88,6 +88,7 @@ import {
   listCompanyTypes, createCompanyType, updateCompanyType, deleteCompanyType,
   listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService, reorderCompanyServices, renameServiceCategory,
   listServiceCategories, createServiceCategory, toggleServiceCategory, reorderServiceCategories, renameServiceCategory2, deleteServiceCategory,
+  listSupplierCategories, createSupplierCategory, updateSupplierCategory, reorderSupplierCategories, toggleSupplierCategory, deleteSupplierCategory,
 } from '../controllers/enumAdminController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
@@ -459,5 +460,12 @@ router.put('/enums/service-categories/reorder', requireAdmin, reorderServiceCate
 router.put('/enums/service-categories/:name/toggle', requireAdmin, toggleServiceCategory);
 router.put('/enums/service-categories/:name/rename', requireAdmin, renameServiceCategory2);
 router.delete('/enums/service-categories/:name', requireAdmin, deleteServiceCategory);
+// Enum management — supplier categories
+router.get('/enums/supplier-categories', listSupplierCategories);
+router.post('/enums/supplier-categories', requireAdmin, createSupplierCategory);
+router.put('/enums/supplier-categories/reorder', requireAdmin, reorderSupplierCategories);
+router.put('/enums/supplier-categories/:value/toggle', requireAdmin, toggleSupplierCategory);
+router.put('/enums/supplier-categories/:value', requireAdmin, updateSupplierCategory);
+router.delete('/enums/supplier-categories/:value', requireAdmin, deleteSupplierCategory);
 
 export default router;

@@ -665,7 +665,10 @@ function SupplierCategoriesTab() {
 
   function deleteCat(cat: SupplierCategory) {
     showConfirm({
-      title: `确定删除分类 "${cat.label}"？`,
+      title: `删除供应商分类 "${cat.label}"`,
+      message: '该分类删除后，已使用此分类的供应商筛选结果将受到影响，网站导航和筛选器中的分类将消失。',
+      requireText: '我已清楚知道删除分类对网站造成的影响',
+      confirmLabel: '确认删除',
       onConfirm: async () => {
         try {
           await adminApi.request(`/enums/supplier-categories/${encodeURIComponent(cat.value)}`, { method: 'DELETE' });

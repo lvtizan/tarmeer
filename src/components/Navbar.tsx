@@ -44,7 +44,7 @@ const portfolioCategories = {
 const materialsCategories = {
   'Materials': [
     { label: 'Furniture', to: '/materials?category=furniture' },
-    { label: 'Stone & Marble', to: '/materials?category=stone' },
+    { label: 'Tile & Stone', to: '/materials?category=stone' },
     { label: 'Lighting', to: '/materials?category=lighting' },
     { label: 'Plants & Landscaping', to: '/materials?category=plants' },
     { label: 'Flooring', to: '/materials?category=flooring' },
@@ -53,7 +53,7 @@ const materialsCategories = {
     { label: 'Kitchen & Bath', to: '/materials?category=kitchen' },
     { label: 'Curtains & Textiles', to: '/materials?category=curtains' },
     { label: 'Paint & Coatings', to: '/materials?category=paint' },
-    { label: 'Hardware & Fittings', to: '/materials?category=hardware' },
+    { label: 'Doors & Windows', to: '/materials?category=hardware' },
     { label: 'Other', to: '/materials?category=other' },
   ],
 };
