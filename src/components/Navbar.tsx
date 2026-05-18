@@ -41,22 +41,6 @@ const portfolioCategories = {
   ],
 };
 
-const materialsCategories = {
-  'Materials': [
-    { label: 'Furniture', to: '/materials?category=furniture' },
-    { label: 'Tile & Stone', to: '/materials?category=stone' },
-    { label: 'Lighting', to: '/materials?category=lighting' },
-    { label: 'Plants & Landscaping', to: '/materials?category=plants' },
-    { label: 'Flooring', to: '/materials?category=flooring' },
-  ],
-  'More': [
-    { label: 'Kitchen & Bath', to: '/materials?category=kitchen' },
-    { label: 'Curtains & Textiles', to: '/materials?category=curtains' },
-    { label: 'Paint & Coatings', to: '/materials?category=paint' },
-    { label: 'Doors & Windows', to: '/materials?category=hardware' },
-    { label: 'Other', to: '/materials?category=other' },
-  ],
-};
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -79,6 +63,7 @@ export default function Navbar({
   const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
+  const [supplierNavCategories, setSupplierNavCategories] = useState<{ label: string; value: string }[]>([]);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
@@ -103,6 +88,10 @@ export default function Navbar({
     fetch(`${API_BASE}/public/service-categories`)
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d?.categories)) setNavCategories(d.categories); })
+      .catch(() => {});
+    fetch(`${API_BASE}/public/supplier-categories`)
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d?.categories)) setSupplierNavCategories(d.categories); })
       .catch(() => {});
   }, []);
 
@@ -358,26 +347,34 @@ export default function Navbar({
             >
               <div className="bg-white shadow-xl rounded-lg border border-stone-200">
                 <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
-                  {Object.entries(materialsCategories).map(([category, items]) => (
-                    <div key={category}>
-                      <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">
-                        {category}
-                      </h3>
-                      <ul className="space-y-2">
-                        {items.map((item) => (
-                          <li key={item.to}>
-                            <Link
-                              to={item.to}
-                              onClick={() => handleClick(item.to)}
-                              className="text-sm text-stone-600 hover:text-[#b8864a] transition"
-                            >
-                              {item.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                  {(() => {
+                    const mid = Math.ceil(supplierNavCategories.length / 2);
+                    const cols = [supplierNavCategories.slice(0, mid), supplierNavCategories.slice(mid)];
+                    const colLabels = ['Materials', 'More'];
+                    return cols.map((items, ci) => items.length === 0 ? null : (
+                      <div key={ci}>
+                        <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">
+                          {colLabels[ci]}
+                        </h3>
+                        <ul className="space-y-2">
+                          {items.map((item) => {
+                            const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                            return (
+                              <li key={item.value}>
+                                <Link
+                                  to={to}
+                                  onClick={() => { setMaterialsDropdownOpen(false); handleClick(to); }}
+                                  className="text-sm text-stone-600 hover:text-[#b8864a] transition"
+                                >
+                                  {item.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ));
+                  })()}
                 </div>
                 <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
                   <Link
@@ -566,26 +563,34 @@ export default function Navbar({
               </div>
               {materialsDropdownOpen && (
                 <div className="mt-3 pl-4 space-y-4">
-                  {Object.entries(materialsCategories).map(([category, items]) => (
-                    <div key={category}>
-                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">
-                        {category}
-                      </h3>
-                      <ul className="space-y-1">
-                        {items.map((item) => (
-                          <li key={item.to}>
-                            <Link
-                              to={item.to}
-                              onClick={() => handleClick(item.to)}
-                              className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1"
-                            >
-                              {item.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                  {(() => {
+                    const mid = Math.ceil(supplierNavCategories.length / 2);
+                    const cols = [supplierNavCategories.slice(0, mid), supplierNavCategories.slice(mid)];
+                    const colLabels = ['Materials', 'More'];
+                    return cols.map((items, ci) => items.length === 0 ? null : (
+                      <div key={ci}>
+                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">
+                          {colLabels[ci]}
+                        </h3>
+                        <ul className="space-y-1">
+                          {items.map((item) => {
+                            const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                            return (
+                              <li key={item.value}>
+                                <Link
+                                  to={to}
+                                  onClick={() => handleClick(to)}
+                                  className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1"
+                                >
+                                  {item.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ));
+                  })()}
                   <div className="border-t border-stone-200 pt-2">
                     <Link
                       to="/materials"

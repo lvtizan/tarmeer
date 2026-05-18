@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Pencil, Star, Check, ImagePlus } from 'lucide-react';
+import { Pencil, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
@@ -34,6 +34,7 @@ interface CompanyDetail {
   owner_name: string | null;
   owner_email: string | null;
   owner_id: number | null;
+  is_published?: number;
 }
 
 interface Project {
@@ -68,6 +69,7 @@ export default function AdminCompanyDetailPage() {
   const [activeStyle, setActiveStyle] = useState<string>('all');
   const [showEditModal, setShowEditModal] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [togglingPublished, setTogglingPublished] = useState(false);
 
   const loadDetail = () => {
     if (!id) return;
@@ -144,6 +146,21 @@ export default function AdminCompanyDetailPage() {
     }
   };
 
+  const handleTogglePublished = async () => {
+    if (!company) return;
+    const next = !(company.is_published !== 0);
+    setTogglingPublished(true);
+    try {
+      await adminApi.toggleDirectoryPublished(company.id, next);
+      setCompany((prev) => prev ? { ...prev, is_published: next ? 1 : 0 } : prev);
+      showToast(next ? '公司已上架' : '公司已下架', 'success');
+    } catch (err: any) {
+      showToast(err?.message || '操作失败', 'error');
+    } finally {
+      setTogglingPublished(false);
+    }
+  };
+
   if (loading) return <PageSpinner />;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
   if (!company) return <div className="p-6 text-stone-400">{t('Company not found.', '公司未找到')}</div>;
@@ -177,6 +194,21 @@ export default function AdminCompanyDetailPage() {
         </div>
         {company.name_ar && <p className="text-sm text-stone-500 mt-0.5" dir="rtl">{company.name_ar}</p>}
         <p className="text-xs text-stone-400 mt-1">/{company.slug}</p>
+        <div className="mt-2">
+          <button
+            onClick={handleTogglePublished}
+            disabled={togglingPublished}
+            className={`w-full py-2 rounded-lg text-sm font-medium border transition disabled:opacity-50 inline-flex items-center justify-center gap-1.5 ${
+              company.is_published !== 0
+                ? 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100'
+            }`}
+          >
+            {company.is_published !== 0
+              ? <><EyeOff size={14} />下架</>
+              : <><Eye size={14} />上架</>}
+          </button>
+        </div>
       </div>
       {company.description && (
         <div>

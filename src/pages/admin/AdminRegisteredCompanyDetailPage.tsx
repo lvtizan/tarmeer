@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ExternalLink, Pencil, Trash2, Star, Check, ImagePlus } from 'lucide-react';
+import { ExternalLink, Pencil, Trash2, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -35,6 +35,7 @@ interface CompanyProfile {
   crm_tenant_id: string | null;
   crm_provisioned_at: string | null;
   crm_first_login_at: string | null;
+  is_published?: number;
 }
 
 interface Project {
@@ -49,6 +50,7 @@ interface Project {
   status: string;
   rejection_reason: string | null;
   created_at: string;
+  is_published?: number;
 }
 
 const COMPANY_STATUS_COLORS: Record<string, string> = {
@@ -93,6 +95,7 @@ export default function AdminRegisteredCompanyDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [togglingPublished, setTogglingPublished] = useState(false);
 
   const loadDetail = () => {
     if (!id) return;
@@ -267,6 +270,34 @@ export default function AdminRegisteredCompanyDetailPage() {
     }
   };
 
+  const handleTogglePublished = async () => {
+    if (!company) return;
+    const next = !(company.is_published !== 0);
+    setTogglingPublished(true);
+    try {
+      await adminApi.toggleCompanyPublished(company.id, next);
+      setCompany((prev) => prev ? { ...prev, is_published: next ? 1 : 0 } : prev);
+      showToast(next ? '装企已上架' : '装企已下架', 'success');
+    } catch (err: any) {
+      showToast(err?.message || '操作失败', 'error');
+    } finally {
+      setTogglingPublished(false);
+    }
+  };
+
+  const handleToggleProjectPublished = async (projectId: number, currentPublished: number | undefined) => {
+    const next = !(currentPublished !== 0);
+    try {
+      await adminApi.toggleProjectPublished(Number(id), projectId, next);
+      setProjects((prev) =>
+        prev.map((p) => p.id === projectId ? { ...p, is_published: next ? 1 : 0 } : p)
+      );
+      showToast(next ? '项目已显示' : '项目已隐藏', 'success');
+    } catch (err: any) {
+      showToast(err?.message || '操作失败', 'error');
+    }
+  };
+
   const backTab = (() => {
     const tab = searchParams.get('tab');
     if (tab === 'applications' || tab === 'directory') return tab;
@@ -363,6 +394,21 @@ export default function AdminRegisteredCompanyDetailPage() {
               </button>
             </div>
           )}
+          {company.status === 'approved' && (
+            <button
+              onClick={handleTogglePublished}
+              disabled={togglingPublished}
+              className={`w-full py-2 rounded-lg text-sm font-medium border transition disabled:opacity-50 inline-flex items-center justify-center gap-1.5 ${
+                company.is_published !== 0
+                  ? 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                  : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100'
+              }`}
+            >
+              {company.is_published !== 0
+                ? <><EyeOff size={14} />下架</>
+                : <><Eye size={14} />上架</>}
+            </button>
+          )}
           {company.admin_notes && (
             <div className="mt-2 text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
               <span className="font-medium">{t('Admin notes:', '管理员备注:')}</span> {company.admin_notes}
@@ -433,7 +479,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                 {visibleProjects.map((project) => (
                   <div
                     key={project.id}
-                    className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
+                    className={`bg-white rounded-xl border overflow-hidden group cursor-pointer hover:shadow-md transition-shadow ${project.is_published === 0 ? 'border-amber-200' : 'border-stone-200'}`}
                     onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}
                   >
                     <div className="aspect-video bg-stone-100 overflow-hidden relative">
@@ -446,6 +492,11 @@ export default function AdminRegisteredCompanyDetailPage() {
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-stone-300">
                           <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
+                        </div>
+                      )}
+                      {project.is_published === 0 && (
+                        <div className="absolute inset-0 bg-black/40 flex items-start justify-end p-1.5 pointer-events-none">
+                          <span className="text-[10px] font-medium bg-amber-500 text-white rounded px-1.5 py-0.5">已隐藏</span>
                         </div>
                       )}
                       {project.images[0] && (() => {
@@ -502,6 +553,19 @@ export default function AdminRegisteredCompanyDetailPage() {
                           </button>
                         </div>
                       )}
+                      <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleProjectPublished(project.id, project.is_published)}
+                          className={`w-full rounded-lg border px-1.5 py-1 text-xs font-medium transition inline-flex items-center justify-center gap-1 ${
+                            project.is_published === 0
+                              ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                              : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+                          }`}
+                        >
+                          {project.is_published === 0 ? <><Eye className="w-3 h-3" />显示</> : <><EyeOff className="w-3 h-3" />隐藏</>}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -634,6 +698,21 @@ export default function AdminRegisteredCompanyDetailPage() {
                   {t('Reject', '拒绝')}
                 </button>
               </div>
+            )}
+            {company.status === 'approved' && (
+              <button
+                onClick={handleTogglePublished}
+                disabled={togglingPublished}
+                className={`w-full py-2 rounded-lg text-sm font-medium border transition disabled:opacity-50 inline-flex items-center justify-center gap-1.5 ${
+                  company.is_published !== 0
+                    ? 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                    : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                }`}
+              >
+                {company.is_published !== 0
+                  ? <><EyeOff size={14} />下架</>
+                  : <><Eye size={14} />上架</>}
+              </button>
             )}
             {company.admin_notes && (
               <div className="mt-2 text-xs text-stone-500 bg-stone-50 rounded-lg p-3">
@@ -783,7 +862,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                   {visibleProjects.map((project) => (
                     <div
                       key={project.id}
-                      className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
+                      className={`bg-white rounded-xl border overflow-hidden group cursor-pointer hover:shadow-md transition-shadow ${project.is_published === 0 ? 'border-amber-200' : 'border-stone-200'}`}
                       onClick={() => navigate(`/admin/profile-companies/${id}/projects/${project.id}`)}
                     >
                       <div className="aspect-video bg-stone-100 overflow-hidden relative">
@@ -796,6 +875,11 @@ export default function AdminRegisteredCompanyDetailPage() {
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-stone-300">
                             <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
+                          </div>
+                        )}
+                        {project.is_published === 0 && (
+                          <div className="absolute inset-0 bg-black/40 flex items-start justify-end p-2 pointer-events-none">
+                            <span className="text-xs font-medium bg-amber-500 text-white rounded px-2 py-0.5">已隐藏</span>
                           </div>
                         )}
                         {project.images[0] && (() => {
@@ -858,6 +942,19 @@ export default function AdminRegisteredCompanyDetailPage() {
                             </button>
                           </div>
                         )}
+                        <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleProjectPublished(project.id, project.is_published)}
+                            className={`w-full rounded-lg border px-2 py-1.5 text-xs font-medium transition inline-flex items-center justify-center gap-1 ${
+                              project.is_published === 0
+                                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                : 'border-stone-200 text-stone-500 hover:bg-stone-50'
+                            }`}
+                          >
+                            {project.is_published === 0 ? <><Eye className="w-3.5 h-3.5" />显示项目</> : <><EyeOff className="w-3.5 h-3.5" />隐藏项目</>}
+                          </button>
+                        </div>
                         {project.images.length > 1 && (
                           <p className="text-xs text-stone-400">{project.images.length} photos</p>
                         )}

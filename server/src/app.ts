@@ -383,7 +383,7 @@ app.use((req, res, next) => {
 });
 
 import { antiScraping } from './middleware/antiScraping';
-import { getPublicServiceCategories } from './controllers/enumAdminController';
+import { getPublicServiceCategories, getPublicSupplierCategories } from './controllers/enumAdminController';
 import { submitFeedback } from './controllers/feedbackController';
 
 // Anti-scraping protection on public data endpoints
@@ -412,6 +412,7 @@ app.use('/api/site', siteRoutes);
 app.use('/api/integration', integrationRoutes);
 app.get('/api/sso/consume', ssoConsume);
 app.get('/api/public/service-categories', getPublicServiceCategories);
+app.get('/api/public/supplier-categories', getPublicSupplierCategories);
 app.post('/api/feedback', submitFeedback);
 app.post('/api/track', trackEvent);
 // SEO: serve index.html with injected meta for search engine bots
