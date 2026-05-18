@@ -220,12 +220,12 @@ app.get('/api/sitemap.xml', async (req, res) => {
       xml += `  <url><loc>${baseUrl}${page.path}</loc><changefreq>${page.changefreq}</changefreq><priority>${page.priority}</priority><lastmod>${today}</lastmod></url>\n`;
     }
 
-    // Company pages — use /@slug (canonical) so sitemap matches canonical URL
+    // Company pages use their public detail canonical URLs.
     const allCompanies = [...(uaeCompanies as any[]), ...(profiles as any[])];
     for (const company of allCompanies) {
       if (company.slug) {
         const lastmod = company.updated_at ? new Date(company.updated_at).toISOString().slice(0, 10) : today;
-        xml += `  <url><loc>${baseUrl}/@${company.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${lastmod}</lastmod></url>\n`;
+        xml += `  <url><loc>${baseUrl}/companies/${company.slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority><lastmod>${lastmod}</lastmod></url>\n`;
       }
     }
 
