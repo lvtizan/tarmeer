@@ -11,6 +11,9 @@ Disallow: /supplier/auth
 Disallow: /verify-email
 Disallow: /reset-password
 Disallow: /forgot-password
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /images/
 # Legacy Shopify URLs no longer on this site
 Disallow: /products/
 Disallow: /blogs/
@@ -56,6 +59,9 @@ Disallow: /auth/
 Disallow: /verify-email
 Disallow: /reset-password
 Disallow: /forgot-password
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /images/
 # Legacy Shopify URLs
 Disallow: /products/
 Disallow: /blogs/
