@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
+import { countWords, estimateReadingTime, markdownToHtml } from '../lib/articleContent';
 import { slugify } from '../lib/slugify';
 import { generateArticle, isLlmConfigured } from '../services/llmService';
 import { validationResult } from 'express-validator';
@@ -252,7 +253,17 @@ export async function getPublicArticleBySlug(req: Request, res: Response) {
       return res.status(404).json({ error: 'Article not found.' });
     }
 
-    res.json({ article });
+    const wordCount = countWords(article.content || '');
+    const readingTime = estimateReadingTime(wordCount);
+
+    res.json({
+      article: {
+        ...article,
+        content_html: markdownToHtml(article.content || '', article.cover_image),
+        word_count: wordCount,
+        reading_time: readingTime,
+      },
+    });
   } catch (err) {
     console.error(TAG, 'getPublicArticleBySlug error:', err);
     res.status(500).json({ error: 'Internal server error.' });

@@ -1,24 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Building2 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
-
-interface Article {
-  id: number;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  cover_image: string | null;
-  tags: string | string[] | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  company_name: string | null;
-  company_slug: string | null;
-  created_at: string;
-}
+import { fetchPublicArticle, type PublicArticle } from '../lib/blogArticleClient';
 
 function parseTags(tags: string | string[] | null): string[] {
   if (!tags) return [];
@@ -26,75 +10,37 @@ function parseTags(tags: string | string[] | null): string[] {
   try { const p = JSON.parse(tags); return Array.isArray(p) ? p : []; } catch { return []; }
 }
 
-/**
- * Markdown → HTML renderer.
- * Supports: ## h2, ### h3, **bold**, *italic*, ![alt](url), ---, paragraphs.
- * No raw markdown symbols left visible.
- */
-function markdownToHtml(md: string): string {
-  return md
-    // Escape HTML entities
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    // Images: ![alt](url)
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<figure><img src="$2" alt="$1" loading="lazy" /><figcaption>$1</figcaption></figure>')
-    // Headings
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
-    // Horizontal rules
-    .replace(/^---$/gm, '<hr />')
-    // Paragraphs
-    .split(/\n\n+/)
-    .map((block) => {
-      const t = block.trim();
-      if (!t) return '';
-      if (t.startsWith('<h') || t.startsWith('<hr') || t.startsWith('<figure')) return t;
-      return `<p>${t.replace(/\n/g, '<br />')}</p>`;
-    })
-    .filter(Boolean)
-    .join('\n');
-}
-
 export default function BlogDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [article, setArticle] = useState<Article | null>(null);
+  const [article, setArticle] = useState<PublicArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!slug) return;
-    setLoading(true);
-    fetch(`${API_BASE}/articles/public/${slug}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Not found');
-        return res.json();
-      })
-      .then((data) => {
-        setArticle(data.article || null);
-        if (!data.article) setNotFound(true);
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-  }, [slug]);
-
-  // Hooks before early returns
-  const contentHtml = useMemo(() => {
-    if (!article?.content) return '';
-    let content = article.content;
-    // Remove first image if it duplicates the cover image
-    if (article.cover_image) {
-      const coverId = article.cover_image.match(/photo-[a-zA-Z0-9-]+/)?.[0];
-      if (coverId) {
-        content = content.replace(new RegExp(`!\\[[^\\]]*\\]\\([^)]*${coverId}[^)]*\\)\\n*`), '');
-      }
+    if (!slug) {
+      setLoading(false);
+      setNotFound(true);
+      return;
     }
-    return markdownToHtml(content);
-  }, [article?.content, article?.cover_image]);
+
+    const abortController = new AbortController();
+    setLoading(true);
+    setNotFound(false);
+
+    fetchPublicArticle(slug, abortController.signal)
+      .then((nextArticle) => {
+        setArticle(nextArticle);
+        setNotFound(!nextArticle);
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return;
+        setArticle(null);
+        setNotFound(true);
+      })
+      .finally(() => setLoading(false));
+
+    return () => abortController.abort();
+  }, [slug]);
 
   if (loading) {
     return (
@@ -138,8 +84,8 @@ export default function BlogDetailPage() {
     day: 'numeric',
   });
   const isoDate = new Date(article.created_at).toISOString();
-  const wordCount = article.content?.split(/\s+/).length || 0;
-  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+  const wordCount = article.word_count || article.content?.split(/\s+/).filter(Boolean).length || 0;
+  const readingTime = article.reading_time || Math.max(1, Math.ceil(wordCount / 200));
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -258,6 +204,7 @@ export default function BlogDetailPage() {
               src={article.cover_image}
               alt={article.title}
               className="w-full h-auto rounded-2xl mb-10 aspect-[16/9] object-cover"
+              decoding="async"
             />
           )}
 
@@ -267,7 +214,7 @@ export default function BlogDetailPage() {
           {/* Article content */}
           <div
             className="article-content"
-            dangerouslySetInnerHTML={{ __html: contentHtml }}
+            dangerouslySetInnerHTML={{ __html: article.content_html || '' }}
           />
 
           {/* Bottom CTA */}

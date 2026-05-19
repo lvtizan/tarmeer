@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { Calendar, Building2 } from 'lucide-react';
+import { prefetchPublicArticle, warmBlogDetailPage } from '../lib/blogArticleClient';
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
@@ -41,6 +42,23 @@ export default function BlogPage() {
       .catch(() => setArticles([]))
       .finally(() => setLoading(false));
   }, [page]);
+
+  useEffect(() => {
+    const warm = () => warmBlogDetailPage();
+    const browserWindow = globalThis.window;
+    if (browserWindow && 'requestIdleCallback' in browserWindow) {
+      const idleId = browserWindow.requestIdleCallback(warm, { timeout: 1200 });
+      return () => browserWindow.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(warm, 300);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, []);
+
+  function handleArticleIntent(slug: string) {
+    warmBlogDetailPage();
+    prefetchPublicArticle(slug);
+  }
 
   const pageTitle = 'Blog - Interior Design Insights | Tarmeer';
   const pageDescription =
@@ -101,6 +119,9 @@ export default function BlogPage() {
                     key={article.id}
                     to={`/blog/${article.slug}`}
                     className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group"
+                    onMouseEnter={() => handleArticleIntent(article.slug)}
+                    onFocus={() => handleArticleIntent(article.slug)}
+                    onTouchStart={() => handleArticleIntent(article.slug)}
                   >
                     {article.cover_image ? (
                       <img
