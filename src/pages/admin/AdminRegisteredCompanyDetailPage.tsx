@@ -495,42 +495,60 @@ export default function AdminRegisteredCompanyDetailPage() {
                         </div>
                       )}
                       {project.is_published === 0 && (
-                        <div className="absolute inset-0 bg-black/40 flex items-start justify-end p-1.5 pointer-events-none">
-                          <span className="text-[10px] font-medium bg-amber-500 text-white rounded px-1.5 py-0.5">已隐藏</span>
+                        <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+                      )}
+                      {project.images.length > 1 && (
+                        <div className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-full pointer-events-none">
+                          {project.images.length}
                         </div>
                       )}
-                      {project.images[0] && (() => {
-                        const isCover = company.cover_image_url === project.images[0];
-                        return (
-                          <div
-                            className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => handleSetCover(project.images[0])}
-                              className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
-                                isCover
-                                  ? 'bg-[#b8864a] text-white !opacity-100'
-                                  : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
-                              }`}
-                              title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
-                            >
-                              {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
-                              <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleAddToShowcase(project.images[0])}
-                              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
-                              title={t('Add to login page showcase', '添加到登录页展示')}
-                            >
-                              <ImagePlus className="w-3 h-3" />
-                              <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
-                            </button>
-                          </div>
-                        );
-                      })()}
+                      <div
+                        className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleToggleProjectPublished(project.id, project.is_published)}
+                          className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                            project.is_published === 0
+                              ? 'bg-amber-500 text-white !opacity-100'
+                              : 'bg-white/95 text-stone-700 hover:bg-stone-100'
+                          }`}
+                          title={project.is_published === 0 ? '显示项目' : '隐藏项目'}
+                        >
+                          {project.is_published === 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                          <span className="text-[9px] leading-none">{project.is_published === 0 ? '显示' : '隐藏'}</span>
+                        </button>
+                        {project.images[0] && (() => {
+                          const isCover = company.cover_image_url === project.images[0];
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleSetCover(project.images[0])}
+                                className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                                  isCover
+                                    ? 'bg-[#b8864a] text-white !opacity-100'
+                                    : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
+                                }`}
+                                title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
+                              >
+                                {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                                <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAddToShowcase(project.images[0])}
+                                className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
+                                title={t('Add to login page showcase', '添加到登录页展示')}
+                              >
+                                <ImagePlus className="w-3 h-3" />
+                                <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                     <div className="p-3 space-y-1">
                       <h3 className="text-xs font-medium text-stone-800 leading-snug line-clamp-1">{project.title}</h3>
@@ -556,19 +574,6 @@ export default function AdminRegisteredCompanyDetailPage() {
                           </button>
                         </div>
                       )}
-                      <div className="pt-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleProjectPublished(project.id, project.is_published)}
-                          className={`w-full rounded-lg border px-1.5 py-1 text-xs font-medium transition inline-flex items-center justify-center gap-1 ${
-                            project.is_published === 0
-                              ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                              : 'border-stone-200 text-stone-500 hover:bg-stone-50'
-                          }`}
-                        >
-                          {project.is_published === 0 ? <><Eye className="w-3 h-3" />显示</> : <><EyeOff className="w-3 h-3" />隐藏</>}
-                        </button>
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -885,38 +890,58 @@ export default function AdminRegisteredCompanyDetailPage() {
                             <span className="text-xs font-medium bg-amber-500 text-white rounded px-2 py-0.5">已隐藏</span>
                           </div>
                         )}
-                        {project.images[0] && (() => {
-                          const isCover = company.cover_image_url === project.images[0];
-                          return (
-                            <div
-                              className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => handleSetCover(project.images[0])}
-                                className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
-                                  isCover
-                                    ? 'bg-[#b8864a] text-white !opacity-100'
-                                    : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
-                                }`}
-                                title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
-                              >
-                                {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
-                                <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleAddToShowcase(project.images[0])}
-                                className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
-                                title={t('Add to login page showcase', '添加到登录页展示')}
-                              >
-                                <ImagePlus className="w-3 h-3" />
-                                <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
-                              </button>
-                            </div>
-                          );
-                        })()}
+                        {project.images.length > 1 && (
+                          <div className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-full pointer-events-none">
+                            {project.images.length}
+                          </div>
+                        )}
+                        <div
+                          className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleToggleProjectPublished(project.id, project.is_published)}
+                            className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                              project.is_published === 0
+                                ? 'bg-amber-500 text-white !opacity-100'
+                                : 'bg-white/95 text-stone-700 hover:bg-stone-100'
+                            }`}
+                            title={project.is_published === 0 ? '显示项目' : '隐藏项目'}
+                          >
+                            {project.is_published === 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            <span className="text-[9px] leading-none">{project.is_published === 0 ? '显示' : '隐藏'}</span>
+                          </button>
+                          {project.images[0] && (() => {
+                            const isCover = company.cover_image_url === project.images[0];
+                            return (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetCover(project.images[0])}
+                                  className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                                    isCover
+                                      ? 'bg-[#b8864a] text-white !opacity-100'
+                                      : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
+                                  }`}
+                                  title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
+                                >
+                                  {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                                  <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddToShowcase(project.images[0])}
+                                  className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
+                                  title={t('Add to login page showcase', '添加到登录页展示')}
+                                >
+                                  <ImagePlus className="w-3 h-3" />
+                                  <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
+                                </button>
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                       <div className="p-3 space-y-1.5">
                         <div className="flex items-start justify-between gap-2">
@@ -947,22 +972,6 @@ export default function AdminRegisteredCompanyDetailPage() {
                               Reject
                             </button>
                           </div>
-                        )}
-                        <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleProjectPublished(project.id, project.is_published)}
-                            className={`w-full rounded-lg border px-2 py-1.5 text-xs font-medium transition inline-flex items-center justify-center gap-1 ${
-                              project.is_published === 0
-                                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                : 'border-stone-200 text-stone-500 hover:bg-stone-50'
-                            }`}
-                          >
-                            {project.is_published === 0 ? <><Eye className="w-3.5 h-3.5" />显示项目</> : <><EyeOff className="w-3.5 h-3.5" />隐藏项目</>}
-                          </button>
-                        </div>
-                        {project.images.length > 1 && (
-                          <p className="text-xs text-stone-400">{project.images.length} photos</p>
                         )}
                       </div>
                     </div>
