@@ -720,7 +720,7 @@ export async function getCompanyProfileFullDetail(req: any, res: any) {
     const company = (companyRows as any[])[0];
 
     const [projectRows] = await pool.execute(
-      `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
+      `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, is_published, created_at
        FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`,
       [id]
     );

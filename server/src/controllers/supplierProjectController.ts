@@ -20,7 +20,7 @@ export async function listPublicProjects(req: any, res: any) {
     if (!profile) return res.status(404).json({ error: 'Supplier not found.' });
 
     const [projects] = await pool.execute(
-      'SELECT * FROM supplier_projects WHERE supplier_profile_id = ? ORDER BY sort_order ASC, id DESC',
+      'SELECT * FROM supplier_projects WHERE supplier_profile_id = ? AND is_published = 1 ORDER BY sort_order ASC, id DESC',
       [profile.id]
     );
     res.json({ projects });
@@ -41,14 +41,14 @@ export async function getPublicProject(req: any, res: any) {
     if (!profile) return res.status(404).json({ error: 'Supplier not found.' });
 
     const [rows] = await pool.execute(
-      'SELECT * FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?',
+      'SELECT * FROM supplier_projects WHERE id = ? AND supplier_profile_id = ? AND is_published = 1',
       [id, profile.id]
     );
     const project = (rows as any[])[0];
     if (!project) return res.status(404).json({ error: 'Project not found.' });
 
     const [allProjects] = await pool.execute(
-      'SELECT id, title, images FROM supplier_projects WHERE supplier_profile_id = ? ORDER BY sort_order ASC, id DESC',
+      'SELECT id, title, images FROM supplier_projects WHERE supplier_profile_id = ? AND is_published = 1 ORDER BY sort_order ASC, id DESC',
       [profile.id]
     );
 
