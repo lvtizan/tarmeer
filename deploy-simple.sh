@@ -284,10 +284,14 @@ fi
 echo "✓ 代码已是最新，main 已合并"
 echo ""
 
-# 0. Bump patch version (+0.0.1，单一来源：package.json)
+# 0. Bump release version (patch +1; every 50 patch releases carry to minor)
 CURRENT_VER=$(node -p "require('./package.json').version")
 IFS='.' read -r V_MAJOR V_MINOR V_PATCH <<< "$CURRENT_VER"
 V_PATCH=$((V_PATCH + 1))
+if [[ "${V_PATCH}" -ge 50 ]]; then
+  V_MINOR=$((V_MINOR + (V_PATCH / 50)))
+  V_PATCH=$((V_PATCH % 50))
+fi
 NEW_VER="${V_MAJOR}.${V_MINOR}.${V_PATCH}"
 echo "🔖 版本号：${CURRENT_VER} → ${NEW_VER}"
 npm version "$NEW_VER" --no-git-tag-version --allow-same-version
