@@ -11,6 +11,7 @@ import {
   getMyArticles,
   getPublicArticles,
   getPublicArticleBySlug,
+  getRelatedContent,
   adminGetArticles,
   adminDeleteArticle,
 } from '../controllers/articleController';
@@ -21,6 +22,7 @@ const generateLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 
 
 // Public
 router.get('/public', getPublicArticles);
+router.get('/public/:slug/related', getRelatedContent);
 router.get('/public/:slug', getPublicArticleBySlug);
 
 // Company (authenticated)

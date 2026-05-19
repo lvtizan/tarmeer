@@ -1,8 +1,29 @@
 import { useEffect, useState } from 'react';
+
+const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 import { Helmet } from 'react-helmet-async';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Building2 } from 'lucide-react';
 import { fetchPublicArticle, type PublicArticle } from '../lib/blogArticleClient';
+
+interface RelatedCase {
+  id: number;
+  title: string;
+  slug: string | null;
+  coverImage: string | null;
+  companyName: string | null;
+  companySlug: string | null;
+}
+
+interface RelatedArticle {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  coverImage: string | null;
+  companyName: string | null;
+  createdAt: string;
+}
 
 function parseTags(tags: string | string[] | null): string[] {
   if (!tags) return [];
@@ -53,6 +74,8 @@ export default function BlogDetailPage() {
   const [article, setArticle] = useState<PublicArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [relatedCases, setRelatedCases] = useState<RelatedCase[]>([]);
+  const [relatedArticles, setRelatedArticles] = useState<RelatedArticle[]>([]);
 
   useEffect(() => {
     if (!slug) {
@@ -78,6 +101,18 @@ export default function BlogDetailPage() {
       .finally(() => setLoading(false));
 
     return () => abortController.abort();
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    fetch(`${API_BASE}/articles/public/${slug}/related`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (!data) return;
+        setRelatedCases(data.relatedCases || []);
+        setRelatedArticles(data.relatedArticles || []);
+      })
+      .catch(() => {});
   }, [slug]);
 
   if (loading) {
@@ -268,6 +303,81 @@ export default function BlogDetailPage() {
               Find Companies
             </Link>
           </div>
+
+          {/* Related Cases */}
+          {relatedCases.length > 0 && (
+            <section className="mt-16">
+              <h2 className="font-serif text-2xl font-bold text-[#1c1917] mb-6">Related Projects</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {relatedCases.map((c) => (
+                  <Link
+                    key={c.id}
+                    to={c.companySlug && c.slug ? `/companies/${c.companySlug}/${c.slug}` : '/companies'}
+                    className="group block rounded-2xl overflow-hidden border border-stone-200 hover:border-[#b8864a]/40 transition-colors"
+                  >
+                    <div className="aspect-video bg-stone-100 overflow-hidden">
+                      {c.coverImage ? (
+                        <img
+                          src={c.coverImage}
+                          alt={c.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-stone-200 flex items-center justify-center">
+                          <Building2 className="w-8 h-8 text-stone-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-[15px] font-semibold text-[#1c1917] line-clamp-2 group-hover:text-[#b8864a] transition-colors">
+                        {c.title}
+                      </p>
+                      {c.companyName && (
+                        <p className="mt-1 text-[13px] text-[#6b6b6b]">{c.companyName}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Related Articles */}
+          {relatedArticles.length > 0 && (
+            <section className="mt-12 pb-4">
+              <h2 className="font-serif text-2xl font-bold text-[#1c1917] mb-6">Related Articles</h2>
+              <div className="flex flex-col gap-4">
+                {relatedArticles.map((a) => (
+                  <Link
+                    key={a.id}
+                    to={`/blog/${a.slug}`}
+                    className="group flex gap-4 items-start rounded-2xl border border-stone-200 hover:border-[#b8864a]/40 transition-colors p-4"
+                  >
+                    {a.coverImage && (
+                      <img
+                        src={a.coverImage}
+                        alt={a.title}
+                        loading="lazy"
+                        className="w-24 h-16 object-cover rounded-xl flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-semibold text-[#1c1917] line-clamp-2 group-hover:text-[#b8864a] transition-colors">
+                        {a.title}
+                      </p>
+                      {a.excerpt && (
+                        <p className="mt-1 text-[13px] text-[#6b6b6b] line-clamp-2">{a.excerpt}</p>
+                      )}
+                      {a.companyName && (
+                        <p className="mt-1 text-[12px] text-stone-400">{a.companyName}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </article>
     </>

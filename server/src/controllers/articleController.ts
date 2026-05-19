@@ -271,6 +271,113 @@ export async function getPublicArticleBySlug(req: Request, res: Response) {
 }
 
 // ──────────────────────────────────────────────
+// GET /api/articles/public/:slug/related
+// Returns related cases (projects) + related articles by tag overlap
+// ──────────────────────────────────────────────
+export async function getRelatedContent(req: Request, res: Response) {
+  try {
+    const { slug } = req.params;
+
+    // Fetch current article tags
+    const [articleRows] = await pool.execute(
+      `SELECT id, tags FROM articles WHERE slug = ? AND status = 'published' LIMIT 1`,
+      [slug]
+    );
+    const article = (articleRows as any[])[0];
+    if (!article) return res.json({ relatedCases: [], relatedArticles: [] });
+
+    let articleTags: string[] = [];
+    try {
+      const parsed = typeof article.tags === 'string' ? JSON.parse(article.tags) : article.tags;
+      if (Array.isArray(parsed)) articleTags = parsed.map((t: string) => String(t).toLowerCase().trim());
+    } catch {}
+
+    // ── Related cases (projects) ──
+    const [projectRows] = await pool.query(
+      `SELECT p.id, p.title, p.slug AS project_slug, p.images, p.service_tags, p.space_type, p.style,
+              cp.company_name, cp.slug AS company_slug
+       FROM projects p
+       JOIN company_profiles cp ON p.company_profile_id = cp.id
+       WHERE p.status = 'published' AND p.deleted_at IS NULL AND cp.status = 'approved'
+       ORDER BY p.created_at DESC
+       LIMIT 80`
+    );
+
+    function parseTagField(f: unknown): string[] {
+      if (!f) return [];
+      try {
+        const parsed = typeof f === 'string' ? JSON.parse(f) : f;
+        if (Array.isArray(parsed)) return parsed.map((t: unknown) => String(t).toLowerCase().trim());
+        if (typeof parsed === 'string') return [parsed.toLowerCase().trim()];
+      } catch {}
+      return [String(f).toLowerCase().trim()];
+    }
+
+    function tagScore(articleTgs: string[], ...fields: unknown[]): number {
+      if (articleTgs.length === 0) return 0;
+      const projectTags = fields.flatMap((f) => parseTagField(f));
+      return articleTgs.filter((t) => projectTags.some((pt) => pt.includes(t) || t.includes(pt))).length;
+    }
+
+    const scoredProjects = (projectRows as any[]).map((p) => {
+      const score = tagScore(articleTags, p.service_tags, p.space_type, p.style);
+      let coverImage: string | null = null;
+      try {
+        const imgs = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
+        if (Array.isArray(imgs) && imgs.length > 0) {
+          const first = imgs[0];
+          coverImage = typeof first === 'string' ? first : (first?.url ?? first?.src ?? null);
+        }
+      } catch {}
+      return { ...p, score, coverImage };
+    });
+    scoredProjects.sort((a, b) => b.score - a.score);
+
+    const relatedCases = scoredProjects.slice(0, 4).map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.project_slug,
+      coverImage: p.coverImage,
+      companyName: p.company_name,
+      companySlug: p.company_slug,
+    }));
+
+    // ── Related articles ──
+    const [otherArticles] = await pool.query(
+      `SELECT a.id, a.title, a.slug, a.excerpt, a.cover_image, a.tags, a.created_at,
+              cp.company_name
+       FROM articles a
+       LEFT JOIN company_profiles cp ON a.company_profile_id = cp.id
+       WHERE a.status = 'published' AND a.id != ?
+       ORDER BY a.created_at DESC
+       LIMIT 50`,
+      [article.id]
+    );
+
+    const scoredArticles = (otherArticles as any[]).map((a) => ({
+      ...a,
+      score: tagScore(articleTags, a.tags),
+    }));
+    scoredArticles.sort((a, b) => b.score - a.score);
+
+    const relatedArticles = scoredArticles.slice(0, 3).map((a) => ({
+      id: a.id,
+      title: a.title,
+      slug: a.slug,
+      excerpt: a.excerpt,
+      coverImage: a.cover_image,
+      companyName: a.company_name,
+      createdAt: a.created_at,
+    }));
+
+    res.json({ relatedCases, relatedArticles });
+  } catch (err) {
+    console.error(TAG, 'getRelatedContent error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+}
+
+// ──────────────────────────────────────────────
 // Admin: GET /api/articles/admin
 // ──────────────────────────────────────────────
 export async function adminGetArticles(req: Request, res: Response) {
