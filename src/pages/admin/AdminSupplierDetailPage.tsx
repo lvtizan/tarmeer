@@ -785,7 +785,7 @@ export default function AdminSupplierDetailPage() {
                             return (
                               <button
                                 onClick={() => setCover(imgs[0])}
-                                className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
+                                className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
                                   isCover
                                     ? 'bg-[#b8864a] text-white opacity-100'
                                     : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
@@ -793,12 +793,13 @@ export default function AdminSupplierDetailPage() {
                                 title={isCover ? t('Currently set as cover', '当前封面') : t('Set as Cover', '设为封面')}
                               >
                                 {isCover ? <Check className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                                <span className="text-[9px] leading-none">{isCover ? t('Cover', '封面') : t('Cover', '封面')}</span>
                               </button>
                             );
                           })()}
                           <button
                             onClick={() => handleToggleProjectPublished(proj.id, !proj.is_published)}
-                            className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
+                            className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
                               proj.is_published !== 0
                                 ? 'bg-white/95 text-stone-700 hover:bg-amber-500 hover:text-white'
                                 : 'bg-amber-500 text-white hover:bg-white/95 hover:text-amber-600'
@@ -806,20 +807,23 @@ export default function AdminSupplierDetailPage() {
                             title={proj.is_published !== 0 ? t('Hide project', '隐藏项目') : t('Show project', '显示项目')}
                           >
                             {proj.is_published !== 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            <span className="text-[9px] leading-none">{proj.is_published !== 0 ? t('Hide', '隐藏') : t('Show', '显示')}</span>
                           </button>
                           <button
                             onClick={() => { setEditingProject(proj); setShowProjectModal(true); }}
-                            className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
+                            className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
                             title={t('Edit', '编辑')}
                           >
                             <Pencil className="w-3 h-3" />
+                            <span className="text-[9px] leading-none">{t('Edit', '编辑')}</span>
                           </button>
                           <button
                             onClick={() => handleDeleteProject(proj.id)}
-                            className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-red-500 hover:text-white transition-colors"
+                            className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-red-500 hover:text-white transition-colors"
                             title={t('Delete', '删除')}
                           >
                             <Trash2 className="w-3 h-3" />
+                            <span className="text-[9px] leading-none">{t('Delete', '删除')}</span>
                           </button>
                         </div>
                         {/* Hidden project badge */}

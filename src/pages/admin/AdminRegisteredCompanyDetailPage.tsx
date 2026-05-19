@@ -509,7 +509,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                             <button
                               type="button"
                               onClick={() => handleSetCover(project.images[0])}
-                              className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
+                              className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
                                 isCover
                                   ? 'bg-[#b8864a] text-white !opacity-100'
                                   : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
@@ -517,14 +517,16 @@ export default function AdminRegisteredCompanyDetailPage() {
                               title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
                             >
                               {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                              <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleAddToShowcase(project.images[0])}
-                              className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
+                              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
                               title={t('Add to login page showcase', '添加到登录页展示')}
                             >
                               <ImagePlus className="w-3 h-3" />
+                              <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
                             </button>
                           </div>
                         );
@@ -893,7 +895,7 @@ export default function AdminRegisteredCompanyDetailPage() {
                               <button
                                 type="button"
                                 onClick={() => handleSetCover(project.images[0])}
-                                className={`w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-colors ${
+                                className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
                                   isCover
                                     ? 'bg-[#b8864a] text-white !opacity-100'
                                     : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
@@ -901,14 +903,16 @@ export default function AdminRegisteredCompanyDetailPage() {
                                 title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
                               >
                                 {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                                <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleAddToShowcase(project.images[0])}
-                                className="w-6 h-6 rounded-md bg-white/95 text-stone-700 flex items-center justify-center shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
+                                className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
                                 title={t('Add to login page showcase', '添加到登录页展示')}
                               >
                                 <ImagePlus className="w-3 h-3" />
+                                <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
                               </button>
                             </div>
                           );
