@@ -371,7 +371,7 @@ export default function ForSuppliersPage() {
         <meta property="og:url" content="https://www.tarmeer.com/for-suppliers" />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.tarmeer.com/for-suppliers" />
-        <meta name="robots" content="noindex, nofollow" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
 
       {/* Hero */}
