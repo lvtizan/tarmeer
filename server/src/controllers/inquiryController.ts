@@ -1,5 +1,5 @@
 import pool from '../config/database';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { analyticsEvents } from '../lib/analyticsEvents';
 import { notifyNewInquiry } from '../services/notificationService';
 import { pushLeadToCRM, type LeadPayload } from '../lib/crmPush';
@@ -245,11 +245,23 @@ export async function exportInquiries(req: any, res: any) {
       'Created At': row.created_at,
     }));
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, 'Inquiries');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Inquiries');
+    worksheet.columns = Object.keys(data[0] || {
+      ID: '',
+      Name: '',
+      Phone: '',
+      City: '',
+      'Area Range': '',
+      Message: '',
+      'Source Company': '',
+      Status: '',
+      'Admin Notes': '',
+      'Created At': '',
+    }).map((header) => ({ header, key: header, width: Math.min(Math.max(header.length + 8, 14), 36) }));
+    worksheet.addRows(data);
 
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=inquiries-${new Date().toISOString().slice(0, 10)}.xlsx`);
