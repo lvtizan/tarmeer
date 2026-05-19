@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
 import { countWords, estimateReadingTime, markdownToHtml } from '../lib/articleContent';
+import { resolveMirroredArticleImage, rewriteMirroredArticleContent } from '../lib/articleImageMirror';
 import { slugify } from '../lib/slugify';
 import { generateArticle, isLlmConfigured } from '../services/llmService';
 import { validationResult } from 'express-validator';
@@ -223,8 +224,13 @@ export async function getPublicArticles(req: Request, res: Response) {
        LIMIT ${limit} OFFSET ${offset}`
     );
 
+    const articles = (rows as any[]).map((article) => ({
+      ...article,
+      cover_image: resolveMirroredArticleImage(article.slug, article.cover_image),
+    }));
+
     res.json({
-      articles: rows,
+      articles,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
@@ -259,7 +265,11 @@ export async function getPublicArticleBySlug(req: Request, res: Response) {
     res.json({
       article: {
         ...article,
-        content_html: markdownToHtml(article.content || '', article.cover_image),
+        cover_image: resolveMirroredArticleImage(article.slug, article.cover_image),
+        content_html: rewriteMirroredArticleContent(
+          article.slug,
+          markdownToHtml(article.content || '', article.cover_image)
+        ),
         word_count: wordCount,
         reading_time: readingTime,
       },
@@ -365,7 +375,7 @@ export async function getRelatedContent(req: Request, res: Response) {
       title: a.title,
       slug: a.slug,
       excerpt: a.excerpt,
-      coverImage: a.cover_image,
+      coverImage: resolveMirroredArticleImage(a.slug, a.cover_image),
       companyName: a.company_name,
       createdAt: a.created_at,
     }));
