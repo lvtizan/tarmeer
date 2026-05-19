@@ -69,6 +69,18 @@ function markdownToHtml(content: string, coverImage?: string | null): string {
     .join('\n');
 }
 
+function getImagePreconnectOrigins(imageUrl: string | null): string[] {
+  if (!imageUrl) return [];
+
+  try {
+    const url = new URL(imageUrl);
+    if (url.origin === 'https://www.tarmeer.com') return [];
+    return [url.origin];
+  } catch {
+    return [];
+  }
+}
+
 export default function BlogDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [article, setArticle] = useState<PublicArticle | null>(null);
@@ -105,14 +117,26 @@ export default function BlogDetailPage() {
 
   useEffect(() => {
     if (!slug) return;
-    fetch(`${API_BASE}/articles/public/${slug}/related`)
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        if (!data) return;
-        setRelatedCases(data.relatedCases || []);
-        setRelatedArticles(data.relatedArticles || []);
-      })
-      .catch(() => {});
+
+    const fetchRelated = () => {
+      fetch(`${API_BASE}/articles/public/${slug}/related`)
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (!data) return;
+          setRelatedCases(data.relatedCases || []);
+          setRelatedArticles(data.relatedArticles || []);
+        })
+        .catch(() => {});
+    };
+
+    const browserWindow = globalThis.window;
+    if (browserWindow && 'requestIdleCallback' in browserWindow) {
+      const idleId = browserWindow.requestIdleCallback(fetchRelated, { timeout: 1800 });
+      return () => browserWindow.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(fetchRelated, 600);
+    return () => globalThis.clearTimeout(timeoutId);
   }, [slug]);
 
   if (loading) {
@@ -160,6 +184,7 @@ export default function BlogDetailPage() {
   const wordCount = article.word_count || article.content?.split(/\s+/).filter(Boolean).length || 0;
   const readingTime = article.reading_time || Math.max(1, Math.ceil(wordCount / 200));
   const articleContentHtml = article.content_html || markdownToHtml(article.content || '', article.cover_image);
+  const coverImagePreconnectOrigins = getImagePreconnectOrigins(article.cover_image);
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -222,6 +247,12 @@ export default function BlogDetailPage() {
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
         <meta name="keywords" content={`interior design UAE, renovation tips, ${tags.join(', ')}, Tarmeer blog`} />
         <link rel="canonical" href={canonicalUrl} />
+        {article.cover_image && (
+          <link rel="preload" as="image" href={article.cover_image} fetchPriority="high" />
+        )}
+        {coverImagePreconnectOrigins.map((origin) => (
+          <link key={origin} rel="preconnect" href={origin} crossOrigin="" />
+        ))}
         <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
       </Helmet>
@@ -279,6 +310,8 @@ export default function BlogDetailPage() {
               alt={article.title}
               className="w-full h-auto rounded-2xl mb-10 aspect-[16/9] object-cover"
               decoding="async"
+              loading="eager"
+              fetchPriority="high"
             />
           )}
 
