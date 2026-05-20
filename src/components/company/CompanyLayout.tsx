@@ -22,7 +22,6 @@ export default function CompanyLayout() {
   const [companyName, setCompanyName] = useState('');
   const [companyType, setCompanyType] = useState('');
   const [crmEnabled, setCrmEnabled] = useState(false);
-  const [crmOpening, setCrmOpening] = useState(false);
   const [linkedPortals, setLinkedPortals] = useState<LinkedPortal[]>([]);
   const [switchingPortal, setSwitchingPortal] = useState('');
 
@@ -83,19 +82,8 @@ export default function CompanyLayout() {
     } catch { } finally { setSwitchingPortal(''); }
   };
 
-  const handleOpenCrm = async () => {
-    if (crmOpening) return;
-    setCrmOpening(true);
-    // Open window synchronously (before await) to avoid popup blocker
-    const win = window.open('', '_blank');
-    try {
-      const res: any = await api.post('/auth/company/crm-sso', {});
-      if (res?.consumeUrl && win) {
-        win.location.href = res.consumeUrl;
-      } else {
-        win?.close();
-      }
-    } catch { win?.close(); } finally { setCrmOpening(false); }
+  const handleOpenCrm = () => {
+    window.open('https://crm.tarmeer.com', '_blank');
   };
 
   if (!token) return <Navigate to="/auth" replace />;
@@ -106,13 +94,6 @@ export default function CompanyLayout() {
   return (
     <div className="h-screen bg-stone-50 flex flex-col overflow-hidden">
       <PhoneRequiredModal blocking />
-      {/* CRM loading overlay */}
-      {crmOpening && (
-        <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-          <div className="w-8 h-8 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
-          <p className="text-[15px] font-medium text-violet-700">Logging into CRM, please stay on this page…</p>
-        </div>
-      )}
       {/* Portal header */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-30 h-14 flex items-center px-4 sm:px-6 justify-between shrink-0">
         <TarmeerLogo className="h-6" />
@@ -150,9 +131,9 @@ export default function CompanyLayout() {
                 <span className="text-sm font-medium">Settings</span>
               </NavLink>
               {crmEnabled && (
-                <button onClick={handleOpenCrm} disabled={crmOpening} className="flex items-center gap-3 px-4 py-3 rounded-full transition w-full text-left bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 disabled:opacity-50">
+                <button onClick={handleOpenCrm} className="flex items-center gap-3 px-4 py-3 rounded-full transition w-full text-left bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100">
                   <ExternalLink className="w-5 h-5 shrink-0" />
-                  <span className="text-sm font-medium">{crmOpening ? 'Opening…' : 'Open CRM'}</span>
+                  <span className="text-sm font-medium">Open CRM</span>
                 </button>
               )}
               {linkedPortals.length > 0 && (
@@ -218,7 +199,7 @@ export default function CompanyLayout() {
           Profile
         </NavLink>
         {crmEnabled && (
-          <button onClick={handleOpenCrm} disabled={crmOpening} className="flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] text-violet-600 font-medium disabled:opacity-50">
+          <button onClick={handleOpenCrm} className="flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] text-violet-600 font-medium">
             <ExternalLink className="w-5 h-5" />
             CRM
           </button>
