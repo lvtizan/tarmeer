@@ -3,6 +3,8 @@ import { Helmet } from 'react-helmet-async';
 import { Check } from 'lucide-react';
 import TarmeerLogo from '../components/TarmeerLogo';
 
+type Lang = 'en' | 'zh';
+
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 // ── Fetch real supplier product images for visual mockups ────────────────────
@@ -44,13 +46,21 @@ const FALLBACK_GRADS = [
 ];
 
 // ── Step 1: Supplier registration form ───────────────────────────────────────
-function Step1Image() {
-  const fields = [
-    { label: 'Full Name', placeholder: 'Your full name' },
-    { label: 'Email', placeholder: 'you@supplier.com' },
-    { label: 'Phone', placeholder: '+971 50 000 0000' },
-    { label: 'Password', placeholder: '••••••••' },
-  ];
+function Step1Image({ lang }: { lang: Lang }) {
+  const zh = lang === 'zh';
+  const fields = zh
+    ? [
+        { label: '姓名', placeholder: '您的姓名' },
+        { label: '邮箱', placeholder: 'you@supplier.com' },
+        { label: '手机号', placeholder: '+971 50 000 0000' },
+        { label: '密码', placeholder: '••••••••' },
+      ]
+    : [
+        { label: 'Full Name', placeholder: 'Your full name' },
+        { label: 'Email', placeholder: 'you@supplier.com' },
+        { label: 'Phone', placeholder: '+971 50 000 0000' },
+        { label: 'Password', placeholder: '••••••••' },
+      ];
   return (
     <div className="h-full overflow-hidden flex items-start justify-center pt-4"
       style={{ background: 'linear-gradient(160deg, #1a1410 0%, #2d1f0e 100%)' }}>
@@ -58,9 +68,11 @@ function Step1Image() {
         <div className="bg-white rounded-2xl mx-4 px-5 pt-5 pb-4 shadow-2xl">
           <div className="text-[22px] font-bold text-[#1a1410] mb-1"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            Join as a Supplier
+            {zh ? '注册供应商账号' : 'Join as a Supplier'}
           </div>
-          <div className="text-[13px] text-stone-400 mb-4">List your materials & reach UAE design firms</div>
+          <div className="text-[13px] text-stone-400 mb-4">
+            {zh ? '上架材料，触达 UAE 设计公司' : 'List your materials & reach UAE design firms'}
+          </div>
 
           {/* Google */}
           <div className="h-11 rounded-xl border border-stone-200 flex items-center justify-center gap-2.5 mb-3">
@@ -70,11 +82,15 @@ function Step1Image() {
               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            <span className="text-[13px] font-medium text-stone-700">Continue with Google</span>
+            <span className="text-[13px] font-medium text-stone-700">
+              {zh ? '使用 Google 登录' : 'Continue with Google'}
+            </span>
           </div>
           <div className="flex items-center gap-3 mb-3">
             <div className="flex-1 h-px bg-stone-200" />
-            <span className="text-[10px] text-stone-400 uppercase tracking-wider">or with email</span>
+            <span className="text-[10px] text-stone-400 uppercase tracking-wider">
+              {zh ? '或使用邮箱' : 'or with email'}
+            </span>
             <div className="flex-1 h-px bg-stone-200" />
           </div>
 
@@ -88,7 +104,9 @@ function Step1Image() {
           ))}
           <div className="mt-4 h-12 rounded-xl flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #b8864a 0%, #d4a96a 100%)' }}>
-            <span className="text-white font-semibold text-[15px]">Create Account →</span>
+            <span className="text-white font-semibold text-[15px]">
+              {zh ? '创建账号 →' : 'Create Account →'}
+            </span>
           </div>
         </div>
       </div>
@@ -97,7 +115,8 @@ function Step1Image() {
 }
 
 // ── Step 2: Email verification ───────────────────────────────────────────────
-function Step2Image() {
+function Step2Image({ lang }: { lang: Lang }) {
+  const zh = lang === 'zh';
   return (
     <div className="h-full overflow-hidden flex items-start justify-center bg-[#f5f0ea] pt-4">
       <div style={{ transform: 'scale(0.66)', transformOrigin: 'top center', width: '100%' }}>
@@ -110,20 +129,28 @@ function Step2Image() {
           </div>
           <div className="text-[20px] font-bold text-[#1a1410] mb-1.5"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            Check Your Inbox
+            {zh ? '请查收邮件' : 'Check Your Inbox'}
           </div>
           <div className="text-[13px] text-stone-500 mb-4 leading-relaxed px-2">
-            We sent a verification link to<br />
+            {zh ? '我们已向以下地址发送验证链接' : 'We sent a verification link to'}<br />
             <strong className="text-[#1a1410]">you@supplier.com</strong>
           </div>
           <div className="bg-[#fdf8f2] border border-[#b8864a]/20 rounded-xl px-4 py-3 mb-4 text-left">
             <div className="text-[11px] text-stone-500 mb-1">From: Tarmeer &lt;noreply@tarmeer.com&gt;</div>
-            <div className="text-[12.5px] font-semibold text-[#1a1410] mb-1">Verify your supplier account</div>
-            <div className="text-[11.5px] text-stone-500">Click the button to activate...</div>
+            <div className="text-[12.5px] font-semibold text-[#1a1410] mb-1">
+              {zh ? '验证您的供应商账号' : 'Verify your supplier account'}
+            </div>
+            <div className="text-[11.5px] text-stone-500">
+              {zh ? '点击按钮激活账号...' : 'Click the button to activate...'}
+            </div>
             <div className="mt-2 inline-flex h-7 px-3 rounded-md items-center text-[11px] font-semibold text-white"
-              style={{ background: '#b8864a' }}>Verify Email →</div>
+              style={{ background: '#b8864a' }}>
+              {zh ? '验证邮箱 →' : 'Verify Email →'}
+            </div>
           </div>
-          <div className="text-[11px] text-stone-400">Didn't receive it? Resend in 30s</div>
+          <div className="text-[11px] text-stone-400">
+            {zh ? '没收到？30 秒后重新发送' : "Didn't receive it? Resend in 30s"}
+          </div>
         </div>
       </div>
     </div>
@@ -131,36 +158,54 @@ function Step2Image() {
 }
 
 // ── Step 3: Profile (categories pickable) ────────────────────────────────────
-function Step3Image() {
-  const cats = [
-    { name: 'Furniture', selected: true },
-    { name: 'Stone', selected: true },
-    { name: 'Lighting', selected: false },
-    { name: 'Flooring', selected: true },
-    { name: 'Kitchen', selected: false },
-    { name: 'Curtains', selected: false },
-    { name: 'Paint', selected: false },
-    { name: 'Hardware', selected: false },
-  ];
+function Step3Image({ lang }: { lang: Lang }) {
+  const zh = lang === 'zh';
+  const cats = zh
+    ? [
+        { name: '家具', selected: true },
+        { name: '石材', selected: true },
+        { name: '灯具', selected: false },
+        { name: '地板', selected: true },
+        { name: '橱柜', selected: false },
+        { name: '窗帘', selected: false },
+        { name: '涂料', selected: false },
+        { name: '五金', selected: false },
+      ]
+    : [
+        { name: 'Furniture', selected: true },
+        { name: 'Stone', selected: true },
+        { name: 'Lighting', selected: false },
+        { name: 'Flooring', selected: true },
+        { name: 'Kitchen', selected: false },
+        { name: 'Curtains', selected: false },
+        { name: 'Paint', selected: false },
+        { name: 'Hardware', selected: false },
+      ];
   return (
     <div className="h-full overflow-hidden flex items-start justify-center bg-[#faf9f7] pt-4">
       <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center', width: '100%' }}>
         <div className="bg-white rounded-2xl mx-4 px-5 pt-5 pb-4 shadow-2xl">
           <div className="text-[19px] font-bold text-[#1a1410] mb-1"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            Your Supplier Profile
+            {zh ? '供应商资料' : 'Your Supplier Profile'}
           </div>
-          <div className="text-[12px] text-stone-400 mb-4">Tell design firms what you specialise in</div>
+          <div className="text-[12px] text-stone-400 mb-4">
+            {zh ? '告诉设计公司您的供货专长' : 'Tell design firms what you specialise in'}
+          </div>
 
           <div className="mb-3">
-            <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">Company Name</div>
+            <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">
+              {zh ? '公司名称' : 'Company Name'}
+            </div>
             <div className="h-11 rounded-xl bg-stone-50 border border-stone-200 flex items-center px-4">
               <span className="text-[13px] text-[#1a1410]">Al Andalus Stone Trading</span>
             </div>
           </div>
 
           <div className="mb-3">
-            <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">Categories</div>
+            <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">
+              {zh ? '供货类别' : 'Categories'}
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {cats.map(c => (
                 <span key={c.name} className={`px-3 py-1.5 rounded-full text-[11.5px] font-medium ${
@@ -173,9 +218,13 @@ function Step3Image() {
           </div>
 
           <div className="mb-3">
-            <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">Description</div>
+            <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">
+              {zh ? '公司简介' : 'Description'}
+            </div>
             <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-2.5 text-[12px] text-stone-500 leading-relaxed">
-              Importer of premium natural stone — marble, travertine, onyx — sourced from quarries in Italy, Turkey & Spain. UAE-based since 2014.
+              {zh
+                ? '进口优质天然石材 —— 大理石、石灰华、缟玛瑙，产地意大利、土耳其、西班牙。2014 年起扎根 UAE。'
+                : 'Importer of premium natural stone — marble, travertine, onyx — sourced from quarries in Italy, Turkey & Spain. UAE-based since 2014.'}
             </div>
           </div>
 
@@ -187,7 +236,9 @@ function Step3Image() {
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
             </div>
-            <div className="text-[12px] text-stone-500">Upload logo & cover image (recommended)</div>
+            <div className="text-[12px] text-stone-500">
+              {zh ? '上传 Logo 和封面图（推荐）' : 'Upload logo & cover image (recommended)'}
+            </div>
           </div>
         </div>
       </div>
@@ -196,15 +247,20 @@ function Step3Image() {
 }
 
 // ── Step 4: Products grid + catalog list ─────────────────────────────────────
-function Step4Image({ images }: { images: string[] }) {
+function Step4Image({ images, lang }: { images: string[]; lang: Lang }) {
+  const zh = lang === 'zh';
   return (
     <div className="h-full bg-[#faf9f7] overflow-hidden flex items-start justify-center pt-4">
       <div style={{ transform: 'scale(0.78)', transformOrigin: 'top center', width: '100%' }}>
         <div className="mx-4">
           {/* Title bar */}
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[14px] font-semibold text-[#1a1410]">Products</div>
-            <div className="text-[11px] text-stone-400">12 uploaded</div>
+            <div className="text-[14px] font-semibold text-[#1a1410]">
+              {zh ? '产品' : 'Products'}
+            </div>
+            <div className="text-[11px] text-stone-400">
+              {zh ? '已上传 12 件' : '12 uploaded'}
+            </div>
           </div>
 
           {/* 4-photo product grid */}
@@ -226,13 +282,19 @@ function Step4Image({ images }: { images: string[] }) {
               </svg>
             </div>
             <div>
-              <div className="text-[12px] font-semibold text-[#1a1410]">Add product photo</div>
-              <div className="text-[11px] text-stone-400">Title, category & price (optional)</div>
+              <div className="text-[12px] font-semibold text-[#1a1410]">
+                {zh ? '添加产品照片' : 'Add product photo'}
+              </div>
+              <div className="text-[11px] text-stone-400">
+                {zh ? '标题、类别及可选价格' : 'Title, category & price (optional)'}
+              </div>
             </div>
           </div>
 
           {/* Catalog list */}
-          <div className="text-[14px] font-semibold text-[#1a1410] mb-2">Catalogs (PDF)</div>
+          <div className="text-[14px] font-semibold text-[#1a1410] mb-2">
+            {zh ? '产品目录 (PDF)' : 'Catalogs (PDF)'}
+          </div>
           <div className="space-y-1.5">
             {[
               { name: '2026 Marble Collection.pdf', size: '4.2 MB' },
@@ -263,7 +325,21 @@ function Step4Image({ images }: { images: string[] }) {
 }
 
 // ── Step 5: WhatsApp lead from a design company ──────────────────────────────
-function Step5Image() {
+function Step5Image({ lang }: { lang: Lang }) {
+  const zh = lang === 'zh';
+  const rows = zh
+    ? [
+        ['公司', 'Sahara Design Studio'],
+        ['联系人', 'Layla Haddad · 高级设计师'],
+        ['采购需求', '石灰华地板 · 350 平方米'],
+        ['项目', '迪拜山庄别墅翻新'],
+      ]
+    : [
+        ['Firm', 'Sahara Design Studio'],
+        ['Contact', 'Layla Haddad · Senior Designer'],
+        ['Looking for', 'Travertine flooring · 350 sqm'],
+        ['Project', 'Villa renovation, Dubai Hills'],
+      ];
   return (
     <div className="h-full overflow-hidden flex flex-col" style={{ background: '#dfe7d0' }}>
       <div className="flex-shrink-0 px-3 py-2.5 flex items-center gap-2.5"
@@ -271,7 +347,9 @@ function Step5Image() {
         <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-[14px] flex-shrink-0"
           style={{ background: '#25D366' }}>T</div>
         <div className="flex-1 min-w-0">
-          <div className="text-white text-[12px] font-semibold">Tarmeer Supplier Leads</div>
+          <div className="text-white text-[12px] font-semibold">
+            {zh ? 'Tarmeer 供应商询盘' : 'Tarmeer Supplier Leads'}
+          </div>
           <div className="text-white/60 text-[10px]">online</div>
         </div>
         <div className="flex gap-2.5">
@@ -283,15 +361,10 @@ function Step5Image() {
       <div className="flex-1 px-2.5 py-2.5 flex flex-col gap-2 overflow-hidden">
         <div className="bg-white rounded-xl rounded-tl-sm px-3 py-2 shadow-sm">
           <div className="text-[11px] font-bold mb-1.5" style={{ color: '#075E54' }}>
-            New Inquiry from Design Firm
+            {zh ? '来自设计公司的新询盘' : 'New Inquiry from Design Firm'}
           </div>
           <div className="space-y-0.5">
-            {[
-              ['Firm', 'Sahara Design Studio'],
-              ['Contact', 'Layla Haddad · Senior Designer'],
-              ['Looking for', 'Travertine flooring · 350 sqm'],
-              ['Project', 'Villa renovation, Dubai Hills'],
-            ].map(([k, v]) => (
+            {rows.map(([k, v]) => (
               <div key={k} className="text-[11px] text-stone-700">
                 <span className="text-stone-400">{k}: </span><strong>{v}</strong>
               </div>
@@ -305,7 +378,9 @@ function Step5Image() {
             <span style={{ color: '#25D366' }}>📞</span>
             <strong>+971 50 234 5678</strong>
           </div>
-          <div className="text-[10px] text-stone-400 mt-0.5">Tap to call or message the designer</div>
+          <div className="text-[10px] text-stone-400 mt-0.5">
+            {zh ? '点击拨打或发消息给设计师' : 'Tap to call or message the designer'}
+          </div>
           <div className="text-[9px] text-stone-400 text-right mt-1">10:18 AM ✓✓</div>
         </div>
       </div>
@@ -314,7 +389,7 @@ function Step5Image() {
 }
 
 // ── Step data ────────────────────────────────────────────────────────────────
-const STEPS = [
+const STEPS_EN = [
   {
     num: '01',
     time: '~2 min',
@@ -371,16 +446,77 @@ const STEPS = [
   },
 ];
 
+const STEPS_ZH = [
+  {
+    num: '01',
+    time: '约 2 分钟',
+    title: '注册供应商账号',
+    body: '通过 Google 或邮箱注册供应商账号。加入 Tarmeer 完全免费 —— 只在成交时收费。',
+    highlights: [
+      '一键 Google 登录',
+      '或使用邮箱 + 密码',
+      '手机号用于接收 WhatsApp 询盘',
+    ],
+  },
+  {
+    num: '02',
+    time: '约 1 分钟',
+    title: '验证您的邮箱',
+    body: '我们会向您发送验证链接，点击后即可激活供应商账号。',
+    highlights: [
+      '验证邮件 30 秒内送达',
+      '使用 Google 登录可跳过此步骤',
+    ],
+  },
+  {
+    num: '03',
+    time: '约 5 分钟',
+    title: '完善供应商资料',
+    body: '选择您的供货类别（石材、灯具、地板、橱柜、五金…），填写公司简介，上传 Logo 和封面图。',
+    highlights: [
+      '选择 1–5 个供货类别',
+      '简短公司介绍（产地、在 UAE 年限）',
+      'Logo 和封面图用于公开展示',
+    ],
+    active: true,
+  },
+  {
+    num: '04',
+    time: '约 10 分钟（必填）',
+    title: '上传产品与产品目录',
+    body: '上传产品照片和 PDF 目录。资料越丰富，设计师搜索材料时排名越靠前。',
+    highlights: [
+      '产品照片：标题、类别和可选价格',
+      'PDF 目录（系列 / 报价单）',
+      '产品越多 + 目录越全 = 搜索排名越高',
+    ],
+  },
+  {
+    num: '05',
+    time: '自动推送',
+    title: '接收设计公司询盘',
+    body: '当设计公司需要您所属类别的材料时，Tarmeer 会直接将线索推送给您，包含公司名称、设计师联系方式和项目范围。',
+    highlights: [
+      'WhatsApp 通知附带设计师姓名、项目信息和联系方式',
+      '直接与对方沟通 —— 无中间商，无佣金',
+    ],
+  },
+];
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function SupplierStartGuidePage() {
+  const [lang, setLang] = useState<Lang>('en');
   const images = useSupplierImages(8);
 
+  const zh = lang === 'zh';
+  const STEPS = zh ? STEPS_ZH : STEPS_EN;
+
   const renderImage = (index: number) => {
-    if (index === 0) return <Step1Image />;
-    if (index === 1) return <Step2Image />;
-    if (index === 2) return <Step3Image />;
-    if (index === 3) return <Step4Image images={images.slice(0, 4)} />;
-    return <Step5Image />;
+    if (index === 0) return <Step1Image lang={lang} />;
+    if (index === 1) return <Step2Image lang={lang} />;
+    if (index === 2) return <Step3Image lang={lang} />;
+    if (index === 3) return <Step4Image images={images.slice(0, 4)} lang={lang} />;
+    return <Step5Image lang={lang} />;
   };
 
   return (
@@ -401,7 +537,7 @@ export default function SupplierStartGuidePage() {
           "name": "How to Join Tarmeer as a Material Supplier",
           "description": "Step-by-step guide for material suppliers joining Tarmeer UAE.",
           "totalTime": "PT20M",
-          "step": STEPS.map((s, i) => ({
+          "step": STEPS_EN.map((s, i) => ({
             "@type": "HowToStep",
             "position": i + 1,
             "name": s.title,
@@ -412,8 +548,31 @@ export default function SupplierStartGuidePage() {
 
       {/* ── Header ── */}
       <header className="h-14 bg-white border-b border-stone-100 flex items-center px-4">
-        <div className="max-w-2xl mx-auto w-full">
+        <div className="max-w-2xl mx-auto w-full flex items-center justify-between">
           <TarmeerLogo />
+          {/* Language toggle */}
+          <div className="flex items-center gap-1 bg-stone-100 rounded-full p-1">
+            <button
+              onClick={() => setLang('en')}
+              className={`px-3 py-1 rounded-full text-[13px] font-medium transition-all ${
+                lang === 'en'
+                  ? 'bg-white text-[#1a1410] shadow-sm'
+                  : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLang('zh')}
+              className={`px-3 py-1 rounded-full text-[13px] font-medium transition-all ${
+                lang === 'zh'
+                  ? 'bg-white text-[#1a1410] shadow-sm'
+                  : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              中文
+            </button>
+          </div>
         </div>
       </header>
 
@@ -429,18 +588,22 @@ export default function SupplierStartGuidePage() {
 
         <div className="relative z-10 max-w-lg mx-auto">
           <div className="inline-flex items-center gap-2 border border-[#b8864a]/30 bg-[#b8864a]/15 text-[#d4a96a] text-[12px] font-semibold tracking-[0.12em] uppercase px-4 py-1.5 rounded-full mb-5">
-            ✦ For Material Suppliers
+            {zh ? '✦ 面向材料供应商' : '✦ For Material Suppliers'}
           </div>
 
           <h1 className="text-[clamp(32px,8vw,52px)] font-bold leading-[1.15] text-white mb-4"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            Reach UAE Design Firms<br />
-            on{' '}
-            <em className="not-italic text-[#d4a96a]">Tarmeer</em>
+            {zh ? (
+              <>在 Tarmeer 触达<br /><em className="not-italic text-[#d4a96a]">UAE 设计公司</em></>
+            ) : (
+              <>Reach UAE Design Firms<br />on{' '}<em className="not-italic text-[#d4a96a]">Tarmeer</em></>
+            )}
           </h1>
 
           <p className="text-[17px] text-white/60 font-light max-w-sm mx-auto leading-relaxed">
-            List your products &amp; catalogs once. Tarmeer pushes you to design firms actively sourcing your category.
+            {zh
+              ? '一次性上传您的产品与目录，Tarmeer 自动将您推送给正在采购您类别材料的设计公司。'
+              : 'List your products & catalogs once. Tarmeer pushes you to design firms actively sourcing your category.'}
           </p>
         </div>
       </section>
@@ -448,14 +611,20 @@ export default function SupplierStartGuidePage() {
       {/* ── Section heading ── */}
       <div className="text-center px-6 pt-10 pb-6">
         <span className="text-[12px] font-semibold tracking-[0.14em] uppercase text-[#b8864a] block mb-2">
-          How it works
+          {zh ? '操作流程' : 'How it works'}
         </span>
         <h2 className="text-[clamp(24px,6vw,36px)] font-semibold text-[#1a1410] leading-snug"
           style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-          Five steps to your<br />first design-firm lead
+          {zh ? (
+            <>五步完成入驻<br />拿到第一个设计公司询盘</>
+          ) : (
+            <>Five steps to your<br />first design-firm lead</>
+          )}
         </h2>
         <p className="text-[15px] text-[#7a6a5a] mt-2 max-w-xs mx-auto">
-          Most suppliers complete the full setup in under 20 minutes.
+          {zh
+            ? '大多数供应商在 20 分钟内完成全部设置。'
+            : 'Most suppliers complete the full setup in under 20 minutes.'}
         </p>
       </div>
 
