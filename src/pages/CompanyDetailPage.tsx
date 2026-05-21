@@ -7,7 +7,7 @@ import {
   Calendar, FolderOpen, Mail, ChevronLeft, ChevronRight,
   Share2, ExternalLink, X, BadgeCheck, Link2, CheckCircle2,
 } from 'lucide-react';
-import type { Company, PortfolioItem } from '../lib/companyData';
+import type { Company, CompanyProjectCard, PortfolioItem } from '../lib/companyData';
 import { getCompanyTypeLabel } from '../lib/companyData';
 import { trackViewContent } from '../lib/analytics';
 import { trackEvent } from '../lib/trackEvent';
@@ -57,7 +57,7 @@ export default function CompanyDetailPage() {
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [portfolioMode, setPortfolioMode] = useState<'project' | 'style'>('project');
+  const portfolioMode: 'project' | 'style' = 'project';
   const [showFloatingForm, setShowFloatingForm] = useState(false);
   const [floatingFormDismissed, setFloatingFormDismissed] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -165,6 +165,19 @@ export default function CompanyDetailPage() {
   const activeCategories = portfolioMode === 'project' && hasProjectCategories
     ? normalizedProjectCategories
     : normalizedStyleCategories;
+
+  // Directory companies: convert portfolioCategoriesByProject → CompanyProjectCard[]
+  const directoryProjects = useMemo<CompanyProjectCard[]>(() => {
+    if (company?.isClaimed) return [];
+    return Object.entries(normalizedProjectCategories).map(([title, items]) => ({
+      title,
+      slug: '',
+      description: '',
+      style: '',
+      location: '',
+      images: items.map((i) => i.url),
+    }));
+  }, [company?.isClaimed, normalizedProjectCategories]);
 
   const allLightboxImages: PortfolioItem[] = useMemo(() => {
     return Object.values(activeCategories).flat();
@@ -621,38 +634,23 @@ export default function CompanyDetailPage() {
             <div className="mt-2">
               {company.isClaimed && company.projects && company.projects.length > 0 ? (
                 <CompanyProjectsSection company={company} projects={company.projects} />
+              ) : directoryProjects.length > 0 ? (
+                <CompanyProjectsSection
+                  company={company}
+                  projects={directoryProjects}
+                  onProjectClick={(proj) => {
+                    const flat = Object.values(normalizedProjectCategories).flat();
+                    const idx = flat.findIndex((item) => item.url === proj.images[0]);
+                    setLightboxIndex(Math.max(0, idx));
+                    setLightboxOpen(true);
+                  }}
+                />
               ) : (
-                <>
-                  {hasProjectCategories && (
-                    <div className="flex gap-2 mb-4 mt-6">
-                      <button
-                        onClick={() => setPortfolioMode('project')}
-                        className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
-                          portfolioMode === 'project'
-                            ? 'bg-[#b8864a] text-white'
-                            : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                        }`}
-                      >
-                        By Project ({Object.keys(normalizedProjectCategories).length})
-                      </button>
-                      <button
-                        onClick={() => setPortfolioMode('style')}
-                        className={`px-4 py-1.5 rounded-2xl text-sm font-medium transition ${
-                          portfolioMode === 'style'
-                            ? 'bg-[#b8864a] text-white'
-                            : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                        }`}
-                      >
-                        By Style ({Object.keys(normalizedStyleCategories).length})
-                      </button>
-                    </div>
-                  )}
-                  <MasonryGallery
-                    categories={activeCategories}
-                    onImageClick={handleImageClick}
-                    externalWebsite={company.isClaimed ? undefined : (company.website || undefined)}
-                  />
-                </>
+                <MasonryGallery
+                  categories={normalizedStyleCategories}
+                  onImageClick={handleImageClick}
+                  externalWebsite={company.isClaimed ? undefined : (company.website || undefined)}
+                />
               )}
             </div>
           </div>

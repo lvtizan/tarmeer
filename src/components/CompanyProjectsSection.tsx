@@ -16,9 +16,10 @@ import type { Company, CompanyProjectCard } from '../lib/companyData';
 interface Props {
   company: Pick<Company, 'id' | 'name'>;
   projects: CompanyProjectCard[];
+  onProjectClick?: (proj: CompanyProjectCard) => void;
 }
 
-export default function CompanyProjectsSection({ company, projects }: Props) {
+export default function CompanyProjectsSection({ company, projects, onProjectClick }: Props) {
   const navigate = useNavigate();
   if (!projects.length) return null;
 
@@ -31,11 +32,11 @@ export default function CompanyProjectsSection({ company, projects }: Props) {
         </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {projects.map((proj) => (
+        {projects.map((proj, idx) => (
           <div
-            key={proj.slug}
+            key={proj.slug || idx}
             className="group cursor-pointer"
-            onClick={() => navigate(`/companies/${company.id}/${proj.slug}`)}
+            onClick={() => onProjectClick ? onProjectClick(proj) : navigate(`/companies/${company.id}/${proj.slug}`)}
           >
             <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100">
               <SmartImage
