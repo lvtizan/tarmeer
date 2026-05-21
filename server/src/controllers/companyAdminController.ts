@@ -833,6 +833,54 @@ export async function getCompanyFullDetail(req: any, res: any) {
   }
 }
 
+// DELETE /admin/companies/:companyId/portfolio-image
+// Removes a single image URL from portfolio_images (scraped directory companies).
+export async function deleteDirectoryPortfolioImage(req: any, res: any) {
+  try {
+    const { companyId } = req.params;
+    const { url } = req.body;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'url is required' });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT portfolio_images FROM uae_companies WHERE id = ?',
+      [companyId]
+    );
+    const row = (rows as any[])[0];
+    if (!row) return res.status(404).json({ error: 'Company not found.' });
+
+    let raw = row.portfolio_images;
+    let parsed: any;
+    try { parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { parsed = null; }
+
+    if (Array.isArray(parsed)) {
+      // Legacy flat array
+      parsed = parsed.filter((u: string) => u !== url);
+    } else if (parsed && typeof parsed === 'object') {
+      // Object with category keys
+      for (const key of Object.keys(parsed)) {
+        const entry = parsed[key];
+        if (Array.isArray(entry)) {
+          parsed[key] = entry.filter((item: any) => item?.url !== url);
+        } else if (entry && typeof entry === 'object' && Array.isArray(entry.items)) {
+          entry.items = entry.items.filter((item: any) => item?.url !== url);
+        }
+      }
+    }
+
+    await pool.execute(
+      'UPDATE uae_companies SET portfolio_images = ? WHERE id = ?',
+      [JSON.stringify(parsed), companyId]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Delete portfolio image error:', error);
+    res.status(500).json({ error: 'Failed to delete image.' });
+  }
+}
+
 // ====== Project CRUD for admin ======
 
 // Helper: resolve designerId from company_profile for image storage paths

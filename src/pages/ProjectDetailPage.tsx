@@ -9,6 +9,7 @@ import {
 import { fetchPublicProjectDetail, type PublicProjectDetailData } from '../lib/publicApi';
 import SmartImage from '../components/ui/SmartImage';
 import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
+import { trackEvent } from '../lib/trackEvent';
 
 const SAVED_PROJECTS_KEY = 'saved-projects';
 
@@ -165,15 +166,18 @@ export default function ProjectDetailPage() {
         setShareToast('Link copied');
         setTimeout(() => setShareToast(''), 2000);
       }
+      trackEvent({ event_type: 'share_project', target_id: project.id, target_name: project.title, target_type: 'project' });
     } catch { /* user cancelled */ }
   };
 
   const handleSave = () => {
     const next = new Set(saved);
-    if (next.has(projectKey)) next.delete(projectKey);
+    const wasSaved = next.has(projectKey);
+    if (wasSaved) next.delete(projectKey);
     else next.add(projectKey);
     setSaved(next);
     writeSavedProjects(next);
+    trackEvent({ event_type: wasSaved ? 'unsave_project' : 'save_project', target_id: project.id, target_name: project.title, target_type: 'project' });
   };
 
   const openGalleryImage = (idx: number) => {

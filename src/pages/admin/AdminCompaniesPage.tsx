@@ -216,10 +216,6 @@ export default function AdminCompaniesPage() {
   };
 
   const handleSetProfileHomeOrder = async (id: number, value: number) => {
-    if (value > 0 && homeOrderCount >= 6) {
-      alert('首页最多展示 6 家公司，请先移除一家');
-      return;
-    }
     setOrderSavingId(id);
     try {
       await adminApi.updateCompanyProfileHomeDisplayOrder(id, Number.isFinite(value) ? value : 0);
@@ -249,10 +245,6 @@ export default function AdminCompaniesPage() {
   };
 
   const handleSetDirectoryHomeOrder = async (id: number, value: number) => {
-    if (value > 0 && homeOrderCount >= 6) {
-      alert('首页最多展示 6 家公司，请先移除一家');
-      return;
-    }
     setDirectoryOrderSavingKey(`home-${id}`);
     try {
       await adminApi.updateDirectoryHomeDisplayOrder(id, Number.isFinite(value) ? value : 0);

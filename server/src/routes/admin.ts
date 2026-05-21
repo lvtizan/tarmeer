@@ -61,6 +61,7 @@ import {
   setCompanyCoverImage,
   setDirectoryCompanyCoverImage,
   getCompanyFullDetail,
+  deleteDirectoryPortfolioImage,
   getCompanyProfileFullDetail,
   updateCompanyDisplayOrder,
   updateCompanyHomeDisplayOrder,
@@ -228,6 +229,7 @@ router.post('/companies/:companyId/bind', requireSuperAdmin, bindUserToCompany);
 router.delete('/companies/:companyId/bind', requireSuperAdmin, unbindCompany);
 router.get('/companies/:companyId/detail', getScrapedCompany);
 router.get('/companies/:companyId/full-detail', getCompanyFullDetail);
+router.delete('/companies/:companyId/portfolio-image', requireAdmin, deleteDirectoryPortfolioImage);
 router.put('/companies/:companyId/edit', editScrapedCompany);
 
 // User management

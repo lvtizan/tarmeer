@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Pencil, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
+import { Pencil, Star, Check, ImagePlus, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
@@ -143,6 +143,18 @@ export default function AdminCompanyDetailPage() {
       })();
     } catch {
       showToast(t('Failed', '设置失败'), 'error');
+    }
+  };
+
+  const handleDeletePortfolioImage = async (url: string) => {
+    if (!company) return;
+    if (!window.confirm(t('Delete this image? This cannot be undone.', '确定删除这张图片？此操作不可撤销。'))) return;
+    try {
+      await adminApi.deleteDirectoryPortfolioImage(company.id, url);
+      setProjects((prev) => prev.filter((p) => p.images[0] !== url));
+      showToast(t('Image deleted', '图片已删除'), 'success');
+    } catch (err: any) {
+      showToast(err?.message || t('Failed to delete image', '删除失败'), 'error');
     }
   };
 
@@ -335,6 +347,17 @@ export default function AdminCompanyDetailPage() {
                       <ImagePlus className="w-3 h-3" />
                       {t('Showcase', '用作展示')}
                     </button>
+                    {project.id < 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeletePortfolioImage(project.images[0]); }}
+                        className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md bg-red-500/90 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"
+                        title={t('Delete image', '删除图片')}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        {t('Delete', '删除')}
+                      </button>
+                    )}
                   </>
                 );
               })()}

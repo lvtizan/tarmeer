@@ -722,6 +722,13 @@ class AdminApiClient {
     });
   }
 
+  async deleteDirectoryPortfolioImage(companyId: number, url: string) {
+    return this.request(`/companies/${companyId}/portfolio-image`, {
+      method: 'DELETE',
+      body: JSON.stringify({ url }),
+    });
+  }
+
   async restoreCompanyProfile(id: number) {
     return this.request(`/roles/companies/${id}/restore`, {
       method: 'POST',
