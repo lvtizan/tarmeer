@@ -225,6 +225,10 @@ class AdminApiClient {
       if (response.status === 403 && serverError) {
         throw new Error(serverError);
       }
+      // 502 Bad Gateway: upstream (e.g. CRM) returned an error — show actual message to admin
+      if (response.status === 502 && serverError) {
+        throw new Error(serverError);
+      }
       const devMessage = `接口 /admin${endpoint} 请求失败：${errorMessage}`;
       throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));
     }

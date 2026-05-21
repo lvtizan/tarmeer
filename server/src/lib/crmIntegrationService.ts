@@ -4,6 +4,7 @@
  * Also exports verifiers for CRM→Mall reverse direction.
  */
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import pool from '../config/database';
 
 const SECRET = process.env.MALL_INTEGRATION_SECRET || '';
@@ -136,12 +137,23 @@ export async function provision(companyId: number): Promise<{ crm_tenant_id: str
   const services = parseJsonSafe(row.services);
   const emiratesServed = parseJsonSafe(row.emirates_served);
 
+  // If neither password_hash nor google_id is set (e.g. manually-created or migrated accounts),
+  // generate a temporary random bcrypt hash so CRM can provision the account.
+  // The company user will need to use "forgot password" to set a real password.
+  let passwordHash = row.password_hash || null;
+  const googleId = row.google_id || null;
+  if (!passwordHash && !googleId) {
+    const tempPassword = crypto.randomBytes(32).toString('hex');
+    passwordHash = await bcrypt.hash(tempPassword, 10);
+    console.warn(`[CRM] provision: user ${row.user_id} has no password/googleId — using temp hash for CRM account creation`);
+  }
+
   const payload = {
     mallPartnerId: String(row.id),
     partnerName: row.company_name || '',
     adminEmail: (row.email || '').trim().toLowerCase(),
-    adminPasswordHash: row.password_hash || null,
-    adminGoogleId: row.google_id || null,
+    adminPasswordHash: passwordHash,
+    adminGoogleId: googleId,
     adminName: row.full_name || '',
     adminPhone: normalizePhone(row.phone || row.user_phone || ''),
     companyName: row.company_name || '',
