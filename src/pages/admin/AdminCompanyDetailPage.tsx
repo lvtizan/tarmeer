@@ -47,6 +47,7 @@ interface Project {
   images: string[];
   tags: string[];
   status: string;
+  is_published: number;
   created_at: string;
 }
 
@@ -155,6 +156,19 @@ export default function AdminCompanyDetailPage() {
       showToast(t('Image deleted', '图片已删除'), 'success');
     } catch (err: any) {
       showToast(err?.message || t('Failed to delete image', '删除失败'), 'error');
+    }
+  };
+
+  const handleToggleProjectPublished = async (project: Project) => {
+    if (!company) return;
+    const next = project.is_published === 0;
+    setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, is_published: next ? 1 : 0 } : p));
+    try {
+      await adminApi.toggleProjectPublished(company.id, project.id, next);
+      showToast(next ? t('Project visible', '项目已显示') : t('Project hidden', '项目已隐藏'), 'success');
+    } catch (err: any) {
+      setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, is_published: project.is_published } : p));
+      showToast(err?.message || t('Failed', '操作失败'), 'error');
     }
   };
 
@@ -307,7 +321,7 @@ export default function AdminCompanyDetailPage() {
         {visibleProjects.map((project) => (
           <div
             key={project.id}
-            className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
+            className={`bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow ${project.is_published === 0 ? 'opacity-50' : ''}`}
           >
             <div className="aspect-video bg-stone-100 overflow-hidden relative">
               {project.images[0] ? (
@@ -347,11 +361,24 @@ export default function AdminCompanyDetailPage() {
                       <ImagePlus className="w-3 h-3" />
                       {t('Showcase', '用作展示')}
                     </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleToggleProjectPublished(project); }}
+                      className={`absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition ${
+                        project.is_published === 0
+                          ? 'bg-green-500/90 text-white hover:bg-green-600'
+                          : 'bg-stone-700/80 text-white hover:bg-stone-800'
+                      }`}
+                      title={project.is_published === 0 ? t('Show project', '显示项目') : t('Hide project', '隐藏项目')}
+                    >
+                      {project.is_published === 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                      {project.is_published === 0 ? t('Show', '显示') : t('Hide', '隐藏')}
+                    </button>
                     {project.id < 0 && (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleDeletePortfolioImage(project.images[0]); }}
-                        className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md bg-red-500/90 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"
+                        className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md bg-red-500/90 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"
                         title={t('Delete image', '删除图片')}
                       >
                         <Trash2 className="w-3 h-3" />
