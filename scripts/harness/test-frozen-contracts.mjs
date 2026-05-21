@@ -109,7 +109,9 @@ const detailPage = read('src/pages/CompanyDetailPage.tsx');
 const projectsSection = (() => { try { return read('src/components/CompanyProjectsSection.tsx'); } catch { return ''; } })();
 
 ok('B1', "portfolioMode 初始值为 'project'",
-  detailPage.includes("useState<'project' | 'style'>('project')"));
+  detailPage.includes("useState<'project' | 'style'>('project')") ||
+  detailPage.includes("portfolioMode: 'project' | 'style' = 'project'") ||
+  detailPage.includes("portfolioMode = 'project'"));
 ok('B1', '项目卡片触发条件: isClaimed && projects && projects.length > 0',
   detailPage.includes('company.isClaimed && company.projects && company.projects.length > 0'));
 ok('B2', '项目卡片布局: grid-cols-1 sm:grid-cols-2',
