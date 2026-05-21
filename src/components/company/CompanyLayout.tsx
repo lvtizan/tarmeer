@@ -82,8 +82,15 @@ export default function CompanyLayout() {
     } catch { } finally { setSwitchingPortal(''); }
   };
 
-  const handleOpenCrm = () => {
-    window.open('https://crm.tarmeer.com', '_blank');
+  const handleOpenCrm = async () => {
+    const win = window.open('', '_blank');
+    try {
+      const res: any = await api.post('/auth/company/crm-sso', {});
+      if (res?.consumeUrl && win) win.location.href = res.consumeUrl;
+      else win?.close();
+    } catch {
+      win?.close();
+    }
   };
 
   if (!token) return <Navigate to="/auth" replace />;

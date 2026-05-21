@@ -22,6 +22,8 @@ interface PageMeta {
   ogImage: string;
   jsonLd?: Record<string, unknown>;
   robots?: string;
+  /** When true, the caller should respond with HTTP 410 Gone instead of 200 */
+  gone?: boolean;
 }
 
 function escapeHtml(str: string): string {
@@ -263,14 +265,14 @@ export async function getPageMeta(pathname: string): Promise<PageMeta | null> {
   const companyMatch = pathname.match(/^\/companies\/([a-z0-9-]+)$/);
   if (companyMatch) {
     const slug = companyMatch[1];
-    // Try uae_companies
+    // Try uae_companies — active/published first
     const [rows] = await pool.execute(
-      'SELECT name_en, description, city, logo_url FROM uae_companies WHERE slug = ? AND is_active = 1 LIMIT 1',
+      'SELECT name_en, description, city, logo_url FROM uae_companies WHERE slug = ? AND is_active = 1 AND is_published = 1 LIMIT 1',
       [slug]
     );
     let company = (rows as any[])[0];
     if (!company) {
-      // Try company_profiles
+      // Try company_profiles (registered companies)
       const [cpRows] = await pool.execute(
         "SELECT company_name AS name_en, description, city, logo_url FROM company_profiles WHERE slug = ? AND status = 'approved' AND deleted_at IS NULL LIMIT 1",
         [slug]
@@ -295,6 +297,37 @@ export async function getPageMeta(pathname: string): Promise<PageMeta | null> {
           image,
           address: { '@type': 'PostalAddress', addressLocality: company.city || 'UAE', addressCountry: 'AE' },
         },
+      };
+    }
+
+    // Company slug exists but is taken down (inactive/unpublished in uae_companies, or
+    // deleted/rejected in company_profiles) — signal 410 Gone to caller
+    const [hiddenUaeRows] = await pool.execute(
+      'SELECT id FROM uae_companies WHERE slug = ? AND (is_active = 0 OR is_published = 0) LIMIT 1',
+      [slug]
+    );
+    if ((hiddenUaeRows as any[]).length > 0) {
+      return {
+        title: 'Page Removed | Tarmeer',
+        description: 'This company page has been removed.',
+        canonical: `${BASE_URL}/`,
+        ogImage: DEFAULT_IMAGE,
+        robots: 'noindex',
+        gone: true,
+      };
+    }
+    const [deletedCpRows] = await pool.execute(
+      'SELECT id FROM company_profiles WHERE slug = ? AND (deleted_at IS NOT NULL OR status = ?) LIMIT 1',
+      [slug, 'rejected']
+    );
+    if ((deletedCpRows as any[]).length > 0) {
+      return {
+        title: 'Page Removed | Tarmeer',
+        description: 'This company page has been removed.',
+        canonical: `${BASE_URL}/`,
+        ogImage: DEFAULT_IMAGE,
+        robots: 'noindex',
+        gone: true,
       };
     }
   }

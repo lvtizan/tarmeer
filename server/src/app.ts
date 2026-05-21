@@ -469,6 +469,14 @@ app.get('/api/seo-render', async (req, res) => {
     const meta = await getPageMeta(pathname);
     if (meta) {
       res.set('Content-Type', 'text/html; charset=utf-8');
+      res.set('X-Robots-Tag', meta.robots || 'index,follow');
+
+      // Company/page has been taken down — tell Google it's permanently gone
+      if (meta.gone) {
+        res.set('Cache-Control', 'no-cache');
+        return res.status(410).send(injectMeta(html, meta));
+      }
+
       res.set('Cache-Control', 'public, max-age=3600');
       return res.send(injectMeta(html, meta));
     }
