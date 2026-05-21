@@ -426,7 +426,7 @@ export default function SupplierDetailPage() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                           {imgs.map((img, i) => (
                             <div key={i} className="cursor-pointer group relative" onClick={() => navigate(`/materials/suppliers/${slug}/projects/${proj.id}?photo=${i}`)}>
-                              <SmartImage src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover group-hover:brightness-90 transition duration-200" loading="lazy" />
+                              <SmartImage src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover group-hover:brightness-90 transition duration-200" loading="lazy" variant="thumb" />
                               {i === imgs.length - 1 && imgs.length > 6 && (
                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">
                                   +{imgs.length - 6} more
@@ -466,7 +466,7 @@ export default function SupplierDetailPage() {
                               {materials.slice(0, 6).map((m) => (
                                 <div key={m.id} className="rounded-2xl border border-stone-200 overflow-hidden bg-stone-50/40">
                                   <div className="aspect-[4/3] bg-stone-100">
-                                    <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                                    <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" variant="thumb" />
                                   </div>
                                   <div className="p-2.5">
                                     {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>}

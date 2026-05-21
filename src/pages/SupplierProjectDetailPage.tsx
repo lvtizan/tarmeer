@@ -164,6 +164,7 @@ export default function SupplierProjectDetailPage() {
                   src={currentImage}
                   alt={`${project.title} — photo ${photoIdx + 1}`}
                   className="w-full h-full object-contain"
+                  variant="medium"
                 />
               ) : (
                 <div className="w-full h-full bg-stone-200 flex items-center justify-center text-stone-400 text-sm">No image</div>
@@ -208,7 +209,7 @@ export default function SupplierProjectDetailPage() {
                       i === photoIdx ? 'border-[#b8864a]' : 'border-transparent opacity-60 hover:opacity-90'
                     }`}
                   >
-                    <SmartImage src={img} alt="" className="w-full h-full object-cover" />
+                    <SmartImage src={img} alt="" className="w-full h-full object-cover" variant="thumb" />
                   </button>
                 ))}
               </div>
@@ -283,7 +284,7 @@ export default function SupplierProjectDetailPage() {
                   {materials.map(m => (
                     <div key={m.id} className="rounded-xl border border-stone-200 overflow-hidden">
                       <div className="aspect-square bg-stone-100">
-                        <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                        <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" variant="thumb" />
                       </div>
                       <div className="p-1.5">
                         {m.category && <p className="text-[9px] font-medium text-[#b8864a] uppercase tracking-wider truncate">{m.category}</p>}
@@ -310,7 +311,7 @@ export default function SupplierProjectDetailPage() {
                         i === photoIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <SmartImage src={img} alt="" className="w-full h-full object-cover" />
+                      <SmartImage src={img} alt="" className="w-full h-full object-cover" variant="thumb" />
                     </button>
                   ))}
                 </div>
@@ -341,7 +342,7 @@ export default function SupplierProjectDetailPage() {
                       <div className="w-48 sm:w-56 rounded-2xl overflow-hidden border border-stone-200 bg-stone-100">
                         <div className="aspect-[4/3]">
                           {firstImg ? (
-                            <SmartImage src={firstImg} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" />
+                            <SmartImage src={firstImg} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" variant="thumb" />
                           ) : (
                             <div className="w-full h-full bg-stone-200" />
                           )}
