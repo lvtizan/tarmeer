@@ -1,0 +1,100 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command' 2>/dev/null); echo \"$cmd\" | grep -qE '(deploy-simple|deploy-backend)' || exit 0; cd /Users/kp/.warp/worktrees/tarmeer-4.0-local/organ-pipe-horned-toad; npx tsc --skipLibCheck --noEmit > /tmp/tsc-deploy-check.txt 2>&1; [ $? -eq 0 ] && exit 0; head -5 /tmp/tsc-deploy-check.txt | jq -Rs '{\"systemMessage\":(\"⚠️ TypeScript errors (fix before deploying):\\n\" + .)}'; exit 0",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "S=/tmp/tarmeer-pitfall-shown; [ -f \"$S\" ] && exit 0; touch \"$S\"; P=$(awk '/^## 写代码前必读清单/{f=1;next} f&&/^## /{exit} f{print}' /Users/kp/.claude/projects/-Users-kp-Code-tarmeer-4-0-local/memory/MEMORY.md 2>/dev/null | head -60); [ -z \"$P\" ] && exit 0; jq -cn --arg p \"$P\" '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":(\"⚠️ 写代码前必读（本 session 首次提醒）：\\n\" + $p)}}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "code-review-graph update --skip-flows",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/kp/Code/tarmeer-4.0-local/scripts/harness/tsc-check-hook.sh",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' 2>/dev/null | grep -qE '(src/|server/src/).*[.](ts|tsx|js)$' && touch /tmp/tarmeer-check-needed || true"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "code-review-graph status",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -n '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:\"[TARMEER 规则摘要]\\n下拉=AdminSelect(size=sm筛选栏/lg表单) 禁<select>\\nTooltip=FloatingTip，Logo=TarmeerLogo\\n新页面前：找相似页面复用结构 + 先运行 node scripts/harness/lint-admin-ui.mjs --guide\\n新路由必须立即注册到路由文件，PC端移动端逻辑必须一致\"}}'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PITFALLS=$(cat '/Users/kp/.claude/projects/-Users-kp-Code-tarmeer-4-0-local/memory/pitfalls.md' 2>/dev/null) && jq -n --arg content \"$PITFALLS\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"[开发前必读：踩坑记录]\\n\" + $content)}}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/kp/Code/tarmeer-4.0-local/scripts/harness/dev-checklist-hook.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
