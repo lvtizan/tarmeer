@@ -51,6 +51,8 @@ export async function tagProjectImages(projectId: number, forceRetag = false): P
   const metaTags = extractTagsFromMetadata({
     style: row.style as string | null,
     description: row.description as string | null,
+    // Note: row.tags is not used as categoryNames input — it's the output we're computing.
+    // Using it as input would create circular dependency (tags → metadata → same tags).
     categoryNames: row.title ? [String(row.title)] : [],
   });
 
@@ -94,6 +96,9 @@ export async function tagProjectImages(projectId: number, forceRetag = false): P
 
   if (!anyUpdated) return;
 
+  // Legacy string entries (alreadyTagged=false per normalizeEntry) are always re-tagged
+  // above and become TaggedImage objects in updatedEntries, so their categories
+  // are always captured here. Already-tagged object entries retain their ai_category field.
   const allCategories = Array.from(
     new Set(
       updatedEntries.flatMap(e =>
