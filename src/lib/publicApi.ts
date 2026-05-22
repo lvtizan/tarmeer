@@ -356,6 +356,21 @@ export interface PortfolioProject {
   source: 'registered' | 'directory';
 }
 
+/** Per-image item returned by the portfolio feed (Task 8+). */
+export interface PortfolioImage {
+  url: string;
+  tags: string[];
+  projectId: number;
+  projectTitle: string;
+  projectSlug: string;
+  companyId: number;
+  companyName: string;
+  companySlug: string;
+  companyLogo: string;
+  companyCity: string;
+  source: 'registered' | 'directory';
+}
+
 export interface PublicProjectDetailData {
   project: {
     id: number;
@@ -392,21 +407,27 @@ export async function fetchPublicProjectDetail(companySlug: string, projectSlug:
 }
 
 export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, tag?: string): Promise<{
+  images: PortfolioImage[];
+  /** @deprecated Use `images` — kept for backward compat during Task 8→9 transition */
   projects: PortfolioProject[];
   pagination: { page: number; limit: number; total: number };
 }> {
   const seedParam = seed ? `&seed=${seed}` : '';
   const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
   const result = await request<{
+    images: PortfolioImage[];
     projects: PortfolioProject[];
     pagination: { page: number; limit: number; total: number };
   }>(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}${tagParam}`);
-  // Normalize AI-tagged image objects to strings: [{url, ai_tags}] -> ["url"]
-  result.projects = (result.projects || []).map((p) => ({
-    ...p,
-    images: (p.images || []).map(extractUrl).filter(Boolean),
-  }));
-  return result;
+  return {
+    images: result.images || [],
+    // Backward compat: projects key still exists, normalize image objects to strings
+    projects: (result.projects || []).map((p) => ({
+      ...p,
+      images: (p.images || []).map(extractUrl).filter(Boolean),
+    })),
+    pagination: result.pagination,
+  };
 }
 
 /** Module-level cache so the navbar doesn't re-fetch on every hover. */
