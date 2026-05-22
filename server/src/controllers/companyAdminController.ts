@@ -348,8 +348,8 @@ async function updateSingleOrderField(
       let total = Number((countRows as any[])[0]?.total || 0);
       // If this record already has a home_display_order > 0, it's being updated not added
       if (Number(current.current_value || 0) > 0) total -= 1;
-      if (total >= 6) {
-        throw new Error(`${field}#MAX_REACHED#6`);
+      if (total >= 9) {
+        throw new Error(`${field}#MAX_REACHED#9`);
       }
     }
 
@@ -386,7 +386,7 @@ export async function updateCompanyHomeDisplayOrder(req: any, res: any) {
       return res.status(404).json({ error: 'Company not found.' });
     }
     if (error instanceof Error && error.message.includes('home_display_order#MAX_REACHED#')) {
-      return res.status(400).json({ error: '首页最多展示 6 家公司，请先移除一家' });
+      return res.status(400).json({ error: '首页最多展示 9 家公司，请先移除一家' });
     }
     if (error instanceof Error && error.message.includes('home_display_order#CONFLICT#')) {
       const parts = error.message.split('#');
@@ -435,7 +435,7 @@ export async function getHomeOrderCount(_req: any, res: any) {
       AS count`
     );
     const count = Number((rows as any[])[0]?.count || 0);
-    res.json({ count, max: 6 });
+    res.json({ count, max: 9 });
   } catch (error) {
     console.error('Get home order count error:', error);
     res.status(500).json({ error: 'Failed to get home order count.' });
