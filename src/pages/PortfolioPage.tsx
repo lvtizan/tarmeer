@@ -484,7 +484,7 @@ export default function PortfolioPage() {
   }, [images]);
 
   return (
-    <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
+    <div className="min-h-screen bg-white">
       <Helmet>
         <title>{urlTag ? `${urlTag} Interior Design Projects - Tarmeer UAE` : 'Interior Design Portfolio & Inspiration - Tarmeer UAE'}</title>
         <meta name="description" content={urlTag ? `Browse ${urlTag.toLowerCase()} interior design projects from top UAE designers. Explore ${urlTag} style inspirations on Tarmeer.` : 'Browse stunning interior design projects from top UAE designers. Get inspired by luxury villas, modern apartments, commercial spaces and more.'} />

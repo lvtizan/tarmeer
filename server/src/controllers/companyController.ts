@@ -28,9 +28,10 @@ function extractImageEntries(raw: unknown): Array<{ url: string; tags: string[] 
       const obj = item as Record<string, unknown>;
       const url = typeof obj.url === 'string' ? obj.url : '';
       if (!url) return [];
-      // ai_category is the single resolved tag string set by the tagger
-      const aiCategory = typeof obj.ai_category === 'string' ? obj.ai_category.trim() : '';
-      const tags: string[] = aiCategory ? [aiCategory] : [];
+      // ai_tags is a string[] array written by the tag engine
+      const tags: string[] = Array.isArray(obj.ai_tags)
+        ? (obj.ai_tags as unknown[]).filter((t): t is string => typeof t === 'string')
+        : [];
       return [{ url, tags }];
     }
     return [];
