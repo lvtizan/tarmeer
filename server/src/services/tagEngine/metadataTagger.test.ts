@@ -30,7 +30,34 @@ test('无元数据返回空数组', () => {
   assert.equal(tags.length, 0);
 });
 
-test('所有结果 confidence=1.0 source=metadata', () => {
+test('所有结果 confidence=0.8 source=metadata', () => {
   const tags = extractTagsFromMetadata({ style: 'Modern', description: null, categoryNames: [] });
-  assert.ok(tags.every(t => t.confidence === 1.0 && t.source === 'metadata'));
+  assert.ok(tags.every(t => t.confidence === 0.8 && t.source === 'metadata'));
+});
+
+// False-positive guard: word-boundary matching prevents substring hits
+test('masterpiece 不触发 Bedroom', () => {
+  const tags = extractTagsFromMetadata({ style: null, description: 'A masterpiece of design', categoryNames: [] });
+  assert.ok(!tags.some(t => t.tag === 'Bedroom'), `should not match: ${JSON.stringify(tags)}`);
+});
+
+test('decoration 不触发 Art Deco', () => {
+  const tags = extractTagsFromMetadata({ style: null, description: 'Simple decoration ideas', categoryNames: [] });
+  assert.ok(!tags.some(t => t.tag === 'Art Deco'), `should not match: ${JSON.stringify(tags)}`);
+});
+
+test('drawing 不触发 Industrial', () => {
+  const tags = extractTagsFromMetadata({ style: null, description: 'A drawing room with tall windows', categoryNames: [] });
+  assert.ok(!tags.some(t => t.tag === 'Industrial'), `should not match: ${JSON.stringify(tags)}`);
+});
+
+test('aloft 不触发 Industrial', () => {
+  const tags = extractTagsFromMetadata({ style: null, description: 'Lights hung aloft the ceiling', categoryNames: [] });
+  assert.ok(!tags.some(t => t.tag === 'Industrial'), `should not match: ${JSON.stringify(tags)}`);
+});
+
+// Field-isolation guard: split categoryNames must not join into ghost compound words
+test("categoryNames ['bath','room'] 不触发 Bathroom", () => {
+  const tags = extractTagsFromMetadata({ style: null, description: null, categoryNames: ['bath', 'room'] });
+  assert.ok(!tags.some(t => t.tag === 'Bathroom'), `should not match: ${JSON.stringify(tags)}`);
 });
