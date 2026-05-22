@@ -5,7 +5,7 @@ function toPublicString(value: unknown) {
   return typeof value === 'string' ? value : '';
 }
 
-function sanitizeCompanyImage(value: unknown) {
+export function sanitizeCompanyImage(value: unknown) {
   const url = toPublicString(value).trim();
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;

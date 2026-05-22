@@ -323,13 +323,40 @@ export default function CompanyDetailPage() {
     ? `https://www.tarmeer.com${heroImages[0]}`
     : 'https://www.tarmeer.com/images/tarmeer_logo.svg';
 
+  const companyTypeLabel = getCompanyTypeLabel(company.companyType) || 'Interior Design';
+  const metaTitle = `${company.name} | ${companyTypeLabel} in ${company.city}, UAE`;
+
+  // Build a compelling, keyword-rich meta description (target: 150-160 chars)
+  const buildMetaDescription = (): string => {
+    const city = company.city || 'UAE';
+    const type = companyTypeLabel.toLowerCase();
+    const photoCount = company.projectCount;
+    const cta = photoCount > 5
+      ? `View ${photoCount}+ portfolio photos & request a free quote.`
+      : 'View portfolio & request a free consultation on Tarmeer.';
+
+    if (description.length > 30) {
+      // Use the actual company description
+      const excerpt = description.length > 90
+        ? description.slice(0, 87).trimEnd() + '...'
+        : description;
+      return `${excerpt} ${cta}`.slice(0, 160);
+    }
+    if (company.services.length > 0) {
+      const services = company.services.slice(0, 3).join(', ');
+      return `${company.name} is a ${type} company in ${city}, UAE. Services: ${services}. ${cta}`.slice(0, 160);
+    }
+    return `${company.name} is a ${type} company based in ${city}, UAE. ${cta}`.slice(0, 160);
+  };
+  const metaDescription = buildMetaDescription();
+
   return (
     <div className="min-h-screen bg-white">
       <Helmet>
-        <title>{company.name} - {getCompanyTypeLabel(company.companyType) || 'Interior Design'} in {company.city} - Tarmeer</title>
-        <meta name="description" content={`${company.name}${company.companyType ? ` (${getCompanyTypeLabel(company.companyType)})` : ''} provides ${company.services.slice(0, 3).join(', ')} services in ${company.city}, UAE. ${company.shortDescription}`} />
-        <meta property="og:title" content={`${company.name} - ${company.city} - Tarmeer`} />
-        <meta property="og:description" content={company.shortDescription} />
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDescription} />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
         <meta property="og:image" content={ogImage} />
         <meta property="og:url" content={`https://www.tarmeer.com/companies/${company.id}`} />
         <meta property="og:type" content="website" />
@@ -346,10 +373,10 @@ export default function CompanyDetailPage() {
         })}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${company.name} - ${company.city} - Tarmeer`} />
-        <meta name="twitter:description" content={company.shortDescription} />
+        <meta name="twitter:title" content={metaTitle} />
+        <meta name="twitter:description" content={metaDescription} />
         <meta name="twitter:image" content={ogImage} />
-        <meta name="keywords" content={`${company.name}, interior design ${company.city}, renovation ${company.city}, ${company.services.slice(0, 5).join(', ')}, UAE, Tarmeer`} />
+        <meta name="keywords" content={`${company.name}, interior design ${company.city}, ${company.city} renovation company, interior designer UAE, ${company.services.slice(0, 5).join(', ')}, UAE, Tarmeer`} />
         <meta name="robots" content="index, follow, max-image-preview:large" />
       </Helmet>
       {/* Back nav */}

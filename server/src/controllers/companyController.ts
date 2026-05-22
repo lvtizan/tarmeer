@@ -8,6 +8,35 @@ import {
 import { slugify } from '../lib/slugify';
 import { extractImageUrls } from '../lib/projectImagesSerialization';
 
+/**
+ * Parses the raw `images` JSON blob from a project row and returns an array of
+ * { url, tags } objects — one per image.  Handles both legacy string-array and
+ * Gemini-tagged object-array shapes.
+ */
+function extractImageEntries(raw: unknown): Array<{ url: string; tags: string[] }> {
+  let parsed: unknown = raw;
+  if (typeof raw === 'string') {
+    try { parsed = JSON.parse(raw); } catch { return []; }
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  return (parsed as unknown[]).flatMap((item) => {
+    if (typeof item === 'string') {
+      return item ? [{ url: item, tags: [] }] : [];
+    }
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>;
+      const url = typeof obj.url === 'string' ? obj.url : '';
+      if (!url) return [];
+      // ai_category is the single resolved tag string set by the tagger
+      const aiCategory = typeof obj.ai_category === 'string' ? obj.ai_category.trim() : '';
+      const tags: string[] = aiCategory ? [aiCategory] : [];
+      return [{ url, tags }];
+    }
+    return [];
+  });
+}
+
 const PUBLIC_COMPANY_WHERE = `WHERE is_active = 1`;
 
 export async function getCompanies(req: any, res: any) {
@@ -82,146 +111,140 @@ export async function getPortfolioFeed(req: any, res: any) {
     const seed = parseInt(req.query.seed, 10) || Math.floor(Math.random() * 1000000);
     const tagFilter = typeof req.query.tag === 'string' ? req.query.tag.trim() : '';
 
-    // Build tag filter clause
-    const tagClause = tagFilter ? `AND JSON_CONTAINS(p.tags, '"${tagFilter.replace(/['"\\]/g, '')}"')` : '';
-
     // 1. Registered company projects (from company_profiles + projects tables)
+    // We fetch projects without a DB-level tag filter here because filtering now
+    // happens at the image level (each image carries its own ai_category tag).
     const [rows] = await pool.execute(`
       SELECT
-        p.id, p.title, p.slug as project_slug, p.description, p.style, p.location, p.year, p.images, p.tags,
+        p.id, p.title, p.slug as project_slug, p.images,
         cp.id as company_id, cp.company_name, cp.slug as company_slug, cp.logo_url, cp.city
       FROM projects p
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
         AND p.images IS NOT NULL AND p.images != '[]'
-        ${tagClause}
       ORDER BY RAND(${Number(seed)})
-      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
+      LIMIT ${Number(limit * 10)} OFFSET ${Number(offset)}
     `);
 
-    // Format registered company projects.
-    // `row.images` may be the legacy ["url", ...] shape or the Gemini-tagged
-    // [{url, ai_tags, ...}, ...] shape — extractImageUrls normalizes both into
-    // a flat string array so the frontend <img src> resolves correctly.
-    const registeredProjects = (rows as any[]).map(row => {
-      const images = extractImageUrls(row.images);
-      let tags: string[] = [];
-      try {
-        const parsed = typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags;
-        if (Array.isArray(parsed)) tags = parsed;
-      } catch { /* skip */ }
-      return {
-        id: row.id,
-        title: row.title || '',
-        slug: row.project_slug || '',
-        description: row.description || '',
-        style: row.style || '',
-        location: row.location || '',
-        year: row.year || null,
-        images,
-        tags,
-        companyId: row.company_id,
-        companyName: row.company_name || '',
-        companySlug: row.company_slug || '',
-        companyLogo: row.logo_url || '',
-        companyCity: row.city || '',
-        source: 'registered' as const,
-      };
-    }).filter(p => p.images.length > 0);
-
-    // 2. Directory company portfolio images (from uae_companies)
-    const [dirRows] = await pool.execute(`
-      SELECT
-        uc.id as company_id, uc.name_en as company_name, uc.slug as company_slug,
-        uc.logo_url, uc.city, uc.portfolio_images
-      FROM uae_companies uc
-      WHERE uc.is_active = 1
-        AND uc.portfolio_images IS NOT NULL
-        AND uc.portfolio_images != '[]'
-        AND uc.portfolio_images != ''
-      ORDER BY uc.weight_score DESC
-      LIMIT 30
-    `);
-
-    // Parse directory company portfolio images into project-like items.
-    // Each portfolio_category entry can be either the legacy array form
-    // (value is an array of {url, title}) or the new object form
-    // ({ items, description, year, location, sourceUrl }).
-    const directoryProjects = (dirRows as any[]).flatMap(row => {
-      let categories: Record<string, any> = {};
-      try {
-        const parsed = typeof row.portfolio_images === 'string' ? JSON.parse(row.portfolio_images) : row.portfolio_images;
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          categories = parsed;
-        }
-      } catch { /* skip malformed JSON */ }
-
-      return Object.entries(categories).map(([catName, entry], idx) => {
-        // Unwrap either shape
-        let items: Array<{ url: string; title: string }> = [];
-        let description = '';
-        let year: number | null = null;
-        let location = '';
-        if (Array.isArray(entry)) {
-          items = entry;
-        } else if (entry && typeof entry === 'object' && Array.isArray((entry as any).items)) {
-          items = (entry as any).items;
-          description = typeof (entry as any).description === 'string' ? (entry as any).description : '';
-          year = typeof (entry as any).year === 'number' ? (entry as any).year : null;
-          location = typeof (entry as any).location === 'string' ? (entry as any).location : '';
-        }
-        const imageUrls = items.map((item: any) => item?.url || '').filter(Boolean);
-        if (imageUrls.length === 0) return null;
-        return {
-          id: row.company_id * 10000 + idx,
-          title: catName,
-          slug: slugify(catName),
-          description,
-          style: catName,
-          location,
-          year,
-          images: imageUrls,
-          companyId: row.company_id,
+    // Expand each project into one item per image. Filter by tag at image level.
+    const registeredImages = (rows as any[]).flatMap(row => {
+      const entries = extractImageEntries(row.images);
+      return entries
+        .filter(entry => !tagFilter || entry.tags.includes(tagFilter))
+        .map(entry => ({
+          url: entry.url,
+          tags: entry.tags,
+          projectId: row.id as number,
+          projectTitle: row.title || '',
+          projectSlug: row.project_slug || '',
+          companyId: row.company_id as number,
           companyName: row.company_name || '',
           companySlug: row.company_slug || '',
           companyLogo: row.logo_url || '',
           companyCity: row.city || '',
-          source: 'directory' as const,
-        };
-      }).filter(Boolean);
+          source: 'registered' as const,
+        }));
     });
 
+    // 2. Directory company portfolio images (from uae_companies)
+    // Directory images don't have ai_category yet, so skip them when a tag filter
+    // is active to avoid flooding the feed with untagged images.
+    let directoryImages: Array<{
+      url: string;
+      tags: string[];
+      projectId: number;
+      projectTitle: string;
+      projectSlug: string;
+      companyId: number;
+      companyName: string;
+      companySlug: string;
+      companyLogo: string;
+      companyCity: string;
+      source: 'directory';
+    }> = [];
+
+    if (!tagFilter) {
+      const [dirRows] = await pool.execute(`
+        SELECT
+          uc.id as company_id, uc.name_en as company_name, uc.slug as company_slug,
+          uc.logo_url, uc.city, uc.portfolio_images
+        FROM uae_companies uc
+        WHERE uc.is_active = 1
+          AND uc.portfolio_images IS NOT NULL
+          AND uc.portfolio_images != '[]'
+          AND uc.portfolio_images != ''
+        ORDER BY uc.weight_score DESC
+        LIMIT 30
+      `);
+
+      directoryImages = (dirRows as any[]).flatMap(row => {
+        let categories: Record<string, any> = {};
+        try {
+          const parsed = typeof row.portfolio_images === 'string' ? JSON.parse(row.portfolio_images) : row.portfolio_images;
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            categories = parsed;
+          }
+        } catch { /* skip malformed JSON */ }
+
+        return Object.entries(categories).flatMap(([catName, entry], idx) => {
+          let items: Array<{ url: string; title: string }> = [];
+          if (Array.isArray(entry)) {
+            items = entry;
+          } else if (entry && typeof entry === 'object' && Array.isArray((entry as any).items)) {
+            items = (entry as any).items;
+          }
+          return items
+            .map((item: any) => item?.url || '')
+            .filter(Boolean)
+            .map((url: string) => ({
+              url,
+              tags: [] as string[],
+              projectId: row.company_id * 10000 + idx,
+              projectTitle: catName,
+              projectSlug: slugify(catName),
+              companyId: row.company_id as number,
+              companyName: row.company_name || '',
+              companySlug: row.company_slug || '',
+              companyLogo: row.logo_url || '',
+              companyCity: row.city || '',
+              source: 'directory' as const,
+            }));
+        });
+      });
+    }
+
     // Merge: registered first, then directory (deduplicate by company name)
-    const seenCompanyNames = new Set(registeredProjects.map(p => p.companyName.toLowerCase()));
-    const dedupedDirectory = directoryProjects.filter(
-      (p): p is NonNullable<typeof p> => p !== null && !seenCompanyNames.has(p.companyName.toLowerCase())
+    const seenCompanyNames = new Set(registeredImages.map(img => img.companyName.toLowerCase()));
+    const dedupedDirectoryImages = directoryImages.filter(
+      img => !seenCompanyNames.has(img.companyName.toLowerCase())
     );
 
-    // When tag filter is active, exclude directory projects (they have no tags)
-    const allProjects = tagFilter
-      ? registeredProjects
-      : [...registeredProjects, ...dedupedDirectory];
+    const allImages = [...registeredImages, ...dedupedDirectoryImages];
 
-    // Count total for pagination
+    // Apply pagination
+    const paginatedImages = allImages.slice(0, limit);
+
+    // Count total registered images for pagination (approximate — counts projects,
+    // not individual images, but keeps the number meaningful for page math)
     const [countResult] = await pool.execute(`
       SELECT COUNT(*) as total FROM projects p
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
         AND p.images IS NOT NULL AND p.images != '[]'
-        ${tagClause}
     `);
-    const registeredTotal = (countResult as any[])[0]?.total || 0;
-
-    // Apply pagination to merged results (registered are already paginated,
-    // but directory projects are added in bulk — cap the final output)
-    const paginatedProjects = allProjects.slice(0, limit);
+    const registeredProjectCount = (countResult as any[])[0]?.total || 0;
+    const estimatedTotal = tagFilter
+      ? registeredImages.length
+      : registeredProjectCount * 3 + dedupedDirectoryImages.length; // rough estimate
 
     res.json({
-      projects: paginatedProjects,
+      images: paginatedImages,
+      // Keep `projects` key for backward compat during Task 8→9 transition
+      projects: paginatedImages,
       pagination: {
         page,
         limit,
-        total: tagFilter ? registeredTotal : registeredTotal + dedupedDirectory.length,
+        total: estimatedTotal,
       },
     });
   } catch (error) {

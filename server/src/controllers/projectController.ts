@@ -11,7 +11,7 @@ import {
 } from '../lib/projectPersistence';
 import { persistProjectImages } from '../lib/projectImageStorage';
 import { slugify } from '../lib/slugify';
-import { tagProjectImages } from '../services/visionTagging';
+import { tagProjectImages } from '../services/tagEngine';
 import { logActivity, getClientIp } from '../lib/activityLogger';
 
 function normalizeProject(project: any) {

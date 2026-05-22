@@ -64,6 +64,22 @@ function parseJsonArray(val: string | null | undefined): string[] {
   try { return JSON.parse(val); } catch { return []; }
 }
 
+function parseImageTags(rawImages: unknown): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  let arr: any[] = [];
+  try {
+    arr = Array.isArray(rawImages)
+      ? rawImages
+      : JSON.parse(rawImages as string || '[]');
+  } catch { /* skip */ }
+  for (const entry of arr) {
+    if (typeof entry === 'object' && entry?.url) {
+      map.set(entry.url, Array.isArray(entry.ai_category) ? entry.ai_category : []);
+    }
+  }
+  return map;
+}
+
 export default function AdminRegisteredCompanyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useAdminT();
@@ -556,6 +572,20 @@ export default function AdminRegisteredCompanyDetailPage() {
                         {project.style && <span>{project.style}</span>}
                         {project.location && <span>· {project.location}</span>}
                       </div>
+                      {/* AI tags for cover image */}
+                      {(() => {
+                        const tags = parseImageTags(project.images).get(project.images[0] as unknown as string) || [];
+                        if (!tags.length) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-1 px-1">
+                            {tags.map(tag => (
+                              <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 whitespace-nowrap">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       {(project.status === 'pending' || project.status === 'rejected') && (
                         <div className="mt-2 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <button
@@ -952,6 +982,20 @@ export default function AdminRegisteredCompanyDetailPage() {
                           {project.location && <span>· {project.location}</span>}
                           {project.year && <span>· {project.year}</span>}
                         </div>
+                        {/* AI tags for cover image */}
+                        {(() => {
+                          const tags = parseImageTags(project.images).get(project.images[0] as unknown as string) || [];
+                          if (!tags.length) return null;
+                          return (
+                            <div className="flex flex-wrap gap-1 mt-1 px-1">
+                              {tags.map(tag => (
+                                <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 whitespace-nowrap">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                         {project.rejection_reason && (
                           <p className="text-xs text-red-600 bg-red-50 rounded px-2 py-1">{project.rejection_reason}</p>
                         )}

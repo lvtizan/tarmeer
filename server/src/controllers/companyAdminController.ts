@@ -1,5 +1,5 @@
 import pool from '../config/database';
-import { extractPortfolioData } from '../lib/publicCompaniesSerialization';
+import { extractPortfolioData, sanitizeCompanyImage } from '../lib/publicCompaniesSerialization';
 import { persistProjectImages, isImageDataUrl } from '../lib/projectImageStorage';
 import type { NormalizedImage } from '../lib/projectPersistence';
 import { calculateAllWeights } from '../lib/weightCalculator';
@@ -854,17 +854,22 @@ export async function deleteDirectoryPortfolioImage(req: any, res: any) {
     let parsed: any;
     try { parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { parsed = null; }
 
+    // Normalize a raw stored URL through the same pipeline used on the read path,
+    // so hotfix renames (e.g. .png → .jpg) and legacy URL formats match correctly.
+    const normalizeStored = (raw: unknown) =>
+      normalizeLegacyImageUrl(sanitizeCompanyImage(String(raw ?? '')));
+
     if (Array.isArray(parsed)) {
-      // Legacy flat array
-      parsed = parsed.filter((u: string) => u !== url);
+      // Legacy flat array of URL strings
+      parsed = parsed.filter((u: string) => normalizeStored(u) !== url);
     } else if (parsed && typeof parsed === 'object') {
       // Object with category keys
       for (const key of Object.keys(parsed)) {
         const entry = parsed[key];
         if (Array.isArray(entry)) {
-          parsed[key] = entry.filter((item: any) => item?.url !== url);
+          parsed[key] = entry.filter((item: any) => normalizeStored(item?.url) !== url);
         } else if (entry && typeof entry === 'object' && Array.isArray(entry.items)) {
-          entry.items = entry.items.filter((item: any) => item?.url !== url);
+          entry.items = entry.items.filter((item: any) => normalizeStored(item?.url) !== url);
         }
       }
     }
