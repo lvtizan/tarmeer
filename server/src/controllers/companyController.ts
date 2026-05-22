@@ -29,10 +29,15 @@ function extractImageEntries(raw: unknown): Array<{ url: string; tags: string[];
       const obj = item as Record<string, unknown>;
       const url = typeof obj.url === 'string' ? obj.url : '';
       if (!url) continue;
-      // ai_tags is a string[] array written by the tag engine
-      const tags: string[] = Array.isArray(obj.ai_tags)
+      // ai_category = merged B+C taxonomy tags (authoritative for filtering)
+      // ai_tags = CLIP-only tags (fallback for images not yet retagged by B+C)
+      const aiCategory: string[] = Array.isArray(obj.ai_category)
+        ? (obj.ai_category as unknown[]).filter((t): t is string => typeof t === 'string')
+        : [];
+      const aiTags: string[] = Array.isArray(obj.ai_tags)
         ? (obj.ai_tags as unknown[]).filter((t): t is string => typeof t === 'string')
         : [];
+      const tags: string[] = aiCategory.length > 0 ? aiCategory : aiTags;
       result.push({ url, tags, imageIndex });
       imageIndex++;
     }
