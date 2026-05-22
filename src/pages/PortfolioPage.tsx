@@ -188,7 +188,7 @@ function JustifiedGallery({
                   />
                 )}
                 <img
-                  src={resolveVariantUrl(item.src, 'thumb')}
+                  src={resolveVariantUrl(item.src, 'medium')}
                   alt="Interior design project"
                   loading="lazy"
                   decoding="async"
