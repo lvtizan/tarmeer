@@ -13,29 +13,31 @@ import { extractImageUrls } from '../lib/projectImagesSerialization';
  * { url, tags } objects — one per image.  Handles both legacy string-array and
  * Gemini-tagged object-array shapes.
  */
-function extractImageEntries(raw: unknown): Array<{ url: string; tags: string[] }> {
+function extractImageEntries(raw: unknown): Array<{ url: string; tags: string[]; imageIndex: number }> {
   let parsed: unknown = raw;
   if (typeof raw === 'string') {
     try { parsed = JSON.parse(raw); } catch { return []; }
   }
   if (!Array.isArray(parsed)) return [];
 
-  return (parsed as unknown[]).flatMap((item) => {
+  const result: Array<{ url: string; tags: string[]; imageIndex: number }> = [];
+  let imageIndex = 0;
+  for (const item of parsed as unknown[]) {
     if (typeof item === 'string') {
-      return item ? [{ url: item, tags: [] }] : [];
-    }
-    if (item && typeof item === 'object') {
+      if (item) { result.push({ url: item, tags: [], imageIndex }); imageIndex++; }
+    } else if (item && typeof item === 'object') {
       const obj = item as Record<string, unknown>;
       const url = typeof obj.url === 'string' ? obj.url : '';
-      if (!url) return [];
+      if (!url) continue;
       // ai_tags is a string[] array written by the tag engine
       const tags: string[] = Array.isArray(obj.ai_tags)
         ? (obj.ai_tags as unknown[]).filter((t): t is string => typeof t === 'string')
         : [];
-      return [{ url, tags }];
+      result.push({ url, tags, imageIndex });
+      imageIndex++;
     }
-    return [];
-  });
+  }
+  return result;
 }
 
 const PUBLIC_COMPANY_WHERE = `WHERE is_active = 1`;
@@ -135,6 +137,7 @@ export async function getPortfolioFeed(req: any, res: any) {
         .map(entry => ({
           url: entry.url,
           tags: entry.tags,
+          imageIndex: entry.imageIndex,
           projectId: row.id as number,
           projectTitle: row.title || '',
           projectSlug: row.project_slug || '',
@@ -431,6 +434,77 @@ export async function getPublicProjectDetail(req: any, res: any) {
   } catch (error) {
     console.error('Get public project detail error:', error);
     res.status(500).json({ error: 'Failed to load project.' });
+  }
+}
+
+/**
+ * GET /api/companies/portfolio/image/:companySlug/:projectSlug/:imageIndex
+ * Returns data for a single image SEO page.
+ */
+export async function getPortfolioImage(req: any, res: any) {
+  try {
+    const { companySlug, projectSlug, imageIndex: imageIndexStr } = req.params;
+    const imageIndex = parseInt(imageIndexStr, 10);
+    if (isNaN(imageIndex) || imageIndex < 0) {
+      return res.status(400).json({ error: 'Invalid imageIndex' });
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT
+         p.id, p.title, p.slug as project_slug, p.images, p.style, p.description, p.location,
+         cp.id as company_id, cp.company_name, cp.slug as company_slug,
+         cp.logo_url, cp.city
+       FROM projects p
+       JOIN company_profiles cp ON p.company_profile_id = cp.id
+       WHERE cp.slug = ? AND p.slug = ?
+         AND cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
+       LIMIT 1`,
+      [companySlug, projectSlug]
+    );
+
+    if (!(rows as any[]).length) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    const row = (rows as any[])[0];
+    const entries = extractImageEntries(row.images);
+
+    if (imageIndex >= entries.length) {
+      return res.status(404).json({ error: 'Image index out of range' });
+    }
+
+    const targetEntry = entries[imageIndex];
+    const siblings = entries
+      .filter((_, i) => i !== imageIndex)
+      .map(e => ({ url: e.url, tags: e.tags, imageIndex: e.imageIndex }))
+      .slice(0, 8);
+
+    res.json({
+      image: {
+        url: targetEntry.url,
+        tags: targetEntry.tags,
+        imageIndex,
+      },
+      project: {
+        id: row.id,
+        title: row.title || '',
+        slug: row.project_slug || '',
+        style: row.style || '',
+        description: row.description || '',
+        location: row.location || '',
+      },
+      company: {
+        id: row.company_id,
+        name: row.company_name || '',
+        slug: row.company_slug || '',
+        logo: row.logo_url || '',
+        city: row.city || '',
+      },
+      siblings,
+    });
+  } catch (error) {
+    console.error('Get portfolio image error:', error);
+    res.status(500).json({ error: 'Failed to load image.' });
   }
 }
 
