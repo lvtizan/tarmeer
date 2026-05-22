@@ -3,10 +3,10 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
-import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
+import { fetchPortfolioFeed, type PortfolioImage } from '../lib/publicApi';
 import { DEFAULT_RATIO, GAP, TARGET_ROW_HEIGHT, justifyRows } from '../lib/justifyRows';
 
-const MAX_IMAGES_PER_GROUP = 12;
+// Removed MAX_IMAGES_PER_GROUP — no longer grouping by project
 
 /* ================================================================== */
 /*  Image preloader with RAF batching                                  */
@@ -218,88 +218,6 @@ function JustifiedGallery({
 }
 
 /* ================================================================== */
-/*  ProjectGroup                                                        */
-/* ================================================================== */
-
-function ProjectGroup({
-  project,
-  maxImages,
-  initialRatios,
-  onRatios,
-  onBeforeNavigate,
-}: {
-  project: PortfolioProject;
-  maxImages: number;
-  initialRatios?: number[];
-  onRatios?: (ratios: number[]) => void;
-  onBeforeNavigate?: (projectId: string, imageIdx: number) => void;
-}) {
-  const navigate = useNavigate();
-  const visibleImages = useMemo(() => project.images.slice(0, maxImages), [project.images, maxImages]);
-  const items = useImagePreloader(visibleImages, initialRatios, onRatios);
-
-  // Compute load state. If every image has finished loading and none are
-  // visible (all failed / filtered), hide the whole group — otherwise we'd
-  // render an empty gap under the header.
-  const allLoaded = items.length > 0 && items.every(it => it.loaded);
-  const visibleCount = items.filter(it => it.ratio > 0).length;
-  const shouldHide = allLoaded && visibleCount === 0;
-
-  // Photo count in the header: once loading is done, show the real visible
-  // count; while loading, optimistically show the project's total.
-  const displayCount = allLoaded ? visibleCount : project.images.length;
-  const remaining = Math.max(0, project.images.length - visibleImages.length - (items.length - visibleCount));
-
-  // Prefer the real slug; fall back to the numeric id so the project detail
-  // page still opens even when the DB slug column is empty. The backend
-  // getPublicProjectDetail query matches either `slug = ?` or `id = ?`, so
-  // both forms resolve to the same project.
-  const projectRouteKey = project.slug || String(project.id);
-  const baseUrl = `/companies/${project.companySlug}/${projectRouteKey}`;
-
-  const handleClick = useCallback((imageIdx: number) => {
-    onBeforeNavigate?.(String(project.id), imageIdx);
-    navigate(`${baseUrl}?from=portfolio&img=${imageIdx}`);
-  }, [navigate, baseUrl, project.id, onBeforeNavigate]);
-
-  const handleHeaderClick = useCallback(() => {
-    onBeforeNavigate?.(String(project.id), -1);
-    navigate(`${baseUrl}?from=portfolio`);
-  }, [navigate, baseUrl, project.id, onBeforeNavigate]);
-
-  const renderOverlay = useCallback(() => (
-    <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-      <p className="text-white text-sm font-medium line-clamp-1">{project.title || 'Project'}</p>
-      <p className="text-[#c6a065] text-xs mt-0.5">
-        {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
-      </p>
-    </div>
-  ), [project]);
-
-  if (shouldHide) return null;
-
-  return (
-    <section className="mb-10" data-project-id={project.id}>
-      <div className="flex items-baseline gap-3 mb-3 cursor-pointer group/hdr" onClick={handleHeaderClick}>
-        <h3 className="text-[15px] font-medium text-[#1c1917] group-hover/hdr:text-[var(--color-tarmeer-primary)] transition">
-          {project.title || 'Project'}
-        </h3>
-        <span className="text-sm text-stone-400">
-          {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
-        </span>
-        <span className="text-xs text-stone-300">{displayCount} photos</span>
-      </div>
-      <JustifiedGallery
-        items={items}
-        onItemClick={handleClick}
-        renderOverlay={renderOverlay}
-        remainingCount={remaining}
-      />
-    </section>
-  );
-}
-
-/* ================================================================== */
 /*  Main page                                                          */
 /* ================================================================== */
 
@@ -309,17 +227,14 @@ const STYLE_FILTERS = ['Modern', 'Luxury', 'Minimalist', 'Classical', 'Arabic', 
 
 // ── Portfolio state cache (survives back navigation) ──
 const CACHE_KEY = 'portfolio-state';
-const SINGLES_RATIO_KEY = '__singles__';
 interface CachedState {
-  projects: PortfolioProject[];
+  images: PortfolioImage[];
   page: number;
   hasMore: boolean;
   activeTag: string;
   seed: number;
   scrollY: number;
-  projectRatios: Record<string, number[]>;   // projectId → ratios[] (0 = hidden)
-  clickedProjectId?: string;                  // anchor target for scroll restore
-  clickedImageIdx?: number;
+  imageRatios: number[];   // flat ratios[] parallel to images[] (0 = hidden)
   savedAt: number;
 }
 
@@ -354,7 +269,7 @@ export default function PortfolioPage() {
     return c && c.activeTag === urlTag ? c : null;
   }, []); // Only read once on mount
 
-  const [projects, setProjects] = useState<PortfolioProject[]>(cached?.projects || []);
+  const [images, setImages] = useState<PortfolioImage[]>(cached?.images || []);
   const [page, setPage] = useState(cached?.page || 1);
   const [hasMore, setHasMore] = useState(cached?.hasMore ?? true);
   const [loading, setLoading] = useState(false);
@@ -369,38 +284,32 @@ export default function PortfolioPage() {
   const seedRef = useRef(cached?.seed || Math.floor(Math.random() * 1000000));
   const navigate = useNavigate();
 
-  // Per-project ratio cache. Hydrated from sessionStorage; children report up via onRatios.
-  const ratiosCacheRef = useRef<Map<string, number[]>>(
-    new Map(cached?.projectRatios ? Object.entries(cached.projectRatios) : [])
-  );
+  // Flat ratio cache for the single gallery. Hydrated from sessionStorage; updated by onRatios.
+  const imageRatiosCacheRef = useRef<number[]>(cached?.imageRatios || []);
 
-  const handleRatiosUpdate = useCallback((projectId: string, ratios: number[]) => {
-    ratiosCacheRef.current.set(projectId, ratios);
+  const handleRatiosUpdate = useCallback((ratios: number[]) => {
+    imageRatiosCacheRef.current = ratios;
   }, []);
 
   // Latest state refs for saveCacheNow (avoids stale closures on click)
-  const stateRef = useRef({ projects, page, hasMore, activeTag });
-  useEffect(() => { stateRef.current = { projects, page, hasMore, activeTag }; }, [projects, page, hasMore, activeTag]);
+  const stateRef = useRef({ images, page, hasMore, activeTag });
+  useEffect(() => { stateRef.current = { images, page, hasMore, activeTag }; }, [images, page, hasMore, activeTag]);
 
-  const saveCacheNow = useCallback((clickedProjectId?: string, clickedImageIdx?: number) => {
-    const ratiosObj: Record<string, number[]> = {};
-    ratiosCacheRef.current.forEach((v, k) => { ratiosObj[k] = v; });
+  const saveCacheNow = useCallback(() => {
     const s = stateRef.current;
     writeCache({
-      projects: s.projects,
+      images: s.images,
       page: s.page,
       hasMore: s.hasMore,
       activeTag: s.activeTag,
       seed: seedRef.current,
       scrollY: window.scrollY,
-      projectRatios: ratiosObj,
-      clickedProjectId,
-      clickedImageIdx,
+      imageRatios: imageRatiosCacheRef.current,
     });
   }, []);
 
-  const handleBeforeNavigate = useCallback((projectId: string, imageIdx: number) => {
-    saveCacheNow(projectId, imageIdx);
+  const handleBeforeNavigate = useCallback(() => {
+    saveCacheNow();
   }, [saveCacheNow]);
 
   // ── Scroll restore: jump to saved position WITHOUT a visible top-of-page flash ──
@@ -492,8 +401,8 @@ export default function PortfolioPage() {
     navigate(newTag ? `/portfolio?tag=${encodeURIComponent(newTag)}` : '/portfolio', { replace: true });
     // Clear cache — user wants a fresh filtered view
     clearCache();
-    ratiosCacheRef.current.clear();
-    setProjects([]);
+    imageRatiosCacheRef.current = [];
+    setImages([]);
     setPage(1);
     setHasMore(true);
     setLoading(false);
@@ -507,9 +416,9 @@ export default function PortfolioPage() {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      const result = await fetchPortfolioFeed(page, 12, seedRef.current, activeTag || undefined);
-      setProjects(prev => [...prev, ...result.projects]);
-      setHasMore(result.projects.length === 12);
+      const result = await fetchPortfolioFeed(page, 30, seedRef.current, activeTag || undefined);
+      setImages(prev => [...prev, ...result.images]);
+      setHasMore(result.images.length === 30);
       setPage(prev => prev + 1);
     } catch (err) {
       console.error('Portfolio load error:', err);
@@ -544,54 +453,35 @@ export default function PortfolioPage() {
     return () => observer.disconnect();
   }, []); // Stable — never recreated
 
-  const { grouped, singles } = useMemo(() => {
-    const g: PortfolioProject[] = [];
-    const s: PortfolioProject[] = [];
-    for (const p of projects) {
-      if (p.images.length > 1) g.push(p);
-      else if (p.images.length === 1) s.push(p);
-    }
-    return { grouped: g, singles: s };
-  }, [projects]);
-
-  const singlesUrls = useMemo(() => singles.map(s => {
-    const first = s.images[0];
-    if (typeof first === 'string') return first;
-    if (first && typeof first === 'object' && typeof (first as any).url === 'string') return (first as any).url;
-    return '';
-  }), [singles]);
-  const singlesInitialRatios = useMemo(
-    () => ratiosCacheRef.current.get(SINGLES_RATIO_KEY),
-    // Re-read when singles set changes so cache hit still works across pagination
+  // Flat URL list for the single unified gallery
+  const imageUrls = useMemo(() => images.map(img => img.url), [images]);
+  const imageInitialRatios = useMemo(
+    () => imageRatiosCacheRef.current.length > 0 ? imageRatiosCacheRef.current : undefined,
+    // Re-read when image count changes so cache hit works across pagination
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [singles.length]
+    [images.length]
   );
-  const handleSinglesRatios = useCallback((rs: number[]) => {
-    ratiosCacheRef.current.set(SINGLES_RATIO_KEY, rs);
-  }, []);
-  const singlesItems = useImagePreloader(singlesUrls, singlesInitialRatios, handleSinglesRatios);
+  const galleryItems = useImagePreloader(imageUrls, imageInitialRatios, handleRatiosUpdate);
 
-  const handleSingleClick = useCallback((idx: number) => {
-    const proj = singles[idx];
-    if (!proj) return;
-    saveCacheNow(String(proj.id), idx);
-    // Fall back to numeric id when slug is missing (backend accepts either).
-    const routeKey = proj.slug || String(proj.id);
-    navigate(`/companies/${proj.companySlug}/${routeKey}?from=portfolio&img=0`);
-  }, [singles, navigate, saveCacheNow]);
+  const handleImageClick = useCallback((idx: number) => {
+    const img = images[idx];
+    if (!img) return;
+    handleBeforeNavigate();
+    navigate(`/companies/${img.companySlug}/${img.projectSlug}?from=portfolio`);
+  }, [images, navigate, handleBeforeNavigate]);
 
-  const renderSingleOverlay = useCallback((idx: number) => {
-    const proj = singles[idx];
-    if (!proj) return null;
+  const renderImageOverlay = useCallback((idx: number) => {
+    const img = images[idx];
+    if (!img) return null;
     return (
       <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <p className="text-white text-sm font-medium line-clamp-1">{proj.title || 'Project'}</p>
+        <p className="text-white text-sm font-medium line-clamp-1">{img.projectTitle || 'Project'}</p>
         <p className="text-[#c6a065] text-xs mt-0.5">
-          {proj.companyName}{proj.companyCity ? ` \u00b7 ${proj.companyCity}` : ''}
+          {img.companyName}{img.companyCity ? ` \u00b7 ${img.companyCity}` : ''}
         </p>
       </div>
     );
-  }, [singles]);
+  }, [images]);
 
   return (
     <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
@@ -608,16 +498,15 @@ export default function PortfolioPage() {
             url: urlTag ? `https://www.tarmeer.com/portfolio?tag=${encodeURIComponent(urlTag)}` : 'https://www.tarmeer.com/portfolio',
             mainEntity: {
               '@type': 'ItemList',
-              itemListElement: projects.slice(0, 20).map((p, i) => ({
+              itemListElement: images.slice(0, 20).map((img, i) => ({
                 '@type': 'ListItem',
                 position: i + 1,
                 item: {
                   '@type': 'CreativeWork',
-                  name: p.title || 'Interior Design Project',
-                  description: p.description || `${p.style || 'Interior design'} project by ${p.companyName}`,
-                  creator: { '@type': 'Organization', name: p.companyName },
-                  ...(p.images[0] ? { image: `https://www.tarmeer.com${typeof p.images[0] === 'string' ? p.images[0] : ((p.images[0] as any)?.url || '')}` } : {}),
-                  ...(p.companySlug && p.slug ? { url: `https://www.tarmeer.com/companies/${p.companySlug}/${p.slug}` } : {}),
+                  name: img.projectTitle || 'Interior Design Project',
+                  creator: { '@type': 'Organization', name: img.companyName },
+                  image: `https://www.tarmeer.com${img.url}`,
+                  url: `https://www.tarmeer.com/companies/${img.companySlug}/${img.projectSlug}`,
                 },
               })),
             },
@@ -686,36 +575,18 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {!initialLoading && projects.length === 0 && (
+        {!initialLoading && images.length === 0 && (
           <div className="text-center py-20">
             <p className="text-[var(--color-tarmeer-muted)]">No portfolio projects available yet.</p>
           </div>
         )}
 
-        {grouped.map(project => (
-          <ProjectGroup
-            key={`g-${project.id}`}
-            project={project}
-            maxImages={MAX_IMAGES_PER_GROUP}
-            initialRatios={ratiosCacheRef.current.get(String(project.id))}
-            onRatios={rs => handleRatiosUpdate(String(project.id), rs)}
-            onBeforeNavigate={handleBeforeNavigate}
+        {images.length > 0 && (
+          <JustifiedGallery
+            items={galleryItems}
+            onItemClick={handleImageClick}
+            renderOverlay={renderImageOverlay}
           />
-        ))}
-
-        {singles.length > 0 && (
-          <section className="mb-10" style={{ marginTop: grouped.length > 0 ? 32 : 0 }}>
-            {grouped.length > 0 && (
-              <div className="flex items-baseline gap-3 mb-3">
-                <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
-              </div>
-            )}
-            <JustifiedGallery
-              items={singlesItems}
-              onItemClick={handleSingleClick}
-              renderOverlay={renderSingleOverlay}
-            />
-          </section>
         )}
 
         <div ref={observerRef} className="flex flex-col items-center justify-center py-6">
@@ -739,8 +610,8 @@ export default function PortfolioPage() {
               <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
             </>
           )}
-          {!hasMore && projects.length > 0 && (
-            <p className="text-sm text-stone-400 py-4">All projects loaded</p>
+          {!hasMore && images.length > 0 && (
+            <p className="text-sm text-stone-400 py-4">All images loaded</p>
           )}
         </div>
       </div>
