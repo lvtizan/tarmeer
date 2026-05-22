@@ -31,6 +31,7 @@ export default function AdminUserDetailPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -40,6 +41,20 @@ export default function AdminUserDetailPage() {
       .catch((err: any) => setError(err.message || t('Failed to load user.', '加载用户失败')))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleForceVerifyEmail = async () => {
+    if (!data || data.user.email_verified) return;
+    setVerifyLoading(true);
+    try {
+      await adminApi.forceVerifyUserEmail(data.user.id);
+      const refreshed = await adminApi.getUserDetail(Number(id));
+      setData(refreshed);
+    } catch (err: any) {
+      alert(err.message || t('Failed to verify email', '邮箱验证失败'));
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
 
   const handleStatusToggle = async () => {
     if (!data) return;
@@ -102,6 +117,15 @@ export default function AdminUserDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!user.email_verified && (
+            <button
+              onClick={handleForceVerifyEmail}
+              disabled={verifyLoading}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition disabled:opacity-50"
+            >
+              {verifyLoading ? '...' : t('Verify Email', '手动验证邮箱')}
+            </button>
+          )}
           <button
             onClick={handleStatusToggle}
             disabled={actionLoading}

@@ -563,6 +563,10 @@ class AdminApiClient {
     });
   }
 
+  async forceVerifyUserEmail(id: number) {
+    return this.request(`/users/${id}/force-verify-email`, { method: 'POST' });
+  }
+
   async getUserPermissions(id: number): Promise<{ permissions: string[]; available: string[] }> {
     return this.request(`/users/${id}/permissions`);
   }

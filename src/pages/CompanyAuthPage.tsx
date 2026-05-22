@@ -221,7 +221,26 @@ function JoinAuthCard() {
   return (
     <AuthCardShell className="mx-auto lg:mx-0 order-2 lg:order-1">
       {error && (
-        <div className="mb-4 rounded-xl border border-red-100 bg-red-50/50 p-3 text-sm text-red-600">{error}</div>
+        <div className="mb-4 rounded-xl border border-red-100 bg-red-50/50 p-3">
+          <p className="text-sm text-red-600">{error}</p>
+          {/verify/i.test(error) && email && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await api.post('/auth/resend-verification', { email });
+                  setError(null);
+                  setSuccess('Verification email resent! Please check your inbox.');
+                } catch (err: any) {
+                  setError((err as any).message || 'Failed to resend.');
+                }
+              }}
+              className="mt-2 text-sm font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2 transition"
+            >
+              Resend verification email
+            </button>
+          )}
+        </div>
       )}
       {success && (
         <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 text-sm text-emerald-600">{success}</div>

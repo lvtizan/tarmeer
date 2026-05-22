@@ -154,6 +154,9 @@ export async function register(req: any, res: any) {
         verificationSent = true;
       } catch (emailError: any) {
         console.error('[SMTP] Verification email failed:', emailError?.message || emailError);
+        // Email delivery failed — auto-verify so the user isn't permanently locked out.
+        // This handles enterprise domains that reject mail from our SMTP server.
+        await pool.execute('UPDATE users SET email_verified = TRUE WHERE id = ?', [userId]);
       }
     }
 
@@ -182,7 +185,7 @@ export async function register(req: any, res: any) {
     res.status(201).json({
       message: verificationSent
         ? 'Registration successful! Please check your email to verify your account.'
-        : 'Registration successful! Email verification is temporarily unavailable.',
+        : 'Registration successful! You can sign in now.',
       email,
       emailSent: verificationSent,
     });
@@ -489,9 +492,18 @@ export async function resendVerification(req: any, res: any) {
     );
 
     const frontendUrl = resolveFrontendUrl(req);
-    await sendVerificationEmail(email, user.full_name, verificationToken, frontendUrl);
-
-    res.json({ message: 'Verification email sent. Please check your inbox.' });
+    try {
+      await sendVerificationEmail(email, user.full_name, verificationToken, frontendUrl);
+      res.json({ message: 'Verification email sent. Please check your inbox.' });
+    } catch (emailError: any) {
+      console.error('[SMTP] Resend verification email failed:', emailError?.message || emailError);
+      // Email delivery failed — auto-verify so the user isn't permanently locked out.
+      await pool.execute(
+        'UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_token_expires = NULL WHERE id = ?',
+        [user.id]
+      );
+      res.json({ message: 'Email could not be delivered. Your account has been verified — you can sign in now.' });
+    }
   } catch (error) {
     console.error('Resend verification error:', error);
     res.status(500).json({ error: 'Failed to send verification email. Please try again.' });

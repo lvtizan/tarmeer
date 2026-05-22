@@ -295,6 +295,37 @@ export async function updateUserPermissions(req: any, res: any) {
   }
 }
 
+// Force verify user email (admin override)
+export async function forceVerifyUserEmail(req: any, res: any) {
+  try {
+    const { id } = req.params;
+    const userId = Number(id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user id.' });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT id, email, email_verified FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1',
+      [userId]
+    );
+    const user = (rows as any[])[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.email_verified) return res.json({ message: 'Email already verified.' });
+
+    await pool.execute(
+      'UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_token_expires = NULL WHERE id = ?',
+      [userId]
+    );
+
+    await logActivity(req.admin?.id, 'force_verify_email', 'user', userId, { email: user.email });
+
+    res.json({ message: 'Email verified successfully.' });
+  } catch (error) {
+    console.error('Force verify email error:', error);
+    res.status(500).json({ error: 'Failed to verify email.' });
+  }
+}
+
 function normalizeDeleteReason(rawReason: unknown): string | null {
   if (typeof rawReason !== 'string') return null;
   const trimmed = rawReason.trim();
