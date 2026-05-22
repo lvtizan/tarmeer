@@ -62,6 +62,7 @@ const ContactPage = lazyRetry(() => import('./pages/ContactPage'));
 const CompaniesPage = lazyRetry(() => import('./pages/CompaniesPage'));
 const CompanyDetailPage = lazyRetry(() => import('./pages/CompanyDetailPage'));
 const PortfolioPage = lazyRetry(() => import('./pages/PortfolioPage'));
+const PortfolioImagePage = lazyRetry(() => import('./pages/PortfolioImagePage'));
 const ProjectDetailPage = lazyRetry(() => import('./pages/ProjectDetailPage'));
 const FaqPage = lazyRetry(() => import('./pages/FaqPage'));
 const BlogPage = lazyRetry(() => import('./pages/BlogPage'));
@@ -355,6 +356,7 @@ function App() {
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/dmca" element={<DmcaPage />} />
+                <Route path="/portfolio/:primaryTag/:companySlug/:projectSlug/:imageIndex" element={<PortfolioImagePage />} />
                 <Route path="/portfolio" element={<PortfolioPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/blog" element={<BlogPage />} />
