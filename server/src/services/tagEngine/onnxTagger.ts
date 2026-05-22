@@ -13,6 +13,11 @@ env.cacheDir = path.resolve(__dirname, '../../../.model-cache');
 const ROOM_PROMPTS = ROOM_TAGS.map(t => `a photo of a ${t.toLowerCase()} in a home`);
 const STYLE_PROMPTS = STYLE_TAGS.map(t => `a photo of a ${t.toLowerCase()} interior design`);
 
+// Reverse maps: prompt string -> taxonomy tag (needed because @xenova/transformers returns
+// results sorted by score descending, NOT in the same order as input prompts)
+const roomPromptToTag = new Map<string, string>(ROOM_PROMPTS.map((p, i) => [p, ROOM_TAGS[i]]));
+const stylePromptToTag = new Map<string, string>(STYLE_PROMPTS.map((p, i) => [p, STYLE_TAGS[i]]));
+
 // Softmax output acceptance thresholds (relative probability among 10 candidates)
 const ROOM_THRESHOLD = 0.15;
 const STYLE_THRESHOLD = 0.12;  // styles are harder to distinguish, lower threshold
@@ -28,6 +33,10 @@ async function getClassifier(): Promise<any> {
       _classifier = cls;
       console.log('[tag-engine] CLIP model ready');
       return cls;
+    })
+    .catch((err: unknown) => {
+      _loading = null;  // allow retry on next call
+      throw err;
     });
   return _loading;
 }
@@ -45,16 +54,18 @@ export async function tagImageWithClip(absoluteImagePath: string): Promise<TagRe
     const cls = await getClassifier();
 
     const roomScores: ClipScore[] = await cls(absoluteImagePath, ROOM_PROMPTS);
-    for (let i = 0; i < roomScores.length; i++) {
-      if (roomScores[i].score >= ROOM_THRESHOLD) {
-        results.push({ tag: ROOM_TAGS[i], confidence: roomScores[i].score, source: 'clip' });
+    for (const score of roomScores) {
+      const tag = roomPromptToTag.get(score.label);
+      if (tag && score.score >= ROOM_THRESHOLD) {
+        results.push({ tag, confidence: score.score, source: 'clip' });
       }
     }
 
     const styleScores: ClipScore[] = await cls(absoluteImagePath, STYLE_PROMPTS);
-    for (let i = 0; i < styleScores.length; i++) {
-      if (styleScores[i].score >= STYLE_THRESHOLD) {
-        results.push({ tag: STYLE_TAGS[i], confidence: styleScores[i].score, source: 'clip' });
+    for (const score of styleScores) {
+      const tag = stylePromptToTag.get(score.label);
+      if (tag && score.score >= STYLE_THRESHOLD) {
+        results.push({ tag, confidence: score.score, source: 'clip' });
       }
     }
   } catch (err) {
