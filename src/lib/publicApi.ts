@@ -360,6 +360,7 @@ export interface PortfolioProject {
 export interface PortfolioImage {
   url: string;
   tags: string[];
+  imageIndex: number;
   projectId: number;
   projectTitle: string;
   projectSlug: string;

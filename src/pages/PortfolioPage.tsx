@@ -221,6 +221,20 @@ function JustifiedGallery({
 /*  Main page                                                          */
 /* ================================================================== */
 
+// ── SEO URL helper — registered images only ──
+function getImageSeoUrl(image: {
+  tags: string[];
+  companySlug: string;
+  projectSlug: string;
+  imageIndex: number;
+  source: string;
+}): string | null {
+  if (image.source !== 'registered') return null;
+  if (!image.companySlug || !image.projectSlug || image.imageIndex === undefined) return null;
+  const primaryTag = encodeURIComponent(image.tags[0] || 'portfolio');
+  return `/portfolio/${primaryTag}/${image.companySlug}/${image.projectSlug}/${image.imageIndex}`;
+}
+
 // ── Tag taxonomy for filter UI ──
 const ROOM_FILTERS = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dining Room', 'Home Office', 'Majlis', 'Hallway', 'Nursery', 'Outdoor'];
 const STYLE_FILTERS = ['Modern', 'Luxury', 'Minimalist', 'Classical', 'Arabic', 'Industrial', 'Scandinavian', 'Coastal', 'Art Deco', 'Bohemian'];
@@ -467,7 +481,12 @@ export default function PortfolioPage() {
     const img = images[idx];
     if (!img) return;
     handleBeforeNavigate();
-    navigate(`/companies/${img.companySlug}/${img.projectSlug}?from=portfolio`);
+    const seoUrl = getImageSeoUrl(img);
+    if (seoUrl) {
+      navigate(seoUrl);
+    } else {
+      navigate(`/companies/${img.companySlug}/${img.projectSlug}?from=portfolio`);
+    }
   }, [images, navigate, handleBeforeNavigate]);
 
   const renderImageOverlay = useCallback((idx: number) => {
