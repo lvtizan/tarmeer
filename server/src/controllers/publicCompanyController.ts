@@ -228,6 +228,7 @@ export async function getCompanyDetail(req: any, res: any) {
       is_claimed: true,
       is_registered: true,
       is_signed: !!(company.is_signed),
+      company_profile_id: company.id,
     };
 
     res.json({ company: formattedCompany });

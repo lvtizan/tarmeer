@@ -73,6 +73,7 @@ function MultiTypeSelect({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const updatePos = useCallback(() => {
@@ -95,7 +96,10 @@ function MultiTypeSelect({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current && !containerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -122,6 +126,7 @@ function MultiTypeSelect({
 
       {open && dropPos && createPortal(
         <div
+          ref={dropdownRef}
           className="fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-y-auto"
           style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: 260 }}
         >
