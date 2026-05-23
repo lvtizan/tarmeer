@@ -22,6 +22,7 @@ export default function CompanyLayout() {
   const [companyName, setCompanyName] = useState('');
   const [companyType, setCompanyType] = useState('');
   const [crmEnabled, setCrmEnabled] = useState(false);
+  const [isSigned, setIsSigned] = useState(false);
   const [linkedPortals, setLinkedPortals] = useState<LinkedPortal[]>([]);
   const [switchingPortal, setSwitchingPortal] = useState('');
   const [newLeadsCount, setNewLeadsCount] = useState(0);
@@ -44,6 +45,7 @@ export default function CompanyLayout() {
           setCompanyName(p?.company_name || '');
           setCompanyType(p?.company_type || '');
           setCrmEnabled(!!p?.crm_tenant_id);
+          setIsSigned(!!p?.is_signed);
         }).catch(() => {});
         // 拿关联入口（admin / supplier portal）
         api.get('/auth/linked-portals').then((res: any) => {
@@ -181,7 +183,7 @@ export default function CompanyLayout() {
 
         <main className="flex-1 overflow-y-auto md:ml-64 pb-20 md:pb-0 [scrollbar-gutter:stable]">
           <div className="p-4 sm:p-6 lg:p-6">
-            <Outlet />
+            <Outlet context={{ isSigned }} />
           </div>
         </main>
       </div>

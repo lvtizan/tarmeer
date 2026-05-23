@@ -1,6 +1,7 @@
 // src/pages/company/CompanyLeadsPage.tsx
 import { useState, useEffect, useCallback } from 'react';
-import { Inbox, Phone, MapPin, Clock, CheckCircle2, Circle, Star } from 'lucide-react';
+import { Inbox, Phone, MapPin, Clock, CheckCircle2, Circle, Star, MessageCircle, Lock } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { api } from '../../lib/api';
 
 interface Inquiry {
@@ -39,7 +40,9 @@ const STATUS_CYCLE: Record<Inquiry['status'], Inquiry['status']> = {
   resolved: 'new',
 };
 
-function LeadCard({ inquiry, onStatusChange }: { inquiry: Inquiry; onStatusChange: (id: number, status: Inquiry['status']) => void }) {
+const WA_NUMBER = '971585368282';
+
+function LeadCard({ inquiry, isSigned, onStatusChange }: { inquiry: Inquiry; isSigned: boolean; onStatusChange: (id: number, status: Inquiry['status']) => void }) {
   const [updating, setUpdating] = useState(false);
   const cfg = STATUS_CONFIG[inquiry.status] ?? STATUS_CONFIG.new;
   const Icon = cfg.icon;
@@ -60,6 +63,64 @@ function LeadCard({ inquiry, onStatusChange }: { inquiry: Inquiry; onStatusChang
       setUpdating(false);
     }
   };
+
+  if (!isSigned) {
+    return (
+      <div className="bg-white rounded-2xl border border-stone-200 p-5 flex flex-col gap-3">
+        {/* Header row: masked name + status */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[15px] font-semibold text-stone-400 tracking-widest">● ● ● ● ●</p>
+            <div className="flex items-center gap-1 text-[13px] text-stone-400 mt-0.5">
+              <Phone className="w-3.5 h-3.5" />
+              <span className="tracking-widest">+971 ●● ●●● ●●●●</span>
+            </div>
+          </div>
+          <button
+            onClick={handleStatusClick}
+            disabled={updating}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition shrink-0 ${cfg.color} ${updating ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 cursor-pointer'}`}
+            title="Click to change status"
+            aria-label={`Status: ${cfg.label}. Click to change.`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {cfg.label}
+          </button>
+        </div>
+
+        {/* Meta: city + area — still visible */}
+        {(inquiry.city || inquiry.area_range) && (
+          <div className="flex items-center gap-1 text-[13px] text-stone-500">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            {[inquiry.city, inquiry.area_range].filter(Boolean).join(' · ')}
+          </div>
+        )}
+
+        {/* Locked message */}
+        <div className="flex items-center gap-2 bg-stone-50 rounded-xl px-4 py-3 text-[13px] text-stone-400">
+          <Lock className="w-3.5 h-3.5 shrink-0" />
+          <span>Contact details hidden — sign a partnership to unlock</span>
+        </div>
+
+        {/* WhatsApp CTA */}
+        <a
+          href={`https://wa.me/${WA_NUMBER}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 bg-[#25D366] text-white text-[13px] font-medium rounded-xl px-4 py-2.5 hover:bg-[#1ebe5a] transition"
+        >
+          <MessageCircle className="w-4 h-4" />
+          Contact us on WhatsApp to unlock
+        </a>
+
+        {/* Timestamp */}
+        <div className="flex items-center gap-1 text-[12px] text-stone-400">
+          <Clock className="w-3.5 h-3.5" />
+          {timeAgo(inquiry.created_at)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-stone-200 p-5 flex flex-col gap-3">
@@ -119,6 +180,7 @@ const TABS: { key: FilterTab; label: string }[] = [
 ];
 
 export default function CompanyLeadsPage() {
+  const { isSigned } = useOutletContext<{ isSigned: boolean }>();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -198,7 +260,7 @@ export default function CompanyLeadsPage() {
       ) : (
         <div className="flex flex-col gap-4">
           {filtered.map(inq => (
-            <LeadCard key={inq.id} inquiry={inq} onStatusChange={handleStatusChange} />
+            <LeadCard key={inq.id} inquiry={inq} isSigned={isSigned} onStatusChange={handleStatusChange} />
           ))}
         </div>
       )}
