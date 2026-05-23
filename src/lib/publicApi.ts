@@ -69,6 +69,7 @@ interface PublicCompanyRecord {
   is_claimed?: boolean;
   is_signed?: boolean;
   weight_score?: number;
+  company_profile_id?: number | null;
 }
 
 function sanitizePortfolioCategories(
@@ -323,6 +324,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     isSigned: !!company.is_signed,
     companyType: company.company_type || undefined,
     weightScore: company.weight_score ?? undefined,
+    companyProfileId: company.company_profile_id ?? null,
     projects: Array.isArray(company.projects)
       ? company.projects
           .map((p: any) => ({

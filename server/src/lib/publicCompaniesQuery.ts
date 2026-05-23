@@ -72,12 +72,16 @@ export function buildPublicCompanyDetailQuery(slug: string) {
          portfolio_images,
          portfolio_images AS portfolio_categories,
          google_reviews_count,
-         owner_user_id,
-         is_signed
+         uae_companies.owner_user_id,
+         uae_companies.is_signed,
+         cp.id AS company_profile_id
        FROM uae_companies
-       WHERE slug = ?
-         AND is_active = 1
-         AND is_published = 1
+       LEFT JOIN company_profiles cp
+         ON cp.user_id = uae_companies.owner_user_id
+         AND cp.deleted_at IS NULL
+       WHERE uae_companies.slug = ?
+         AND uae_companies.is_active = 1
+         AND uae_companies.is_published = 1
        LIMIT 1`,
     params: [slug],
   };

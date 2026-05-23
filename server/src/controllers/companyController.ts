@@ -636,6 +636,7 @@ export async function getCompanyBySlug(req: any, res: any) {
         ...(company.is_registered && {
           is_claimed: true,
           projects: company._registeredProjects || [],
+          company_profile_id: company.id,  // cp.id = company_profiles.id, needed for lead linking
         }),
       },
     });

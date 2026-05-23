@@ -685,7 +685,7 @@ export default function CompanyDetailPage() {
           {/* Right: Sticky Inquiry Sidebar */}
           <div ref={sidebarRef} className="hidden lg:block w-[320px] flex-shrink-0">
             <div className="sticky top-20 space-y-4">
-              <ServiceInquiryCard title={`Get in touch with ${company.name}`} companyName={company.name} companySlug={company.id} />
+              <ServiceInquiryCard title={`Get in touch with ${company.name}`} companyName={company.name} companySlug={company.id} companyId={company.companyProfileId ?? undefined} />
 
               {/* Contact Info Card — hidden for claimed/registered companies */}
               {!company.isClaimed && (company.phone || company.email || company.website || company.instagram || company.address) && (
@@ -806,6 +806,7 @@ export default function CompanyDetailPage() {
                 title={`Get in touch with ${company.name}`}
                 companyName={company.name}
                 companySlug={company.id}
+                companyId={company.companyProfileId ?? undefined}
                 inline
                 className="mt-4"
               />

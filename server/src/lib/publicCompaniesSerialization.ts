@@ -139,5 +139,6 @@ export function sanitizePublicCompany(company: any) {
     project_count: portfolio_images.length,
     is_claimed: isClaimed,
     is_signed: !!(company.is_signed),
+    company_profile_id: company.company_profile_id ?? null,
   };
 }
