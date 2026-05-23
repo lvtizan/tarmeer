@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare, ExternalLink, ArrowRightLeft, LogOut } from 'lucide-react';
+import { Building2, FolderOpen, FileText, User, ImagePlus, Settings, MessageSquare, ExternalLink, ArrowRightLeft, LogOut, Inbox } from 'lucide-react';
 import TarmeerLogo from '../TarmeerLogo';
 import PhoneRequiredModal from '../PhoneRequiredModal';
 import { safeRemoveItem } from '../../lib/storage';
@@ -24,6 +24,7 @@ export default function CompanyLayout() {
   const [crmEnabled, setCrmEnabled] = useState(false);
   const [linkedPortals, setLinkedPortals] = useState<LinkedPortal[]>([]);
   const [switchingPortal, setSwitchingPortal] = useState('');
+  const [newLeadsCount, setNewLeadsCount] = useState(0);
 
   useEffect(() => {
     if (!token) {
@@ -48,6 +49,12 @@ export default function CompanyLayout() {
         api.get('/auth/linked-portals').then((res: any) => {
           if (!mounted) return;
           setLinkedPortals(res?.portals || []);
+        }).catch(() => {});
+        // 拿未读线索数
+        api.request('/inquiries/mine?limit=100').then((data: any) => {
+          if (!mounted) return;
+          const arr: any[] = Array.isArray(data?.inquiries) ? data.inquiries : [];
+          setNewLeadsCount(arr.filter((i: any) => i.status === 'new').length);
         }).catch(() => {});
       })
       .catch(() => {
@@ -137,6 +144,15 @@ export default function CompanyLayout() {
                 <Settings className="w-5 h-5" />
                 <span className="text-sm font-medium">Settings</span>
               </NavLink>
+              <NavLink to="/company/leads" className={navCls}>
+                <Inbox className="w-5 h-5" />
+                <span className="text-sm font-medium">线索</span>
+                {newLeadsCount > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-tight">
+                    {newLeadsCount}
+                  </span>
+                )}
+              </NavLink>
               {crmEnabled && (
                 <button onClick={handleOpenCrm} className="flex items-center gap-3 px-4 py-3 rounded-full transition w-full text-left bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100">
                   <ExternalLink className="w-5 h-5 shrink-0" />
@@ -205,6 +221,17 @@ export default function CompanyLayout() {
           <User className="w-5 h-5" />
           Profile
         </NavLink>
+        <div className="relative">
+          <NavLink to="/company/leads" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
+            <Inbox className="w-5 h-5" />
+            线索
+          </NavLink>
+          {newLeadsCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+              {newLeadsCount > 9 ? '9+' : newLeadsCount}
+            </span>
+          )}
+        </div>
         {crmEnabled && (
           <button onClick={handleOpenCrm} className="flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] text-violet-600 font-medium">
             <ExternalLink className="w-5 h-5" />

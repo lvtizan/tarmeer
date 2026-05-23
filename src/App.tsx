@@ -83,6 +83,7 @@ const CompanyProjectsPage = lazyRetry(() => import('./pages/company/CompanyProje
 const CompanyUploadPage = lazyRetry(() => import('./pages/company/CompanyUploadPage'));
 const CompanyArticlesPage = lazyRetry(() => import('./pages/company/CompanyArticlesPage'));
 const CompanyProfilePage = lazyRetry(() => import('./pages/company/CompanyProfilePage'));
+const CompanyLeadsPage = lazyRetry(() => import('./pages/company/CompanyLeadsPage'));
 
 // Homeowner dashboard
 const UserDashboardLayout = lazyRetry(() => import('./layouts/UserDashboardLayout'));
@@ -288,6 +289,7 @@ function App() {
             <Route path="articles" element={<CompanyArticlesPage />} />
             <Route path="profile" element={<CompanyProfilePage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="leads" element={<CompanyLeadsPage />} />
           </Route>
 
           {/* ====== Homeowner Dashboard ====== */}
