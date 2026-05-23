@@ -406,6 +406,48 @@ export async function getMyInquiries(req: any, res: any) {
   }
 }
 
+// Update inquiry status for the company that owns it (company portal)
+export async function updateMyInquiryStatus(req: any, res: any) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Authentication required.' });
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowed = ['new', 'contacted', 'resolved'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Allowed: new, contacted, resolved.' });
+    }
+
+    // Verify the inquiry belongs to this company
+    const [companyRows] = await pool.execute(
+      'SELECT id FROM company_profiles WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    const companyId = (companyRows as any[])[0]?.id;
+    if (!companyId) return res.status(403).json({ error: 'No company profile found.' });
+
+    const [rows] = await pool.execute(
+      'SELECT id FROM design_inquiries WHERE id = ? AND company_id = ? AND deleted_at IS NULL LIMIT 1',
+      [id, companyId]
+    );
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ error: 'Inquiry not found.' });
+    }
+
+    await pool.execute(
+      'UPDATE design_inquiries SET status = ? WHERE id = ? AND company_id = ? AND deleted_at IS NULL',
+      [status, id, companyId]
+    );
+
+    res.json({ ok: true, status });
+  } catch (error) {
+    console.error('updateMyInquiryStatus error:', error);
+    res.status(500).json({ error: 'Failed to update status.' });
+  }
+}
+
 // Manually retry pushing an inquiry to CRM (admin only).
 // Used to recover from transient failures or to re-push after fixing an
 // upstream issue. Unlike submitInquiry, this one AWAITS the result so the

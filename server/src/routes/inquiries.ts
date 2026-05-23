@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { body, validationResult } from 'express-validator';
-import { submitInquiry, getInquiries, updateInquiryStatus, exportInquiries, getMyInquiries } from '../controllers/inquiryController';
+import { submitInquiry, getInquiries, updateInquiryStatus, exportInquiries, getMyInquiries, updateMyInquiryStatus } from '../controllers/inquiryController';
 import { authenticate } from '../middleware/auth';
 import { authenticateAdmin, requireAdmin, requirePermission } from '../middleware/adminAuth';
 
@@ -35,6 +35,9 @@ router.post('/',
 
 // Authenticated: get my received inquiries
 router.get('/mine', authenticate, getMyInquiries);
+
+// Authenticated: company updates status on their own inquiry
+router.patch('/:id/my-status', authenticate, updateMyInquiryStatus);
 
 // Admin: list all inquiries
 router.get('/', authenticateAdmin, requireAdmin, getInquiries);
