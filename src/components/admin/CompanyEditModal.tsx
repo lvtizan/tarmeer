@@ -150,15 +150,26 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           if (!Array.isArray(raw[k])) raw[k] = [];
         });
 
-        // Normalize company_type → always array
-        if (typeof raw.company_type === 'string') {
-          if (raw.company_type.startsWith('[')) {
-            try { raw.company_type = JSON.parse(raw.company_type); } catch { raw.company_type = raw.company_type ? [raw.company_type] : []; }
-          } else {
-            raw.company_type = raw.company_type ? [raw.company_type] : [];
+        // Normalize company_type → always array (prefer company_types plural first)
+        let _typeArr: string[] = [];
+        if (raw.company_types) {
+          const _parsed = typeof raw.company_types === 'string'
+            ? (() => { try { return JSON.parse(raw.company_types); } catch { return []; } })()
+            : raw.company_types;
+          if (Array.isArray(_parsed)) _typeArr = _parsed;
+        }
+        if (_typeArr.length === 0) {
+          if (typeof raw.company_type === 'string') {
+            if (raw.company_type.startsWith('[')) {
+              try { _typeArr = JSON.parse(raw.company_type); } catch { _typeArr = raw.company_type ? [raw.company_type] : []; }
+            } else {
+              _typeArr = raw.company_type ? [raw.company_type] : [];
+            }
+          } else if (Array.isArray(raw.company_type)) {
+            _typeArr = raw.company_type;
           }
         }
-        if (!Array.isArray(raw.company_type)) raw.company_type = [];
+        raw.company_type = _typeArr;
 
         setData(raw);
       } catch (err: any) {

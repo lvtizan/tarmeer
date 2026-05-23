@@ -652,7 +652,11 @@ export async function editCompanyProfile(req: any, res: any) {
     if (website !== undefined) { updates.push('website = ?'); values.push(website || null); }
     if (city !== undefined) { updates.push('city = ?'); values.push(city); }
     if (address !== undefined) { updates.push('address = ?'); values.push(address); }
-    if (company_type !== undefined) { updates.push('company_type = ?'); values.push(Array.isArray(company_type) ? JSON.stringify(company_type) : company_type); }
+    if (company_type !== undefined) {
+      const _typeArr = Array.isArray(company_type) ? company_type : (company_type ? [company_type] : []);
+      updates.push('company_type = ?'); values.push(JSON.stringify(_typeArr));
+      updates.push('company_types = ?'); values.push(JSON.stringify(_typeArr));
+    }
     if (trade_license_number !== undefined) { updates.push('trade_license_number = ?'); values.push(trade_license_number || null); }
     if (establishment_year !== undefined) { updates.push('establishment_year = ?'); values.push(establishment_year || null); }
     if (status !== undefined) { updates.push('status = ?'); values.push(status); }
