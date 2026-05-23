@@ -3,10 +3,9 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
-import { fetchPortfolioFeed, type PortfolioImage } from '../lib/publicApi';
+import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 import { DEFAULT_RATIO, GAP, TARGET_ROW_HEIGHT, justifyRows } from '../lib/justifyRows';
 
-// Removed MAX_IMAGES_PER_GROUP — no longer grouping by project
 
 /* ================================================================== */
 /*  Image preloader with RAF batching                                  */
@@ -188,7 +187,7 @@ function JustifiedGallery({
                   />
                 )}
                 <img
-                  src={resolveVariantUrl(item.src, 'medium')}
+                  src={resolveVariantUrl(item.src, 'thumb')}
                   alt="Interior design project"
                   loading="lazy"
                   decoding="async"
@@ -218,22 +217,216 @@ function JustifiedGallery({
 }
 
 /* ================================================================== */
-/*  Main page                                                          */
+/*  MosaicGallery — varied-size collage layout                         */
 /* ================================================================== */
 
-// ── SEO URL helper — registered images only ──
-function getImageSeoUrl(image: {
-  tags: string[];
-  companySlug: string;
-  projectSlug: string;
-  imageIndex: number;
-  source: string;
-}): string | null {
-  if (image.source !== 'registered') return null;
-  if (!image.companySlug || !image.projectSlug || image.imageIndex === undefined) return null;
-  const primaryTag = encodeURIComponent(image.tags[0] || 'portfolio');
-  return `/portfolio/${primaryTag}/${image.companySlug}/${image.projectSlug}/${image.imageIndex}`;
+interface MosaicPattern {
+  n: number;    // number of images this pattern displays
+  tpl: string;  // CSS grid-template value (areas + track sizes)
+  h: number;    // fixed block height in px
 }
+
+// Each pattern creates a complete rectangle from images of different sizes.
+// Area letters a,b,c... map to images[0], images[1], images[2]...
+// Design rules:
+//   - No single cell may span the full width (no "a a a" across all columns)
+//   - Every cell height ≥ 160px so images never become flat strips
+//   - Target cell aspect ratio between 0.6:1 (portrait) and 2.5:1 (landscape)
+const MOSAIC_PATTERNS: MosaicPattern[] = [
+  // ── 3-image patterns ──────────────────────────────────────────────
+  // Big left (2/3 w) + 2 small stacked right (1/3 w each)
+  { n: 3, tpl: '"a b" 1fr "a c" 1fr / 2fr 1fr', h: 420 },
+  // 2 small stacked left + big right (2/3 w)
+  { n: 3, tpl: '"b a" 1fr "c a" 1fr / 1fr 2fr', h: 420 },
+  // Three equal columns
+  { n: 3, tpl: '"a b c" 1fr / 1fr 1fr 1fr', h: 380 },
+
+  // ── 4-image patterns ──────────────────────────────────────────────
+  // 2×2 grid
+  { n: 4, tpl: '"a b" 1fr "c d" 1fr / 1fr 1fr', h: 560 },
+  // Big top-left (spans 2 rows left col) + 3 right
+  { n: 4, tpl: '"a b c" 1fr "a d d" 1fr / 1fr 1fr 1fr', h: 440 },
+  // Big bottom-right (spans 2 rows right col) + 3 left
+  { n: 4, tpl: '"a a b" 1fr "c c b" 1fr / 1fr 1fr 1fr', h: 440 },
+
+  // ── 5-image patterns ──────────────────────────────────────────────
+  // Tall left (2 cols) + 2×2 right (1 col each)
+  { n: 5, tpl: '"a b c" 1fr "a d e" 1fr / 2fr 1fr 1fr', h: 460 },
+  // 2×2 left + tall right (2 cols)
+  { n: 5, tpl: '"b c a" 1fr "d e a" 1fr / 1fr 1fr 2fr', h: 460 },
+  // 3 top row + 2 bottom (wider)
+  { n: 5, tpl: '"a b c" 1fr "d d e" 1fr / 1fr 1fr 1fr', h: 460 },
+
+  // ── 6-image patterns ──────────────────────────────────────────────
+  // 2 rows × 3 cols
+  { n: 6, tpl: '"a b c" 1fr "d e f" 1fr / 1fr 1fr 1fr', h: 480 },
+  // Big left (spans 2 rows) + 2×2 mid + 2 right stacked
+  { n: 6, tpl: '"a b c" 1fr "a d e" 1fr / 2fr 1fr 1fr', h: 460 },
+];
+
+const MOSAIC_GAP = 4;
+
+function MosaicGallery({
+  images,
+  patternIndex,
+  totalImages,
+  onImageClick,
+  renderOverlay,
+}: {
+  images: string[];
+  patternIndex: number;
+  totalImages: number;
+  onImageClick: (idx: number) => void;
+  renderOverlay?: (idx: number) => React.ReactNode;
+}) {
+  const viable = MOSAIC_PATTERNS.filter(p => p.n <= images.length);
+
+  // Fallback for 1–2 images: simple flex row
+  if (!viable.length) {
+    const imgs = images.slice(0, 2);
+    return (
+      <div className="flex overflow-hidden rounded-xl" style={{ gap: MOSAIC_GAP, height: 300 }}>
+        {imgs.map((url, i) => (
+          <div key={i} className="relative flex-1 cursor-pointer group overflow-hidden rounded-xl" onClick={() => onImageClick(i)}>
+            <img src={resolveVariantUrl(url, 'medium')} alt="" loading="lazy" decoding="async"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => { const t = e.currentTarget; if (!t.dataset.fb) { t.dataset.fb='1'; t.src=resolveImageUrl(url); } }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {renderOverlay?.(i)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const pattern = viable[patternIndex % viable.length];
+  const displayImages = images.slice(0, pattern.n);
+  const remaining = Math.max(0, totalImages - pattern.n);
+
+  return (
+    <div
+      className="w-full overflow-hidden rounded-xl"
+      style={{ display: 'grid', gridTemplate: pattern.tpl, gap: MOSAIC_GAP, height: pattern.h }}
+    >
+      {displayImages.map((url, i) => {
+        const area = String.fromCharCode(97 + i); // a, b, c, d, e, f
+        const isLast = i === displayImages.length - 1;
+        return (
+          <div
+            key={i}
+            style={{ gridArea: area }}
+            className="relative cursor-pointer group overflow-hidden bg-stone-200"
+            onClick={() => onImageClick(i)}
+          >
+            {/* Shimmer placeholder — hidden once image loads */}
+            <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(90deg,#e7e5e4 25%,#d6d3d1 50%,#e7e5e4 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+            <img
+              src={resolveVariantUrl(url, 'medium')}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onLoad={(e) => {
+                const shimmer = e.currentTarget.previousElementSibling as HTMLElement | null;
+                if (shimmer) shimmer.style.display = 'none';
+              }}
+              onError={(e) => {
+                const img = e.currentTarget;
+                const retries = parseInt(img.dataset.retry || '0');
+                if (retries === 0) {
+                  img.dataset.retry = '1';
+                  img.src = resolveImageUrl(url);
+                } else if (retries === 1) {
+                  img.dataset.retry = '2';
+                  setTimeout(() => { img.src = resolveImageUrl(url) + '?r=2'; }, 2000);
+                } else {
+                  // All retries failed — hide img, shimmer stays as neutral placeholder
+                  img.style.display = 'none';
+                }
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {renderOverlay?.(i)}
+            {isLast && remaining > 0 && (
+              <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                <span className="text-white text-2xl font-semibold">+{remaining}</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  ProjectGroup                                                        */
+/* ================================================================== */
+
+function ProjectGroup({
+  project,
+  patternIndex,
+  onBeforeNavigate,
+}: {
+  project: PortfolioProject;
+  patternIndex: number;
+  onBeforeNavigate?: (projectId: string, imageIdx: number) => void;
+}) {
+  const navigate = useNavigate();
+  const projectRouteKey = project.slug || String(project.id);
+  const baseUrl = `/companies/${project.companySlug}/${projectRouteKey}`;
+
+  const handleClick = useCallback((imageIdx: number) => {
+    onBeforeNavigate?.(String(project.id), imageIdx);
+    navigate(`${baseUrl}?from=portfolio&img=${imageIdx}`);
+  }, [navigate, baseUrl, project.id, onBeforeNavigate]);
+
+  const handleHeaderClick = useCallback(() => {
+    onBeforeNavigate?.(String(project.id), -1);
+    navigate(`${baseUrl}?from=portfolio`);
+  }, [navigate, baseUrl, project.id, onBeforeNavigate]);
+
+  const renderOverlay = useCallback((_idx: number) => (
+    <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+      <p className="text-white text-sm font-medium line-clamp-1">{project.title || 'Project'}</p>
+      <p className="text-[#c6a065] text-xs mt-0.5">
+        {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
+      </p>
+    </div>
+  ), [project]);
+
+  if (!project.images.length) return null;
+
+  // Normalize images to string URLs (handles both legacy string[] and object[] shapes)
+  const imageUrls: string[] = project.images.map((img: any) =>
+    typeof img === 'string' ? img : (img?.url || '')
+  ).filter(Boolean);
+
+  return (
+    <section className="mb-10" data-project-id={project.id}>
+      <div className="flex items-baseline gap-3 mb-3 cursor-pointer group/hdr" onClick={handleHeaderClick}>
+        <h3 className="text-[15px] font-medium text-[#1c1917] group-hover/hdr:text-[var(--color-tarmeer-primary)] transition">
+          {project.title || 'Project'}
+        </h3>
+        <span className="text-sm text-stone-400">
+          {project.companyName}{project.companyCity ? ` \u00b7 ${project.companyCity}` : ''}
+        </span>
+        <span className="text-xs text-stone-300">{project.images.length} photos</span>
+      </div>
+      <MosaicGallery
+        images={imageUrls}
+        patternIndex={patternIndex}
+        totalImages={project.images.length}
+        onImageClick={handleClick}
+        renderOverlay={renderOverlay}
+      />
+    </section>
+  );
+}
+
+/* ================================================================== */
+/*  Main page                                                          */
+/* ================================================================== */
 
 // ── Tag taxonomy for filter UI ──
 const ROOM_FILTERS = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dining Room', 'Home Office', 'Majlis', 'Hallway', 'Nursery', 'Outdoor'];
@@ -241,14 +434,17 @@ const STYLE_FILTERS = ['Modern', 'Luxury', 'Minimalist', 'Classical', 'Arabic', 
 
 // ── Portfolio state cache (survives back navigation) ──
 const CACHE_KEY = 'portfolio-state';
+const SINGLES_RATIO_KEY = '__singles__';
 interface CachedState {
-  images: PortfolioImage[];
+  projects: PortfolioProject[];
   page: number;
   hasMore: boolean;
   activeTag: string;
   seed: number;
   scrollY: number;
-  imageRatios: number[];   // flat ratios[] parallel to images[] (0 = hidden)
+  projectRatios: Record<string, number[]>;   // projectId → ratios[] (0 = hidden)
+  clickedProjectId?: string;                  // anchor target for scroll restore
+  clickedImageIdx?: number;
   savedAt: number;
 }
 
@@ -283,7 +479,7 @@ export default function PortfolioPage() {
     return c && c.activeTag === urlTag ? c : null;
   }, []); // Only read once on mount
 
-  const [images, setImages] = useState<PortfolioImage[]>(cached?.images || []);
+  const [projects, setProjects] = useState<PortfolioProject[]>(cached?.projects || []);
   const [page, setPage] = useState(cached?.page || 1);
   const [hasMore, setHasMore] = useState(cached?.hasMore ?? true);
   const [loading, setLoading] = useState(false);
@@ -298,32 +494,34 @@ export default function PortfolioPage() {
   const seedRef = useRef(cached?.seed || Math.floor(Math.random() * 1000000));
   const navigate = useNavigate();
 
-  // Flat ratio cache for the single gallery. Hydrated from sessionStorage; updated by onRatios.
-  const imageRatiosCacheRef = useRef<number[]>(cached?.imageRatios || []);
-
-  const handleRatiosUpdate = useCallback((ratios: number[]) => {
-    imageRatiosCacheRef.current = ratios;
-  }, []);
+  // Per-project ratio cache. Hydrated from sessionStorage; children report up via onRatios.
+  const ratiosCacheRef = useRef<Map<string, number[]>>(
+    new Map(cached?.projectRatios ? Object.entries(cached.projectRatios) : [])
+  );
 
   // Latest state refs for saveCacheNow (avoids stale closures on click)
-  const stateRef = useRef({ images, page, hasMore, activeTag });
-  useEffect(() => { stateRef.current = { images, page, hasMore, activeTag }; }, [images, page, hasMore, activeTag]);
+  const stateRef = useRef({ projects, page, hasMore, activeTag });
+  useEffect(() => { stateRef.current = { projects, page, hasMore, activeTag }; }, [projects, page, hasMore, activeTag]);
 
-  const saveCacheNow = useCallback(() => {
+  const saveCacheNow = useCallback((clickedProjectId?: string, clickedImageIdx?: number) => {
+    const ratiosObj: Record<string, number[]> = {};
+    ratiosCacheRef.current.forEach((v, k) => { ratiosObj[k] = v; });
     const s = stateRef.current;
     writeCache({
-      images: s.images,
+      projects: s.projects,
       page: s.page,
       hasMore: s.hasMore,
       activeTag: s.activeTag,
       seed: seedRef.current,
       scrollY: window.scrollY,
-      imageRatios: imageRatiosCacheRef.current,
+      projectRatios: ratiosObj,
+      clickedProjectId,
+      clickedImageIdx,
     });
   }, []);
 
-  const handleBeforeNavigate = useCallback(() => {
-    saveCacheNow();
+  const handleBeforeNavigate = useCallback((projectId: string, imageIdx: number) => {
+    saveCacheNow(projectId, imageIdx);
   }, [saveCacheNow]);
 
   // ── Scroll restore: jump to saved position WITHOUT a visible top-of-page flash ──
@@ -415,8 +613,8 @@ export default function PortfolioPage() {
     navigate(newTag ? `/portfolio?tag=${encodeURIComponent(newTag)}` : '/portfolio', { replace: true });
     // Clear cache — user wants a fresh filtered view
     clearCache();
-    imageRatiosCacheRef.current = [];
-    setImages([]);
+    ratiosCacheRef.current.clear();
+    setProjects([]);
     setPage(1);
     setHasMore(true);
     setLoading(false);
@@ -430,9 +628,9 @@ export default function PortfolioPage() {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      const result = await fetchPortfolioFeed(page, 30, seedRef.current, activeTag || undefined);
-      setImages(prev => [...prev, ...result.images]);
-      setHasMore(result.images.length === 30);
+      const result = await fetchPortfolioFeed(page, 12, seedRef.current, activeTag || undefined);
+      setProjects(prev => [...prev, ...result.projects]);
+      setHasMore(result.projects.length === 12);
       setPage(prev => prev + 1);
     } catch (err) {
       console.error('Portfolio load error:', err);
@@ -467,40 +665,54 @@ export default function PortfolioPage() {
     return () => observer.disconnect();
   }, []); // Stable — never recreated
 
-  // Flat URL list for the single unified gallery
-  const imageUrls = useMemo(() => images.map(img => img.url), [images]);
-  const imageInitialRatios = useMemo(
-    () => imageRatiosCacheRef.current.length > 0 ? imageRatiosCacheRef.current : undefined,
-    // Re-read when image count changes so cache hit works across pagination
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [images.length]
-  );
-  const galleryItems = useImagePreloader(imageUrls, imageInitialRatios, handleRatiosUpdate);
-
-  const handleImageClick = useCallback((idx: number) => {
-    const img = images[idx];
-    if (!img) return;
-    handleBeforeNavigate();
-    const seoUrl = getImageSeoUrl(img);
-    if (seoUrl) {
-      navigate(seoUrl);
-    } else {
-      navigate(`/companies/${img.companySlug}/${img.projectSlug}?from=portfolio`);
+  const { grouped, singles } = useMemo(() => {
+    const g: PortfolioProject[] = [];
+    const s: PortfolioProject[] = [];
+    for (const p of projects) {
+      if (p.images.length > 1) g.push(p);
+      else if (p.images.length === 1) s.push(p);
     }
-  }, [images, navigate, handleBeforeNavigate]);
+    return { grouped: g, singles: s };
+  }, [projects]);
 
-  const renderImageOverlay = useCallback((idx: number) => {
-    const img = images[idx];
-    if (!img) return null;
+  const singlesUrls = useMemo(() => singles.map(s => {
+    const first = s.images[0];
+    if (typeof first === 'string') return first;
+    if (first && typeof first === 'object' && typeof (first as any).url === 'string') return (first as any).url;
+    return '';
+  }), [singles]);
+  const singlesInitialRatios = useMemo(
+    () => ratiosCacheRef.current.get(SINGLES_RATIO_KEY),
+    // Re-read when singles set changes so cache hit still works across pagination
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [singles.length]
+  );
+  const handleSinglesRatios = useCallback((rs: number[]) => {
+    ratiosCacheRef.current.set(SINGLES_RATIO_KEY, rs);
+  }, []);
+  const singlesItems = useImagePreloader(singlesUrls, singlesInitialRatios, handleSinglesRatios);
+
+  const handleSingleClick = useCallback((idx: number) => {
+    const proj = singles[idx];
+    if (!proj) return;
+    saveCacheNow(String(proj.id), idx);
+    // Fall back to numeric id when slug is missing (backend accepts either).
+    const routeKey = proj.slug || String(proj.id);
+    navigate(`/companies/${proj.companySlug}/${routeKey}?from=portfolio&img=0`);
+  }, [singles, navigate, saveCacheNow]);
+
+  const renderSingleOverlay = useCallback((idx: number) => {
+    const proj = singles[idx];
+    if (!proj) return null;
     return (
       <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <p className="text-white text-sm font-medium line-clamp-1">{img.projectTitle || 'Project'}</p>
+        <p className="text-white text-sm font-medium line-clamp-1">{proj.title || 'Project'}</p>
         <p className="text-[#c6a065] text-xs mt-0.5">
-          {img.companyName}{img.companyCity ? ` \u00b7 ${img.companyCity}` : ''}
+          {proj.companyName}{proj.companyCity ? ` \u00b7 ${proj.companyCity}` : ''}
         </p>
       </div>
     );
-  }, [images]);
+  }, [singles]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -517,15 +729,16 @@ export default function PortfolioPage() {
             url: urlTag ? `https://www.tarmeer.com/portfolio?tag=${encodeURIComponent(urlTag)}` : 'https://www.tarmeer.com/portfolio',
             mainEntity: {
               '@type': 'ItemList',
-              itemListElement: images.slice(0, 20).map((img, i) => ({
+              itemListElement: projects.slice(0, 20).map((p, i) => ({
                 '@type': 'ListItem',
                 position: i + 1,
                 item: {
                   '@type': 'CreativeWork',
-                  name: img.projectTitle || 'Interior Design Project',
-                  creator: { '@type': 'Organization', name: img.companyName },
-                  image: `https://www.tarmeer.com${img.url}`,
-                  url: `https://www.tarmeer.com/companies/${img.companySlug}/${img.projectSlug}`,
+                  name: p.title || 'Interior Design Project',
+                  description: p.description || `${p.style || 'Interior design'} project by ${p.companyName}`,
+                  creator: { '@type': 'Organization', name: p.companyName },
+                  ...(p.images[0] ? { image: `https://www.tarmeer.com${typeof p.images[0] === 'string' ? p.images[0] : ((p.images[0] as any)?.url || '')}` } : {}),
+                  ...(p.companySlug && p.slug ? { url: `https://www.tarmeer.com/companies/${p.companySlug}/${p.slug}` } : {}),
                 },
               })),
             },
@@ -594,18 +807,34 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {!initialLoading && images.length === 0 && (
+        {!initialLoading && projects.length === 0 && (
           <div className="text-center py-20">
             <p className="text-[var(--color-tarmeer-muted)]">No portfolio projects available yet.</p>
           </div>
         )}
 
-        {images.length > 0 && (
-          <JustifiedGallery
-            items={galleryItems}
-            onItemClick={handleImageClick}
-            renderOverlay={renderImageOverlay}
+        {grouped.map((project, index) => (
+          <ProjectGroup
+            key={`g-${project.id}`}
+            project={project}
+            patternIndex={index}
+            onBeforeNavigate={handleBeforeNavigate}
           />
+        ))}
+
+        {singles.length > 0 && (
+          <section className="mb-10" style={{ marginTop: grouped.length > 0 ? 32 : 0 }}>
+            {grouped.length > 0 && (
+              <div className="flex items-baseline gap-3 mb-3">
+                <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
+              </div>
+            )}
+            <JustifiedGallery
+              items={singlesItems}
+              onItemClick={handleSingleClick}
+              renderOverlay={renderSingleOverlay}
+            />
+          </section>
         )}
 
         <div ref={observerRef} className="flex flex-col items-center justify-center py-6">
@@ -629,8 +858,8 @@ export default function PortfolioPage() {
               <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
             </>
           )}
-          {!hasMore && images.length > 0 && (
-            <p className="text-sm text-stone-400 py-4">All images loaded</p>
+          {!hasMore && projects.length > 0 && (
+            <p className="text-sm text-stone-400 py-4">All projects loaded</p>
           )}
         </div>
       </div>
