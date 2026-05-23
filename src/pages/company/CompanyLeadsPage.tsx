@@ -80,6 +80,7 @@ function LeadCard({ inquiry, onStatusChange }: { inquiry: Inquiry; onStatusChang
           disabled={updating}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition shrink-0 ${cfg.color} ${updating ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 cursor-pointer'}`}
           title="Click to change status"
+          aria-label={`Status: ${cfg.label}. Click to change.`}
         >
           <Icon className="w-3.5 h-3.5" />
           {cfg.label}
@@ -120,15 +121,18 @@ const TABS: { key: FilterTab; label: string }[] = [
 export default function CompanyLeadsPage() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState<FilterTab>('all');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res: any = await api.get('/inquiries/mine?limit=100');
       setInquiries(res.inquiries ?? []);
     } catch {
       setInquiries([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -176,7 +180,11 @@ export default function CompanyLeadsPage() {
       </div>
 
       {/* Content */}
-      {loading ? (
+      {!loading && loadError ? (
+        <div className="text-center py-8 text-stone-500 text-sm">
+          Failed to load leads. <button onClick={load} className="text-[#b8864a] underline">Try again</button>
+        </div>
+      ) : loading ? (
         <div className="text-center py-16 text-stone-400 text-sm">Loading leads…</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -184,7 +192,7 @@ export default function CompanyLeadsPage() {
           <p className="text-stone-500 text-sm">
             {tab === 'all'
               ? 'No leads yet. Once homeowners submit inquiries on your company page, they will appear here.'
-              : `No ${tab} leads.`}
+              : `No ${TABS.find(t => t.key === tab)?.label ?? tab} leads.`}
           </p>
         </div>
       ) : (
