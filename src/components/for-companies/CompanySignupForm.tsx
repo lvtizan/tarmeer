@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronDown, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { t, type Lang } from '../../i18n/forCompanies';
 import AdminSelect from '../ui/AdminSelect';
@@ -30,14 +32,6 @@ const GCC_PHONE_OPTIONS = [
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
-const COMPANY_TYPE_GROUPS: Record<string, string> = {
-  design_studio: 'Design',
-  renovation_company: 'Construction', general_contractor: 'Construction', fitout_contractor: 'Construction',
-  mep_contractor: 'Systems & MEP', fire_fighting: 'Systems & MEP', smart_home: 'Systems & MEP', waterproofing: 'Systems & MEP',
-  glass_aluminium: 'Specialty Trade', carpentry_joinery: 'Specialty Trade', stone_marble: 'Specialty Trade', steel_fabrication: 'Specialty Trade', specialty_trade: 'Specialty Trade',
-  maintenance_company: 'Services', cleaning_services: 'Services', manpower_supply: 'Services', landscaping: 'Services', swimming_pool: 'Services',
-  furnishing: 'Furnishing',
-};
 
 const COMPANY_TYPES = [
   { value: 'design_studio', labelKey: 'typeDesignStudio' as const },
@@ -59,20 +53,100 @@ const COMPANY_TYPES = [
   { value: 'landscaping', labelKey: 'typeLandscaping' as const },
   { value: 'swimming_pool', labelKey: 'typeSwimmingPool' as const },
   { value: 'furnishing', labelKey: 'typeFurnishing' as const },
-  { value: 'fitout_contractor', labelKey: 'typeFitoutContractor' as const },
-  { value: 'glass_aluminium', labelKey: 'typeGlassAluminium' as const },
-  { value: 'waterproofing', labelKey: 'typeWaterproofing' as const },
-  { value: 'smart_home', labelKey: 'typeSmartHome' as const },
-  { value: 'fire_fighting', labelKey: 'typeFireFighting' as const },
-  { value: 'carpentry_joinery', labelKey: 'typeCarpentryJoinery' as const },
-  { value: 'stone_marble', labelKey: 'typeStoneMarble' as const },
-  { value: 'steel_fabrication', labelKey: 'typeSteelFabrication' as const },
-  { value: 'cleaning_services', labelKey: 'typeCleaningServices' as const },
-  { value: 'manpower_supply', labelKey: 'typeManpowerSupply' as const },
-  { value: 'swimming_pool', labelKey: 'typeSwimmingPool' as const },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
+
+// ── Multi-select Company Type Dropdown ──────────────────────────────────────
+function MultiTypeSelect({
+  selected,
+  onToggle,
+  options,
+  placeholder,
+  error: hasError,
+}: {
+  selected: string[];
+  onToggle: (slug: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  error?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const updatePos = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePos();
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [open, updatePos]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const selectedLabels = options.filter(o => selected.includes(o.value)).map(o => o.label);
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className={`flex items-center justify-between w-full h-[50px] px-5 rounded-2xl border bg-stone-50/80 text-left cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white ${hasError ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : 'border-stone-200'}`}
+      >
+        <span className="truncate text-[15px]">
+          {selectedLabels.length === 0
+            ? <span className="text-stone-400">{placeholder}</span>
+            : <span className="text-[#1c1917]">{selectedLabels.join(', ')}</span>}
+        </span>
+        <ChevronDown className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && dropPos && createPortal(
+        <div
+          className="fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-y-auto"
+          style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: 260 }}
+        >
+          {options.map(opt => {
+            const isOn = selected.includes(opt.value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onToggle(opt.value)}
+                className={`flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm transition hover:bg-stone-50 ${isOn ? 'text-[#b8864a] font-medium' : 'text-[#1c1917]'}`}
+              >
+                <span className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition ${isOn ? 'bg-[#b8864a] border-[#b8864a]' : 'border-stone-300'}`}>
+                  {isOn && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                </span>
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 interface CompanySignupFormProps {
   lang: Lang;
@@ -86,7 +160,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [companyType, setCompanyType] = useState('');
+  const [companyTypes, setCompanyTypes] = useState<string[]>([]);
   const [establishmentYear, setEstablishmentYear] = useState('');
   const [city, setCity] = useState('');
 
@@ -94,9 +168,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const phoneError = isPhoneComplete(phoneDigits, phoneRegion.code)
     ? validatePhone(phoneDigits, phoneRegion.code)
     : null;
-
-  // Refs
-  const companyTypeRef = useRef<HTMLSelectElement>(null);
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -175,7 +246,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     if (phoneError) { setError(phoneError); return; }
     if (!companyName.trim()) { setError('Please fill in all required fields'); return; }
     if (!city) { setError('Please fill in all required fields'); return; }
-    if (!companyType) {
+    if (companyTypes.length === 0) {
       setCompanyTypeError(true);
       setError('Please fill in all required fields');
       return;
@@ -194,7 +265,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           contactName: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           companyName: companyName.trim(),
-          companyType,
+          companyType: companyTypes,
           establishmentYear: establishmentYear || undefined,
           city,
           sourcePage: window.location.href,
@@ -213,7 +284,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               contact_person: contactName.trim(),
               phone: `${phoneRegion.code}${phoneDigits}`,
               city,
-              company_type: companyType,
+              company_type: companyTypes,
               establishment_year: establishmentYear || null,
             }));
           }
@@ -260,7 +331,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           contact_person: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           city,
-          company_type: companyType,
+          company_type: companyTypes,
           establishment_year: establishmentYear ? Number(establishmentYear) : null,
           description: '',
           services: ['Interior Design'],
@@ -319,7 +390,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       contact_person: contactName.trim(),
       description: '',
       services: ['Interior Design'],
-      company_type: companyType,
+      company_type: companyTypes,
       establishment_year: establishmentYear ? Number(establishmentYear) : null,
       signup_source: source,
     };
@@ -504,7 +575,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       contact_person: contactName.trim(),
                       phone: `${phoneRegion.code}${phoneDigits}`,
                       city,
-                      company_type: companyType,
+                      company_type: companyTypes[0] || '',
                       establishment_year: establishmentYear || null,
                       services: ['Interior Design'],
                       signup_source: 'for-companies-landing',
@@ -730,17 +801,18 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             <label className={labelClass}>
               {t(lang, 'companyType')} <span className="text-red-500">*</span>
             </label>
-            <AdminSelect
-              ref={companyTypeRef}
-              value={companyType}
-              onChange={(v) => { setCompanyType(v); if (v) setCompanyTypeError(false); }}
-              options={[
-                { value: '', label: t(lang, 'companyTypePlaceholder') },
-                ...COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey), group: COMPANY_TYPE_GROUPS[ct.value] })),
-              ]}
-              searchable
-              className="w-full"
-              error={companyTypeError || (tried && !companyType)}
+            <MultiTypeSelect
+              selected={companyTypes}
+              onToggle={(slug) => {
+                setCompanyTypes(prev => {
+                  const next = prev.includes(slug) ? prev.filter(v => v !== slug) : [...prev, slug];
+                  if (next.length > 0) setCompanyTypeError(false);
+                  return next;
+                });
+              }}
+              options={COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey) }))}
+              placeholder={t(lang, 'companyTypePlaceholder')}
+              error={companyTypeError || (tried && companyTypes.length === 0)}
             />
           </div>
 
