@@ -325,7 +325,7 @@ function MosaicGallery({
               alt=""
               loading="eager"
               decoding="async"
-              className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               onLoad={(e) => {
                 const shimmer = e.currentTarget.previousElementSibling as HTMLElement | null;
                 if (shimmer) shimmer.style.display = 'none';
@@ -864,9 +864,6 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      <style>{`
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-      `}</style>
     </div>
   );
 }
