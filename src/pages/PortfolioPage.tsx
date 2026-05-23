@@ -246,8 +246,8 @@ const MOSAIC_PATTERNS: MosaicPattern[] = [
   { n: 4, tpl: '"a b" 1fr "c d" 1fr / 1fr 1fr', h: 560 },
   // Big top-left (spans 2 rows left col) + 3 right
   { n: 4, tpl: '"a b c" 1fr "a d d" 1fr / 1fr 1fr 1fr', h: 440 },
-  // Big bottom-right (spans 2 rows right col) + 3 left
-  { n: 4, tpl: '"a a b" 1fr "c c b" 1fr / 1fr 1fr 1fr', h: 440 },
+  // Tall right col + big top-left + 2 small bottom-left
+  { n: 4, tpl: '"a a b" 1fr "c d b" 1fr / 1fr 1fr 1fr', h: 440 },
 
   // ── 5-image patterns ──────────────────────────────────────────────
   // Tall left (2 cols) + 2×2 right (1 col each)
@@ -323,7 +323,7 @@ function MosaicGallery({
             <img
               src={resolveVariantUrl(url, 'medium')}
               alt=""
-              loading="lazy"
+              loading="eager"
               decoding="async"
               className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               onLoad={(e) => {
