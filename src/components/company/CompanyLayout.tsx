@@ -146,10 +146,10 @@ export default function CompanyLayout() {
               </NavLink>
               <NavLink to="/company/leads" className={navCls}>
                 <Inbox className="w-5 h-5" />
-                <span className="text-sm font-medium">线索</span>
+                <span className="text-sm font-medium">Leads</span>
                 {newLeadsCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-tight">
-                    {newLeadsCount}
+                    {newLeadsCount > 9 ? '9+' : newLeadsCount}
                   </span>
                 )}
               </NavLink>
@@ -224,7 +224,7 @@ export default function CompanyLayout() {
         <div className="relative">
           <NavLink to="/company/leads" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-3 py-2 min-h-[44px] justify-center rounded-lg text-[11px] ${isActive ? 'text-[#b8864a] font-semibold' : 'text-stone-500'}`}>
             <Inbox className="w-5 h-5" />
-            线索
+            Leads
           </NavLink>
           {newLeadsCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
