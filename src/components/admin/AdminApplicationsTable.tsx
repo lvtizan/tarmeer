@@ -71,7 +71,38 @@ export default function AdminApplicationsTable({
     setSelected(new Set());
   };
 
-  const typeLabel = (type: string) => ({ design_studio: t('Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包商'), mep_contractor: t('MEP', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty', '专项工程'), landscaping: t('Landscape', '景观工程'), furnishing: t('Furnishing', '软装公司') }[type] || type);
+  const TYPE_LABEL_MAP: Record<string, string> = {
+    design_studio: t('Studio', '设计工作室'),
+    renovation_company: t('Renovation', '装修公司'),
+    general_contractor: t('Contractor', '总承包商'),
+    mep_contractor: t('MEP', '机电工程'),
+    maintenance_company: t('Maintenance', '维保公司'),
+    specialty_trade: t('Specialty', '专项工程'),
+    landscaping: t('Landscape', '景观工程'),
+    furnishing: t('Furnishing', '软装公司'),
+    fitout_contractor: t('Fit-Out', '装修工程'),
+    glass_aluminium: t('Glass & Alu', '玻璃铝材'),
+    waterproofing: t('Waterproof', '防水工程'),
+    smart_home: t('Smart Home', '智能家居'),
+    fire_fighting: t('Fire Safety', '消防安全'),
+    carpentry_joinery: t('Carpentry', '木工工程'),
+    stone_marble: t('Stone/Marble', '石材工程'),
+    steel_fabrication: t('Steel Works', '钢铁工程'),
+    cleaning_services: t('Cleaning', '清洁服务'),
+    manpower_supply: t('Manpower', '劳务供应'),
+    swimming_pool: t('Pool', '游泳池工程'),
+  };
+  const typeLabel = (raw: string) => {
+    if (!raw) return '—';
+    // Handle JSON array string e.g. '["carpentry_joinery","general_contractor"]'
+    if (raw.startsWith('[')) {
+      try {
+        const arr: string[] = JSON.parse(raw);
+        return arr.map(v => TYPE_LABEL_MAP[v] || v).join(' · ');
+      } catch { /* fall through */ }
+    }
+    return TYPE_LABEL_MAP[raw] || raw;
+  };
   const typeCls = (type: string) => type === 'design_studio' ? 'bg-purple-50 text-purple-600' : type === 'mep_contractor' ? 'bg-orange-50 text-orange-600' : type === 'general_contractor' ? 'bg-emerald-50 text-emerald-600' : type === 'maintenance_company' ? 'bg-cyan-50 text-cyan-600' : type === 'specialty_trade' ? 'bg-amber-50 text-amber-600' : type === 'landscaping' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600';
 
   return (
