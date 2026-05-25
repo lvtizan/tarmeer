@@ -5,6 +5,27 @@ import { enqueueVariants } from '../lib/variantWorker';
 import { processUploadedImage } from '../lib/imageVariants';
 
 /**
+ * PATCH /admin/suppliers/catalogs/:id/title — 修改目录名称
+ */
+export async function adminRenameCatalog(req: any, res: any) {
+  try {
+    const catalogId = Number(req.params.id);
+    if (!catalogId) return res.status(400).json({ error: 'invalid catalog id' });
+    const title = (req.body?.title || '').toString().trim();
+    if (!title) return res.status(400).json({ error: 'title is required' });
+
+    const [rows] = await pool.execute('SELECT id FROM supplier_catalogs WHERE id = ?', [catalogId]);
+    if ((rows as any[]).length === 0) return res.status(404).json({ error: 'catalog not found' });
+
+    await pool.execute('UPDATE supplier_catalogs SET title = ? WHERE id = ?', [title, catalogId]);
+    res.json({ id: catalogId, title });
+  } catch (error) {
+    console.error('Admin rename catalog error:', error);
+    res.status(500).json({ error: 'Failed to rename catalog.' });
+  }
+}
+
+/**
  * 管理员替换 catalog PDF 文件 —— 用于"把联系方式打白后回写"工作流。
  * multipart/form-data，字段名 file。保存到 public/uploads/catalogs/redacted/<supplier_id>/<id>.pdf，
  * UPDATE supplier_catalogs.file_url 指向新路径。
