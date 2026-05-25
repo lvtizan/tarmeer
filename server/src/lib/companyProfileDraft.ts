@@ -59,7 +59,14 @@ function normalizeEstablishmentYear(value: unknown) {
 }
 
 export function normalizeCompanyProfilePayload(body: any): CompanyProfilePayload {
-  const company_types = normalizeStringArray(body?.company_types);
+  // Accept company_types (preferred) OR company_type as array (signup form backward compat)
+  const company_types = normalizeStringArray(
+    Array.isArray(body?.company_types) && body.company_types.length > 0
+      ? body.company_types
+      : Array.isArray(body?.company_type)
+        ? body.company_type
+        : []
+  );
   // Derive legacy company_type from company_types[0] if provided
   const company_type = company_types.length > 0
     ? company_types[0]

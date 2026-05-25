@@ -289,7 +289,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               contact_person: contactName.trim(),
               phone: `${phoneRegion.code}${phoneDigits}`,
               city,
-              company_type: companyTypes,
+              company_types: companyTypes,
+              company_type: companyTypes[0] || '',
               establishment_year: establishmentYear || null,
             }));
           }
@@ -336,7 +337,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           contact_person: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           city,
-          company_type: companyTypes,
+          company_types: companyTypes,
+          company_type: companyTypes[0] || '',
           establishment_year: establishmentYear ? Number(establishmentYear) : null,
           description: '',
           services: ['Interior Design'],
@@ -395,7 +397,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       contact_person: contactName.trim(),
       description: '',
       services: ['Interior Design'],
-      company_type: companyTypes,
+      company_types: companyTypes,
+      company_type: companyTypes[0] || '',
       establishment_year: establishmentYear ? Number(establishmentYear) : null,
       signup_source: source,
     };
@@ -580,6 +583,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       contact_person: contactName.trim(),
                       phone: `${phoneRegion.code}${phoneDigits}`,
                       city,
+                      company_types: companyTypes,
                       company_type: companyTypes[0] || '',
                       establishment_year: establishmentYear || null,
                       services: ['Interior Design'],

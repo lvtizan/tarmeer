@@ -534,7 +534,9 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
               phone: pending.phone || '',
               city: pending.city || '',
               company_type: pending.company_type || '',
-              company_types: pending.company_type ? [pending.company_type] : [],
+              company_types: Array.isArray(pending.company_types) && pending.company_types.length > 0
+                ? pending.company_types
+                : pending.company_type ? [pending.company_type] : [],
               services: pending.services || [],
               establishment_year: pending.establishment_year || '',
             };
