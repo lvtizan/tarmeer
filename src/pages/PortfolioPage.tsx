@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 import { DEFAULT_RATIO, GAP, TARGET_ROW_HEIGHT, justifyRows } from '../lib/justifyRows';
@@ -485,6 +485,7 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!cached);
   const [activeTag, setActiveTag] = useState(urlTag);
+  const [openDropdown, setOpenDropdown] = useState<'room' | 'style' | null>(null);
   const [isFilterSticky, setIsFilterSticky] = useState(false);
   const [filterBarHeight, setFilterBarHeight] = useState(88);
   const headingRef = useRef<HTMLDivElement>(null);
@@ -772,30 +773,97 @@ export default function PortfolioPage() {
         ref={filterBarRef}
         className={`${isFilterSticky ? 'fixed top-14 sm:top-16 left-0 right-0 z-40' : 'relative'} bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm`}
       >
-        <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
-            {ROOM_FILTERS.map(tag => (
-              <button key={tag} onClick={() => selectTag(tag)}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                {tag}
+        <div className="max-w-[1400px] mx-auto px-4 py-2.5">
+
+          {/* ── Mobile: Houzz-style compact dropdown buttons ── */}
+          <div className="sm:hidden">
+            <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              {/* Room dropdown trigger */}
+              <button
+                onClick={() => setOpenDropdown(o => o === 'room' ? null : 'room')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition whitespace-nowrap shrink-0 ${
+                  activeTag && ROOM_FILTERS.includes(activeTag)
+                    ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                    : openDropdown === 'room'
+                    ? 'bg-stone-100 text-stone-700 border-stone-300'
+                    : 'bg-white text-stone-600 border-stone-200'
+                }`}
+              >
+                {activeTag && ROOM_FILTERS.includes(activeTag) ? activeTag : 'Room'}
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${openDropdown === 'room' ? 'rotate-180' : ''}`} />
               </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
-            {STYLE_FILTERS.map(tag => (
-              <button key={tag} onClick={() => selectTag(tag)}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                {tag}
+              {/* Style dropdown trigger */}
+              <button
+                onClick={() => setOpenDropdown(o => o === 'style' ? null : 'style')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition whitespace-nowrap shrink-0 ${
+                  activeTag && STYLE_FILTERS.includes(activeTag)
+                    ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                    : openDropdown === 'style'
+                    ? 'bg-stone-100 text-stone-700 border-stone-300'
+                    : 'bg-white text-stone-600 border-stone-200'
+                }`}
+              >
+                {activeTag && STYLE_FILTERS.includes(activeTag) ? activeTag : 'Style'}
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${openDropdown === 'style' ? 'rotate-180' : ''}`} />
               </button>
-            ))}
-            {activeTag && (
-              <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
-                <X className="w-3.5 h-3.5" /> Clear
-              </button>
+              {activeTag && (
+                <button
+                  onClick={() => { selectTag(activeTag); setOpenDropdown(null); }}
+                  className="ml-auto shrink-0 text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" /> Clear
+                </button>
+              )}
+            </div>
+            {/* Floating dropdown panel — absolute, doesn't push content down */}
+            {openDropdown && (
+              <div className="absolute left-0 right-0 top-full bg-white border-b border-stone-200 shadow-lg z-50 px-4 py-3">
+                <div className="flex flex-wrap gap-2 max-w-[1400px] mx-auto">
+                  {(openDropdown === 'room' ? ROOM_FILTERS : STYLE_FILTERS).map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => { selectTag(tag); setOpenDropdown(null); }}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                        activeTag === tag
+                          ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
+                          : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
+
+          {/* ── Desktop: flat pill rows ── */}
+          <div className="hidden sm:flex flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
+              {ROOM_FILTERS.map(tag => (
+                <button key={tag} onClick={() => selectTag(tag)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
+              {STYLE_FILTERS.map(tag => (
+                <button key={tag} onClick={() => selectTag(tag)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
+                  {tag}
+                </button>
+              ))}
+              {activeTag && (
+                <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
+                  <X className="w-3.5 h-3.5" /> Clear
+                </button>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 
