@@ -64,6 +64,9 @@ export default function Navbar({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
+  const [findCompanySearch, setFindCompanySearch] = useState('');
+  const [portfolioSearch, setPortfolioSearch] = useState('');
+  const [materialsSearch, setMaterialsSearch] = useState('');
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
   const [supplierNavCategories, setSupplierNavCategories] = useState<{ label: string; value: string }[]>([]);
@@ -135,6 +138,9 @@ export default function Navbar({
     setDropdownOpen(false);
     setPortfolioDropdownOpen(false);
     setMaterialsDropdownOpen(false);
+    setFindCompanySearch('');
+    setPortfolioSearch('');
+    setMaterialsSearch('');
   };
 
   const renderNavLink = (to: string, label: string, extraClasses = '') => (
@@ -443,7 +449,7 @@ export default function Navbar({
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-stone-200 bg-white">
+        <div className="md:hidden border-t border-stone-200 bg-white max-h-[calc(100vh-56px)] overflow-y-auto">
           <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-2">
             {navLinks.map(({ to, label }) => (
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
@@ -459,39 +465,66 @@ export default function Navbar({
                 <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {portfolioDropdownOpen && (
-                  <div className="mt-3 pl-4 space-y-4"
-                  >
-                    {Object.entries(portfolioCategories).map(([category, items]) => (
-                      <div key={category}>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">
-                          {category}
-                        </h3>
-                        <ul className="space-y-1">
-                          {items.map((item) => (
-                            <li key={item.to}>
-                              <Link
-                                to={item.to}
-                                onClick={() => handleClick(item.to)}
-                                className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1"
-                              >
+                <div className="mt-3 pl-2">
+                  {/* Search */}
+                  <div className="mb-3 relative">
+                    <input
+                      type="text"
+                      value={portfolioSearch}
+                      onChange={e => setPortfolioSearch(e.target.value)}
+                      placeholder="Search room or style…"
+                      className="w-full h-9 pl-3 pr-8 rounded-lg border border-stone-200 bg-stone-50 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+                    />
+                    {portfolioSearch && (
+                      <button onClick={() => setPortfolioSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {portfolioSearch.trim() ? (
+                    (() => {
+                      const q = portfolioSearch.toLowerCase();
+                      const allItems = Object.values(portfolioCategories).flat().filter(item => item.label.toLowerCase().includes(q));
+                      return allItems.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-x-4">
+                          {allItems.map(item => (
+                            <Link key={item.to} to={item.to}
+                              onClick={() => { handleClick(item.to); setPortfolioSearch(''); }}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition py-1">
+                              {item.label}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-stone-400 py-2">No results</p>
+                      );
+                    })()
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(portfolioCategories).map(([category, items]) => (
+                        <div key={category}>
+                          <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{category}</h3>
+                          <div className="grid grid-cols-2 gap-x-4">
+                            {items.map(item => (
+                              <Link key={item.to} to={item.to} onClick={() => handleClick(item.to)}
+                                className="text-sm text-stone-600 hover:text-[#b8864a] transition py-0.5">
                                 {item.label}
                               </Link>
-                            </li>
-                          ))}
-                        </ul>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="border-t border-stone-200 pt-2">
+                        <Link to="/portfolio" onClick={() => handleClick('/portfolio')}
+                          className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
+                          All Projects →
+                        </Link>
                       </div>
-                    ))}
-                    <div className="border-t border-stone-200 pt-2">
-                      <Link
-                        to="/portfolio"
-                        onClick={() => handleClick('/portfolio')}
-                        className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1"
-                      >
-                        All Projects {'>'}
-                      </Link>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Mobile Find Company Section */}
@@ -512,39 +545,88 @@ export default function Navbar({
                 </button>
               </div>
               {dropdownOpen && (
-                  <div className="mt-3 pl-4 space-y-4">
-                    <div>
-                      <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Space Type</h4>
-                      {spaceTypeItems.map((item) => (
-                        <Link key={item.to} to={item.to} onClick={() => handleClick(item.to)}
-                          className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Service Type</h4>
-                      {navCategories.map((cat) => (
-                        <div key={cat.name} className="py-1">
-                          <p className="text-xs font-semibold text-stone-500 mb-1">{cat.name}</p>
-                          {cat.subs.map((svc: string) => (
-                            <Link key={svc} to={`/companies?service=${encodeURIComponent(svc)}`}
-                              onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
-                              className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
-                              {svc}
+                <div className="mt-3 pl-2">
+                  {/* Search */}
+                  <div className="mb-3 relative">
+                    <input
+                      type="text"
+                      value={findCompanySearch}
+                      onChange={e => setFindCompanySearch(e.target.value)}
+                      placeholder="Search space or service…"
+                      className="w-full h-9 pl-3 pr-8 rounded-lg border border-stone-200 bg-stone-50 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+                    />
+                    {findCompanySearch && (
+                      <button onClick={() => setFindCompanySearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {findCompanySearch.trim() ? (
+                    /* Search results: flat 2-column grid */
+                    (() => {
+                      const q = findCompanySearch.toLowerCase();
+                      const allItems = [
+                        ...spaceTypeItems,
+                        ...navCategories.flatMap(cat =>
+                          cat.subs.map(svc => ({ label: svc, to: `/companies?service=${encodeURIComponent(svc)}` }))
+                        ),
+                      ].filter(item => item.label.toLowerCase().includes(q));
+                      return allItems.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-x-4">
+                          {allItems.map(item => (
+                            <Link key={item.to} to={item.to}
+                              onClick={() => { handleClick(item.to); setFindCompanySearch(''); }}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition py-1">
+                              {item.label}
                             </Link>
                           ))}
                         </div>
-                      ))}
+                      ) : (
+                        <p className="text-sm text-stone-400 py-2">No results</p>
+                      );
+                    })()
+                  ) : (
+                    /* Default grouped view: 2-column grid per section */
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Space Type</h4>
+                        <div className="grid grid-cols-2 gap-x-4">
+                          {spaceTypeItems.map(item => (
+                            <Link key={item.to} to={item.to} onClick={() => handleClick(item.to)}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition py-0.5">
+                              {item.label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Service Type</h4>
+                        {navCategories.map(cat => (
+                          <div key={cat.name} className="mb-3">
+                            <p className="text-xs font-semibold text-stone-400 mb-1">{cat.name}</p>
+                            <div className="grid grid-cols-2 gap-x-4">
+                              {cat.subs.map((svc: string) => (
+                                <Link key={svc} to={`/companies?service=${encodeURIComponent(svc)}`}
+                                  onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
+                                  className="text-sm text-stone-600 hover:text-[#b8864a] transition py-0.5">
+                                  {svc}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-stone-200 pt-2">
+                        <Link to="/companies" onClick={() => handleClick('/companies')}
+                          className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
+                          All Companies →
+                        </Link>
+                      </div>
                     </div>
-                    <div className="border-t border-stone-200 pt-2">
-                      <Link to="/companies" onClick={() => handleClick('/companies')}
-                        className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
-                        All Companies {'>'}
-                      </Link>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Mobile Materials Dropdown */}
@@ -565,42 +647,49 @@ export default function Navbar({
                 </button>
               </div>
               {materialsDropdownOpen && (
-                <div className="mt-3 pl-4 space-y-4">
+                <div className="mt-3 pl-2">
+                  {/* Search */}
+                  <div className="mb-3 relative">
+                    <input
+                      type="text"
+                      value={materialsSearch}
+                      onChange={e => setMaterialsSearch(e.target.value)}
+                      placeholder="Search category…"
+                      className="w-full h-9 pl-3 pr-8 rounded-lg border border-stone-200 bg-stone-50 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+                    />
+                    {materialsSearch && (
+                      <button onClick={() => setMaterialsSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
                   {(() => {
-                    const mid = Math.ceil(supplierNavCategories.length / 2);
-                    const cols = [supplierNavCategories.slice(0, mid), supplierNavCategories.slice(mid)];
-                    const colLabels = ['Materials', 'More'];
-                    return cols.map((items, ci) => items.length === 0 ? null : (
-                      <div key={ci}>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">
-                          {colLabels[ci]}
-                        </h3>
-                        <ul className="space-y-1">
-                          {items.map((item) => {
-                            const to = `/materials?category=${encodeURIComponent(item.value)}`;
-                            return (
-                              <li key={item.value}>
-                                <Link
-                                  to={to}
-                                  onClick={() => handleClick(to)}
-                                  className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1"
-                                >
-                                  {item.label}
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
+                    const q = materialsSearch.toLowerCase();
+                    const filtered = materialsSearch.trim()
+                      ? supplierNavCategories.filter(item => item.label.toLowerCase().includes(q))
+                      : supplierNavCategories;
+                    return filtered.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-x-4">
+                        {filtered.map(item => {
+                          const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                          return (
+                            <Link key={item.value} to={to}
+                              onClick={() => { handleClick(to); setMaterialsSearch(''); }}
+                              className="text-sm text-stone-600 hover:text-[#b8864a] transition py-0.5">
+                              {item.label}
+                            </Link>
+                          );
+                        })}
                       </div>
-                    ));
+                    ) : (
+                      <p className="text-sm text-stone-400 py-2">No results</p>
+                    );
                   })()}
-                  <div className="border-t border-stone-200 pt-2">
-                    <Link
-                      to="/materials"
-                      onClick={() => handleClick('/materials')}
-                      className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1"
-                    >
-                      All Suppliers {'>'}
+                  <div className="border-t border-stone-200 mt-3 pt-2">
+                    <Link to="/materials" onClick={() => handleClick('/materials')}
+                      className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
+                      All Suppliers →
                     </Link>
                   </div>
                 </div>
