@@ -609,32 +609,59 @@ function ServicesTab({
 
 // ─── Supplier Categories Tab ──────────────────────────────────────────────────
 
-interface SupplierCategory {
+interface SupplierGroup {
   value: string;
   label: string;
   sort_order: number;
   is_enabled: number;
 }
 
+interface SupplierCategory {
+  value: string;
+  label: string;
+  sort_order: number;
+  is_enabled: number;
+  group_value: string | null;
+}
+
 function SupplierCategoriesTab() {
+  const [groups, setGroups] = useState<SupplierGroup[]>([]);
   const [cats, setCats] = useState<SupplierCategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addingValue, setAddingValue] = useState('');
-  const [addingLabel, setAddingLabel] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const addValueRef = useRef<HTMLInputElement>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
-  const dragIndex = useRef(-1);
-  const overIndex = useRef(-1);
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroupValue, setNewGroupValue] = useState('');
+  const [newGroupLabel, setNewGroupLabel] = useState('');
+  const newGroupValueRef = useRef<HTMLInputElement>(null);
+  const groupSubmittingRef = useRef(false);
+
+  const [newCatValue, setNewCatValue] = useState('');
+  const [newCatLabel, setNewCatLabel] = useState('');
+  const [showAddCat, setShowAddCat] = useState(false);
+  const [addingCat, setAddingCat] = useState(false);
+
+  const dragIdx = useRef(-1);
+  const overIdx = useRef(-1);
   const [draggingIdx, setDraggingIdx] = useState(-1);
-  const [overIdx, setOverIdx] = useState(-1);
+  const [overDragIdx, setOverDragIdx] = useState(-1);
 
-  async function load() {
+  const gDragIdx = useRef(-1);
+  const gOverIdx = useRef(-1);
+  const [gDraggingIdx, setGDraggingIdx] = useState(-1);
+  const [gOverDragIdx, setGOverDragIdx] = useState(-1);
+
+  async function loadAll() {
     setLoading(true);
     try {
-      const data = await adminApi.request('/enums/supplier-categories');
-      setCats(data.categories || []);
+      const [gData, cData] = await Promise.all([
+        adminApi.request('/enums/supplier-category-groups'),
+        adminApi.request('/enums/supplier-categories'),
+      ]);
+      const loadedGroups: SupplierGroup[] = gData.groups || [];
+      setGroups(loadedGroups);
+      setCats(cData.categories || []);
+      setSelectedGroup(prev => prev ?? (loadedGroups[0]?.value ?? '__ungrouped__'));
     } catch {
       showToast('加载失败', 'error');
     } finally {
@@ -642,200 +669,383 @@ function SupplierCategoriesTab() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadAll(); }, []);
 
-  async function updateLabel(cat: SupplierCategory, newLabel: string) {
+  const displayedCats = selectedGroup === '__ungrouped__'
+    ? cats.filter(c => !c.group_value)
+    : cats.filter(c => c.group_value === selectedGroup);
+
+  // ── Group CRUD ──
+
+  async function commitNewGroup() {
+    if (groupSubmittingRef.current) return;
+    const v = newGroupValue.trim().toLowerCase().replace(/\s+/g, '_');
+    const l = newGroupLabel.trim();
+    if (!v || !l) { setAddingGroup(false); setNewGroupValue(''); setNewGroupLabel(''); return; }
+    groupSubmittingRef.current = true;
+    try {
+      await adminApi.request('/enums/supplier-category-groups', {
+        method: 'POST',
+        body: JSON.stringify({ value: v, label: l }),
+      });
+      showToast('大类已创建', 'success');
+      await loadAll();
+      setSelectedGroup(v);
+    } catch (e: any) {
+      showToast(e.message || '创建失败', 'error');
+    } finally {
+      groupSubmittingRef.current = false;
+      setAddingGroup(false);
+      setNewGroupValue('');
+      setNewGroupLabel('');
+    }
+  }
+
+  async function renameGroup(group: SupplierGroup, newLabel: string) {
+    if (!newLabel.trim() || newLabel.trim() === group.label) return;
+    try {
+      await adminApi.request(`/enums/supplier-category-groups/${encodeURIComponent(group.value)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ label: newLabel.trim() }),
+      });
+      setGroups(prev => prev.map(g => g.value === group.value ? { ...g, label: newLabel.trim() } : g));
+      showToast('已重命名', 'success');
+    } catch { showToast('重命名失败', 'error'); }
+  }
+
+  async function toggleGroup(group: SupplierGroup) {
+    try {
+      await adminApi.request(`/enums/supplier-category-groups/${encodeURIComponent(group.value)}/toggle`, { method: 'PUT' });
+      setGroups(prev => prev.map(g => g.value === group.value ? { ...g, is_enabled: g.is_enabled ? 0 : 1 } : g));
+    } catch { showToast('更新失败', 'error'); }
+  }
+
+  function deleteGroup(group: SupplierGroup) {
+    showConfirm({
+      title: `删除大类「${group.label}」`,
+      message: '该大类下的所有子分类将变为"待分配"状态，不会被删除。此操作不可恢复。',
+      requireText: '我已知道删除对系统的影响',
+      confirmLabel: '确认删除',
+      onConfirm: async () => {
+        try {
+          await adminApi.request(`/enums/supplier-category-groups/${encodeURIComponent(group.value)}`, { method: 'DELETE' });
+          showToast('已删除', 'success');
+          setSelectedGroup(groups.filter(g => g.value !== group.value)[0]?.value ?? '__ungrouped__');
+          await loadAll();
+        } catch { showToast('删除失败', 'error'); }
+      },
+    });
+  }
+
+  function handleGDragStart(idx: number) { gDragIdx.current = idx; setGDraggingIdx(idx); }
+  function handleGDragEnter(idx: number) { gOverIdx.current = idx; setGOverDragIdx(idx); }
+  async function handleGDragEnd() {
+    const from = gDragIdx.current, to = gOverIdx.current;
+    setGDraggingIdx(-1); setGOverDragIdx(-1);
+    gDragIdx.current = -1; gOverIdx.current = -1;
+    if (from === to || from < 0 || to < 0) return;
+    const reordered = [...groups];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    setGroups(reordered);
+    try {
+      await adminApi.request('/enums/supplier-category-groups/reorder', {
+        method: 'PUT',
+        body: JSON.stringify({ values: reordered.map(g => g.value) }),
+      });
+    } catch { showToast('排序保存失败', 'error'); }
+  }
+
+  // ── Category CRUD ──
+
+  async function addCat() {
+    if (addingCat || !selectedGroup || selectedGroup === '__ungrouped__') return;
+    const v = newCatValue.trim().toLowerCase().replace(/\s+/g, '_');
+    const l = newCatLabel.trim();
+    if (!v || !l) { showToast('请填写 key 和名称', 'error'); return; }
+    setAddingCat(true);
+    try {
+      await adminApi.request('/enums/supplier-categories', {
+        method: 'POST',
+        body: JSON.stringify({ value: v, label: l, group_value: selectedGroup }),
+      });
+      setNewCatValue(''); setNewCatLabel(''); setShowAddCat(false);
+      showToast('分类已添加', 'success');
+      await loadAll();
+    } catch (e: any) {
+      showToast(e.message || '添加失败', 'error');
+    } finally {
+      setAddingCat(false);
+    }
+  }
+
+  async function updateCatLabel(cat: SupplierCategory, newLabel: string) {
     if (!newLabel.trim() || newLabel.trim() === cat.label) return;
     try {
       await adminApi.request(`/enums/supplier-categories/${encodeURIComponent(cat.value)}`, {
         method: 'PUT',
         body: JSON.stringify({ label: newLabel.trim() }),
       });
-      setCats((prev) => prev.map((c) => c.value === cat.value ? { ...c, label: newLabel.trim() } : c));
-    } catch {
-      showToast('更新失败', 'error');
-    }
+      setCats(prev => prev.map(c => c.value === cat.value ? { ...c, label: newLabel.trim() } : c));
+    } catch { showToast('更新失败', 'error'); }
   }
 
-  async function toggle(cat: SupplierCategory) {
+  async function moveCatGroup(cat: SupplierCategory, newGroup: string) {
+    const group_value = newGroup === '__ungrouped__' ? null : newGroup;
+    if (group_value === (cat.group_value ?? null)) return;
+    try {
+      await adminApi.request(`/enums/supplier-categories/${encodeURIComponent(cat.value)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ group_value }),
+      });
+      setCats(prev => prev.map(c => c.value === cat.value ? { ...c, group_value } : c));
+      showToast('已移动', 'success');
+    } catch { showToast('移动失败', 'error'); }
+  }
+
+  async function toggleCat(cat: SupplierCategory) {
     try {
       await adminApi.request(`/enums/supplier-categories/${encodeURIComponent(cat.value)}/toggle`, { method: 'PUT' });
-      setCats((prev) => prev.map((c) => c.value === cat.value ? { ...c, is_enabled: c.is_enabled ? 0 : 1 } : c));
-    } catch {
-      showToast('更新失败', 'error');
-    }
+      setCats(prev => prev.map(c => c.value === cat.value ? { ...c, is_enabled: c.is_enabled ? 0 : 1 } : c));
+    } catch { showToast('更新失败', 'error'); }
   }
 
   function deleteCat(cat: SupplierCategory) {
     showConfirm({
-      title: `删除供应商分类 "${cat.label}"`,
-      message: '该分类删除后，已使用此分类的供应商筛选结果将受到影响，网站导航和筛选器中的分类将消失。',
+      title: `删除分类「${cat.label}」`,
+      message: '该分类删除后，已使用此分类的供应商筛选将受影响。此操作不可恢复。',
       requireText: '我已清楚知道删除分类对网站造成的影响',
       confirmLabel: '确认删除',
       onConfirm: async () => {
         try {
           await adminApi.request(`/enums/supplier-categories/${encodeURIComponent(cat.value)}`, { method: 'DELETE' });
-          setCats((prev) => prev.filter((c) => c.value !== cat.value));
+          setCats(prev => prev.filter(c => c.value !== cat.value));
           showToast('已删除', 'success');
-        } catch {
-          showToast('删除失败', 'error');
-        }
+        } catch { showToast('删除失败', 'error'); }
       },
     });
   }
 
-  async function addCat() {
-    if (adding) return;
-    const v = addingValue.trim().toLowerCase().replace(/\s+/g, '_');
-    const l = addingLabel.trim();
-    if (!v || !l) { showToast('请填写 value 和显示名称', 'error'); return; }
-    setAdding(true);
-    try {
-      await adminApi.request('/enums/supplier-categories', {
-        method: 'POST',
-        body: JSON.stringify({ value: v, label: l }),
-      });
-      setAddingValue(''); setAddingLabel(''); setShowAddForm(false);
-      showToast('分类已添加', 'success');
-      await load();
-    } catch (e: any) {
-      showToast(e.message || '添加失败', 'error');
-    } finally {
-      setAdding(false);
-    }
-  }
-
-  function handleDragStart(idx: number) { dragIndex.current = idx; setDraggingIdx(idx); }
-  function handleDragEnter(idx: number) { overIndex.current = idx; setOverIdx(idx); }
+  function handleDragStart(idx: number) { dragIdx.current = idx; setDraggingIdx(idx); }
+  function handleDragEnter(idx: number) { overIdx.current = idx; setOverDragIdx(idx); }
   async function handleDragEnd() {
-    const from = dragIndex.current;
-    const to = overIndex.current;
-    setDraggingIdx(-1); setOverIdx(-1);
-    dragIndex.current = -1; overIndex.current = -1;
+    const from = dragIdx.current, to = overIdx.current;
+    setDraggingIdx(-1); setOverDragIdx(-1);
+    dragIdx.current = -1; overIdx.current = -1;
     if (from === to || from < 0 || to < 0) return;
-    const reordered = [...cats];
+    const reordered = [...displayedCats];
     const [moved] = reordered.splice(from, 1);
     reordered.splice(to, 0, moved);
-    setCats(reordered);
+    setCats(prev => {
+      const reorderedValues = new Set(reordered.map(r => r.value));
+      const others = prev.filter(c => !reorderedValues.has(c.value));
+      return [...reordered, ...others];
+    });
     try {
       await adminApi.request('/enums/supplier-categories/reorder', {
         method: 'PUT',
-        body: JSON.stringify({ values: reordered.map((c) => c.value) }),
+        body: JSON.stringify({ values: reordered.map(c => c.value) }),
       });
-    } catch {
-      showToast('排序保存失败', 'error');
-    }
+    } catch { showToast('排序保存失败', 'error'); }
   }
+
+  const groupOptions = [
+    { value: '__ungrouped__', label: '— 待分配 —' },
+    ...groups.map(g => ({ value: g.value, label: g.label })),
+  ];
 
   if (loading) return <div className="p-8 text-center text-stone-400 text-sm">加载中…</div>;
 
+  const ungroupedCount = cats.filter(c => !c.group_value).length;
+
   return (
-    <div>
-      <div className="bg-white rounded-2xl border border-stone-200 p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-stone-500">供应商分类列表（拖动排序，点击名称编辑）</p>
+    <div className="flex gap-4 items-start min-h-[500px]">
+      {/* ── Left: groups ── */}
+      <div className="w-[300px] shrink-0 bg-white rounded-2xl border border-stone-200 overflow-hidden">
+        <div className="px-3 pt-3 pb-1 flex items-center justify-between">
+          <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">大类（拖动排序）</p>
           <button
-            onClick={() => { setShowAddForm(true); setTimeout(() => addValueRef.current?.focus(), 50); }}
+            onClick={() => { setAddingGroup(true); setNewGroupValue(''); setNewGroupLabel(''); setTimeout(() => newGroupValueRef.current?.focus(), 50); }}
             className="text-xs text-[#b8864a] hover:text-[#a07040] font-medium transition-colors"
           >
-            + 新增分类
+            + 新增
           </button>
         </div>
+        <div className="p-2 space-y-0.5">
+          {groups.map((g, gi) => {
+            const count = cats.filter(c => c.group_value === g.value).length;
+            const isSelected = selectedGroup === g.value;
+            const isDragging = gDraggingIdx === gi;
+            const isOver = gOverDragIdx === gi && gDraggingIdx !== gi;
+            return (
+              <div
+                key={g.value}
+                draggable
+                onDragStart={() => handleGDragStart(gi)}
+                onDragEnter={() => handleGDragEnter(gi)}
+                onDragEnd={handleGDragEnd}
+                onDragOver={e => e.preventDefault()}
+                onClick={() => setSelectedGroup(g.value)}
+                className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-xl cursor-pointer transition-colors select-none ${isSelected ? 'bg-[#b8864a]/8' : 'hover:bg-stone-50'} ${isDragging ? 'opacity-40' : ''} ${isOver ? 'bg-amber-50 ring-1 ring-[#B8864A]/30' : ''}`}
+              >
+                <span className="cursor-grab text-stone-300 hover:text-stone-400 text-[16px] leading-none shrink-0">⠿</span>
+                <input
+                  key={g.value}
+                  className={`${inputCls} flex-1 min-w-0 cursor-pointer focus:cursor-text ${!g.is_enabled ? 'opacity-50' : ''}`}
+                  defaultValue={g.label}
+                  onClick={e => e.stopPropagation()}
+                  onBlur={e => renameGroup(g, e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    if (e.key === 'Escape') { (e.target as HTMLInputElement).value = g.label; (e.target as HTMLInputElement).blur(); }
+                  }}
+                />
+                <span className={`text-[11px] shrink-0 tabular-nums group-hover:hidden ${isSelected ? 'text-[#b8864a]/70' : 'text-stone-400'}`}>{count}</span>
+                <button
+                  onClick={e => { e.stopPropagation(); toggleGroup(g); }}
+                  className={`shrink-0 hidden group-hover:inline-flex text-[11px] px-1.5 py-0.5 rounded-full font-medium transition-colors ${g.is_enabled ? 'bg-stone-100 text-stone-400 hover:bg-stone-200' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
+                >
+                  {g.is_enabled ? '停' : '启'}
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); deleteGroup(g); }}
+                  className="shrink-0 hidden group-hover:inline-flex text-[11px] text-red-400 hover:text-red-600 transition-colors"
+                >
+                  删
+                </button>
+              </div>
+            );
+          })}
+          {ungroupedCount > 0 && (
+            <button
+              onClick={() => setSelectedGroup('__ungrouped__')}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors text-sm ${selectedGroup === '__ungrouped__' ? 'bg-amber-50 text-amber-700 font-medium' : 'text-amber-600 hover:bg-amber-50'}`}
+            >
+              <span>待分配</span>
+              <span className="text-[11px]">{ungroupedCount}</span>
+            </button>
+          )}
+          {addingGroup && (
+            <div className="flex flex-col gap-2 px-2 py-2">
+              <input
+                ref={newGroupValueRef}
+                value={newGroupValue}
+                onChange={e => setNewGroupValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') { setAddingGroup(false); }
+                }}
+                placeholder="key (如 outdoor)"
+                className={`${inputCls} w-full`}
+              />
+              <input
+                value={newGroupLabel}
+                onChange={e => setNewGroupLabel(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') commitNewGroup(); if (e.key === 'Escape') { setAddingGroup(false); } }}
+                onBlur={commitNewGroup}
+                placeholder="大类名称…"
+                className={`${inputCls} w-full`}
+              />
+            </div>
+          )}
+        </div>
+      </div>
 
-        {showAddForm && (
+      {/* ── Right: categories in selected group ── */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-[#2c2c2c]">
+              {selectedGroup === '__ungrouped__' ? '待分配' : (groups.find(g => g.value === selectedGroup)?.label ?? '')}
+            </h3>
+            <p className="text-xs text-stone-400 mt-0.5">
+              {displayedCats.length} 项 · {displayedCats.filter(c => c.is_enabled).length} 启用 · 拖动 ⠿ 调整顺序
+            </p>
+          </div>
+          {selectedGroup !== '__ungrouped__' && (
+            <button
+              onClick={() => setShowAddCat(true)}
+              className="text-xs text-[#b8864a] hover:text-[#a07040] font-medium transition-colors"
+            >
+              + 新增分类
+            </button>
+          )}
+        </div>
+
+        {showAddCat && selectedGroup !== '__ungrouped__' && (
           <div className="flex gap-2 flex-wrap mb-3 p-3 bg-stone-50 rounded-xl border border-stone-200">
             <input
-              ref={addValueRef}
-              className={`${inputCls} w-36`}
+              className={`${inputCls} w-32`}
               placeholder="key (如 tiles)"
-              value={addingValue}
-              onChange={(e) => setAddingValue(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') addCat(); if (e.key === 'Escape') { setShowAddForm(false); setAddingValue(''); setAddingLabel(''); } }}
+              value={newCatValue}
+              onChange={e => setNewCatValue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addCat(); if (e.key === 'Escape') { setShowAddCat(false); setNewCatValue(''); setNewCatLabel(''); } }}
             />
             <input
-              className={`${inputCls} w-48`}
-              placeholder="显示名称 (如 Tiles & Stone)"
-              value={addingLabel}
-              onChange={(e) => setAddingLabel(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') addCat(); if (e.key === 'Escape') { setShowAddForm(false); setAddingValue(''); setAddingLabel(''); } }}
+              className={`${inputCls} w-40`}
+              placeholder="名称 (如 瓷砖)"
+              value={newCatLabel}
+              onChange={e => setNewCatLabel(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addCat(); if (e.key === 'Escape') { setShowAddCat(false); setNewCatValue(''); setNewCatLabel(''); } }}
             />
-            <button
-              onClick={addCat}
-              disabled={adding || !addingValue.trim() || !addingLabel.trim()}
-              className="btn-primary inline-flex items-center justify-center h-[36px] px-4 text-sm disabled:opacity-40"
-            >
+            <button onClick={addCat} disabled={addingCat || !newCatValue.trim() || !newCatLabel.trim()}
+              className="btn-primary inline-flex items-center justify-center h-[36px] px-4 text-sm disabled:opacity-40">
               添加
             </button>
-            <button
-              onClick={() => { setShowAddForm(false); setAddingValue(''); setAddingLabel(''); }}
-              className="h-[36px] px-3 text-sm text-stone-500 hover:text-stone-700 transition-colors"
-            >
+            <button onClick={() => { setShowAddCat(false); setNewCatValue(''); setNewCatLabel(''); }}
+              className="h-[36px] px-3 text-sm text-stone-500 hover:text-stone-700 transition-colors">
               取消
             </button>
           </div>
         )}
-      </div>
 
-      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-stone-50 border-b border-stone-200">
-            <tr>
-              <th className="w-8"></th>
-              <th className="text-left px-4 py-2.5 text-stone-500 font-medium w-36">Key (URL 参数)</th>
-              <th className="text-left px-4 py-2.5 text-stone-500 font-medium">显示名称</th>
-              <th className="text-left px-4 py-2.5 text-stone-500 font-medium w-20">启用</th>
-              <th className="w-16"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {cats.map((cat, idx) => (
-              <tr
-                key={cat.value}
-                draggable
-                onDragStart={() => handleDragStart(idx)}
-                onDragEnter={() => handleDragEnter(idx)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => e.preventDefault()}
-                className={`border-b border-stone-100 last:border-0 select-none ${
-                  draggingIdx === idx ? 'opacity-40' : ''
-                } ${overIdx === idx && draggingIdx !== idx ? 'bg-amber-50 ring-1 ring-[#B8864A]/30' : 'hover:bg-stone-50/50'}`}
-              >
-                <td className="pl-3">
-                  <span className="cursor-grab text-stone-300 hover:text-stone-400 text-[18px] leading-none" title="拖动排序">⠿</span>
-                </td>
-                <td className="px-4 py-2.5 font-mono text-xs text-stone-500">{cat.value}</td>
-                <td className="px-4 py-2.5">
+        <div className="bg-white rounded-2xl border border-stone-200 p-2">
+          {displayedCats.length === 0 ? (
+            <p className="px-3 py-6 text-sm text-stone-400 text-center">暂无分类</p>
+          ) : (
+            <div className="space-y-0.5">
+              {displayedCats.map((cat, idx) => (
+                <div
+                  key={cat.value}
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragEnter={() => handleDragEnter(idx)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={e => e.preventDefault()}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors select-none ${draggingIdx === idx ? 'opacity-40' : ''} ${overDragIdx === idx && draggingIdx !== idx ? 'bg-amber-50 ring-1 ring-[#B8864A]/30' : 'hover:bg-stone-50'}`}
+                >
+                  <span className="cursor-grab text-stone-300 hover:text-stone-400 text-[18px] leading-none shrink-0">⠿</span>
+                  <span className="text-xs text-stone-300 w-4 shrink-0">{idx + 1}</span>
                   <input
-                    className={`${inputCls} w-full`}
+                    className={`${inputCls} flex-1 min-w-0`}
                     defaultValue={cat.label}
-                    onBlur={(e) => updateLabel(cat, e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    onBlur={e => updateCatLabel(cat, e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                   />
-                </td>
-                <td className="px-4 py-2.5">
+                  <div className="shrink-0 w-36">
+                    <AdminSelect
+                      size="sm"
+                      value={cat.group_value ?? '__ungrouped__'}
+                      onChange={v => moveCatGroup(cat, v)}
+                      options={groupOptions}
+                    />
+                  </div>
                   <button
-                    onClick={() => toggle(cat)}
-                    className={`inline-flex items-center justify-center text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
-                      cat.is_enabled
-                        ? 'bg-stone-100 text-stone-400 hover:bg-stone-200'
-                        : 'bg-green-50 text-green-700 hover:bg-green-100'
-                    }`}
+                    onClick={() => toggleCat(cat)}
+                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${cat.is_enabled ? 'bg-stone-100 text-stone-400 hover:bg-stone-200' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
                   >
                     {cat.is_enabled ? '停用' : '启用'}
                   </button>
-                </td>
-                <td className="px-4 py-2.5 text-right">
                   <button
                     onClick={() => deleteCat(cat)}
-                    className="inline-flex items-center justify-center text-xs text-red-400 hover:text-red-600 transition-colors"
+                    className="shrink-0 text-xs text-red-400 hover:text-red-600 transition-colors"
                   >
                     删除
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

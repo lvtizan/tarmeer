@@ -93,6 +93,8 @@ import {
   listCompanyServices, createCompanyService, updateCompanyService, deleteCompanyService, reorderCompanyServices, renameServiceCategory,
   listServiceCategories, createServiceCategory, toggleServiceCategory, reorderServiceCategories, renameServiceCategory2, deleteServiceCategory,
   listSupplierCategories, createSupplierCategory, updateSupplierCategory, reorderSupplierCategories, toggleSupplierCategory, deleteSupplierCategory,
+  listSupplierCategoryGroups, createSupplierCategoryGroup, updateSupplierCategoryGroup,
+  reorderSupplierCategoryGroups, toggleSupplierCategoryGroup, deleteSupplierCategoryGroup,
 } from '../controllers/enumAdminController';
 import { generateTemplate, parseTemplate, importCompany } from '../services/companyImportService';
 import multer from 'multer';
@@ -481,5 +483,12 @@ router.put('/enums/supplier-categories/reorder', requireAdmin, reorderSupplierCa
 router.put('/enums/supplier-categories/:value/toggle', requireAdmin, toggleSupplierCategory);
 router.put('/enums/supplier-categories/:value', requireAdmin, updateSupplierCategory);
 router.delete('/enums/supplier-categories/:value', requireAdmin, deleteSupplierCategory);
+// Supplier category groups
+router.get('/enums/supplier-category-groups', listSupplierCategoryGroups);
+router.post('/enums/supplier-category-groups', requireAdmin, createSupplierCategoryGroup);
+router.put('/enums/supplier-category-groups/reorder', requireAdmin, reorderSupplierCategoryGroups);
+router.put('/enums/supplier-category-groups/:value/toggle', requireAdmin, toggleSupplierCategoryGroup);
+router.put('/enums/supplier-category-groups/:value', requireAdmin, updateSupplierCategoryGroup);
+router.delete('/enums/supplier-category-groups/:value', requireAdmin, deleteSupplierCategoryGroup);
 
 export default router;

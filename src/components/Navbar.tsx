@@ -69,7 +69,8 @@ export default function Navbar({
   const [materialsSearch, setMaterialsSearch] = useState('');
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
-  const [supplierNavCategories, setSupplierNavCategories] = useState<{ label: string; value: string }[]>([]);
+  const [supplierNavGroups, setSupplierNavGroups] = useState<{ value: string; label: string; categories: { label: string; value: string }[] }[]>([]);
+  const [supplierNavUngrouped, setSupplierNavUngrouped] = useState<{ label: string; value: string }[]>([]);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
@@ -96,8 +97,11 @@ export default function Navbar({
       .then((d) => { if (Array.isArray(d?.categories)) setNavCategories(d.categories); })
       .catch(() => {});
     fetch(`${API_BASE}/public/supplier-categories`)
-      .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d?.categories)) setSupplierNavCategories(d.categories); })
+      .then(r => r.json())
+      .then(data => {
+        setSupplierNavGroups(data.groups || []);
+        setSupplierNavUngrouped(data.ungrouped || []);
+      })
       .catch(() => {});
   }, []);
 
@@ -355,35 +359,28 @@ export default function Navbar({
               className={`absolute top-full right-0 pt-2 w-max z-50 transition-all duration-150 ${materialsDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
             >
               <div className="bg-white shadow-xl rounded-lg border border-stone-200">
-                <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
-                  {(() => {
-                    const mid = Math.ceil(supplierNavCategories.length / 2);
-                    const cols = [supplierNavCategories.slice(0, mid), supplierNavCategories.slice(mid)];
-                    const colLabels = ['Materials', 'More'];
-                    return cols.map((items, ci) => items.length === 0 ? null : (
-                      <div key={ci}>
-                        <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">
-                          {colLabels[ci]}
-                        </h3>
-                        <ul className="space-y-2">
-                          {items.map((item) => {
-                            const to = `/materials?category=${encodeURIComponent(item.value)}`;
-                            return (
-                              <li key={item.value}>
-                                <Link
-                                  to={to}
-                                  onClick={() => { setMaterialsDropdownOpen(false); handleClick(to); }}
-                                  className="text-sm text-stone-600 hover:text-[#b8864a] transition"
-                                >
-                                  {item.label}
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    ));
-                  })()}
+                <div className="p-6 flex gap-8 min-w-max">
+                  {supplierNavGroups.filter(g => g.categories.length > 0).map(g => (
+                    <div key={g.value}>
+                      <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">{g.label}</h3>
+                      <ul className="space-y-2">
+                        {g.categories.map(item => {
+                          const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                          return (
+                            <li key={item.value}>
+                              <Link
+                                to={to}
+                                onClick={() => { setMaterialsDropdownOpen(false); handleClick(to); }}
+                                className="text-sm text-stone-600 hover:text-[#b8864a] transition"
+                              >
+                                {item.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
                 <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
                   <Link
@@ -665,27 +662,53 @@ export default function Navbar({
                   </div>
 
                   {(() => {
+                    const allNavCats = [
+                      ...supplierNavGroups.flatMap(g => g.categories),
+                      ...supplierNavUngrouped,
+                    ];
                     const q = materialsSearch.toLowerCase();
-                    const filtered = materialsSearch.trim()
-                      ? supplierNavCategories.filter(item => item.label.toLowerCase().includes(q))
-                      : supplierNavCategories;
-                    return filtered.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-x-4">
-                        {filtered.map(item => {
-                          const to = `/materials?category=${encodeURIComponent(item.value)}`;
-                          return (
-                            <Link key={item.value} to={to}
-                              onClick={() => { handleClick(to); setMaterialsSearch(''); }}
-                              className="text-sm text-stone-600 hover:text-[#b8864a] transition py-0.5">
-                              {item.label}
-                            </Link>
-                          );
-                        })}
+
+                    if (materialsSearch.trim()) {
+                      const filtered = allNavCats.filter(item => item.label.toLowerCase().includes(q));
+                      return filtered.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-x-4">
+                          {filtered.map(item => {
+                            const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                            return (
+                              <Link key={item.value} to={to}
+                                onClick={() => { handleClick(to); setMaterialsSearch(''); }}
+                                className="text-sm text-stone-600 hover:text-[#b8864a] transition py-1.5">
+                                {item.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      ) : <p className="text-sm text-stone-400 py-2">No results</p>;
+                    }
+
+                    return (
+                      <div className="space-y-4">
+                        {supplierNavGroups.filter(g => g.categories.length > 0).map(g => (
+                          <div key={g.value}>
+                            <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-2">{g.label}</p>
+                            <div className="grid grid-cols-2 gap-x-4">
+                              {g.categories.map(item => {
+                                const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                                return (
+                                  <Link key={item.value} to={to}
+                                    onClick={() => { handleClick(to); setMaterialsSearch(''); }}
+                                    className="text-sm text-stone-600 hover:text-[#b8864a] transition py-1.5">
+                                    {item.label}
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ) : (
-                      <p className="text-sm text-stone-400 py-2">No results</p>
                     );
                   })()}
+
                   <div className="border-t border-stone-200 mt-3 pt-2">
                     <Link to="/materials" onClick={() => handleClick('/materials')}
                       className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">

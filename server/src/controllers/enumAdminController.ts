@@ -305,7 +305,7 @@ export async function deleteServiceCategory(req: any, res: any) {
 export async function listSupplierCategories(req: any, res: any) {
   try {
     const [rows] = await pool.execute(
-      'SELECT value, label, sort_order, is_enabled FROM supplier_categories ORDER BY sort_order, label'
+      'SELECT value, label, sort_order, is_enabled, group_value FROM supplier_categories ORDER BY sort_order, label'
     );
     res.json({ categories: rows });
   } catch (error) {
@@ -316,7 +316,7 @@ export async function listSupplierCategories(req: any, res: any) {
 
 export async function createSupplierCategory(req: any, res: any) {
   try {
-    const { value, label } = req.body;
+    const { value, label, group_value } = req.body;
     if (!value?.trim() || !label?.trim()) {
       return res.status(400).json({ error: 'value and label are required.' });
     }
@@ -329,8 +329,8 @@ export async function createSupplierCategory(req: any, res: any) {
     const [allRows] = await pool.execute('SELECT MAX(sort_order) AS maxOrd FROM supplier_categories');
     const maxOrd = (allRows as any[])[0]?.maxOrd ?? -1;
     await pool.execute(
-      'INSERT INTO supplier_categories (value, label, sort_order, is_enabled) VALUES (?, ?, ?, 1)',
-      [cleanValue, cleanLabel, maxOrd + 1]
+      'INSERT INTO supplier_categories (value, label, sort_order, is_enabled, group_value) VALUES (?, ?, ?, 1, ?)',
+      [cleanValue, cleanLabel, maxOrd + 1, group_value || null]
     );
     res.status(201).json({ value: cleanValue, label: cleanLabel });
   } catch (error) {
@@ -342,12 +342,14 @@ export async function createSupplierCategory(req: any, res: any) {
 export async function updateSupplierCategory(req: any, res: any) {
   try {
     const value = decodeURIComponent(req.params.value);
-    const { label } = req.body;
-    if (!label?.trim()) return res.status(400).json({ error: 'label is required.' });
-    await pool.execute(
-      'UPDATE supplier_categories SET label = ? WHERE value = ?',
-      [label.trim().slice(0, 100), value]
-    );
+    const { label, group_value } = req.body;
+    const sets: string[] = [];
+    const params: any[] = [];
+    if (label?.trim()) { sets.push('label = ?'); params.push(label.trim().slice(0, 100)); }
+    if ('group_value' in req.body) { sets.push('group_value = ?'); params.push(group_value || null); }
+    if (sets.length === 0) return res.status(400).json({ error: 'Nothing to update.' });
+    params.push(value);
+    await pool.execute(`UPDATE supplier_categories SET ${sets.join(', ')} WHERE value = ?`, params);
     res.json({ message: 'Updated.' });
   } catch (error) {
     console.error('updateSupplierCategory error:', error);
@@ -399,12 +401,115 @@ export async function deleteSupplierCategory(req: any, res: any) {
   }
 }
 
-export async function getPublicSupplierCategories(req: any, res: any) {
+// ── Admin: supplier category groups ─────────────────────────────────────────
+
+export async function listSupplierCategoryGroups(req: any, res: any) {
   try {
     const [rows] = await pool.execute(
-      'SELECT value, label FROM supplier_categories WHERE is_enabled = 1 ORDER BY sort_order, label'
+      'SELECT value, label, sort_order, is_enabled FROM supplier_category_groups ORDER BY sort_order, label'
     );
-    res.json({ categories: rows });
+    res.json({ groups: rows });
+  } catch (error) {
+    console.error('listSupplierCategoryGroups error:', error);
+    res.status(500).json({ error: 'Failed to load supplier category groups.' });
+  }
+}
+
+export async function createSupplierCategoryGroup(req: any, res: any) {
+  try {
+    const { value, label } = req.body;
+    if (!value?.trim() || !label?.trim()) {
+      return res.status(400).json({ error: 'value and label are required.' });
+    }
+    const cleanValue = value.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 50);
+    const cleanLabel = label.trim().slice(0, 100);
+    const [existing] = await pool.execute('SELECT value FROM supplier_category_groups WHERE value = ?', [cleanValue]);
+    if ((existing as any[]).length > 0) {
+      return res.status(409).json({ error: 'Group already exists.' });
+    }
+    const [allRows] = await pool.execute('SELECT MAX(sort_order) AS maxOrd FROM supplier_category_groups');
+    const maxOrd = (allRows as any[])[0]?.maxOrd ?? -1;
+    await pool.execute(
+      'INSERT INTO supplier_category_groups (value, label, sort_order, is_enabled) VALUES (?, ?, ?, 1)',
+      [cleanValue, cleanLabel, maxOrd + 1]
+    );
+    res.status(201).json({ value: cleanValue, label: cleanLabel });
+  } catch (error) {
+    console.error('createSupplierCategoryGroup error:', error);
+    res.status(500).json({ error: 'Failed to create supplier category group.' });
+  }
+}
+
+export async function updateSupplierCategoryGroup(req: any, res: any) {
+  try {
+    const value = decodeURIComponent(req.params.value);
+    const { label } = req.body;
+    if (!label?.trim()) return res.status(400).json({ error: 'label is required.' });
+    await pool.execute(
+      'UPDATE supplier_category_groups SET label = ? WHERE value = ?',
+      [label.trim().slice(0, 100), value]
+    );
+    res.json({ message: 'Updated.' });
+  } catch (error) {
+    console.error('updateSupplierCategoryGroup error:', error);
+    res.status(500).json({ error: 'Failed to update supplier category group.' });
+  }
+}
+
+export async function reorderSupplierCategoryGroups(req: any, res: any) {
+  try {
+    const { values } = req.body;
+    if (!Array.isArray(values) || values.length === 0) {
+      return res.status(400).json({ error: 'values array is required.' });
+    }
+    for (let i = 0; i < values.length; i++) {
+      await pool.execute('UPDATE supplier_category_groups SET sort_order = ? WHERE value = ?', [i, values[i]]);
+    }
+    res.json({ message: 'Reordered.' });
+  } catch (error) {
+    console.error('reorderSupplierCategoryGroups error:', error);
+    res.status(500).json({ error: 'Failed to reorder supplier category groups.' });
+  }
+}
+
+export async function toggleSupplierCategoryGroup(req: any, res: any) {
+  try {
+    const value = decodeURIComponent(req.params.value);
+    await pool.execute('UPDATE supplier_category_groups SET is_enabled = 1 - is_enabled WHERE value = ?', [value]);
+    res.json({ message: 'Toggled.' });
+  } catch (error) {
+    console.error('toggleSupplierCategoryGroup error:', error);
+    res.status(500).json({ error: 'Failed to toggle supplier category group.' });
+  }
+}
+
+export async function deleteSupplierCategoryGroup(req: any, res: any) {
+  try {
+    const value = decodeURIComponent(req.params.value);
+    await pool.execute('UPDATE supplier_categories SET group_value = NULL WHERE group_value = ?', [value]);
+    await pool.execute('DELETE FROM supplier_category_groups WHERE value = ?', [value]);
+    res.json({ message: 'Deleted.' });
+  } catch (error) {
+    console.error('deleteSupplierCategoryGroup error:', error);
+    res.status(500).json({ error: 'Failed to delete supplier category group.' });
+  }
+}
+
+export async function getPublicSupplierCategories(req: any, res: any) {
+  try {
+    const [groupRows] = await pool.execute(
+      'SELECT value, label FROM supplier_category_groups WHERE is_enabled = 1 ORDER BY sort_order, label'
+    );
+    const [catRows] = await pool.execute(
+      'SELECT value, label, group_value FROM supplier_categories WHERE is_enabled = 1 ORDER BY sort_order, label'
+    );
+    const cats = catRows as { value: string; label: string; group_value: string | null }[];
+    const groups = (groupRows as { value: string; label: string }[]).map(g => ({
+      ...g,
+      categories: cats.filter(c => c.group_value === g.value),
+    }));
+    const ungrouped = cats.filter(c => !c.group_value);
+    res.json({ groups, ungrouped });
   } catch (error) {
     console.error('getPublicSupplierCategories error:', error);
     res.status(500).json({ error: 'Failed to load supplier categories.' });

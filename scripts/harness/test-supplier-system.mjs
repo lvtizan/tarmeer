@@ -408,6 +408,34 @@ async function run() {
     ok('TC24', 'Catalogs deleted', catalogs.length === 0);
   }
 
+  // ── supplier-category-groups 测试 ────────────────────────────────────────
+  console.log('\n── Supplier Category Groups ──');
+
+  // TCG1: 公开 API 返回分组结构
+  {
+    const r = await get('/public/supplier-categories');
+    ok('TCG1', 'public supplier-categories → 200', r.status === 200);
+    ok('TCG1', 'groups should be array', Array.isArray(r.data.groups));
+    ok('TCG1', 'should have at least 2 groups', r.data.groups?.length >= 2);
+    ok('TCG1', 'first group should have categories array', Array.isArray(r.data.groups?.[0]?.categories));
+    ok('TCG1', 'first group should have categories', r.data.groups?.[0]?.categories?.length > 0);
+    ok('TCG1', 'ungrouped should be array', Array.isArray(r.data.ungrouped));
+  }
+
+  // TCG2: admin 大类列表（需要 token）
+  {
+    const r = await get('/admin/enums/supplier-category-groups', adminToken);
+    ok('TCG2', 'admin supplier-category-groups → 200', r.status === 200);
+    ok('TCG2', 'admin groups should be array', Array.isArray(r.data.groups));
+    ok('TCG2', 'should have at least 2 groups', r.data.groups?.length >= 2);
+  }
+
+  // TCG3: 无 token → 401
+  {
+    const r = await get('/admin/enums/supplier-category-groups');
+    ok('TCG3', 'supplier-category-groups requires auth → 401', r.status === 401);
+  }
+
   // ── Summary ──
   console.log(`\n${'═'.repeat(50)}`);
   console.log(`  ${passed} passed, ${failed} failed`);

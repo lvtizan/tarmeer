@@ -319,6 +319,16 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
     )`,
   },
   {
+    name: 'supplier_category_groups',
+    sql: `CREATE TABLE IF NOT EXISTS supplier_category_groups (
+      value VARCHAR(50) NOT NULL PRIMARY KEY,
+      label VARCHAR(100) NOT NULL,
+      sort_order INT DEFAULT 0,
+      is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
+  {
     name: 'feedback',
     sql: `CREATE TABLE IF NOT EXISTS feedback (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -715,22 +725,81 @@ export async function runAutoMigrate(): Promise<void> {
       );
     } catch { /* ignore */ }
 
-    // 7d. Seed supplier_categories
+    // 7c-2. Add group_value to supplier_categories
+    {
+      const gcExists = await columnExists('supplier_categories', 'group_value');
+      if (!gcExists) {
+        try {
+          await pool.execute(`ALTER TABLE supplier_categories ADD COLUMN group_value VARCHAR(50) NULL`);
+          changes++;
+          console.log(`${TAG} Added group_value to supplier_categories`);
+        } catch (e) { console.error(`${TAG} Failed to add group_value:`, e); }
+      }
+    }
+
+    // 7c-3. Seed supplier_category_groups
     try {
-      await pool.execute(
-        `INSERT INTO supplier_categories (value, label, sort_order, is_enabled) VALUES
-          ('furniture',  'Furniture',              1, 1),
-          ('stone',      'Tile & Stone',            2, 1),
-          ('lighting',   'Lighting',               3, 1),
-          ('plants',     'Plants & Landscaping',   4, 1),
-          ('flooring',   'Flooring',               5, 1),
-          ('kitchen',    'Kitchen & Bath',         6, 1),
-          ('curtains',   'Curtains & Textiles',    7, 1),
-          ('paint',      'Paint & Coatings',       8, 1),
-          ('hardware',   'Doors & Windows',        9, 1),
-          ('other',      'Other',                 10, 1)
-         ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`
-      );
+      await pool.execute(`
+        INSERT INTO supplier_category_groups (value, label, sort_order, is_enabled) VALUES
+          ('decoration_materials', '装饰材料', 0, 1),
+          ('furniture_group',      '家具',     1, 1)
+        ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)
+      `);
+    } catch { /* ignore */ }
+
+    // 7d. Seed supplier_categories — 30 new + keep existing 10 as ungrouped
+    try {
+      await pool.execute(`
+        INSERT INTO supplier_categories (value, label, sort_order, is_enabled, group_value) VALUES
+          ('tiles',           '瓷砖',              1,  1, 'decoration_materials'),
+          ('stone_materials', '石材',              2,  1, 'decoration_materials'),
+          ('sanitary_ware',   '洁具',              3,  1, 'decoration_materials'),
+          ('whole_house',     '全屋定制',          4,  1, 'decoration_materials'),
+          ('system_windows',  '系统门窗',          5,  1, 'decoration_materials'),
+          ('entry_doors',     '入户门',            6,  1, 'decoration_materials'),
+          ('garage_doors',    '车库门',            7,  1, 'decoration_materials'),
+          ('interior_doors',  '室内门',            8,  1, 'decoration_materials'),
+          ('wood_flooring',   '木地板',            9,  1, 'decoration_materials'),
+          ('outdoor_deco',    '户外装饰新材料',    10, 1, 'decoration_materials'),
+          ('indoor_deco',     '室内装饰新材料',    11, 1, 'decoration_materials'),
+          ('soft_furnishing', '软装',              12, 1, 'decoration_materials'),
+          ('hardware_items',  '五金',              13, 1, 'decoration_materials'),
+          ('paint_coatings',  '油漆涂料',          14, 1, 'decoration_materials'),
+          ('stairs',          '楼梯、扶手',        15, 1, 'decoration_materials'),
+          ('lighting_new',    '灯具',              16, 1, 'decoration_materials'),
+          ('smart_home',      '智能家居',          17, 1, 'decoration_materials'),
+          ('italian_minimal',   '意式极简家具',    1,  1, 'furniture_group'),
+          ('italian_luxury',    '意式轻奢家具',    2,  1, 'furniture_group'),
+          ('modern_functional', '现代功能家具',    3,  1, 'furniture_group'),
+          ('european_style',    '欧式家具',        4,  1, 'furniture_group'),
+          ('american_style',    '美式家具',        5,  1, 'furniture_group'),
+          ('french_style',      '法式家具',        6,  1, 'furniture_group'),
+          ('wabi_sabi',         '侘寂风家具',      7,  1, 'furniture_group'),
+          ('childrens_furn',    '儿童家具',        8,  1, 'furniture_group'),
+          ('outdoor_furn',      '户外家具',        9,  1, 'furniture_group'),
+          ('office_furn',       '办公家具',        10, 1, 'furniture_group'),
+          ('hotel_furn',        '酒店家具',        11, 1, 'furniture_group'),
+          ('beds',              '床',              12, 1, 'furniture_group'),
+          ('bedding',           '床上用品',        13, 1, 'furniture_group')
+        ON DUPLICATE KEY UPDATE
+          label = VALUES(label),
+          sort_order = VALUES(sort_order),
+          group_value = IF(group_value IS NULL, VALUES(group_value), group_value)
+      `);
+      await pool.execute(`
+        INSERT INTO supplier_categories (value, label, sort_order, is_enabled) VALUES
+          ('furniture',  'Furniture',            1, 1),
+          ('stone',      'Tile & Stone',          2, 1),
+          ('lighting',   'Lighting',             3, 1),
+          ('plants',     'Plants & Landscaping', 4, 1),
+          ('flooring',   'Flooring',             5, 1),
+          ('kitchen',    'Kitchen & Bath',       6, 1),
+          ('curtains',   'Curtains & Textiles',  7, 1),
+          ('paint',      'Paint & Coatings',     8, 1),
+          ('hardware',   'Doors & Windows',      9, 1),
+          ('other',      'Other',               10, 1)
+        ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)
+      `);
     } catch { /* ignore */ }
 
     // 8. Add field_staff role to admin_users ENUM
