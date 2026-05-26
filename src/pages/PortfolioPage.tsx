@@ -771,7 +771,7 @@ export default function PortfolioPage() {
       {/* Filter bar — fixed below Navbar once heading scrolls away; relative otherwise */}
       <div
         ref={filterBarRef}
-        className={`${isFilterSticky ? 'fixed top-14 sm:top-16 left-0 right-0 z-40' : 'relative'} bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm`}
+        className={`${isFilterSticky ? 'fixed top-14 sm:top-16 left-0 right-0' : 'relative'} z-40 bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm`}
       >
         <div className="max-w-[1400px] mx-auto px-4 py-2.5">
 

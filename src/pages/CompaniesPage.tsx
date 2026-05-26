@@ -291,7 +291,9 @@ export default function CompaniesPage() {
     [companies]
   );
   const typeOptions = useMemo(
-    () => [...new Set(companies.map((c) => c.companyType).filter(Boolean))] as string[],
+    () => [...new Set(companies.map((c) => c.companyType).filter(Boolean))].filter(
+      (t) => !!getCompanyTypeLabel(t)
+    ) as string[],
     [companies]
   );
   // Use canonical service list from DB; put selected ones first so they're visible without expanding
