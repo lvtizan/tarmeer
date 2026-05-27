@@ -13,13 +13,13 @@
       "Bash(git ls-tree:*)",
       "Bash(ls -d */)",
       "Bash(find . -name \".DS_Store\" -delete)",
-      "Read(//Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI\u9879\u76ee/\u8fea\u62dc\u7f51\u7ad9/tarmeer-4.0/**)",
+      "Read(//Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI项目/迪拜网站/tarmeer-4.0/**)",
       "Bash(git commit -m \"chore: clean up unused files:*)",
       "Bash(ln -s ~/.local/share/tarmeer-4.0/node_modules node_modules)",
       "Bash(git commit -m \"chore: fix node_modules symlink and update permissions:*)"
     ],
     "additionalDirectories": [
-      "/Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI\u9879\u76ee/\u8fea\u62dc\u7f51\u7ad9/tarmeer-4.0/.git"
+      "/Users/yiming/Library/Mobile Documents/com~apple~CloudDocs/AI项目/迪拜网站/tarmeer-4.0/.git"
     ]
   },
   "hooks": {
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "code-review-graph update --skip-flows",
+            "command": "pwd | grep -q \"/Users/kp/Code/tarmeer-4.0-local\" || exit 0; code-review-graph update --skip-flows",
             "timeout": 30
           }
         ]
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "code-review-graph status",
+            "command": "pwd | grep -q \"/Users/kp/Code/tarmeer-4.0-local\" || exit 0; code-review-graph status",
             "timeout": 10
           }
         ]
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -n '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:\"[TARMEER 规则摘要]\\n下拉=AdminSelect(size=sm筛选栏/lg表单) 禁<select>\\nTooltip=FloatingTip，Logo=TarmeerLogo\\n新页面前：找相似页面复用结构 + 先运行 node scripts/harness/lint-admin-ui.mjs --guide\\n新路由必须立即注册到路由文件，PC端移动端逻辑必须一致\"}}'",
+            "command": "pwd | grep -q \"/Users/kp/Code/tarmeer-4.0-local\" || exit 0; jq -n '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:\"[TARMEER 规则摘要]\\n下拉=AdminSelect(size=sm筛选栏/lg表单) 禁<select>\\nTooltip=FloatingTip，Logo=TarmeerLogo\\n新页面前：找相似页面复用结构 + 先运行 node scripts/harness/lint-admin-ui.mjs --guide\\n新路由必须立即注册到路由文件，PC端移动端逻辑必须一致\"}}'",
             "timeout": 5
           }
         ]
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PITFALLS=$(cat '/Users/kp/.claude/projects/-Users-kp-Code-tarmeer-4-0-local/memory/pitfalls.md' 2>/dev/null) && jq -n --arg content \"$PITFALLS\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"[开发前必读：踩坑记录]\\n\" + $content)}}'",
+            "command": "pwd | grep -q \"/Users/kp/Code/tarmeer-4.0-local\" || exit 0; PITFALLS=$(cat '/Users/kp/.claude/projects/-Users-kp-Code-tarmeer-4-0-local/memory/pitfalls.md' 2>/dev/null) && jq -n --arg content \"$PITFALLS\" '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"[开发前必读：踩坑记录]\\n\" + $content)}}'",
             "timeout": 5
           }
         ]
@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cmd=$(jq -r '.tool_input.command' 2>/dev/null); echo \"$cmd\" | grep -qE '(deploy-simple|deploy-backend)' || exit 0; cd /Users/kp/.warp/worktrees/tarmeer-4.0-local/organ-pipe-horned-toad; npx tsc --skipLibCheck --noEmit > /tmp/tsc-deploy-check.txt 2>&1; [ $? -eq 0 ] && exit 0; head -5 /tmp/tsc-deploy-check.txt | jq -Rs '{\"systemMessage\":(\"⚠️ TypeScript errors (fix before deploying):\\n\" + .)}'; exit 0",
+            "command": "pwd | grep -q \"/Users/kp/Code/tarmeer-4.0-local\" || exit 0; cmd=$(jq -r '.tool_input.command' 2>/dev/null); echo \"$cmd\" | grep -qE '(deploy-simple|deploy-backend)' || exit 0; cd /Users/kp/.warp/worktrees/tarmeer-4.0-local/organ-pipe-horned-toad; npx tsc --skipLibCheck --noEmit > /tmp/tsc-deploy-check.txt 2>&1; [ $? -eq 0 ] && exit 0; head -5 /tmp/tsc-deploy-check.txt | jq -Rs '{\"systemMessage\":(\"⚠️ TypeScript errors (fix before deploying):\\n\" + .)}'; exit 0",
             "timeout": 60
           }
         ]
@@ -85,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/kp/Code/tarmeer-4.0-local/scripts/harness/dev-checklist-hook.sh",
+            "command": "pwd | grep -q \"/Users/kp/Code/tarmeer-4.0-local\" || exit 0; bash /Users/kp/Code/tarmeer-4.0-local/scripts/harness/dev-checklist-hook.sh",
             "timeout": 10
           }
         ]

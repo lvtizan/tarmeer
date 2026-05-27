@@ -44,7 +44,7 @@ function parseCategories(c: Supplier['categories']): string[] {
   try { const p = JSON.parse(c); return Array.isArray(p) ? p : [c]; } catch { return [c]; }
 }
 
-function SupplierCard({ s }: { s: Supplier }) {
+function SupplierCard({ s, labelMap }: { s: Supplier; labelMap: Map<string, string> }) {
   const cats = parseCategories(s.categories);
   return (
     <Link
@@ -86,8 +86,8 @@ function SupplierCard({ s }: { s: Supplier }) {
           )}
           <div className="flex flex-wrap gap-1.5">
             {cats.slice(0, 4).map(c => (
-              <span key={c} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded-2xl capitalize">
-                {c}
+              <span key={c} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded-2xl">
+                {labelMap.get(c) ?? c}
               </span>
             ))}
           </div>
@@ -133,6 +133,9 @@ export default function ShowroomsPage() {
   const [loading, setLoading] = useState(true);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState(CATEGORY_OPTIONS_FALLBACK);
+  const [categoryLabelMap, setCategoryLabelMap] = useState<Map<string, string>>(
+    new Map(CATEGORY_OPTIONS_FALLBACK.map(c => [c.value, c.label]))
+  );
 
   const [searchParams, setSearchParams] = useSearchParams();
   const originFilter = searchParams.get('origin') || '';
@@ -158,9 +161,17 @@ export default function ShowroomsPage() {
     fetch(`${API_BASE}/suppliers/categories`)
       .then(r => r.json())
       .then(data => {
-        if (data.categories?.length) {
-          setCategoryOptions(data.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
-        }
+        // Build flat list: all subcategories from groups + ungrouped items
+        const grouped: { value: string; label: string }[] = (data.groups || []).flatMap(
+          (g: { categories: { value: string; label: string }[] }) => g.categories
+        );
+        const ungrouped: { value: string; label: string }[] = data.ungrouped || [];
+        const all = [...grouped, ...ungrouped];
+        // Build label lookup map (value → label)
+        setCategoryLabelMap(new Map(all.map(c => [c.value, c.label])));
+        // Sidebar: prefer ungrouped (English) for display; if empty fall back to all
+        const sidebarOptions = ungrouped.length ? ungrouped : all;
+        if (sidebarOptions.length) setCategoryOptions(sidebarOptions);
       })
       .catch(() => {});
   }, []);
@@ -371,7 +382,7 @@ export default function ShowroomsPage() {
           ) : (
             <div>
               {suppliers.map(s => (
-                <SupplierCard key={s.id} s={s} />
+                <SupplierCard key={s.id} s={s} labelMap={categoryLabelMap} />
               ))}
             </div>
           )}

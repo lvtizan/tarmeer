@@ -119,8 +119,13 @@ export async function getPortfolioFeed(req: any, res: any) {
     const seed = parseInt(req.query.seed, 10) || Math.floor(Math.random() * 1000000);
     const tagFilter = typeof req.query.tag === 'string' ? req.query.tag.trim() : '';
 
-    // Build tag filter clause
-    const tagClause = tagFilter ? `AND JSON_CONTAINS(p.tags, '"${tagFilter.replace(/['"\\]/g, '')}"')` : '';
+    // Build project-level tag pre-filter clause (used as coarse filter; image-level match done below)
+    const safeTag = tagFilter.replace(/['"\\]/g, '');
+    const tagClause = tagFilter ? `AND JSON_CONTAINS(p.tags, '"${safeTag}"')` : '';
+
+    // Fetch portfolio-hidden image URLs for directory companies
+    const [hiddenRows] = await pool.execute('SELECT image_url FROM portfolio_hidden_images');
+    const hiddenUrls = new Set((hiddenRows as any[]).map((r: any) => r.image_url as string));
 
     // 1. Registered company projects (from company_profiles + projects tables)
     const [rows] = await pool.execute(`
@@ -130,20 +135,22 @@ export async function getPortfolioFeed(req: any, res: any) {
       FROM projects p
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
+        AND p.is_portfolio_hidden = 0
         AND p.images IS NOT NULL AND p.images != '[]'
         ${tagClause}
       ORDER BY RAND(${Number(seed)})
       LIMIT ${Number(limit)} OFFSET ${Number(offset)}
     `);
 
-    const registeredProjects = (rows as any[]).map(row => {
-      const images = extractImageUrls(row.images);
+    const registeredProjects = (rows as any[]).flatMap(row => {
+      const allEntries = extractImageEntries(row.images);
       let tags: string[] = [];
       try {
         const parsed = typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags;
         if (Array.isArray(parsed)) tags = parsed;
       } catch { /* skip */ }
-      return {
+
+      const base = {
         id: row.id,
         title: row.title || '',
         slug: row.project_slug || '',
@@ -151,7 +158,6 @@ export async function getPortfolioFeed(req: any, res: any) {
         style: row.style || '',
         location: row.location || '',
         year: row.year || null,
-        images,
         tags,
         companyId: row.company_id,
         companyName: row.company_name || '',
@@ -160,7 +166,18 @@ export async function getPortfolioFeed(req: any, res: any) {
         companyCity: row.city || '',
         source: 'registered' as const,
       };
-    }).filter(p => p.images.length > 0);
+
+      if (tagFilter) {
+        // Image-level tag match: find the first image whose ai_category includes the tag
+        const matchedEntry = allEntries.find(e => e.tags.includes(tagFilter));
+        if (!matchedEntry) return [];
+        return [{ ...base, images: [matchedEntry.url] }];
+      }
+
+      const images = allEntries.map(e => e.url).filter(Boolean);
+      if (images.length === 0) return [];
+      return [{ ...base, images }];
+    });
 
     // 2. Directory company portfolio images (from uae_companies)
     const [dirRows] = await pool.execute(`
@@ -198,7 +215,8 @@ export async function getPortfolioFeed(req: any, res: any) {
           year = typeof (entry as any).year === 'number' ? (entry as any).year : null;
           location = typeof (entry as any).location === 'string' ? (entry as any).location : '';
         }
-        const imageUrls = items.map((item: any) => item?.url || '').filter(Boolean);
+        // Filter out portfolio-hidden images
+        const imageUrls = items.map((item: any) => item?.url || '').filter(u => u && !hiddenUrls.has(u));
         if (imageUrls.length === 0) return null;
         return {
           id: row.company_id * 10000 + idx,
@@ -225,7 +243,7 @@ export async function getPortfolioFeed(req: any, res: any) {
       (p): p is NonNullable<typeof p> => p !== null && !seenCompanyNames.has(p.companyName.toLowerCase())
     );
 
-    // When tag filter is active, exclude directory projects (they have no tags)
+    // When tag filter is active, exclude directory projects (they have no image-level tags)
     const allProjects = tagFilter
       ? registeredProjects
       : [...registeredProjects, ...dedupedDirectory];
@@ -643,5 +661,59 @@ export async function getCompanyBySlug(req: any, res: any) {
   } catch (error) {
     console.error('Get company detail error:', error);
     res.status(500).json({ error: 'Failed to load company.' });
+  }
+}
+
+/**
+ * PUT /api/admin/projects/:projectId/toggle-portfolio-hidden
+ * Toggles is_portfolio_hidden for a registered company project.
+ */
+export async function toggleProjectPortfolioHidden(req: any, res: any) {
+  try {
+    const projectId = parseInt(req.params.projectId, 10);
+    if (!projectId) return res.status(400).json({ error: 'Invalid project id' });
+
+    const [rows] = await pool.execute(
+      'SELECT is_portfolio_hidden FROM projects WHERE id = ? AND deleted_at IS NULL',
+      [projectId]
+    );
+    const row = (rows as any[])[0];
+    if (!row) return res.status(404).json({ error: 'Project not found' });
+
+    const next = row.is_portfolio_hidden ? 0 : 1;
+    await pool.execute('UPDATE projects SET is_portfolio_hidden = ? WHERE id = ?', [next, projectId]);
+    res.json({ ok: true, is_portfolio_hidden: next });
+  } catch (error) {
+    console.error('Toggle portfolio hidden error:', error);
+    res.status(500).json({ error: 'Failed to toggle' });
+  }
+}
+
+/**
+ * PUT /api/admin/directory-companies/:companyId/images/toggle-portfolio-hidden
+ * Toggles portfolio visibility for a directory company image URL.
+ * Body: { imageUrl: string }
+ */
+export async function toggleDirectoryImagePortfolioHidden(req: any, res: any) {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      return res.status(400).json({ error: 'imageUrl is required' });
+    }
+
+    const [existing] = await pool.execute(
+      'SELECT 1 FROM portfolio_hidden_images WHERE image_url = ?',
+      [imageUrl]
+    );
+    if ((existing as any[]).length > 0) {
+      await pool.execute('DELETE FROM portfolio_hidden_images WHERE image_url = ?', [imageUrl]);
+      res.json({ ok: true, is_portfolio_hidden: false });
+    } else {
+      await pool.execute('INSERT INTO portfolio_hidden_images (image_url) VALUES (?)', [imageUrl]);
+      res.json({ ok: true, is_portfolio_hidden: true });
+    }
+  } catch (error) {
+    console.error('Toggle directory image portfolio hidden error:', error);
+    res.status(500).json({ error: 'Failed to toggle' });
   }
 }

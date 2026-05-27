@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Pencil, Star, Check, ImagePlus, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Pencil, Star, Check, ImagePlus, Eye, EyeOff, Trash2, LayoutGrid } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { PageSpinner } from '../../components/ui/Spinner';
 import SmartImage from '../../components/ui/SmartImage';
@@ -48,6 +48,7 @@ interface Project {
   tags: string[];
   status: string;
   is_published: number;
+  is_portfolio_hidden?: number;
   created_at: string;
 }
 
@@ -145,6 +146,20 @@ export default function AdminCompanyDetailPage() {
     } catch {
       showToast(t('Failed', '设置失败'), 'error');
     }
+  };
+
+  const handleTogglePortfolioHidden = async (project: Project) => {
+    if (!company) return;
+    const imageUrl = project.images[0];
+    if (!imageUrl) return;
+    try {
+      const res = await adminApi.request(`/directory-companies/${company.id}/images/toggle-portfolio-hidden`, {
+        method: 'PUT',
+        body: JSON.stringify({ imageUrl }),
+      });
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, is_portfolio_hidden: res.is_portfolio_hidden ? 1 : 0 } : p));
+      showToast(res.is_portfolio_hidden ? '已从瀑布流隐藏' : '已显示在瀑布流', 'success');
+    } catch { showToast('操作失败', 'error'); }
   };
 
   const handleDeletePortfolioImage = async (url: string) => {
@@ -339,52 +354,70 @@ export default function AdminCompanyDetailPage() {
                 const isCover = company.cover_image === project.images[0];
                 return (
                   <>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleSetCover(project.images[0]); }}
-                      className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md transition ${
-                        isCover
-                          ? 'bg-[#b8864a] text-white opacity-100'
-                          : 'bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100'
-                      }`}
-                      title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
-                    >
-                      {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
-                      {isCover ? t('Cover', '已是封面') : t('Set as cover', '设为封面')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleAddToShowcase(project.images[0]); }}
-                      className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md bg-white/95 text-stone-700 hover:bg-white opacity-0 group-hover:opacity-100 transition"
-                      title={t('Add to login page showcase', '添加到登录页展示')}
-                    >
-                      <ImagePlus className="w-3 h-3" />
-                      {t('Showcase', '用作展示')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleToggleProjectPublished(project); }}
-                      className={`absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition ${
-                        project.is_published === 0
-                          ? 'bg-green-500/90 text-white hover:bg-green-600'
-                          : 'bg-stone-700/80 text-white hover:bg-stone-800'
-                      }`}
-                      title={project.is_published === 0 ? t('Show project', '显示项目') : t('Hide project', '隐藏项目')}
-                    >
-                      {project.is_published === 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                      {project.is_published === 0 ? t('Show', '显示') : t('Hide', '隐藏')}
-                    </button>
                     {project.id < 0 && (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleDeletePortfolioImage(project.images[0]); }}
-                        className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md bg-red-500/90 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"
+                        className="absolute top-1.5 left-1.5 flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-red-500/90 text-white hover:bg-red-600 opacity-0 group-hover:opacity-100 transition"
                         title={t('Delete image', '删除图片')}
                       >
                         <Trash2 className="w-3 h-3" />
-                        {t('Delete', '删除')}
+                        <span className="text-[9px] leading-none">{t('Delete', '删除')}</span>
                       </button>
                     )}
+                    <div
+                      className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProjectPublished(project)}
+                        className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                          project.is_published === 0
+                            ? 'bg-amber-500 text-white !opacity-100'
+                            : 'bg-white/95 text-stone-700 hover:bg-red-500 hover:text-white'
+                        }`}
+                        title={project.is_published === 0 ? t('Publish: show on company page', '上架：在装企详情页显示') : t('Unpublish: hide from company page', '下架：从装企详情页隐藏')}
+                      >
+                        {project.is_published === 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                        <span className="text-[9px] leading-none">{project.is_published === 0 ? t('Publish', '上架') : t('Unpublish', '下架')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetCover(project.images[0])}
+                        className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                          isCover
+                            ? 'bg-[#b8864a] text-white !opacity-100'
+                            : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'
+                        }`}
+                        title={isCover ? t('Click to clear cover', '再次点击清除封面') : t('Set as cover', '设为封面')}
+                      >
+                        {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                        <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddToShowcase(project.images[0])}
+                        className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md bg-white/95 text-stone-700 shadow-sm hover:bg-[#b8864a] hover:text-white transition-colors"
+                        title={t('Add to login page showcase', '添加到登录页展示')}
+                      >
+                        <ImagePlus className="w-3 h-3" />
+                        <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePortfolioHidden(project)}
+                        className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                          project.is_portfolio_hidden
+                            ? 'bg-orange-500 text-white !opacity-100'
+                            : 'bg-white/95 text-stone-700 hover:bg-orange-500 hover:text-white'
+                        }`}
+                        title={project.is_portfolio_hidden ? '已从瀑布流排除，点击恢复' : '排除：不出现在公共瀑布流'}
+                      >
+                        <LayoutGrid className="w-3 h-3" />
+                        <span className="text-[9px] leading-none">{project.is_portfolio_hidden ? '已屏流' : '入流'}</span>
+                      </button>
+                    </div>
                   </>
                 );
               })()}

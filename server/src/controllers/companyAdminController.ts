@@ -724,7 +724,7 @@ export async function getCompanyProfileFullDetail(req: any, res: any) {
     const company = (companyRows as any[])[0];
 
     const [projectRows] = await pool.execute(
-      `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, is_published, created_at
+      `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, is_published, is_portfolio_hidden, created_at
        FROM projects WHERE company_profile_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`,
       [id]
     );
@@ -774,7 +774,7 @@ export async function getCompanyFullDetail(req: any, res: any) {
     if (profileIds.length > 0) {
       const placeholders = profileIds.map(() => '?').join(',');
       const [projectRows] = await pool.execute(
-        `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
+        `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, is_portfolio_hidden, created_at
          FROM projects
          WHERE company_profile_id IN (${placeholders}) AND deleted_at IS NULL
          ORDER BY created_at DESC`,
@@ -793,7 +793,7 @@ export async function getCompanyFullDetail(req: any, res: any) {
       if ((designerRows as any[]).length > 0) {
         const designerId = (designerRows as any[])[0].id;
         const [projectRows] = await pool.execute(
-          `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, created_at
+          `SELECT id, title, description, style, location, year, images, tags, status, rejection_reason, is_portfolio_hidden, created_at
            FROM projects WHERE designer_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`,
           [designerId]
         );
@@ -815,6 +815,10 @@ export async function getCompanyFullDetail(req: any, res: any) {
         }))
       ).filter((item) => !!item.url);
 
+      // Check which image URLs are hidden from portfolio
+      const [hiddenRows] = await pool.execute('SELECT image_url FROM portfolio_hidden_images');
+      const hiddenUrls = new Set((hiddenRows as any[]).map((r: any) => r.image_url as string));
+
       projects = portfolioItems.map((item, index) => ({
         id: -(index + 1),
         title: `${company.name_en} Portfolio ${index + 1}`,
@@ -826,6 +830,7 @@ export async function getCompanyFullDetail(req: any, res: any) {
         tags: [],
         status: 'published',
         rejection_reason: null,
+        is_portfolio_hidden: hiddenUrls.has(item.url) ? 1 : 0,
         created_at: company.created_at || new Date().toISOString(),
       }));
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ExternalLink, Pencil, Trash2, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
+import { ExternalLink, Pencil, Trash2, Star, Check, ImagePlus, Eye, EyeOff, LayoutGrid } from 'lucide-react';
 import { adminApi } from '../../lib/adminApi';
 import { useAdmin } from '../../contexts/AdminContext';
 import { PageSpinner } from '../../components/ui/Spinner';
@@ -51,6 +51,7 @@ interface Project {
   rejection_reason: string | null;
   created_at: string;
   is_published?: number;
+  is_portfolio_hidden?: number;
 }
 
 const COMPANY_STATUS_COLORS: Record<string, string> = {
@@ -164,6 +165,14 @@ export default function AdminRegisteredCompanyDetailPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleTogglePortfolioHidden = async (project: Project) => {
+    try {
+      const res = await adminApi.request(`/projects/${project.id}/toggle-portfolio-hidden`, { method: 'PUT' });
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, is_portfolio_hidden: res.is_portfolio_hidden } : p));
+      showToast(res.is_portfolio_hidden ? '已从瀑布流隐藏' : '已显示在瀑布流', 'success');
+    } catch { showToast('操作失败', 'error'); }
   };
 
   const handleSetCover = async (url: string) => {
@@ -528,12 +537,12 @@ export default function AdminRegisteredCompanyDetailPage() {
                           className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
                             project.is_published === 0
                               ? 'bg-amber-500 text-white !opacity-100'
-                              : 'bg-white/95 text-stone-700 hover:bg-stone-100'
+                              : 'bg-white/95 text-stone-700 hover:bg-red-500 hover:text-white'
                           }`}
-                          title={project.is_published === 0 ? '显示项目' : '隐藏项目'}
+                          title={project.is_published === 0 ? '上架：在装企详情页显示' : '下架：从装企详情页隐藏'}
                         >
                           {project.is_published === 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                          <span className="text-[9px] leading-none">{project.is_published === 0 ? '显示' : '隐藏'}</span>
+                          <span className="text-[9px] leading-none">{project.is_published === 0 ? '上架' : '下架'}</span>
                         </button>
                         {project.images[0] && (() => {
                           const isCover = company.cover_image_url === project.images[0];
@@ -560,6 +569,19 @@ export default function AdminRegisteredCompanyDetailPage() {
                               >
                                 <ImagePlus className="w-3 h-3" />
                                 <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePortfolioHidden(project)}
+                                className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                                  project.is_portfolio_hidden
+                                    ? 'bg-orange-500 text-white !opacity-100'
+                                    : 'bg-white/95 text-stone-700 hover:bg-orange-500 hover:text-white'
+                                }`}
+                                title={project.is_portfolio_hidden ? '已从瀑布流排除，点击恢复' : '排除：不出现在公共瀑布流'}
+                              >
+                                <LayoutGrid className="w-3 h-3" />
+                                <span className="text-[9px] leading-none">{project.is_portfolio_hidden ? '已屏流' : '入流'}</span>
                               </button>
                             </>
                           );
@@ -935,12 +957,12 @@ export default function AdminRegisteredCompanyDetailPage() {
                             className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
                               project.is_published === 0
                                 ? 'bg-amber-500 text-white !opacity-100'
-                                : 'bg-white/95 text-stone-700 hover:bg-stone-100'
+                                : 'bg-white/95 text-stone-700 hover:bg-red-500 hover:text-white'
                             }`}
-                            title={project.is_published === 0 ? '显示项目' : '隐藏项目'}
+                            title={project.is_published === 0 ? '上架：在装企详情页显示' : '下架：从装企详情页隐藏'}
                           >
                             {project.is_published === 0 ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                            <span className="text-[9px] leading-none">{project.is_published === 0 ? '显示' : '隐藏'}</span>
+                            <span className="text-[9px] leading-none">{project.is_published === 0 ? '上架' : '下架'}</span>
                           </button>
                           {project.images[0] && (() => {
                             const isCover = company.cover_image_url === project.images[0];
@@ -967,6 +989,19 @@ export default function AdminRegisteredCompanyDetailPage() {
                                 >
                                   <ImagePlus className="w-3 h-3" />
                                   <span className="text-[9px] leading-none">{t('Showcase', '展示')}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePortfolioHidden(project)}
+                                  className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${
+                                    project.is_portfolio_hidden
+                                      ? 'bg-orange-500 text-white !opacity-100'
+                                      : 'bg-white/95 text-stone-700 hover:bg-orange-500 hover:text-white'
+                                  }`}
+                                  title={project.is_portfolio_hidden ? '已从瀑布流排除，点击恢复' : '排除：不出现在公共瀑布流'}
+                                >
+                                  <LayoutGrid className="w-3 h-3" />
+                                  <span className="text-[9px] leading-none">{project.is_portfolio_hidden ? '已屏流' : '入流'}</span>
                                 </button>
                               </>
                             );

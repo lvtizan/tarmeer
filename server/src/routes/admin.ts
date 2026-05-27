@@ -86,6 +86,7 @@ import {
 import { getAnalyticsOverview, getCompanyVisitors, listAnalyticsEvents, getDailyRegistrations, getDailyVisits, getTodayNew } from '../controllers/analyticsAdminController';
 import { listSuppliers, getSupplierDetail, updateSupplierStatus, updateSupplier, deleteSupplier, adminAddProduct, adminDeleteProduct, adminReplaceCatalogFile, adminRenameCatalog, adminReplaceProductImage, adminUpdateProduct, adminUploadProjectImage, adminAddProject, adminUpdateProject, adminDeleteProject, setSupplierHomeOrder, setSupplierListOrder, toggleSupplierPublished, toggleSupplierProjectPublished } from '../controllers/supplierAdminController';
 import { globalSearch } from '../controllers/globalSearchController';
+import { toggleProjectPortfolioHidden, toggleDirectoryImagePortfolioHidden } from '../controllers/companyController';
 import * as roleAdmin from '../controllers/roleAdminController';
 import { mergeCompanyWithScraped, listMergeCandidates, unmergeCompany } from '../controllers/companyMergeController';
 import {
@@ -283,6 +284,8 @@ router.put('/companies/:companyId/toggle-signed', toggleDirectorySigned);
 router.put('/roles/companies/:id/toggle-published', toggleCompanyProfilePublished);
 router.put('/companies/:companyId/toggle-published', toggleDirectoryPublished);
 router.put('/roles/companies/:companyId/projects/:projectId/toggle-published', toggleProjectPublished);
+router.put('/projects/:projectId/toggle-portfolio-hidden', toggleProjectPortfolioHidden);
+router.put('/directory-companies/:companyId/images/toggle-portfolio-hidden', toggleDirectoryImagePortfolioHidden);
 router.get('/signed-companies', listSignedCompanies);
 
 // Weight config management

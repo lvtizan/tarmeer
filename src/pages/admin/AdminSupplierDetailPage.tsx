@@ -345,6 +345,7 @@ export default function AdminSupplierDetailPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [catalogs, setCatalogs] = useState<any[]>([]);
+  const [categoryLabelMap, setCategoryLabelMap] = useState<Map<string, string>>(new Map());
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
   const [savingCatalogId, setSavingCatalogId] = useState<number | null>(null);
@@ -406,6 +407,15 @@ export default function AdminSupplierDetailPage() {
   }, [id, t]);
 
   useEffect(() => { fetchSupplier(); }, [fetchSupplier]);
+
+  useEffect(() => {
+    adminApi.request('/enums/supplier-categories')
+      .then((data: any) => {
+        const cats: { value: string; label: string }[] = data.categories || [];
+        setCategoryLabelMap(new Map(cats.map((c: any) => [c.value, c.label])));
+      })
+      .catch(() => {});
+  }, []);
 
   const handleStatus = async (status: string) => {
     setIsSubmitting(true);
@@ -740,7 +750,7 @@ export default function AdminSupplierDetailPage() {
                 <span className="text-stone-400 w-20 flex-shrink-0 text-sm pt-0.5">{t('Categories', '品类')}</span>
                 <div className="flex flex-wrap gap-1">
                   {cats.map((c: string) => (
-                    <span key={c} className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{c}</span>
+                    <span key={c} className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{categoryLabelMap.get(c) ?? c}</span>
                   ))}
                 </div>
               </div>

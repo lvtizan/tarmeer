@@ -329,6 +329,14 @@ const REQUIRED_TABLES: { name: string; sql: string }[] = [
     )`,
   },
   {
+    name: 'portfolio_hidden_images',
+    sql: `CREATE TABLE IF NOT EXISTS portfolio_hidden_images (
+      image_url VARCHAR(500) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (image_url(255))
+    )`,
+  },
+  {
     name: 'feedback',
     sql: `CREATE TABLE IF NOT EXISTS feedback (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -802,7 +810,19 @@ export async function runAutoMigrate(): Promise<void> {
       `);
     } catch { /* ignore */ }
 
-    // 8. Add field_staff role to admin_users ENUM
+    // 8. Add is_portfolio_hidden to projects
+    {
+      const phExists = await columnExists('projects', 'is_portfolio_hidden');
+      if (!phExists) {
+        try {
+          await pool.execute(`ALTER TABLE projects ADD COLUMN is_portfolio_hidden TINYINT NOT NULL DEFAULT 0`);
+          changes++;
+          console.log(`${TAG} Added is_portfolio_hidden to projects`);
+        } catch (e) { console.error(`${TAG} Failed to add is_portfolio_hidden:`, e); }
+      }
+    }
+
+    // 9. Add field_staff role to admin_users ENUM
     await addFieldStaffRole();
 
     if (changes === 0) {
