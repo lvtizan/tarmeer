@@ -717,3 +717,44 @@ export async function toggleDirectoryImagePortfolioHidden(req: any, res: any) {
     res.status(500).json({ error: 'Failed to toggle' });
   }
 }
+
+/**
+ * GET /api/companies/portfolio/tags
+ * Returns distinct AI-tagged style and room categories from project images.
+ */
+export async function getPortfolioTags(req: any, res: any) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT CAST(images AS CHAR) as images FROM projects
+       WHERE deleted_at IS NULL AND images IS NOT NULL AND images != '[]'
+         AND images LIKE '%ai_category%'`
+    );
+    const counts: Record<string, number> = {};
+    for (const row of rows as any[]) {
+      const txt = String((row as any).images || '');
+      const re = /"ai_category"\s*:\s*\[([^\]]+)\]/g;
+      let m;
+      while ((m = re.exec(txt)) !== null) {
+        const matches = m[1].match(/"([^"]+)"/g) || [];
+        matches.forEach((v: string) => {
+          const c = v.replace(/"/g, '');
+          counts[c] = (counts[c] || 0) + 1;
+        });
+      }
+    }
+    const ROOM_SET = new Set(['Living Room','Home Office','Bathroom','Dining Room','Hallway','Kitchen','Bedroom','Majlis','Nursery','Outdoor']);
+    const MIN_COUNT = 3;
+    const sorted = Object.entries(counts)
+      .filter(([, n]) => n >= MIN_COUNT)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k]) => k);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.json({
+      style: sorted.filter(t => !ROOM_SET.has(t)),
+      room: sorted.filter(t => ROOM_SET.has(t)),
+    });
+  } catch (error) {
+    console.error('getPortfolioTags error:', error);
+    res.status(500).json({ error: 'Failed to load portfolio tags.' });
+  }
+}

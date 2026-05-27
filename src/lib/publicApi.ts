@@ -312,7 +312,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     instagram: company.instagram || '',
     phone: company.phone || '',
     email: company.email || '',
-    styles: parseUnknownStringArray(company.specialties),
+    styles: [],
     projectCount: company.project_count || (Array.isArray(company.projects) ? company.projects.length : projectImages.length),
     services: parseUnknownStringArray(company.services),
     featured: false,

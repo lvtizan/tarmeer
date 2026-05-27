@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { Fragment, useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, User, Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
 import { api } from '../lib/api';
@@ -7,6 +7,7 @@ import Avatar from './ui/Avatar';
 import NotificationBell from './NotificationBell';
 import { useNavigationHandler } from '../hooks/useNavigationHandler';
 import TarmeerLogo from './TarmeerLogo';
+import { usePortfolioTags } from '../hooks/usePortfolioTags';
 
 const spaceTypeItems = [
   { label: 'Villa', to: '/companies?style=Villa' },
@@ -18,31 +19,6 @@ const spaceTypeItems = [
 
 const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
 
-const portfolioCategories = {
-  'By Room': [
-    { label: 'Living Room', to: '/portfolio?tag=Living+Room' },
-    { label: 'Bedroom',     to: '/portfolio?tag=Bedroom' },
-    { label: 'Kitchen',     to: '/portfolio?tag=Kitchen' },
-    { label: 'Bathroom',    to: '/portfolio?tag=Bathroom' },
-    { label: 'Dining Room', to: '/portfolio?tag=Dining+Room' },
-    { label: 'Home Office', to: '/portfolio?tag=Home+Office' },
-    { label: 'Majlis',      to: '/portfolio?tag=Majlis' },
-    { label: 'Hallway',     to: '/portfolio?tag=Hallway' },
-    { label: 'Outdoor',     to: '/portfolio?tag=Outdoor' },
-  ],
-  'By Style': [
-    { label: 'Modern',       to: '/portfolio?tag=Modern' },
-    { label: 'Luxury',       to: '/portfolio?tag=Luxury' },
-    { label: 'Minimalist',   to: '/portfolio?tag=Minimalist' },
-    { label: 'Classical',    to: '/portfolio?tag=Classical' },
-    { label: 'Arabic',       to: '/portfolio?tag=Arabic' },
-    { label: 'Industrial',   to: '/portfolio?tag=Industrial' },
-    { label: 'Scandinavian', to: '/portfolio?tag=Scandinavian' },
-    { label: 'Coastal',      to: '/portfolio?tag=Coastal' },
-    { label: 'Art Deco',     to: '/portfolio?tag=Art+Deco' },
-    { label: 'Bohemian',     to: '/portfolio?tag=Bohemian' },
-  ],
-};
 
 
 const navLinks = [
@@ -71,6 +47,14 @@ export default function Navbar({
   const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
   const [supplierNavGroups, setSupplierNavGroups] = useState<{ value: string; label: string; categories: { label: string; value: string }[] }[]>([]);
   const [supplierNavUngrouped, setSupplierNavUngrouped] = useState<{ label: string; value: string }[]>([]);
+  const portfolioTags = usePortfolioTags();
+  const portfolioCategories = useMemo(() => {
+    const toItem = (label: string) => ({ label, to: `/portfolio?tag=${encodeURIComponent(label)}` });
+    return {
+      'By Room': portfolioTags.room.map(toItem),
+      'By Style': portfolioTags.style.map(toItem),
+    };
+  }, [portfolioTags]);
   const { handleNavClick } = useNavigationHandler();
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';

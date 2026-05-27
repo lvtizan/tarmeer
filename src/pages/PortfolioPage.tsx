@@ -5,6 +5,7 @@ import { X, ChevronDown } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '../lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '../lib/publicApi';
 import { DEFAULT_RATIO, GAP, TARGET_ROW_HEIGHT, justifyRows } from '../lib/justifyRows';
+import { usePortfolioTags } from '../hooks/usePortfolioTags';
 
 
 /* ================================================================== */
@@ -428,9 +429,6 @@ function ProjectGroup({
 /*  Main page                                                          */
 /* ================================================================== */
 
-// ── Tag taxonomy for filter UI ──
-const ROOM_FILTERS = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dining Room', 'Home Office', 'Majlis', 'Hallway', 'Nursery', 'Outdoor'];
-const STYLE_FILTERS = ['Modern', 'Luxury', 'Minimalist', 'Classical', 'Arabic', 'Industrial', 'Scandinavian', 'Coastal', 'Art Deco', 'Bohemian'];
 
 // ── Portfolio state cache (survives back navigation) ──
 const CACHE_KEY = 'portfolio-state';
@@ -472,6 +470,7 @@ function clearCache() {
 export default function PortfolioPage() {
   const [searchParams] = useSearchParams();
   const urlTag = searchParams.get('tag') || '';
+  const { style: styleFilters, room: roomFilters } = usePortfolioTags();
 
   // Restore cache ONLY if URL tag matches cached tag (otherwise filter changed)
   const cached = useMemo(() => {
@@ -782,28 +781,28 @@ export default function PortfolioPage() {
               <button
                 onClick={() => setOpenDropdown(o => o === 'room' ? null : 'room')}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition whitespace-nowrap shrink-0 ${
-                  activeTag && ROOM_FILTERS.includes(activeTag)
+                  activeTag && roomFilters.includes(activeTag)
                     ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
                     : openDropdown === 'room'
                     ? 'bg-stone-100 text-stone-700 border-stone-300'
                     : 'bg-white text-stone-600 border-stone-200'
                 }`}
               >
-                {activeTag && ROOM_FILTERS.includes(activeTag) ? activeTag : 'Room'}
+                {activeTag && roomFilters.includes(activeTag) ? activeTag : 'Room'}
                 <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${openDropdown === 'room' ? 'rotate-180' : ''}`} />
               </button>
               {/* Style dropdown trigger */}
               <button
                 onClick={() => setOpenDropdown(o => o === 'style' ? null : 'style')}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition whitespace-nowrap shrink-0 ${
-                  activeTag && STYLE_FILTERS.includes(activeTag)
+                  activeTag && styleFilters.includes(activeTag)
                     ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]'
                     : openDropdown === 'style'
                     ? 'bg-stone-100 text-stone-700 border-stone-300'
                     : 'bg-white text-stone-600 border-stone-200'
                 }`}
               >
-                {activeTag && STYLE_FILTERS.includes(activeTag) ? activeTag : 'Style'}
+                {activeTag && styleFilters.includes(activeTag) ? activeTag : 'Style'}
                 <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${openDropdown === 'style' ? 'rotate-180' : ''}`} />
               </button>
               {activeTag && (
@@ -819,7 +818,7 @@ export default function PortfolioPage() {
             {openDropdown && (
               <div className="absolute left-0 right-0 top-full bg-white border-b border-stone-200 shadow-lg z-50 px-4 py-3">
                 <div className="flex flex-wrap gap-2 max-w-[1400px] mx-auto">
-                  {(openDropdown === 'room' ? ROOM_FILTERS : STYLE_FILTERS).map(tag => (
+                  {(openDropdown === 'room' ? roomFilters : styleFilters).map(tag => (
                     <button
                       key={tag}
                       onClick={() => { selectTag(tag); setOpenDropdown(null); }}
@@ -841,7 +840,7 @@ export default function PortfolioPage() {
           <div className="hidden sm:flex flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
-              {ROOM_FILTERS.map(tag => (
+              {roomFilters.map(tag => (
                 <button key={tag} onClick={() => selectTag(tag)}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
                   {tag}
@@ -850,7 +849,7 @@ export default function PortfolioPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
-              {STYLE_FILTERS.map(tag => (
+              {styleFilters.map(tag => (
                 <button key={tag} onClick={() => selectTag(tag)}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
                   {tag}
