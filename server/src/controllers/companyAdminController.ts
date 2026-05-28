@@ -1191,12 +1191,18 @@ export async function toggleCompanyProfilePublished(req: any, res: any) {
     const { is_published } = req.body;
     await pool.execute('UPDATE company_profiles SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, id]);
     res.json({ ok: true });
-    // Notify IndexNow when publishing (fire-and-forget)
-    if (is_published) {
-      const [rows] = await pool.execute('SELECT slug FROM company_profiles WHERE id = ?', [id]);
-      const slug = (rows as any[])[0]?.slug;
-      if (slug) notifyIndexNow([`/companies/${slug}`]).catch(() => {});
-    }
+    // Fire-and-forget IndexNow notification — isolated from main error handler
+    (async () => {
+      try {
+        if (is_published) {
+          const [rows] = await pool.execute('SELECT slug FROM company_profiles WHERE id = ?', [id]);
+          const slug = (rows as any[])[0]?.slug;
+          if (slug) await notifyIndexNow([`/companies/${slug}`]);
+        }
+      } catch (err) {
+        console.warn('[IndexNow] slug lookup failed (company_profiles):', err);
+      }
+    })();
   } catch (error) {
     console.error('Toggle company profile published error:', error);
     res.status(500).json({ error: 'Failed to update published status.' });
@@ -1210,12 +1216,18 @@ export async function toggleDirectoryPublished(req: any, res: any) {
     const { is_published } = req.body;
     await pool.execute('UPDATE uae_companies SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, companyId]);
     res.json({ ok: true });
-    // Notify IndexNow when publishing (fire-and-forget)
-    if (is_published) {
-      const [rows] = await pool.execute('SELECT slug FROM uae_companies WHERE id = ?', [companyId]);
-      const slug = (rows as any[])[0]?.slug;
-      if (slug) notifyIndexNow([`/companies/${slug}`]).catch(() => {});
-    }
+    // Fire-and-forget IndexNow notification — isolated from main error handler
+    (async () => {
+      try {
+        if (is_published) {
+          const [rows] = await pool.execute('SELECT slug FROM uae_companies WHERE id = ?', [companyId]);
+          const slug = (rows as any[])[0]?.slug;
+          if (slug) await notifyIndexNow([`/companies/${slug}`]);
+        }
+      } catch (err) {
+        console.warn('[IndexNow] slug lookup failed (uae_companies):', err);
+      }
+    })();
   } catch (error) {
     console.error('Toggle directory published error:', error);
     res.status(500).json({ error: 'Failed to update published status.' });
@@ -1229,20 +1241,26 @@ export async function toggleProjectPublished(req: any, res: any) {
     const { is_published } = req.body;
     await pool.execute('UPDATE projects SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, projectId]);
     res.json({ ok: true });
-    // Notify IndexNow when publishing (fire-and-forget)
-    if (is_published) {
-      const [rows] = await pool.execute(
-        `SELECT p.slug AS project_slug, cp.slug AS company_slug
-         FROM projects p
-         LEFT JOIN company_profiles cp ON p.company_profile_id = cp.id
-         WHERE p.id = ?`,
-        [projectId]
-      );
-      const row = (rows as any[])[0];
-      if (row?.project_slug && row?.company_slug) {
-        notifyIndexNow([`/companies/${row.company_slug}/${row.project_slug}`]).catch(() => {});
+    // Fire-and-forget IndexNow notification — isolated from main error handler
+    (async () => {
+      try {
+        if (is_published) {
+          const [rows] = await pool.execute(
+            `SELECT p.slug AS project_slug, cp.slug AS company_slug
+             FROM projects p
+             LEFT JOIN company_profiles cp ON p.company_profile_id = cp.id
+             WHERE p.id = ?`,
+            [projectId]
+          );
+          const row = (rows as any[])[0];
+          if (row?.project_slug && row?.company_slug) {
+            await notifyIndexNow([`/companies/${row.company_slug}/${row.project_slug}`]);
+          }
+        }
+      } catch (err) {
+        console.warn('[IndexNow] slug lookup failed (projects):', err);
       }
-    }
+    })();
   } catch (error) {
     console.error('Toggle project published error:', error);
     res.status(500).json({ error: 'Failed to update project published status.' });
