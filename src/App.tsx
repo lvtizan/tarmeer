@@ -72,6 +72,7 @@ const ForHomeownersPage = lazyRetry(() => import('./pages/ForHomeownersPage'));
 const StartGuidePage = lazyRetry(() => import('./pages/StartGuidePage'));
 const SupplierStartGuidePage = lazyRetry(() => import('./pages/SupplierStartGuidePage'));
 const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage'));
+const ServiceCityPage = lazyRetry(() => import('./pages/ServiceCityPage'));
 
 // Onboarding
 const OnboardingPage = lazyRetry(() => import('./pages/OnboardingPage'));
@@ -355,6 +356,7 @@ function App() {
                 <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
                 <Route path="/services/house-exterior" element={<HouseExteriorDesignPage />} />
+                <Route path="/services/:service/:city" element={<ServiceCityPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/dmca" element={<DmcaPage />} />

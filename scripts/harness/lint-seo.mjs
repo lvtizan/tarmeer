@@ -50,6 +50,9 @@ const PUBLIC_PAGES = [
   { file: 'src/pages/HouseExteriorDesignPage.tsx', label: 'House Exterior Design', detail: false },
   { file: 'src/pages/SoftDecorationPage.tsx', label: 'Soft Decoration', detail: false },
   { file: 'src/pages/NewHomeDesignPage.tsx', label: 'New Home Design', detail: false },
+  // Programmatic SEO landing pages — /services/:service/:city
+  { file: 'src/pages/ServiceCityPage.tsx', label: 'Service+City (interior-design/dubai)', detail: true },
+  { file: 'src/pages/ServiceCityPage.tsx', label: 'Service+City (renovation/abu-dhabi)', detail: true },
   // ── ADD NEW PUBLIC PAGES HERE ──
   // When you add a new public-facing page, add an entry above this line.
   // detail: true  → also checks for JSON-LD structured data
