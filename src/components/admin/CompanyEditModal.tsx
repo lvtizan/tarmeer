@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { adminApi } from '../../lib/adminApi';
 import AdminSelect from '../ui/AdminSelect';
 import PhoneCountryInput from '../ui/PhoneCountryInput';
+import { STANDARD_COMPANY_TYPES } from '../../lib/companyTypesList';
 
 interface Props {
   type: 'scraped' | 'profile';
@@ -26,6 +27,7 @@ function MultiTypeSelect({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const updatePos = useCallback(() => {
@@ -48,7 +50,10 @@ function MultiTypeSelect({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current && !containerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -75,6 +80,7 @@ function MultiTypeSelect({
 
       {open && dropPos && createPortal(
         <div
+          ref={dropdownRef}
           className="fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-y-auto"
           style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: 260 }}
         >
@@ -122,10 +128,18 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
       adminApi.request('/enums/service-categories').catch(() => ({ categories: [] })),
       adminApi.request('/enums/company-services').catch(() => ({ services: [] })),
     ]).then(([typesRes, catsRes, svcsRes]: any[]) => {
-      const types = (typesRes?.types || []).filter((t: any) => t.active !== 0);
+      // Merge DB types with standard list so signup-form selections always appear,
+      // even if the DB table is missing entries (deleted or not yet seeded).
+      const dbTypes: { slug: string; label: string }[] = (typesRes?.types || [])
+        .filter((t: any) => t.active !== 0)
+        .map((t: any) => ({ slug: t.slug, label: t.label }));
+      const merged = [
+        ...STANDARD_COMPANY_TYPES,
+        ...dbTypes.filter(t => !STANDARD_COMPANY_TYPES.some(s => s.slug === t.slug)),
+      ];
       const cats = (catsRes?.categories || []).filter((c: any) => c.is_enabled !== 0);
       const svcs = svcsRes?.services || [];
-      setCompanyTypes(types);
+      setCompanyTypes(merged);
       setServiceCategories(cats);
       setAllServices(svcs);
       if (cats.length > 0) setActiveServiceTab(cats[0].name);

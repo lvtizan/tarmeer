@@ -790,7 +790,6 @@ export async function runAutoMigrate(): Promise<void> {
           ('beds',              '床',              12, 1, 'furniture_group'),
           ('bedding',           '床上用品',        13, 1, 'furniture_group')
         ON DUPLICATE KEY UPDATE
-          label = VALUES(label),
           sort_order = VALUES(sort_order),
           group_value = IF(group_value IS NULL, VALUES(group_value), group_value)
       `);

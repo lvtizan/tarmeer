@@ -974,17 +974,17 @@ function SupplierCategoriesTab() {
         {showAddCat && selectedGroup !== '__ungrouped__' && (
           <div className="flex gap-2 flex-wrap mb-3 p-3 bg-stone-50 rounded-xl border border-stone-200">
             <input
-              className={`${inputCls} w-32`}
-              placeholder="key (如 tiles)"
-              value={newCatValue}
-              onChange={e => setNewCatValue(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') addCat(); if (e.key === 'Escape') { setShowAddCat(false); setNewCatValue(''); setNewCatLabel(''); } }}
-            />
-            <input
               className={`${inputCls} w-40`}
               placeholder="名称 (如 瓷砖)"
               value={newCatLabel}
               onChange={e => setNewCatLabel(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addCat(); if (e.key === 'Escape') { setShowAddCat(false); setNewCatValue(''); setNewCatLabel(''); } }}
+            />
+            <input
+              className={`${inputCls} w-32`}
+              placeholder="key (如 tiles)"
+              value={newCatValue}
+              onChange={e => setNewCatValue(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') addCat(); if (e.key === 'Escape') { setShowAddCat(false); setNewCatValue(''); setNewCatLabel(''); } }}
             />
             <button onClick={addCat} disabled={addingCat || !newCatValue.trim() || !newCatLabel.trim()}
@@ -1016,6 +1016,13 @@ function SupplierCategoriesTab() {
                   <span className="cursor-grab text-stone-300 hover:text-stone-400 text-[18px] leading-none shrink-0">⠿</span>
                   <span className="text-xs text-stone-300 w-4 shrink-0">{idx + 1}</span>
                   <input
+                    readOnly
+                    className={`${inputCls} w-36 shrink-0 text-stone-400 cursor-default select-all`}
+                    value={cat.value}
+                    title="分类 key（只读）"
+                  />
+                  <input
+                    key={cat.label}
                     className={`${inputCls} flex-1 min-w-0`}
                     defaultValue={cat.label}
                     onBlur={e => updateCatLabel(cat, e.target.value)}

@@ -1,0 +1,22 @@
+/** Standard company types — must stay in sync with CompanySignupForm COMPANY_TYPES and autoMigrate seed */
+export const STANDARD_COMPANY_TYPES: { slug: string; label: string }[] = [
+  { slug: 'design_studio',       label: 'Design Studio' },
+  { slug: 'renovation_company',  label: 'Renovation & Fit-out' },
+  { slug: 'general_contractor',  label: 'General Contractor' },
+  { slug: 'fitout_contractor',   label: 'Fit-Out Contractor' },
+  { slug: 'mep_contractor',      label: 'MEP Contractor' },
+  { slug: 'fire_fighting',       label: 'Fire Fighting & Safety' },
+  { slug: 'smart_home',          label: 'Smart Home & IT' },
+  { slug: 'waterproofing',       label: 'Waterproofing' },
+  { slug: 'glass_aluminium',     label: 'Glass & Aluminium' },
+  { slug: 'carpentry_joinery',   label: 'Carpentry & Joinery' },
+  { slug: 'stone_marble',        label: 'Stone, Marble & Tile' },
+  { slug: 'steel_fabrication',   label: 'Steel & Metal Works' },
+  { slug: 'specialty_trade',     label: 'Specialty Trade' },
+  { slug: 'maintenance_company', label: 'Maintenance Company' },
+  { slug: 'cleaning_services',   label: 'Cleaning Services' },
+  { slug: 'manpower_supply',     label: 'Manpower Supply' },
+  { slug: 'landscaping',         label: 'Landscaping' },
+  { slug: 'swimming_pool',       label: 'Swimming Pool Contractor' },
+  { slug: 'furnishing',          label: 'Furnishing' },
+];
