@@ -12,16 +12,6 @@ function authHeaders(): Record<string, string> {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` };
 }
 
-const CATEGORY_OPTIONS = [
-  'furniture', 'stone', 'lighting', 'plants', 'flooring',
-  'kitchen', 'curtains', 'paint', 'hardware', 'other',
-];
-
-const CATEGORY_ZH: Record<string, string> = {
-  furniture: '家具', stone: '石材', lighting: '灯具', plants: '植物景观',
-  flooring: '地板', kitchen: '厨卫', curtains: '窗帘纺织',
-  paint: '涂料', hardware: '五金配件', other: '其他',
-};
 
 const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
 const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
@@ -31,6 +21,9 @@ export default function SupplierProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+
+  const [catGroups, setCatGroups] = useState<{value:string;label:string;categories:{value:string;label:string}[]}[]>([]);
+  const [catUngrouped, setCatUngrouped] = useState<{value:string;label:string}[]>([]);
 
   const [companyName, setCompanyName] = useState('');
   const [description, setDescription] = useState('');
@@ -45,7 +38,7 @@ export default function SupplierProfilePage() {
   const [website, setWebsite] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
+    const profilePromise = fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as any })
       .then(r => r.json())
       .then(data => {
         const p = data.profile;
@@ -64,8 +57,17 @@ export default function SupplierProfilePage() {
         setWhatsapp(p.whatsapp || '');
         setWebsite(p.website || '');
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
+
+    const categoriesPromise = fetch(`${API_BASE}/public/supplier-categories`)
+      .then(r => r.json())
+      .then(data => {
+        setCatGroups(data.groups || []);
+        setCatUngrouped(data.ungrouped || []);
+      })
+      .catch(() => {});
+
+    Promise.all([profilePromise, categoriesPromise]).finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -149,15 +151,34 @@ export default function SupplierProfilePage() {
 
           <div>
             <label className={labelCls}>{t('Categories', '产品品类')}</label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map(c => (
-                <button key={c} type="button" onClick={() => toggleCategory(c)}
-                  className={`px-3 py-1.5 rounded-2xl text-sm font-medium transition ${
-                    categories.includes(c) ? 'bg-[#b8864a] text-white' : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}>
-                  {t(c, CATEGORY_ZH[c])}
-                </button>
+            <div className="space-y-3">
+              {catGroups.map(group => (
+                <div key={group.value}>
+                  <p className="text-xs text-stone-400 mb-1.5">{group.label}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.categories.map(c => (
+                      <button key={c.value} type="button" onClick={() => toggleCategory(c.value)}
+                        className={`px-3 py-1.5 rounded-2xl text-sm font-medium transition ${
+                          categories.includes(c.value) ? 'bg-[#b8864a] text-white' : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}>
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
+              {catUngrouped.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {catUngrouped.map(c => (
+                    <button key={c.value} type="button" onClick={() => toggleCategory(c.value)}
+                      className={`px-3 py-1.5 rounded-2xl text-sm font-medium transition ${
+                        categories.includes(c.value) ? 'bg-[#b8864a] text-white' : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+                      }`}>
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
