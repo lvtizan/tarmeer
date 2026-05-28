@@ -200,7 +200,8 @@ export default function HomeownerAuthPage() {
       if (activeRole === 'company') {
         navigate('/company');
       } else {
-        navigate('/dashboard');
+        const returnTo = searchParams.get('returnTo');
+        navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard');
       }
     } catch (err: any) {
       setLoading(false);

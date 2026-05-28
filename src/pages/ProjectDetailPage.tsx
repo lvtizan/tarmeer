@@ -10,6 +10,7 @@ import { fetchPublicProjectDetail, type PublicProjectDetailData } from '../lib/p
 import SmartImage from '../components/ui/SmartImage';
 import ServiceInquiryCard from '../components/services/ServiceInquiryCard';
 import { trackEvent } from '../lib/trackEvent';
+import { api } from '../lib/api';
 
 const SAVED_PROJECTS_KEY = 'saved-projects';
 
@@ -171,6 +172,10 @@ export default function ProjectDetailPage() {
   };
 
   const handleSave = () => {
+    if (!api.getToken()) {
+      navigate(`/auth?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
     const next = new Set(saved);
     const wasSaved = next.has(projectKey);
     if (wasSaved) next.delete(projectKey);
