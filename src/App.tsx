@@ -73,6 +73,11 @@ const StartGuidePage = lazyRetry(() => import('./pages/StartGuidePage'));
 const SupplierStartGuidePage = lazyRetry(() => import('./pages/SupplierStartGuidePage'));
 const NotFoundPage = lazyRetry(() => import('./pages/NotFoundPage'));
 const ServiceCityPage = lazyRetry(() => import('./pages/ServiceCityPage'));
+const RenovationCostDubaiPage = lazyRetry(() => import('./pages/guides/RenovationCostDubaiPage'));
+const BestInteriorDesignersDubaiPage = lazyRetry(() => import('./pages/guides/BestInteriorDesignersDubaiPage'));
+const ApartmentRenovationUaePage = lazyRetry(() => import('./pages/guides/ApartmentRenovationUaePage'));
+const VillaRenovationDubaiPage = lazyRetry(() => import('./pages/guides/VillaRenovationDubaiPage'));
+const HowToChooseInteriorDesignerPage = lazyRetry(() => import('./pages/guides/HowToChooseInteriorDesignerPage'));
 
 // Onboarding
 const OnboardingPage = lazyRetry(() => import('./pages/OnboardingPage'));
@@ -357,6 +362,11 @@ function App() {
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
                 <Route path="/services/house-exterior" element={<HouseExteriorDesignPage />} />
                 <Route path="/services/:service/:city" element={<ServiceCityPage />} />
+                <Route path="/guide/renovation-cost-dubai" element={<RenovationCostDubaiPage />} />
+                <Route path="/guide/best-interior-designers-dubai" element={<BestInteriorDesignersDubaiPage />} />
+                <Route path="/guide/apartment-renovation-uae" element={<ApartmentRenovationUaePage />} />
+                <Route path="/guide/villa-renovation-dubai" element={<VillaRenovationDubaiPage />} />
+                <Route path="/guide/how-to-choose-interior-designer-uae" element={<HowToChooseInteriorDesignerPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/dmca" element={<DmcaPage />} />

@@ -53,6 +53,12 @@ const PUBLIC_PAGES = [
   // Programmatic SEO landing pages — /services/:service/:city
   { file: 'src/pages/ServiceCityPage.tsx', label: 'Service+City (interior-design/dubai)', detail: true },
   { file: 'src/pages/ServiceCityPage.tsx', label: 'Service+City (renovation/abu-dhabi)', detail: true },
+  // Guide pages — SEO/GEO Phase 1
+  { file: 'src/pages/guides/RenovationCostDubaiPage.tsx', label: 'Guide: Renovation Cost Dubai', detail: true },
+  { file: 'src/pages/guides/BestInteriorDesignersDubaiPage.tsx', label: 'Guide: Best Interior Designers Dubai', detail: true },
+  { file: 'src/pages/guides/ApartmentRenovationUaePage.tsx', label: 'Guide: Apartment Renovation UAE', detail: true },
+  { file: 'src/pages/guides/VillaRenovationDubaiPage.tsx', label: 'Guide: Villa Renovation Dubai', detail: true },
+  { file: 'src/pages/guides/HowToChooseInteriorDesignerPage.tsx', label: 'Guide: How to Choose Interior Designer UAE', detail: true },
   // ── ADD NEW PUBLIC PAGES HERE ──
   // When you add a new public-facing page, add an entry above this line.
   // detail: true  → also checks for JSON-LD structured data
