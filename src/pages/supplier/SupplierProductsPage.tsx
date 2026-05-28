@@ -16,22 +16,11 @@ const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
 export default function SupplierProductsPage() {
   const { t } = useAdminT();
 
-  const CATEGORY_OPTIONS = [
-    { value: '', label: t('No category', '无品类') },
-    { value: 'furniture', label: t('Furniture', '家具') },
-    { value: 'stone', label: t('Stone', '石材') },
-    { value: 'lighting', label: t('Lighting', '灯具') },
-    { value: 'plants', label: t('Plants', '植物景观') },
-    { value: 'flooring', label: t('Flooring', '地板') },
-    { value: 'kitchen', label: t('Kitchen', '厨卫') },
-    { value: 'curtains', label: t('Curtains', '窗帘纺织') },
-    { value: 'paint', label: t('Paint', '涂料') },
-    { value: 'hardware', label: t('Hardware', '五金配件') },
-    { value: 'other', label: t('Other', '其他') },
-  ];
-
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([
+    { value: '', label: t('No category', '无品类') },
+  ]);
   const [adding, setAdding] = useState(false);
 
   // new product form
@@ -43,11 +32,24 @@ export default function SupplierProductsPage() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/me/products`, { headers: authHeaders() as any })
-      .then(r => r.json())
-      .then(data => { if (data?.products) setProducts(data.products); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`${API_BASE}/suppliers/me/products`, { headers: authHeaders() as any })
+        .then(r => r.json()),
+      fetch(`${API_BASE}/public/supplier-categories`)
+        .then(r => r.json()),
+    ]).then(([prodData, catData]) => {
+      if (prodData?.products) setProducts(prodData.products);
+      const allCats = [
+        ...(catData?.groups || []).flatMap((g: any) => g.categories || []),
+        ...(catData?.ungrouped || []),
+      ];
+      if (allCats.length > 0) {
+        setCategoryOptions([
+          { value: '', label: t('No category', '无品类') },
+          ...allCats.map((c: any) => ({ value: c.value, label: c.label })),
+        ]);
+      }
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const handleAdd = async () => {
@@ -132,7 +134,7 @@ export default function SupplierProductsPage() {
               </div>
               <div>
                 <label className={labelCls}>{t('Category', '品类')}</label>
-                <AdminSelect options={CATEGORY_OPTIONS} value={newCat} onChange={setNewCat} />
+                <AdminSelect options={categoryOptions} value={newCat} onChange={setNewCat} />
               </div>
               <div className="sm:col-span-2">
                 <label className={labelCls}>{t('Description', '产品描述')}</label>

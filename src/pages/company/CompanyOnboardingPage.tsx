@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { STANDARD_COMPANY_TYPES } from '../../lib/companyTypesList';
 import AdminSelect from '../../components/ui/AdminSelect';
 import Navbar from '../../components/Navbar';
 import { useServices } from '../../hooks/useServices';
@@ -41,16 +42,7 @@ const SPECIALTIES = [
   'Education', 'Healthcare', 'F&B', 'Mixed-Use',
 ];
 
-const COMPANY_TYPES = [
-  { value: 'renovation_company', label: 'Renovation Company' },
-  { value: 'design_studio', label: 'Interior Design Studio' },
-  { value: 'general_contractor', label: 'General Contractor' },
-  { value: 'mep_contractor', label: 'MEP Contractor' },
-  { value: 'maintenance_company', label: 'Maintenance Company' },
-  { value: 'specialty_trade', label: 'Specialty Trade' },
-  { value: 'landscaping', label: 'Landscaping' },
-  { value: 'furnishing', label: 'Furnishing' },
-];
+const COMPANY_TYPES = STANDARD_COMPANY_TYPES.map(t => ({ value: t.slug, label: t.label }));
 
 const CITY_OPTIONS = [
   { value: '', label: 'Select city' },
