@@ -228,7 +228,7 @@ export default function CompanyDetailPage() {
   if (loading) {
     return (
       <>
-        {id && <Helmet><link rel="canonical" href={`https://www.tarmeer.com/companies/${id}`} /></Helmet>}
+        {id && <Helmet><link rel="canonical" href={`https://www.tarmeer.com/@${id}`} /></Helmet>}
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-tarmeer-bg)]">
           <div className="w-8 h-8 rounded-full border-2 border-[var(--color-tarmeer-primary)]/20 border-t-[var(--color-tarmeer-primary)] animate-spin" />
         </div>
@@ -265,27 +265,34 @@ export default function CompanyDetailPage() {
   const heroPrev = () => setHeroIndex(i => (i > 0 ? i - 1 : heroImages.length - 1));
   const heroNext = () => setHeroIndex(i => (i < heroImages.length - 1 ? i + 1 : 0));
 
+  const canonicalUrl = `https://www.tarmeer.com/@${company.id}`;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
+    "@id": canonicalUrl,
     "name": company.name,
     "description": description || company.shortDescription,
-    "address": { "@type": "PostalAddress", "addressLocality": company.city, "addressCountry": "AE" },
+    "url": canonicalUrl,
+    "address": { "@type": "PostalAddress", "addressLocality": company.city || 'Dubai', "addressCountry": "AE" },
     ...(company.phone ? { "telephone": company.phone } : {}),
-    "url": company.website || `https://www.tarmeer.com/companies/${company.id}`,
     ...(heroImages[0] ? { "image": `https://www.tarmeer.com${heroImages[0]}` } : {}),
     "priceRange": "$$",
-    "areaServed": [
-      { "@type": "City", "name": "Dubai" },
-      { "@type": "City", "name": "Abu Dhabi" },
-      { "@type": "City", "name": "Sharjah" },
-      { "@type": "City", "name": "Ajman" },
-      { "@type": "City", "name": "Ras Al Khaimah" },
-      { "@type": "City", "name": "Fujairah" },
-      { "@type": "City", "name": "Umm Al Quwain" },
-    ],
+    "areaServed": company.city
+      ? { "@type": "City", "name": company.city }
+      : { "@type": "Country", "name": "United Arab Emirates" },
+    ...(company.services.length > 0 ? {
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "itemListElement": company.services.slice(0, 8).map((svc: string) => ({
+          "@type": "Offer",
+          "itemOffered": { "@type": "Service", "name": svc }
+        }))
+      }
+    } : {}),
     "knowsAbout": company.services.length > 0 ? company.services : ['Interior Design', 'Renovation', 'Fit-out'],
     ...(company.companyType ? { "additionalType": getCompanyTypeLabel(company.companyType) } : {}),
+    ...(company.website ? { "sameAs": [company.website] } : {}),
   };
 
   const faqJsonLd = {
@@ -358,9 +365,9 @@ export default function CompanyDetailPage() {
         <meta property="og:title" content={metaTitle} />
         <meta property="og:description" content={metaDescription} />
         <meta property="og:image" content={ogImage} />
-        <meta property="og:url" content={`https://www.tarmeer.com/companies/${company.id}`} />
+        <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href={`https://www.tarmeer.com/companies/${company.id}`} />
+        <link rel="canonical" href={canonicalUrl} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
@@ -368,7 +375,7 @@ export default function CompanyDetailPage() {
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
             { '@type': 'ListItem', position: 2, name: 'Companies', item: 'https://www.tarmeer.com/companies' },
-            { '@type': 'ListItem', position: 3, name: company.name, item: `https://www.tarmeer.com/companies/${company.id}` },
+            { '@type': 'ListItem', position: 3, name: company.name, item: canonicalUrl },
           ],
         })}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
