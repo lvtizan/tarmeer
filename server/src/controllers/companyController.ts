@@ -758,3 +758,50 @@ export async function getPortfolioTags(req: any, res: any) {
     res.status(500).json({ error: 'Failed to load portfolio tags.' });
   }
 }
+
+export async function getCompaniesByServiceCity(req: any, res: any) {
+  try {
+    const service = typeof req.query.service === 'string' ? req.query.service.trim() : '';
+    const city = typeof req.query.city === 'string' ? req.query.city.trim() : '';
+
+    if (!service || !city) {
+      return res.status(400).json({ error: 'service and city are required' });
+    }
+
+    // Match directory companies (uae_companies)
+    const [dirRows] = await pool.query(
+      `SELECT uc.slug, uc.name_en AS name, uc.city, uc.description,
+              uc.weight_score, uc.portfolio_images, uc.logo_url
+       FROM uae_companies uc
+       WHERE uc.is_active = 1
+         AND LOWER(uc.city) = LOWER(?)
+         AND LOWER(uc.services) LIKE ?
+       ORDER BY uc.weight_score DESC
+       LIMIT 30`,
+      [city, `%${service.toLowerCase()}%`]
+    ) as any[];
+
+    // Match registered companies (company_profiles)
+    const [regRows] = await pool.query(
+      `SELECT cp.slug, cp.company_name AS name, cp.city, cp.description, cp.company_type,
+              cp.weight_score
+       FROM company_profiles cp
+       WHERE cp.status = 'approved'
+         AND cp.deleted_at IS NULL
+         AND LOWER(cp.city) = LOWER(?)
+         AND LOWER(cp.services) LIKE ?
+       ORDER BY cp.weight_score DESC
+       LIMIT 30`,
+      [city, `%${service.toLowerCase()}%`]
+    ) as any[];
+
+    const combined = [...(Array.isArray(dirRows) ? dirRows : []), ...(Array.isArray(regRows) ? regRows : [])]
+      .sort((a, b) => (b.weight_score || 0) - (a.weight_score || 0))
+      .slice(0, 30);
+
+    res.json({ companies: combined, service, city });
+  } catch (err) {
+    console.error('getCompaniesByServiceCity error:', err);
+    res.status(500).json({ error: 'server error' });
+  }
+}
