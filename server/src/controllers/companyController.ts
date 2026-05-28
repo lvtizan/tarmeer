@@ -761,6 +761,8 @@ export async function getPortfolioTags(req: any, res: any) {
 
 export async function getCompaniesByServiceCity(req: any, res: any) {
   try {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+
     const service = typeof req.query.service === 'string' ? req.query.service.trim() : '';
     const city = typeof req.query.city === 'string' ? req.query.city.trim() : '';
 
@@ -768,38 +770,86 @@ export async function getCompaniesByServiceCity(req: any, res: any) {
       return res.status(400).json({ error: 'service and city are required' });
     }
 
-    // Match directory companies (uae_companies)
+    if (service.length > 100 || city.length > 100) {
+      return res.status(400).json({ error: 'service and city parameters are too long' });
+    }
+
+    // Escape SQL wildcard chars to prevent injection via LIKE patterns
+    const safeService = service.toLowerCase().replace(/%/g, '\\%').replace(/_/g, '\\_');
+
+    // Match directory companies (uae_companies) — services is a JSON array, use JSON_CONTAINS
     const [dirRows] = await pool.query(
       `SELECT uc.slug, uc.name_en AS name, uc.city, uc.description,
-              uc.weight_score, uc.portfolio_images, uc.logo_url
+              uc.weight_score, uc.portfolio_images, uc.logo_url,
+              uc.owner_user_id, uc.is_signed
        FROM uae_companies uc
        WHERE uc.is_active = 1
          AND LOWER(uc.city) = LOWER(?)
-         AND LOWER(uc.services) LIKE ?
+         AND (
+           JSON_CONTAINS(LOWER(uc.services), LOWER(JSON_QUOTE(?)), '$')
+           OR LOWER(uc.services) LIKE ? ESCAPE '\\\\'
+         )
        ORDER BY uc.weight_score DESC
        LIMIT 30`,
-      [city, `%${service.toLowerCase()}%`]
+      [city, service, `%${safeService}%`]
     ) as any[];
 
-    // Match registered companies (company_profiles)
+    // Match registered companies (company_profiles) — services is a JSON array, use JSON_CONTAINS
     const [regRows] = await pool.query(
       `SELECT cp.slug, cp.company_name AS name, cp.city, cp.description, cp.company_type,
-              cp.weight_score
+              cp.weight_score, cp.is_signed
        FROM company_profiles cp
        WHERE cp.status = 'approved'
          AND cp.deleted_at IS NULL
          AND LOWER(cp.city) = LOWER(?)
-         AND LOWER(cp.services) LIKE ?
+         AND (
+           JSON_CONTAINS(LOWER(cp.services), LOWER(JSON_QUOTE(?)), '$')
+           OR LOWER(cp.services) LIKE ? ESCAPE '\\\\'
+         )
        ORDER BY cp.weight_score DESC
        LIMIT 30`,
-      [city, `%${service.toLowerCase()}%`]
+      [city, service, `%${safeService}%`]
     ) as any[];
 
-    const combined = [...(Array.isArray(dirRows) ? dirRows : []), ...(Array.isArray(regRows) ? regRows : [])]
-      .sort((a, b) => (b.weight_score || 0) - (a.weight_score || 0))
-      .slice(0, 30);
+    const dirMapped = (Array.isArray(dirRows) ? dirRows : []).map((r: any) => ({
+      slug: r.slug,
+      name: r.name,
+      city: r.city,
+      description: r.description,
+      portfolio_images: r.portfolio_images,
+      logo_url: r.logo_url,
+      is_claimed: !!(r.owner_user_id),
+      is_signed: !!(r.is_signed),
+      weight_score: r.weight_score,
+    }));
 
-    res.json({ companies: combined, service, city });
+    const regMapped = (Array.isArray(regRows) ? regRows : []).map((r: any) => ({
+      slug: r.slug,
+      name: r.name,
+      city: r.city,
+      description: r.description,
+      portfolio_images: null,
+      logo_url: null,
+      is_claimed: true,
+      is_signed: !!(r.is_signed),
+      weight_score: r.weight_score,
+    }));
+
+    // Combine, sort by weight_score, deduplicate by slug (dirRows take priority)
+    const sorted = [...dirMapped, ...regMapped]
+      .sort((a, b) => (b.weight_score || 0) - (a.weight_score || 0));
+
+    const seen = new Set<string>();
+    const deduped = sorted.filter(c => {
+      if (!c.slug || seen.has(c.slug)) return false;
+      seen.add(c.slug);
+      return true;
+    });
+
+    // Strip internal ranking signal from response
+    const companies = deduped.slice(0, 30).map(({ weight_score: _w, ...rest }) => rest);
+
+    res.json({ companies, service, city });
   } catch (err) {
     console.error('getCompaniesByServiceCity error:', err);
     res.status(500).json({ error: 'server error' });
