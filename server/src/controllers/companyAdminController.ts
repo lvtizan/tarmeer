@@ -2,6 +2,7 @@ import pool from '../config/database';
 import { extractPortfolioData, sanitizeCompanyImage } from '../lib/publicCompaniesSerialization';
 import { persistProjectImages, isImageDataUrl } from '../lib/projectImageStorage';
 import type { NormalizedImage } from '../lib/projectPersistence';
+import { notifyIndexNow } from '../lib/indexNow';
 import { calculateAllWeights } from '../lib/weightCalculator';
 import { slugify } from '../lib/slugify';
 import fs from 'fs';
@@ -1190,6 +1191,12 @@ export async function toggleCompanyProfilePublished(req: any, res: any) {
     const { is_published } = req.body;
     await pool.execute('UPDATE company_profiles SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, id]);
     res.json({ ok: true });
+    // Notify IndexNow when publishing (fire-and-forget)
+    if (is_published) {
+      const [rows] = await pool.execute('SELECT slug FROM company_profiles WHERE id = ?', [id]);
+      const slug = (rows as any[])[0]?.slug;
+      if (slug) notifyIndexNow([`/companies/${slug}`]).catch(() => {});
+    }
   } catch (error) {
     console.error('Toggle company profile published error:', error);
     res.status(500).json({ error: 'Failed to update published status.' });
@@ -1203,6 +1210,12 @@ export async function toggleDirectoryPublished(req: any, res: any) {
     const { is_published } = req.body;
     await pool.execute('UPDATE uae_companies SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, companyId]);
     res.json({ ok: true });
+    // Notify IndexNow when publishing (fire-and-forget)
+    if (is_published) {
+      const [rows] = await pool.execute('SELECT slug FROM uae_companies WHERE id = ?', [companyId]);
+      const slug = (rows as any[])[0]?.slug;
+      if (slug) notifyIndexNow([`/companies/${slug}`]).catch(() => {});
+    }
   } catch (error) {
     console.error('Toggle directory published error:', error);
     res.status(500).json({ error: 'Failed to update published status.' });
@@ -1216,6 +1229,20 @@ export async function toggleProjectPublished(req: any, res: any) {
     const { is_published } = req.body;
     await pool.execute('UPDATE projects SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, projectId]);
     res.json({ ok: true });
+    // Notify IndexNow when publishing (fire-and-forget)
+    if (is_published) {
+      const [rows] = await pool.execute(
+        `SELECT p.slug AS project_slug, cp.slug AS company_slug
+         FROM projects p
+         LEFT JOIN company_profiles cp ON p.company_profile_id = cp.id
+         WHERE p.id = ?`,
+        [projectId]
+      );
+      const row = (rows as any[])[0];
+      if (row?.project_slug && row?.company_slug) {
+        notifyIndexNow([`/companies/${row.company_slug}/${row.project_slug}`]).catch(() => {});
+      }
+    }
   } catch (error) {
     console.error('Toggle project published error:', error);
     res.status(500).json({ error: 'Failed to update project published status.' });

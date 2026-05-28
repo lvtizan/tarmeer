@@ -180,6 +180,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// IndexNow key file verification — must be at /{key}.txt per protocol spec
+app.get('/:key([a-f0-9]{32,64}).txt', (req, res, next) => {
+  const key = req.params.key;
+  if (process.env.INDEXNOW_KEY && key === process.env.INDEXNOW_KEY) {
+    return res.type('text/plain').send(process.env.INDEXNOW_KEY);
+  }
+  next();
+});
+
 // Dynamic sitemap endpoint
 app.get('/api/sitemap.xml', async (req, res) => {
   try {
