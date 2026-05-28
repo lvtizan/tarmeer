@@ -64,6 +64,8 @@ function SupplierCard({ s, labelMap }: { s: Supplier; labelMap: Map<string, stri
             }
           }}
           alt={s.company_name}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>

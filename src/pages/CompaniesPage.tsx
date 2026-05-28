@@ -119,6 +119,8 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
           <img
             src={displaySrc}
             alt={`${company.name} project`}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
             onError={handleImageError}
             onLoad={handleImageLoad}
@@ -135,7 +137,7 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
         <div>
           <div className="flex items-center gap-2.5 mb-1">
             {company.coverImage && company.coverImage.includes('/logos/') && (
-              <img src={resolveImageUrl(company.coverImage)} alt="" className="w-6 h-6 rounded object-contain bg-white flex-shrink-0"
+              <img src={resolveImageUrl(company.coverImage)} alt="" loading="lazy" decoding="async" className="w-6 h-6 rounded object-contain bg-white flex-shrink-0"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             )}
             <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors truncate">

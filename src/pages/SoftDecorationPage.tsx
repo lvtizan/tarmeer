@@ -169,7 +169,7 @@ export default function SoftDecorationPage() {
       {/* Hero Section */}
       <section className="relative h-[200px] sm:h-[280px] overflow-hidden bg-gradient-to-r from-[#2c2c2c] to-[#3d3d3d]">
         <div className="absolute inset-0 opacity-30">
-          <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1600&q=80" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&q=75" alt="" fetchPriority="high" className="w-full h-full object-cover" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center">
           <div>

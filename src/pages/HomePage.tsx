@@ -35,8 +35,11 @@ export default function HomePage() {
         <meta property="og:url" content="https://www.tarmeer.com/" />
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://www.tarmeer.com/" />
-        {/* LCP image preload — Banner uses /images/hero/hero-living-1.jpg as background */}
-        <link rel="preload" as="image" href="/images/hero/hero-living-1.jpg" fetchPriority="high" />
+        {/* LCP image preload — Banner background, WebP for all modern browsers */}
+        <link rel="preload" as="image" href="/images/hero/hero-living-1.webp"
+          imageSrcSet="/images/hero/hero-living-1-medium.webp 768w, /images/hero/hero-living-1.webp 1200w"
+          imageSizes="100vw"
+          fetchPriority="high" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Tarmeer - Find Interior Design & Renovation Companies in UAE" />
         <meta name="twitter:description" content="Find trusted interior design, renovation and fit-out companies in UAE." />

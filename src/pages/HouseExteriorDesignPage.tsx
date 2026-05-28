@@ -59,8 +59,9 @@ export default function HouseExteriorDesignPage() {
       <section className="relative h-[200px] sm:h-[280px] overflow-hidden bg-gradient-to-r from-[#2c2c2c] to-[#45413b]">
         <div className="absolute inset-0 opacity-35">
           <img
-            src="https://images.unsplash.com/photo-1494526585095-c41746248156?w=1600&q=80"
+            src="https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=75"
             alt=""
+            fetchPriority="high"
             className="h-full w-full object-cover"
           />
         </div>

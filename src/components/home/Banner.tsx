@@ -85,7 +85,7 @@ export default function Banner() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: 'url(/images/hero/hero-living-1.jpg)',
+          backgroundImage: 'url(/images/hero/hero-living-1.webp)',
         }}
       />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.55)_0%,rgba(0,0,0,0.45)_38%,rgba(0,0,0,0.35)_100%)]" />
