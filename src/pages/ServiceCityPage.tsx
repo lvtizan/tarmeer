@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { MapPin, ChevronRight, Building2 } from 'lucide-react';
@@ -339,26 +339,29 @@ export default function ServiceCityPage() {
 
   const [companies, setCompanies] = useState<ServiceCityCompany[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch companies
-  useEffect(() => {
+  const loadCompanies = useCallback(async () => {
     setLoading(true);
-    setError('');
-    setCompanies([]);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ service, city: cityLabel });
+      const res = await fetch(`/api/companies/by-service-city?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setCompanies(data.companies ?? []);
+    } catch {
+      setError('Failed to load companies. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [service, cityLabel]);
 
-    const params = new URLSearchParams({ service, city: cityLabel });
-    fetch(`/api/companies/by-service-city?${params}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        setCompanies(Array.isArray(data.companies) ? data.companies : []);
-      })
-      .catch(() => setError('Failed to load companies. Please try again.'))
-      .finally(() => setLoading(false));
-  }, [service, city, cityLabel]);
+  useEffect(() => {
+    setCompanies([]);
+    loadCompanies();
+  }, [loadCompanies]);
 
   // SEO strings
   const pageTitle = `${serviceLabel} Companies in ${cityLabel}, UAE | Tarmeer`;
@@ -409,6 +412,22 @@ export default function ServiceCityPage() {
   // If service or city is not recognised, show 404-ish message
   const isValid = service in SERVICE_LABELS && city in CITY_LABELS;
 
+  if (!isValid) {
+    return (
+      <>
+        <Helmet>
+          <title>Page Not Found | Tarmeer</title>
+          <meta name="robots" content="noindex" />
+        </Helmet>
+        <div className="max-w-3xl mx-auto px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold text-[#2c2c2c] mb-4">Page Not Found</h1>
+          <p className="text-[#6b6b6b] mb-8">The page you're looking for doesn't exist.</p>
+          <a href="/" className="btn-primary">Go Home</a>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -441,17 +460,10 @@ export default function ServiceCityPage() {
             <ChevronRight className="w-3.5 h-3.5" />
             <Link to="/companies" className="hover:text-[#b8864a] transition-colors">Companies</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-[#2c2c2c] font-medium">{isValid ? `${serviceLabel} in ${cityLabel}` : 'Not Found'}</span>
+            <span className="text-[#2c2c2c] font-medium">{serviceLabel} in {cityLabel}</span>
           </nav>
 
-          {!isValid ? (
-            <div className="text-center py-20">
-              <p className="text-xl font-semibold text-[#2c2c2c] mb-2">Page Not Found</p>
-              <p className="text-[#6b6b6b] mb-6">The service or city you requested is not available.</p>
-              <Link to="/companies" className="btn-primary">Browse All Companies</Link>
-            </div>
-          ) : (
-            <>
+          <>
               {/* Hero header */}
               <div className="mb-8">
                 <h1 className="text-2xl sm:text-3xl font-bold text-[#2c2c2c] mb-3">
@@ -480,16 +492,7 @@ export default function ServiceCityPage() {
                     <p className="text-[#6b6b6b] mb-4">{error}</p>
                     <button
                       className="btn-primary"
-                      onClick={() => {
-                        setLoading(true);
-                        setError('');
-                        const params = new URLSearchParams({ service, city: cityLabel });
-                        fetch(`/api/companies/by-service-city?${params}`)
-                          .then((r) => r.json())
-                          .then((data) => setCompanies(Array.isArray(data.companies) ? data.companies : []))
-                          .catch(() => setError('Failed to load companies. Please try again.'))
-                          .finally(() => setLoading(false));
-                      }}
+                      onClick={() => loadCompanies()}
                     >
                       Try Again
                     </button>
@@ -560,8 +563,7 @@ export default function ServiceCityPage() {
                   ))}
                 </div>
               </section>
-            </>
-          )}
+          </>
         </div>
       </div>
     </>
