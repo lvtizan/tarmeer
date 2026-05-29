@@ -265,6 +265,7 @@ export default function CompaniesPage() {
   const [showAllServices, setShowAllServices] = useState(false);
   const [foundedRange, setFoundedRange] = useState<string>('');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [displayCount, setDisplayCount] = useState(20);
 
   useEffect(() => {
     let active = true;
@@ -328,6 +329,11 @@ export default function CompaniesPage() {
       return true;
     });
   }, [companies, searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, foundedRange]);
+
+  // Reset display count when filters change so results start from the top
+  useEffect(() => {
+    setDisplayCount(20);
+  }, [searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, foundedRange]);
 
   const clearAllFilters = () => {
     setSearchQuery('');
@@ -640,7 +646,7 @@ export default function CompaniesPage() {
               </div>
             ) : filteredCompanies.length > 0 ? (
               <div>
-                {filteredCompanies.map((company) => (
+                {filteredCompanies.slice(0, displayCount).map((company) => (
                   <div
                     key={company.id}
                     className="relative"
@@ -651,6 +657,16 @@ export default function CompaniesPage() {
                     />
                   </div>
                 ))}
+                {displayCount < filteredCompanies.length && (
+                  <div className="py-8 text-center">
+                    <button
+                      onClick={() => setDisplayCount((n) => n + 20)}
+                      className="px-8 py-3 rounded-2xl border border-stone-200 bg-white text-sm font-medium text-stone-600 hover:bg-stone-50 transition"
+                    >
+                      Load more ({filteredCompanies.length - displayCount} remaining)
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-20 bg-white rounded-[22px] border border-stone-100">

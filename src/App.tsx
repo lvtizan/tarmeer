@@ -328,6 +328,10 @@ function App() {
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/sso/consume" element={<SsoConsumePage />} />
 
+          {/* ====== Supplier Auth (own header, no main Navbar) ====== */}
+          <Route path="/supplier/auth" element={<SupplierAuthPage />} />
+          <Route path="/supplier/auth/callback" element={<SupplierAuthPage />} />
+
           {/* ====== Supplier Dashboard (own layout, no main Navbar) ====== */}
           <Route path="/supplier" element={<SupplierLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
@@ -356,8 +360,6 @@ function App() {
                 <Route path="/materials/suppliers/:slug" element={<SupplierDetailPage />} />
                 <Route path="/materials/suppliers/:slug/projects/:projectId" element={<SupplierProjectDetailPage />} />
                 <Route path="/for-suppliers" element={<ForSuppliersPage />} />
-                <Route path="/supplier/auth" element={<SupplierAuthPage />} />
-                <Route path="/supplier/auth/callback" element={<SupplierAuthPage />} />
                 <Route path="/services/new-home-design" element={<NewHomeDesignPage />} />
                 <Route path="/services/soft-decoration" element={<SoftDecorationPage />} />
                 <Route path="/services/house-exterior" element={<HouseExteriorDesignPage />} />
