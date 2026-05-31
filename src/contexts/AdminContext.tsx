@@ -1,0 +1,142 @@
+'use client';
+
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { adminApi, AdminUser } from '@/lib/adminApi';
+
+interface AdminProfileResponse {
+  id: number;
+  email: string;
+  fullName: string;
+  role: string;
+  permissions: AdminUser['permissions'] | null;
+}
+
+interface AdminContextType {
+  admin: AdminUser | null;
+  isLoading: boolean;
+  isInstalled: boolean | null;
+  login: (email: string, password: string) => Promise<{ admin: { role: string } }>;
+  logout: () => void;
+  install: (email: string, password: string, fullName: string) => Promise<void>;
+  checkInstallation: () => Promise<void>;
+  hasPermission: (permission: 'can_approve' | 'can_sort' | 'can_view_stats') => boolean;
+  isSuperAdmin: boolean;
+  isFieldStaff: boolean;
+}
+
+const AdminContext = createContext<AdminContextType | null>(null);
+
+export function AdminProvider({ children }: { children: ReactNode }) {
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
+
+  const checkInstallation = useCallback(async () => {
+    try {
+      const result = await adminApi.checkInstallation();
+      setIsInstalled(result.installed);
+    } catch (error) {
+      // Fail closed to login flow: transient API/rate-limit errors must not force install mode.
+      setIsInstalled(true);
+    }
+  }, []);
+
+  const loadProfile = useCallback(async () => {
+    if (!adminApi.getToken()) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const profile = await adminApi.getProfile() as AdminProfileResponse;
+      setAdmin({
+        id: profile.id,
+        email: profile.email,
+        fullName: profile.fullName,
+        role: profile.role as AdminUser['role'],
+        permissions: profile.permissions,
+      });
+    } catch (error) {
+      adminApi.clearToken();
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      await checkInstallation();
+      await loadProfile();
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run once on mount
+
+  const login = async (email: string, password: string) => {
+    const result = await adminApi.login(email, password);
+    setAdmin({
+      id: result.admin.id,
+      email: result.admin.email,
+      fullName: result.admin.fullName,
+      role: result.admin.role as AdminUser['role'],
+      permissions: result.admin.permissions,
+    });
+    return result;
+  };
+
+  const logout = () => {
+    adminApi.logout();
+    setAdmin(null);
+  };
+
+  const install = async (email: string, password: string, fullName: string) => {
+    const result = await adminApi.install({ email, password, fullName });
+    setAdmin({
+      id: result.admin.id,
+      email: result.admin.email,
+      fullName: result.admin.fullName,
+      role: result.admin.role as AdminUser['role'],
+      permissions: null,
+    });
+    setIsInstalled(true);
+  };
+
+  const hasPermission = useCallback(
+    (permission: 'can_approve' | 'can_sort' | 'can_view_stats') => {
+      if (!admin) return false;
+      if (admin.role === 'super_admin') return true;
+      return admin.permissions?.[permission] === true;
+    },
+    [admin]
+  );
+
+  const isSuperAdmin = admin?.role === 'super_admin';
+  const isFieldStaff = admin?.role === 'field_staff';
+
+  return (
+    <AdminContext.Provider
+      value={{
+        admin,
+        isLoading,
+        isInstalled,
+        login,
+        logout,
+        install,
+        checkInstallation,
+        hasPermission,
+        isSuperAdmin: isSuperAdmin ?? false,
+        isFieldStaff: isFieldStaff ?? false,
+      }}
+    >
+      {children}
+    </AdminContext.Provider>
+  );
+}
+
+export function useAdmin() {
+  const context = useContext(AdminContext);
+  if (!context) {
+    throw new Error('useAdmin must be used within AdminProvider');
+  }
+  return context;
+}

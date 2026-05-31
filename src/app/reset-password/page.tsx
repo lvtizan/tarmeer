@@ -1,0 +1,16 @@
+import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import ResetPasswordClient from '@/components/auth/ResetPasswordClient';
+
+export const metadata: Metadata = {
+  title: 'Reset Password - Tarmeer',
+  robots: { index: false, follow: false },
+};
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordClient />
+    </Suspense>
+  );
+}
