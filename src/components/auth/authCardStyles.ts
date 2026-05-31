@@ -3,4 +3,3 @@ export const AUTH_INPUT_CLASS =
 
 export const AUTH_SOCIAL_BUTTON_CLASS =
   'w-full flex items-center justify-center gap-3 h-[50px] px-5 rounded-2xl border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50 transition-all duration-200 font-medium text-[#1c1917]';
-

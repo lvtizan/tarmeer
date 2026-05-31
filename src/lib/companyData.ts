@@ -48,8 +48,6 @@ export interface Company {
   companyType?: string;
   /** Canonical URL slug (used to redirect legacy directory slugs after claiming) */
   slug?: string;
-  /** company_profiles.id — used to link design_inquiries.company_id correctly */
-  companyProfileId?: number | null;
 }
 
 export const COMPANY_TYPE_LABELS: Record<string, string> = {

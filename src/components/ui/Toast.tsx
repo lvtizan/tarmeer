@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 
 type ToastType = 'success' | 'error' | 'info';

@@ -1,8 +1,10 @@
+'use client';
+
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Search, X, Users, Building2, MessageSquare, Package } from 'lucide-react';
-import { adminApi } from '../../lib/adminApi';
-import CopyButton from '../ui/CopyButton';
+import { adminApi } from '@/lib/adminApi';
+import CopyButton from '@/components/ui/CopyButton';
 
 type SearchResults = Awaited<ReturnType<typeof adminApi.globalSearch>>;
 type FlatResult =
@@ -40,7 +42,7 @@ export default function AdminGlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const search = useCallback(async (val: string) => {
     if (val.length < 2) { setResults(null); setLoading(false); return; }
@@ -76,13 +78,13 @@ export default function AdminGlobalSearch() {
     setOpen(false);
     setQ('');
     setResults(null);
-    if (r.kind === 'homeowner') navigate(`/admin/inquiries?type=homeowner&search=${encodeURIComponent(r.item.phone)}`);
-    else if (r.kind === 'company') navigate(`/admin/inquiries?type=company&search=${encodeURIComponent(r.item.phone)}`);
-    else if (r.kind === 'user') navigate(`/admin/activity-log/user/${r.item.id}`);
-    else if (r.kind === 'registeredCompany') navigate(`/admin/profile-companies/${r.item.id}`);
-    else if (r.kind === 'directoryCompany') navigate(`/admin/companies/${r.item.id}`);
-    else if (r.kind === 'supplier') navigate(`/admin/suppliers/${r.item.id}`);
-  }, [navigate]);
+    if (r.kind === 'homeowner') router.push(`/admin/inquiries?type=homeowner&search=${encodeURIComponent(r.item.phone)}`);
+    else if (r.kind === 'company') router.push(`/admin/inquiries?type=company&search=${encodeURIComponent(r.item.phone)}`);
+    else if (r.kind === 'user') router.push(`/admin/activity-log/user/${r.item.id}`);
+    else if (r.kind === 'registeredCompany') router.push(`/admin/profile-companies/${r.item.id}`);
+    else if (r.kind === 'directoryCompany') router.push(`/admin/companies/${r.item.id}`);
+    else if (r.kind === 'supplier') router.push(`/admin/suppliers/${r.item.id}`);
+  }, [router]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!open) return;

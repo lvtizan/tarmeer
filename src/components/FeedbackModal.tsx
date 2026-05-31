@@ -1,7 +1,9 @@
+'use client';
+
 import { useState } from 'react';
 import { X, Send, MessageSquare } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
 interface FeedbackModalProps {
   open: boolean;
@@ -14,7 +16,9 @@ interface FeedbackModalProps {
   companyType?: string;
 }
 
-export default function FeedbackModal({ open, onClose, source = 'website', userId, userName, userEmail, companyName, companyType }: FeedbackModalProps) {
+export default function FeedbackModal({
+  open, onClose, source = 'website', userId, userName, userEmail, companyName, companyType,
+}: FeedbackModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,12 +39,12 @@ export default function FeedbackModal({ open, onClose, source = 'website', userI
         body: JSON.stringify({ title: title.trim(), content: content.trim(), source, user_id: userId, user_name: userName, user_email: userEmail, company_name: companyName, company_type: companyType }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(data.error || 'Failed to submit');
       }
       setSubmitted(true);
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -48,7 +52,6 @@ export default function FeedbackModal({ open, onClose, source = 'website', userI
 
   const handleClose = () => {
     onClose();
-    // Reset after close animation
     setTimeout(() => { setTitle(''); setContent(''); setSubmitted(false); setError(''); }, 300);
   };
 
@@ -56,7 +59,6 @@ export default function FeedbackModal({ open, onClose, source = 'website', userI
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
         <div className="bg-[#1c1917] px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -107,11 +109,7 @@ export default function FeedbackModal({ open, onClose, source = 'website', userI
                 className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition resize-none"
               />
             </div>
-
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
-            )}
-
+            {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
             <button
               type="submit"
               disabled={submitting || !title.trim() || !content.trim()}
@@ -120,10 +118,7 @@ export default function FeedbackModal({ open, onClose, source = 'website', userI
               {submitting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Send Feedback
-                </>
+                <><Send className="w-4 h-4" />Send Feedback</>
               )}
             </button>
           </form>

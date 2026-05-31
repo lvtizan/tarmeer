@@ -1,5 +1,9 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { SERVICE_CATEGORIES, type ServiceCategory } from '../lib/serviceCategories';
+import { SERVICE_CATEGORIES, type ServiceCategory } from '@/lib/serviceCategories';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 let cache: ServiceCategory[] | null = null;
 let inflight: Promise<ServiceCategory[]> | null = null;
@@ -9,7 +13,7 @@ const FALLBACK: ServiceCategory[] = SERVICE_CATEGORIES;
 async function fetchServiceCategories(): Promise<ServiceCategory[]> {
   if (cache) return cache;
   if (!inflight) {
-    inflight = fetch('/api/public/service-categories')
+    inflight = fetch(`${API_BASE}/public/service-categories`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         const categories = Array.isArray(d.categories) ? d.categories as ServiceCategory[] : FALLBACK;

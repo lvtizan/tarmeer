@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { resolveVariantUrl, resolveImageUrl } from '../../lib/imageUrl';
-
-const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
 
 interface Supplier {
   id: number;
@@ -15,22 +12,7 @@ interface Supplier {
   origin: 'china' | 'dubai';
 }
 
-export default function HomeSupplierSection() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    fetch(`${API_BASE}/suppliers?limit=4&order=home`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!active) return;
-        const list: Supplier[] = Array.isArray(data?.suppliers) ? data.suppliers : Array.isArray(data) ? data : [];
-        setSuppliers(list.slice(0, 4));
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
-
+export default function HomeSupplierSection({ suppliers }: { suppliers: Supplier[] }) {
   if (suppliers.length === 0) return null;
 
   return (
@@ -38,34 +20,24 @@ export default function HomeSupplierSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-end justify-between mb-6">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-stone-400 mb-1.5">
-              Materials &amp; Products
-            </p>
-            <h2 className="font-serif text-[24px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[28px]">
-              Premium Chinese Suppliers
-            </h2>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-stone-400 mb-1.5">Materials &amp; Products</p>
+            <h2 className="font-serif text-[24px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[28px]">Premium Chinese Suppliers</h2>
           </div>
-          <Link
-            to="/materials"
-            className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-[#b8864a] hover:text-[#9a7040] transition"
-          >
-            View All
-            <ArrowRight className="w-4 h-4" />
+          <Link href="/materials" className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-[#b8864a] hover:text-[#9a7040] transition">
+            View All <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {suppliers.map((s) => (
-            <Link
-              key={s.id}
-              to={`/materials/suppliers/${s.slug}`}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_12px_32px_rgba(28,25,23,0.08)]"
-            >
+            <Link key={s.id} href={`/materials/suppliers/${s.slug}`}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_12px_32px_rgba(28,25,23,0.08)]">
               <div className="relative aspect-video overflow-hidden bg-stone-100">
                 {s.cover_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={resolveVariantUrl(s.cover_image_url, 'thumb')}
-                    onError={(e) => { e.currentTarget.src = resolveImageUrl(s.cover_image_url); }}
+                    onError={(e) => { e.currentTarget.src = resolveImageUrl(s.cover_image_url!); }}
                     alt={s.company_name}
                     loading="lazy"
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -86,9 +58,7 @@ export default function HomeSupplierSection() {
                   {s.company_name}
                 </h3>
                 {s.description && (
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-stone-500 sm:text-[13px]">
-                    {s.description}
-                  </p>
+                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-stone-500 sm:text-[13px]">{s.description}</p>
                 )}
               </div>
             </Link>
@@ -96,12 +66,8 @@ export default function HomeSupplierSection() {
         </div>
 
         <div className="mt-5 flex justify-center sm:hidden">
-          <Link
-            to="/materials"
-            className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-5 py-2.5 text-sm font-medium text-[#1c1917] transition hover:border-[#b8864a] hover:text-[#b8864a]"
-          >
-            View All Suppliers
-            <ArrowRight className="h-4 w-4" />
+          <Link href="/materials" className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-5 py-2.5 text-sm font-medium text-[#1c1917] transition hover:border-[#b8864a] hover:text-[#b8864a]">
+            View All Suppliers <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

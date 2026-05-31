@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { Paperclip, X, FileText } from 'lucide-react';
 
@@ -17,7 +19,7 @@ function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB per chunk
 
-function xhrPost(url: string, headers: Record<string, string>, formData: FormData, onProgress?: (p: number) => void): Promise<any> {
+function xhrPost(url: string, headers: Record<string, string>, formData: FormData, onProgress?: (p: number) => void): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -27,7 +29,7 @@ function xhrPost(url: string, headers: Record<string, string>, formData: FormDat
       try {
         const res = JSON.parse(xhr.responseText);
         if (xhr.status >= 200 && xhr.status < 300) resolve(res);
-        else reject(new Error(res.error || 'Upload failed'));
+        else reject(new Error((res as { error?: string }).error || 'Upload failed'));
       } catch { reject(new Error('Server error')); }
     };
     xhr.onerror = () => reject(new Error('Upload failed'));
@@ -63,7 +65,7 @@ export default function ImageUploadZone({
     setProgress(0);
     setErr('');
     try {
-      let data: any;
+      let data: { url: string; original_name?: string };
       if (chunkUploadUrl && file.size > 4 * 1024 * 1024) {
         // Chunked upload for large files
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
@@ -77,7 +79,7 @@ export default function ImageUploadZone({
           fd.append('chunk_index', String(i));
           fd.append('total_chunks', String(totalChunks));
           fd.append('original_name', file.name);
-          data = await xhrPost(chunkUploadUrl, getHeaders(), fd);
+          data = await xhrPost(chunkUploadUrl, getHeaders(), fd) as typeof data;
           setProgress(Math.round((i + 1) / totalChunks * 100));
         }
       } else {
@@ -85,12 +87,12 @@ export default function ImageUploadZone({
         const fd = new FormData();
         fd.append('file', file);
         fd.append('original_name', file.name);
-        data = await xhrPost(uploadUrl, getHeaders(), fd, setProgress);
+        data = await xhrPost(uploadUrl, getHeaders(), fd, setProgress) as typeof data;
       }
-      onUpload([...value, data.url]);
-      if (onFileMeta && data.original_name) onFileMeta({ original_name: data.original_name });
-    } catch (e: any) {
-      setErr(e.message || 'Upload failed');
+      onUpload([...value, data!.url]);
+      if (onFileMeta && data!.original_name) onFileMeta({ original_name: data!.original_name });
+    } catch (e: unknown) {
+      setErr((e instanceof Error ? e.message : null) || 'Upload failed');
     } finally {
       setUploading(false);
       setProgress(0);

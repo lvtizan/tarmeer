@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 
 interface ProgressiveImageProps {
@@ -13,19 +15,6 @@ interface ProgressiveImageProps {
 
 /**
  * Progressive image with instant blur placeholder → HD fade-in.
- *
- * Usage:
- *   <ProgressiveImage
- *     src="/images/hero/hero-living-1.jpg"
- *     srcSet="/images/hero/hero-living-1-thumb.webp 600w, /images/hero/hero-living-1-medium.webp 1200w, /images/hero/hero-living-1.jpg 1920w"
- *     sizes="100vw"
- *     blur={HERO_BLUR['hero-living-1']}
- *     alt="Living room"
- *   />
- *
- * Timeline:
- *   0ms   → blur placeholder visible (inline base64, ~90 bytes)
- *   ~200ms → HD image loaded, blur fades out
  */
 export default function ProgressiveImage({
   src, srcSet, sizes, blur, alt, className = '', loading = 'eager', fetchPriority = 'auto',

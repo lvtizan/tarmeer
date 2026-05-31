@@ -1,10 +1,11 @@
+'use client';
+
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { adminApi } from '../../lib/adminApi';
-import AdminSelect from '../ui/AdminSelect';
-import PhoneCountryInput from '../ui/PhoneCountryInput';
-import { STANDARD_COMPANY_TYPES } from '../../lib/companyTypesList';
+import { adminApi } from '@/lib/adminApi';
+import AdminSelect from '@/components/ui/AdminSelect';
+import PhoneCountryInput from '@/components/ui/PhoneCountryInput';
 
 interface Props {
   type: 'scraped' | 'profile';
@@ -27,7 +28,6 @@ function MultiTypeSelect({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const updatePos = useCallback(() => {
@@ -50,10 +50,7 @@ function MultiTypeSelect({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (
-        containerRef.current && !containerRef.current.contains(e.target as Node) &&
-        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
@@ -80,7 +77,6 @@ function MultiTypeSelect({
 
       {open && dropPos && createPortal(
         <div
-          ref={dropdownRef}
           className="fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-y-auto"
           style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: 260 }}
         >
@@ -109,85 +105,64 @@ function MultiTypeSelect({
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
 export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) {
-  const [data, setData] = useState<Record<string, any>>({});
+  const [data, setData] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Enum data from backend
   const [companyTypes, setCompanyTypes] = useState<{ slug: string; label: string }[]>([]);
   const [serviceCategories, setServiceCategories] = useState<{ name: string; is_enabled: boolean }[]>([]);
   const [allServices, setAllServices] = useState<{ name: string; category: string | null; active: boolean }[]>([]);
   const [activeServiceTab, setActiveServiceTab] = useState('');
   const descRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load enums in parallel
   useEffect(() => {
     Promise.all([
       adminApi.request('/enums/company-types').catch(() => ({ types: [] })),
       adminApi.request('/enums/service-categories').catch(() => ({ categories: [] })),
       adminApi.request('/enums/company-services').catch(() => ({ services: [] })),
-    ]).then(([typesRes, catsRes, svcsRes]: any[]) => {
-      // Merge DB types with standard list so signup-form selections always appear,
-      // even if the DB table is missing entries (deleted or not yet seeded).
-      const dbTypes: { slug: string; label: string }[] = (typesRes?.types || [])
-        .filter((t: any) => t.active !== 0)
-        .map((t: any) => ({ slug: t.slug, label: t.label }));
-      const merged = [
-        ...STANDARD_COMPANY_TYPES,
-        ...dbTypes.filter(t => !STANDARD_COMPANY_TYPES.some(s => s.slug === t.slug)),
-      ];
-      const cats = (catsRes?.categories || []).filter((c: any) => c.is_enabled !== 0);
-      const svcs = svcsRes?.services || [];
-      setCompanyTypes(merged);
+    ]).then(([typesRes, catsRes, svcsRes]: unknown[]) => {
+      const tr = typesRes as { types?: { active?: number; slug: string; label: string }[] };
+      const cr = catsRes as { categories?: { is_enabled?: number; name: string }[] };
+      const sr = svcsRes as { services?: { name: string; category: string | null; active: boolean }[] };
+      const types = (tr?.types || []).filter((t) => t.active !== 0);
+      const cats = (cr?.categories || []).filter((c) => c.is_enabled !== 0).map((c) => ({ name: c.name, is_enabled: Boolean(c.is_enabled) }));
+      const svcs = sr?.services || [];
+      setCompanyTypes(types);
       setServiceCategories(cats);
       setAllServices(svcs);
       if (cats.length > 0) setActiveServiceTab(cats[0].name);
     });
   }, []);
 
-  // Load company data
   useEffect(() => {
     const fetchData = async () => {
       try {
         const endpoint = type === 'scraped'
           ? `/companies/${id}/detail`
           : `/roles/companies/${id}/detail`;
-        const result = await adminApi.request(endpoint);
-        const raw = result.company || result.profile || {};
+        const result = await adminApi.request(endpoint) as { company?: Record<string, unknown>; profile?: Record<string, unknown> };
+        const raw: Record<string, unknown> = result.company || result.profile || {};
 
-        // Normalize arrays
         ['services', 'specialties'].forEach(k => {
           if (typeof raw[k] === 'string') {
-            try { raw[k] = JSON.parse(raw[k]); } catch { raw[k] = []; }
+            try { raw[k] = JSON.parse(raw[k] as string); } catch { raw[k] = []; }
           }
           if (!Array.isArray(raw[k])) raw[k] = [];
         });
 
-        // Normalize company_type → always array (prefer company_types plural first)
-        let _typeArr: string[] = [];
-        if (raw.company_types) {
-          const _parsed = typeof raw.company_types === 'string'
-            ? (() => { try { return JSON.parse(raw.company_types); } catch { return []; } })()
-            : raw.company_types;
-          if (Array.isArray(_parsed)) _typeArr = _parsed;
-        }
-        if (_typeArr.length === 0) {
-          if (typeof raw.company_type === 'string') {
-            if (raw.company_type.startsWith('[')) {
-              try { _typeArr = JSON.parse(raw.company_type); } catch { _typeArr = raw.company_type ? [raw.company_type] : []; }
-            } else {
-              _typeArr = raw.company_type ? [raw.company_type] : [];
-            }
-          } else if (Array.isArray(raw.company_type)) {
-            _typeArr = raw.company_type;
+        if (typeof raw.company_type === 'string') {
+          if ((raw.company_type as string).startsWith('[')) {
+            try { raw.company_type = JSON.parse(raw.company_type as string); } catch { raw.company_type = raw.company_type ? [raw.company_type] : []; }
+          } else {
+            raw.company_type = raw.company_type ? [raw.company_type] : [];
           }
         }
-        raw.company_type = _typeArr;
+        if (!Array.isArray(raw.company_type)) raw.company_type = [];
 
         setData(raw);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load');
+      } catch (err: unknown) {
+        setError((err instanceof Error ? err.message : null) || 'Failed to load');
       } finally {
         setLoading(false);
       }
@@ -195,7 +170,6 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
     fetchData();
   }, [type, id]);
 
-  // Auto-resize description textarea
   useEffect(() => {
     const el = descRef.current;
     if (!el) return;
@@ -217,30 +191,29 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
       });
       onSaved();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : null) || 'Failed to save');
     } finally {
       setSaving(false);
     }
   };
 
-  const set = (key: string, val: any) => setData(prev => ({ ...prev, [key]: val }));
+  const set = (key: string, val: unknown) => setData(prev => ({ ...prev, [key]: val }));
 
   const toggleArrayItem = (key: string, item: string) => {
-    const arr: string[] = data[key] || [];
+    const arr: string[] = (data[key] as string[]) || [];
     set(key, arr.includes(item) ? arr.filter((x: string) => x !== item) : [...arr, item]);
   };
 
   const toggleType = (slug: string) => {
-    const current: string[] = data.company_type || [];
+    const current: string[] = (data.company_type as string[]) || [];
     set('company_type', current.includes(slug) ? current.filter(s => s !== slug) : [...current, slug]);
   };
 
-  // Group active services by category
   const servicesByCategory = useMemo(() => {
     const map: Record<string, string[]> = {};
     allServices
-      .filter(s => s.active !== false && (s as any).active !== 0)
+      .filter(s => s.active !== false && (s as { active: number | boolean }).active !== 0)
       .forEach(s => {
         const cat = s.category || 'Other';
         if (!map[cat]) map[cat] = [];
@@ -250,7 +223,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
   }, [allServices]);
 
   const tabServices = servicesByCategory[activeServiceTab] || [];
-  const selectedServices: string[] = data.services || [];
+  const selectedServices: string[] = (data.services as string[]) || [];
 
   const inputCls = "w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition";
   const labelCls = "block text-xs font-medium text-stone-500 mb-1";
@@ -267,12 +240,10 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      {/* 50vw width, min 640px, max 900px */}
       <div
         className="bg-white rounded-2xl w-[50vw] min-w-[640px] max-w-[900px] h-[80vh] flex flex-col shadow-xl"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex-shrink-0 border-b border-stone-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-stone-900">
             Edit {isScraped ? 'Scraped Company' : 'Company Profile'}
@@ -282,41 +253,38 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           </button>
         </div>
 
-        {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
           )}
 
-          {/* Row 1: Name + Contact/Name AR */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>{isScraped ? 'Name (EN)' : 'Company Name'}</label>
-              <input className={inputCls} value={data[isScraped ? 'name_en' : 'company_name'] || ''}
+              <input className={inputCls} value={(data[isScraped ? 'name_en' : 'company_name'] as string) || ''}
                 onChange={e => set(isScraped ? 'name_en' : 'company_name', e.target.value)} />
             </div>
             {isScraped ? (
               <div>
                 <label className={labelCls}>Name (AR)</label>
-                <input className={inputCls} value={data.name_ar || ''} onChange={e => set('name_ar', e.target.value)} />
+                <input className={inputCls} value={(data.name_ar as string) || ''} onChange={e => set('name_ar', e.target.value)} />
               </div>
             ) : (
               <div>
                 <label className={labelCls}>Contact Person</label>
-                <input className={inputCls} value={data.contact_person || ''} onChange={e => set('contact_person', e.target.value)} />
+                <input className={inputCls} value={(data.contact_person as string) || ''} onChange={e => set('contact_person', e.target.value)} />
               </div>
             )}
           </div>
 
-          {/* Row 2: Phone + Email/Website */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Phone</label>
-              <PhoneCountryInput value={data.phone || ''} onChange={val => set('phone', val)} size="sm" />
+              <PhoneCountryInput value={(data.phone as string) || ''} onChange={val => set('phone', val)} size="sm" />
             </div>
             <div>
               <label className={labelCls}>{isScraped ? 'Email' : 'Website'}</label>
-              <input className={inputCls} value={data[isScraped ? 'email' : 'website'] || ''}
+              <input className={inputCls} value={(data[isScraped ? 'email' : 'website'] as string) || ''}
                 onChange={e => set(isScraped ? 'email' : 'website', e.target.value)} />
             </div>
           </div>
@@ -325,22 +293,21 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Website</label>
-                <input className={inputCls} value={data.website || ''} onChange={e => set('website', e.target.value)} />
+                <input className={inputCls} value={(data.website as string) || ''} onChange={e => set('website', e.target.value)} />
               </div>
               <div>
                 <label className={labelCls}>WhatsApp</label>
-                <input className={inputCls} value={data.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} />
+                <input className={inputCls} value={(data.whatsapp as string) || ''} onChange={e => set('whatsapp', e.target.value)} />
               </div>
             </div>
           )}
 
-          {/* Row 3: City + Address */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>City</label>
               <AdminSelect
                 size="sm"
-                value={data.city || ''}
+                value={(data.city as string) || ''}
                 onChange={val => set('city', val)}
                 options={[{ value: '', label: 'Select' }, ...EMIRATES.map(c => ({ value: c, label: c }))]}
                 className="w-full"
@@ -348,7 +315,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
             </div>
             <div>
               <label className={labelCls}>{isScraped ? 'Area' : 'Address'}</label>
-              <input className={inputCls} value={data[isScraped ? 'area' : 'address'] || ''}
+              <input className={inputCls} value={(data[isScraped ? 'area' : 'address'] as string) || ''}
                 onChange={e => set(isScraped ? 'area' : 'address', e.target.value)} />
             </div>
           </div>
@@ -356,45 +323,42 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           {isScraped && (
             <div>
               <label className={labelCls}>Full Address</label>
-              <input className={inputCls} value={data.address || ''} onChange={e => set('address', e.target.value)} />
+              <input className={inputCls} value={(data.address as string) || ''} onChange={e => set('address', e.target.value)} />
             </div>
           )}
 
-          {/* Description */}
           <div>
             <label className={labelCls}>Description</label>
             <textarea
               ref={descRef}
               className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none overflow-hidden"
               style={{ minHeight: '120px' }}
-              value={data.description || ''}
+              value={(data.description as string) || ''}
               onChange={e => set('description', e.target.value)}
             />
           </div>
 
-          {/* Row: Est. Year + Trade License */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>{isScraped ? 'Year Established' : 'Est. Year'}</label>
               <input type="number" className={inputCls}
-                value={data[isScraped ? 'year_established' : 'establishment_year'] || ''}
+                value={(data[isScraped ? 'year_established' : 'establishment_year'] as string) || ''}
                 onChange={e => set(isScraped ? 'year_established' : 'establishment_year', e.target.value)} />
             </div>
             <div>
               <label className={labelCls}>{isScraped ? 'License Number' : 'Trade License No.'}</label>
               <input className={inputCls}
-                value={data[isScraped ? 'license_number' : 'trade_license_number'] || ''}
+                value={(data[isScraped ? 'license_number' : 'trade_license_number'] as string) || ''}
                 onChange={e => set(isScraped ? 'license_number' : 'trade_license_number', e.target.value)} />
             </div>
           </div>
 
-          {/* Company Type (multi-select) + Status */}
           {!isScraped && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Company Type</label>
                 <MultiTypeSelect
-                  selected={data.company_type || []}
+                  selected={(data.company_type as string[]) || []}
                   onToggle={toggleType}
                   options={companyTypes}
                 />
@@ -403,7 +367,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                 <label className={labelCls}>Status</label>
                 <AdminSelect
                   size="sm"
-                  value={data.status || ''}
+                  value={(data.status as string) || ''}
                   onChange={val => set('status', val)}
                   options={[
                     { value: 'pending', label: 'Pending' },
@@ -421,18 +385,15 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
               {[['Instagram', 'instagram'], ['Facebook', 'facebook'], ['LinkedIn', 'linkedin']].map(([label, key]) => (
                 <div key={key}>
                   <label className={labelCls}>{label}</label>
-                  <input className={inputCls} value={data[key] || ''} onChange={e => set(key, e.target.value)} />
+                  <input className={inputCls} value={(data[key] as string) || ''} onChange={e => set(key, e.target.value)} />
                 </div>
               ))}
             </div>
           )}
 
-          {/* Services — tabbed by category */}
           {serviceCategories.length > 0 && (
             <div>
               <label className={labelCls}>Services</label>
-
-              {/* Category tabs */}
               <div className="flex flex-wrap gap-1 mt-1 mb-3">
                 {serviceCategories.map(cat => {
                   const servicesInCat = servicesByCategory[cat.name] || [];
@@ -444,9 +405,7 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                       type="button"
                       onClick={() => setActiveServiceTab(cat.name)}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                        isActive
-                          ? 'bg-[#b8864a] text-white'
-                          : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        isActive ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                       }`}
                     >
                       {cat.name}
@@ -462,7 +421,6 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
                 })}
               </div>
 
-              {/* Services for active tab */}
               <div className="flex flex-wrap gap-2 min-h-[48px]">
                 {tabServices.length === 0 ? (
                   <span className="text-xs text-stone-400">No services in this category</span>
@@ -488,7 +446,6 @@ export default function CompanyEditModal({ type, id, onClose, onSaved }: Props) 
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex-shrink-0 border-t border-stone-200 px-6 py-4 flex items-center justify-end gap-3">
           <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition">
             Cancel

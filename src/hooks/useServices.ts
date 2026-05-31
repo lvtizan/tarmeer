@@ -1,4 +1,8 @@
+'use client';
+
 import { useState, useEffect } from 'react';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 let cache: string[] | null = null;
 let inflight: Promise<string[]> | null = null;
@@ -11,7 +15,7 @@ const FALLBACK: string[] = [
 async function fetchServices(): Promise<string[]> {
   if (cache) return cache;
   if (!inflight) {
-    inflight = fetch('/api/auth/company/services')
+    inflight = fetch(`${API_BASE}/auth/company/services`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         const services = Array.isArray(d.services) ? d.services as string[] : FALLBACK;

@@ -1,9 +1,9 @@
 /**
- * 前端行为埋点工具
- * 发送到 POST /api/track，不阻塞页面加载（fire-and-forget）
+ * Frontend behavior tracking utility.
+ * Sends to POST /api/track — fire-and-forget, never blocks page load.
  */
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
 export interface TrackPayload {
   event_type: string;
@@ -14,7 +14,9 @@ export interface TrackPayload {
 }
 
 export function trackEvent(payload: TrackPayload): void {
-  const token = localStorage.getItem('auth_token') || localStorage.getItem('token') || undefined;
+  if (typeof window === 'undefined') return;
+  const token =
+    localStorage.getItem('auth_token') || localStorage.getItem('token') || undefined;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -22,5 +24,7 @@ export function trackEvent(payload: TrackPayload): void {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
-  }).catch(() => { /* silent fail — tracking should never break the page */ });
+  }).catch(() => {
+    /* silent fail — tracking should never break the page */
+  });
 }

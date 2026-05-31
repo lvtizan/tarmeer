@@ -1,7 +1,9 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PortfolioItem } from '../lib/companyData';
+import type { PortfolioItem } from '../lib/companyData';
 import { resolveImageUrl } from '../lib/imageUrl';
 import { getImageFallbackCandidates } from '../lib/imageCleanup';
 
@@ -100,10 +102,8 @@ export default function Lightbox({
             </button>
           </div>
 
-          {/* Main image area - clicking empty space closes */}
-          <div
-            className="flex-1 flex items-center justify-center relative px-12 min-h-0"
-          >
+          {/* Main image area */}
+          <div className="flex-1 flex items-center justify-center relative px-12 min-h-0">
             {/* Prev button */}
             {currentIndex > 0 && (
               <button
@@ -126,6 +126,7 @@ export default function Lightbox({
                 transition={{ duration: 0.2 }}
                 onClick={(e) => e.stopPropagation()}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={currentImageCandidates[0] || ''}
                   alt={currentImage.title || `Image ${currentIndex + 1}`}
@@ -169,38 +170,37 @@ export default function Lightbox({
               className="flex gap-2 overflow-x-auto px-4 max-w-4xl mx-auto scrollbar-hide"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {images.map((image, index) => (
-                (() => {
-                  const thumbCandidates = getImageFallbackCandidates(resolveImageUrl(image.url));
-                  return (
-                <button
-                  key={index}
-                  data-active={index === currentIndex ? 'true' : 'false'}
-                  onClick={() => onNavigate(index)}
-                  className={`shrink-0 w-16 h-12 rounded-lg overflow-hidden transition-all ${
-                    index === currentIndex
-                      ? 'ring-2 ring-[#c6a065] opacity-100'
-                      : 'opacity-50 hover:opacity-80'
-                  }`}
-                  aria-label={`Go to image ${index + 1}`}
-                >
-                  <img
-                    src={thumbCandidates[0] || ''}
-                    alt={image.title || `Thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const retryIndex = Number(e.currentTarget.dataset.retryIndex || '0');
-                      if (retryIndex < thumbCandidates.length - 1) {
-                        const next = retryIndex + 1;
-                        e.currentTarget.dataset.retryIndex = String(next);
-                        e.currentTarget.src = thumbCandidates[next];
-                      }
-                    }}
-                  />
-                </button>
-                  );
-                })()
-              ))}
+              {images.map((image, index) => {
+                const thumbCandidates = getImageFallbackCandidates(resolveImageUrl(image.url));
+                return (
+                  <button
+                    key={index}
+                    data-active={index === currentIndex ? 'true' : 'false'}
+                    onClick={() => onNavigate(index)}
+                    className={`shrink-0 w-16 h-12 rounded-lg overflow-hidden transition-all ${
+                      index === currentIndex
+                        ? 'ring-2 ring-[#c6a065] opacity-100'
+                        : 'opacity-50 hover:opacity-80'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={thumbCandidates[0] || ''}
+                      alt={image.title || `Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const retryIndex = Number(e.currentTarget.dataset.retryIndex || '0');
+                        if (retryIndex < thumbCandidates.length - 1) {
+                          const next = retryIndex + 1;
+                          e.currentTarget.dataset.retryIndex = String(next);
+                          e.currentTarget.src = thumbCandidates[next];
+                        }
+                      }}
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
         </motion.div>

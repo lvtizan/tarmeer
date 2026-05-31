@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PortfolioCategories, PortfolioItem } from '../lib/companyData';
@@ -79,12 +81,12 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
   );
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
-  // Reset tab and pagination when categories change (e.g. navigating to a different company)
+  // Reset tab and pagination when categories change
   useEffect(() => {
     setActiveTab(showAllTab ? 'All' : (categoryNames[0] ?? ''));
     setVisibleCount(ITEMS_PER_PAGE);
     fingerprintsRef.current = [];
-  }, [categories]);
+  }, [categories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Return null if no non-empty categories
   if (nonEmptyCategories.length === 0) return null;
@@ -115,7 +117,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setVisibleCount(ITEMS_PER_PAGE);
-    fingerprintsRef.current = []; // reset fingerprints on tab switch
+    fingerprintsRef.current = [];
   };
 
   const tabs = showAllTab ? ['All', ...categoryNames] : categoryNames;
@@ -193,13 +195,15 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                   }}
                 >
                   {/* Blur placeholder */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={resolveVariantUrl(item.url, 'blur')}
                     alt=""
                     aria-hidden
                     className="absolute inset-0 w-full h-full object-cover scale-110 blur-lg"
                   />
-                  {/* Main image — srcset for responsive quality + speed */}
+                  {/* Main image */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={primarySrc}
                     srcSet={`${resolveVariantUrl(item.url, 'thumb')} 600w, ${resolveVariantUrl(item.url, 'medium')} 1200w, ${primarySrc} 1600w`}
@@ -218,7 +222,7 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                       const container = img.closest('.rounded-xl.group') as HTMLElement | null;
                       if (!container) return;
 
-                      // Filter extreme aspect ratios (banners / narrow strips)
+                      // Filter extreme aspect ratios
                       const aspectRatio = w / h;
                       if (aspectRatio > MAX_ASPECT_RATIO || aspectRatio < MIN_ASPECT_RATIO) {
                         container.classList.add('hidden');
@@ -248,7 +252,6 @@ export default function MasonryGallery({ categories, onImageClick, externalWebsi
                     }}
                     onError={(e) => {
                       const current = e.currentTarget;
-                      // Fall back through extension candidates (.jpg → .webp → .png etc.)
                       const retryIndex = Number(current.dataset.retryIndex || '0');
                       if (retryIndex < fallbackCandidates.length - 1) {
                         const nextRetry = retryIndex + 1;

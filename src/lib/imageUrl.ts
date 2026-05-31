@@ -107,11 +107,6 @@ export function resolveVariantUrl(
   if (resolved.startsWith('data:')) return resolved;
   // External URLs (Alibaba CDN, etc.) don't have local variants — return as-is
   if (resolved.startsWith('http://') || resolved.startsWith('https://')) return resolved;
-  // Only apply variant transform for paths that have generated variants:
-  // - /api/uploads/ (sharp-processed uploads)
-  // - /images/uae-companies/ (pre-generated during data import)
-  // Static /images/suppliers/ files don't have generated variants — return original to avoid 404s.
-  if (!resolved.startsWith('/api/uploads/') && !resolved.startsWith('/images/uae-companies/')) return resolved;
   const dotIndex = resolved.lastIndexOf('.');
   const slashIndex = resolved.lastIndexOf('/');
   if (dotIndex === -1 || dotIndex < slashIndex) return resolved;

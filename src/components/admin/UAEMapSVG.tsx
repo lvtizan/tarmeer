@@ -1,6 +1,8 @@
+'use client';
+
 import { useState } from 'react';
-import { labelCompanyType } from '../../lib/companyTypeLabel';
-import { useAdminT } from '../../hooks/useAdminLang';
+import { labelCompanyType } from '@/lib/companyTypeLabel';
+import { useAdminT } from '@/hooks/useAdminLang';
 
 interface CityData {
   city: string;
@@ -20,7 +22,6 @@ interface UAEMapSVGProps {
   companyTypeCities?: CompanyTypeCity[];
 }
 
-// Distance from Dubai (km) per emirate, for service-reach visualization
 const EMIRATE_DISTANCE_KM: Record<string, number> = {
   'Dubai':     0,
   'Sharjah':  25,
@@ -51,7 +52,6 @@ const EMIRATE_CN: Record<string, string> = {
 };
 type Emirate = typeof EMIRATES[number];
 
-// Simplified UAE emirate polygons in a 520×400 viewBox
 const EMIRATE_PATHS: Record<Emirate, string> = {
   'Abu Dhabi': 'M 12,248 L 12,392 L 440,392 L 462,356 L 468,310 L 450,262 L 425,232 L 398,198 L 368,152 L 322,185 L 228,212 L 132,168 L 65,158 Z',
   'Dubai':     'M 368,152 L 398,198 L 420,192 L 425,164 L 435,150 L 420,126 L 392,124 Z',
@@ -64,7 +64,6 @@ const EMIRATE_PATHS: Record<Emirate, string> = {
 
 
 const CITY_TO_EMIRATE: Record<string, Emirate> = {
-  // Abu Dhabi (English)
   'abu dhabi': 'Abu Dhabi',
   'abu-dhabi': 'Abu Dhabi',
   'abudhabi': 'Abu Dhabi',
@@ -72,41 +71,33 @@ const CITY_TO_EMIRATE: Record<string, Emirate> = {
   'al-ain': 'Abu Dhabi',
   'al ain city': 'Abu Dhabi',
   'al dhafra': 'Abu Dhabi',
-  // Abu Dhabi (Chinese/Arabic transliteration)
   '阿布扎比': 'Abu Dhabi',
   '艾因': 'Abu Dhabi',
   'al-ain city': 'Abu Dhabi',
-  // Dubai (English)
   'dubai': 'Dubai',
   'deira': 'Dubai',
   'bur dubai': 'Dubai',
   'jumeirah': 'Dubai',
   'jbr': 'Dubai',
   'downtown dubai': 'Dubai',
-  // Dubai (Chinese)
   '迪拜': 'Dubai',
   'Dubai': 'Dubai',
-  // Sharjah
   'sharjah': 'Sharjah',
   'khor fakkan': 'Sharjah',
   'kalba': 'Sharjah',
   '沙迦': 'Sharjah',
   '夏尔迦': 'Sharjah',
-  // Ajman
   'ajman': 'Ajman',
   '阿治曼': 'Ajman',
-  // UAQ
   'umm al quwain': 'UAQ',
   'umm al-quwain': 'UAQ',
   'uaq': 'UAQ',
   '乌姆盖万': 'UAQ',
-  // RAK
   'ras al khaimah': 'RAK',
   'ras al-khaimah': 'RAK',
   'rak': 'RAK',
   '哈伊马角': 'RAK',
   '莱斯海玛': 'RAK',
-  // Fujairah
   'fujairah': 'Fujairah',
   'dibba': 'Fujairah',
   '富查伊拉': 'Fujairah',
@@ -121,7 +112,6 @@ function mapToEmirate(city: string): Emirate | null {
 }
 
 function interpolateColor(t: number): string {
-  // #FDF5EC → #B8864A
   const r = Math.round(253 - 69 * t);
   const g = Math.round(245 - 111 * t);
   const b = Math.round(236 - 162 * t);
@@ -165,7 +155,6 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
     return interpolateColor(t);
   }
 
-  // Auto contrast: luminance = 246.3 - 104.3*t; switch to white below 180
   function getLabelColor(emirate: Emirate): { name: string; sub: string; count: string } {
     if (maxTotal === 0) return { name: '#6b4a24', sub: '#9a7a52', count: '#B8864A' };
     const t = emirateData[emirate].total / maxTotal;
@@ -178,15 +167,13 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
 
   const hoveredData = hovered ? emirateData[hovered] : null;
 
-  // Top inquiry cities with emirate + distance-from-Dubai metadata
   const topInquiryCities = inquiryCities.slice(0, 8);
   const maxInquiry = topInquiryCities[0]?.count || 1;
 
-  // Distance badge color
   function distanceColor(km: number): string {
-    if (km < 40)  return '#22c55e'; // green  — same city / neighbour
-    if (km < 100) return '#f59e0b'; // amber  — medium
-    return '#f97316';               // orange — far
+    if (km < 40)  return '#22c55e';
+    if (km < 100) return '#f59e0b';
+    return '#f97316';
   }
 
   return (
@@ -197,7 +184,6 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
       </div>
 
       <div className="flex min-h-0">
-        {/* Left: UAE map */}
         <div className="relative flex-1 min-w-0 px-4 pt-5 pb-4 border-r border-stone-100">
           <svg viewBox="0 0 520 400" className="w-full" style={{ maxHeight: 500 }}>
             {EMIRATES.map((emirate) => (
@@ -266,7 +252,6 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
             )}
           </svg>
 
-          {/* Hover tooltip */}
           {hovered && hoveredData && hoveredData.total > 0 && (
             <div className="absolute top-5 left-4 bg-white/95 backdrop-blur-sm border border-stone-200 rounded-2xl shadow-lg p-3 text-xs min-w-[148px]">
               <div className="font-semibold text-[#2c2c2c] mb-2">{EMIRATE_CN[hovered] || hovered}</div>
@@ -294,10 +279,8 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
 
         </div>
 
-        {/* Right: Company types + Inquiry city distribution */}
         <div className="w-[268px] shrink-0 flex flex-col overflow-y-auto">
 
-          {/* ── 装企类型分布 ── */}
           <div className="px-4 pt-4 pb-3 border-b border-stone-100">
             <div className="text-[11px] font-bold text-[#2c2c2c] mb-0.5">装企类型</div>
             <div className="text-[10px] text-[#6b6b6b] mb-3">注册装企按类别分布</div>
@@ -331,7 +314,6 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
             )}
           </div>
 
-          {/* ── 询盘客分布 + 服务距离 ── */}
           <div className="px-4 pt-4 pb-4 flex-1">
             <div className="text-[11px] font-bold text-[#2c2c2c] mb-0.5">询盘客分布</div>
             <div className="text-[10px] text-[#6b6b6b] mb-3 flex items-center gap-2">
@@ -355,23 +337,18 @@ export default function UAEMapSVG({ companyCities, inquiryCities, visitorCities,
                   const barPct = (ic.count / maxInquiry) * 100;
                   return (
                     <div key={ic.city} className="flex items-center gap-2">
-                      {/* Distance dot */}
                       <div
                         className="w-2 h-2 rounded-full shrink-0"
                         style={{ background: km !== null ? distanceColor(km) : '#d4d4d4' }}
                       />
-                      {/* City name */}
                       <span className="text-[11px] text-[#2c2c2c] w-[64px] shrink-0 truncate">{ic.city}</span>
-                      {/* Bar */}
                       <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{ width: `${barPct}%`, background: km !== null ? distanceColor(km) : '#B8864A', opacity: 0.75 }}
                         />
                       </div>
-                      {/* Count */}
                       <span className="text-[10px] font-semibold text-[#6b6b6b] w-[26px] text-right shrink-0">{ic.count}</span>
-                      {/* Distance label */}
                       {km !== null && (
                         <span className="text-[9px] text-[#9a9a9a] w-[32px] shrink-0">{km === 0 ? '市内' : `${km}km`}</span>
                       )}

@@ -1,6 +1,8 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { validatePhone } from '../../lib/phoneValidation';
+import { validatePhone } from '@/lib/phoneValidation';
 
 export const PHONE_COUNTRIES = [
   { code: '+971', flag: '🇦🇪', name: 'UAE',     maxDigits: 9  },

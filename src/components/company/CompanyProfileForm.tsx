@@ -1,10 +1,12 @@
+'use client';
+
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Globe, MapPin, Phone, ChevronDown, ChevronRight } from 'lucide-react';
-import { api } from '../../lib/api';
-import { FormInput, FormTextarea, FormLabel, FormTag } from '../form/FormInput';
-import AdminSelect from '../ui/AdminSelect';
-import { SPACE_TYPES, MAX_SERVICE_CATEGORIES } from '../../lib/serviceCategories';
-import { useServiceCategories, getActiveParentsDynamic } from '../../hooks/useServiceCategories';
+import { api } from '@/lib/api';
+import { FormInput, FormTextarea, FormLabel, FormTag } from '@/components/form/FormInput';
+import AdminSelect from '@/components/ui/AdminSelect';
+import { SPACE_TYPES, MAX_SERVICE_CATEGORIES } from '@/lib/serviceCategories';
+import { useServiceCategories, getActiveParentsDynamic } from '@/hooks/useServiceCategories';
 
 const GCC_DIAL_CODES = [
   { code: '+971', label: '🇦🇪 UAE (+971)' },
@@ -29,8 +31,8 @@ function parsePhone(full: string): { dialCode: string; local: string } {
   return { dialCode: '+971', local: full };
 }
 
-/* ── Constants ── */
-export const SPECIALTIES = SPACE_TYPES; // backward compat export
+/* Constants */
+export const SPECIALTIES = SPACE_TYPES;
 export const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 export const TYPE_OPTIONS = [
   { value:'design_studio', label:'Interior Design Studio' },
@@ -57,12 +59,12 @@ export const TYPE_OPTIONS = [
 export interface ProfileData {
   company_name: string; description: string; contact_person: string;
   phone: string; website: string; city: string; address: string;
-  company_type: string; // legacy, kept for backward compat
-  company_types: string[]; // multi-select (max 5)
+  company_type: string;
+  company_types: string[];
   trade_license_number: string;
   establishment_year: number | null;
-  services: string[]; // selected service subcategories
-  specialties: string[]; // space types
+  services: string[];
+  specialties: string[];
   emirates_served: string[];
   status: string; admin_notes?: string;
 }
@@ -76,25 +78,24 @@ export const EMPTY_PROFILE: ProfileData = {
   status:'pending',
 };
 
-export function parseProfile(r: any): ProfileData {
-  function pj(v: any): string[] {
-    if (Array.isArray(v)) return v;
+export function parseProfile(r: Record<string, unknown>): ProfileData {
+  function pj(v: unknown): string[] {
+    if (Array.isArray(v)) return v as string[];
     if (typeof v === 'string') try { return JSON.parse(v); } catch { return []; }
     return [];
   }
   const company_types = pj(r.company_types);
   return {
-    company_name: r.company_name || '', description: r.description || '',
-    contact_person: r.contact_person || '', phone: r.phone || '',
-    website: r.website || '', city: r.city || 'Dubai', address: r.address || '',
-    company_type: r.company_type || '',
-    // If company_types saved, use it; otherwise migrate from single company_type
-    company_types: company_types.length > 0 ? company_types : (r.company_type ? [r.company_type] : []),
-    trade_license_number: r.trade_license_number || '',
-    establishment_year: r.establishment_year || null,
+    company_name: (r.company_name as string) || '', description: (r.description as string) || '',
+    contact_person: (r.contact_person as string) || '', phone: (r.phone as string) || '',
+    website: (r.website as string) || '', city: (r.city as string) || 'Dubai', address: (r.address as string) || '',
+    company_type: (r.company_type as string) || '',
+    company_types: company_types.length > 0 ? company_types : (r.company_type ? [r.company_type as string] : []),
+    trade_license_number: (r.trade_license_number as string) || '',
+    establishment_year: (r.establishment_year as number) || null,
     services: pj(r.services), specialties: pj(r.specialties),
     emirates_served: pj(r.emirates_served),
-    status: r.status || 'pending', admin_notes: r.admin_notes,
+    status: (r.status as string) || 'pending', admin_notes: r.admin_notes as string | undefined,
   };
 }
 
@@ -108,7 +109,7 @@ export interface CompanyProfileFormRef {
   saveText: string;
 }
 
-/* ── Generic flat multi-select with search (fixed positioning) ── */
+/* Generic flat multi-select with search */
 function MultiSelectDropdown({
   options, selected, onChange, max, placeholder = 'Select…',
 }: {
@@ -196,7 +197,6 @@ function MultiSelectDropdown({
           className="fixed z-50 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg"
           style={{ top: panelPos.top, left: panelPos.left, width: Math.max(panelPos.width, 320) }}
         >
-          {/* Search */}
           <div className="p-2 border-b border-stone-100">
             <input
               ref={searchRef}
@@ -206,7 +206,6 @@ function MultiSelectDropdown({
               className="w-full h-8 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]"
             />
           </div>
-          {/* List */}
           <div className="max-h-60 overflow-y-auto">
             {filtered.length === 0 && (
               <p className="px-4 py-3 text-sm text-stone-400">No results</p>
@@ -240,7 +239,7 @@ function MultiSelectDropdown({
   );
 }
 
-/* ── Service Category Picker — cascading dropdown (fixed positioning) ── */
+/* Service Category Picker */
 function ServiceCategoryPicker({
   selected,
   onChange,
@@ -259,7 +258,6 @@ function ServiceCategoryPicker({
   const dynamicCategories = useServiceCategories();
   const activeParents = getActiveParentsDynamic(selected, dynamicCategories);
 
-  // Flat search results across all categories
   const searchResults = query.trim()
     ? dynamicCategories.flatMap(cat => cat.subs.filter(s => s.toLowerCase().includes(query.toLowerCase())).map(s => ({ sub: s, cat: cat.name })))
     : [];
@@ -316,7 +314,6 @@ function ServiceCategoryPicker({
 
   return (
     <div>
-      {/* Trigger */}
       <button
         ref={triggerRef}
         type="button"
@@ -331,21 +328,18 @@ function ServiceCategoryPicker({
         <ChevronDown className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Limit warning */}
       {activeParents.length >= MAX_SERVICE_CATEGORIES && (
         <p className="mt-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
           Max {MAX_SERVICE_CATEGORIES} categories selected. Deselect from an existing category to add another.
         </p>
       )}
 
-      {/* Panel — fixed positioning to avoid overflow clipping */}
       {open && (
         <div
           ref={panelRef}
           className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg"
           style={{ top: panelPos.top, left: panelPos.left, width: Math.max(panelPos.width, 480) }}
         >
-          {/* Search input */}
           <div className="shrink-0 p-2 border-b border-stone-100">
             <input
               ref={searchRef}
@@ -357,7 +351,6 @@ function ServiceCategoryPicker({
           </div>
 
           {query.trim() ? (
-            /* Flat search results */
             <div className="overflow-y-auto max-h-[360px]">
               {searchResults.length === 0 && (
                 <p className="px-4 py-3 text-sm text-stone-400">No results</p>
@@ -386,9 +379,7 @@ function ServiceCategoryPicker({
               })}
             </div>
           ) : (
-            /* Normal cascading L1 / L2 view */
             <div className="flex overflow-hidden" style={{ maxHeight: 420 }}>
-              {/* L1 list */}
               <div className="w-52 flex-shrink-0 border-r border-stone-100 overflow-y-auto">
                 <div className="px-3 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-[#b8864a]">Service Type</div>
                 {dynamicCategories.map((cat, i) => {
@@ -413,7 +404,6 @@ function ServiceCategoryPicker({
                 <div className="h-3" />
               </div>
 
-              {/* L2 subs */}
               {currentCat && (
                 <div className="flex-1 overflow-y-auto">
                   <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
@@ -489,21 +479,23 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
   useEffect(() => {
     (async () => {
       try {
-        const r = await api.get('/auth/company/profile');
-        const d = r.profile || r;
+        const r = await api.get('/auth/company/profile') as Record<string, unknown> | null;
+        const d = (r?.profile ?? r) as Record<string, unknown> | null;
         if (d?.company_name) {
           let next = parseProfile(d);
           if (!next.phone) {
             try {
-              const me = await api.get('/auth/me');
+              const me = await api.get('/auth/me') as { user?: { phone?: string } } | null;
               const up = me?.user?.phone || '';
               if (up) next = { ...next, phone: up };
             } catch {
               try {
-                const raw = localStorage.getItem('user');
-                const lp = raw ? (JSON.parse(raw)?.phone || '') : '';
-                if (lp) next = { ...next, phone: lp };
-              } catch {}
+                if (typeof window !== 'undefined') {
+                  const raw = localStorage.getItem('user');
+                  const lp = raw ? ((JSON.parse(raw) as { phone?: string })?.phone || '') : '';
+                  if (lp) next = { ...next, phone: lp };
+                }
+              } catch {/* ignore */}
             }
           }
           setProfile(next);
@@ -515,30 +507,32 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
             setLocalPhone(parsed.local);
           }
         } else {
-          let pending: any = null;
+          let pending: Record<string, unknown> | null = null;
           try {
-            const raw = sessionStorage.getItem('pending_company_profile');
-            if (raw) { pending = JSON.parse(raw); sessionStorage.removeItem('pending_company_profile'); }
-          } catch { /* ignore */ }
+            if (typeof window !== 'undefined') {
+              const raw = sessionStorage.getItem('pending_company_profile');
+              if (raw) { pending = JSON.parse(raw); sessionStorage.removeItem('pending_company_profile'); }
+            }
+          } catch {/* ignore */}
           if (!pending) {
             try {
-              const raw2 = sessionStorage.getItem('company_signup_prefill');
-              if (raw2) { pending = JSON.parse(raw2); sessionStorage.removeItem('company_signup_prefill'); }
-            } catch { /* ignore */ }
+              if (typeof window !== 'undefined') {
+                const raw2 = sessionStorage.getItem('company_signup_prefill');
+                if (raw2) { pending = JSON.parse(raw2); sessionStorage.removeItem('company_signup_prefill'); }
+              }
+            } catch {/* ignore */}
           }
           if (pending) {
-            const prefilled = {
+            const prefilled: ProfileData = {
               ...EMPTY_PROFILE,
-              company_name: pending.company_name || '',
-              contact_person: pending.contact_person || '',
-              phone: pending.phone || '',
-              city: pending.city || '',
-              company_type: pending.company_type || '',
-              company_types: Array.isArray(pending.company_types) && pending.company_types.length > 0
-                ? pending.company_types
-                : pending.company_type ? [pending.company_type] : [],
-              services: pending.services || [],
-              establishment_year: pending.establishment_year || '',
+              company_name: (pending.company_name as string) || '',
+              contact_person: (pending.contact_person as string) || '',
+              phone: (pending.phone as string) || '',
+              city: (pending.city as string) || '',
+              company_type: (pending.company_type as string) || '',
+              company_types: pending.company_type ? [pending.company_type as string] : [],
+              services: (pending.services as string[]) || [],
+              establishment_year: (pending.establishment_year as number) || null,
             };
             setProfile(prefilled);
             if (prefilled.phone) {
@@ -591,22 +585,21 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
         establishment_year: current.establishment_year,
         specialties: current.specialties,
         emirates_served: current.emirates_served,
-      });
-      const saved = res?.profile || res;
+      }) as { profile?: { id?: number }; id?: number } | null;
+      const saved = res?.profile ?? res;
       const newId = saved?.id ? Number(saved.id) : profileId;
       if (saved?.id) setProfileId(Number(saved.id));
       lastSavedSnapshotRef.current = serialize(current);
       setSaveText(manual ? 'Saved' : 'Draft saved');
       clearSaveTextLater();
-      onSaved?.(newId);
-    } catch (err: any) {
-      setSaveText(err?.message || 'Failed to save');
+      onSaved?.(newId ?? null);
+    } catch (err: unknown) {
+      setSaveText((err as { message?: string })?.message || 'Failed to save');
     } finally {
       setSaving(false);
     }
   }, [serialize, clearSaveTextLater, profileId, onSaved]);
 
-  // Auto-save debounced 900ms
   useEffect(() => {
     if (loading) return;
     const snap = serialize(profile);
@@ -633,7 +626,7 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
     get saveText() { return saveText; },
   }), [saveProfile, saving, saveText]);
 
-  const set = (f: string, v: any) => setProfile(p => ({ ...p, [f]: v }));
+  const set = (f: string, v: unknown) => setProfile(p => ({ ...p, [f]: v }));
   const toggleTag = (f: 'specialties' | 'emirates_served' | 'company_types', t: string, max?: number) =>
     setProfile(p => {
       const arr = p[f] as string[];
@@ -724,7 +717,6 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
           </div>
         </div>
 
-        {/* Company Type multiselect */}
         <div className="mt-3">
           <FormLabel>Company Type <span className="text-stone-400 font-normal">(select up to 5)</span></FormLabel>
           <div className="mt-1.5">
@@ -738,7 +730,6 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
           </div>
         </div>
 
-        {/* Emirates Served */}
         <div className="mt-3">
           <FormLabel>Emirates Served</FormLabel>
           <div className="flex flex-wrap gap-2 mt-1.5">
@@ -756,7 +747,7 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
 
       {/* Services & Expertise */}
       <section className="rounded-2xl border border-stone-200 bg-white p-4">
-        <h2 className="text-sm font-bold text-[#2c2c2c] mb-1">Services & Expertise</h2>
+        <h2 className="text-sm font-bold text-[#2c2c2c] mb-1">Services &amp; Expertise</h2>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">

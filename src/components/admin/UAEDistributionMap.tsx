@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -43,7 +45,6 @@ export default function UAEDistributionMap({ companyCities, inquiryCities }: Pro
       scrollWheelZoom: false,
     });
 
-    // Light grey no-label tile (matches the screenshot style)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
       maxZoom: 12,
       minZoom: 5,
@@ -60,12 +61,10 @@ export default function UAEDistributionMap({ companyCities, inquiryCities }: Pro
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Clear overlays
     map.eachLayer((layer) => {
       if (layer instanceof L.CircleMarker) map.removeLayer(layer);
     });
 
-    // Merge data by city
     const cityMap = new Map<string, { companies: number; inquiries: number }>();
     companyCities.forEach(({ city, count }) => {
       const n = normalizeCity(city);
@@ -89,7 +88,6 @@ export default function UAEDistributionMap({ companyCities, inquiryCities }: Pro
       const total = data.companies + data.inquiries;
       const radius = Math.max(10, Math.min(45, Math.sqrt(total / maxTotal) * 45));
 
-      // Outer glow — large, very transparent
       L.circleMarker(coords, {
         radius: radius * 1.4,
         fillColor: '#B8864A',
@@ -97,7 +95,6 @@ export default function UAEDistributionMap({ companyCities, inquiryCities }: Pro
         fillOpacity: 0.12,
       }).addTo(map);
 
-      // Main bubble — semi-transparent gold
       L.circleMarker(coords, {
         radius,
         fillColor: '#D4A76A',

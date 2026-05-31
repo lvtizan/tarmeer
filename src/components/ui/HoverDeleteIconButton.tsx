@@ -1,3 +1,5 @@
+'use client';
+
 import type { MouseEvent } from 'react';
 import { Trash2 } from 'lucide-react';
 

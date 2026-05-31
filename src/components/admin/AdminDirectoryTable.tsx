@@ -1,8 +1,10 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import SmartImage from '../ui/SmartImage';
-import { TableSpinner } from '../ui/Spinner';
-import { useAdminT } from '../../hooks/useAdminLang';
+import { useRouter } from 'next/navigation';
+import SmartImage from '@/components/ui/SmartImage';
+import { TableSpinner } from '@/components/ui/Spinner';
+import { useAdminT } from '@/hooks/useAdminLang';
 
 interface CompanyRecord {
   id: number;
@@ -47,7 +49,7 @@ export default function AdminDirectoryTable({
   sortActive,
   onSortToggle,
 }: AdminDirectoryTableProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useAdminT();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
@@ -122,7 +124,7 @@ export default function AdminDirectoryTable({
             <tr
               key={c.id}
               className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
-              onClick={() => navigate(`/admin/companies/${c.id}?tab=directory`)}
+              onClick={() => router.push(`/admin/companies/${c.id}?tab=directory`)}
             >
               <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <input

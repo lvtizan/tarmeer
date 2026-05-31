@@ -1,10 +1,12 @@
+'use client';
+
 // gold-only single-color v4
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Maximize2, Minimize2 } from 'lucide-react';
-import { labelCompanyType } from '../../lib/companyTypeLabel';
-import { useAdminT } from '../../hooks/useAdminLang';
+import { labelCompanyType } from '@/lib/companyTypeLabel';
+import { useAdminT } from '@/hooks/useAdminLang';
 
 interface CityData { city: string; count: number; }
 interface CompanyTypeCity { type: string; count: number; topCities: CityData[]; }
@@ -47,7 +49,6 @@ function ensurePingStyle() {
     .leaflet-marker-draggable.leaflet-marker-dragging .uae-card-wrap {
       box-shadow:0 4px 12px rgba(0,0,0,0.18),0 16px 40px rgba(184,134,74,0.28),0 0 0 1.5px rgba(184,134,74,0.5);
     }
-    /* "+N" delta toast popping up above a row when new entity registers */
     @keyframes map-delta-toast {
       0%   { transform:translateY(0)    scale(0.6); opacity:0; }
       15%  { transform:translateY(-4px) scale(1);   opacity:1; }
@@ -61,10 +62,8 @@ function ensurePingStyle() {
       font-size:11px; font-weight:700; line-height:1.4;
       box-shadow:0 4px 10px rgba(184,134,74,0.45),0 0 0 1px rgba(255,255,255,0.18);
       white-space:nowrap;
-      /* fill-mode: both → during stagger delay, show 0% keyframe (opacity:0); after, show 100% (also opacity:0). Avoids flicker. */
       animation:map-delta-toast 2.4s cubic-bezier(0.2,0.7,0.3,1) both;
     }
-    /* Subtle highlight while a value is rolling */
     @keyframes map-num-flash {
       0%, 100% { background:transparent; }
       30%      { background:rgba(184,134,74,0.18); }
@@ -159,14 +158,12 @@ function aggregateCities(
       const lower = city.toLowerCase().trim();
       const coords = CITY_COORDS[lower];
       if (!coords) continue;
-      // Canonicalize by coordinate so "Dubai" + "迪拜" merge into one entry
       const k = `${coords[0].toFixed(4)},${coords[1].toFixed(4)}`;
       let e = m.get(k);
       if (!e) {
         e = { city, key: k, coords, visitor:0, company:0, homeowner:0, inquiry:0, total:0 };
         m.set(k, e);
       } else if (HAS_CJK.test(city) && !HAS_CJK.test(e.city)) {
-        // Prefer Chinese display name when both variants seen
         e.city = city;
       }
       e[field] += count;
@@ -189,20 +186,16 @@ function makeBubbleIcon(radius: number): L.DivIcon {
   });
 }
 
-// Per-card geometry.
-//   总计 = 装企+业主+询盘（去掉访客噪声）→ "转化"
-//   装企/业主/询盘 = 主行（gold）；访客 = 参考行（muted gray + dashed separator）
 const CARD_W            = 156;
-const ROW_PX            = 17;   // primary row: line-height 1.55 * 10.5px ≈ 16.3, round to 17
-const VISITOR_FOOTER_PX = 14;   // visitor row: line-height 1.55 * 9.5px ≈ 14.7, round to 14
-const SEPARATOR_PX      = 5;    // dashed top border + small margin
-const HEAD_PX           = 30;   // rank + city + total + border/margin
-const PAD_Y_PX          = 14;   // 7 top + 7 bottom
+const ROW_PX            = 17;
+const VISITOR_FOOTER_PX = 14;
+const SEPARATOR_PX      = 5;
+const HEAD_PX           = 30;
+const PAD_Y_PX          = 14;
 
 const conversionTotal = (c: AggCity) => c.company + c.homeowner + c.inquiry;
 
 function cardRowCount(city: AggCity): number {
-  // primary rows only (visitor is footer when conv > 0)
   return (city.company ? 1 : 0) + (city.homeowner ? 1 : 0) + (city.inquiry ? 1 : 0);
 }
 function cardHeight(city: AggCity, scale = 1): number {
@@ -220,8 +213,6 @@ function cardHeight(city: AggCity, scale = 1): number {
 }
 
 function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number, scale = 1): L.DivIcon {
-  // iconSize/iconAnchor stay at unscaled values so leaflet's anchoring math is unaffected.
-  // Visual scaling is done via CSS transform with origin at the anchor edge.
   const H = cardHeight(city, 1);
   const W = CARD_W;
   const conv = conversionTotal(city);
@@ -229,7 +220,6 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number, scale =
   const rsMuted   = `display:flex;justify-content:space-between;font-size:9.5px;color:#a3a3a3;line-height:1.55;border-top:1px dashed rgba(184,134,74,0.18);margin-top:3px;padding-top:2px`;
   const vs        = `font-weight:700;color:${GOLD};font-variant-numeric:tabular-nums`;
   const vsMuted   = `font-weight:500;color:#a3a3a3;font-variant-numeric:tabular-nums`;
-  // data-field marks each numeric span so animateValue() can find it via querySelector
   const primarySpan = (field: string, n: number) => `<span style="${vs}" data-field="${field}">${n.toLocaleString()}</span>`;
   const mutedSpan   = (field: string, n: number) => `<span style="${vsMuted}" data-field="${field}">${n.toLocaleString()}</span>`;
 
@@ -240,16 +230,12 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number, scale =
     if (city.inquiry)   rows.push(`<div style="${rs}" data-row="inquiry"><span>询盘</span>${primarySpan('inquiry', city.inquiry)}</div>`);
     if (city.visitor)   rows.push(`<div style="${rsMuted}" data-row="visitor"><span>访客</span>${mutedSpan('visitor', city.visitor)}</div>`);
   } else if (city.visitor) {
-    // Degraded: pure-visitor card (no real conversion yet) — show visitor in primary style
     rows.push(`<div style="${rs}" data-row="visitor"><span>访客</span>${primarySpan('visitor', city.visitor)}</div>`);
   }
 
-  // Header total: real conversion total, or visitor count if degraded
   const headerNum   = conv > 0 ? conv : city.visitor;
   const headerLabel = conv > 0 ? '转化' : '访客';
 
-  // Visual scale: keep anchor edge fixed (right for left-side card, left for right-side).
-  // origin uses "center" vertically so the card grows symmetrically up/down — matches iconAnchor at H/2.
   const transformOrigin = side === 'left' ? 'right center' : 'left center';
   const transform = scale !== 1 ? `transform:scale(${scale});transform-origin:${transformOrigin};` : '';
   return L.divIcon({
@@ -270,7 +256,6 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number, scale =
 }
 
 const UAE_BOUNDS    = L.latLngBounds([22.3, 51.5], [26.5, 56.8]);
-// 海湾六国 (GCC: 沙特/UAE/卡塔尔/巴林/科威特/阿曼) — 全屏时拉宽视野
 const GCC_BOUNDS    = L.latLngBounds([20.5, 46], [30.8, 60]);
 const CARD_OFFSET_PX = 180;
 const TOP_CALLOUT_N  = 5;
@@ -281,9 +266,6 @@ function cardSide(city: AggCity): 'left'|'right' {
 
 interface CardRect { x: number; y: number; w: number; h: number; side: 'left'|'right'; }
 
-// Place cards left/right of bubbles, then iteratively push-apart in y. If a side is
-// too crowded (cards push past the map edge), reassign the lowest-rank crowded card
-// to the opposite side. Final positions are clamped inside the map viewport.
 function computeCardLayout(
   map: L.Map,
   topCities: { city: AggCity; side: 'left'|'right' }[],
@@ -304,10 +286,6 @@ function computeCardLayout(
       const y    = bPt.y - h / 2;
       return { x, y, w: cardW, h, side };
     });
-    // Column-align cards on the same side: pick the x closest to map content
-    // (right side → min x, left side → max x). When a side has only 1 card,
-    // it stays at its natural x. Dragged cards' computed x is discarded by
-    // the caller, so user drags survive this alignment.
     for (const side of ['left', 'right'] as const) {
       const idxs: number[] = [];
       for (let i = 0; i < rects.length; i++) if (rects[i].side === side) idxs.push(i);
@@ -319,10 +297,6 @@ function computeCardLayout(
     return rects;
   }
   function resolveOverlaps(rects: CardRect[]) {
-    // Within each side group: sort by y, cascade-down so each card sits below the
-    // previous (no y-overlap), then shift the whole stack up if its bottom overflows
-    // the map. Deterministic, single pass — replaces the iterative push-apart that
-    // could oscillate for >2 cards on the same column.
     const GAP = 8;
     const M   = 16;
     const isFs = scale > 1;
@@ -338,8 +312,6 @@ function computeCardLayout(
       }
       const first = rects[idxs[0]];
       const last  = rects[idxs[idxs.length - 1]];
-      // Fullscreen: center stack slightly above viewport middle (≈42% from top)
-      // so it doesn't crowd map dots near center yet still feels balanced.
       if (isFs) {
         const stackH = (last.y + last.h) - first.y;
         const desiredFirstY = Math.max(M, sz.y * 0.42 - stackH / 2);
@@ -363,8 +335,6 @@ function computeCardLayout(
   let rects = buildRects();
   resolveOverlaps(rects);
 
-  // If one side overflows the map height, flip the lowest-priority card on that
-  // side to the other side and retry, until both sides fit (or we've tried all).
   const mapH = sz.y;
   for (let i = topCities.length - 1; i >= 0 && (totalSpan(rects, 'left') > mapH || totalSpan(rects, 'right') > mapH); i--) {
     const overSide = totalSpan(rects, 'right') > totalSpan(rects, 'left') ? 'right' : 'left';
@@ -373,10 +343,6 @@ function computeCardLayout(
     rects = buildRects();
     resolveOverlaps(rects);
   }
-
-  // Note: resolveOverlaps already handles top/bottom overflow by shifting the
-  // whole same-side stack up (capped by margin). Don't re-clamp individual cards
-  // here — that would re-introduce overlap when shift was capped.
 
   return rects.map((r, i) => ({
     anchorPt: L.point(r.side === 'left' ? r.x + r.w : r.x, r.y + r.h / 2),
@@ -405,8 +371,6 @@ const CITY_TO_EMIRATE: Record<string, string> = {
 function mapToEmirate(city: string) { return CITY_TO_EMIRATE[city.toLowerCase().trim()] ?? null; }
 function distanceColor(km: number) { return km < 40 ? '#22c55e' : km < 100 ? '#f59e0b' : '#f97316'; }
 
-// Roll a numeric value from `from` to `to` over `ms` (cubic ease-out).
-// Updates el.textContent and adds a brief flash class for visual emphasis.
 function animateValue(el: HTMLElement, from: number, to: number, ms = 600) {
   const t0 = performance.now();
   el.classList.add('map-num-rolling');
@@ -421,7 +385,6 @@ function animateValue(el: HTMLElement, from: number, to: number, ms = 600) {
   requestAnimationFrame(frame);
 }
 
-// "+N 标签" toast popping above a card row or bubble. Auto-cleans up after 2.4s.
 const FIELD_LABEL: Record<string, string> = {
   visitor: '访客', company: '装企', homeowner: '业主', inquiry: '询盘', total: '合计',
 };
@@ -430,10 +393,9 @@ function spawnDeltaToast(
   anchorLL: L.LatLng,
   label: string,
   delta: number,
-  yOffsetPx: number,    // pixels above the anchor
-  delayMs = 0,          // stagger when multiple toasts fire in same paint
+  yOffsetPx: number,
+  delayMs = 0,
 ) {
-  // animation-fill-mode:both in the CSS class handles invisibility during the delay phase
   const styleAttr = delayMs > 0 ? ` style="animation-delay:${delayMs}ms"` : '';
   const html = `<div class="map-delta-toast"${styleAttr}>${label} +${delta}</div>`;
   const icon = L.divIcon({
@@ -443,7 +405,6 @@ function spawnDeltaToast(
     html,
   });
   const m = L.marker(anchorLL, { icon, interactive: false, zIndexOffset: 5000 }).addTo(map);
-  // Total lifetime = delay + 2.4s animation
   setTimeout(() => { try { map.removeLayer(m); } catch { /* map may be gone */ } }, 2400 + delayMs);
 }
 
@@ -458,14 +419,13 @@ export default function UAEMapLeaflet({
   const leaderLinesRef = useRef<L.Polyline[]>([]);
   const topCitiesRef   = useRef<{ city: AggCity; side: 'left'|'right' }[]>([]);
   const cardSidesRef   = useRef<('left'|'right')[]>([]);
-  const userMovedRef   = useRef<boolean[]>([]);  // per-index: true if user dragged
-  const prevAggRef     = useRef<Map<string, AggCity>>(new Map());  // last seen agg, keyed by city.key
-  const cardRef        = useRef<HTMLDivElement>(null);  // outer card for fullscreen
-  const cardScaleRef   = useRef(1);                     // 1 normal, 1.5 fullscreen
+  const userMovedRef   = useRef<boolean[]>([]);
+  const prevAggRef     = useRef<Map<string, AggCity>>(new Map());
+  const cardRef        = useRef<HTMLDivElement>(null);
+  const cardScaleRef   = useRef(1);
   const [mapReady, setMapReady] = useState(false);
   const [isFs, setIsFs] = useState(false);
 
-  // Fullscreen toggle + listener (ESC handled by browser)
   useEffect(() => {
     const onChange = () => {
       const inFs = document.fullscreenElement === cardRef.current;
@@ -475,13 +435,11 @@ export default function UAEMapLeaflet({
         mapRef.current?.invalidateSize();
         if (mapRef.current) {
           if (inFs) {
-            // 全屏 → 沙迦 (Sharjah) 居中，比 GCC fit 再放大 2× (zoom+1)
             const gccZoom = mapRef.current.getBoundsZoom(GCC_BOUNDS, false);
             mapRef.current.setView([25.3463, 55.4209], gccZoom + 1, { animate: false });
           } else {
             mapRef.current.fitBounds(UAE_BOUNDS, { padding: [40, 40] });
           }
-          // Re-render every card icon with new scale
           for (let i = 0; i < cardMarkersRef.current.length; i++) {
             const m = cardMarkersRef.current[i];
             const tc = topCitiesRef.current[i];
@@ -506,19 +464,12 @@ export default function UAEMapLeaflet({
     }
   }
 
-  // Update one leader line when its card moves (drag or auto-relayout)
-  // 单根斜线：从 bubble 中心直连卡片中心。L 形折线在卡片列对齐时退化成水平段，
-  // 看起来全水平不"指向"，所以改回斜线。
   function leaderPath(map: L.Map, bubbleLL: L.LatLng, cardLL: L.LatLng): L.LatLng[] {
-    // If the natural straight line is shallower than 45°, insert a kink so the
-    // segment hitting the bubble is at exactly 45° (more visually distinct than
-    // a near-horizontal line, esp. for far-south cities like Abu Dhabi).
     const A = map.latLngToContainerPoint(cardLL);
     const B = map.latLngToContainerPoint(bubbleLL);
     const dx = B.x - A.x, dy = B.y - A.y;
     const adx = Math.abs(dx), ady = Math.abs(dy);
     if (ady < 6 || ady >= adx) return [bubbleLL, cardLL];
-    // Kink point: on the card's horizontal line, |dy| pixels away from bubble in x.
     const kx = B.x - Math.sign(dx) * ady;
     const kink = map.containerPointToLatLng(L.point(kx, A.y));
     return [bubbleLL, kink, cardLL];
@@ -536,12 +487,10 @@ export default function UAEMapLeaflet({
     if (!topCitiesRef.current.length) return;
     const layout = computeCardLayout(map, topCitiesRef.current, cardScaleRef.current);
     layout.forEach(({ anchorPt, bubbleLL, cardSide: newSide }, i) => {
-      // Skip cards user has dragged manually - keep their position
       if (userMovedRef.current[i]) {
         updateLeaderLine(map, i);
         return;
       }
-      // If side flipped (auto-relayout chose other side), rebuild the icon so anchor is correct
       if (cardSidesRef.current[i] !== newSide) {
         cardSidesRef.current[i] = newSide;
         cardMarkersRef.current[i]?.setIcon(makeCardIcon(topCitiesRef.current[i].city, newSide, i + 1, cardScaleRef.current));
@@ -593,24 +542,19 @@ export default function UAEMapLeaflet({
     cardSidesRef.current = topCities.map(t => t.side);
     userMovedRef.current = new Array(topCities.length).fill(false);
 
-    // ─── Detect deltas vs last fetch (skip on first load) ─────────────────
     type Field = 'visitor'|'company'|'homeowner'|'inquiry';
     const FIELD_ORDER: Field[] = ['company', 'homeowner', 'inquiry', 'visitor'];
     interface CardDelta { rank: number; field: Field; from: number; to: number; delta: number; rowOffsetFromCenterPx: number; }
     interface BubbleDelta { aggIdx: number; field: Field; delta: number; city: AggCity; }
     const cardDeltas: CardDelta[] = [];
     const bubbleDeltas: BubbleDelta[] = [];
-    // Map of rank → {from, to} for header total (conv-only or visitor in degraded mode)
     const headerDeltas = new Map<number, { from: number; to: number }>();
 
-    // Compute the y-offset (from card center) for a given field, matching makeCardIcon's layout.
-    // Returned in screen pixels — must match the *scaled* card so the toast lines up with the row.
     function fieldRowOffset(c: AggCity, field: Field): number | null {
       const conv = conversionTotal(c);
       const s = cardScaleRef.current;
       const cardH = cardHeight(c, s);
       if (conv === 0) {
-        // Degraded: visitor is the only row, in primary position
         if (field === 'visitor' && c.visitor > 0) {
           return cardH / 2 - (HEAD_PX + ROW_PX / 2) * s;
         }
@@ -647,7 +591,6 @@ export default function UAEMapLeaflet({
             }
           }
         }
-        // Header total: conv-mode shows conversionTotal; degraded shows visitor count
         if (isTop) {
           const prevConv = prev.company + prev.homeowner + prev.inquiry;
           const curConv = conversionTotal(cur);
@@ -659,10 +602,8 @@ export default function UAEMapLeaflet({
         }
       }
     }
-    // Store new aggregation for next comparison
     prevAggRef.current = new Map(agg.map(c => [c.key, c]));
 
-    // Create markers at placeholder positions; syncCallouts will apply collision-resolved positions
     for (let i = 0; i < topCities.length; i++) {
       const { city, side } = topCities[i];
       const bLL = L.latLng(city.coords);
@@ -681,12 +622,9 @@ export default function UAEMapLeaflet({
         .addTo(map);
       cardMarkersRef.current.push(cardMarker);
     }
-    // Apply collision-avoided positions immediately
     syncCallouts(map);
 
-    // ─── Trigger animations (next paint, after DOM is in place) ───────────
     if (cardDeltas.length || bubbleDeltas.length) {
-      // Group card deltas by rank so total only rolls once per card.
       const byRank = new Map<number, CardDelta[]>();
       for (const d of cardDeltas) {
         const arr = byRank.get(d.rank) ?? [];
@@ -694,11 +632,9 @@ export default function UAEMapLeaflet({
         byRank.set(d.rank, arr);
       }
       requestAnimationFrame(() => {
-        // Stagger toasts globally: each toast 150ms after previous
         const STAGGER_MS = 150;
         let toastIdx = 0;
 
-        // Top cities: animate card row + spawn toast above the row
         byRank.forEach((fieldDeltas, rank) => {
           const cardMarker = cardMarkersRef.current[rank];
           const el = cardMarker?.getElement();
@@ -708,14 +644,12 @@ export default function UAEMapLeaflet({
             if (fieldEl instanceof HTMLElement) animateValue(fieldEl, d.from, d.to, 600);
             spawnDeltaToast(map, cardMarker.getLatLng(), FIELD_LABEL[d.field] ?? d.field, d.delta, d.rowOffsetFromCenterPx + 32, toastIdx++ * STAGGER_MS);
           }
-          // Header total animation uses headerDeltas (conv-only, or visitor in degraded mode)
           const headerDelta = headerDeltas.get(rank);
           const totalEl = el.querySelector('[data-field="total"]');
           if (totalEl instanceof HTMLElement && headerDelta) {
             animateValue(totalEl, headerDelta.from, headerDelta.to, 600);
           }
         });
-        // Non-top cities: toast above the bubble with city name + field
         for (const d of bubbleDeltas) {
           const bubble = markersRef.current[d.aggIdx];
           if (!bubble) continue;
@@ -757,7 +691,6 @@ export default function UAEMapLeaflet({
         </div>
       </div>
 
-      {/* Fixed-height row in card mode; flex-1 fills remaining viewport in fullscreen */}
       <div className="flex" style={isFs ? { flex: 1, minHeight: 0 } : { height: 520 }}>
         <div className="flex-1 min-w-0 border-r border-stone-100 relative">
           <div ref={mapDivRef} className="absolute inset-0" />

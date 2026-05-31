@@ -1,11 +1,13 @@
+'use client';
+
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 /* ── Shared styles ── */
-const base = "w-full rounded-lg border border-stone-200 bg-stone-50 text-[#2c2c2c] outline-none transition-colors focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 focus:bg-white placeholder:text-stone-400";
-const inputSize = "h-12 px-4";
-const textareaSize = "px-4 py-3";
-const labelStyle = "mb-2 block text-sm font-semibold text-stone-700";
+const base = "w-full rounded-2xl border border-stone-200 bg-stone-50/80 text-[#1c1917] outline-none transition focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/15 focus:bg-white placeholder:text-stone-400";
+const inputSize = "h-[50px] px-5 text-[15px]";
+const textareaSize = "px-5 py-4 text-[15px]";
+const labelStyle = "mb-1.5 block text-sm font-medium text-stone-700";
 
 /* ── Label ── */
 export function FormLabel({ children, required, icon }: { children: ReactNode; required?: boolean; icon?: ReactNode }) {
@@ -29,7 +31,7 @@ FormInput.displayName = 'FormInput';
 /* ── Textarea ── */
 export const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
   ({ className = '', ...props }, ref) => (
-    <textarea ref={ref} className={`${base} ${textareaSize} resize-none ${className}`} {...props} />
+    <textarea ref={ref} className={`${base} ${textareaSize} resize-y ${className}`} {...props} />
   )
 );
 FormTextarea.displayName = 'FormTextarea';

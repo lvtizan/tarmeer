@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { adminApi } from '../../lib/adminApi';
+import { adminApi } from '@/lib/adminApi';
 
 interface DataPoint { date: string; count: number; }
 
@@ -16,13 +18,13 @@ export default function RegistrationChart() {
   const [companyData, setCompanyData] = useState<DataPoint[]>([]);
 
   useEffect(() => {
-    adminApi.getRegistrationStats(30).then((res: any) => {
-      setUserData(res.users || []);
-      setCompanyData(res.companies || []);
+    adminApi.getRegistrationStats(30).then((res: unknown) => {
+      const r = res as { users?: DataPoint[]; companies?: DataPoint[] };
+      setUserData(r.users || []);
+      setCompanyData(r.companies || []);
     }).catch(() => {});
   }, []);
 
-  // Build unified date axis (last 30 days)
   const today = new Date();
   const dates: string[] = [];
   for (let i = 29; i >= 0; i--) {
@@ -47,10 +49,8 @@ export default function RegistrationChart() {
   const userPts = toXY(userCounts);
   const companyPts = toXY(companyCounts);
 
-  // X-axis labels: show every 7th date
   const xLabels = dates.filter((_, i) => i === 0 || i === 14 || i === dates.length - 1);
 
-  // Y-axis gridlines
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((r) => ({
     y: PT + CH - r * CH,
     label: Math.round(r * maxVal),
@@ -75,7 +75,6 @@ export default function RegistrationChart() {
         </div>
       </div>
       <svg width={W} height={H} className="overflow-visible">
-        {/* Grid lines */}
         {yTicks.map((t) => (
           <g key={t.y}>
             <line x1={PL} x2={PL + CW} y1={t.y} y2={t.y} stroke="#e7e5e4" strokeWidth={0.5} />
@@ -83,19 +82,16 @@ export default function RegistrationChart() {
           </g>
         ))}
 
-        {/* User line */}
         <path d={buildPath(userPts)} fill="none" stroke="#b8864a" strokeWidth={1.5} strokeLinejoin="round" />
         {userPts.map((p, i) => userCounts[i] > 0 && (
           <circle key={i} cx={p.x} cy={p.y} r={2.5} fill="#b8864a" />
         ))}
 
-        {/* Company line */}
         <path d={buildPath(companyPts)} fill="none" stroke="#2c6e49" strokeWidth={1.5} strokeLinejoin="round" />
         {companyPts.map((p, i) => companyCounts[i] > 0 && (
           <circle key={i} cx={p.x} cy={p.y} r={2.5} fill="#2c6e49" />
         ))}
 
-        {/* X-axis labels (tilted) */}
         {xLabels.map((date) => {
           const idx = dates.indexOf(date);
           const x = PL + (idx / (dates.length - 1)) * CW;

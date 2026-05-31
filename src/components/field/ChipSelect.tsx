@@ -1,3 +1,5 @@
+'use client';
+
 interface ChipSelectProps {
   options: string[];
   value: string | string[];
@@ -6,14 +8,12 @@ interface ChipSelectProps {
 }
 
 export default function ChipSelect({ options, value, onChange, multi = false }: ChipSelectProps) {
-  const selected = multi
-    ? (Array.isArray(value) ? value : [])
-    : value as string;
+  const selected = multi ? (Array.isArray(value) ? value : []) : (value as string);
 
   function toggle(opt: string) {
     if (multi) {
       const arr = Array.isArray(value) ? value : [];
-      onChange(arr.includes(opt) ? arr.filter(v => v !== opt) : [...arr, opt]);
+      onChange(arr.includes(opt) ? arr.filter((v) => v !== opt) : [...arr, opt]);
     } else {
       onChange(opt === selected ? '' : opt);
     }
@@ -25,7 +25,7 @@ export default function ChipSelect({ options, value, onChange, multi = false }: 
 
   return (
     <div className="flex flex-wrap gap-2">
-      {options.map(opt => (
+      {options.map((opt) => (
         <button
           key={opt}
           type="button"

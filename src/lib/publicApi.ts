@@ -3,8 +3,8 @@ import { normalizeFoundedYear, summarizeCompanyDescription, type Company, type P
 import { companies as localCompanies } from '../data/companies';
 import { api } from './api';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const ALLOW_LOCAL_FALLBACK = import.meta.env.DEV;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+const ALLOW_LOCAL_FALLBACK = process.env.NODE_ENV === 'development';
 
 export interface PublicDesignerCardData {
   id: string;
@@ -69,7 +69,6 @@ interface PublicCompanyRecord {
   is_claimed?: boolean;
   is_signed?: boolean;
   weight_score?: number;
-  company_profile_id?: number | null;
 }
 
 function sanitizePortfolioCategories(
@@ -312,7 +311,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     instagram: company.instagram || '',
     phone: company.phone || '',
     email: company.email || '',
-    styles: [],
+    styles: parseUnknownStringArray(company.specialties),
     projectCount: company.project_count || (Array.isArray(company.projects) ? company.projects.length : projectImages.length),
     services: parseUnknownStringArray(company.services),
     featured: false,
@@ -324,7 +323,6 @@ function toCompany(company: PublicCompanyRecord): Company {
     isSigned: !!company.is_signed,
     companyType: company.company_type || undefined,
     weightScore: company.weight_score ?? undefined,
-    companyProfileId: company.company_profile_id ?? null,
     projects: Array.isArray(company.projects)
       ? company.projects
           .map((p: any) => ({
@@ -350,22 +348,6 @@ export interface PortfolioProject {
   year: number | null;
   images: string[];
   tags?: string[];
-  companyId: number;
-  companyName: string;
-  companySlug: string;
-  companyLogo: string;
-  companyCity: string;
-  source: 'registered' | 'directory';
-}
-
-/** Per-image item returned by the portfolio feed (Task 8+). */
-export interface PortfolioImage {
-  url: string;
-  tags: string[];
-  imageIndex: number;
-  projectId: number;
-  projectTitle: string;
-  projectSlug: string;
   companyId: number;
   companyName: string;
   companySlug: string;
@@ -410,27 +392,21 @@ export async function fetchPublicProjectDetail(companySlug: string, projectSlug:
 }
 
 export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, tag?: string): Promise<{
-  images: PortfolioImage[];
-  /** @deprecated Use `images` — kept for backward compat during Task 8→9 transition */
   projects: PortfolioProject[];
   pagination: { page: number; limit: number; total: number };
 }> {
   const seedParam = seed ? `&seed=${seed}` : '';
   const tagParam = tag ? `&tag=${encodeURIComponent(tag)}` : '';
   const result = await request<{
-    images: PortfolioImage[];
     projects: PortfolioProject[];
     pagination: { page: number; limit: number; total: number };
   }>(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}${tagParam}`);
-  return {
-    images: result.images || [],
-    // Backward compat: projects key still exists, normalize image objects to strings
-    projects: (result.projects || []).map((p) => ({
-      ...p,
-      images: (p.images || []).map(extractUrl).filter(Boolean),
-    })),
-    pagination: result.pagination,
-  };
+  // Normalize AI-tagged image objects to strings: [{url, ai_tags}] -> ["url"]
+  result.projects = (result.projects || []).map((p) => ({
+    ...p,
+    images: (p.images || []).map(extractUrl).filter(Boolean),
+  }));
+  return result;
 }
 
 /** Module-level cache so the navbar doesn't re-fetch on every hover. */

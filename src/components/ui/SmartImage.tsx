@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import type { ImgHTMLAttributes } from 'react';
 import { resolveImageUrl, resolveVariantUrl } from '../../lib/imageUrl';
@@ -40,9 +42,11 @@ export default function SmartImage({ src, variant, onError, ...rest }: SmartImag
   const displaySrc = exhausted ? EMPTY_PIXEL : candidates[idx] || primary || EMPTY_PIXEL;
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       {...rest}
       src={displaySrc}
+      alt={rest.alt || ''}
       onError={(e) => {
         if (displaySrc) {
           GLOBAL_FAILED_IMAGE_SRC.add(displaySrc);

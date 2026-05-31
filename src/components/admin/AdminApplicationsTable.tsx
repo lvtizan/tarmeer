@@ -1,10 +1,12 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import SmartImage from '../ui/SmartImage';
-import { TableSpinner } from '../ui/Spinner';
+import { useRouter } from 'next/navigation';
+import SmartImage from '@/components/ui/SmartImage';
+import { TableSpinner } from '@/components/ui/Spinner';
 import { Trash2 } from 'lucide-react';
-import { useAdminT } from '../../hooks/useAdminLang';
-import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
+import { useAdminT } from '@/hooks/useAdminLang';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface CompanyProfileRecord {
   id: number;
@@ -44,7 +46,7 @@ export default function AdminApplicationsTable({
   sortActive,
   onSortToggle,
 }: AdminApplicationsTableProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useAdminT();
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
@@ -71,38 +73,7 @@ export default function AdminApplicationsTable({
     setSelected(new Set());
   };
 
-  const TYPE_LABEL_MAP: Record<string, string> = {
-    design_studio: t('Studio', '设计工作室'),
-    renovation_company: t('Renovation', '装修公司'),
-    general_contractor: t('Contractor', '总承包商'),
-    mep_contractor: t('MEP', '机电工程'),
-    maintenance_company: t('Maintenance', '维保公司'),
-    specialty_trade: t('Specialty', '专项工程'),
-    landscaping: t('Landscape', '景观工程'),
-    furnishing: t('Furnishing', '软装公司'),
-    fitout_contractor: t('Fit-Out', '装修工程'),
-    glass_aluminium: t('Glass & Alu', '玻璃铝材'),
-    waterproofing: t('Waterproof', '防水工程'),
-    smart_home: t('Smart Home', '智能家居'),
-    fire_fighting: t('Fire Safety', '消防安全'),
-    carpentry_joinery: t('Carpentry', '木工工程'),
-    stone_marble: t('Stone/Marble', '石材工程'),
-    steel_fabrication: t('Steel Works', '钢铁工程'),
-    cleaning_services: t('Cleaning', '清洁服务'),
-    manpower_supply: t('Manpower', '劳务供应'),
-    swimming_pool: t('Pool', '游泳池工程'),
-  };
-  const typeLabel = (raw: string) => {
-    if (!raw) return '—';
-    // Handle JSON array string e.g. '["carpentry_joinery","general_contractor"]'
-    if (raw.startsWith('[')) {
-      try {
-        const arr: string[] = JSON.parse(raw);
-        return arr.map(v => TYPE_LABEL_MAP[v] || v).join(' · ');
-      } catch { /* fall through */ }
-    }
-    return TYPE_LABEL_MAP[raw] || raw;
-  };
+  const typeLabel = (type: string) => ({ design_studio: t('Studio', '设计工作室'), renovation_company: t('Renovation', '装修公司'), general_contractor: t('Contractor', '总承包商'), mep_contractor: t('MEP', '机电工程'), maintenance_company: t('Maintenance', '维保公司'), specialty_trade: t('Specialty', '专项工程'), landscaping: t('Landscape', '景观工程'), furnishing: t('Furnishing', '软装公司') }[type] || type);
   const typeCls = (type: string) => type === 'design_studio' ? 'bg-purple-50 text-purple-600' : type === 'mep_contractor' ? 'bg-orange-50 text-orange-600' : type === 'general_contractor' ? 'bg-emerald-50 text-emerald-600' : type === 'maintenance_company' ? 'bg-cyan-50 text-cyan-600' : type === 'specialty_trade' ? 'bg-amber-50 text-amber-600' : type === 'landscaping' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600';
 
   return (
@@ -131,7 +102,6 @@ export default function AdminApplicationsTable({
             key={c.id}
             className="bg-white rounded-xl border border-stone-200 p-4 space-y-3"
           >
-            {/* Header row */}
             <div className="flex items-center gap-3">
               {c.logo_url ? (
                 <SmartImage src={c.logo_url} alt="" className="w-10 h-10 rounded-lg object-contain bg-stone-100 flex-shrink-0" />
@@ -148,15 +118,13 @@ export default function AdminApplicationsTable({
                 {typeLabel(c.company_type)}
               </span>
             </div>
-            {/* Meta row */}
             <div className="flex items-center gap-4 text-xs text-stone-500">
               {c.city && <span>📍 {c.city}</span>}
               <span>🗂 {c.project_count} {t('projects', '个项目')}</span>
               <span className={`ml-auto ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(c.created_at)}</span>
             </div>
-            {/* Action */}
             <button
-              onClick={() => navigate(`/admin/profile-companies/${c.id}?tab=applications`)}
+              onClick={() => router.push(`/admin/profile-companies/${c.id}?tab=applications`)}
               className="w-full h-11 rounded-xl bg-stone-800 text-white text-sm font-medium hover:bg-stone-700 transition"
             >
               {t('View & Review', '查看审核')} →
@@ -209,7 +177,7 @@ export default function AdminApplicationsTable({
               <tr
                 key={c.id}
                 className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
-                onClick={() => navigate(`/admin/profile-companies/${c.id}?tab=applications`)}
+                onClick={() => router.push(`/admin/profile-companies/${c.id}?tab=applications`)}
               >
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <input

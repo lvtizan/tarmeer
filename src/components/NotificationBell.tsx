@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { api } from '../lib/api';
@@ -20,21 +22,18 @@ export default function NotificationBell() {
 
   const fetchNotifications = async () => {
     try {
-      const data = await api.get('/notifications?limit=20');
+      const data = await api.get('/notifications?limit=20') as { notifications?: Notification[]; unread_count?: number };
       setNotifications(data.notifications || []);
       setUnreadCount(data.unread_count || 0);
-    } catch {
-      // silent fail
-    }
+    } catch { /* silent */ }
   };
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // poll every 30s
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -59,9 +58,7 @@ export default function NotificationBell() {
         setUnreadCount(prev => Math.max(0, prev - 1));
       } catch { /* silent */ }
     }
-    if (n.link) {
-      window.location.href = n.link;
-    }
+    if (n.link) window.location.href = n.link;
     setOpen(false);
   };
 
@@ -72,8 +69,7 @@ export default function NotificationBell() {
     if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
   };
 
   return (
@@ -101,27 +97,20 @@ export default function NotificationBell() {
               </button>
             )}
           </div>
-
           <div className="overflow-y-auto max-h-[320px]">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-stone-400">
-                No notifications yet
-              </div>
+              <div className="px-4 py-8 text-center text-sm text-stone-400">No notifications yet</div>
             ) : (
               notifications.map(n => (
                 <button
                   key={n.id}
                   onClick={() => handleClick(n)}
-                  className={`w-full text-left px-4 py-3 border-b border-stone-50 hover:bg-stone-50 transition ${
-                    !n.is_read ? 'bg-amber-50/50' : ''
-                  }`}
+                  className={`w-full text-left px-4 py-3 border-b border-stone-50 hover:bg-stone-50 transition ${!n.is_read ? 'bg-amber-50/50' : ''}`}
                 >
                   <div className="flex items-start gap-2">
                     {!n.is_read && <span className="mt-1.5 w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
                     <div className="min-w-0 flex-1">
-                      <p className={`text-sm truncate ${!n.is_read ? 'font-semibold text-stone-900' : 'text-stone-700'}`}>
-                        {n.title}
-                      </p>
+                      <p className={`text-sm truncate ${!n.is_read ? 'font-semibold text-stone-900' : 'text-stone-700'}`}>{n.title}</p>
                       <p className="text-xs text-stone-500 mt-0.5 line-clamp-2">{n.message}</p>
                       <p className="text-[10px] text-stone-400 mt-1">{timeAgo(n.created_at)}</p>
                     </div>

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { Paperclip, CheckCircle, X } from 'lucide-react';
 
@@ -55,15 +57,14 @@ export default function FileUploadButton({
       if (!resp.ok) throw new Error(data.error || 'Upload failed');
       setDisplayName(file.name);
       onUpload(data.url);
-    } catch (e: any) {
-      setErr(e.message || 'Upload failed');
+    } catch (e: unknown) {
+      setErr((e instanceof Error ? e.message : null) || 'Upload failed');
     } finally {
       setUploading(false);
     }
   };
 
   // Keep ref current so paste handler always calls latest upload
-  // Always keep ref pointing at latest upload function (avoids stale closure in paste handler)
   uploadFnRef.current = (file: File) => upload(file);
 
   useEffect(() => {

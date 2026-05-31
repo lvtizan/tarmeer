@@ -1,14 +1,14 @@
+'use client';
+
 /**
- * CompanyProjectsSection — 公司详情页的项目卡片网格模块
+ * CompanyProjectsSection — company detail page project card grid.
  *
- * 锁死布局：每个项目一张 16:9 封面卡片 + 左下角图片数量角标 + 标题 + 位置/简介。
- * 点卡片跳到该项目详情。
- *
- * 这是详情页最容易被改坏的一块（参 commit 20b7b5f7 / 243a6c24 引入的双 pipeline
- * 回归），抽成独立组件 + 单一渲染入口，所有 detail 页面（public 直访 / admin
- * preview / company-dashboard preview）都用这个组件渲染，不再有第二份样式。
+ * Single rendering entry point for all detail-page contexts
+ * (public access / admin preview / company-dashboard preview).
+ * Every detail data source that has isClaimed=true + projects[] uses this component.
  */
-import { useNavigate } from 'react-router-dom';
+
+import { useRouter } from 'next/navigation';
 import { ImageIcon, MapPin } from 'lucide-react';
 import SmartImage from './ui/SmartImage';
 import type { Company, CompanyProjectCard } from '../lib/companyData';
@@ -16,11 +16,10 @@ import type { Company, CompanyProjectCard } from '../lib/companyData';
 interface Props {
   company: Pick<Company, 'id' | 'name'>;
   projects: CompanyProjectCard[];
-  onProjectClick?: (proj: CompanyProjectCard) => void;
 }
 
-export default function CompanyProjectsSection({ company, projects, onProjectClick }: Props) {
-  const navigate = useNavigate();
+export default function CompanyProjectsSection({ company, projects }: Props) {
+  const router = useRouter();
   if (!projects.length) return null;
 
   return (
@@ -32,11 +31,11 @@ export default function CompanyProjectsSection({ company, projects, onProjectCli
         </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {projects.map((proj, idx) => (
+        {projects.map((proj) => (
           <div
-            key={proj.slug || idx}
+            key={proj.slug}
             className="group cursor-pointer"
-            onClick={() => onProjectClick ? onProjectClick(proj) : navigate(`/companies/${company.id}/${proj.slug}`)}
+            onClick={() => router.push(`/companies/${company.id}/${proj.slug}`)}
           >
             <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100">
               <SmartImage

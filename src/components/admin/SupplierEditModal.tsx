@@ -1,10 +1,12 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { X, Package } from 'lucide-react';
-import { adminApi } from '../../lib/adminApi';
-import AdminSelect from '../ui/AdminSelect';
-import PhoneCountryInput from '../ui/PhoneCountryInput';
-import { showToast } from '../ui/Toast';
-import { showConfirm } from '../ui/ConfirmModal';
+import { adminApi } from '@/lib/adminApi';
+import AdminSelect from '@/components/ui/AdminSelect';
+import PhoneCountryInput from '@/components/ui/PhoneCountryInput';
+import { showToast } from '@/components/ui/Toast';
+import { showConfirm } from '@/components/ui/ConfirmModal';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SupplierData {
@@ -62,8 +64,8 @@ function ProductAddModal({
     try {
       const fd = new FormData();
       fd.append('file', file, file.name);
-      const token = localStorage.getItem('admin_token');
-      const API_BASE = (import.meta.env.VITE_API_URL?.trim() || '/api') + '/admin';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+      const API_BASE = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin';
       const res = await fetch(`${API_BASE}/suppliers/${supplierId}/project-image`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -72,8 +74,8 @@ function ProductAddModal({
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
       setImageUrl(data.url);
-    } catch (e: any) {
-      showToast(e.message || 'Upload failed', 'error');
+    } catch (e: unknown) {
+      showToast((e instanceof Error ? e.message : null) || 'Upload failed', 'error');
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -87,11 +89,11 @@ function ProductAddModal({
       const data = await adminApi.request(`/suppliers/${supplierId}/products`, {
         method: 'POST',
         body: JSON.stringify({ title: title.trim() || null, category: category || null, image_url: imageUrl }),
-      });
+      }) as { product: Product };
       onAdded(data.product);
       showToast('产品已添加', 'success');
-    } catch (e: any) {
-      showToast(e.message || '保存失败', 'error');
+    } catch (e: unknown) {
+      showToast((e instanceof Error ? e.message : null) || '保存失败', 'error');
     } finally {
       setSaving(false);
     }
@@ -105,7 +107,6 @@ function ProductAddModal({
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
-          {/* Image upload */}
           <div>
             <label className={labelCls}>图片 *</label>
             {imageUrl ? (
@@ -135,12 +136,10 @@ function ProductAddModal({
               onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); }}
             />
           </div>
-          {/* Title */}
           <div>
             <label className={labelCls}>标题</label>
             <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} placeholder="产品名称" />
           </div>
-          {/* Category */}
           <div>
             <label className={labelCls}>分类</label>
             <AdminSelect
@@ -193,11 +192,11 @@ function ProductEditInlineModal({
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
         body: JSON.stringify({ title: title.trim() || null, category: category || null }),
-      });
+      }) as { product: Product };
       onSaved(data.product);
       showToast('产品已更新', 'success');
-    } catch (e: any) {
-      showToast(e.message || '保存失败', 'error');
+    } catch (e: unknown) {
+      showToast((e instanceof Error ? e.message : null) || '保存失败', 'error');
     } finally {
       setSaving(false);
     }
@@ -260,7 +259,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
   const [showAddProduct, setShowAddProduct] = useState(false);
   const descRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize description textarea
   useEffect(() => {
     const el = descRef.current;
     if (!el) return;
@@ -268,30 +266,30 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
     el.style.height = Math.max(el.scrollHeight, 120) + 'px';
   }, [data.description]);
 
-  // Load supplier data + categories
   useEffect(() => {
     Promise.all([
       adminApi.request(`/suppliers/${supplierId}`),
       adminApi.request('/enums/supplier-categories').catch(() => ({ categories: [] })),
     ]).then(([detail, catsRes]) => {
-      const s = detail.supplier || {};
-      // Parse categories JSON string → array
+      const d = detail as { supplier?: Partial<SupplierData>; products?: Product[] };
+      const cr = catsRes as { categories?: { is_enabled?: number; value: string; label: string }[] };
+      const s = d.supplier || {};
       if (typeof s.categories === 'string') {
         try { s.categories = JSON.parse(s.categories); } catch { s.categories = []; }
       }
       if (!Array.isArray(s.categories)) s.categories = [];
       setData(s);
-      setProducts(detail.products || []);
+      setProducts(d.products || []);
       setCategories(
-        (catsRes.categories || [])
-          .filter((c: any) => c.is_enabled !== 0)
-          .map((c: any) => ({ value: c.value, label: c.label })),
+        (cr.categories || [])
+          .filter((c) => c.is_enabled !== 0)
+          .map((c) => ({ value: c.value, label: c.label })),
       );
-    }).catch(e => setError(e.message || 'Failed to load'))
+    }).catch((e: unknown) => setError((e instanceof Error ? e.message : null) || 'Failed to load'))
       .finally(() => setLoading(false));
   }, [supplierId]);
 
-  const set = (key: keyof SupplierData, val: any) =>
+  const set = (key: keyof SupplierData, val: unknown) =>
     setData(prev => ({ ...prev, [key]: val }));
 
   const toggleCategory = (val: string) => {
@@ -303,7 +301,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
     setSaving(true);
     setError('');
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         company_name: data.company_name,
         description: data.description,
         origin: data.origin,
@@ -322,8 +320,8 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
       });
       onSaved();
       onClose();
-    } catch (e: any) {
-      setError(e.message || 'Failed to save');
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -337,8 +335,8 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
           await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, { method: 'DELETE' });
           setProducts(prev => prev.filter(p => p.id !== product.id));
           showToast('产品已删除', 'success');
-        } catch (e: any) {
-          showToast(e.message || '删除失败', 'error');
+        } catch (e: unknown) {
+          showToast((e instanceof Error ? e.message : null) || '删除失败', 'error');
         }
       },
     });
@@ -359,7 +357,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
           className="bg-white rounded-2xl w-[50vw] min-w-[640px] max-w-[900px] h-[80vh] flex flex-col shadow-xl"
           onClick={e => e.stopPropagation()}
         >
-          {/* Header */}
           <div className="flex-shrink-0 border-b border-stone-200 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-1">
               {(['info', 'products'] as Tab[]).map(tab => (
@@ -381,16 +378,13 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
             </button>
           </div>
 
-          {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-5">
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
             )}
 
-            {/* ── Tab 1: Basic Info ── */}
             {activeTab === 'info' && (
               <div className="space-y-4">
-                {/* Row 1: Name + Origin */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>公司名称</label>
@@ -411,7 +405,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                   </div>
                 </div>
 
-                {/* Row 2: Phone + WhatsApp */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>联系电话</label>
@@ -423,7 +416,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                   </div>
                 </div>
 
-                {/* Row 3: Website + Status */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>网站</label>
@@ -445,7 +437,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                   </div>
                 </div>
 
-                {/* Description */}
                 <div>
                   <label className={labelCls}>描述</label>
                   <textarea
@@ -457,7 +448,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                   />
                 </div>
 
-                {/* Categories */}
                 {categories.length > 0 && (
                   <div>
                     <label className={labelCls}>分类</label>
@@ -483,7 +473,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                   </div>
                 )}
 
-                {/* Physical store toggle */}
                 <div>
                   <label className={labelCls}>实体店</label>
                   <div className="flex items-center gap-3">
@@ -517,7 +506,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
               </div>
             )}
 
-            {/* ── Tab 2: Products ── */}
             {activeTab === 'products' && (
               <div className="space-y-2">
                 {products.length === 0 && (
@@ -561,7 +549,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
             )}
           </div>
 
-          {/* Footer — only show Save on Tab 1 */}
           {activeTab === 'info' && (
             <div className="flex-shrink-0 border-t border-stone-200 px-6 py-4 flex items-center justify-end gap-3">
               <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition">
@@ -579,7 +566,6 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
         </div>
       </div>
 
-      {/* Sub-modals rendered outside main modal to avoid z-index stacking issues */}
       {editingProduct && (
         <ProductEditInlineModal
           supplierId={supplierId}

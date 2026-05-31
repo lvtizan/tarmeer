@@ -1,5 +1,7 @@
+'use client';
+
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { adminApi, AdminUser } from '../lib/adminApi';
+import { adminApi, AdminUser } from '@/lib/adminApi';
 
 interface AdminProfileResponse {
   id: number;
@@ -34,7 +36,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const result = await adminApi.checkInstallation();
       setIsInstalled(result.installed);
     } catch (error) {
-      console.error('Error checking installation:', error);
       // Fail closed to login flow: transient API/rate-limit errors must not force install mode.
       setIsInstalled(true);
     }
@@ -56,7 +57,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         permissions: profile.permissions,
       });
     } catch (error) {
-      console.error('Error loading admin profile:', error);
       adminApi.clearToken();
     } finally {
       setIsLoading(false);
@@ -65,8 +65,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      // Check installation first, then load profile
-      // This prevents race conditions between the two async operations
       await checkInstallation();
       await loadProfile();
     };
@@ -126,8 +124,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         install,
         checkInstallation,
         hasPermission,
-        isSuperAdmin,
-        isFieldStaff,
+        isSuperAdmin: isSuperAdmin ?? false,
+        isFieldStaff: isFieldStaff ?? false,
       }}
     >
       {children}

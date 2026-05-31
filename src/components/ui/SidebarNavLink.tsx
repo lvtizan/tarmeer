@@ -1,5 +1,8 @@
+'use client';
+
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface SidebarNavLinkProps {
   to: string;
@@ -24,16 +27,15 @@ export default function SidebarNavLink({
   activeClassName = ACTIVE_CLASS,
   inactiveClassName = INACTIVE_CLASS,
 }: SidebarNavLinkProps) {
+  const pathname = usePathname();
+  const isActive = end ? pathname === to : pathname.startsWith(to);
+
   return (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        `${BASE_CLASS} ${isActive ? activeClassName : inactiveClassName} ${className}`.trim()
-      }
+    <Link
+      href={to}
+      className={`${BASE_CLASS} ${isActive ? activeClassName : inactiveClassName} ${className}`.trim()}
     >
       {children}
-    </NavLink>
+    </Link>
   );
 }
-

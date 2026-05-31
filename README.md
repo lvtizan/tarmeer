@@ -1,61 +1,36 @@
-# Tarmeer 4.0
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Interior design & build website for the UAE. Built in the `tarmeer-4.0` folder under 迪拜网站 (iCloud).
+## Getting Started
 
-## Stack
-
-- Vite + React 19 + TypeScript
-- Tailwind CSS v4
-- React Router
-
-## Run
+First, run the development server:
 
 ```bash
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Open http://localhost:5173
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Build
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-```bash
-npm run build
-npm run preview
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Localize Heavy Folders (Reduce iCloud Usage)
+## Learn More
 
-This project lives under iCloud. To keep dependencies and generated caches on local disk:
+To learn more about Next.js, take a look at the following resources:
 
-```bash
-./scripts/localize-workspace.sh --install
-```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-What it does:
-- Keeps source code in iCloud project directory
-- Moves heavy folders to `~/.local/share/tarmeer-4.0`
-- Symlinks `node_modules`, `dist`, Playwright reports, and test caches back into project
-- Installs dependencies locally with `PUPPETEER_SKIP_DOWNLOAD=1` by default
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## GitHub Pages（对外访问）
+## Deploy on Vercel
 
-代码推送到 `main` 后，GitHub Actions 会自动构建并部署到 GitHub Pages。
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-- **访问地址**：https://lvtizan.github.io/tarmeer/
-- **首次使用**：在仓库 **Settings → Pages** 里，Source 选 **GitHub Actions**，保存后等一次 push 或手动运行 workflow 即可发布。
-- 若仓库已用同一分支发布过 Pages，可忽略；新仓库需在 Settings → Pages 里选 “Deploy from a branch” 或 “GitHub Actions” 一次。
-
-## Features (current)
-
-- **Homepage**: Banner, pricing section (two packages, Havenly-style cards), designers grid (circular avatars), company/contact block
-- **Footer**: Address with Google Maps link, WhatsApp +971 58 838 8922
-- **Nav**: Home, Designers, Pricing, Materials, Become a Partner, Contact Us (WhatsApp)
-- **Responsive**: Mobile-first; breakpoints `sm`, `md`, `lg` used throughout
-- Placeholder pages: `/designers`, `/designers/:slug`, `/designers/apply`, `/materials`
-
-## Design
-
-- Imagery: high-end, atmospheric (Unsplash placeholders; replace with final assets)
-- Pricing module: reference user-provided Havenly-style “Our Design Packages” (section title, tagline, two white cards on warm background, CTA buttons)
-- Full plan: see project plan in Cursor (tarmeer-4.0 site replan)
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

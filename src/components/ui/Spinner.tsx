@@ -1,3 +1,5 @@
+'use client';
+
 import { Loader2 } from 'lucide-react';
 
 interface SpinnerProps {
@@ -18,8 +20,6 @@ export function Spinner({ size = 'md', text }: SpinnerProps) {
 
 /**
  * Full-screen page loading state — fixed at absolute center of viewport.
- * Use as early return when a page is fetching its initial data.
- * Works correctly inside any layout (sidebars, headers don't affect centering).
  */
 export function ScreenSpinner() {
   return (

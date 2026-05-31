@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 
-type AuthCardShellProps = {
+interface AuthCardShellProps {
   children: ReactNode;
   className?: string;
-};
+}
 
 export default function AuthCardShell({ children, className = '' }: AuthCardShellProps) {
   return (
@@ -14,4 +14,3 @@ export default function AuthCardShell({ children, className = '' }: AuthCardShel
     </div>
   );
 }
-

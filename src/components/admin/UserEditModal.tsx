@@ -1,7 +1,9 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { adminApi } from '../../lib/adminApi';
-import AdminSelect from '../ui/AdminSelect';
+import { adminApi } from '@/lib/adminApi';
+import AdminSelect from '@/components/ui/AdminSelect';
 
 interface Props {
   id: number;
@@ -12,7 +14,7 @@ interface Props {
 const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
 export default function UserEditModal({ id, onClose, onSaved }: Props) {
-  const [data, setData] = useState<Record<string, any>>({});
+  const [data, setData] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -21,9 +23,9 @@ export default function UserEditModal({ id, onClose, onSaved }: Props) {
     const fetchData = async () => {
       try {
         const result = await adminApi.getUserDetail(id);
-        setData(result.user || {});
-      } catch (err: any) {
-        setError(err.message || 'Failed to load');
+        setData((result as { user?: Record<string, unknown> }).user || {});
+      } catch (err: unknown) {
+        setError((err instanceof Error ? err.message : null) || 'Failed to load');
       } finally {
         setLoading(false);
       }
@@ -36,21 +38,21 @@ export default function UserEditModal({ id, onClose, onSaved }: Props) {
     setError('');
     try {
       await adminApi.editUser(id, {
-        full_name: data.full_name,
-        email: data.email,
-        phone: data.phone,
-        city: data.city,
+        full_name: data.full_name as string,
+        email: data.email as string,
+        phone: data.phone as string,
+        city: data.city as string,
       });
       onSaved();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : null) || 'Failed to save');
     } finally {
       setSaving(false);
     }
   };
 
-  const set = (key: string, val: any) => setData(prev => ({ ...prev, [key]: val }));
+  const set = (key: string, val: unknown) => setData(prev => ({ ...prev, [key]: val }));
 
   const inputCls = "w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#b8864a]";
   const labelCls = "block text-xs font-medium text-stone-500 mb-1";
@@ -76,23 +78,23 @@ export default function UserEditModal({ id, onClose, onSaved }: Props) {
 
           <div>
             <label className={labelCls}>Full Name</label>
-            <input className={inputCls} value={data.full_name || ''} onChange={e => set('full_name', e.target.value)} />
+            <input className={inputCls} value={(data.full_name as string) || ''} onChange={e => set('full_name', e.target.value)} />
           </div>
 
           <div>
             <label className={labelCls}>Email</label>
-            <input type="email" className={inputCls} value={data.email || ''} onChange={e => set('email', e.target.value)} />
+            <input type="email" className={inputCls} value={(data.email as string) || ''} onChange={e => set('email', e.target.value)} />
           </div>
 
           <div>
             <label className={labelCls}>Phone</label>
-            <input className={inputCls} value={data.phone || ''} onChange={e => set('phone', e.target.value)} />
+            <input className={inputCls} value={(data.phone as string) || ''} onChange={e => set('phone', e.target.value)} />
           </div>
 
           <div>
             <label className={labelCls}>City</label>
             <AdminSelect
-              value={data.city || ''}
+              value={(data.city as string) || ''}
               onChange={(val) => set('city', val)}
               options={[
                 { value: '', label: 'Select' },

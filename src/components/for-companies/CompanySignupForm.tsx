@@ -1,25 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { ChevronDown, Check } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { t, type Lang } from '../../i18n/forCompanies';
-import AdminSelect from '../ui/AdminSelect';
-import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
-import { api } from '../../lib/api';
-import { useVerificationPoller } from '../../hooks/useVerificationPoller';
-import { registerPendingAction } from '../../lib/pendingActionsRegistry';
+'use client';
 
-// Register the company-profile carry-over handler once.
-// When a new user verifies their email (on any device/browser),
-// the poller will call this with the data they filled in the form.
-registerPendingAction('create_company_profile', async (data, token) => {
-  const API_BASE = (import.meta as any).env?.VITE_API_URL?.trim() || '/api';
-  await fetch(`${API_BASE}/auth/company/profile`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-    body: JSON.stringify(data),
-  });
-});
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { t, type Lang } from '@/i18n/forCompanies';
+import AdminSelect from '@/components/ui/AdminSelect';
+import { validatePhone, isPhoneComplete } from '@/lib/phoneValidation';
+import { api } from '@/lib/api';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -32,155 +18,78 @@ const GCC_PHONE_OPTIONS = [
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
+const COMPANY_TYPE_GROUPS: Record<string, string> = {
+  design_studio: 'Design',
+  renovation_company: 'Construction',
+  general_contractor: 'Construction',
+  fitout_contractor: 'Construction',
+  mep_contractor: 'Systems & MEP',
+  fire_fighting: 'Systems & MEP',
+  smart_home: 'Systems & MEP',
+  waterproofing: 'Systems & MEP',
+  glass_aluminium: 'Specialty Trade',
+  carpentry_joinery: 'Specialty Trade',
+  stone_marble: 'Specialty Trade',
+  steel_fabrication: 'Specialty Trade',
+  specialty_trade: 'Specialty Trade',
+  maintenance_company: 'Services',
+  cleaning_services: 'Services',
+  manpower_supply: 'Services',
+  landscaping: 'Services',
+  swimming_pool: 'Services',
+  furnishing: 'Furnishing',
+};
 
-const COMPANY_TYPES = [
-  { value: 'design_studio', labelKey: 'typeDesignStudio' as const },
-  { value: 'renovation_company', labelKey: 'typeRenovation' as const },
-  { value: 'general_contractor', labelKey: 'typeGeneralContractor' as const },
-  { value: 'fitout_contractor', labelKey: 'typeFitoutContractor' as const },
-  { value: 'mep_contractor', labelKey: 'typeMepContractor' as const },
-  { value: 'fire_fighting', labelKey: 'typeFireFighting' as const },
-  { value: 'smart_home', labelKey: 'typeSmartHome' as const },
-  { value: 'waterproofing', labelKey: 'typeWaterproofing' as const },
-  { value: 'glass_aluminium', labelKey: 'typeGlassAluminium' as const },
-  { value: 'carpentry_joinery', labelKey: 'typeCarpentryJoinery' as const },
-  { value: 'stone_marble', labelKey: 'typeStoneMarble' as const },
-  { value: 'steel_fabrication', labelKey: 'typeSteelFabrication' as const },
-  { value: 'specialty_trade', labelKey: 'typeSpecialtyTrade' as const },
-  { value: 'maintenance_company', labelKey: 'typeMaintenanceCompany' as const },
-  { value: 'cleaning_services', labelKey: 'typeCleaningServices' as const },
-  { value: 'manpower_supply', labelKey: 'typeManpowerSupply' as const },
-  { value: 'landscaping', labelKey: 'typeLandscaping' as const },
-  { value: 'swimming_pool', labelKey: 'typeSwimmingPool' as const },
-  { value: 'furnishing', labelKey: 'typeFurnishing' as const },
+const COMPANY_TYPES: Array<{ value: string; labelKey: keyof typeof import('@/i18n/forCompanies').default.en }> = [
+  { value: 'design_studio', labelKey: 'typeDesignStudio' },
+  { value: 'renovation_company', labelKey: 'typeRenovation' },
+  { value: 'general_contractor', labelKey: 'typeGeneralContractor' },
+  { value: 'fitout_contractor', labelKey: 'typeFitoutContractor' },
+  { value: 'mep_contractor', labelKey: 'typeMepContractor' },
+  { value: 'fire_fighting', labelKey: 'typeFireFighting' },
+  { value: 'smart_home', labelKey: 'typeSmartHome' },
+  { value: 'waterproofing', labelKey: 'typeWaterproofing' },
+  { value: 'glass_aluminium', labelKey: 'typeGlassAluminium' },
+  { value: 'carpentry_joinery', labelKey: 'typeCarpentryJoinery' },
+  { value: 'stone_marble', labelKey: 'typeStoneMarble' },
+  { value: 'steel_fabrication', labelKey: 'typeSteelFabrication' },
+  { value: 'specialty_trade', labelKey: 'typeSpecialtyTrade' },
+  { value: 'maintenance_company', labelKey: 'typeMaintenanceCompany' },
+  { value: 'cleaning_services', labelKey: 'typeCleaningServices' },
+  { value: 'manpower_supply', labelKey: 'typeManpowerSupply' },
+  { value: 'landscaping', labelKey: 'typeLandscaping' },
+  { value: 'swimming_pool', labelKey: 'typeSwimmingPool' },
+  { value: 'furnishing', labelKey: 'typeFurnishing' },
 ];
 
-const API_BASE = import.meta.env.VITE_API_URL?.trim() || '/api';
-
-// ── Multi-select Company Type Dropdown ──────────────────────────────────────
-function MultiTypeSelect({
-  selected,
-  onToggle,
-  options,
-  placeholder,
-  error: hasError,
-}: {
-  selected: string[];
-  onToggle: (slug: string) => void;
-  options: { value: string; label: string }[];
-  placeholder: string;
-  error?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null);
-
-  const updatePos = useCallback(() => {
-    if (!containerRef.current) return;
-    const r = containerRef.current.getBoundingClientRect();
-    setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updatePos();
-    window.addEventListener('scroll', updatePos, true);
-    window.addEventListener('resize', updatePos);
-    return () => {
-      window.removeEventListener('scroll', updatePos, true);
-      window.removeEventListener('resize', updatePos);
-    };
-  }, [open, updatePos]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        containerRef.current && !containerRef.current.contains(e.target as Node) &&
-        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const selectedLabels = options.filter(o => selected.includes(o.value)).map(o => o.label);
-
-  return (
-    <div ref={containerRef} className="relative w-full">
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        className={`flex items-center justify-between w-full h-[50px] px-5 rounded-2xl border bg-stone-50/80 text-left cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white ${hasError ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : 'border-stone-200'}`}
-      >
-        <span className="truncate text-[15px]">
-          {selectedLabels.length === 0
-            ? <span className="text-stone-400">{placeholder}</span>
-            : <span className="text-[#1c1917]">{selectedLabels.join(', ')}</span>}
-        </span>
-        <ChevronDown className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {open && dropPos && createPortal(
-        <div
-          ref={dropdownRef}
-          className="fixed z-[9999] bg-white border border-stone-200 rounded-2xl shadow-lg overflow-y-auto"
-          style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: 260 }}
-        >
-          {options.map(opt => {
-            const isOn = selected.includes(opt.value);
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onToggle(opt.value)}
-                className={`flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm transition hover:bg-stone-50 ${isOn ? 'text-[#b8864a] font-medium' : 'text-[#1c1917]'}`}
-              >
-                <span className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition ${isOn ? 'bg-[#b8864a] border-[#b8864a]' : 'border-stone-300'}`}>
-                  {isOn && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                </span>
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
 interface CompanySignupFormProps {
   lang: Lang;
 }
 
 export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
-  // Form fields
   const [contactName, setContactName] = useState('');
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [companyTypes, setCompanyTypes] = useState<string[]>([]);
+  const [companyType, setCompanyType] = useState('');
   const [establishmentYear, setEstablishmentYear] = useState('');
   const [city, setCity] = useState('');
 
-  // Phone validation
   const phoneError = isPhoneComplete(phoneDigits, phoneRegion.code)
     ? validatePhone(phoneDigits, phoneRegion.code)
     : null;
 
-  // UI state
+  const companyTypeRef = useRef<HTMLSelectElement>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [companyTypeError, setCompanyTypeError] = useState(false);
   const [tried, setTried] = useState(false);
 
-  // Phone-exists inline login state
   const [phoneExistsMode, setPhoneExistsMode] = useState(false);
   const [existingHasProfile, setExistingHasProfile] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
@@ -188,7 +97,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
-  // New user registration (stay on page instead of redirecting to /auth)
   const [registerMode, setRegisterMode] = useState(false);
   const [regStep, setRegStep] = useState<'email' | 'password'>('email');
   const [regIsNewEmail, setRegIsNewEmail] = useState<boolean | null>(null);
@@ -198,10 +106,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [regSubmitting, setRegSubmitting] = useState(false);
   const [regSuccess, setRegSuccess] = useState<string | null>(null);
 
-  // Poll for email verification — auto-login when user verifies in another tab/device
-  useVerificationPoller(regSuccess ? regEmail : null, 'company');
-
-  // Phone-already-submitted detection (real-time)
   const [phoneAlreadySubmitted, setPhoneAlreadySubmitted] = useState(false);
   const [phoneCheckResult, setPhoneCheckResult] = useState<{ hasAccount: boolean; hasCompanyProfile: boolean } | null>(null);
   const phoneCheckTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -212,8 +116,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     setPhoneCheckResult(null);
 
     if (!isPhoneComplete(digits, regionCode)) return;
-    const phoneValidation = validatePhone(digits, regionCode);
-    if (phoneValidation) return;
+    const validation = validatePhone(digits, regionCode);
+    if (validation) return;
 
     phoneCheckTimer.current = setTimeout(async () => {
       try {
@@ -240,7 +144,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
   const labelClass = 'block text-xs font-medium uppercase tracking-wider text-stone-500 mb-1.5';
 
-  /* ── Step 1: Submit lead to CRM ── */
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTried(true);
@@ -251,7 +154,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     if (phoneError) { setError(phoneError); return; }
     if (!companyName.trim()) { setError('Please fill in all required fields'); return; }
     if (!city) { setError('Please fill in all required fields'); return; }
-    if (companyTypes.length === 0) {
+    if (!companyType) {
       setCompanyTypeError(true);
       setError('Please fill in all required fields');
       return;
@@ -270,10 +173,10 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           contactName: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           companyName: companyName.trim(),
-          companyType: companyTypes,
+          companyType,
           establishmentYear: establishmentYear || undefined,
           city,
-          sourcePage: window.location.href,
+          sourcePage: typeof window !== 'undefined' ? window.location.href : '/for-companies',
         }),
       });
 
@@ -282,15 +185,13 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         if (body.phoneExists) {
           const hasProfile = !!body.hasCompanyProfile;
           setExistingHasProfile(hasProfile);
-          if (!hasProfile) {
-            // Save form data so profile page can prefill after login
+          if (!hasProfile && typeof sessionStorage !== 'undefined') {
             sessionStorage.setItem('company_signup_prefill', JSON.stringify({
               company_name: companyName.trim(),
               contact_person: contactName.trim(),
               phone: `${phoneRegion.code}${phoneDigits}`,
               city,
-              company_types: companyTypes,
-              company_type: companyTypes[0] || '',
+              company_type: companyType,
               establishment_year: establishmentYear || null,
             }));
           }
@@ -305,16 +206,15 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
         throw new Error(body.error || 'Failed to submit. Please try again.');
       }
 
-      // Stay on page — show email/password registration form
       setRegisterMode(true);
-    } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /* ── Step 2: Login when phone already registered ── */
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail.trim() || !loginPassword) {
@@ -326,35 +226,31 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     try {
       const response = await api.post('/auth/login', { email: loginEmail.trim(), password: loginPassword });
       api.setToken(response.token);
-      if (response.user) {
+      if (response.user && typeof localStorage !== 'undefined') {
         localStorage.setItem('user', JSON.stringify(response.user));
         localStorage.setItem('active_role', 'company');
       }
-      // If no existing profile, auto-create it with form data so dashboard onboarding can proceed
       if (!existingHasProfile) {
         await api.post('/auth/company/profile', {
           company_name: companyName.trim(),
           contact_person: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           city,
-          company_types: companyTypes,
-          company_type: companyTypes[0] || '',
+          company_type: companyType,
           establishment_year: establishmentYear ? Number(establishmentYear) : null,
           description: '',
           services: ['Interior Design'],
         }).catch(() => {});
       }
-      navigate('/company/dashboard');
-    } catch (err: any) {
-      setLoginError(err?.message || 'Invalid email or password.');
+      router.push('/company/dashboard');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Invalid email or password.';
+      setLoginError(message);
     } finally {
       setLoginSubmitting(false);
     }
   };
 
-
-
-  /* ── Step 3a: Check email availability ── */
   const handleEmailContinue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())) {
@@ -368,7 +264,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       setRegIsNewEmail(res.isNewEmail !== false);
       setRegStep('password');
     } catch {
-      // If check fails, assume new and proceed
       setRegIsNewEmail(true);
       setRegStep('password');
     } finally {
@@ -376,7 +271,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     }
   };
 
-  /* ── Step 3b: Register or login with password ── */
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regPassword) {
@@ -397,15 +291,13 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       contact_person: contactName.trim(),
       description: '',
       services: ['Interior Design'],
-      company_types: companyTypes,
-      company_type: companyTypes[0] || '',
+      company_type: companyType,
       establishment_year: establishmentYear ? Number(establishmentYear) : null,
       signup_source: source,
     };
 
     try {
       if (regIsNewEmail) {
-        // New user: register → auto-login → create profile
         await api.post('/auth/register', {
           email: regEmail.trim(),
           password: regPassword,
@@ -414,22 +306,23 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           city,
           role: 'company',
           signup_source: source,
-          pending_profile: profileData,  // stored server-side, applied after email verification
+          pending_profile: profileData,
         });
 
         try {
           const loginRes = await api.post('/auth/login', { email: regEmail.trim(), password: regPassword });
           api.setToken(loginRes.token);
-          if (loginRes.user) {
+          if (loginRes.user && typeof localStorage !== 'undefined') {
             localStorage.setItem('user', JSON.stringify(loginRes.user));
             localStorage.setItem('active_role', 'company');
           }
           await api.post('/auth/company/profile', profileData);
-          navigate('/company');
+          router.push('/company');
           return;
         } catch {
-          // Save profile data so it can be applied after email verification + login
-          sessionStorage.setItem('pending_company_profile', JSON.stringify(profileData));
+          if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('pending_company_profile', JSON.stringify(profileData));
+          }
           setRegSuccess(
             lang === 'ar'
               ? `تم إنشاء الحساب! يرجى التحقق من ${regEmail.trim()} ثم تسجيل الدخول.`
@@ -437,19 +330,17 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           );
         }
       } else {
-        // Existing user: login → create/update profile
         const loginRes = await api.post('/auth/login', { email: regEmail.trim(), password: regPassword });
         api.setToken(loginRes.token);
-        if (loginRes.user) {
+        if (loginRes.user && typeof localStorage !== 'undefined') {
           localStorage.setItem('user', JSON.stringify(loginRes.user));
           localStorage.setItem('active_role', 'company');
         }
         await api.post('/auth/company/profile', profileData).catch(() => {});
-        navigate('/company');
+        router.push('/company');
       }
-    } catch (err: any) {
-      const msg: string = err.message || '';
-      // If registration failed because email already exists, switch to login mode
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
       if (regIsNewEmail && /already registered/i.test(msg)) {
         setRegIsNewEmail(false);
         setRegPassword('');
@@ -462,14 +353,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     }
   };
 
-  /* ── Main form UI ── */
   return (
     <div
       dir={dir}
       className="bg-white rounded-[20px] shadow-[0_18px_44px_rgba(28,25,23,0.14)] overflow-hidden"
     >
       <div className="px-7 py-7 space-y-5">
-        {/* ── Phone-exists inline login panel ── */}
         {phoneExistsMode ? (
           <>
             <div className="flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
@@ -554,7 +443,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               </div>
             ) : (
               <>
-                {/* Lead collected confirmation */}
                 <div className="flex items-start gap-3 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3">
                   <svg className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <div>
@@ -573,24 +461,23 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   {lang === 'ar' ? 'إنشاء حسابك' : 'Create your account'}
                 </h2>
 
-                {/* Google OAuth */}
                 <button
                   type="button"
                   onClick={() => {
-                    const apiBase = import.meta.env.VITE_API_URL || '/api';
-                    sessionStorage.setItem('pending_company_profile', JSON.stringify({
-                      company_name: companyName.trim(),
-                      contact_person: contactName.trim(),
-                      phone: `${phoneRegion.code}${phoneDigits}`,
-                      city,
-                      company_types: companyTypes,
-                      company_type: companyTypes[0] || '',
-                      establishment_year: establishmentYear || null,
-                      services: ['Interior Design'],
-                      signup_source: 'for-companies-landing',
-                    }));
+                    if (typeof sessionStorage !== 'undefined') {
+                      sessionStorage.setItem('pending_company_profile', JSON.stringify({
+                        company_name: companyName.trim(),
+                        contact_person: contactName.trim(),
+                        phone: `${phoneRegion.code}${phoneDigits}`,
+                        city,
+                        company_type: companyType,
+                        establishment_year: establishmentYear || null,
+                        services: ['Interior Design'],
+                        signup_source: 'for-companies-landing',
+                      }));
+                    }
                     const phoneFull = encodeURIComponent(`${phoneRegion.code}${phoneDigits}`);
-                    window.location.href = `${apiBase}/auth/google?role=company&phone=${phoneFull}&source=company_form`;
+                    window.location.href = `${API_BASE}/auth/google?role=company&phone=${phoneFull}&source=company_form`;
                   }}
                   className="flex h-12 w-full items-center justify-center gap-3 rounded-[20px] border border-stone-200 bg-white text-[15px] font-medium text-[#1c1917] shadow-sm transition hover:bg-stone-50"
                 >
@@ -619,7 +506,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 )}
 
                 {regStep === 'email' ? (
-                  /* Step 3a: Email input */
                   <form onSubmit={handleEmailContinue} className="space-y-3" noValidate>
                     <input
                       type="email"
@@ -647,7 +533,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                     >
                       {lang === 'ar' ? '← العودة' : '← Back'}
                     </button>
-
                     <p className="text-[10px] text-stone-400 text-center">
                       {lang === 'ar' ? 'بالمتابعة، أنت توافق على' : 'By continuing, you agree to our'}{' '}
                       <a href="/privacy" className="text-stone-500 hover:text-[#B8864A]">Terms</a>
@@ -656,7 +541,6 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                     </p>
                   </form>
                 ) : (
-                  /* Step 3b: Password input */
                   <form onSubmit={handlePasswordSubmit} className="space-y-3" noValidate>
                     <p className="text-sm text-stone-500">
                       {regIsNewEmail
@@ -702,185 +586,180 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             )}
           </>
         ) : (
-        <>
-        <h2 className="text-[18px] font-bold text-[#1c1917] leading-snug">
-          {t(lang, 'formTitle')}
-        </h2>
+          <>
+            <h2 className="text-[18px] font-bold text-[#1c1917] leading-snug">
+              {t(lang, 'formTitle')}
+            </h2>
 
-        <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
-          {/* Contact Name */}
-          <div>
-            <label className={labelClass}>
-              {t(lang, 'contactName')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-              placeholder={t(lang, 'contactNamePlaceholder')}
-              className={`${inputClass} ${tried && !contactName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
-            />
-          </div>
-
-          {/* Phone Number */}
-          <div>
-            <label className={labelClass}>
-              {t(lang, 'phone')} <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <AdminSelect
-                value={phoneRegion.code}
-                onChange={(code) => {
-                  const next = GCC_PHONE_OPTIONS.find((o) => o.code === code) || GCC_PHONE_OPTIONS[0];
-                  setPhoneRegion(next);
-                  setPhoneDigits((d) => d.slice(0, next.maxDigits));
-                }}
-                options={GCC_PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} (${o.code})` }))}
-                className="shrink-0 w-[150px]"
-              />
-              <input
-                type="tel"
-                inputMode="numeric"
-                value={phoneDigits}
-                onChange={(e) => {
-                  const digits = e.target.value
-                    .replace(/\D/g, '')
-                    .slice(0, phoneRegion.maxDigits);
-                  setPhoneDigits(digits);
-                  checkPhoneDebounced(digits, phoneRegion.code);
-                }}
-                maxLength={phoneRegion.maxDigits}
-                placeholder={t(lang, 'phonePlaceholder')}
-                className={`${inputClass} flex-1 min-w-0 ${
-                  phoneError || (tried && !isPhoneComplete(phoneDigits, phoneRegion.code))
-                    ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30'
-                    : ''
-                }`}
-              />
-            </div>
-            {phoneError && (
-              <p className="mt-1.5 text-[12px] text-red-600">{phoneError}</p>
-            )}
-            {phoneAlreadySubmitted && !phoneError && (
-              <div className="mt-2 flex items-start gap-2.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5">
-                <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                <p className="text-[13px] text-emerald-800 leading-relaxed">
-                  {phoneCheckResult?.hasAccount
-                    ? (lang === 'ar' ? 'هذا الرقم مسجّل بالفعل. سجّل الدخول للوصول إلى لوحة التحكم.' : 'This number is already registered. Sign in to access your dashboard.')
-                    : (lang === 'ar' ? 'معلوماتك موجودة لدينا بالفعل! سجّل حسابك لإدارة صفحة شركتك.' : 'Your info is already in our system! Register an account to manage your company page.')}
-                </p>
+            <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
+              <div>
+                <label className={labelClass}>
+                  {t(lang, 'contactName')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  placeholder={t(lang, 'contactNamePlaceholder')}
+                  className={`${inputClass} ${tried && !contactName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
+                />
               </div>
-            )}
-          </div>
 
-          {/* Company Name */}
-          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
-            <label className={labelClass}>
-              {t(lang, 'companyName')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder={t(lang, 'companyNamePlaceholder')}
-              disabled={phoneAlreadySubmitted}
-              className={`${inputClass} ${tried && !companyName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
-            />
-          </div>
+              <div>
+                <label className={labelClass}>
+                  {t(lang, 'phone')} <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <AdminSelect
+                    value={phoneRegion.code}
+                    onChange={(code) => {
+                      const next = GCC_PHONE_OPTIONS.find((o) => o.code === code) || GCC_PHONE_OPTIONS[0];
+                      setPhoneRegion(next);
+                      setPhoneDigits((d) => d.slice(0, next.maxDigits));
+                    }}
+                    options={GCC_PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} (${o.code})` }))}
+                    className="shrink-0 w-[150px]"
+                  />
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={phoneDigits}
+                    onChange={(e) => {
+                      const digits = e.target.value
+                        .replace(/\D/g, '')
+                        .slice(0, phoneRegion.maxDigits);
+                      setPhoneDigits(digits);
+                      checkPhoneDebounced(digits, phoneRegion.code);
+                    }}
+                    maxLength={phoneRegion.maxDigits}
+                    placeholder={t(lang, 'phonePlaceholder')}
+                    className={`${inputClass} flex-1 min-w-0 ${
+                      phoneError || (tried && !isPhoneComplete(phoneDigits, phoneRegion.code))
+                        ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30'
+                        : ''
+                    }`}
+                  />
+                </div>
+                {phoneError && (
+                  <p className="mt-1.5 text-[12px] text-red-600">{phoneError}</p>
+                )}
+                {phoneAlreadySubmitted && !phoneError && (
+                  <div className="mt-2 flex items-start gap-2.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5">
+                    <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <p className="text-[13px] text-emerald-800 leading-relaxed">
+                      {phoneCheckResult?.hasAccount
+                        ? (lang === 'ar' ? 'هذا الرقم مسجّل بالفعل. سجّل الدخول للوصول إلى لوحة التحكم.' : 'This number is already registered. Sign in to access your dashboard.')
+                        : (lang === 'ar' ? 'معلوماتك موجودة لدينا بالفعل! سجّل حسابك لإدارة صفحة شركتك.' : 'Your info is already in our system! Register an account to manage your company page.')}
+                    </p>
+                  </div>
+                )}
+              </div>
 
-          {/* City */}
-          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
-            <label className={labelClass}>
-              {lang === 'ar' ? 'المدينة' : 'City'} <span className="text-red-500">*</span>
-            </label>
-            <AdminSelect
-              value={city}
-              onChange={setCity}
-              options={[
-                { value: '', label: lang === 'ar' ? 'اختر المدينة' : 'Select city' },
-                ...UAE_CITIES.map(c => ({ value: c, label: c })),
-              ]}
-              className="w-full"
-              error={tried && !city}
-            />
-          </div>
+              <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
+                <label className={labelClass}>
+                  {t(lang, 'companyName')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder={t(lang, 'companyNamePlaceholder')}
+                  disabled={phoneAlreadySubmitted}
+                  className={`${inputClass} ${tried && !companyName.trim() ? 'border-red-400 focus:border-red-400 focus:ring-red-200/30' : ''}`}
+                />
+              </div>
 
-          {/* Company Type */}
-          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
-            <label className={labelClass}>
-              {t(lang, 'companyType')} <span className="text-red-500">*</span>
-            </label>
-            <MultiTypeSelect
-              selected={companyTypes}
-              onToggle={(slug) => {
-                setCompanyTypes(prev => {
-                  const next = prev.includes(slug) ? prev.filter(v => v !== slug) : [...prev, slug];
-                  if (next.length > 0) setCompanyTypeError(false);
-                  return next;
-                });
-              }}
-              options={COMPANY_TYPES.map(ct => ({ value: ct.value, label: t(lang, ct.labelKey) }))}
-              placeholder={t(lang, 'companyTypePlaceholder')}
-              error={companyTypeError || (tried && companyTypes.length === 0)}
-            />
-          </div>
+              <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
+                <label className={labelClass}>
+                  {lang === 'ar' ? 'المدينة' : 'City'} <span className="text-red-500">*</span>
+                </label>
+                <AdminSelect
+                  value={city}
+                  onChange={setCity}
+                  options={[
+                    { value: '', label: lang === 'ar' ? 'اختر المدينة' : 'Select city' },
+                    ...UAE_CITIES.map(c => ({ value: c, label: c })),
+                  ]}
+                  className="w-full"
+                  error={tried && !city}
+                />
+              </div>
 
-          {/* Year of Establishment */}
-          <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
-            <label className={labelClass}>{t(lang, 'yearEstablished')}</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={establishmentYear}
-              onChange={(e) => setEstablishmentYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder={t(lang, 'yearPlaceholder')}
-              disabled={phoneAlreadySubmitted}
-              className={inputClass}
-            />
-          </div>
+              <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
+                <label className={labelClass}>
+                  {t(lang, 'companyType')} <span className="text-red-500">*</span>
+                </label>
+                <AdminSelect
+                  ref={companyTypeRef}
+                  value={companyType}
+                  onChange={(v) => { setCompanyType(v); if (v) setCompanyTypeError(false); }}
+                  options={[
+                    { value: '', label: t(lang, 'companyTypePlaceholder') },
+                    ...COMPANY_TYPES.map(ct => ({
+                      value: ct.value,
+                      label: t(lang, ct.labelKey),
+                      group: COMPANY_TYPE_GROUPS[ct.value],
+                    })),
+                  ]}
+                  searchable
+                  className="w-full"
+                  error={companyTypeError || (tried && !companyType)}
+                />
+              </div>
 
-          {/* Error */}
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
-              {error}
-            </p>
-          )}
+              <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
+                <label className={labelClass}>{t(lang, 'yearEstablished')}</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={establishmentYear}
+                  onChange={(e) => setEstablishmentYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder={t(lang, 'yearPlaceholder')}
+                  disabled={phoneAlreadySubmitted}
+                  className={inputClass}
+                />
+              </div>
 
-          {/* Submit / Go to Register */}
-          {phoneAlreadySubmitted ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (phoneCheckResult?.hasAccount) {
-                  navigate('/auth?mode=login&role=company');
-                } else {
-                  setRegisterMode(true);
-                }
-              }}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47]"
-            >
-              {phoneCheckResult?.hasAccount
-                ? (lang === 'ar' ? 'تسجيل الدخول →' : 'Sign In →')
-                : (lang === 'ar' ? 'إنشاء حساب →' : 'Create Account →')}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
-                  {t(lang, 'submitting')}
-                </>
-              ) : (
-                t(lang, 'submit')
+              {error && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-5 text-red-700">
+                  {error}
+                </p>
               )}
-            </button>
-          )}
-        </form>
-        </>
+
+              {phoneAlreadySubmitted ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (phoneCheckResult?.hasAccount) {
+                      router.push('/auth?mode=login&role=company');
+                    } else {
+                      setRegisterMode(true);
+                    }
+                  }}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47]"
+                >
+                  {phoneCheckResult?.hasAccount
+                    ? (lang === 'ar' ? 'تسجيل الدخول →' : 'Sign In →')
+                    : (lang === 'ar' ? 'إنشاء حساب →' : 'Create Account →')}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                      {t(lang, 'submitting')}
+                    </>
+                  ) : (
+                    t(lang, 'submit')
+                  )}
+                </button>
+              )}
+            </form>
+          </>
         )}
       </div>
     </div>

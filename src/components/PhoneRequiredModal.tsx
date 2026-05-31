@@ -1,7 +1,9 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
-import { safeRemoveItem } from '../lib/storage';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { safeRemoveItem } from '@/lib/storage';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -13,7 +15,7 @@ const GCC_PHONE_OPTIONS = [
 ];
 
 export default function PhoneRequiredModal({ blocking = false }: { blocking?: boolean }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [checking, setChecking] = useState(blocking);
   const [country, setCountry] = useState(GCC_PHONE_OPTIONS[0]);
@@ -101,14 +103,14 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
       window.dispatchEvent(new CustomEvent('phone-saved', { detail: { phone } }));
 
       setVisible(false);
-    } catch (err: any) {
-      const message = err?.message || 'Failed to update phone number. Please try again.';
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to update phone number. Please try again.';
       if (/invalid authentication token|not authenticated|unauthorized/i.test(message)) {
         api.clearToken();
         safeRemoveItem('user');
         safeRemoveItem('active_role');
         setVisible(false);
-        navigate('/auth', { replace: true });
+        router.replace('/auth');
         return;
       }
       setError(message);

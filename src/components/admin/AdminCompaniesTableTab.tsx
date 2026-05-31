@@ -1,10 +1,12 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import SmartImage from '../ui/SmartImage';
-import { TableSpinner } from '../ui/Spinner';
+import { useRouter } from 'next/navigation';
+import SmartImage from '@/components/ui/SmartImage';
+import { TableSpinner } from '@/components/ui/Spinner';
 import { Trash2 } from 'lucide-react';
-import CopyButton from '../ui/CopyButton';
-import { formatAdminDateTime, ADMIN_TIME_CLS } from '../../lib/formatTime';
+import CopyButton from '@/components/ui/CopyButton';
+import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface CompanyProfileRecord {
   id: number;
@@ -68,7 +70,7 @@ export default function AdminCompaniesTableTab({
   updatedSortDir,
   onUpdatedSortToggle,
 }: AdminCompaniesTableTabProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{ msg: string; key: string } | null>(null);
@@ -183,7 +185,7 @@ export default function AdminCompaniesTableTab({
               <tr
                 key={c.id}
                 className="group border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
-                onClick={() => navigate(`/admin/profile-companies/${c.id}?tab=companies`)}
+                onClick={() => router.push(`/admin/profile-companies/${c.id}?tab=companies`)}
               >
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <input

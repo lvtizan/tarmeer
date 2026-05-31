@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Camera } from 'lucide-react';
 import { resolveImageUrl } from '../../lib/imageUrl';
@@ -8,7 +10,7 @@ interface AvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   onClick?: () => void;
-  editable?: boolean; // 是否显示编辑相机图标
+  editable?: boolean;
 }
 
 const SIZE_MAP = {
@@ -26,29 +28,19 @@ const CAMERA_SIZE_MAP = {
 };
 
 export default function Avatar({ name, avatarUrl, size = 'md', className = '', onClick, editable = false }: AvatarProps) {
-  // 获取用户名首字母（取名字的前两个单词的首字母）
+  const [imgFailed, setImgFailed] = useState(false);
+
   const getInitials = (fullName: string): string => {
     if (!fullName) return '?';
     const words = fullName.trim().split(/\s+/);
-    if (words.length === 1) {
-      return words[0].charAt(0).toUpperCase();
-    }
-    return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    return words.length === 1
+      ? words[0].charAt(0).toUpperCase()
+      : (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
   };
 
-  // 生成基于名字的颜色
   const getColorFromName = (fullName: string): string => {
     if (!fullName) return '#b8864a';
-    const colors = [
-      '#b8864a', // 主题色
-      '#6366f1', // indigo
-      '#8b5cf6', // violet
-      '#ec4899', // pink
-      '#14b8a6', // teal
-      '#f59e0b', // amber
-      '#ef4444', // red
-      '#22c55e', // green
-    ];
+    const colors = ['#b8864a', '#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#ef4444', '#22c55e'];
     let hash = 0;
     for (let i = 0; i < fullName.length; i++) {
       hash = fullName.charCodeAt(i) + ((hash << 5) - hash);
@@ -60,47 +52,30 @@ export default function Avatar({ name, avatarUrl, size = 'md', className = '', o
   const bgColor = getColorFromName(name);
   const sizeClass = SIZE_MAP[size];
   const cameraSizeClass = CAMERA_SIZE_MAP[size];
+  const wrapperClass = editable ? 'cursor-pointer' : '';
 
-  // 相机图标按钮（右下角）- 黑色80%半透明圆形 + 白色线性图标
   const cameraButton = editable && (
     <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-black/80 flex items-center justify-center shadow-sm pointer-events-none">
       <Camera className={`${cameraSizeClass} text-white`} strokeWidth={1.5} />
     </div>
   );
 
-  const wrapperClass = editable ? 'cursor-pointer' : '';
-
-  const [imgFailed, setImgFailed] = useState(false);
   const resolvedAvatarUrl = resolveImageUrl(avatarUrl || '');
 
-  // 如果有头像URL且未加载失败，显示图片（使用 img 标签以便检测加载失败）
   if (resolvedAvatarUrl && !imgFailed) {
     return (
-      <div
-        className={`relative inline-flex ${wrapperClass} ${className}`}
-        onClick={editable ? onClick : undefined}
-      >
-        <div
-          className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm bg-stone-200`}
-        >
-          <img
-            src={resolvedAvatarUrl}
-            alt={`${name} avatar`}
-            className="w-full h-full object-cover"
-            onError={() => setImgFailed(true)}
-          />
+      <div className={`relative inline-flex ${wrapperClass} ${className}`} onClick={editable ? onClick : undefined}>
+        <div className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm bg-stone-200`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={resolvedAvatarUrl} alt={`${name} avatar`} className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
         </div>
         {cameraButton}
       </div>
     );
   }
 
-  // 否则显示首字母头像
   return (
-    <div 
-      className={`relative inline-flex ${wrapperClass} ${className}`} 
-      onClick={editable ? onClick : undefined}
-    >
+    <div className={`relative inline-flex ${wrapperClass} ${className}`} onClick={editable ? onClick : undefined}>
       <div
         className={`${sizeClass} rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm`}
         style={{ backgroundColor: `${bgColor}20`, color: bgColor }}

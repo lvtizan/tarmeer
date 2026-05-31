@@ -1,11 +1,8 @@
+'use client';
 // Admin API Client - separate token storage from designer auth
-import { safeGetItem, safeSetItem, safeRemoveItem } from './storage';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/storage';
 
-function resolveApiBase() {
-  return import.meta.env.VITE_API_URL?.trim() || '/api';
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
 const ADMIN_TOKEN_KEY = 'admin_token';
 
@@ -160,7 +157,7 @@ class AdminApiClient {
   }
 
   private getDevelopmentErrorMessage(originalError: string, _requestUrl: string): string {
-    if (import.meta.env.DEV) {
+    if (process.env.NODE_ENV === 'development') {
       return originalError;
     }
     // Production-friendly generic error message
@@ -189,7 +186,7 @@ class AdminApiClient {
       if (err instanceof Error) {
         const msg = err.message || '';
         if (/fetch|network|failed|load/i.test(msg) || err.name === 'TypeError') {
-          const devMessage = `无法连接后端接口 ${requestUrl}。请检查：1) 后端服务是否已启动（http://localhost:3002）；2) VITE_API_URL 是否配置正确；3) 是否被 CORS 或代理拦截。`;
+          const devMessage = `无法连接后端接口 ${requestUrl}。请检查：1) 后端服务是否已启动；2) NEXT_PUBLIC_API_URL 是否配置正确；3) 是否被 CORS 或代理拦截。`;
           throw new Error(this.getDevelopmentErrorMessage(devMessage, requestUrl));
         }
         throw err;
@@ -223,10 +220,6 @@ class AdminApiClient {
       }
       // 403 Forbidden: always show the actual server message (e.g. "Super admin privileges required")
       if (response.status === 403 && serverError) {
-        throw new Error(serverError);
-      }
-      // 502 Bad Gateway: upstream (e.g. CRM) returned an error — show actual message to admin
-      if (response.status === 502 && serverError) {
         throw new Error(serverError);
       }
       const devMessage = `接口 /admin${endpoint} 请求失败：${errorMessage}`;
@@ -323,7 +316,7 @@ class AdminApiClient {
     if (params.sortOrder) query.set('sortOrder', params.sortOrder);
     if (params.page) query.set('page', String(params.page));
     if (params.limit) query.set('limit', String(params.limit));
-    
+
     return this.request(`/designers?${query.toString()}`);
   }
 
@@ -496,6 +489,10 @@ class AdminApiClient {
     return this.request(`/analytics/events?${query.toString()}`);
   }
 
+  async getAnalyticsDashboard(period: '7d' | '30d' | '90d' = '30d') {
+    return this.request(`/analytics/dashboard?period=${period}`);
+  }
+
   // Admin management (super admin only)
   async getAdmins() {
     return this.request('/admins');
@@ -542,6 +539,7 @@ class AdminApiClient {
     return this.request(`/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async editUser(id: number, data: Record<string, any>) {
     return this.request(`/users/${id}/edit`, {
       method: 'PUT',
@@ -561,10 +559,6 @@ class AdminApiClient {
     return this.request(`/users/${id}/restore`, {
       method: 'POST',
     });
-  }
-
-  async forceVerifyUserEmail(id: number) {
-    return this.request(`/users/${id}/force-verify-email`, { method: 'POST' });
   }
 
   async getUserPermissions(id: number): Promise<{ permissions: string[]; available: string[] }> {
@@ -726,13 +720,6 @@ class AdminApiClient {
     });
   }
 
-  async deleteDirectoryPortfolioImage(companyId: number, url: string) {
-    return this.request(`/companies/${companyId}/portfolio-image`, {
-      method: 'DELETE',
-      body: JSON.stringify({ url }),
-    });
-  }
-
   async restoreCompanyProfile(id: number) {
     return this.request(`/roles/companies/${id}/restore`, {
       method: 'POST',
@@ -768,10 +755,12 @@ class AdminApiClient {
   }
 
   // Project management (registered companies)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getAdminProject(companyId: string, projectId: string) {
     return this.request(`/roles/companies/${companyId}/projects/${projectId}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async updateAdminProject(companyId: string, projectId: string, data: any) {
     return this.request(`/roles/companies/${companyId}/projects/${projectId}`, {
       method: 'PUT',
@@ -780,6 +769,7 @@ class AdminApiClient {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async createAdminProject(companyId: string, data: any) {
     return this.request(`/roles/companies/${companyId}/projects`, {
       method: 'POST',
@@ -833,7 +823,7 @@ class AdminApiClient {
     });
     if (!res.ok) {
       let msg = `HTTP ${res.status}`;
-      try { const j = await res.json(); if (j?.error) msg = j.error; } catch {}
+      try { const j = await res.json(); if (j?.error) msg = j.error; } catch { /* ignore */ }
       throw new Error(msg);
     }
     return res.json();
@@ -939,12 +929,14 @@ class AdminApiClient {
     return this.request('/weight-config/recalculate', { method: 'POST' });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getActivityLog(params: { page?: number; limit?: number; role?: string; action?: string; search?: string; start_date?: string; end_date?: string } = {}): Promise<{ logs: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
     const qs = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)); });
     return this.request(`/activity-log?${qs.toString()}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getActivityLogStats(days?: number): Promise<{ today: any; action_distribution: any[]; daily_trend: any[] }> {
     return this.request(`/activity-log/stats${days ? `?days=${days}` : ''}`);
   }
@@ -952,14 +944,16 @@ class AdminApiClient {
   getActivityLogExportUrl(params: { role?: string; action?: string; start_date?: string; end_date?: string } = {}): string {
     const qs = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)); });
-    const base = (import.meta as any).env?.VITE_API_URL || '/api';
+    const base = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
     return `${base}/admin/activity-log/export?${qs.toString()}`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getTopActiveUsers(days?: number): Promise<{ users: any[] }> {
     return this.request(`/activity-log/top-users${days ? `?days=${days}` : ''}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getUserTimeline(userId: number, params: { role?: string; page?: number; limit?: number } = {}): Promise<{ logs: any[]; summary: any; pagination: any }> {
     const qs = new URLSearchParams();
     if (params.role) qs.set('role', params.role);
@@ -980,6 +974,7 @@ class AdminApiClient {
   async getInterview(id: number) {
     return this.request(`/interviews/${id}`);
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async updateInterview(id: number, data: Record<string, any>) {
     return this.request(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
   }
@@ -1000,8 +995,9 @@ export const adminApi = new AdminApiClient();
 
 const FIELD_API_BASE = '/api/field';
 
-async function fieldRequest(path: string, options: RequestInit = {}) {
-  const token = localStorage.getItem('admin_token');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fieldRequest(path: string, options: RequestInit = {}): Promise<any> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
   const res = await fetch(`${FIELD_API_BASE}${path}`, {
     ...options,
     headers: {
@@ -1011,8 +1007,9 @@ async function fieldRequest(path: string, options: RequestInit = {}) {
     },
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).error || `Request failed: ${res.status}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const err = await res.json().catch(() => ({})) as any;
+    throw new Error(err.error || `Request failed: ${res.status}`);
   }
   return res.json();
 }
@@ -1020,6 +1017,7 @@ async function fieldRequest(path: string, options: RequestInit = {}) {
 export const fieldApi = {
   createDraft: () => fieldRequest('/interviews', { method: 'POST' }),
   getDraft: () => fieldRequest('/interviews/draft'),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveDraft: (id: number, data: Record<string, any>) =>
     fieldRequest(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   submit: (id: number) =>

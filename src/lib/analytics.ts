@@ -1,8 +1,7 @@
 type AnalyticsPayload = Record<string, unknown>;
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-// TikTok Pixel helper
 function ttqTrack(eventName: string, params: Record<string, unknown> = {}) {
   if (typeof window === 'undefined') return;
   const w = window as unknown as { ttq?: { track: (e: string, p?: Record<string, unknown>) => void } };
@@ -18,11 +17,7 @@ function pushDataLayer(eventName: string, payload: AnalyticsPayload = {}) {
   if (typeof window === 'undefined') return;
   const w = window as unknown as { dataLayer?: unknown[] };
   if (!w.dataLayer) w.dataLayer = [];
-  w.dataLayer.push({
-    event: eventName,
-    page_path: getCurrentPath(),
-    ...payload,
-  });
+  w.dataLayer.push({ event: eventName, page_path: getCurrentPath(), ...payload });
 }
 
 function sendEventToBackend(eventName: string, payload: AnalyticsPayload = {}) {
@@ -36,12 +31,9 @@ function sendEventToBackend(eventName: string, payload: AnalyticsPayload = {}) {
 
   if (navigator.sendBeacon) {
     try {
-      const blob = new Blob([body], { type: 'application/json' });
-      navigator.sendBeacon(`${API_BASE}/stats/event`, blob);
+      navigator.sendBeacon(`${API_BASE}/stats/event`, new Blob([body], { type: 'application/json' }));
       return;
-    } catch {
-      // fallback to fetch
-    }
+    } catch { /* fallback */ }
   }
 
   fetch(`${API_BASE}/stats/event`, {
@@ -49,9 +41,7 @@ function sendEventToBackend(eventName: string, payload: AnalyticsPayload = {}) {
     headers: { 'Content-Type': 'application/json' },
     body,
     keepalive: true,
-  }).catch(() => {
-    // Never break user actions because of analytics.
-  });
+  }).catch(() => {});
 }
 
 export function trackAnalyticsEvent(eventName: string, payload: AnalyticsPayload = {}) {
@@ -66,45 +56,24 @@ export function trackPageView(payload: AnalyticsPayload = {}) {
   });
 }
 
-// TikTok Pixel Events
-
-/** 浏览公司详情页 */
 export function trackViewContent(params: { content_name?: string; content_id?: string }) {
-  ttqTrack('ViewContent', {
-    content_type: 'product',
-    content_name: params.content_name,
-    content_id: params.content_id,
-  });
+  ttqTrack('ViewContent', { content_type: 'product', ...params });
 }
 
-/** 提交询单（Contact 事件） */
 export function trackContact(params: { content_name?: string; content_id?: string }) {
-  ttqTrack('Contact', {
-    content_type: 'product',
-    content_name: params.content_name,
-    content_id: params.content_id,
-  });
+  ttqTrack('Contact', { content_type: 'product', ...params });
 }
 
-/** 询单提交成功（Lead 事件） */
 export function trackLead(params: { content_name?: string; content_id?: string }) {
-  ttqTrack('Lead', {
-    content_type: 'product',
-    content_name: params.content_name,
-    content_id: params.content_id,
-  });
+  ttqTrack('Lead', { content_type: 'product', ...params });
 }
 
-/** Meta Pixel: SubmitApplication */
 export function trackFbSubmitApplication() {
   if (typeof window !== 'undefined') {
-    window.fbq?.('track', 'SubmitApplication');
+    (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq?.('track', 'SubmitApplication');
   }
 }
 
-/** 点击重要按钮 */
 export function trackClickButton(params: { content_name?: string }) {
-  ttqTrack('ClickButton', {
-    content_name: params.content_name,
-  });
+  ttqTrack('ClickButton', { content_name: params.content_name });
 }
