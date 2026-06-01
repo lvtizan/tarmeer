@@ -15,6 +15,7 @@ interface Admin {
     can_approve?: boolean;
     can_sort?: boolean;
     can_view_stats?: boolean;
+    can_view_interviews?: boolean;
   } | null;
   is_active: boolean;
   last_login: string | null;
@@ -27,7 +28,7 @@ export default function AdminAdminsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editPermissionsAdmin, setEditPermissionsAdmin] = useState<Admin | null>(null);
-  const [editPermissions, setEditPermissions] = useState({ can_approve: false, can_sort: false, can_view_stats: false });
+  const [editPermissions, setEditPermissions] = useState({ can_approve: false, can_sort: false, can_view_stats: false, can_view_interviews: false });
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [permError, setPermError] = useState('');
   const [createData, setCreateData] = useState({
@@ -38,6 +39,7 @@ export default function AdminAdminsPage() {
       can_approve: false,
       can_sort: false,
       can_view_stats: true,
+      can_view_interviews: false,
     },
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,6 +102,7 @@ export default function AdminAdminsPage() {
       can_approve: !!admin.permissions?.can_approve,
       can_sort: !!admin.permissions?.can_sort,
       can_view_stats: !!admin.permissions?.can_view_stats,
+      can_view_interviews: !!admin.permissions?.can_view_interviews,
     });
     setPermError('');
   };
@@ -210,10 +213,13 @@ export default function AdminAdminsPage() {
                       {admin.permissions?.can_sort && (
                         <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">{t('Sort', '排序')}</span>
                       )}
+                      {admin.permissions?.can_view_interviews && (
+                        <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs rounded">{t('Interviews', '访谈记录')}</span>
+                      )}
                       {admin.permissions?.can_view_stats && (
                         <span className="px-2 py-0.5 bg-stone-100 text-stone-700 text-xs rounded">{t('Stats', '统计')}</span>
                       )}
-                      {!admin.permissions?.can_approve && !admin.permissions?.can_sort && !admin.permissions?.can_view_stats && (
+                      {!admin.permissions?.can_approve && !admin.permissions?.can_sort && !admin.permissions?.can_view_stats && !admin.permissions?.can_view_interviews && (
                         <span className="text-stone-400 text-xs">{t('No permissions', '无权限')}</span>
                       )}
                       <button
@@ -351,6 +357,18 @@ export default function AdminAdminsPage() {
                     />
                     <span className="text-sm">{t('Can view statistics', '可查看统计')}</span>
                   </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={createData.permissions.can_view_interviews}
+                      onChange={(e) => setCreateData({
+                        ...createData,
+                        permissions: { ...createData.permissions, can_view_interviews: e.target.checked }
+                      })}
+                      className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                    />
+                    <span className="text-sm">{t('Can view visit records', '可查看访谈记录')}</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -430,6 +448,18 @@ export default function AdminAdminsPage() {
                 <div>
                   <div className="text-[15px] font-medium text-[#2c2c2c]">{t('View Statistics', '查看统计')}</div>
                   <div className="text-[12px] text-stone-500">{t('View analytics and report pages', '查看数据分析和报表页面')}</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editPermissions.can_view_interviews}
+                  onChange={(e) => setEditPermissions({ ...editPermissions, can_view_interviews: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                />
+                <div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">{t('View Visit Records', '查看访谈记录')}</div>
+                  <div className="text-[12px] text-stone-500">{t('View field interview records and visit submissions', '查看外勤访谈记录和拜访提交')}</div>
                 </div>
               </label>
             </div>

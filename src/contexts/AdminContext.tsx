@@ -19,7 +19,7 @@ interface AdminContextType {
   logout: () => void;
   install: (email: string, password: string, fullName: string) => Promise<void>;
   checkInstallation: () => Promise<void>;
-  hasPermission: (permission: 'can_approve' | 'can_sort' | 'can_view_stats') => boolean;
+  hasPermission: (permission: 'can_approve' | 'can_sort' | 'can_view_stats' | 'can_view_interviews') => boolean;
   isSuperAdmin: boolean;
   isFieldStaff: boolean;
 }
@@ -102,7 +102,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   const hasPermission = useCallback(
-    (permission: 'can_approve' | 'can_sort' | 'can_view_stats') => {
+    (permission: 'can_approve' | 'can_sort' | 'can_view_stats' | 'can_view_interviews') => {
       if (!admin) return false;
       if (admin.role === 'super_admin') return true;
       return admin.permissions?.[permission] === true;

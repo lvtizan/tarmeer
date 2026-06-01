@@ -77,7 +77,7 @@ const adminItems = [
     infoZh: '查看通过官网底部和装企后台提交的反馈意见。',
   },
   {
-    to: '/admin/visit-records', labelEn: 'Visit Records', labelZh: '访谈记录', icon: MapPin, superAdminOnly: true,
+    to: '/admin/visit-records', labelEn: 'Visit Records', labelZh: '访谈记录', icon: MapPin, permission: 'can_view_interviews' as const,
     infoEn: 'View all field visit records submitted by field staff.',
     infoZh: '查看外勤人员提交的所有公司访谈记录。',
   },

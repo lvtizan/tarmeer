@@ -15,6 +15,7 @@ export interface AdminUser {
     can_approve?: boolean;
     can_sort?: boolean;
     can_view_stats?: boolean;
+    can_view_interviews?: boolean;
   } | null;
 }
 
