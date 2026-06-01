@@ -19,6 +19,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Legacy Vite build output (not part of Next.js build)
     "dist/**",
+    // Backend compiled JS and source (not part of Next.js frontend)
+    "server/**",
+    // Duplicate node_modules directories
+    "node_modules 3/**",
   ]),
   // Downgrade rules that fire extensively in Vite-migrated code.
   // TODO: fix these incrementally after migration stabilises.
