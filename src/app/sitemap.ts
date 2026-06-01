@@ -5,6 +5,17 @@ export const dynamic = 'force-dynamic';
 const BASE = 'https://www.tarmeer.com';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
 
+const GUIDE_SLUGS = [
+  'renovation-cost-dubai',
+  'best-interior-designers-dubai',
+  'apartment-renovation-uae',
+  'villa-renovation-dubai',
+  'how-to-choose-interior-designer-uae',
+];
+
+const SERVICE_SLUGS = ['interior-design', 'renovation', 'kitchen-renovation', 'bathroom-renovation', 'villa-renovation', 'apartment-design', 'office-design', 'fit-out'];
+const CITY_SLUGS = ['dubai', 'abu-dhabi', 'sharjah', 'ajman', 'ras-al-khaimah', 'fujairah'];
+
 async function fetchJson<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
@@ -72,5 +83,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }));
 
-  return [...staticRoutes, ...companyRoutes, ...blogRoutes, ...supplierRoutes];
+  // ── Guide pages ───────────────────────────────────────────────
+  const guideRoutes: MetadataRoute.Sitemap = GUIDE_SLUGS.map((slug) => ({
+    url: `${BASE}/guide/${slug}`,
+    lastModified: new Date('2026-05-28'),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  // ── Service/city landing pages ────────────────────────────────
+  const serviceCityRoutes: MetadataRoute.Sitemap = SERVICE_SLUGS.flatMap((service) =>
+    CITY_SLUGS.map((city) => ({
+      url: `${BASE}/services/${service}/${city}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+  );
+
+  return [...staticRoutes, ...guideRoutes, ...serviceCityRoutes, ...companyRoutes, ...blogRoutes, ...supplierRoutes];
 }
