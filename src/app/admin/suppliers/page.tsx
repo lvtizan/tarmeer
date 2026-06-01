@@ -195,7 +195,7 @@ export default function AdminSuppliersPage() {
             </thead>
             <tbody>
               {((() => {
-                let list = [...suppliers];
+                const list = [...suppliers];
                 if (productSort) list.sort((a, b) => productSort === 'asc' ? a.product_count - b.product_count : b.product_count - a.product_count);
                 if (joinedSort) list.sort((a, b) => {
                   const d = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
