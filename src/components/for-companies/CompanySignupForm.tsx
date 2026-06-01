@@ -75,7 +75,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [companyType, setCompanyType] = useState('');
+  const [companyTypes, setCompanyTypes] = useState<string[]>([]);
   const [establishmentYear, setEstablishmentYear] = useState('');
   const [city, setCity] = useState('');
 
@@ -83,7 +83,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     ? validatePhone(phoneDigits, phoneRegion.code)
     : null;
 
-  const companyTypeRef = useRef<HTMLSelectElement>(null);
+  const MAX_COMPANY_TYPES = 5;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,7 +154,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
     if (phoneError) { setError(phoneError); return; }
     if (!companyName.trim()) { setError('Please fill in all required fields'); return; }
     if (!city) { setError('Please fill in all required fields'); return; }
-    if (!companyType) {
+    if (companyTypes.length === 0) {
       setCompanyTypeError(true);
       setError('Please fill in all required fields');
       return;
@@ -173,7 +173,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           contactName: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           companyName: companyName.trim(),
-          companyType,
+          companyTypes,
           establishmentYear: establishmentYear || undefined,
           city,
           sourcePage: typeof window !== 'undefined' ? window.location.href : '/for-companies',
@@ -191,7 +191,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               contact_person: contactName.trim(),
               phone: `${phoneRegion.code}${phoneDigits}`,
               city,
-              company_type: companyType,
+              company_type: companyTypes[0] || '',
               establishment_year: establishmentYear || null,
             }));
           }
@@ -236,7 +236,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           contact_person: contactName.trim(),
           phone: `${phoneRegion.code}${phoneDigits}`,
           city,
-          company_type: companyType,
+          company_type: companyTypes[0] || '',
           establishment_year: establishmentYear ? Number(establishmentYear) : null,
           description: '',
           services: ['Interior Design'],
@@ -291,7 +291,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       contact_person: contactName.trim(),
       description: '',
       services: ['Interior Design'],
-      company_type: companyType,
+      company_type: companyTypes[0] || '',
       establishment_year: establishmentYear ? Number(establishmentYear) : null,
       signup_source: source,
     };
@@ -470,7 +470,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                         contact_person: contactName.trim(),
                         phone: `${phoneRegion.code}${phoneDigits}`,
                         city,
-                        company_type: companyType,
+                        company_type: companyTypes[0] || '',
                         establishment_year: establishmentYear || null,
                         services: ['Interior Design'],
                         signup_source: 'for-companies-landing',
@@ -686,25 +686,52 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               </div>
 
               <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
-                <label className={labelClass}>
-                  {t(lang, 'companyType')} <span className="text-red-500">*</span>
-                </label>
-                <AdminSelect
-                  ref={companyTypeRef}
-                  value={companyType}
-                  onChange={(v) => { setCompanyType(v); if (v) setCompanyTypeError(false); }}
-                  options={[
-                    { value: '', label: t(lang, 'companyTypePlaceholder') },
-                    ...COMPANY_TYPES.map(ct => ({
-                      value: ct.value,
-                      label: t(lang, ct.labelKey),
-                      group: COMPANY_TYPE_GROUPS[ct.value],
-                    })),
-                  ]}
-                  searchable
-                  className="w-full"
-                  error={companyTypeError || (tried && !companyType)}
-                />
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <label className={labelClass + ' mb-0'}>
+                    {t(lang, 'companyType')} <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-stone-400">
+                    {lang === 'ar' ? `اختر حتى ${MAX_COMPANY_TYPES}` : `Select up to ${MAX_COMPANY_TYPES}`}
+                    {companyTypes.length > 0 && (
+                      <span className="ml-1 text-[#b8864a] font-medium">({companyTypes.length}/{MAX_COMPANY_TYPES})</span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {COMPANY_TYPES.map(ct => {
+                    const selected = companyTypes.includes(ct.value);
+                    const disabled = !selected && companyTypes.length >= MAX_COMPANY_TYPES;
+                    return (
+                      <button
+                        key={ct.value}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => {
+                          if (selected) {
+                            setCompanyTypes(prev => prev.filter(v => v !== ct.value));
+                          } else {
+                            setCompanyTypes(prev => [...prev, ct.value]);
+                            setCompanyTypeError(false);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-[13px] border transition-all ${
+                          selected
+                            ? 'bg-[#b8864a] border-[#b8864a] text-white font-medium shadow-sm'
+                            : disabled
+                            ? 'bg-stone-50 border-stone-200 text-stone-300 cursor-not-allowed'
+                            : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-[#b8864a] hover:text-[#b8864a] cursor-pointer'
+                        }`}
+                      >
+                        {t(lang, ct.labelKey)}
+                      </button>
+                    );
+                  })}
+                </div>
+                {(companyTypeError || (tried && companyTypes.length === 0)) && (
+                  <p className="mt-1.5 text-[12px] text-red-500">
+                    {lang === 'ar' ? 'يرجى اختيار نوع الشركة' : 'Please select at least one company type'}
+                  </p>
+                )}
               </div>
 
               <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
