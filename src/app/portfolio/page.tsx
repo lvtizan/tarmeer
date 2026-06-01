@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import PortfolioClient from '@/components/portfolio/PortfolioClient';
 import { fetchPortfolioFeed, type PortfolioProject } from '@/lib/publicApi';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Interior Design Portfolio — Browse UAE Projects | Tarmeer',
   description:

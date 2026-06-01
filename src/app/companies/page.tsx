@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import { fetchPublicCompanies } from '@/lib/publicApi';
 import CompaniesClient from '@/components/companies/CompaniesClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Interior Design Companies in UAE - Tarmeer',
   description:

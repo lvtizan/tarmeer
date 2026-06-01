@@ -5,6 +5,8 @@ import HomeSpaceSection from '@/components/home/HomeSpaceSection';
 import HomeSupplierSection from '@/components/home/HomeSupplierSection';
 import { fetchPublicCompanies } from '@/lib/publicApi';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Tarmeer - Find Interior Design & Renovation Companies in UAE',
   description:
