@@ -86,7 +86,7 @@ export default function AdminAdminsPage() {
         email: '',
         password: '',
         fullName: '',
-        permissions: { can_approve: false, can_sort: false, can_view_stats: true },
+        permissions: { can_approve: false, can_sort: false, can_view_stats: true, can_view_interviews: false },
       });
       await loadAdmins();
     } catch (err: unknown) {
