@@ -2,6 +2,11 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
+// Extract plugins registered by nextVitals so we can reference their rules in overrides.
+const nextVitalsArr = Array.isArray(nextVitals) ? nextVitals : [nextVitals];
+const reactHooksPlugin = nextVitalsArr.find((c) => c.plugins?.["react-hooks"])?.plugins?.["react-hooks"];
+const nextPlugin = nextVitalsArr.find((c) => c.plugins?.["@next/next"])?.plugins?.["@next/next"];
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -18,18 +23,23 @@ const eslintConfig = defineConfig([
   // Downgrade rules that fire extensively in Vite-migrated code.
   // TODO: fix these incrementally after migration stabilises.
   {
+    plugins: {
+      ...(reactHooksPlugin ? { "react-hooks": reactHooksPlugin } : {}),
+      ...(nextPlugin ? { "@next/next": nextPlugin } : {}),
+    },
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
-      "react-hooks/rules-of-hooks": "warn",
-      "@next/next/no-html-link-for-pages": "warn",
-      // React compiler rules — fire extensively in Vite-migrated code
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/static-components": "warn",
-      "react-hooks/refs": "warn",
-      "react-hooks/immutability": "warn",
-      "react-hooks/purity": "warn",
-      "react-hooks/preserve-manual-memoization": "warn",
-      "react-hooks/use-memo": "warn",
+      ...(reactHooksPlugin ? {
+        "react-hooks/rules-of-hooks": "warn",
+        "react-hooks/set-state-in-effect": "warn",
+        "react-hooks/static-components": "warn",
+        "react-hooks/refs": "warn",
+        "react-hooks/immutability": "warn",
+        "react-hooks/purity": "warn",
+        "react-hooks/preserve-manual-memoization": "warn",
+        "react-hooks/use-memo": "warn",
+      } : {}),
+      ...(nextPlugin ? { "@next/next/no-html-link-for-pages": "warn" } : {}),
     },
   },
 ]);
