@@ -259,7 +259,7 @@ export default function FieldSurveyPage() {
       setCompanyName('');
     }
     if (companySearchTimerRef.current) clearTimeout(companySearchTimerRef.current);
-    if (val.length > 1) {
+    if (val.length >= 1) {
       setCompanySearching(true);
       companySearchTimerRef.current = setTimeout(async () => {
         try {
@@ -391,11 +391,11 @@ export default function FieldSurveyPage() {
               ))}
             </div>
           )}
-          {companySearchQuery.length > 1 && !companySearching && companySuggestions.length === 0 && (
+          {companySearchQuery.length >= 1 && !companySearching && companySuggestions.length === 0 && (
             <p className="mt-6 text-center text-sm text-stone-400">No companies found</p>
           )}
           {companySearchQuery.length === 0 && (
-            <p className="mt-6 text-center text-xs text-stone-300">Type at least 2 characters to search</p>
+            <p className="mt-6 text-center text-xs text-stone-300">Type to search companies</p>
           )}
         </div>
       </div>
