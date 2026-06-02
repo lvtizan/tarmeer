@@ -352,9 +352,9 @@ export default function FieldSurveyPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-[#1c1917] mb-2">装企实地调研</h1>
+          <h1 className="text-2xl font-bold text-[#1c1917] mb-2">Field Survey</h1>
           <p className="text-[15px] text-stone-500 leading-relaxed">
-            搜索系统内已登记的装企<br />点击「匹配」后开始填写调研问卷
+            Search for a registered company<br />then tap <strong className="font-semibold text-[#b8864a]">Match</strong> to start the survey
           </p>
         </div>
 
@@ -364,7 +364,7 @@ export default function FieldSurveyPage() {
             ref={companyNameRef}
             value={companySearchQuery}
             onChange={(e) => handleCompanySearchChange(e.target.value)}
-            placeholder="输入公司名称搜索…"
+            placeholder="Search company name…"
             autoComplete="off"
             autoFocus
             className="w-full h-[52px] px-5 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
@@ -385,17 +385,17 @@ export default function FieldSurveyPage() {
                     onClick={() => selectCompany(c)}
                     className="shrink-0 h-8 px-4 rounded-full bg-[#b8864a] text-white text-sm font-semibold active:opacity-80 transition-opacity"
                   >
-                    匹配
+                    Match
                   </button>
                 </div>
               ))}
             </div>
           )}
           {companySearchQuery.length > 1 && !companySearching && companySuggestions.length === 0 && (
-            <p className="mt-6 text-center text-sm text-stone-400">未找到匹配的企业</p>
+            <p className="mt-6 text-center text-sm text-stone-400">No companies found</p>
           )}
           {companySearchQuery.length === 0 && (
-            <p className="mt-6 text-center text-xs text-stone-300">输入至少 2 个字符开始搜索</p>
+            <p className="mt-6 text-center text-xs text-stone-300">Type at least 2 characters to search</p>
           )}
         </div>
       </div>
@@ -409,7 +409,7 @@ export default function FieldSurveyPage() {
       <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-stone-400 leading-none mb-0.5">正在调研</p>
+            <p className="text-xs text-stone-400 leading-none mb-0.5">Surveying</p>
             <p className="text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</p>
           </div>
           <button
@@ -417,7 +417,7 @@ export default function FieldSurveyPage() {
             onClick={clearSelectedCompany}
             className="shrink-0 text-xs text-stone-400 hover:text-[#b8864a] transition-colors font-medium"
           >
-            重新选择
+            Change
           </button>
           <span className={`shrink-0 text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
             {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
@@ -429,7 +429,7 @@ export default function FieldSurveyPage() {
         {/* Photos section */}
         <div>
           <h2 className="text-base font-bold text-[#2c2c2c] mb-3 pl-3 border-l-4 border-[#b8864a]">
-            现场照片 {photos.length > 0 && <span className="text-stone-400 font-normal text-sm">({photos.length})</span>}
+            Photos {photos.length > 0 && <span className="text-stone-400 font-normal text-sm">({photos.length})</span>}
           </h2>
           {photos.length > 0 && (
             <div className="grid grid-cols-3 gap-2 mb-3">
@@ -460,7 +460,7 @@ export default function FieldSurveyPage() {
               ))}
             </div>
           )}
-          <p className="text-xs text-stone-400">{photos.length === 0 ? '暂无照片 — 点击下方📷拍摄' : '点击照片放大 · 点击📷继续拍摄'}</p>
+          <p className="text-xs text-stone-400">{photos.length === 0 ? 'No photos yet — tap 📷 below to add.' : 'Tap a photo to enlarge · tap 📷 to add more.'}</p>
         </div>
 
         {schema.map((section) => (
@@ -495,14 +495,14 @@ export default function FieldSurveyPage() {
           className="flex items-center justify-center gap-2 h-12 px-5 rounded-2xl border-2 border-[#b8864a] text-[#b8864a] font-semibold text-[15px] active:bg-[#b8864a]/10 transition flex-shrink-0"
         >
           <Camera className="w-5 h-5" />
-          <span>拍照</span>
+          <span>Photo</span>
         </button>
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
           className="btn-primary flex-1 h-12 disabled:opacity-50"
         >
-          {isSubmitting ? '提交中…' : '提交调研'}
+          {isSubmitting ? 'Submitting…' : 'Submit Survey'}
         </button>
       </div>
 
