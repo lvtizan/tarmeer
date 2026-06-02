@@ -85,13 +85,15 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
       try {
         const r = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
-          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(5000) }
+          { headers: { 'Accept-Language': 'zh-CN,zh,en' }, signal: AbortSignal.timeout(5000) }
         );
         if (r.ok) {
           const data = await r.json();
           const a = data.address || {};
-          const parts = [a.suburb || a.quarter || a.neighbourhood, a.city || a.town || a.village, a.country].filter(Boolean);
-          info.address = parts.join(', ');
+          const city = a.city || a.town || a.village || a.county || a.state;
+          const district = a.suburb || a.quarter || a.neighbourhood || a.district;
+          const parts = [district, city].filter(Boolean);
+          info.address = parts.join(' · ');
         }
       } catch { /* coords-only fallback */ }
       setGeoInfo(info);
