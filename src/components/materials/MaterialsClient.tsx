@@ -165,7 +165,9 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
           setCategoryOptions(data.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[Materials] Failed to fetch categories:', err);
+      });
   }, []);
 
   useEffect(() => {
@@ -179,7 +181,9 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
     fetch(`${API_BASE}/suppliers?${params}`)
       .then(r => r.json())
       .then(data => setSuppliers(data.suppliers || []))
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[Materials] Failed to fetch suppliers:', err);
+      })
       .finally(() => setLoading(false));
   }, [originFilter, categoryFilter]);
 

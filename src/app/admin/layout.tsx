@@ -200,7 +200,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       };
       const pageKey = pageKeyMap[notifKey];
       if (pageKey) {
-        adminApi.markNotificationSeen(pageKey).then(() => fetchNotificationCounts()).catch(() => {});
+        adminApi.markNotificationSeen(pageKey).then(() => fetchNotificationCounts()).catch((err) => {
+          console.error('[AdminLayout] Failed to mark notification seen:', err);
+        });
       } else {
         fetchNotificationCounts();
       }

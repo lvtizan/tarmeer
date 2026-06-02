@@ -33,7 +33,9 @@ function useProjectImages(count: number): string[] {
         }
         if (imgs.length >= 3) setImages(imgs.slice(0, count));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[StartGuide] Failed to load portfolio images:', err);
+      });
   }, [count]);
   return images;
 }

@@ -69,7 +69,9 @@ export default function SupplierProfilePage() {
         setWhatsapp(p.whatsapp || '');
         setWebsite(p.website || '');
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[SupplierProfile] Failed to load profile:', err);
+      })
       .finally(() => setLoading(false));
   }, []);
 

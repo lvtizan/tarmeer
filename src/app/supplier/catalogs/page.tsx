@@ -40,7 +40,9 @@ export default function SupplierCatalogsPage() {
     fetch(`${API_BASE}/suppliers/me/catalogs`, { headers: authHeaders() as HeadersInit })
       .then(r => r.json())
       .then(data => { if (data?.catalogs) setCatalogs(data.catalogs); })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[SupplierCatalogs] Failed to load catalogs:', err);
+      })
       .finally(() => setLoading(false));
   }, []);
 

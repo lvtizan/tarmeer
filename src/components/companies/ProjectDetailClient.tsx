@@ -59,7 +59,9 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
         const len = result.project.images.length;
         setCurrentIndex((i) => (len > 0 ? Math.min(Math.max(0, i), len - 1) : 0));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[ProjectDetail] Failed to fetch project detail:', err);
+      });
   }, [companySlug, projectSlug]);
 
   useEffect(() => { setCurrentIndex(0); }, [projectSlug]);

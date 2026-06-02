@@ -30,7 +30,9 @@ export default function DashboardProfilePage() {
         setCity(u.city || '');
         setEmail(u.email || '');
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[DashboardProfile] Failed to load profile:', err);
+      })
       .finally(() => setLoading(false));
   };
 

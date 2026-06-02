@@ -65,12 +65,16 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
           setCompanyName((p.company_name as string) || '');
           setCompanyType((p.company_type as string) || '');
           setCrmEnabled(!!(p.crm_tenant_id));
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error('[CompanyLayout] Failed to load company profile:', err);
+        });
         api.get('/auth/linked-portals').then((res: unknown) => {
           if (!mounted) return;
           const r = res as { portals?: LinkedPortal[] } | null;
           setLinkedPortals(r?.portals || []);
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error('[CompanyLayout] Failed to load linked portals:', err);
+        });
       })
       .catch(() => {
         if (!mounted) return;

@@ -60,7 +60,9 @@ export default function SupplierProductsPage() {
     fetch(`${API_BASE}/suppliers/me/products`, { headers: authHeaders() as HeadersInit })
       .then(r => r.json())
       .then(data => { if (data?.products) setProducts(data.products); })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[SupplierProducts] Failed to load products:', err);
+      })
       .finally(() => setLoading(false));
   }, []);
 

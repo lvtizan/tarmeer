@@ -25,7 +25,9 @@ export default function NotificationBell() {
       const data = await api.get('/notifications?limit=20') as { notifications?: Notification[]; unread_count?: number };
       setNotifications(data.notifications || []);
       setUnreadCount(data.unread_count || 0);
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error('[NotificationBell] Failed to fetch notifications:', err);
+    }
   };
 
   useEffect(() => {
@@ -47,7 +49,9 @@ export default function NotificationBell() {
       await api.put('/notifications/read-all', {});
       setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
       setUnreadCount(0);
-    } catch { /* silent */ }
+    } catch (err) {
+      console.error('[NotificationBell] Failed to mark all as read:', err);
+    }
   };
 
   const handleClick = async (n: Notification) => {
@@ -56,7 +60,9 @@ export default function NotificationBell() {
         await api.put(`/notifications/${n.id}/read`, {});
         setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: 1 } : x));
         setUnreadCount(prev => Math.max(0, prev - 1));
-      } catch { /* silent */ }
+      } catch (err) {
+        console.error('[NotificationBell] Failed to mark notification as read:', err);
+      }
     }
     if (n.link) window.location.href = n.link;
     setOpen(false);
