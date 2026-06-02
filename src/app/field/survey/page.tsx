@@ -141,6 +141,7 @@ export default function FieldSurveyPage() {
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoRecord | null>(null);
   const [companyNameError, setCompanyNameError] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companyNameRef = useRef<HTMLInputElement>(null);
@@ -248,9 +249,14 @@ export default function FieldSurveyPage() {
     });
   }
 
-  function handleCompanyNameChange(val: string) {
-    setCompanyName(val);
-    if (draftId) triggerSave(draftId, val, companyRefId, sections);
+  function handleCompanySearchChange(val: string) {
+    setCompanySearchQuery(val);
+    // Clear any previously selected company when user starts re-typing
+    if (companyRefId) {
+      setCompanyRefId(null);
+      setCompanyRefName('');
+      setCompanyName('');
+    }
     if (companySearchTimerRef.current) clearTimeout(companySearchTimerRef.current);
     if (val.length > 1) {
       companySearchTimerRef.current = setTimeout(async () => {
@@ -271,13 +277,24 @@ export default function FieldSurveyPage() {
     setCompanyRefId(company.id);
     setCompanyRefName(company.name);
     setCompanyName(company.name);
+    setCompanySearchQuery('');
     setShowSuggestions(false);
+    setCompanyNameError(false);
     if (draftId) triggerSave(draftId, company.name, company.id, sections);
   }
 
+  function clearSelectedCompany() {
+    setCompanyRefId(null);
+    setCompanyRefName('');
+    setCompanyName('');
+    setCompanySearchQuery('');
+    setShowSuggestions(false);
+    setTimeout(() => companyNameRef.current?.focus(), 50);
+  }
+
   async function handleSubmit() {
-    // Validate company name
-    if (!companyName.trim()) {
+    // Validate: must select a company from the system
+    if (!companyRefId) {
       setCompanyNameError(true);
       companyNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       companyNameRef.current?.focus();
@@ -332,39 +349,53 @@ export default function FieldSurveyPage() {
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
         <div>
           <label className="block text-sm font-medium text-stone-500 mb-1">Company Name *</label>
-          <div className="relative">
-            <input
-              ref={companyNameRef}
-              value={companyName}
-              onChange={(e) => { setCompanyNameError(false); handleCompanyNameChange(e.target.value); }}
-              placeholder="Enter company name"
-              className={`w-full h-[50px] px-5 rounded-2xl border text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:bg-white transition ${
-                companyNameError
-                  ? 'border-red-400 bg-red-50 focus:ring-red-200 focus:border-red-400'
-                  : 'border-stone-200 bg-stone-50/80 focus:ring-[#B8864A]/15 focus:border-[#B8864A]'
-              }`}
-            />
-            {showSuggestions && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-2xl shadow-lg z-20 overflow-hidden">
-                {companySuggestions.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => selectCompany(c)}
-                    className="w-full text-left px-4 py-3 text-[15px] hover:bg-stone-50 border-b border-stone-100 last:border-0"
-                  >
-                    <span className="font-medium">{c.name}</span>
-                    {c.city && <span className="text-stone-400 ml-2 text-sm">{c.city}</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {companyNameError && (
-            <p className="text-xs text-red-500 mt-1">⚠ Company name is required</p>
+          {companyRefId ? (
+            /* Selected state — show badge */
+            <div className={`flex items-center gap-3 h-[50px] px-5 rounded-2xl border bg-green-50 border-green-300`}>
+              <span className="text-green-600 font-bold text-lg leading-none">✓</span>
+              <span className="flex-1 text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</span>
+              <button
+                type="button"
+                onClick={clearSelectedCompany}
+                className="shrink-0 text-xs text-stone-400 hover:text-red-500 transition-colors font-medium"
+              >
+                重新搜索
+              </button>
+            </div>
+          ) : (
+            /* Search state */
+            <div className="relative">
+              <input
+                ref={companyNameRef}
+                value={companySearchQuery}
+                onChange={(e) => { setCompanyNameError(false); handleCompanySearchChange(e.target.value); }}
+                placeholder="搜索系统内已有公司名…"
+                autoComplete="off"
+                className={`w-full h-[50px] px-5 rounded-2xl border text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:bg-white transition ${
+                  companyNameError
+                    ? 'border-red-400 bg-red-50 focus:ring-red-200 focus:border-red-400'
+                    : 'border-stone-200 bg-stone-50/80 focus:ring-[#B8864A]/15 focus:border-[#B8864A]'
+                }`}
+              />
+              {showSuggestions && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-2xl shadow-lg z-20 overflow-hidden">
+                  {companySuggestions.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); selectCompany(c); }}
+                      className="w-full text-left px-4 py-3 text-[15px] hover:bg-stone-50 border-b border-stone-100 last:border-0"
+                    >
+                      <span className="font-medium">{c.name}</span>
+                      {c.city && <span className="text-stone-400 ml-2 text-sm">{c.city}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
-          {!companyNameError && companyRefName && companyRefId && (
-            <p className="text-xs text-green-600 mt-1">✓ Linked to existing company record</p>
+          {companyNameError && (
+            <p className="text-xs text-red-500 mt-1">⚠ 请先搜索并从列表中选择公司</p>
           )}
         </div>
 
