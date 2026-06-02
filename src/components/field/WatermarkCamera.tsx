@@ -75,30 +75,41 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
     };
   }, []);
 
-  // Get geolocation
+  // Get geolocation — try high-accuracy first, fall back to low-accuracy on timeout
   useEffect(() => {
     if (!navigator.geolocation) { setGeoStatus('error'); return; }
+
+    async function applyPosition(pos: GeolocationPosition) {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      const info: GeoInfo = { lat, lng, timestamp: new Date() };
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
+          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(5000) }
+        );
+        if (r.ok) {
+          const data = await r.json();
+          const a = data.address || {};
+          const parts = [a.suburb || a.quarter || a.neighbourhood, a.city || a.town || a.village, a.country].filter(Boolean);
+          info.address = parts.join(', ');
+        }
+      } catch { /* coords-only fallback */ }
+      setGeoInfo(info);
+      setGeoStatus('ok');
+    }
+
+    // First attempt: high accuracy (GPS chip), 15s timeout
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        const info: GeoInfo = { lat, lng, timestamp: new Date() };
-        try {
-          const r = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
-            { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(5000) }
-          );
-          if (r.ok) {
-            const data = await r.json();
-            const a = data.address || {};
-            const parts = [a.suburb || a.quarter || a.neighbourhood, a.city || a.town || a.village, a.country].filter(Boolean);
-            info.address = parts.join(', ');
-          }
-        } catch { /* coords-only fallback */ }
-        setGeoInfo(info);
-        setGeoStatus('ok');
+      applyPosition,
+      () => {
+        // Fall back to network/cell location — faster, less accurate
+        navigator.geolocation.getCurrentPosition(
+          applyPosition,
+          () => setGeoStatus('error'),
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+        );
       },
-      () => setGeoStatus('error'),
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     );
   }, []);
 
@@ -128,19 +139,23 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
     const boxX = padX;
     const boxY = H - boxH - padY;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.62)';
-    ctx.beginPath();
-    ctx.roundRect(boxX, boxY, boxW, boxH, Math.round(8 * scale));
-    ctx.fill();
+    // Text shadow instead of background block
+    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowBlur = Math.round(10 * scale);
+    ctx.shadowOffsetX = Math.round(1 * scale);
+    ctx.shadowOffsetY = Math.round(1 * scale);
 
     lines.forEach((line, i) => {
       const isLast = i === lines.length - 1;
       ctx.font = isLast
         ? `${Math.round(fontSize * 0.85)}px -apple-system, "SF Pro Text", Arial, sans-serif`
         : `bold ${fontSize}px -apple-system, "SF Pro Text", Arial, sans-serif`;
-      ctx.fillStyle = isLast ? 'rgba(255,255,255,0.65)' : '#ffffff';
+      ctx.fillStyle = isLast ? 'rgba(255,255,255,0.75)' : '#ffffff';
       ctx.fillText(line, boxX + padX, boxY + padY + fontSize + i * lineHeight);
     });
+
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
   }
 
   function takePhoto() {
@@ -227,11 +242,12 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
               className="w-full h-full object-cover"
             />
             {/* Live watermark overlay — mirrors what will be burned in */}
-            <div className="absolute bottom-4 left-4 bg-black/62 rounded-xl px-4 py-3 max-w-[88vw] pointer-events-none select-none">
+            <div className="absolute bottom-4 left-4 max-w-[88vw] pointer-events-none select-none">
               {liveLines.map((line, i) => (
                 <p
                   key={i}
-                  className={`text-white leading-snug ${i === liveLines.length - 1 ? 'text-[11px] opacity-65 mt-0.5' : 'text-[13px] font-semibold'}`}
+                  className={`text-white leading-snug ${i === liveLines.length - 1 ? 'text-[11px] opacity-75 mt-0.5' : 'text-[13px] font-semibold'}`}
+                  style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)' }}
                 >
                   {line}
                 </p>
