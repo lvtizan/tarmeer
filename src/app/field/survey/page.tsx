@@ -344,12 +344,22 @@ export default function FieldSurveyPage() {
   /* ── 未选公司：搜索界面 ── */
   if (!companyRefId) {
     return (
-      <div className="min-h-screen bg-[#faf9f7]">
-        <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3">
-          <span className="font-semibold text-[#2c2c2c] text-[15px]">选择调研企业</span>
+      <div className="min-h-screen bg-[#faf9f7] flex flex-col">
+        {/* Hero 引导区 */}
+        <div className="bg-white border-b border-stone-100 px-6 pt-12 pb-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#b8864a]/10 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-[#b8864a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-[#1c1917] mb-2">装企实地调研</h1>
+          <p className="text-[15px] text-stone-500 leading-relaxed">
+            搜索系统内已登记的装企<br />点击「匹配」后开始填写调研问卷
+          </p>
         </div>
-        <div className="px-4 pt-6 max-w-lg mx-auto">
-          <p className="text-sm text-stone-500 mb-4">搜索系统内已登记的装企，点击「匹配」后开始调研问卷。</p>
+
+        {/* 搜索区 */}
+        <div className="flex-1 px-4 pt-5 max-w-lg mx-auto w-full">
           <input
             ref={companyNameRef}
             value={companySearchQuery}
@@ -357,7 +367,7 @@ export default function FieldSurveyPage() {
             placeholder="输入公司名称搜索…"
             autoComplete="off"
             autoFocus
-            className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
+            className="w-full h-[52px] px-5 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
           />
           {companySuggestions.length > 0 && (
             <div className="mt-3 bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
@@ -382,7 +392,10 @@ export default function FieldSurveyPage() {
             </div>
           )}
           {companySearchQuery.length > 1 && !companySearching && companySuggestions.length === 0 && (
-            <p className="mt-4 text-center text-sm text-stone-400">未找到匹配的企业</p>
+            <p className="mt-6 text-center text-sm text-stone-400">未找到匹配的企业</p>
+          )}
+          {companySearchQuery.length === 0 && (
+            <p className="mt-6 text-center text-xs text-stone-300">输入至少 2 个字符开始搜索</p>
           )}
         </div>
       </div>
