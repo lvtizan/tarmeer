@@ -142,6 +142,7 @@ export default function FieldSurveyPage() {
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoRecord | null>(null);
   const [companyNameError, setCompanyNameError] = useState(false);
   const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [companySearching, setCompanySearching] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companyNameRef = useRef<HTMLInputElement>(null);
@@ -259,6 +260,7 @@ export default function FieldSurveyPage() {
     }
     if (companySearchTimerRef.current) clearTimeout(companySearchTimerRef.current);
     if (val.length > 1) {
+      setCompanySearching(true);
       companySearchTimerRef.current = setTimeout(async () => {
         try {
           const { results } = await fieldApi.searchCompanies(val) as { results: CompanySuggestion[] };
@@ -266,10 +268,14 @@ export default function FieldSurveyPage() {
           setShowSuggestions(results.length > 0);
         } catch {
           setShowSuggestions(false);
+        } finally {
+          setCompanySearching(false);
         }
       }, 300);
     } else {
+      setCompanySuggestions([]);
       setShowSuggestions(false);
+      setCompanySearching(false);
     }
   }
 
@@ -335,74 +341,82 @@ export default function FieldSurveyPage() {
     );
   }
 
+  /* ── 未选公司：搜索界面 ── */
+  if (!companyRefId) {
+    return (
+      <div className="min-h-screen bg-[#faf9f7]">
+        <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3">
+          <span className="font-semibold text-[#2c2c2c] text-[15px]">选择调研企业</span>
+        </div>
+        <div className="px-4 pt-6 max-w-lg mx-auto">
+          <p className="text-sm text-stone-500 mb-4">搜索系统内已登记的装企，点击「匹配」后开始调研问卷。</p>
+          <input
+            ref={companyNameRef}
+            value={companySearchQuery}
+            onChange={(e) => handleCompanySearchChange(e.target.value)}
+            placeholder="输入公司名称搜索…"
+            autoComplete="off"
+            autoFocus
+            className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
+          />
+          {companySuggestions.length > 0 && (
+            <div className="mt-3 bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+              {companySuggestions.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-3 px-4 py-3.5 border-b border-stone-100 last:border-0"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium text-[#1c1917] truncate">{c.name}</p>
+                    {c.city && <p className="text-xs text-stone-400 mt-0.5">{c.city}</p>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => selectCompany(c)}
+                    className="shrink-0 h-8 px-4 rounded-full bg-[#b8864a] text-white text-sm font-semibold active:opacity-80 transition-opacity"
+                  >
+                    匹配
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {companySearchQuery.length > 1 && !companySearching && companySuggestions.length === 0 && (
+            <p className="mt-4 text-center text-sm text-stone-400">未找到匹配的企业</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── 已选公司：问卷界面 ── */
   return (
     <div className="min-h-screen bg-[#faf9f7] pb-28">
+      {/* 顶部：已选公司 + 保存状态 */}
       <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <span className="font-semibold text-[#2c2c2c] text-[15px]">Interview Survey</span>
-          <span className={`text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-stone-400 leading-none mb-0.5">正在调研</p>
+            <p className="text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={clearSelectedCompany}
+            className="shrink-0 text-xs text-stone-400 hover:text-[#b8864a] transition-colors font-medium"
+          >
+            重新选择
+          </button>
+          <span className={`shrink-0 text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
             {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
           </span>
         </div>
       </div>
 
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
-        <div>
-          <label className="block text-sm font-medium text-stone-500 mb-1">Company Name *</label>
-          {companyRefId ? (
-            /* Selected state — show badge */
-            <div className={`flex items-center gap-3 h-[50px] px-5 rounded-2xl border bg-green-50 border-green-300`}>
-              <span className="text-green-600 font-bold text-lg leading-none">✓</span>
-              <span className="flex-1 text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</span>
-              <button
-                type="button"
-                onClick={clearSelectedCompany}
-                className="shrink-0 text-xs text-stone-400 hover:text-red-500 transition-colors font-medium"
-              >
-                重新搜索
-              </button>
-            </div>
-          ) : (
-            /* Search state */
-            <div className="relative">
-              <input
-                ref={companyNameRef}
-                value={companySearchQuery}
-                onChange={(e) => { setCompanyNameError(false); handleCompanySearchChange(e.target.value); }}
-                placeholder="搜索系统内已有公司名…"
-                autoComplete="off"
-                className={`w-full h-[50px] px-5 rounded-2xl border text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:bg-white transition ${
-                  companyNameError
-                    ? 'border-red-400 bg-red-50 focus:ring-red-200 focus:border-red-400'
-                    : 'border-stone-200 bg-stone-50/80 focus:ring-[#B8864A]/15 focus:border-[#B8864A]'
-                }`}
-              />
-              {showSuggestions && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-2xl shadow-lg z-20 overflow-hidden">
-                  {companySuggestions.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); selectCompany(c); }}
-                      className="w-full text-left px-4 py-3 text-[15px] hover:bg-stone-50 border-b border-stone-100 last:border-0"
-                    >
-                      <span className="font-medium">{c.name}</span>
-                      {c.city && <span className="text-stone-400 ml-2 text-sm">{c.city}</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {companyNameError && (
-            <p className="text-xs text-red-500 mt-1">⚠ 请先搜索并从列表中选择公司</p>
-          )}
-        </div>
-
         {/* Photos section */}
         <div>
           <h2 className="text-base font-bold text-[#2c2c2c] mb-3 pl-3 border-l-4 border-[#b8864a]">
-            Photos {photos.length > 0 && <span className="text-stone-400 font-normal text-sm">({photos.length})</span>}
+            现场照片 {photos.length > 0 && <span className="text-stone-400 font-normal text-sm">({photos.length})</span>}
           </h2>
           {photos.length > 0 && (
             <div className="grid grid-cols-3 gap-2 mb-3">
@@ -433,7 +447,7 @@ export default function FieldSurveyPage() {
               ))}
             </div>
           )}
-          <p className="text-xs text-stone-400">{photos.length === 0 ? 'No photos yet — tap 📷 below to add.' : 'Tap a photo to enlarge · tap 📷 to add more.'}</p>
+          <p className="text-xs text-stone-400">{photos.length === 0 ? '暂无照片 — 点击下方📷拍摄' : '点击照片放大 · 点击📷继续拍摄'}</p>
         </div>
 
         {schema.map((section) => (
@@ -468,14 +482,14 @@ export default function FieldSurveyPage() {
           className="flex items-center justify-center gap-2 h-12 px-5 rounded-2xl border-2 border-[#b8864a] text-[#b8864a] font-semibold text-[15px] active:bg-[#b8864a]/10 transition flex-shrink-0"
         >
           <Camera className="w-5 h-5" />
-          <span>Photo</span>
+          <span>拍照</span>
         </button>
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
           className="btn-primary flex-1 h-12 disabled:opacity-50"
         >
-          {isSubmitting ? 'Submitting…' : 'Submit Interview'}
+          {isSubmitting ? '提交中…' : '提交调研'}
         </button>
       </div>
 
