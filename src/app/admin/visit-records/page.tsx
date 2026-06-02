@@ -4,7 +4,7 @@ import { adminApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import AdminSelect from '@/components/ui/AdminSelect';
-import { MapPin, ExternalLink, X } from 'lucide-react';
+import { MapPin, ExternalLink, X, ClipboardList } from 'lucide-react';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface VisitRecord {
@@ -364,15 +364,24 @@ export default function AdminVisitRecordsPage() {
           <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Visit Records', '访谈记录')}</h1>
           <span className="text-sm text-stone-400">{records.length}</span>
         </div>
-        <a
-          href="/field/survey"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          {t('Interview Page', '访谈提交页')}
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="/admin/survey-questions"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            {t('Survey Questions', '问卷题目')}
+          </a>
+          <a
+            href="/field/survey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            {t('Interview Page', '访谈提交页')}
+          </a>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">

@@ -82,11 +82,6 @@ const adminItems = [
     infoZh: '查看外勤人员提交的所有公司访谈记录。',
   },
   {
-    to: '/admin/survey-questions', labelEn: 'Survey Questions', labelZh: '问卷题目', icon: ClipboardList, superAdminOnly: true,
-    infoEn: 'Edit the field survey structure: add/remove sections and questions.',
-    infoZh: '编辑外勤访谈问卷结构，增删节和问题。',
-  },
-  {
     to: '/admin/staff', labelEn: 'Field Staff', labelZh: '外勤人员', icon: UserCheck, superAdminOnly: true,
     infoEn: 'Manage field staff accounts — create, activate, or deactivate.',
     infoZh: '管理外勤账号，包括新建、启用和停用。',

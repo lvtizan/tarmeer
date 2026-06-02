@@ -102,6 +102,7 @@ type SectionData = Record<string, string | string[]>;
 type AllSections = { [key: string]: SectionData };
 
 interface PhotoRecord {
+  _id?: string;      // local unique ID for update targeting
   dataUrl: string;   // local preview (always available)
   url: string;       // server URL (empty until upload completes)
   uploading?: boolean;
@@ -193,26 +194,26 @@ export default function FieldSurveyPage() {
   }
 
   async function handlePhotoTaken(captured: CapturedPhoto) {
-    if (!draftId) return;
+    const photoId = Date.now().toString();
     const record: PhotoRecord = {
       dataUrl: captured.dataUrl,
       url: '',
-      uploading: true,
+      uploading: !!draftId,
       lat: captured.lat,
       lng: captured.lng,
       timestamp: captured.timestamp,
     };
-    setPhotos(prev => [...prev, record]);
-    const idx = photos.length; // index this photo will be at
+    setPhotos(prev => [...prev, { ...record, _id: photoId }]);
+    if (!draftId) return; // show photo locally; upload skipped (no draft yet)
     try {
       const { url } = await fieldApi.uploadPhoto(draftId, captured.blob, {
         lat: captured.lat,
         lng: captured.lng,
         timestamp: captured.timestamp,
       });
-      setPhotos(prev => prev.map((p, i) => i === idx ? { ...p, url, uploading: false } : p));
+      setPhotos(prev => prev.map((p) => p._id === photoId ? { ...p, url, uploading: false } : p));
     } catch {
-      setPhotos(prev => prev.map((p, i) => i === idx ? { ...p, uploading: false, error: 'Upload failed' } : p));
+      setPhotos(prev => prev.map((p) => p._id === photoId ? { ...p, uploading: false, error: 'Upload failed' } : p));
     }
   }
 
