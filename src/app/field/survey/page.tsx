@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Camera, X } from 'lucide-react';
 import { fieldApi } from '@/lib/adminApi';
 import ChipSelect from '@/components/field/ChipSelect';
+import WatermarkCamera, { type CapturedPhoto } from '@/components/field/WatermarkCamera';
 
 const SECTIONS = [
   {
@@ -99,6 +101,16 @@ const SECTIONS = [
 type SectionData = Record<string, string | string[]>;
 type AllSections = { [key: string]: SectionData };
 
+interface PhotoRecord {
+  dataUrl: string;   // local preview (always available)
+  url: string;       // server URL (empty until upload completes)
+  uploading?: boolean;
+  error?: string;
+  lat?: number;
+  lng?: number;
+  timestamp: string;
+}
+
 interface DraftData {
   id: number;
   company_name?: string;
@@ -123,6 +135,9 @@ export default function FieldSurveyPage() {
   const [submitted, setSubmitted] = useState(false);
   const [companySuggestions, setCompanySuggestions] = useState<CompanySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [photos, setPhotos] = useState<PhotoRecord[]>([]);
+  const [lightboxPhoto, setLightboxPhoto] = useState<PhotoRecord | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -160,6 +175,40 @@ export default function FieldSurveyPage() {
       }
     }
     setSections(restored);
+    if (draft.photos) {
+      const raw = typeof draft.photos === 'string' ? JSON.parse(draft.photos as string) : draft.photos;
+      if (Array.isArray(raw)) {
+        setPhotos((raw as PhotoRecord[]).map(p => ({ ...p, dataUrl: p.url || '' })));
+      }
+    }
+  }
+
+  async function handlePhotoTaken(captured: CapturedPhoto) {
+    if (!draftId) return;
+    const record: PhotoRecord = {
+      dataUrl: captured.dataUrl,
+      url: '',
+      uploading: true,
+      lat: captured.lat,
+      lng: captured.lng,
+      timestamp: captured.timestamp,
+    };
+    setPhotos(prev => [...prev, record]);
+    const idx = photos.length; // index this photo will be at
+    try {
+      const { url } = await fieldApi.uploadPhoto(draftId, captured.blob, {
+        lat: captured.lat,
+        lng: captured.lng,
+        timestamp: captured.timestamp,
+      });
+      setPhotos(prev => prev.map((p, i) => i === idx ? { ...p, url, uploading: false } : p));
+    } catch {
+      setPhotos(prev => prev.map((p, i) => i === idx ? { ...p, uploading: false, error: 'Upload failed' } : p));
+    }
+  }
+
+  function removePhoto(idx: number) {
+    setPhotos(prev => prev.filter((_, i) => i !== idx));
   }
 
   const triggerSave = useCallback((id: number, cName: string, cRefId: number | null, secs: AllSections) => {
@@ -251,9 +300,18 @@ export default function FieldSurveyPage() {
     <div className="min-h-screen bg-[#faf9f7] pb-24">
       <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
         <span className="font-semibold text-[#2c2c2c] text-[15px]">Interview Survey</span>
-        <span className={`text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
-          {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCamera(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#b8864a]/10 text-[#b8864a] text-sm font-medium active:bg-[#b8864a]/20 transition"
+          >
+            <Camera className="w-4 h-4" />
+            <span>Photo{photos.length > 0 ? ` (${photos.length})` : ''}</span>
+          </button>
+          <span className={`text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
+            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
+          </span>
+        </div>
       </div>
 
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
@@ -286,6 +344,42 @@ export default function FieldSurveyPage() {
             <p className="text-xs text-green-600 mt-1">✓ Linked to existing company record</p>
           )}
         </div>
+
+        {/* Photo thumbnails */}
+        {photos.length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-stone-500 mb-2">Photos ({photos.length})</p>
+            <div className="flex gap-2 flex-wrap">
+              {photos.map((photo, idx) => (
+                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.dataUrl || photo.url}
+                    alt={`Photo ${idx + 1}`}
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setLightboxPhoto(photo)}
+                  />
+                  {photo.uploading && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    </div>
+                  )}
+                  {photo.error && (
+                    <div className="absolute inset-0 bg-red-500/60 flex items-center justify-center">
+                      <span className="text-white text-[10px] font-medium px-1 text-center">Failed</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => removePhoto(idx)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {SECTIONS.map((section) => (
           <div key={section.key}>
@@ -322,6 +416,35 @@ export default function FieldSurveyPage() {
           {isSubmitting ? 'Submitting…' : 'Submit Interview'}
         </button>
       </div>
+
+      {/* Watermark Camera overlay */}
+      {showCamera && (
+        <WatermarkCamera
+          onClose={() => setShowCamera(false)}
+          onPhotoTaken={handlePhotoTaken}
+        />
+      )}
+
+      {/* Lightbox */}
+      {lightboxPhoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setLightboxPhoto(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxPhoto.dataUrl || lightboxPhoto.url}
+            alt="Photo preview"
+            className="max-w-full max-h-full object-contain"
+          />
+          <button
+            onClick={() => setLightboxPhoto(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

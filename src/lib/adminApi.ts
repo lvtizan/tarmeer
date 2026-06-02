@@ -1025,4 +1025,23 @@ export const fieldApi = {
     fieldRequest(`/interviews/${id}/submit`, { method: 'POST' }),
   searchCompanies: (q: string) =>
     fieldRequest(`/companies/search?q=${encodeURIComponent(q)}`),
+  uploadPhoto: async (id: number, blob: Blob, meta?: { lat?: number; lng?: number; timestamp?: string }): Promise<{ url: string }> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+    const fd = new FormData();
+    fd.append('photo', blob, `photo-${Date.now()}.jpg`);
+    if (meta?.lat !== undefined) fd.append('lat', String(meta.lat));
+    if (meta?.lng !== undefined) fd.append('lng', String(meta.lng));
+    if (meta?.timestamp) fd.append('timestamp', meta.timestamp);
+    const res = await fetch(`${FIELD_API_BASE}/interviews/${id}/photos`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+    if (!res.ok) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = await res.json().catch(() => ({})) as any;
+      throw new Error(err.error || `Upload failed: ${res.status}`);
+    }
+    return res.json();
+  },
 };
