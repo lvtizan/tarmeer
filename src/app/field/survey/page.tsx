@@ -140,8 +140,10 @@ export default function FieldSurveyPage() {
   const [showCamera, setShowCamera] = useState(false);
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoRecord | null>(null);
+  const [companyNameError, setCompanyNameError] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const companyNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -274,7 +276,17 @@ export default function FieldSurveyPage() {
   }
 
   async function handleSubmit() {
-    if (!draftId) return;
+    // Validate company name
+    if (!companyName.trim()) {
+      setCompanyNameError(true);
+      companyNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      companyNameRef.current?.focus();
+      return;
+    }
+    if (!draftId) {
+      alert('Draft not ready yet — please wait a moment and try again.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await fieldApi.submit(draftId);
@@ -322,10 +334,15 @@ export default function FieldSurveyPage() {
           <label className="block text-sm font-medium text-stone-500 mb-1">Company Name *</label>
           <div className="relative">
             <input
+              ref={companyNameRef}
               value={companyName}
-              onChange={(e) => handleCompanyNameChange(e.target.value)}
+              onChange={(e) => { setCompanyNameError(false); handleCompanyNameChange(e.target.value); }}
               placeholder="Enter company name"
-              className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white"
+              className={`w-full h-[50px] px-5 rounded-2xl border text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:bg-white transition ${
+                companyNameError
+                  ? 'border-red-400 bg-red-50 focus:ring-red-200 focus:border-red-400'
+                  : 'border-stone-200 bg-stone-50/80 focus:ring-[#B8864A]/15 focus:border-[#B8864A]'
+              }`}
             />
             {showSuggestions && (
               <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-2xl shadow-lg z-20 overflow-hidden">
@@ -343,7 +360,10 @@ export default function FieldSurveyPage() {
               </div>
             )}
           </div>
-          {companyRefName && companyRefId && (
+          {companyNameError && (
+            <p className="text-xs text-red-500 mt-1">⚠ Company name is required</p>
+          )}
+          {!companyNameError && companyRefName && companyRefId && (
             <p className="text-xs text-green-600 mt-1">✓ Linked to existing company record</p>
           )}
         </div>
@@ -421,7 +441,7 @@ export default function FieldSurveyPage() {
         </button>
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting || !companyName}
+          disabled={isSubmitting}
           className="btn-primary flex-1 h-12 disabled:opacity-50"
         >
           {isSubmitting ? 'Submitting…' : 'Submit Interview'}
