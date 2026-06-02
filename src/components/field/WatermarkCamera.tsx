@@ -86,27 +86,22 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
       setGeoInfo(base);
       setGeoStatus('ok');
 
-      // Fetch human-readable address in background
+      // Fetch human-readable address via BigDataCloud (free, no key, reliable in UAE)
       try {
         const r = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
-          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8000) }
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+          { signal: AbortSignal.timeout(8000) }
         );
         if (r.ok) {
           const data = await r.json();
-          const a = data.address || {};
-          const city = a.city || a.town || a.municipality || a.county
-            || a.state_district || a.state || a.village;
-          const district = a.suburb || a.quarter || a.neighbourhood
-            || a.district || a.residential;
-          const parts = [district, city].filter(Boolean);
-          let address = '';
-          if (parts.length > 0) {
-            address = parts.join(' · ');
-          } else if (data.display_name) {
-            const segs = (data.display_name as string).split(',').map((s: string) => s.trim()).filter(Boolean);
-            address = segs.slice(-2).join(', ');
-          }
+          const locality = data.locality || data.city || data.principalSubdivision || '';
+          const neighbourhood = data.localityInfo?.administrative
+            ?.slice().reverse()
+            .find((a: { name?: string; description?: string }) =>
+              a.description && /suburb|neighbourhood|district|quarter/i.test(a.description)
+            )?.name || '';
+          const parts = [neighbourhood, locality].filter(Boolean);
+          const address = parts.length > 0 ? parts.join(' · ') : (data.countryName || '');
           if (address) setGeoInfo({ ...base, address });
         }
       } catch { /* keep coords-only */ }
