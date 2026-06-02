@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { adminApi } from '@/lib/adminApi';
 import AdminSelect from '@/components/ui/AdminSelect';
 import PhoneCountryInput from '@/components/ui/PhoneCountryInput';
+import { EMIRATES } from '@/lib/adminConstants';
 
 interface Props {
   type: 'scraped' | 'profile';
@@ -13,8 +14,6 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
 }
-
-const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
 // ── Multi-select Company Type Dropdown ──────────────────────────────────────
 function MultiTypeSelect({

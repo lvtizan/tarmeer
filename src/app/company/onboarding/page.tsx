@@ -14,6 +14,7 @@ import {
   buildUploadSizeMessage,
 } from '@/lib/projectImageUpload';
 import { getDroppedImageFiles } from '@/lib/dropFiles';
+import { EMIRATES as CITIES } from '@/lib/constants';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -32,8 +33,6 @@ const STYLES = [
   { value: 'minimalist', label: 'Minimalist' },
   { value: 'industrial', label: 'Industrial' },
 ];
-
-const CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
 const SPECIALTIES = [
   'Villa', 'Apartment', 'Commercial', 'Hospitality', 'Retail', 'Office',

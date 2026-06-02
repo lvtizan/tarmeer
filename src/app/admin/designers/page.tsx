@@ -12,6 +12,7 @@ import { formatCount } from '@/lib/formatNumber';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
+import AdminPagination from '@/components/admin/AdminPagination';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type DeletedFilter = 'active' | 'deleted' | 'all';
@@ -522,16 +523,15 @@ export default function AdminDesignersPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {total > 20 && viewMode === 'list' && (
-        <div className="mt-6 flex justify-center gap-2">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-4 py-2 border border-stone-200 rounded-lg text-sm disabled:opacity-50">
-            {t('Previous', '上一页')}
-          </button>
-          <span className="px-4 py-2 text-sm text-stone-600">{t('Page', '第')} {page} {t('of', '/')} {Math.ceil(total / 20)}</span>
-          <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(total / 20)} className="px-4 py-2 bg-white border border-stone-200 rounded-lg text-sm hover:bg-stone-50 disabled:opacity-50">
-            {t('Next', '下一页')}
-          </button>
+      {viewMode === 'list' && (
+        <div className="mt-6">
+          <AdminPagination
+            page={page}
+            totalPages={Math.ceil(total / 20)}
+            onPageChange={setPage}
+            labels={[t('Previous', '上一页'), t('Next', '下一页')]}
+            formatInfo={(p, tp) => `${t('Page', '第')} ${p} ${t('of', '/')} ${tp}`}
+          />
         </div>
       )}
 

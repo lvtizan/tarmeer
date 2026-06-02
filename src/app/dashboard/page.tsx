@@ -8,6 +8,7 @@ import {
   Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { EMIRATES } from '@/lib/constants';
 import { getDroppedImageFiles } from '@/lib/dropFiles';
 import Avatar from '@/components/ui/Avatar';
 import {
@@ -18,7 +19,6 @@ import {
 /* ── Constants ── */
 
 const AREA_OPTIONS = ['<50m²', '50-100m²', '100-200m²', '200-500m²', '>500m²'];
-const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const STAGE_OPTIONS = ['Researching', 'Has Design', 'Ready to Start', 'In Progress'];
 const BUDGET_OPTIONS = ['<50K AED', '50-100K', '100-300K', '300K-1M', '>1M AED'];
 

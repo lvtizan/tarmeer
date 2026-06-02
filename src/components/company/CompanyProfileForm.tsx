@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { FormInput, FormTextarea, FormLabel, FormTag } from '@/components/form/FormInput';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { SPACE_TYPES, MAX_SERVICE_CATEGORIES } from '@/lib/serviceCategories';
+import { EMIRATES } from '@/lib/constants';
 import { useServiceCategories, getActiveParentsDynamic } from '@/hooks/useServiceCategories';
 
 const GCC_DIAL_CODES = [
@@ -33,7 +34,7 @@ function parsePhone(full: string): { dialCode: string; local: string } {
 
 /* Constants */
 export const SPECIALTIES = SPACE_TYPES;
-export const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
+export { EMIRATES };
 export const TYPE_OPTIONS = [
   { value:'design_studio', label:'Interior Design Studio' },
   { value:'renovation_company', label:'Renovation & Fit-out' },

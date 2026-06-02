@@ -7,6 +7,8 @@ import { TableSpinner } from '@/components/ui/Spinner';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
+import { truncateText } from '@/lib/textUtils';
+import AdminPagination from '@/components/admin/AdminPagination';
 
 type StatusFilter = 'all' | 'new' | 'processing' | 'resolved' | 'rejected';
 
@@ -28,10 +30,7 @@ const STATUS_BADGE: Record<string, string> = {
   rejected: 'bg-red-100 text-red-700',
 };
 
-function truncate(str: string | null, max: number): string {
-  if (!str) return '';
-  return str.length > max ? str.slice(0, max) + '...' : str;
-}
+
 
 export default function AdminComplaintsPage() {
   const { t } = useAdminT();
@@ -182,13 +181,13 @@ export default function AdminComplaintsPage() {
                           className="text-blue-600 hover:underline"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {truncate(c.content_url, 30)}
+                          {truncateText(c.content_url, 30)}
                         </a>
                       ) : (
                         <span className="text-stone-400">&mdash;</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-stone-600 max-w-[200px]">{truncate(c.description, 40)}</td>
+                    <td className="px-4 py-3 text-stone-600 max-w-[200px]">{truncateText(c.description, 40)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[c.status]}`}>
                         {c.status}
@@ -265,15 +264,14 @@ export default function AdminComplaintsPage() {
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">{t('Page', '页')} {page} / {totalPages} ({t('Total', '共')} {total})</span>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Prev', '上一页')}</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">{t('Next', '下一页')}</button>
-            </div>
-          </div>
-        )}
+        <AdminPagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onPageChange={setPage}
+          labels={[t('Prev', '上一页'), t('Next', '下一页')]}
+          formatInfo={(p, tp, tot) => `${t('Page', '页')} ${p} / ${tp} (${t('Total', '共')} ${tot})`}
+        />
       </div>
     </div>
   );
