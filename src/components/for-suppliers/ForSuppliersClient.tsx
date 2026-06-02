@@ -6,10 +6,10 @@ import { ChevronRight, Mail, Lock, Eye, EyeOff, Check, Package, Search, Globe } 
 import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '@/components/auth/authCardStyles';
 import AuthCardShell from '@/components/auth/AuthCardShell';
 import LoadingButton from '@/components/ui/LoadingButton';
+import { MIN_PASSWORD_LENGTH } from '@/lib/constants';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const MIN_PASSWORD_LENGTH = 6;
 
 type AuthStep = 'initial' | 'password' | 'done';
 

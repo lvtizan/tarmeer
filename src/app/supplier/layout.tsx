@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, Package, Layers, FolderOpen, LogOut, ExternalLink, User, MessageSquare, ArrowRightLeft } from 'lucide-react';
+import { sanitizeRedirectUrl } from '@/lib/sanitizeRedirect';
 import TarmeerLogo from '@/components/TarmeerLogo';
 import { AdminLangContext, type AdminLang } from '@/hooks/useAdminLang';
 import { usePathname as useNextPathname } from 'next/navigation';
@@ -129,7 +130,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
       if (data?.token) {
         const keyMap: Record<string, string> = { company: 'token', supplier: 'supplier_token', admin: 'admin_token' };
         localStorage.setItem(keyMap[portal.type] || portal.type, data.token);
-        window.location.href = data.redirectUrl || portal.url;
+        window.location.href = sanitizeRedirectUrl(data.redirectUrl, portal.url);
       }
     } catch {
       // ignore

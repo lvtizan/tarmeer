@@ -50,6 +50,18 @@ function stripLeadingDuplicateCoverImage(
   );
 }
 
+function stripUnsafeTags(html: string): string {
+  return html
+    .replace(/<script[\s>][\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s>][\s\S]*?<\/iframe>/gi, '')
+    .replace(/<object[\s>][\s\S]*?<\/object>/gi, '')
+    .replace(/<embed[\s>][\s\S]*?>/gi, '')
+    .replace(/<link[\s>][\s\S]*?>/gi, '')
+    .replace(/\bon\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/\bon\w+\s*=\s*[^\s>]+/gi, '')
+    .replace(/javascript\s*:/gi, 'blocked:');
+}
+
 function markdownToHtml(content: string, coverImage?: string | null): string {
   const normalized = stripLeadingDuplicateCoverImage(content, coverImage);
 
@@ -129,8 +141,9 @@ export default function BlogDetailClient({ article }: BlogDetailClientProps) {
   const wordCount =
     article.word_count || article.content?.split(/\s+/).filter(Boolean).length || 0;
   const readingTime = article.reading_time || Math.max(1, Math.ceil(wordCount / 200));
-  const articleContentHtml =
+  const rawHtml =
     article.content_html || markdownToHtml(article.content || '', article.cover_image);
+  const articleContentHtml = stripUnsafeTags(rawHtml);
 
   return (
     <article className="min-h-screen bg-white">

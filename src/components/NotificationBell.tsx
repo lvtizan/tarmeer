@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { api } from '../lib/api';
+import { sanitizeRedirectUrl } from '../lib/sanitizeRedirect';
 
 interface Notification {
   id: number;
@@ -58,7 +59,7 @@ export default function NotificationBell() {
         setUnreadCount(prev => Math.max(0, prev - 1));
       } catch { /* silent */ }
     }
-    if (n.link) window.location.href = n.link;
+    if (n.link) window.location.href = sanitizeRedirectUrl(n.link, '/');
     setOpen(false);
   };
 

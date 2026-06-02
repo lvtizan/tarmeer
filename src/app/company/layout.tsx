@@ -4,6 +4,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { sanitizeRedirectUrl } from '@/lib/sanitizeRedirect';
 import {
   Building2, FolderOpen, FileText, User, ImagePlus, Settings,
   MessageSquare, ExternalLink, ArrowRightLeft, LogOut,
@@ -100,7 +101,7 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
         const keyMap: Record<string, string> = { company: 'token', supplier: 'supplier_token', admin: 'admin_token' };
         if (typeof window !== 'undefined') {
           localStorage.setItem(keyMap[portal.type] || portal.type, res.token);
-          window.location.href = res.redirectUrl || portal.url;
+          window.location.href = sanitizeRedirectUrl(res.redirectUrl, portal.url);
         }
       }
     } catch { /* ignore */ } finally { setSwitchingPortal(''); }
