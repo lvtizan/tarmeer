@@ -221,7 +221,8 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
   const now = new Date();
   const liveLines: string[] = [];
   if (geoInfo) {
-    if (geoInfo.address) liveLines.push(`\u{1F4CD} ${geoInfo.address}`);
+    // Show address if loaded, or a loading hint while Nominatim is fetching
+    liveLines.push(geoInfo.address ? `\u{1F4CD} ${geoInfo.address}` : '\u{1F4CD} Locating address…');
     liveLines.push(formatLatLng(geoInfo.lat, geoInfo.lng));
   } else {
     liveLines.push(geoStatus === 'locating' ? 'Locating GPS…' : 'GPS unavailable');

@@ -307,19 +307,44 @@ export default function FieldSurveyPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7] pb-24">
-      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
-        <span className="font-semibold text-[#2c2c2c] text-[15px]">Interview Survey</span>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowCamera(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#b8864a]/10 text-[#b8864a] text-sm font-medium active:bg-[#b8864a]/20 transition"
-          >
-            <Camera className="w-4 h-4" />
-            <span>Photo{photos.length > 0 ? ` (${photos.length})` : ''}</span>
-          </button>
+      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-2">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-[#2c2c2c] text-[15px]">Interview Survey</span>
           <span className={`text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
             {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
           </span>
+        </div>
+        {/* Photo strip — camera button + thumbnails */}
+        <div className="flex items-center gap-2 mt-2 overflow-x-auto pb-1">
+          <button
+            onClick={() => setShowCamera(true)}
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#b8864a]/10 text-[#b8864a] text-sm font-medium active:bg-[#b8864a]/20 transition"
+          >
+            <Camera className="w-4 h-4" />
+            <span>Photo</span>
+          </button>
+          {photos.map((photo, idx) => (
+            <div key={idx} className="relative flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.dataUrl || photo.url}
+                alt={`Photo ${idx + 1}`}
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={() => setLightboxPhoto(photo)}
+              />
+              {photo.uploading && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+              <button
+                onClick={() => removePhoto(idx)}
+                className="absolute top-0 right-0 w-4 h-4 rounded-bl-md bg-black/60 flex items-center justify-center"
+              >
+                <X className="w-2.5 h-2.5 text-white" />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -353,42 +378,6 @@ export default function FieldSurveyPage() {
             <p className="text-xs text-green-600 mt-1">✓ Linked to existing company record</p>
           )}
         </div>
-
-        {/* Photo thumbnails */}
-        {photos.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-stone-500 mb-2">Photos ({photos.length})</p>
-            <div className="flex gap-2 flex-wrap">
-              {photos.map((photo, idx) => (
-                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photo.dataUrl || photo.url}
-                    alt={`Photo ${idx + 1}`}
-                    className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => setLightboxPhoto(photo)}
-                  />
-                  {photo.uploading && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    </div>
-                  )}
-                  {photo.error && (
-                    <div className="absolute inset-0 bg-red-500/60 flex items-center justify-center">
-                      <span className="text-white text-[10px] font-medium px-1 text-center">Failed</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => removePhoto(idx)}
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {schema.map((section) => (
           <div key={section.key}>
