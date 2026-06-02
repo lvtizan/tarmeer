@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
@@ -160,8 +161,9 @@ function FieldValue({ value }: { value: string | string[] | undefined }) {
   );
 }
 
-export default function AdminVisitRecordsPage() {
+function AdminVisitRecordsContent() {
   const { t } = useAdminT();
+  const searchParams = useSearchParams();
   const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -181,6 +183,15 @@ export default function AdminVisitRecordsPage() {
   }, []);
 
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
+
+  // Auto-open a record when navigating back from company detail (?detail=N)
+  useEffect(() => {
+    const detailId = searchParams.get('detail');
+    if (detailId) {
+      openDetail(Number(detailId));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openDetail = async (id: number) => {
     setSelectedId(id);
@@ -275,7 +286,16 @@ export default function AdminVisitRecordsPage() {
                 </div>
                 <div>
                   <div className="text-xs text-stone-400 mb-0.5">{t('Interview Subject', '访谈对象')}</div>
-                  <div className="font-medium text-[#2c2c2c]">{detail.company_name || '—'}</div>
+                  {detail.company_ref_id ? (
+                    <a
+                      href={`/admin/companies/${detail.company_ref_id}?from=visit-records&recordId=${detail.id}`}
+                      className="font-medium text-[#b8864a] hover:underline"
+                    >
+                      {detail.company_name || '—'}
+                    </a>
+                  ) : (
+                    <div className="font-medium text-[#2c2c2c]">{detail.company_name || '—'}</div>
+                  )}
                 </div>
                 <div>
                   <div className="text-xs text-stone-400 mb-0.5">{t('Created', '创建时间')}</div>
@@ -355,7 +375,7 @@ export default function AdminVisitRecordsPage() {
   );
   }
 
-  // List view
+  // List view — only reachable when selectedId === null
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -449,5 +469,13 @@ export default function AdminVisitRecordsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminVisitRecordsPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <AdminVisitRecordsContent />
+    </Suspense>
   );
 }

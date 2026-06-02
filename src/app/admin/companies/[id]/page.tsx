@@ -180,6 +180,8 @@ function CompanyDetailContent({ id }: { id: string }) {
   const services = parseJsonArray(company.services);
   const specialties = parseJsonArray(company.specialties);
   const backTab = searchParams.get('tab') || 'directory';
+  const fromParam = searchParams.get('from');
+  const recordId = searchParams.get('recordId');
 
   const descLines = company.description ? company.description.split('\n').length : 0;
   const needsCollapse = descLines > 10 || (company.description?.length ?? 0) > 400;
@@ -372,11 +374,17 @@ function CompanyDetailContent({ id }: { id: string }) {
     <div className="w-full space-y-4">
       {/* Back button */}
       <button
-        onClick={() => router.push(`/admin/companies?tab=${backTab}`)}
+        onClick={() => {
+          if (fromParam === 'visit-records' && recordId) {
+            router.push(`/admin/visit-records?detail=${recordId}`);
+          } else {
+            router.push(`/admin/companies?tab=${backTab}`);
+          }
+        }}
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        {t('Back to Companies', '返回公司列表')}
+        {fromParam === 'visit-records' ? t('Back to Visit Record', '返回访谈记录') : t('Back to Companies', '返回公司列表')}
       </button>
 
       {/* MOBILE layout */}
