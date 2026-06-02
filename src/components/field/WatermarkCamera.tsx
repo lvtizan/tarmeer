@@ -81,7 +81,12 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
 
     async function applyPosition(pos: GeolocationPosition) {
       const { latitude: lat, longitude: lng } = pos.coords;
-      const info: GeoInfo = { lat, lng, timestamp: new Date() };
+      const base: GeoInfo = { lat, lng, timestamp: new Date() };
+      // Show coordinates immediately — don't wait for address lookup
+      setGeoInfo(base);
+      setGeoStatus('ok');
+
+      // Fetch human-readable address in background
       try {
         const r = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
@@ -90,23 +95,21 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
         if (r.ok) {
           const data = await r.json();
           const a = data.address || {};
-          // UAE: Nominatim often uses municipality/state_district instead of city
           const city = a.city || a.town || a.municipality || a.county
             || a.state_district || a.state || a.village;
           const district = a.suburb || a.quarter || a.neighbourhood
             || a.district || a.residential;
           const parts = [district, city].filter(Boolean);
+          let address = '';
           if (parts.length > 0) {
-            info.address = parts.join(' · ');
+            address = parts.join(' · ');
           } else if (data.display_name) {
-            // display_name always exists; take last 2 meaningful segments (city, country)
             const segs = (data.display_name as string).split(',').map((s: string) => s.trim()).filter(Boolean);
-            info.address = segs.slice(-2).join(', ');
+            address = segs.slice(-2).join(', ');
           }
+          if (address) setGeoInfo({ ...base, address });
         }
-      } catch { /* coords-only fallback */ }
-      setGeoInfo(info);
-      setGeoStatus('ok');
+      } catch { /* keep coords-only */ }
     }
 
     // First attempt: high accuracy (GPS chip), 15s timeout
