@@ -130,6 +130,7 @@ export default function FieldSurveyPage() {
   const [companyRefId, setCompanyRefId] = useState<number | null>(null);
   const [companyRefName, setCompanyRefName] = useState('');
   const [sections, setSections] = useState<AllSections>({});
+  const [schema, setSchema] = useState(SECTIONS);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -143,6 +144,14 @@ export default function FieldSurveyPage() {
 
   useEffect(() => {
     (async () => {
+      // Load survey schema from API (falls back to hardcoded SECTIONS)
+      try {
+        const { schema: remoteSchema } = await fieldApi.getSurveySchema() as { schema: typeof SECTIONS | null };
+        if (remoteSchema && Array.isArray(remoteSchema) && remoteSchema.length > 0) {
+          setSchema(remoteSchema as typeof SECTIONS);
+        }
+      } catch { /* keep hardcoded fallback */ }
+
       try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem('field_draft_id') : null;
         if (storedId) {
@@ -381,7 +390,7 @@ export default function FieldSurveyPage() {
           </div>
         )}
 
-        {SECTIONS.map((section) => (
+        {schema.map((section) => (
           <div key={section.key}>
             <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
               {section.title}

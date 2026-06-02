@@ -9,6 +9,7 @@ exports.saveDraft = saveDraft;
 exports.submitInterview = submitInterview;
 exports.searchCompanies = searchCompanies;
 exports.uploadPhoto = uploadPhoto;
+exports.getSurveySchema = getSurveySchema;
 exports.uploadPhotoMiddleware = void 0;
 const database_1 = __importDefault(require("../config/database"));
 const path_1 = __importDefault(require("path"));
@@ -159,6 +160,16 @@ async function uploadPhoto(req, res) {
             try { fs_1.default.unlinkSync(req.file.path); } catch {}
         }
         res.status(500).json({ error: 'Upload failed' });
+    }
+}
+// GET /api/field/survey-schema — return current survey schema (falls back to null if not seeded)
+async function getSurveySchema(req, res) {
+    try {
+        const [rows] = await database_1.default.execute('SELECT schema_json FROM survey_schema WHERE id = 1');
+        if (rows.length === 0) return res.json({ schema: null });
+        res.json({ schema: JSON.parse(rows[0].schema_json) });
+    } catch {
+        res.json({ schema: null });
     }
 }
 // GET /api/field/companies/search?q= — search uae_companies for linking

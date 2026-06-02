@@ -1025,6 +1025,7 @@ export const fieldApi = {
     fieldRequest(`/interviews/${id}/submit`, { method: 'POST' }),
   searchCompanies: (q: string) =>
     fieldRequest(`/companies/search?q=${encodeURIComponent(q)}`),
+  getSurveySchema: () => fieldRequest('/survey-schema'),
   uploadPhoto: async (id: number, blob: Blob, meta?: { lat?: number; lng?: number; timestamp?: string }): Promise<{ url: string }> => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
     const fd = new FormData();

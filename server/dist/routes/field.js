@@ -12,4 +12,5 @@ router.patch('/interviews/:id', fieldInterviewController_1.saveDraft);
 router.post('/interviews/:id/submit', fieldInterviewController_1.submitInterview);
 router.post('/interviews/:id/photos', fieldInterviewController_1.uploadPhotoMiddleware, fieldInterviewController_1.uploadPhoto);
 router.get('/companies/search', fieldInterviewController_1.searchCompanies);
+router.get('/survey-schema', fieldInterviewController_1.getSurveySchema);
 exports.default = router;

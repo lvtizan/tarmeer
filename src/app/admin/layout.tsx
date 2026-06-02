@@ -52,7 +52,7 @@ const navItems = [
 
 const adminItems = [
   {
-    to: '/admin', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, end: true, permission: 'can_view_stats' as const,
+    to: '/admin/analytics', labelEn: 'Analytics', labelZh: '数据分析', icon: Activity, permission: 'can_view_stats' as const,
     infoEn: 'Analyze traffic/events, company visitors, compare trends, and jump to external analytics platforms.',
     infoZh: '分析流量与事件趋势、公司访客，并可跳转外部分析平台。',
   },
@@ -80,6 +80,11 @@ const adminItems = [
     to: '/admin/visit-records', labelEn: 'Visit Records', labelZh: '访谈记录', icon: MapPin, permission: 'can_view_interviews' as const,
     infoEn: 'View all field visit records submitted by field staff.',
     infoZh: '查看外勤人员提交的所有公司访谈记录。',
+  },
+  {
+    to: '/admin/survey-questions', labelEn: 'Survey Questions', labelZh: '问卷题目', icon: ClipboardList, superAdminOnly: true,
+    infoEn: 'Edit the field survey structure: add/remove sections and questions.',
+    infoZh: '编辑外勤访谈问卷结构，增删节和问题。',
   },
   {
     to: '/admin/staff', labelEn: 'Field Staff', labelZh: '外勤人员', icon: UserCheck, superAdminOnly: true,
@@ -128,6 +133,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const { admin, logout, hasPermission, isSuperAdmin, isLoading } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
+  const isStandalone = standaloneRoutes.includes(pathname);
   const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
   const [menuCounts, setMenuCounts] = useState<Record<string, number>>({});
   const [todayNew, setTodayNew] = useState<{ homeowners: number; companies: number; suppliers: number }>({ homeowners: 0, companies: 0, suppliers: 0 });
@@ -138,11 +144,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Render standalone wrapper for auth-only routes
-  if (standaloneRoutes.includes(pathname)) {
-    return <div className="min-h-screen bg-stone-50">{children}</div>;
-  }
-
+  // NOTE: all hooks must be declared before any conditional return (Rules of Hooks)
   const fetchNotificationCounts = useCallback(async () => {
     try {
       const data = await adminApi.getNotificationCounts();
@@ -215,17 +217,23 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, fetchNotificationCounts]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && !admin) {
+      router.replace('/admin/login');
+    }
+  }, [isLoading, admin, router]);
+
+  // Standalone routes (login, install, etc.) — render without sidebar
+  if (isStandalone) {
+    return <div className="min-h-screen bg-stone-50">{children}</div>;
+  }
+
+  if (isLoading || !admin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#faf9f7]">
         <div className="text-stone-500">Loading...</div>
       </div>
     );
-  }
-
-  if (!admin) {
-    router.replace('/admin/login');
-    return null;
   }
 
   const filteredNavItems = navItems.filter(item =>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Globe, Eye, RefreshCw } from 'lucide-react';
 import { adminApi, type VisitorRecord } from '@/lib/adminApi';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
@@ -36,6 +35,7 @@ export default function AdminVisitorsPage() {
     }
   };
 
+  useEffect(() => { document.title = '访客列表 — Tarmeer Admin'; }, []);
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
 
   const filtered = visitors.filter(v => {
@@ -46,8 +46,6 @@ export default function AdminVisitorsPage() {
 
   return (
     <div className="w-full">
-      <Helmet><title>访客列表 — Tarmeer Admin</title></Helmet>
-
       <BackToAnalytics />
 
       {/* Title bar */}

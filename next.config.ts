@@ -1,9 +1,16 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const nextConfig: NextConfig = {
   // /@slug → /companies/[slug] (browser URL stays /@slug, canonical preserved)
   async rewrites() {
     return [
+      // In development, proxy /api/* and /uploads/* to Express backend on port 3002
+      ...(isDev ? [
+        { source: "/api/:path*", destination: "http://localhost:3002/api/:path*" },
+        { source: "/uploads/:path*", destination: "http://localhost:3002/uploads/:path*" },
+      ] : []),
       {
         source: "/@:slug",
         destination: "/companies/:slug",

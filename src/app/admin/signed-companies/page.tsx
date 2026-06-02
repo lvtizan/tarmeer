@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Helmet } from 'react-helmet-async';
 import { Building2, RefreshCw } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
@@ -28,6 +27,7 @@ export default function AdminSignedCompaniesPage() {
     }
   };
 
+  useEffect(() => { document.title = '已签约装企 — Tarmeer Admin'; }, []);
   useEffect(() => { load(); }, []);
 
   const goDetail = (r: Row) => {
@@ -37,8 +37,6 @@ export default function AdminSignedCompaniesPage() {
 
   return (
     <div className="w-full">
-      <Helmet><title>已签约装企 — Tarmeer Admin</title></Helmet>
-
       <BackToAnalytics />
 
       <div className="flex items-center justify-between mb-6">
