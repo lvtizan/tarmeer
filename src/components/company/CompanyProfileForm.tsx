@@ -84,13 +84,16 @@ export function parseProfile(r: Record<string, unknown>): ProfileData {
     if (typeof v === 'string') try { return JSON.parse(v); } catch { return []; }
     return [];
   }
-  const company_types = pj(r.company_types);
+  const VALID_SLUGS = TYPE_OPTIONS.map(o => o.value);
+  // Filter to valid slugs only — legacy profiles may have labels stored instead of slugs
+  const company_types = pj(r.company_types).filter(t => VALID_SLUGS.includes(t));
+  const legacy_type = typeof r.company_type === 'string' && VALID_SLUGS.includes(r.company_type) ? r.company_type : '';
   return {
     company_name: (r.company_name as string) || '', description: (r.description as string) || '',
     contact_person: (r.contact_person as string) || '', phone: (r.phone as string) || '',
     website: (r.website as string) || '', city: (r.city as string) || 'Dubai', address: (r.address as string) || '',
-    company_type: (r.company_type as string) || '',
-    company_types: company_types.length > 0 ? company_types : (r.company_type ? [r.company_type as string] : []),
+    company_type: legacy_type,
+    company_types: company_types.length > 0 ? company_types : (legacy_type ? [legacy_type] : []),
     trade_license_number: (r.trade_license_number as string) || '',
     establishment_year: (r.establishment_year as number) || null,
     services: pj(r.services), specialties: pj(r.specialties),
