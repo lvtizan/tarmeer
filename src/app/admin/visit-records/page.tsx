@@ -4,7 +4,7 @@ import { adminApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import AdminSelect from '@/components/ui/AdminSelect';
-import { MapPin, ExternalLink } from 'lucide-react';
+import { MapPin, ExternalLink, X } from 'lucide-react';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface VisitRecord {
@@ -15,6 +15,13 @@ interface VisitRecord {
   status: 'draft' | 'submitted';
   submitted_at: string | null;
   created_at: string;
+}
+
+interface PhotoEntry {
+  url: string;
+  lat?: number;
+  lng?: number;
+  timestamp?: string;
 }
 
 interface VisitRecordDetail extends VisitRecord {
@@ -28,6 +35,7 @@ interface VisitRecordDetail extends VisitRecord {
   section_7: Record<string, string | string[]> | null;
   section_8: Record<string, string | string[]> | null;
   section_9: Record<string, string | string[]> | null;
+  photos?: string | PhotoEntry[] | null;
 }
 
 const STATUS_OPTIONS = [
@@ -161,6 +169,7 @@ export default function AdminVisitRecordsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<VisitRecordDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const fetchRecords = useCallback(async () => {
     setLoading(true);
@@ -198,12 +207,28 @@ export default function AdminVisitRecordsPage() {
 
   const formatDate = (s: string | null) => formatAdminDateTime(s);
 
+  const lightbox = lightboxUrl ? (
+    <div
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      onClick={() => setLightboxUrl(null)}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={lightboxUrl} alt="Photo" className="max-w-full max-h-full object-contain" />
+      <button
+        onClick={() => setLightboxUrl(null)}
+        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"
+      >
+        <X className="w-5 h-5 text-white" />
+      </button>
+    </div>
+  ) : null;
+
   // Detail view
   if (selectedId !== null) {
     return (
       <div className="space-y-4">
         <button
-          onClick={() => { setSelectedId(null); setDetail(null); }}
+          onClick={() => { setSelectedId(null); setDetail(null); setLightboxUrl(null); }}
           className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -267,6 +292,34 @@ export default function AdminVisitRecordsPage() {
               </div>
             </div>
 
+            {/* Photos */}
+            {(() => {
+              const raw = detail.photos;
+              const photos: PhotoEntry[] = raw
+                ? (typeof raw === 'string' ? JSON.parse(raw) : raw) as PhotoEntry[]
+                : [];
+              if (photos.length === 0) return null;
+              return (
+                <div className="bg-white rounded-xl border border-stone-200 p-5">
+                  <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-3">
+                    Photos ({photos.length})
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {photos.map((p, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={i}
+                        src={p.url}
+                        alt={`Photo ${i + 1}`}
+                        onClick={() => setLightboxUrl(p.url)}
+                        className="w-24 h-24 object-cover rounded-lg border border-stone-200 cursor-pointer hover:opacity-80 transition"
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {SECTIONS.map(section => {
               const sectionData = parseSection(detail[section.key as keyof VisitRecordDetail]);
               const hasAnyData = section.fields.some(f => {
@@ -297,8 +350,9 @@ export default function AdminVisitRecordsPage() {
             })}
           </>
         )}
-      </div>
-    );
+      {lightbox}
+    </div>
+  );
   }
 
   // List view

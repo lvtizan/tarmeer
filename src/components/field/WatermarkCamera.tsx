@@ -85,7 +85,7 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
       try {
         const r = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
-          { headers: { 'Accept-Language': 'zh-CN,zh,en' }, signal: AbortSignal.timeout(5000) }
+          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(5000) }
         );
         if (r.ok) {
           const data = await r.json();
