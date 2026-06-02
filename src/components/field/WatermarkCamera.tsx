@@ -85,15 +85,24 @@ export default function WatermarkCamera({ onClose, onPhotoTaken }: WatermarkCame
       try {
         const r = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
-          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(5000) }
+          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8000) }
         );
         if (r.ok) {
           const data = await r.json();
           const a = data.address || {};
-          const city = a.city || a.town || a.village || a.county || a.state;
-          const district = a.suburb || a.quarter || a.neighbourhood || a.district;
+          // UAE: Nominatim often uses municipality/state_district instead of city
+          const city = a.city || a.town || a.municipality || a.county
+            || a.state_district || a.state || a.village;
+          const district = a.suburb || a.quarter || a.neighbourhood
+            || a.district || a.residential;
           const parts = [district, city].filter(Boolean);
-          info.address = parts.join(' · ');
+          if (parts.length > 0) {
+            info.address = parts.join(' · ');
+          } else if (data.display_name) {
+            // display_name always exists; take last 2 meaningful segments (city, country)
+            const segs = (data.display_name as string).split(',').map((s: string) => s.trim()).filter(Boolean);
+            info.address = segs.slice(-2).join(', ');
+          }
         }
       } catch { /* coords-only fallback */ }
       setGeoInfo(info);
