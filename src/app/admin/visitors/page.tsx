@@ -5,6 +5,7 @@ import { Globe, Eye, RefreshCw } from 'lucide-react';
 import { adminApi, type VisitorRecord } from '@/lib/adminApi';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
+import AdminPagination from '@/components/admin/AdminPagination';
 
 const PAGE_SIZE = 50;
 
@@ -151,22 +152,13 @@ export default function AdminVisitorsPage() {
         </table>
       </div>
 
-      {/* Pagination */}
-      {pages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            className="px-3 py-1.5 text-xs rounded-lg border border-stone-200 disabled:opacity-30 hover:bg-stone-50"
-          >上一页</button>
-          <span className="text-xs text-stone-500">第 {page} / {pages} 页</span>
-          <button
-            disabled={page >= pages}
-            onClick={() => setPage(p => Math.min(pages, p + 1))}
-            className="px-3 py-1.5 text-xs rounded-lg border border-stone-200 disabled:opacity-30 hover:bg-stone-50"
-          >下一页</button>
-        </div>
-      )}
+      <AdminPagination
+        page={page}
+        totalPages={pages}
+        onPageChange={setPage}
+        labels={['上一页', '下一页']}
+        formatInfo={(p, tp) => `第 ${p} / ${tp} 页`}
+      />
     </div>
   );
 }

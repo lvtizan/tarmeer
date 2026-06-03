@@ -6,6 +6,8 @@ import { adminApi } from '@/lib/adminApi';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
+import { truncateText } from '@/lib/textUtils';
+import AdminPagination from '@/components/admin/AdminPagination';
 import { MessageSquare, CheckCheck } from 'lucide-react';
 
 interface FeedbackRecord {
@@ -22,9 +24,7 @@ interface FeedbackRecord {
   created_at: string;
 }
 
-function truncate(str: string, max: number): string {
-  return str.length > max ? str.slice(0, max) + '…' : str;
-}
+
 
 const SOURCE_LABEL: Record<string, string> = {
   footer: '网站底部',
@@ -152,7 +152,7 @@ export default function AdminFeedbackPage() {
                     )}
                   </div>
                   <p className="text-xs text-stone-500 leading-relaxed">
-                    {truncate(item.content, 100)}
+                    {truncateText(item.content, 100)}
                   </p>
                   {item.user_name && (
                     <p className="text-xs text-stone-400 mt-1">{item.user_name}{item.user_email ? ` · ${item.user_email}` : ''}</p>
@@ -168,26 +168,13 @@ export default function AdminFeedbackPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="px-3 py-1.5 rounded-lg border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-          >
-            {t('Prev', '上一页')}
-          </button>
-          <span className="text-sm text-stone-500">{page} / {totalPages}</span>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
-            className="px-3 py-1.5 rounded-lg border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-          >
-            {t('Next', '下一页')}
-          </button>
-        </div>
-      )}
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        labels={[t('Prev', '上一页'), t('Next', '下一页')]}
+        formatInfo={(p, tp) => `${p} / ${tp}`}
+      />
     </div>
   );
 }

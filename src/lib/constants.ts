@@ -45,3 +45,13 @@ export const DESIGNER_STATUS = {
   APPROVED: 'approved',
   REJECTED: 'rejected',
 } as const;
+
+export const EMIRATES = [
+  'Dubai',
+  'Abu Dhabi',
+  'Sharjah',
+  'Ajman',
+  'Ras Al Khaimah',
+  'Fujairah',
+  'Umm Al Quwain',
+] as const;

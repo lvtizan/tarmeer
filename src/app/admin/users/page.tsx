@@ -12,6 +12,7 @@ import AdminRowActions from '@/components/admin/AdminRowActions';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
+import AdminPagination from '@/components/admin/AdminPagination';
 
 interface UserRecord {
   id: number;
@@ -345,17 +346,7 @@ export default function AdminUsersPage() {
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">Page {page} of {totalPages}</span>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1}
-                className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}
-                className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
-            </div>
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {editUserId && (

@@ -4,14 +4,13 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import AdminSelect from '@/components/ui/AdminSelect';
+import { EMIRATES } from '@/lib/adminConstants';
 
 interface Props {
   id: number;
   onClose: () => void;
   onSaved: () => void;
 }
-
-const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
 export default function UserEditModal({ id, onClose, onSaved }: Props) {
   const [data, setData] = useState<Record<string, unknown>>({});

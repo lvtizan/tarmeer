@@ -8,6 +8,8 @@ import { adminApi } from '@/lib/adminApi';
 import { TableSpinner } from '@/components/ui/Spinner';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
+import { STATUS_BADGE_CLASSES } from '@/lib/adminConstants';
+import AdminPagination from '@/components/admin/AdminPagination';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
 
 /* ── Floating Tooltip (portal-free, renders outside table overflow) ── */
@@ -78,12 +80,7 @@ interface InquiryRecord {
   dup_count?: number;
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  new: 'bg-blue-100 text-blue-700',
-  contacted: 'bg-amber-100 text-amber-700',
-  resolved: 'bg-green-100 text-green-700',
-  archived: 'bg-stone-100 text-stone-500',
-};
+const STATUS_BADGE = STATUS_BADGE_CLASSES.workflow;
 
 const STATUS_LABEL: Record<string, string> = {
   new: '新询单',
@@ -481,15 +478,7 @@ export default function AdminInquiriesPage() {
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100">
-            <span className="text-xs text-stone-500">Page {page} of {totalPages} ({total} total)</span>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Prev</button>
-              <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="px-3 py-1 text-xs border rounded-lg hover:bg-stone-50 disabled:opacity-30">Next</button>
-            </div>
-          </div>
-        )}
+        <AdminPagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
       </div>
     </div>
   );

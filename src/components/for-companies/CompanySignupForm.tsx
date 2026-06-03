@@ -6,6 +6,7 @@ import { t, type Lang } from '@/i18n/forCompanies';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { validatePhone, isPhoneComplete } from '@/lib/phoneValidation';
 import { api } from '@/lib/api';
+import { EMIRATES as UAE_CITIES } from '@/lib/constants';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -15,8 +16,6 @@ const GCC_PHONE_OPTIONS = [
   { label: 'Oman', code: '+968', maxDigits: 8 },
   { label: 'Bahrain', code: '+973', maxDigits: 8 },
 ];
-
-const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
 const COMPANY_TYPE_GROUPS: Record<string, string> = {
   design_studio: 'Design',

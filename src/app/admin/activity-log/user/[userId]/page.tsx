@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi } from '@/lib/adminApi';
 import { formatAdminDateTime } from '@/lib/formatTime';
+import AdminPagination from '@/components/admin/AdminPagination';
 
 interface LogEntry {
   id: number;
@@ -381,16 +382,14 @@ function UserTimelineContent({ userId }: { userId: string }) {
             </div>
           )}
 
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between text-sm text-[#6b6b6b] mt-6">
-              <span>共 {pagination.total} 条</span>
-              <div className="flex items-center gap-2">
-                <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="h-9 px-4 rounded-2xl border border-stone-200 bg-white text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-50 transition-colors">上一页</button>
-                <span className="px-2">第 {page} / {pagination.totalPages} 页</span>
-                <button disabled={page >= pagination.totalPages} onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))} className="h-9 px-4 rounded-2xl border border-stone-200 bg-white text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-50 transition-colors">下一页</button>
-              </div>
-            </div>
-          )}
+          <AdminPagination
+            page={page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            onPageChange={setPage}
+            labels={['上一页', '下一页']}
+            formatInfo={(_p, _tp, tot) => `共 ${tot} 条`}
+          />
         </div>
       </div>
     </div>
