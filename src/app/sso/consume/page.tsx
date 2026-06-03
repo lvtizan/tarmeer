@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { sanitizeRedirectUrl } from '@/lib/sanitizeRedirect';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -32,7 +33,7 @@ function SsoConsumeInner() {
           localStorage.setItem('auth_token', data.token);
           localStorage.setItem('active_role', 'company');
         }
-        const redirect = data.redirectUrl || '/company/dashboard';
+        const redirect = sanitizeRedirectUrl(data.redirectUrl, '/company/dashboard');
         router.replace(redirect);
       })
       .catch((err: unknown) => {

@@ -20,7 +20,7 @@ export const ADMIN_ANALYTICS_PAGE_SIZE = 50;
 
 // Validation
 export const MAX_NAME_LENGTH = 50;
-export const MIN_PASSWORD_LENGTH = 6;
+export const MIN_PASSWORD_LENGTH = 8;
 
 // Storage keys
 export const STORAGE_KEYS = {

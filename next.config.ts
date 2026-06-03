@@ -41,7 +41,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "www.tarmeer.com" },
       { protocol: "https", hostname: "*.tarmeer.com" },
-      { protocol: "http", hostname: "localhost" },
+      ...(process.env.NODE_ENV === "development"
+        ? [{ protocol: "http" as const, hostname: "localhost" }]
+        : []),
     ],
   },
 };
