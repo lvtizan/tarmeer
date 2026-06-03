@@ -76,7 +76,9 @@ export default function SupplierProjectsPage() {
           })));
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[SupplierProjects] Failed to load projects:', err);
+      })
       .finally(() => setLoading(false));
   };
 

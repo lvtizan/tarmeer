@@ -22,7 +22,9 @@ export default function RegistrationChart() {
       const r = res as { users?: DataPoint[]; companies?: DataPoint[] };
       setUserData(r.users || []);
       setCompanyData(r.companies || []);
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error('[RegistrationChart] Failed to load registration stats:', err);
+    });
   }, []);
 
   const today = new Date();

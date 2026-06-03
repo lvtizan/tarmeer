@@ -111,9 +111,13 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
         fetch(`${API_BASE}/suppliers/me/linked-portals`, { headers: authHeaders() as HeadersInit })
           .then(r => r.ok ? r.json() : { portals: [] })
           .then(d => setLinkedPortals(d?.portals || []))
-          .catch(() => {});
+          .catch((err) => {
+            console.error('[SupplierLayout] Failed to load linked portals:', err);
+          });
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[SupplierLayout] Failed to verify supplier auth:', err);
+      });
   }, [router]);
 
   const handleSwitchPortal = async (portal: LinkedPortal) => {

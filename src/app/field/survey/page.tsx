@@ -169,7 +169,9 @@ export default function FieldSurveyPage() {
         const { id } = await fieldApi.createDraft() as { id: number };
         setDraftId(id);
         if (typeof window !== 'undefined') localStorage.setItem('field_draft_id', String(id));
-      } catch { /* silent */ }
+      } catch (err) {
+        console.error('[FieldSurvey] Failed to initialize draft:', err);
+      }
     })();
   }, []);
 

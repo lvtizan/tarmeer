@@ -30,7 +30,10 @@ export default function AdminStaffPage() {
     try {
       const data = await adminApi.getStaff();
       setStaff(data.staff || []);
-    } catch {}
+    } catch (err) {
+      console.error('[AdminStaff] Failed to fetch staff:', err);
+      showToast(t('Failed to load staff', '加载人员失败'), 'error');
+    }
     setLoading(false);
   }, []);
 

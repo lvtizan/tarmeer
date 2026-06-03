@@ -50,7 +50,8 @@ export default function AdminGlobalSearch() {
     try {
       const data = await adminApi.globalSearch(val);
       setResults(data);
-    } catch {
+    } catch (err) {
+      console.error('[AdminGlobalSearch] Search failed:', err);
       setResults(null);
     } finally {
       setLoading(false);

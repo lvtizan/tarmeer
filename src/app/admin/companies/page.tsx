@@ -302,7 +302,9 @@ export default function AdminCompaniesPage() {
       const c = d.pendingProjectCompanies || 0;
       const p = d.pendingProjectCount || 0;
       setPendingProjectsHint(c > 0 ? { companies: c, projects: p } : null);
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error('[AdminCompanies] Failed to get notification counts:', err);
+    });
   }, [tab]);
   const hasNewApplications = newAppCount > 0;
 
@@ -329,7 +331,9 @@ export default function AdminCompaniesPage() {
             onClick={() => {
               setTab(key);
               if (key === 'applications') {
-                adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch(() => {});
+                adminApi.markNotificationSeen('companies').then(() => setNewAppCount(0)).catch((err) => {
+                  console.error('[AdminCompanies] Failed to mark notifications seen:', err);
+                });
               }
             }}
             className={`relative rounded-xl border p-3 text-left transition ${

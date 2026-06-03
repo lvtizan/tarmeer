@@ -69,7 +69,9 @@ export default function AuthClient() {
           setPanelImages(data.images);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[Auth] Failed to load showcase images:', err);
+      });
   }, []);
 
   const third = Math.ceil(panelImages.length / 3);

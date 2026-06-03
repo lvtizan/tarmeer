@@ -52,7 +52,10 @@ export default function AdminSuppliersPage() {
       const qs = new URLSearchParams(params).toString();
       const data = await adminApi.request(`/suppliers?${qs}`);
       setSuppliers(data.suppliers || []);
-    } catch {}
+    } catch (err) {
+      console.error('[AdminSuppliers] Failed to fetch suppliers:', err);
+      showToast(t('Failed to load suppliers', '加载供应商失败'), 'error');
+    }
     setLoading(false);
   }, [originFilter, statusFilter]);
 
@@ -82,7 +85,10 @@ export default function AdminSuppliersPage() {
       await adminApi.request(`/suppliers/${deleteModal.id}`, { method: 'DELETE', body: JSON.stringify({ reason }) });
       setDeleteModal(null);
       fetchSuppliers();
-    } catch {}
+    } catch (err) {
+      console.error('[AdminSuppliers] Failed to delete supplier:', err);
+      showToast(t('Failed to delete supplier', '删除供应商失败'), 'error');
+    }
     setDeleteLoading(false);
   };
 

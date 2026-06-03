@@ -240,7 +240,9 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           establishment_year: establishmentYear ? Number(establishmentYear) : null,
           description: '',
           services: ['Interior Design'],
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error('[CompanySignup] Failed to create company profile after login:', err);
+        });
       }
       router.push('/company/dashboard');
     } catch (err: unknown) {
@@ -336,7 +338,9 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           localStorage.setItem('user', JSON.stringify(loginRes.user));
           localStorage.setItem('active_role', 'company');
         }
-        await api.post('/auth/company/profile', profileData).catch(() => {});
+        await api.post('/auth/company/profile', profileData).catch((err) => {
+          console.error('[CompanySignup] Failed to create company profile:', err);
+        });
         router.push('/company');
       }
     } catch (err: unknown) {

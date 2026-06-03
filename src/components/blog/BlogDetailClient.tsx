@@ -103,7 +103,9 @@ export default function BlogDetailClient({ article }: BlogDetailClientProps) {
           setRelatedCases(data.relatedCases ?? []);
           setRelatedArticles(data.relatedArticles ?? []);
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error('[BlogDetail] Failed to fetch related content:', err);
+        });
     };
 
     const browserWindow = globalThis.window;

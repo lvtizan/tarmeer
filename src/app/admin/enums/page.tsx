@@ -102,7 +102,9 @@ function ServicesTab({ services, loading, onReload }: { services: CompanyService
     try {
       const d = await adminApi.request('/enums/service-categories');
       setCategories(d.categories || []);
-    } catch {}
+    } catch (err) {
+      console.error('[AdminEnums] Failed to load categories:', err);
+    }
   }, []);
 
   useEffect(() => { loadCats(); }, [loadCats]);
@@ -122,7 +124,9 @@ function ServicesTab({ services, loading, onReload }: { services: CompanyService
     const maxOrder = categories.length;
     Promise.all(
       unregistered.map((cat, i) =>
-        adminApi.request('/enums/service-categories', { method: 'POST', body: JSON.stringify({ name: cat, sort_order: maxOrder + i }) }).catch(() => {})
+        adminApi.request('/enums/service-categories', { method: 'POST', body: JSON.stringify({ name: cat, sort_order: maxOrder + i }) }).catch((err) => {
+          console.error(`[AdminEnums] Failed to auto-register category "${cat}":`, err);
+        })
       )
     ).then(() => loadCats());
   }, [extraCats.join(','), categories.length]);

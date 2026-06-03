@@ -21,7 +21,9 @@ export default function CompanyProfilePage() {
         if (d.status) setStatus(d.status as string);
         if (d.admin_notes) setAdminNotes(d.admin_notes as string);
       }
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error('[CompanyProfile] Failed to load company profile:', err);
+    });
   }, []);
 
   function handleSaved(_id: number | null) {

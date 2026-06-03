@@ -90,14 +90,18 @@ export default function Navbar({
         const data = d as { categories?: { name: string; subs: string[] }[] };
         if (Array.isArray(data?.categories)) setNavCategories(data.categories);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[Navbar] Failed to fetch service categories:', err);
+      });
     fetch(`${API_BASE}/public/supplier-categories`)
       .then((r) => r.json())
       .then((d: unknown) => {
         const data = d as { categories?: { label: string; value: string }[] };
         if (Array.isArray(data?.categories)) setSupplierNavCategories(data.categories);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[Navbar] Failed to fetch supplier categories:', err);
+      });
   }, []);
 
   if ((isAuthPage && !forceShowOnAuth) || isPortalPage) return null;

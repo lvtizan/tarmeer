@@ -178,7 +178,9 @@ function AdminVisitRecordsContent() {
     try {
       const data = await adminApi.getInterviews();
       setRecords(data.interviews || []);
-    } catch {}
+    } catch (err) {
+      console.error('[AdminVisitRecords] Failed to fetch records:', err);
+    }
     setLoading(false);
   }, []);
 
@@ -200,7 +202,9 @@ function AdminVisitRecordsContent() {
     try {
       const data = await adminApi.getInterview(id);
       setDetail(data.interview || data);
-    } catch {}
+    } catch (err) {
+      console.error('[AdminVisitRecords] Failed to fetch interview detail:', err);
+    }
     setDetailLoading(false);
   };
 

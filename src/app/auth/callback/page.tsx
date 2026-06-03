@@ -42,7 +42,9 @@ function AuthCallbackInner() {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                     body: JSON.stringify({ phone: pending.phone }),
-                  }).catch(() => {});
+                  }).catch((err) => {
+                    console.error('[AuthCallback] Failed to update phone:', err);
+                  });
                 }
                 await fetch(`${API_BASE}/auth/company/profile`, {
                   method: 'POST',
@@ -58,9 +60,13 @@ function AuthCallbackInner() {
                     establishment_year: pending.establishment_year || null,
                     signup_source: pending.signup_source || 'for-companies-landing',
                   }),
-                }).catch(() => {});
+                }).catch((err) => {
+                  console.error('[AuthCallback] Failed to create company profile:', err);
+                });
               }
-            } catch { /* best-effort */ }
+            } catch (err) {
+              console.error('[AuthCallback] Failed to process pending company profile:', err);
+            }
             router.push('/company');
           } else {
             router.push('/dashboard');

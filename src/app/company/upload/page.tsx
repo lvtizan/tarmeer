@@ -19,7 +19,9 @@ export default function CompanyUploadPage() {
         ? (d as { projects: unknown[] }).projects
         : Array.isArray(d) ? d : [];
       setHasRejected(list.some((p: unknown) => (p as Record<string, unknown>).status === 'rejected'));
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error('[CompanyUpload] Failed to fetch projects:', err);
+    });
   }, []);
 
   return (

@@ -391,7 +391,9 @@ export default function AdminActivityLogPage() {
       if (c) return;
       setTodayStats(data.today || { total: 0, active_companies: 0, active_homeowners: 0, admin_actions: 0 });
       setActionDist(data.action_distribution || []);
-    }).catch(() => {}).finally(() => { if (!c) setStatsLoading(false); });
+    }).catch((err) => {
+      console.error('[ActivityLog] Failed to load stats:', err);
+    }).finally(() => { if (!c) setStatsLoading(false); });
     return () => { c = true; };
   }, []);
 
@@ -401,7 +403,9 @@ export default function AdminActivityLogPage() {
     adminApi.getTopActiveUsers(1).then((data) => {
       if (c) return;
       setTopUsers(data.users || []);
-    }).catch(() => {}).finally(() => { if (!c) setTopUsersLoading(false); });
+    }).catch((err) => {
+      console.error('[ActivityLog] Failed to load top users:', err);
+    }).finally(() => { if (!c) setTopUsersLoading(false); });
     return () => { c = true; };
   }, []);
 
