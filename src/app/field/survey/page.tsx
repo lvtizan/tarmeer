@@ -6,97 +6,18 @@ import { fieldApi } from '@/lib/adminApi';
 import ChipSelect from '@/components/field/ChipSelect';
 import WatermarkCamera, { type CapturedPhoto } from '@/components/field/WatermarkCamera';
 
-const SECTIONS = [
-  {
-    title: 'Section 1: Company Basic Information',
-    key: 'section_1',
-    fields: [
-      { key: 'company_type', label: 'Company Type', type: 'single', options: ['Local', 'Joint Venture', 'Foreign'] },
-      { key: 'year_established', label: 'Year Established', type: 'single', options: ['Before 2000', '2000-2010', '2010-2015', '2015-2020', '2020+'] },
-      { key: 'registration_location', label: 'Registration Location', type: 'single', options: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Other UAE', 'Outside UAE'] },
-      { key: 'company_size', label: 'Company Size', type: 'single', options: ['1-10', '10-30', '30-100', '100+'] },
-      { key: 'licenses', label: 'Licenses / Certifications', type: 'multi', options: ['Dubai Municipality', 'DEWA Approved', 'ISO Certified', 'RERA', 'Other'] },
-    ],
-  },
-  {
-    title: 'Section 2: Core Business',
-    key: 'section_2',
-    fields: [
-      { key: 'main_business_scope', label: 'Main Business Scope', type: 'multi', options: ['Interior Design', 'Fit-out', 'FF&E', 'MEP', 'Joinery', 'Landscaping'] },
-      { key: 'one_stop_service', label: 'One-Stop Service (Design + Build + Materials + Furniture)?', type: 'single', options: ['Yes', 'No', 'Partial'] },
-      { key: 'main_client_types', label: 'Main Client Types', type: 'multi', options: ['Residential', 'Commercial', 'Hospitality', 'Retail', 'Government', 'F&B'] },
-    ],
-  },
-  {
-    title: 'Section 3: Team Structure',
-    key: 'section_3',
-    fields: [
-      { key: 'total_employees', label: 'Total Employees', type: 'single', options: ['1-10', '11-30', '31-100', '100+'] },
-      { key: 'design_team_size', label: 'Design Team Size', type: 'single', options: ['0', '1-3', '4-10', '10+'] },
-      { key: 'pm_team_size', label: 'Project Management Team Size', type: 'single', options: ['0', '1-3', '4-10', '10+'] },
-      { key: 'construction_team', label: 'Construction Team', type: 'single', options: ['In-house', 'Outsourced', 'Hybrid'] },
-      { key: 'management_background', label: 'Management Background', type: 'multi', options: ['UAE Local', 'Arab', 'South Asian', 'Chinese', 'European', 'Mixed'] },
-      { key: 'owner_nationality', label: 'Owner / Shareholder Nationality', type: 'multi', options: ['Emirati', 'Arab', 'Indian', 'Pakistani', 'Chinese', 'European', 'Other'] },
-    ],
-  },
-  {
-    title: 'Section 4: Projects & Performance',
-    key: 'section_4',
-    fields: [
-      { key: 'projects_last_year', label: 'Projects Completed Last Year', type: 'single', options: ['1-5', '6-20', '21-50', '50+'] },
-      { key: 'annual_revenue_aed', label: 'Annual Revenue (AED)', type: 'single', options: ['< 1M', '1-5M', '5-20M', '20-50M', '50M+'] },
-      { key: 'typical_contract_value', label: 'Typical Contract Value Range', type: 'single', options: ['< 100K', '100K-500K', '500K-2M', '2M+'] },
-      { key: 'main_project_types', label: 'Main Project Types', type: 'multi', options: ['Villa', 'Apartment', 'Office', 'Retail', 'Hotel', 'Restaurant', 'Government'] },
-    ],
-  },
-  {
-    title: 'Section 5: Supply Chain',
-    key: 'section_5',
-    fields: [
-      { key: 'main_material_sources', label: 'Main Material Sources', type: 'multi', options: ['China', 'Italy', 'Germany', 'Local UAE', 'India', 'Turkey', 'Mixed'] },
-      { key: 'stable_supply_chain', label: 'Stable Supply Chain?', type: 'single', options: ['Yes', 'No', 'Partially'] },
-      { key: 'open_to_chinese_supply', label: 'Open to Chinese Material Supply?', type: 'single', options: ['Very Interested', 'Open', 'Neutral', 'Not Interested'] },
-    ],
-  },
-  {
-    title: 'Section 6: Strengths & Challenges',
-    key: 'section_6',
-    fields: [
-      { key: 'key_strengths', label: 'Key Strengths', type: 'multi', options: ['Design Capability', 'Speed', 'Price', 'Quality', 'Relationships', 'After-sales'] },
-      { key: 'main_challenges', label: 'Main Challenges', type: 'multi', options: ['Material Cost', 'Labour', 'Cash Flow', 'Competition', 'Finding Clients', 'Logistics'] },
-    ],
-  },
-  {
-    title: 'Section 7: Cooperation Intent',
-    key: 'section_7',
-    fields: [
-      { key: 'interest_in_chinese_platform', label: 'Interest in Cooperating with Chinese Supply Platform', type: 'single', options: ['Very Interested', 'Interested', 'Maybe', 'Not Interested'] },
-      { key: 'support_needed', label: 'Support Needed', type: 'multi', options: ['Sourcing', 'Logistics', 'Quality Control', 'Payment Terms', 'Showroom', 'Training'] },
-      { key: 'preferred_cooperation_model', label: 'Preferred Cooperation Model', type: 'single', options: ['Platform Membership', 'Per-project', 'Revenue Share', 'Exclusive Supply'] },
-    ],
-  },
-  {
-    title: 'Section 8: Additional Information',
-    key: 'section_8',
-    fields: [
-      { key: 'stable_developer_clients', label: 'Stable Developer / Client Resources?', type: 'single', options: ['Yes', 'No', 'Some'] },
-      { key: 'avg_project_duration', label: 'Average Project Duration', type: 'single', options: ['< 1 month', '1-3 months', '3-6 months', '6+ months'] },
-      { key: 'client_acquisition_channels', label: 'Client Acquisition Channels', type: 'multi', options: ['Referral', 'Social Media', 'Tenders', 'Direct Sales', 'Repeat Clients', 'Platforms'] },
-      { key: 'design_software', label: 'Design Software Used', type: 'multi', options: ['AutoCAD', '3ds Max', 'SketchUp', 'Revit', 'Lumion', 'Other'] },
-      { key: 'standardized_quotation', label: 'Standardized Quotation System?', type: 'single', options: ['Yes', 'No', 'In Progress'] },
-    ],
-  },
-  {
-    title: 'Section 9: Strategic Questions',
-    key: 'section_9',
-    fields: [
-      { key: 'open_to_material_construction_split', label: 'Open to Material + Construction Separation Model?', type: 'single', options: ['Yes', 'No', 'Need to Discuss'] },
-      { key: 'willing_to_share_client_resources', label: 'Willing to Share Client Resources for Joint Projects?', type: 'single', options: ['Yes', 'No', 'Case by Case'] },
-      { key: 'concerns_about_chinese_supply', label: 'Main Concerns About Chinese Supply Chain', type: 'multi', options: ['Quality', 'Delivery Time', 'Communication', 'MOQ', 'After-sales', 'None'] },
-      { key: 'interested_in_showroom_collab', label: 'Interested in Showroom / Sample Collaboration?', type: 'single', options: ['Very Interested', 'Interested', 'Maybe', 'Not Interested'] },
-    ],
-  },
-];
+interface SurveyField {
+  key: string;
+  label: string;
+  type: string;
+  options: string[];
+}
+
+interface SurveySection {
+  title: string;
+  key: string;
+  fields: SurveyField[];
+}
 
 type SectionData = Record<string, string | string[]>;
 type AllSections = { [key: string]: SectionData };
@@ -123,6 +44,7 @@ interface CompanySuggestion {
   id: number;
   name: string;
   city?: string;
+  source?: string;
 }
 
 export default function FieldSurveyPage() {
@@ -130,8 +52,9 @@ export default function FieldSurveyPage() {
   const [companyName, setCompanyName] = useState('');
   const [companyRefId, setCompanyRefId] = useState<number | null>(null);
   const [companyRefName, setCompanyRefName] = useState('');
+  const [companyRefSource, setCompanyRefSource] = useState<string>('uae');
   const [sections, setSections] = useState<AllSections>({});
-  const [schema, setSchema] = useState(SECTIONS);
+  const [schema, setSchema] = useState<SurveySection[] | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -149,19 +72,18 @@ export default function FieldSurveyPage() {
 
   useEffect(() => {
     (async () => {
-      // Load survey schema from API (falls back to hardcoded SECTIONS)
       try {
-        const { schema: remoteSchema } = await fieldApi.getSurveySchema() as { schema: typeof SECTIONS | null };
+        const { schema: remoteSchema } = await fieldApi.getSurveySchema() as { schema: SurveySection[] | null };
         if (remoteSchema && Array.isArray(remoteSchema) && remoteSchema.length > 0) {
-          setSchema(remoteSchema as typeof SECTIONS);
+          setSchema(remoteSchema);
         }
-      } catch { /* keep hardcoded fallback */ }
+      } catch { /* schema unavailable */ }
 
       try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem('field_draft_id') : null;
         if (storedId) {
-          const { draft } = await fieldApi.getDraft() as { draft: DraftData };
-          if (draft && draft.id === Number(storedId)) {
+          const { draft } = await fieldApi.getDraft(Number(storedId)) as { draft: DraftData };
+          if (draft) {
             hydrateDraft(draft);
             return;
           }
@@ -225,7 +147,7 @@ export default function FieldSurveyPage() {
     setPhotos(prev => prev.filter((_, i) => i !== idx));
   }
 
-  const triggerSave = useCallback((id: number, cName: string, cRefId: number | null, secs: AllSections) => {
+  const triggerSave = useCallback((id: number, cName: string, cRefId: number | null, cRefSource: string, secs: AllSections) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       setSaveStatus('saving');
@@ -233,6 +155,7 @@ export default function FieldSurveyPage() {
         await fieldApi.saveDraft(id, {
           company_name: cName,
           company_ref_id: cRefId,
+          company_ref_source: cRefSource,
           ...Object.fromEntries(Object.entries(secs).map(([k, v]) => [k, v])),
         });
         setSaveStatus('saved');
@@ -245,7 +168,7 @@ export default function FieldSurveyPage() {
   function updateSection(sectionKey: string, fieldKey: string, value: string | string[]) {
     setSections((prev) => {
       const updated = { ...prev, [sectionKey]: { ...(prev[sectionKey] || {}), [fieldKey]: value } };
-      if (draftId) triggerSave(draftId, companyName, companyRefId, updated);
+      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated);
       return updated;
     });
   }
@@ -280,21 +203,26 @@ export default function FieldSurveyPage() {
   }
 
   function selectCompany(company: CompanySuggestion) {
+    const src = company.source || 'uae';
     setCompanyRefId(company.id);
     setCompanyRefName(company.name);
     setCompanyName(company.name);
+    setCompanyRefSource(src);
     setCompanySearchQuery('');
     setShowSuggestions(false);
     setCompanyNameError(false);
-    if (draftId) triggerSave(draftId, company.name, company.id, sections);
+    if (draftId) triggerSave(draftId, company.name, company.id, src, sections);
   }
 
   function clearSelectedCompany() {
     setCompanyRefId(null);
     setCompanyRefName('');
     setCompanyName('');
+    setCompanyRefSource('uae');
     setCompanySearchQuery('');
     setShowSuggestions(false);
+    // Persist the cleared company to server so reload doesn't restore old company
+    if (draftId) triggerSave(draftId, '', null, 'uae', sections);
     setTimeout(() => companyNameRef.current?.focus(), 50);
   }
 
@@ -325,18 +253,24 @@ export default function FieldSurveyPage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#faf9f7] flex flex-col items-center justify-center px-6">
-        <div className="text-5xl mb-4">✓</div>
-        <h1 className="text-xl font-bold text-[#2c2c2c] mb-2">Interview Submitted</h1>
-        <p className="text-stone-500 text-[15px] mb-8">Record saved successfully.</p>
-        <button
-          onClick={() => {
-            if (typeof window !== 'undefined') localStorage.removeItem('field_draft_id');
-            window.location.reload();
-          }}
-          className="btn-primary w-full max-w-xs"
-        >
-          Start New Interview
-        </button>
+        <div className="w-full max-w-sm bg-white rounded-3xl shadow-sm border border-stone-100 px-8 py-10 flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-5">
+            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold text-[#1c1917] mb-2">Interview Submitted</h1>
+          <p className="text-stone-400 text-[14px] mb-8">Record saved successfully.</p>
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') localStorage.removeItem('field_draft_id');
+              window.location.reload();
+            }}
+            className="btn-primary w-full"
+          >
+            Start New Interview
+          </button>
+        </div>
       </div>
     );
   }
@@ -463,7 +397,11 @@ export default function FieldSurveyPage() {
           <p className="text-xs text-stone-400">{photos.length === 0 ? 'No photos yet — tap 📷 below to add.' : 'Tap a photo to enlarge · tap 📷 to add more.'}</p>
         </div>
 
-        {schema.map((section) => (
+        {!schema ? (
+          <div className="flex justify-center py-8">
+            <div className="w-5 h-5 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
+          </div>
+        ) : schema.map((section) => (
           <div key={section.key}>
             <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
               {section.title}
