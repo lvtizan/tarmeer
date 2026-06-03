@@ -16,6 +16,7 @@ import ToastContainer from '@/components/ui/Toast';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { AdminLangContext, type AdminLang } from '@/hooks/useAdminLang';
 import AdminGlobalSearch from '@/components/admin/AdminGlobalSearch';
+import { AdminCountryProvider, useAdminCountry, type AdminCountry } from '@/contexts/AdminCountryContext';
 
 const ADMIN_LANG_KEY = 'admin_lang';
 
@@ -123,6 +124,32 @@ const NOTIFICATION_MAP: Record<string, string> = {
   '/admin/users': 'newUsers',
   '/admin/feedback': 'newFeedback',
 };
+
+function CountrySwitcher() {
+  const { country, setCountry } = useAdminCountry();
+  const options: { value: AdminCountry; flag: string; label: string }[] = [
+    { value: 'ae', flag: '🇦🇪', label: 'UAE' },
+    { value: 'vn', flag: '🇻🇳', label: 'VN' },
+  ];
+  return (
+    <div className="flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 p-0.5">
+      {options.map(o => (
+        <button
+          key={o.value}
+          onClick={() => setCountry(o.value)}
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+            country === o.value
+              ? 'bg-white shadow-sm text-[#2c2c2c]'
+              : 'text-stone-400 hover:text-stone-600'
+          }`}
+        >
+          <span>{o.flag}</span>
+          <span>{o.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const { admin, logout, hasPermission, isSuperAdmin, isLoading } = useAdmin();
@@ -275,7 +302,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="hidden md:flex justify-center">
             <AdminGlobalSearch />
           </div>
-          <div className="hidden md:block" />
+          <div className="hidden md:flex justify-end items-center gap-2">
+            <CountrySwitcher />
+          </div>
         </header>
 
         {/* Mobile overlay */}
@@ -427,7 +456,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
+      <AdminCountryProvider>
+        <AdminLayoutInner>{children}</AdminLayoutInner>
+      </AdminCountryProvider>
     </AdminProvider>
   );
 }

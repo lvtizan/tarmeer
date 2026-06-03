@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { Pencil, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { PageSpinner } from '@/components/ui/Spinner';
@@ -69,10 +69,12 @@ function InfoRow({ label, value, isLink = false }: { label: string; value: strin
   );
 }
 
-function CompanyDetailContent({ id }: { id: string }) {
+function CompanyDetailContent() {
   const { t } = useAdminT();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const routeParams = useParams();
+  const id = routeParams?.id as string | undefined;
   const [company, setCompany] = useState<CompanyDetail | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ function CompanyDetailContent({ id }: { id: string }) {
   const [togglingPublished, setTogglingPublished] = useState(false);
 
   const loadDetail = () => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
     setLoading(true);
     adminApi.getCompanyFullDetail(Number(id))
       .then((data: { company: CompanyDetail; projects?: Project[] }) => {
@@ -469,11 +471,10 @@ function CompanyDetailContent({ id }: { id: string }) {
   );
 }
 
-export default function AdminCompanyDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function AdminCompanyDetailPage() {
   return (
     <Suspense fallback={<PageSpinner />}>
-      <CompanyDetailContent id={id} />
+      <CompanyDetailContent />
     </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, FolderOpen, ExternalLink, Trash2 } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { adminApi } from '@/lib/adminApi';
@@ -20,8 +20,9 @@ const STATUS_BADGE: Record<string, string> = {
   suspended: 'bg-red-100 text-red-700',
 };
 
-export default function AdminUserDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function AdminUserDetailPage() {
+  const routeParams = useParams();
+  const id = routeParams?.id as string | undefined;
   const { t } = useAdminT();
   const router = useRouter();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,7 +35,7 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
     setLoading(true);
     adminApi.getUserDetail(Number(id))
       .then(setData)

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import SupplierEditModal from '@/components/admin/SupplierEditModal';
 import { useAdminT } from '@/hooks/useAdminLang';
@@ -278,8 +278,9 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   );
 }
 
-export default function AdminSupplierDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function AdminSupplierDetailPage() {
+  const routeParams = useParams();
+  const id = routeParams?.id as string | undefined;
   const { t } = useAdminT();
   const router = useRouter();
 
@@ -325,7 +326,7 @@ export default function AdminSupplierDetailPage({ params }: { params: { id: stri
   };
 
   const fetchSupplier = useCallback(() => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
     adminApi.request(`/suppliers/${id}`)
       .then((data: {
         supplier: typeof supplier;

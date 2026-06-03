@@ -92,8 +92,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   } catch {
     return {
-      title: 'Project Not Found | Tarmeer',
-      robots: { index: false },
+      title: 'Project | Tarmeer',
     };
   }
 }

@@ -623,7 +623,7 @@ class AdminApiClient {
   }
 
   // Company management
-  async getCompanies(params?: { page?: number; limit?: number; claimed?: string; search?: string; sort_by?: string; sort_dir?: string }) {
+  async getCompanies(params?: { page?: number; limit?: number; claimed?: string; search?: string; sort_by?: string; sort_dir?: string; country?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
@@ -631,6 +631,7 @@ class AdminApiClient {
     if (params?.search) query.set('search', params.search);
     if (params?.sort_by) query.set('sort_by', params.sort_by);
     if (params?.sort_dir) query.set('sort_dir', params.sort_dir);
+    if (params?.country) query.set('country', params.country);
     return this.request(`/companies?${query.toString()}`);
   }
 
@@ -979,6 +980,9 @@ class AdminApiClient {
   async updateInterview(id: number, data: Record<string, any>) {
     return this.request(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
   }
+  async deleteInterviews(ids: number[]) {
+    return this.request('/interviews', { method: 'DELETE', body: JSON.stringify({ ids }) });
+  }
 
   // Field staff management
   async getStaff() {
@@ -1017,7 +1021,7 @@ async function fieldRequest(path: string, options: RequestInit = {}): Promise<an
 
 export const fieldApi = {
   createDraft: () => fieldRequest('/interviews', { method: 'POST' }),
-  getDraft: () => fieldRequest('/interviews/draft'),
+  getDraft: (id: number) => fieldRequest(`/interviews/draft?id=${id}`),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveDraft: (id: number, data: Record<string, any>) =>
     fieldRequest(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),

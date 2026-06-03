@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { ExternalLink, Pencil, Trash2, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -85,10 +85,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProfileCompanyDetailContent({ id }: { id: string }) {
+function ProfileCompanyDetailContent() {
   const { t } = useAdminT();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const routeParams = useParams();
+  const id = routeParams?.id as string | undefined;
   const { hasPermission } = useAdmin();
   const canApprove = hasPermission('can_approve');
 
@@ -115,7 +117,7 @@ function ProfileCompanyDetailContent({ id }: { id: string }) {
   const [togglingPublished, setTogglingPublished] = useState(false);
 
   const loadDetail = () => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
     setLoading(true);
     adminApi.getCompanyProfileDetail(Number(id))
       .then((data: { company: CompanyProfile; projects?: Project[] }) => {
@@ -785,11 +787,10 @@ function ProfileCompanyDetailContent({ id }: { id: string }) {
   );
 }
 
-export default function AdminRegisteredCompanyDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function AdminRegisteredCompanyDetailPage() {
   return (
     <Suspense fallback={<PageSpinner />}>
-      <ProfileCompanyDetailContent id={id} />
+      <ProfileCompanyDetailContent />
     </Suspense>
   );
 }

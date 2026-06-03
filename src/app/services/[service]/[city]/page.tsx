@@ -176,12 +176,6 @@ interface Props {
   params: Promise<{ service: string; city: string }>;
 }
 
-export async function generateStaticParams(): Promise<Array<{ service: string; city: string }>> {
-  const services = Object.keys(SERVICE_LABELS);
-  const cities = Object.keys(CITY_LABELS);
-  return services.flatMap((service) => cities.map((city) => ({ service, city })));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { service, city } = await params;
   const serviceLabel = SERVICE_LABELS[service] ?? service;

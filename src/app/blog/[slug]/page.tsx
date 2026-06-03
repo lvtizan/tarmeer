@@ -72,7 +72,6 @@ export async function generateMetadata({
     return {
       title: 'Article Not Found | Tarmeer Blog',
       description: 'The article you are looking for could not be found on the Tarmeer blog.',
-      robots: { index: false },
       alternates: { canonical: 'https://www.tarmeer.com/blog' },
     };
   }

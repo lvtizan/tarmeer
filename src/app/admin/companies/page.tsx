@@ -10,6 +10,7 @@ import AdminDirectoryTable from '@/components/admin/AdminDirectoryTable';
 import AdminApplicationsTable from '@/components/admin/AdminApplicationsTable';
 import AdminSelect from '@/components/ui/AdminSelect';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 
 type Tab = 'companies' | 'directory' | 'applications';
 type ClaimedFilter = 'all' | 'claimed' | 'unclaimed';
@@ -50,6 +51,7 @@ interface CompanyRecord {
 export default function AdminCompaniesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { country } = useAdminCountry();
 
   const [tab, setTab] = useState<Tab>(() => {
     const t = searchParams.get('tab');
@@ -150,6 +152,7 @@ export default function AdminCompaniesPage() {
         search: companySearch || undefined,
         sort_by: directorySortActive ? 'project_count' : undefined,
         sort_dir: directorySortActive ? directorySortDir : undefined,
+        country,
       });
       setCompanies(result.companies);
       setCompanyTotal(result.pagination.total);
@@ -162,7 +165,7 @@ export default function AdminCompaniesPage() {
       directoryLoaded.current = true;
       setCompanyLoading(false);
     }
-  }, [companyPage, claimedFilter, companySearch, directorySortActive, directorySortDir]);
+  }, [companyPage, claimedFilter, companySearch, directorySortActive, directorySortDir, country]);
 
   const loadTabBadges = useCallback(async () => {
     const [profilesRes, pendingRes, directoryRes] = await Promise.allSettled([

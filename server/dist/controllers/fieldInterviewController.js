@@ -35,11 +35,10 @@ exports.uploadPhotoMiddleware = (0, multer_1.default)({
         else cb(new Error('Only image files allowed'));
     },
 }).single('photo');
-// POST /api/field/interviews — create draft
+// POST /api/field/interviews — create draft (public, no auth)
 async function createDraft(req, res) {
-    const interviewerId = req.admin.id;
     try {
-        const [result] = await database_1.default.execute(`INSERT INTO company_interviews (interviewer_id, status) VALUES (?, 'draft')`, [interviewerId]);
+        const [result] = await database_1.default.execute(`INSERT INTO company_interviews (status) VALUES ('draft')`);
         const id = result.insertId;
         res.status(201).json({ id });
     }
@@ -48,30 +47,27 @@ async function createDraft(req, res) {
         res.status(500).json({ error: 'Failed to create draft.' });
     }
 }
-// GET /api/field/interviews/draft — get latest draft for current user
+// GET /api/field/interviews/draft?id=N — fetch draft by ID (public)
 async function getMyDraft(req, res) {
-    const interviewerId = req.admin.id;
+    const id = parseInt(String(req.query.id || ''), 10);
+    if (!id) return res.json({ draft: null });
     try {
-        const [rows] = await database_1.default.execute(`SELECT * FROM company_interviews
-       WHERE interviewer_id = ? AND status = 'draft'
-       ORDER BY updated_at DESC LIMIT 1`, [interviewerId]);
+        const [rows] = await database_1.default.execute(`SELECT * FROM company_interviews WHERE id = ? AND status = 'draft' LIMIT 1`, [id]);
         const drafts = rows;
-        if (drafts.length === 0)
-            return res.json({ draft: null });
+        if (drafts.length === 0) return res.json({ draft: null });
         res.json({ draft: drafts[0] });
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to fetch draft.' });
     }
 }
-// PATCH /api/field/interviews/:id — auto-save
+// PATCH /api/field/interviews/:id — auto-save (public)
 async function saveDraft(req, res) {
     const { id } = req.params;
-    const interviewerId = req.admin.id;
-    const { company_name, company_ref_id, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, } = req.body;
+    const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, } = req.body;
     try {
-        // Verify ownership and draft status
-        const [rows] = await database_1.default.execute(`SELECT id FROM company_interviews WHERE id = ? AND interviewer_id = ? AND status = 'draft'`, [id, interviewerId]);
+        // Verify draft exists
+        const [rows] = await database_1.default.execute(`SELECT id FROM company_interviews WHERE id = ? AND status = 'draft'`, [id]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Draft not found or already submitted.' });
         }
@@ -80,6 +76,8 @@ async function saveDraft(req, res) {
             fields.company_name = String(company_name).slice(0, 200);
         if (company_ref_id !== undefined)
             fields.company_ref_id = company_ref_id || null;
+        if (company_ref_source !== undefined)
+            fields.company_ref_source = company_ref_source || 'uae';
         if (section_1 !== undefined)
             fields.section_1 = JSON.stringify(section_1);
         if (section_2 !== undefined)
@@ -112,12 +110,11 @@ async function saveDraft(req, res) {
         res.status(500).json({ error: 'Failed to save.' });
     }
 }
-// POST /api/field/interviews/:id/submit — submit
+// POST /api/field/interviews/:id/submit — submit (public)
 async function submitInterview(req, res) {
     const { id } = req.params;
-    const interviewerId = req.admin.id;
     try {
-        const [rows] = await database_1.default.execute('SELECT id FROM company_interviews WHERE id = ? AND interviewer_id = ? AND status = ?', [id, interviewerId, 'draft']);
+        const [rows] = await database_1.default.execute('SELECT id FROM company_interviews WHERE id = ? AND status = ?', [id, 'draft']);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Draft not found.' });
         }
@@ -131,12 +128,11 @@ async function submitInterview(req, res) {
 // POST /api/field/interviews/:id/photos — upload watermark photo
 async function uploadPhoto(req, res) {
     const { id } = req.params;
-    const interviewerId = req.admin.id;
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
     try {
-        const [rows] = await database_1.default.execute('SELECT photos FROM company_interviews WHERE id = ? AND interviewer_id = ?', [id, interviewerId]);
+        const [rows] = await database_1.default.execute('SELECT photos FROM company_interviews WHERE id = ?', [id]);
         if (rows.length === 0) {
             fs_1.default.unlinkSync(req.file.path);
             return res.status(404).json({ error: 'Interview not found' });
@@ -172,13 +168,18 @@ async function getSurveySchema(req, res) {
         res.json({ schema: null });
     }
 }
-// GET /api/field/companies/search?q= — search uae_companies for linking
+// GET /api/field/companies/search?q= — search all company tables (uae_companies + company_profiles)
 async function searchCompanies(req, res) {
     const q = String(req.query.q || '').trim().slice(0, 100);
     if (!q)
         return res.json({ results: [] });
+    const like = `%${q}%`;
     try {
-        const [rows] = await database_1.default.execute(`SELECT id, name_en AS name, city FROM uae_companies WHERE name_en LIKE ? LIMIT 10`, [`%${q}%`]);
+        const [rows] = await database_1.default.execute(`(SELECT id, name_en AS name, city, 'uae' AS source FROM uae_companies WHERE name_en LIKE ? AND name_en IS NOT NULL)
+               UNION
+               (SELECT id, company_name AS name, city, 'profile' AS source FROM company_profiles WHERE company_name LIKE ? AND deleted_at IS NULL AND status = 'approved')
+               ORDER BY name
+               LIMIT 20`, [like, like]);
         res.json({ results: rows });
     }
     catch (e) {
