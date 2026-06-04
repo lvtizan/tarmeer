@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { headers } from 'next/headers';
 import { fetchPublicCompanies } from '@/lib/publicApi';
 import CompaniesClient from '@/components/companies/CompaniesClient';
 
@@ -26,7 +27,10 @@ export const metadata: Metadata = {
 };
 
 export default async function CompaniesPage() {
-  const result = await Promise.allSettled([fetchPublicCompanies(300)]);
+  const headersList = await headers();
+  const country = headersList.get('x-country') ?? 'ae';
+
+  const result = await Promise.allSettled([fetchPublicCompanies(300, 'list', country)]);
   const companies = result[0].status === 'fulfilled' ? result[0].value : [];
 
   const jsonLd = {

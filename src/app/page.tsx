@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import Banner from '@/components/home/Banner';
 import HomeDesignSection from '@/components/home/HomeDesignSection';
 import HomeSpaceSection from '@/components/home/HomeSpaceSection';
@@ -84,8 +85,11 @@ async function fetchSuppliers(): Promise<Supplier[]> {
 }
 
 export default async function HomePage() {
+  const headersList = await headers();
+  const country = headersList.get('x-country') ?? 'ae';
+
   const [companiesResult, suppliersResult] = await Promise.allSettled([
-    fetchPublicCompanies(24, 'home'),
+    fetchPublicCompanies(24, 'home', country),
     fetchSuppliers(),
   ]);
 

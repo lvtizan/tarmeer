@@ -94,8 +94,14 @@ function extractPortfolioData(rawField) {
         }
         return { portfolio_images: flatUrls, portfolio_categories: categories, portfolio_metadata: metadata };
     }
-    // Legacy flat array format
-    const flatUrls = (0, publicImageCleanup_1.sanitizeImageUrls)(Array.isArray(parsed) ? parsed : []);
+    // Legacy flat array format — items may be plain strings or {url, category?} objects
+    const rawArray = Array.isArray(parsed) ? parsed : [];
+    const rawUrls = rawArray.map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object' && typeof item.url === 'string') return item.url;
+        return '';
+    }).filter(Boolean);
+    const flatUrls = (0, publicImageCleanup_1.sanitizeImageUrls)(rawUrls);
     const categories = {
         Projects: flatUrls.map((url) => ({ url, title: '' })),
     };
@@ -113,6 +119,7 @@ function sanitizePublicCompany(company) {
         description: toPublicString(company.description),
         city: toPublicString(company.city),
         address: toPublicString(company.address),
+        country: toPublicString(company.country),
         year_established: toPublicString(company.year_established),
         website: isClaimed ? '' : toPublicString(company.website),
         instagram: toPublicString(company.instagram),

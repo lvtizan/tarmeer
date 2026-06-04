@@ -11,41 +11,9 @@ import Avatar from './ui/Avatar';
 import NotificationBell from './NotificationBell';
 import { useNavigationHandler } from '../hooks/useNavigationHandler';
 import TarmeerLogo from './TarmeerLogo';
-
-const spaceTypeItems = [
-  { label: 'Villa', to: '/companies?style=Villa' },
-  { label: 'Apartment', to: '/companies?style=Apartment' },
-  { label: 'Commercial', to: '/companies?style=Commercial' },
-  { label: 'Public / Institutional', to: '/companies?style=Office' },
-  { label: 'Outdoor / Landscape', to: '/companies?service=Landscape' },
-];
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
-
-const portfolioCategories = {
-  'By Room': [
-    { label: 'Living Room', to: '/portfolio?tag=Living+Room' },
-    { label: 'Bedroom', to: '/portfolio?tag=Bedroom' },
-    { label: 'Kitchen', to: '/portfolio?tag=Kitchen' },
-    { label: 'Bathroom', to: '/portfolio?tag=Bathroom' },
-    { label: 'Dining Room', to: '/portfolio?tag=Dining+Room' },
-    { label: 'Office', to: '/portfolio?tag=Office' },
-    { label: 'Hallway', to: '/portfolio?tag=Hallway' },
-    { label: 'Outdoor', to: '/portfolio?tag=Outdoor' },
-  ],
-  'By Style': [
-    { label: 'Modern', to: '/portfolio?tag=Modern' },
-    { label: 'Luxury', to: '/portfolio?tag=Luxury' },
-    { label: 'Minimalist', to: '/portfolio?tag=Minimalist' },
-    { label: 'Classical', to: '/portfolio?tag=Classical' },
-    { label: 'Arabic', to: '/portfolio?tag=Arabic' },
-    { label: 'Industrial', to: '/portfolio?tag=Industrial' },
-    { label: 'Scandinavian', to: '/portfolio?tag=Scandinavian' },
-    { label: 'Art Deco', to: '/portfolio?tag=Art+Deco' },
-  ],
-};
-
-const navLinks = [{ to: '/', label: 'Home' }];
 
 type NavbarVariant = 'default' | 'admin-auth';
 
@@ -58,6 +26,41 @@ export default function Navbar({
   noBorder?: boolean;
   variant?: NavbarVariant;
 }) {
+  const { tr } = useSiteLocale();
+
+  const navLinks = [{ to: '/', label: tr.footer.navLinks.Home }];
+
+  const spaceTypeItems = [
+    { label: tr.spaces.Villa, to: '/companies?style=Villa' },
+    { label: tr.spaces.Apartment, to: '/companies?style=Apartment' },
+    { label: tr.spaces.Commercial, to: '/companies?style=Commercial' },
+    { label: tr.spaces['Public / Institutional'], to: '/companies?style=Office' },
+    { label: tr.spaces['Outdoor / Landscape'], to: '/companies?service=Landscape' },
+  ];
+
+  const portfolioCategories: Record<string, { label: string; to: string }[]> = {
+    [tr.nav.byRoom]: [
+      { label: tr.rooms['Living Room'], to: '/portfolio?tag=Living+Room' },
+      { label: tr.rooms.Bedroom, to: '/portfolio?tag=Bedroom' },
+      { label: tr.rooms.Kitchen, to: '/portfolio?tag=Kitchen' },
+      { label: tr.rooms.Bathroom, to: '/portfolio?tag=Bathroom' },
+      { label: tr.rooms['Dining Room'], to: '/portfolio?tag=Dining+Room' },
+      { label: tr.rooms.Office, to: '/portfolio?tag=Office' },
+      { label: tr.rooms.Hallway, to: '/portfolio?tag=Hallway' },
+      { label: tr.rooms.Outdoor, to: '/portfolio?tag=Outdoor' },
+    ],
+    [tr.nav.byStyle]: [
+      { label: tr.styles.Modern, to: '/portfolio?tag=Modern' },
+      { label: tr.styles.Luxury, to: '/portfolio?tag=Luxury' },
+      { label: tr.styles.Minimalist, to: '/portfolio?tag=Minimalist' },
+      { label: tr.styles.Classical, to: '/portfolio?tag=Classical' },
+      { label: tr.styles.Arabic, to: '/portfolio?tag=Arabic' },
+      { label: tr.styles.Industrial, to: '/portfolio?tag=Industrial' },
+      { label: tr.styles.Scandinavian, to: '/portfolio?tag=Scandinavian' },
+      { label: tr.styles['Art Deco'], to: '/portfolio?tag=Art+Deco' },
+    ],
+  };
+
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
@@ -167,7 +170,7 @@ export default function Navbar({
               onClick={() => { setPortfolioDropdownOpen(false); handleClick('/portfolio'); }}
               className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
             >
-              Portfolio
+              {tr.nav.portfolio}
               <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
             </Link>
             <div className={`absolute top-full left-0 pt-2 w-max z-50 transition-all duration-150 ${portfolioDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
@@ -190,7 +193,7 @@ export default function Navbar({
                 </div>
                 <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
                   <Link href="/portfolio" onClick={() => handleClick('/portfolio')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-                    All Projects {'>'}
+                    {tr.nav.allProjects} {'>'}
                   </Link>
                 </div>
               </div>
@@ -208,7 +211,7 @@ export default function Navbar({
               onClick={() => { setDropdownOpen(false); handleClick('/companies'); }}
               className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
             >
-              Find Company
+              {tr.nav.findCompany}
               <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </Link>
             <div
@@ -218,7 +221,7 @@ export default function Navbar({
               <div ref={dropdownPanelRef} className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
                 <div className="flex">
                   <div className="p-6 w-48 border-r border-stone-100 flex-shrink-0">
-                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Space Type</h3>
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{tr.nav.spaceType}</h3>
                     <ul className="space-y-2">
                       {spaceTypeItems.map((item) => (
                         <li key={item.to}>
@@ -230,7 +233,7 @@ export default function Navbar({
                     </ul>
                   </div>
                   <div className="p-6 w-52 border-r border-stone-100 flex-shrink-0">
-                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">Service Type</h3>
+                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{tr.nav.serviceType}</h3>
                     <ul className="space-y-1">
                       {navCategories.map((cat) => (
                         <li key={cat.name}>
@@ -286,7 +289,7 @@ export default function Navbar({
                 </div>
                 <div className="border-t border-stone-200 px-6 py-3 bg-stone-50">
                   <Link href="/companies" onClick={() => handleClick('/companies')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-                    All Companies {'>'}
+                    {tr.nav.allCompanies} {'>'}
                   </Link>
                 </div>
               </div>
@@ -304,7 +307,7 @@ export default function Navbar({
               onClick={() => { setMaterialsDropdownOpen(false); handleClick('/materials'); }}
               className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
             >
-              Materials
+              {tr.nav.materials}
               <ChevronDown className={`w-4 h-4 transition-transform ${materialsDropdownOpen ? 'rotate-180' : ''}`} />
             </Link>
             <div className={`absolute top-full right-0 pt-2 w-max z-50 transition-all duration-150 ${materialsDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
@@ -335,7 +338,7 @@ export default function Navbar({
                 </div>
                 <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
                   <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-                    All Suppliers {'>'}
+                    {tr.nav.allSuppliers} {'>'}
                   </Link>
                 </div>
               </div>
@@ -350,13 +353,13 @@ export default function Navbar({
           ) : showLogInLink ? (
             <Link href="/auth" onClick={() => handleClick('/auth')} className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
               <User className="w-4 h-4" />
-              Log In
+              {tr.nav.logIn}
             </Link>
           ) : null}
           {showJoinAsCompany && (
             <Link href="/for-companies" onClick={() => handleClick('/for-companies')} className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-4 py-2 text-base font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
               <Briefcase className="w-4 h-4" />
-              Join as Company
+              {tr.nav.joinAsCompany}
             </Link>
           )}
         </nav>
@@ -365,7 +368,7 @@ export default function Navbar({
           {showJoinAsCompany && (
             <Link href="/for-companies" className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-[#2c2c2c] hover:bg-stone-50 transition">
               <Briefcase className="w-3.5 h-3.5" />
-              Join as Company
+              {tr.nav.joinAsCompany}
             </Link>
           )}
           <button type="button" onClick={() => setOpen((o) => !o)} className="p-2 rounded-lg hover:bg-stone-100" aria-label="Toggle menu">
@@ -384,7 +387,7 @@ export default function Navbar({
             {/* Mobile Portfolio */}
             <div className="py-2">
               <button onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)} className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
-                Portfolio
+                {tr.nav.portfolio}
                 <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {portfolioDropdownOpen && (
@@ -405,7 +408,7 @@ export default function Navbar({
                   ))}
                   <div className="border-t border-stone-200 pt-2">
                     <Link href="/portfolio" onClick={() => handleClick('/portfolio')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
-                      All Projects {'>'}
+                      {tr.nav.allProjects} {'>'}
                     </Link>
                   </div>
                 </div>
@@ -416,7 +419,7 @@ export default function Navbar({
             <div className="py-2">
               <div className="flex items-center justify-between">
                 <Link href="/companies" onClick={() => handleClick('/companies')} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
-                  Find Company
+                  {tr.nav.findCompany}
                 </Link>
                 <button onClick={() => setDropdownOpen(!dropdownOpen)} className="p-1 text-[#2c2c2c]/60 hover:text-[#2c2c2c] transition">
                   <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
@@ -425,7 +428,7 @@ export default function Navbar({
               {dropdownOpen && (
                 <div className="mt-3 pl-4 space-y-4">
                   <div>
-                    <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Space Type</h4>
+                    <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{tr.nav.spaceType}</h4>
                     {spaceTypeItems.map((item) => (
                       <Link key={item.to} href={item.to} onClick={() => handleClick(item.to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
                         {item.label}
@@ -433,7 +436,7 @@ export default function Navbar({
                     ))}
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">Service Type</h4>
+                    <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{tr.nav.serviceType}</h4>
                     {navCategories.map((cat) => (
                       <div key={cat.name} className="py-1">
                         <p className="text-xs font-semibold text-stone-500 mb-1">{cat.name}</p>
@@ -447,7 +450,7 @@ export default function Navbar({
                   </div>
                   <div className="border-t border-stone-200 pt-2">
                     <Link href="/companies" onClick={() => handleClick('/companies')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
-                      All Companies {'>'}
+                      {tr.nav.allCompanies} {'>'}
                     </Link>
                   </div>
                 </div>
@@ -458,7 +461,7 @@ export default function Navbar({
             <div className="py-2">
               <div className="flex items-center justify-between">
                 <Link href="/materials" onClick={() => handleClick('/materials')} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
-                  Materials
+                  {tr.nav.materials}
                 </Link>
                 <button onClick={() => setMaterialsDropdownOpen(!materialsDropdownOpen)} className="p-1 text-[#2c2c2c]/60 hover:text-[#2c2c2c] transition">
                   <ChevronDown className={`w-4 h-4 transition-transform ${materialsDropdownOpen ? 'rotate-180' : ''}`} />
@@ -490,7 +493,7 @@ export default function Navbar({
                   })()}
                   <div className="border-t border-stone-200 pt-2">
                     <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
-                      All Suppliers {'>'}
+                      {tr.nav.allSuppliers} {'>'}
                     </Link>
                   </div>
                 </div>
@@ -500,7 +503,7 @@ export default function Navbar({
             {isLoggedIn ? (
               <Link href={accountEntry.to} onClick={() => handleClick(accountEntry.to)} className="py-2 inline-flex items-center gap-2 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
                 <Avatar name={userName} avatarUrl={userAvatar} size="sm" />
-                Dashboard
+                {tr.nav.dashboard}
               </Link>
             ) : (
               renderNavLink(accountEntry.to, accountEntry.label, 'py-2')
@@ -515,6 +518,7 @@ export default function Navbar({
 function UserMenu({ userName, userAvatar, dashboardTo, onNavigate }: {
   userName: string; userAvatar: string; dashboardTo: string; onNavigate: (to: string) => void;
 }) {
+  const { tr } = useSiteLocale();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -542,11 +546,11 @@ function UserMenu({ userName, userAvatar, dashboardTo, onNavigate }: {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-stone-200 z-50 py-1">
           <Link href={dashboardTo} onClick={() => { onNavigate(dashboardTo); setOpen(false); }} className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition">
-            <LayoutDashboard className="w-4 h-4 text-stone-400" />Dashboard
+            <LayoutDashboard className="w-4 h-4 text-stone-400" />{tr.nav.dashboard}
           </Link>
           <div className="border-t border-stone-100 my-1" />
           <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition text-left">
-            <LogOut className="w-4 h-4 text-stone-400" />Log out
+            <LogOut className="w-4 h-4 text-stone-400" />{tr.nav.logOut}
           </button>
         </div>
       )}

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
+import { SiteLocaleProvider } from "@/contexts/SiteLocaleContext";
+import type { SiteLang } from "@/i18n/site-translations";
 import { WHATSAPP_LINK } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -29,13 +32,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const country = headersList.get('x-country') ?? 'ae';
+  const lang: SiteLang = country === 'vn' ? 'vi' : 'en';
+
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang={lang === 'vi' ? 'vi' : 'en'} className="scroll-smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -46,11 +53,13 @@ export default function RootLayout({
         <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
       </head>
       <body className="text-[#2c2c2c] antialiased min-h-full flex flex-col">
-        <Providers>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer whatsAppLink={WHATSAPP_LINK} />
-        </Providers>
+        <SiteLocaleProvider lang={lang}>
+          <Providers>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer whatsAppLink={WHATSAPP_LINK} />
+          </Providers>
+        </SiteLocaleProvider>
       </body>
     </html>
   );

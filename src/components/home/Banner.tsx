@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { trackContact, trackLead } from '../../lib/analytics';
 import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
 import AdminSelect from '../ui/AdminSelect';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -14,12 +15,19 @@ const GCC_PHONE_OPTIONS = [
   { label: 'Bahrain', code: '+973', maxDigits: 8 },
 ];
 
+const VN_PHONE_OPTIONS = [
+  { label: 'VN', code: '+84', maxDigits: 9 },
+  { label: 'Other', code: '+1', maxDigits: 10 },
+];
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
 export default function Banner() {
+  const { tr, lang } = useSiteLocale();
+  const PHONE_OPTIONS = lang === 'vi' ? VN_PHONE_OPTIONS : GCC_PHONE_OPTIONS;
   const [name, setName] = useState('');
   const [area, setArea] = useState('');
-  const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
+  const [phoneRegion, setPhoneRegion] = useState(PHONE_OPTIONS[0]);
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,11 +44,11 @@ export default function Banner() {
 
     const numericArea = Number(area);
     if (!area || !Number.isFinite(numericArea) || numericArea <= 0) {
-      setError('Area must be a valid number.');
+      setError(tr.banner.areaError);
       return;
     }
     if (phone.length !== phoneRegion.maxDigits) {
-      setError(`Phone number must be exactly ${phoneRegion.maxDigits} digits for ${phoneRegion.label}.`);
+      setError(tr.banner.phoneDigitError(phoneRegion.maxDigits, phoneRegion.label));
       return;
     }
     if (phoneError) {
@@ -65,7 +73,7 @@ export default function Banner() {
         const body = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error || 'Failed to submit booking request.');
       }
-      setSuccess('Submitted successfully. Our team will contact you soon.');
+      setSuccess(tr.banner.successMessage);
       trackContact({ content_name: 'Homepage Banner' });
       trackLead({ content_name: 'Homepage Banner' });
       setName('');
@@ -86,33 +94,33 @@ export default function Banner() {
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[340px_1fr] lg:gap-16">
         <form onSubmit={handleSubmit} className="rounded-[20px] border border-white/80 bg-white/94 shadow-[0_18px_44px_rgba(28,25,23,0.14)] backdrop-blur-sm">
           <div className="space-y-3.5 px-6 py-5">
-            <h2 className="text-[22px] font-semibold tracking-tight text-[#1c1917]">Book a Design</h2>
+            <h2 className="text-[22px] font-semibold tracking-tight text-[#1c1917]">{tr.banner.formTitle}</h2>
 
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name"
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={tr.banner.namePlaceholder}
               className="w-full h-[48px] px-5 rounded-[20px] border border-stone-200 bg-stone-50/70 text-[15px] text-[#1c1917] placeholder:text-stone-300 outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition" />
 
             <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">Area</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">{tr.banner.areaLabel}</label>
               <div className="flex items-center justify-between gap-4">
                 <input type="text" inputMode="numeric" value={area}
                   onChange={(e) => setArea(e.target.value.replace(/\D/g, ''))}
                   className="w-full bg-transparent text-[1.65rem] font-semibold text-[#1c1917] outline-none placeholder:text-stone-300"
-                  placeholder="Enter area" />
+                  placeholder={tr.banner.areaPlaceholder} />
                 <span className="shrink-0 text-2xl font-semibold text-stone-700">m²</span>
               </div>
             </div>
 
             <div className={`rounded-[20px] border ${phoneError ? 'border-red-300' : 'border-stone-200'} bg-stone-50/70 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]`}>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">Phone/WA Number</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">{tr.banner.phoneLabel}</label>
               <div className="grid grid-cols-[112px_1fr] items-center gap-3">
                 <AdminSelect
                   value={phoneRegion.code}
                   onChange={(val) => {
-                    const next = GCC_PHONE_OPTIONS.find((o) => o.code === val) || GCC_PHONE_OPTIONS[0];
+                    const next = PHONE_OPTIONS.find((o) => o.code === val) || PHONE_OPTIONS[0];
                     setPhoneRegion(next);
                     setPhone((cur) => cur.slice(0, next.maxDigits));
                   }}
-                  options={GCC_PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} ${o.code}` }))}
+                  options={PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} ${o.code}` }))}
                   className="w-full"
                 />
                 <input type="tel" inputMode="numeric" value={phone}
@@ -128,25 +136,25 @@ export default function Banner() {
             {success && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] leading-5 text-emerald-700">{success}</p>}
 
             <p className="text-left text-[11px] leading-5 text-stone-500">
-              Share your area and phone number. Our team will contact you to discuss a custom design brief and recommend the right studio.
+              {tr.banner.formNote}
             </p>
 
             <button type="submit" disabled={isSubmitting}
               className="flex h-12 w-full items-center justify-center rounded-[20px] bg-[#B8864A] text-lg font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.24)] transition hover:bg-[#a4763f]">
-              {isSubmitting ? 'Submitting...' : 'Book Now'}
+              {isSubmitting ? tr.banner.submitting : tr.banner.submit}
             </button>
           </div>
         </form>
 
         <div className="max-w-2xl text-white lg:justify-self-end">
-          <p className="mb-3 text-xs font-medium uppercase tracking-[0.32em] text-white/80">Tailored For UAE Homes</p>
+          <p className="mb-3 text-xs font-medium uppercase tracking-[0.32em] text-white/80">{tr.banner.tagline}</p>
           <h1 className="font-serif text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-[3.5rem]">
-            Bespoke Design Services
-            <br />for Villas, Apartments
-            <br />and Signature Spaces
+            {tr.banner.headline1}
+            <br />{tr.banner.headline2}
+            <br />{tr.banner.headline3}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-white/88 sm:text-lg">
-            Connect with curated design partners for concept development, space planning, material direction and premium residential interiors across Dubai and the UAE.
+            {tr.banner.description}
           </p>
         </div>
       </div>

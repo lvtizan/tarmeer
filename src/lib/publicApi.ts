@@ -65,6 +65,7 @@ interface PublicCompanyRecord {
   list_display_order?: number;
   projects?: any[];
   portfolio_categories?: Record<string, { url: string; title: string }[]>;
+  country?: string;
   cover_image_url?: string | null;
   is_claimed?: boolean;
   is_signed?: boolean;
@@ -131,8 +132,13 @@ function parseUnknownStringArray(value: unknown): string[] {
   return [];
 }
 
-async function request<T>(endpoint: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${endpoint}`);
+async function request<T>(endpoint: string, country?: string): Promise<T> {
+  // Pass country as both a query param (survives Next.js dev proxy rewrites) and a header (for direct server calls)
+  let url = `${API_BASE}${endpoint}`;
+  if (country) {
+    url += (endpoint.includes('?') ? '&' : '?') + `country=${country}`;
+  }
+  const response = await fetch(url, country ? { headers: { 'x-country': country } } : undefined);
   if (!response.ok) {
     let message = 'Request failed';
     try {
@@ -304,8 +310,8 @@ function toCompany(company: PublicCompanyRecord): Company {
     name: company.name_en || company.company_name || 'Tarmeer Company',
     description,
     shortDescription: summarizeCompanyDescription(description),
-    city: company.city || 'UAE',
-    address: company.address || 'UAE',
+    city: company.city || (company.country === 'vn' ? 'Việt Nam' : 'UAE'),
+    address: company.address || (company.country === 'vn' ? 'Việt Nam' : 'UAE'),
     foundedYear: normalizeFoundedYear(company.year_established ?? company.establishment_year),
     website: company.website || '',
     instagram: company.instagram || '',
@@ -428,11 +434,15 @@ export async function fetchActiveServices(): Promise<string[]> {
   return _activeServicesFetching;
 }
 
-export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list'): Promise<Company[]> {
+export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list' = 'list', country?: string): Promise<Company[]> {
   try {
+    // /public/companies (registered company_profiles) are UAE-only; skip for non-AE locales
+    const isAe = !country || country === 'ae';
     const [directoryResult, approvedResult] = await Promise.all([
-      request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}&order=${orderMode}`).catch(() => ({ companies: [] as PublicCompanyRecord[] })),
-      request<{ companies: PublicCompanyRecord[] }>(`/public/companies?limit=${limit}`).catch(() => ({ companies: [] as PublicCompanyRecord[] })),
+      request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}&order=${orderMode}`, country).catch(() => ({ companies: [] as PublicCompanyRecord[] })),
+      isAe
+        ? request<{ companies: PublicCompanyRecord[] }>(`/public/companies?limit=${limit}`).catch(() => ({ companies: [] as PublicCompanyRecord[] }))
+        : Promise.resolve({ companies: [] as PublicCompanyRecord[] }),
     ]);
 
     const directoryRaw = directoryResult.companies || [];

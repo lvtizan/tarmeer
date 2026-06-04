@@ -46,7 +46,8 @@ function buildPublicCompaniesListQuery(input) {
          list_display_order,
          google_reviews_count,
          owner_user_id,
-         is_signed
+         is_signed,
+         country
        FROM uae_companies
        WHERE is_active = 1 AND is_published = 1 ${spaceWhere} AND country = ?
        ORDER BY ${orderBy}

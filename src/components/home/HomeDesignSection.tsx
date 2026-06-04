@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, MapPin } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
 import { resolveImageUrl, resolveVariantUrl } from '../../lib/imageUrl';
 
@@ -101,6 +102,7 @@ function filterByTab(companies: Company[], tab: typeof SERVICE_TABS[number]): Co
 }
 
 export default function HomeDesignSection({ initialCompanies }: { initialCompanies: Company[] }) {
+  const { tr } = useSiteLocale();
   const [activeTabIdx, setActiveTabIdx] = useState(0);
 
   if (initialCompanies.length === 0) return null;
@@ -115,11 +117,11 @@ export default function HomeDesignSection({ initialCompanies }: { initialCompani
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-[#b8864a]">Curated for UAE Homeowners</p>
-            <h2 className="font-serif text-[26px] leading-tight text-[#1c1917] sm:text-[32px]">Top Design &amp; Build Companies</h2>
+            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-[#b8864a]">{tr.home.curatedTag}</p>
+            <h2 className="font-serif text-[26px] leading-tight text-[#1c1917] sm:text-[32px]">{tr.home.topCompanies}</h2>
           </div>
           <Link href={activeTab.to} className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-            View all <ArrowRight className="h-4 w-4" />
+            {tr.home.viewAll} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
@@ -127,7 +129,7 @@ export default function HomeDesignSection({ initialCompanies }: { initialCompani
           {SERVICE_TABS.map((tab, idx) => (
             <button key={tab.label} onClick={() => setActiveTabIdx(idx)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${idx === activeTabIdx ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>
-              {tab.label}
+              {tr.home.serviceTabs[tab.label as keyof typeof tr.home.serviceTabs] ?? tab.label}
             </button>
           ))}
         </div>
