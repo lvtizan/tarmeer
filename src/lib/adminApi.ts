@@ -970,8 +970,9 @@ class AdminApiClient {
   }
 
   // Field interviews (admin view)
-  async getInterviews() {
-    return this.request('/interviews');
+  async getInterviews(country?: string) {
+    const qs = country ? `?country=${country}` : '';
+    return this.request(`/interviews${qs}`);
   }
   async getInterview(id: number) {
     return this.request(`/interviews/${id}`);

@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { adminApi, fieldApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { MapPin, ExternalLink, X, ClipboardList, Trash2 } from 'lucide-react';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
@@ -83,6 +84,7 @@ function FieldValue({ value }: { value: string | string[] | undefined }) {
 
 function AdminVisitRecordsContent() {
   const { t } = useAdminT();
+  const { country } = useAdminCountry();
   const searchParams = useSearchParams();
   const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,11 +113,11 @@ function AdminVisitRecordsContent() {
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminApi.getInterviews();
+      const data = await adminApi.getInterviews(country);
       setRecords(data.interviews || []);
     } catch {}
     setLoading(false);
-  }, []);
+  }, [country]);
 
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
 

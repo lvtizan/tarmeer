@@ -5,6 +5,7 @@ import { adminApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { Package, Trash2, Pencil, Check, X, ExternalLink } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import AdminSelect from '@/components/ui/AdminSelect';
@@ -31,6 +32,7 @@ interface Supplier {
 
 export default function AdminSuppliersPage() {
   const { t } = useAdminT();
+  const { country } = useAdminCountry();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function AdminSuppliersPage() {
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { limit: '50' };
+      const params: Record<string, string> = { limit: '50', country };
       if (originFilter) params.origin = originFilter;
       if (statusFilter) params.status = statusFilter;
       const qs = new URLSearchParams(params).toString();
@@ -54,7 +56,7 @@ export default function AdminSuppliersPage() {
       setSuppliers(data.suppliers || []);
     } catch {}
     setLoading(false);
-  }, [originFilter, statusFilter]);
+  }, [originFilter, statusFilter, country]);
 
   useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
 

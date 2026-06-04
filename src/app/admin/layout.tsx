@@ -161,7 +161,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [todayNew, setTodayNew] = useState<{ homeowners: number; companies: number; suppliers: number }>({ homeowners: 0, companies: 0, suppliers: 0 });
   const [lang, setLang] = useState<AdminLang>(() => {
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_LANG_KEY) : null;
-    return saved === 'zh' ? 'zh' : 'en';
+    if (saved === 'zh') return 'zh';
+    if (saved === 'vi') return 'vi';
+    return 'en';
   });
   const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -267,10 +269,14 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     (!('permission' in item) || !item.permission || hasPermission(item.permission))
   );
 
-  const t = (en: string, zh: string) => (lang === 'zh' ? zh : en);
+  const t = (en: string, zh: string, vi?: string) => {
+    if (lang === 'zh') return zh;
+    if (lang === 'vi') return vi ?? en;
+    return en;
+  };
   const toggleLang = () => {
     setLang((prev) => {
-      const next = prev === 'en' ? 'zh' : 'en';
+      const next: AdminLang = prev === 'en' ? 'zh' : prev === 'zh' ? 'vi' : 'en';
       if (typeof window !== 'undefined') window.localStorage.setItem(ADMIN_LANG_KEY, next);
       return next;
     });
@@ -418,7 +424,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 className="mb-2 flex items-center justify-between w-full px-3 py-2 rounded-lg border border-stone-200 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
               >
                 <span>{t('Language', '语言')}</span>
-                <span>{lang === 'en' ? 'EN / 中文' : '中文 / EN'}</span>
+                <span>{lang === 'en' ? 'EN' : lang === 'zh' ? '中文' : 'VI'}</span>
               </button>
               <button
                 type="button"

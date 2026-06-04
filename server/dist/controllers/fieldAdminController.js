@@ -13,7 +13,8 @@ exports.toggleStaff = toggleStaff;
 const database_1 = __importDefault(require("../config/database"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 // GET /api/admin/interviews
-async function listInterviews(_req, res) {
+async function listInterviews(req, res) {
+    const country = req.query.country || req.country || 'ae';
     try {
         const [rows] = await database_1.default.execute(`
       SELECT ci.id, ci.company_name, ci.status, ci.submitted_at, ci.created_at,
@@ -28,9 +29,10 @@ async function listInterviews(_req, res) {
       LEFT JOIN admin_users au ON au.id = ci.interviewer_id
       LEFT JOIN uae_companies uc ON uc.id = ci.company_ref_id AND ci.company_ref_source = 'uae'
       LEFT JOIN company_profiles cp ON cp.id = ci.company_ref_id AND ci.company_ref_source = 'profile'
+      WHERE ci.country = ?
       ORDER BY ci.updated_at DESC
       LIMIT 200
-    `);
+    `, [country]);
         res.json({ interviews: rows });
     }
     catch (e) {

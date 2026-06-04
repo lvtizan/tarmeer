@@ -2,11 +2,11 @@
 
 import { createContext, useContext } from 'react';
 
-export type AdminLang = 'en' | 'zh';
+export type AdminLang = 'en' | 'zh' | 'vi';
 
 interface AdminLangContextValue {
   lang: AdminLang;
-  t: (en: string, zh: string) => string;
+  t: (en: string, zh: string, vi?: string) => string;
 }
 
 export const AdminLangContext = createContext<AdminLangContextValue>({
