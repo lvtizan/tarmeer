@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Camera, X } from 'lucide-react';
 import { fieldApi } from '@/lib/adminApi';
 import ChipSelect from '@/components/field/ChipSelect';
+import SearchableSelect from '@/components/field/SearchableSelect';
 import WatermarkCamera, { type CapturedPhoto } from '@/components/field/WatermarkCamera';
+import { UAE_EMIRATES } from '@/lib/uae-locations';
 
 interface SurveyField {
   key: string;
@@ -40,11 +42,18 @@ interface DraftData {
   [key: string]: unknown;
 }
 
+interface PastInterview {
+  id: number;
+  submitted_at: string;
+  interviewer_name: string;
+}
+
 interface CompanySuggestion {
   id: number;
   name: string;
   city?: string;
   source?: string;
+  interviews: PastInterview[];
 }
 
 export default function FieldSurveyPage() {
@@ -66,6 +75,10 @@ export default function FieldSurveyPage() {
   const [companyNameError, setCompanyNameError] = useState(false);
   const [companySearchQuery, setCompanySearchQuery] = useState('');
   const [companySearching, setCompanySearching] = useState(false);
+  const [editingInterviewId, setEditingInterviewId] = useState<number | null>(null);
+  const [locEmirate, setLocEmirate] = useState('');
+  const [locGroup, setLocGroup] = useState('');
+  const [locDistrict, setLocDistrict] = useState('');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companyNameRef = useRef<HTMLInputElement>(null);
@@ -91,7 +104,13 @@ export default function FieldSurveyPage() {
         const { id } = await fieldApi.createDraft() as { id: number };
         setDraftId(id);
         if (typeof window !== 'undefined') localStorage.setItem('field_draft_id', String(id));
-      } catch { /* silent */ }
+      } catch (err: unknown) {
+        const status = (err as { status?: number })?.status;
+        if (status === 401 || status === 403) {
+          alert('Session expired — please refresh the page and log in again.');
+        }
+        // other errors: silent (network blip, etc.)
+      }
     })();
   }, []);
 
@@ -100,7 +119,7 @@ export default function FieldSurveyPage() {
     setCompanyName(draft.company_name || '');
     setCompanyRefId(draft.company_ref_id || null);
     const restored: AllSections = {};
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= 8; i++) {
       const key = `section_${i}`;
       if (draft[key]) {
         try {
@@ -109,6 +128,15 @@ export default function FieldSurveyPage() {
           restored[key] = {};
         }
       }
+    }
+    // section_9 is reserved for location
+    if (draft.section_9) {
+      try {
+        const loc = typeof draft.section_9 === 'string' ? JSON.parse(draft.section_9 as string) : draft.section_9 as SectionData;
+        if (loc.emirate) setLocEmirate(String(loc.emirate));
+        if (loc.group) setLocGroup(String(loc.group));
+        if (loc.district) setLocDistrict(String(loc.district));
+      } catch { /* ignore */ }
     }
     setSections(restored);
     if (draft.photos) {
@@ -147,7 +175,11 @@ export default function FieldSurveyPage() {
     setPhotos(prev => prev.filter((_, i) => i !== idx));
   }
 
-  const triggerSave = useCallback((id: number, cName: string, cRefId: number | null, cRefSource: string, secs: AllSections) => {
+  const triggerSave = useCallback((
+    id: number, cName: string, cRefId: number | null, cRefSource: string,
+    secs: AllSections,
+    loc?: { emirate: string; group: string; district: string },
+  ) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       setSaveStatus('saving');
@@ -157,6 +189,7 @@ export default function FieldSurveyPage() {
           company_ref_id: cRefId,
           company_ref_source: cRefSource,
           ...Object.fromEntries(Object.entries(secs).map(([k, v]) => [k, v])),
+          ...(loc !== undefined ? { section_9: loc } : {}),
         });
         setSaveStatus('saved');
       } catch {
@@ -168,9 +201,16 @@ export default function FieldSurveyPage() {
   function updateSection(sectionKey: string, fieldKey: string, value: string | string[]) {
     setSections((prev) => {
       const updated = { ...prev, [sectionKey]: { ...(prev[sectionKey] || {}), [fieldKey]: value } };
-      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated);
+      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated, { emirate: locEmirate, group: locGroup, district: locDistrict });
       return updated;
     });
+  }
+
+  function updateLocation(emirate: string, group: string, district: string) {
+    setLocEmirate(emirate);
+    setLocGroup(group);
+    setLocDistrict(district);
+    if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate, group, district });
   }
 
   function handleCompanySearchChange(val: string) {
@@ -226,6 +266,61 @@ export default function FieldSurveyPage() {
     setTimeout(() => companyNameRef.current?.focus(), 50);
   }
 
+  async function loadExistingInterview(company: CompanySuggestion, interviewId: number) {
+    setShowSuggestions(false);
+    setCompanySearchQuery('');
+    try {
+      const { interview } = await fieldApi.loadInterview(interviewId) as { interview: DraftData };
+      if (interview) {
+        setEditingInterviewId(interviewId);
+        setDraftId(interviewId);
+        setCompanyRefId(company.id);
+        setCompanyRefName(company.name);
+        setCompanyName(company.name);
+        setCompanyRefSource(company.source || 'uae');
+        // Hydrate sections
+        const restored: AllSections = {};
+        for (let i = 1; i <= 8; i++) {
+          const key = `section_${i}`;
+          if ((interview as Record<string, unknown>)[key]) {
+            try {
+              const raw = (interview as Record<string, unknown>)[key];
+              restored[key] = typeof raw === 'string' ? JSON.parse(raw) : raw as SectionData;
+            } catch { restored[key] = {}; }
+          }
+        }
+        setSections(restored);
+        // Hydrate location
+        if ((interview as Record<string, unknown>).section_9) {
+          try {
+            const loc = typeof (interview as Record<string, unknown>).section_9 === 'string'
+              ? JSON.parse((interview as Record<string, unknown>).section_9 as string)
+              : (interview as Record<string, unknown>).section_9 as { emirate?: string; group?: string; district?: string };
+            if (loc.emirate) setLocEmirate(String(loc.emirate));
+            if (loc.group) setLocGroup(String(loc.group));
+            if (loc.district) setLocDistrict(String(loc.district));
+          } catch { /* ignore */ }
+        }
+        // Hydrate photos
+        if ((interview as Record<string, unknown>).photos) {
+          const raw = (interview as Record<string, unknown>).photos;
+          const parsed = typeof raw === 'string' ? JSON.parse(raw as string) : raw;
+          if (Array.isArray(parsed)) {
+            setPhotos(parsed.map((p: { url: string; lat?: number; lng?: number; timestamp?: string }) => ({
+              dataUrl: p.url || '',
+              url: p.url || '',
+              lat: p.lat,
+              lng: p.lng,
+              timestamp: p.timestamp || new Date().toISOString(),
+            })));
+          }
+        }
+      }
+    } catch(e) {
+      alert(e instanceof Error ? e.message : 'Failed to load interview');
+    }
+  }
+
   async function handleSubmit() {
     // Validate: must select a company from the system
     if (!companyRefId) {
@@ -240,8 +335,19 @@ export default function FieldSurveyPage() {
     }
     setIsSubmitting(true);
     try {
-      await fieldApi.submit(draftId);
-      if (typeof window !== 'undefined') localStorage.removeItem('field_draft_id');
+      if (editingInterviewId) {
+        await fieldApi.reSubmit(editingInterviewId, {
+          company_name: companyName,
+          company_ref_id: companyRefId,
+          company_ref_source: companyRefSource,
+          ...sections,
+          section_9: { emirate: locEmirate, group: locGroup, district: locDistrict },
+        });
+        setEditingInterviewId(null);
+      } else {
+        await fieldApi.submit(draftId);
+        if (typeof window !== 'undefined') localStorage.removeItem('field_draft_id');
+      }
       setSubmitted(true);
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Failed to submit');
@@ -306,21 +412,43 @@ export default function FieldSurveyPage() {
           {companySuggestions.length > 0 && (
             <div className="mt-3 bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
               {companySuggestions.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-3 px-4 py-3.5 border-b border-stone-100 last:border-0"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[15px] font-medium text-[#1c1917] truncate">{c.name}</p>
-                    {c.city && <p className="text-xs text-stone-400 mt-0.5">{c.city}</p>}
+                <div key={c.id} className="border-b border-stone-100 last:border-0">
+                  {/* Company row */}
+                  <div className="flex items-center gap-3 px-4 py-3.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-medium text-[#1c1917] truncate">{c.name}</p>
+                      {c.city && <p className="text-xs text-stone-400 mt-0.5">{c.city}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => selectCompany(c)}
+                      className="shrink-0 h-8 px-4 rounded-full bg-[#b8864a] text-white text-sm font-semibold active:opacity-80 transition-opacity"
+                    >
+                      Match
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => selectCompany(c)}
-                    className="shrink-0 h-8 px-4 rounded-full bg-[#b8864a] text-white text-sm font-semibold active:opacity-80 transition-opacity"
-                  >
-                    Match
-                  </button>
+                  {/* Historical interviews */}
+                  {c.interviews && c.interviews.length > 0 && (
+                    <div className="px-4 pb-3 space-y-1.5 bg-stone-50/60">
+                      <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wide mb-1">Previous records</p>
+                      {c.interviews.map(iv => (
+                        <div key={iv.id} className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="text-xs text-stone-500">{iv.interviewer_name}</span>
+                            <span className="text-xs text-stone-300 mx-1.5">·</span>
+                            <span className="text-xs text-stone-400">{new Date(iv.submitted_at).toLocaleDateString()}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => loadExistingInterview(c, iv.id)}
+                            className="shrink-0 h-7 px-3 rounded-full border border-[#b8864a] text-[#b8864a] text-xs font-semibold active:opacity-80 transition-opacity"
+                          >
+                            修改
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -345,6 +473,11 @@ export default function FieldSurveyPage() {
           <div className="flex-1 min-w-0">
             <p className="text-xs text-stone-400 leading-none mb-0.5">Surveying</p>
             <p className="text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</p>
+            {editingInterviewId && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium ml-1">
+                Editing #{editingInterviewId}
+              </span>
+            )}
           </div>
           <button
             type="button"
@@ -396,6 +529,80 @@ export default function FieldSurveyPage() {
           )}
           <p className="text-xs text-stone-400">{photos.length === 0 ? 'No photos yet — tap 📷 below to add.' : 'Tap a photo to enlarge · tap 📷 to add more.'}</p>
         </div>
+
+        {/* Location section — fixed, always first */}
+        {(() => {
+          const emirateData = UAE_EMIRATES.find((e) => e.label === locEmirate);
+          const isDubai = !!emirateData?.groups;
+          const groupData = emirateData?.groups?.find((g) => g.label === locGroup);
+
+          // options for level 2
+          const level2Options = isDubai
+            ? (emirateData.groups!.map((g) => g.label))
+            : (emirateData?.districts ?? []);
+
+          // options for level 3 (Dubai only)
+          const level3Options = isDubai ? (groupData?.districts ?? []) : [];
+
+          return (
+            <div>
+              <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
+                Project Location
+              </h2>
+              <div className="space-y-3">
+                {/* Level 1: Emirate — plain select, no search */}
+                <div>
+                  <label className="block text-sm font-medium text-stone-500 mb-2">Emirate</label>
+                  <select
+                    value={locEmirate}
+                    onChange={(e) => updateLocation(e.target.value, '', '')}
+                    className="w-full h-[48px] px-4 rounded-xl border border-stone-200 bg-white text-[15px] text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a] appearance-none"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+                  >
+                    <option value="">Select emirate…</option>
+                    {UAE_EMIRATES.map((e) => (
+                      <option key={e.value} value={e.label}>{e.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Level 2: Sector (Dubai) or District (others) */}
+                {locEmirate && (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-500 mb-2">
+                      {isDubai ? 'Sector / Area' : 'District'}
+                    </label>
+                    <SearchableSelect
+                      options={level2Options}
+                      value={isDubai ? locGroup : locDistrict}
+                      placeholder={isDubai ? 'Select sector…' : 'Search district…'}
+                      onChange={(v) => {
+                        if (isDubai) {
+                          updateLocation(locEmirate, v, '');
+                        } else {
+                          updateLocation(locEmirate, '', v);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Level 3: District within sector (Dubai only) */}
+                {isDubai && locGroup && (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-500 mb-2">District</label>
+                    <SearchableSelect
+                      options={level3Options}
+                      value={locDistrict}
+                      placeholder="Search district…"
+                      onChange={(v) => updateLocation(locEmirate, locGroup, v)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {!schema ? (
           <div className="flex justify-center py-8">
