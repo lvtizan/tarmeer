@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Globe, MapPin, Phone, ChevronDown, ChevronRight } from 'lucide-react';
+import { Globe, MapPin, Phone, ChevronDown, ChevronRight, X, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { FormInput, FormTextarea, FormLabel, FormTag } from '@/components/form/FormInput';
 import AdminSelect from '@/components/ui/AdminSelect';
@@ -67,6 +67,7 @@ export interface ProfileData {
   specialties: string[];
   emirates_served: string[];
   status: string; admin_notes?: string;
+  branch_addresses: string[];
 }
 
 export const EMPTY_PROFILE: ProfileData = {
@@ -76,6 +77,7 @@ export const EMPTY_PROFILE: ProfileData = {
   trade_license_number:'', establishment_year:null,
   services:[], specialties:[], emirates_served:[],
   status:'pending',
+  branch_addresses:[],
 };
 
 export function parseProfile(r: Record<string, unknown>): ProfileData {
@@ -99,6 +101,7 @@ export function parseProfile(r: Record<string, unknown>): ProfileData {
     services: pj(r.services), specialties: pj(r.specialties),
     emirates_served: pj(r.emirates_served),
     status: (r.status as string) || 'pending', admin_notes: r.admin_notes as string | undefined,
+    branch_addresses: Array.isArray(r.branch_addresses) ? r.branch_addresses as string[] : [],
   };
 }
 
@@ -588,6 +591,7 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
         establishment_year: current.establishment_year,
         specialties: current.specialties,
         emirates_served: current.emirates_served,
+        branch_addresses: current.branch_addresses,
       }) as { profile?: { id?: number }; id?: number } | null;
       const saved = res?.profile ?? res;
       const newId = saved?.id ? Number(saved.id) : profileId;
@@ -709,6 +713,44 @@ const CompanyProfileForm = forwardRef<CompanyProfileFormRef, Props>(function Com
           <div>
             <FormLabel>Address</FormLabel>
             <FormInput value={profile.address} onChange={e => set('address', e.target.value)} placeholder="Street address, area" />
+          </div>
+          <div className="md:col-span-2">
+            {/* Branch Addresses */}
+            <div className="space-y-2">
+              <FormLabel>Branch Addresses</FormLabel>
+              {profile.branch_addresses.map((addr, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={addr}
+                    onChange={e => {
+                      const next = [...profile.branch_addresses];
+                      next[idx] = e.target.value;
+                      setProfile(p => ({ ...p, branch_addresses: next }));
+                    }}
+                    placeholder={`Branch address ${idx + 1}`}
+                    className="flex-1 h-10 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30 focus:border-[#b8864a] focus:bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setProfile(p => ({ ...p, branch_addresses: p.branch_addresses.filter((_, i) => i !== idx) }))}
+                    className="h-10 w-10 flex items-center justify-center rounded-lg border border-stone-200 text-stone-400 hover:text-red-500 hover:border-red-200 transition"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {profile.branch_addresses.length < 10 && (
+                <button
+                  type="button"
+                  onClick={() => setProfile(p => ({ ...p, branch_addresses: [...p.branch_addresses, ''] }))}
+                  className="flex items-center gap-1.5 text-sm text-[#b8864a] hover:underline"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Branch Address
+                </button>
+              )}
+            </div>
           </div>
           <div>
             <FormLabel>Trade License No.</FormLabel>
