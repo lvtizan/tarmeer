@@ -10,7 +10,9 @@ router.get('/survey-schema', fieldInterviewController_1.getSurveySchema);
 router.get('/companies/search', fieldInterviewController_1.searchCompanies);
 
 // Protected routes (field staff or super admin)
-router.use(adminAuth_1.authenticateAdmin, adminAuth_1.requireFieldOrSuperAdmin);
+// authenticateAdmin sets req.adminId; requireAdmin fetches from DB and sets req.admin;
+// requireFieldOrSuperAdmin then checks req.admin.role
+router.use(adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, adminAuth_1.requireFieldOrSuperAdmin);
 router.post('/interviews', fieldInterviewController_1.createDraft);
 router.get('/interviews/draft', fieldInterviewController_1.getMyDraft);
 router.get('/interviews/:id/load', fieldInterviewController_1.loadInterview);

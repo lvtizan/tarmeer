@@ -130,6 +130,7 @@ async function ensureInterviewColumns() {
 // Run on module load
 ensureEditLogsTable();
 ensureInterviewColumns();
+ensureColumns(database_1.default);
 
 // ── 核心合并逻辑（fire-and-forget）──────────────────────────────────────────
 async function mergeInterviewToProfile(interviewId) {
