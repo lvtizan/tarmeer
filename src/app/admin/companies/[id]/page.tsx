@@ -317,6 +317,7 @@ function CompanyDetailContent() {
   );
 
   const SurveyVerifiedCard = () => {
+    if (!company) return null;
     if (!company.latest_interview_id) return null;
     const VERIFIED_FIELDS: { key: keyof CompanyDetail; label: string }[] = [
       { key: 'office_type', label: '办公室类型' },
