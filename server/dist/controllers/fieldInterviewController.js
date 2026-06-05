@@ -154,7 +154,11 @@ async function mergeInterviewToProfile(interviewId) {
 
 async function createDraft(req, res) {
     try {
-        const [result] = await database_1.default.execute(`INSERT INTO company_interviews (status) VALUES ('draft')`);
+        const interviewerId = req.adminId || null;
+        const [result] = await database_1.default.execute(
+            `INSERT INTO company_interviews (status, interviewer_id) VALUES ('draft', ?)`,
+            [interviewerId]
+        );
         const id = result.insertId;
         res.status(201).json({ id });
     }
@@ -297,3 +301,24 @@ async function searchCompanies(req, res) {
         res.status(500).json({ error: 'Search failed.' });
     }
 }
+async function loadInterview(req, res) {
+    const { id } = req.params;
+    try {
+        const [rows] = await database_1.default.execute(
+            `SELECT ci.*, COALESCE(au.full_name, '—') AS interviewer_name
+             FROM company_interviews ci
+             LEFT JOIN admin_users au ON au.id = ci.interviewer_id
+             WHERE ci.id = ? AND ci.status = 'submitted'`,
+            [id]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: 'Interview not found.' });
+        res.json({ interview: rows[0] });
+    } catch(e) {
+        res.status(500).json({ error: 'Failed to load interview.' });
+    }
+}
+exports.loadInterview = loadInterview;
+async function reSubmitInterview(req, res) {
+    res.status(501).json({ error: 'Not yet implemented' });
+}
+exports.reSubmitInterview = reSubmitInterview;
