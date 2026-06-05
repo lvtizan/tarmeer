@@ -51,6 +51,9 @@ async function upsertProfile(req, res) {
         const specialtiesJson = JSON.stringify(payload.specialties);
         const companyTypesJson = JSON.stringify(payload.company_types);
         const emiratesServedJson = JSON.stringify(payload.emirates_served);
+        const branchAddressesJson = Array.isArray(req.body.branch_addresses)
+            ? JSON.stringify(req.body.branch_addresses.slice(0, 10).map(a => String(a).slice(0, 300)).filter(Boolean))
+            : null;
         const onboardingStep = typeof req.body.onboarding_step === 'number' ? req.body.onboarding_step : null;
         const signupSource = typeof req.body.signup_source === 'string' ? req.body.signup_source.slice(0, 64) : null;
         // Check if profile exists (fetch old onboarding_step for notification trigger)
@@ -59,7 +62,7 @@ async function upsertProfile(req, res) {
         const existingSource = existing[0]?.signup_source;
         if (existing.length > 0) {
             // UPDATE: preserve existing slug so public URLs don't break
-            await database_1.default.execute(`UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, company_types = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, emirates_served = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?), signup_source = COALESCE(signup_source, ?) WHERE user_id = ?`, [
+            await database_1.default.execute(`UPDATE company_profiles SET company_name = ?, description = ?, contact_person = ?, phone = ?, website = ?, city = ?, address = ?, logo_url = ?, services = ?, company_type = ?, company_types = ?, trade_license_number = ?, establishment_year = ?, specialties = ?, emirates_served = ?, branch_addresses = ?, onboarding_step = GREATEST(COALESCE(onboarding_step, 0), ?), signup_source = COALESCE(signup_source, ?) WHERE user_id = ?`, [
                 payload.company_name,
                 payload.description,
                 payload.contact_person,
@@ -75,6 +78,7 @@ async function upsertProfile(req, res) {
                 payload.establishment_year,
                 specialtiesJson,
                 emiratesServedJson,
+                branchAddressesJson,
                 onboardingStep || 0,
                 signupSource,
                 userId,
@@ -93,8 +97,8 @@ async function upsertProfile(req, res) {
                     break;
                 slug = `${baseHandle}-${suffix++}`;
             }
-            await database_1.default.execute(`INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, company_types, trade_license_number, establishment_year, specialties, emirates_served, slug, status, onboarding_step, signup_source)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`, [
+            await database_1.default.execute(`INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, company_types, trade_license_number, establishment_year, specialties, emirates_served, branch_addresses, slug, status, onboarding_step, signup_source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`, [
                 userId,
                 payload.company_name,
                 payload.description,
@@ -111,6 +115,7 @@ async function upsertProfile(req, res) {
                 payload.establishment_year,
                 specialtiesJson,
                 emiratesServedJson,
+                branchAddressesJson,
                 slug,
                 onboardingStep || 0,
                 signupSource,
