@@ -41,6 +41,14 @@ interface VisitRecordDetail extends VisitRecord {
   photos?: string | PhotoEntry[] | null;
 }
 
+interface EditLog {
+  id: number;
+  editor_id: number;
+  editor_name: string;
+  edit_summary: string;
+  edited_at: string;
+}
+
 interface SchemaField {
   key: string;
   label: string;
@@ -98,6 +106,7 @@ function AdminVisitRecordsContent() {
   const [schemaLoaded, setSchemaLoaded] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [editLogs, setEditLogs] = useState<EditLog[]>([]);
 
   useEffect(() => {
     fieldApi.getSurveySchema()
@@ -164,6 +173,7 @@ function AdminVisitRecordsContent() {
     try {
       const data = await adminApi.getInterview(id);
       setDetail(data.interview || data);
+      setEditLogs(data.edit_logs || []);
     } catch {}
     setDetailLoading(false);
   };
@@ -203,7 +213,7 @@ function AdminVisitRecordsContent() {
     return (
       <div className="space-y-4">
         <button
-          onClick={() => { setSelectedId(null); setDetail(null); setLightboxUrl(null); }}
+          onClick={() => { setSelectedId(null); setDetail(null); setLightboxUrl(null); setEditLogs([]); }}
           className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -346,6 +356,30 @@ function AdminVisitRecordsContent() {
                 </div>
               );
             })}
+
+            {editLogs.length > 0 && (
+              <div className="bg-white rounded-xl border border-stone-200 p-5">
+                <h2 className="text-xs font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-4">
+                  修改历史 ({editLogs.length})
+                </h2>
+                <div className="space-y-3">
+                  {editLogs.map((log, i) => (
+                    <div key={log.id} className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-stone-100 flex items-center justify-center text-xs text-stone-500 font-medium mt-0.5">
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-stone-800">{log.editor_name}</span>
+                          <span className="text-xs text-stone-400">{formatDate(log.edited_at)}</span>
+                        </div>
+                        <p className="text-xs text-stone-500 mt-0.5 leading-relaxed break-words">{log.edit_summary}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       {lightbox}
