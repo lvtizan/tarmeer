@@ -90,13 +90,6 @@ export default function CompanyDetailClient({ company, slug }: CompanyDetailClie
         target_type: 'company',
       });
     }
-    // Redirect to canonical slug if the API resolved a different one
-    if (slug && company.id && company.id !== slug) {
-      router.replace(`/companies/${company.id}`);
-    }
-    if (slug && company.slug && company.slug !== slug) {
-      router.replace(`/companies/${company.slug}`);
-    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close share dropdown on outside click
@@ -178,7 +171,7 @@ export default function CompanyDetailClient({ company, slug }: CompanyDetailClie
         const resolved = resolveImageUrl(url);
         const projectSlug = imageToProjectSlug[resolved] || imageToProjectSlug[url];
         if (projectSlug) {
-          router.push(`/companies/${company.id}/${projectSlug}`);
+          router.push(`/companies/${company.slug || company.id}/${projectSlug}`);
           return;
         }
       }

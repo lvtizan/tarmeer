@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
+import { permanentRedirect } from 'next/navigation';
 import { fetchPublicCompanyDetail } from '@/lib/publicApi';
 import { getCompanyTypeLabel } from '@/lib/companyData';
 import CompanyDetailClient from '@/components/companies/CompanyDetailClient';
@@ -28,6 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
     const company = await fetchPublicCompanyDetail(slug);
+    const canonicalSlug = company.slug || slug;
     const typeLabel = getCompanyTypeLabel(company.companyType) || 'Interior Design';
     const heroImages = company.projectImages.filter(Boolean).slice(0, 1);
     const ogImage = heroImages[0]
@@ -42,12 +44,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       keywords: `${company.name}, interior design ${company.city}, renovation ${company.city}, ${company.services.slice(0, 5).join(', ')}, UAE, Tarmeer`,
       robots: 'index, follow, max-image-preview:large',
       alternates: {
-        canonical: `https://www.tarmeer.com/companies/${slug}`,
+        canonical: `https://www.tarmeer.com/companies/${canonicalSlug}`,
       },
       openGraph: {
         title: `${company.name} - ${company.city} - Tarmeer`,
         description: company.shortDescription,
-        url: `https://www.tarmeer.com/companies/${slug}`,
+        url: `https://www.tarmeer.com/companies/${canonicalSlug}`,
         type: 'website',
         images: [{ url: ogImage }],
       },
@@ -96,6 +98,12 @@ export default async function CompanyDetailPage({ params }: Props) {
     );
   }
 
+  // Server-side canonical redirect: if URL uses numeric ID or non-canonical slug,
+  // 308 redirect to the real slug. This prevents Google from indexing non-canonical URLs.
+  if (company.slug && company.slug !== slug) {
+    permanentRedirect(`/companies/${company.slug}`);
+  }
+
   const heroImages = company.projectImages.filter(Boolean).slice(0, 10);
   const description = company.description || '';
   const typeLabel = getCompanyTypeLabel(company.companyType) || 'Interior Design';
@@ -111,7 +119,7 @@ export default async function CompanyDetailPage({ params }: Props) {
       addressCountry: 'AE',
     },
     ...(company.phone ? { telephone: company.phone } : {}),
-    url: company.website || `https://www.tarmeer.com/companies/${company.id}`,
+    url: company.website || `https://www.tarmeer.com/companies/${company.slug || company.id}`,
     ...(heroImages[0] ? { image: `https://www.tarmeer.com${heroImages[0]}` } : {}),
     priceRange: '$$',
     areaServed: [
@@ -145,7 +153,7 @@ export default async function CompanyDetailPage({ params }: Props) {
         '@type': 'ListItem',
         position: 3,
         name: company.name,
-        item: `https://www.tarmeer.com/companies/${company.id}`,
+        item: `https://www.tarmeer.com/companies/${company.slug || company.id}`,
       },
     ],
   };
