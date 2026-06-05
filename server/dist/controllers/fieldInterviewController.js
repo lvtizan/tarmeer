@@ -112,8 +112,24 @@ async function ensureEditLogsTable() {
     console.error('[field] ensureEditLogsTable:', e.message);
   }
 }
+async function ensureInterviewColumns() {
+  const cols = ['company_ref_source'];
+  try {
+    const [existing] = await database_1.default.execute(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'company_interviews'`
+    );
+    const existingSet = new Set(existing.map(r => r.COLUMN_NAME));
+    if (!existingSet.has('company_ref_source')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN company_ref_source VARCHAR(20) NULL DEFAULT 'uae'`);
+      console.log('[field] added column: company_ref_source');
+    }
+  } catch(e) {
+    console.error('[field] ensureInterviewColumns:', e.message);
+  }
+}
 // Run on module load
 ensureEditLogsTable();
+ensureInterviewColumns();
 
 // ── 核心合并逻辑（fire-and-forget）──────────────────────────────────────────
 async function mergeInterviewToProfile(interviewId) {
