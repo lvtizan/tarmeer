@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
-const SPACE_CARD_KEYS = [
+const AE_SPACE_CARDS = [
   { key: 'Villa' as const, to: '/companies?style=Villa', image: '/images/hero/hero-villa-1.jpg', size: 'large' },
   { key: 'Apartment' as const, to: '/companies?style=Apartment', image: '/images/hero/hero-living-1.jpg', size: 'large' },
   { key: 'Commercial' as const, to: '/companies?style=Commercial', image: '/images/hero/hero-kitchen-1.jpg', size: 'small' },
@@ -11,9 +11,18 @@ const SPACE_CARD_KEYS = [
   { key: 'Landscape' as const, to: '/companies?service=Landscape', image: '/images/hero/hero-renovation-xl.webp', size: 'small' },
 ];
 
-export default function HomeSpaceSection() {
-  const { tr } = useSiteLocale();
+const VN_SPACE_CARDS = [
+  { key: 'Villa' as const, to: '/companies?style=Villa', image: '/images/vn-companies/portfolio/vn-atz-luxury/06.jpg', size: 'large' },
+  { key: 'Apartment' as const, to: '/companies?style=Apartment', image: '/images/vn-companies/portfolio/vn-25-nm-thiet-ke-noi-that-chung-cu-biet-thu-nha-pho-vn-phong/05.jpg', size: 'large' },
+  { key: 'Commercial' as const, to: '/companies?style=Commercial', image: '/images/vn-companies/portfolio/vn-cong-ty-cp-s/01.jpg', size: 'small' },
+  { key: 'Office' as const, to: '/companies?style=Office', image: '/images/vn-companies/portfolio/vn-floorii/12.jpg', size: 'small' },
+  { key: 'Landscape' as const, to: '/companies?service=Landscape', image: '/images/vn-companies/portfolio/vn-atz-luxury/03.jpg', size: 'small' },
+];
 
+export default function HomeSpaceSection() {
+  const { tr, lang } = useSiteLocale();
+
+  const SPACE_CARD_KEYS = lang === 'vi' ? VN_SPACE_CARDS : AE_SPACE_CARDS;
   const cards = SPACE_CARD_KEYS.map((c) => ({
     ...c,
     label: tr.home.spaceCards[c.key].label,

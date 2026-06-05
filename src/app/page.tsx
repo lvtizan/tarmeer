@@ -88,9 +88,10 @@ export default async function HomePage() {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
 
+  const isAe = !country || country === 'ae';
   const [companiesResult, suppliersResult] = await Promise.allSettled([
-    fetchPublicCompanies(24, 'home', country),
-    fetchSuppliers(),
+    fetchPublicCompanies(30, 'home', country),
+    isAe ? fetchSuppliers() : Promise.resolve([]),
   ]);
 
   const companies = companiesResult.status === 'fulfilled' ? companiesResult.value : [];

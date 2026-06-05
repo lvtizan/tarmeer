@@ -1,10 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { trackContact, trackLead } from '../../lib/analytics';
 import { validatePhone, isPhoneComplete } from '../../lib/phoneValidation';
 import AdminSelect from '../ui/AdminSelect';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+
+const AE_HERO_IMAGES = [
+  '/images/hero/hero-living-1.jpg',
+  '/images/hero/hero-villa-1.jpg',
+  '/images/hero/hero-living-2.jpg',
+  '/images/hero/hero-kitchen-1.jpg',
+];
+
+const VN_HERO_IMAGES = [
+  '/images/vn-companies/portfolio/vn-atz-luxury/03.jpg',
+  '/images/vn-companies/portfolio/vn-atz-luxury/06.jpg',
+  '/images/vn-companies/portfolio/vn-25-nm-thiet-ke-noi-that-chung-cu-biet-thu-nha-pho-vn-phong/05.jpg',
+  '/images/vn-companies/portfolio/vn-cong-ty-cp-s/01.jpg',
+  '/images/vn-companies/portfolio/vn-floorii/12.jpg',
+];
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -25,6 +40,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 export default function Banner() {
   const { tr, lang } = useSiteLocale();
   const PHONE_OPTIONS = lang === 'vi' ? VN_PHONE_OPTIONS : GCC_PHONE_OPTIONS;
+  const heroImages = lang === 'vi' ? VN_HERO_IMAGES : AE_HERO_IMAGES;
+  const [heroIndex, setHeroIndex] = useState(0);
   const [name, setName] = useState('');
   const [area, setArea] = useState('');
   const [phoneRegion, setPhoneRegion] = useState(PHONE_OPTIONS[0]);
@@ -32,6 +49,13 @@ export default function Banner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % heroImages.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [heroImages.length]);
 
   const phoneError = isPhoneComplete(phone, phoneRegion.code)
     ? validatePhone(phone, phoneRegion.code)
@@ -88,7 +112,13 @@ export default function Banner() {
 
   return (
     <section className="relative min-h-[420px] overflow-hidden py-8 sm:min-h-[500px] sm:py-10">
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/images/hero/hero-living-1.jpg)' }} />
+      {heroImages.map((src, i) => (
+        <div
+          key={src}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+          style={{ backgroundImage: `url(${src})`, opacity: i === heroIndex ? 1 : 0 }}
+        />
+      ))}
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.55)_0%,rgba(0,0,0,0.45)_38%,rgba(0,0,0,0.35)_100%)]" />
 
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[340px_1fr] lg:gap-16">

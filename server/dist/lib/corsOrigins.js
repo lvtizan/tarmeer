@@ -33,6 +33,7 @@ const CORS_CONFIG = {
         'https://tarmeer.com',
         // 管理后台
         'https://admin.tarmeer.com',
+        'https://vn.tarmeer.com',
         // 如果有其他域名，请在这里添加
         // 'https://your-domain.com',
     ],

@@ -109,8 +109,8 @@ export default function HomeDesignSection({ initialCompanies }: { initialCompani
 
   const activeTab = SERVICE_TABS[activeTabIdx];
   const filtered = filterByTab(initialCompanies, activeTab);
-  const featured = filtered.slice(0, 9);
-  const hasMore = filtered.length > 9;
+  const featured = filtered.slice(0, 15);
+  const hasMore = filtered.length > 15;
 
   return (
     <section className="bg-white py-10 sm:py-12">
