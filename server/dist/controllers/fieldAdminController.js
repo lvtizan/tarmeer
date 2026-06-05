@@ -53,7 +53,13 @@ async function getInterview(req, res) {
         const items = rows;
         if (items.length === 0)
             return res.status(404).json({ error: 'Not found.' });
-        res.json({ interview: items[0] });
+        // Fetch edit logs
+        const [logRows] = await database_1.default.execute(
+            `SELECT id, editor_id, editor_name, edit_summary, edited_at
+             FROM interview_edit_logs WHERE interview_id = ? ORDER BY edited_at ASC`,
+            [id]
+        );
+        res.json({ interview: items[0], edit_logs: logRows });
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to fetch interview.' });

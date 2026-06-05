@@ -94,6 +94,27 @@ async function ensureColumns(pool) {
     }
 }
 
+async function ensureEditLogsTable() {
+  try {
+    await database_1.default.execute(`
+      CREATE TABLE IF NOT EXISTS interview_edit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        interview_id INT NOT NULL,
+        editor_id INT NOT NULL,
+        editor_name VARCHAR(100) NOT NULL,
+        snapshot_before JSON,
+        edit_summary TEXT,
+        edited_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_interview_id (interview_id)
+      )
+    `);
+  } catch(e) {
+    console.error('[field] ensureEditLogsTable:', e.message);
+  }
+}
+// Run on module load
+ensureEditLogsTable();
+
 // ── 核心合并逻辑（fire-and-forget）──────────────────────────────────────────
 async function mergeInterviewToProfile(interviewId) {
     try {
@@ -235,6 +256,21 @@ async function submitInterview(req, res) {
             return res.status(404).json({ error: 'Draft not found.' });
         }
         await database_1.default.execute(`UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?`, [id]);
+        // Write initial audit log
+        try {
+          const editorId = req.adminId || 0;
+          const [editorRows] = await database_1.default.execute(
+            'SELECT full_name FROM admin_users WHERE id = ?', [editorId]
+          );
+          const editorName = editorRows[0]?.full_name || '—';
+          await database_1.default.execute(
+            `INSERT INTO interview_edit_logs (interview_id, editor_id, editor_name, snapshot_before, edit_summary)
+             VALUES (?, ?, ?, NULL, 'Initial submission')`,
+            [id, editorId, editorName]
+          );
+        } catch(logErr) {
+          console.error('[field] audit log error:', logErr.message);
+        }
         res.json({ ok: true });
         // fire-and-forget：满足条件时自动合并 + 同步 CRM
         mergeInterviewToProfile(parseInt(id, 10)).catch(() => {});
@@ -285,21 +321,38 @@ async function getSurveySchema(req, res) {
     }
 }
 async function searchCompanies(req, res) {
-    const q = String(req.query.q || '').trim().slice(0, 100);
-    if (!q)
-        return res.json({ results: [] });
-    const like = `%${q}%`;
-    try {
-        const [rows] = await database_1.default.execute(`(SELECT id, name_en AS name, city, 'uae' AS source FROM uae_companies WHERE name_en LIKE ? AND name_en IS NOT NULL)
-               UNION
-               (SELECT id, company_name AS name, city, 'profile' AS source FROM company_profiles WHERE company_name LIKE ? AND deleted_at IS NULL)
-               ORDER BY name
-               LIMIT 20`, [like, like]);
-        res.json({ results: rows });
-    }
-    catch (e) {
-        res.status(500).json({ error: 'Search failed.' });
-    }
+  const q = String(req.query.q || '').trim().slice(0, 100);
+  if (!q) return res.json({ results: [] });
+  const like = `%${q}%`;
+  try {
+    const [rows] = await database_1.default.execute(
+      `(SELECT id, name_en AS name, city, 'uae' AS source FROM uae_companies WHERE name_en LIKE ? AND name_en IS NOT NULL)
+       UNION
+       (SELECT id, company_name AS name, city, 'profile' AS source FROM company_profiles WHERE company_name LIKE ? AND deleted_at IS NULL)
+       ORDER BY name
+       LIMIT 20`,
+      [like, like]
+    );
+
+    // For each company, fetch recent submitted interviews
+    const results = await Promise.all(rows.map(async (company) => {
+      const [ivRows] = await database_1.default.execute(
+        `SELECT ci.id, ci.submitted_at, COALESCE(au.full_name, '—') AS interviewer_name
+         FROM company_interviews ci
+         LEFT JOIN admin_users au ON au.id = ci.interviewer_id
+         WHERE ci.company_ref_id = ? AND ci.company_ref_source = ? AND ci.status = 'submitted'
+         ORDER BY ci.submitted_at DESC
+         LIMIT 5`,
+        [company.id, company.source]
+      );
+      return { ...company, interviews: ivRows };
+    }));
+
+    res.json({ results });
+  } catch(e) {
+    console.error('searchCompanies error:', e);
+    res.status(500).json({ error: 'Search failed.' });
+  }
 }
 async function loadInterview(req, res) {
     const { id } = req.params;
@@ -319,6 +372,76 @@ async function loadInterview(req, res) {
 }
 exports.loadInterview = loadInterview;
 async function reSubmitInterview(req, res) {
-    res.status(501).json({ error: 'Not yet implemented' });
+  const { id } = req.params;
+  const allowed = ['company_name','company_ref_id','company_ref_source',
+    'section_1','section_2','section_3','section_4','section_5',
+    'section_6','section_7','section_8','section_9'];
+
+  try {
+    // Fetch current state for snapshot
+    const [rows] = await database_1.default.execute(
+      'SELECT * FROM company_interviews WHERE id = ? AND status = ?',
+      [id, 'submitted']
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Submitted interview not found.' });
+    const current = rows[0];
+
+    // Build update fields
+    const fields = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        fields[key] = typeof req.body[key] === 'object' ? JSON.stringify(req.body[key]) : req.body[key];
+      }
+    }
+    if (Object.keys(fields).length > 0) {
+      const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
+      await database_1.default.execute(
+        `UPDATE company_interviews SET ${setClauses}, submitted_at = NOW(), updated_at = NOW() WHERE id = ?`,
+        [...Object.values(fields), id]
+      ).catch(async () => {
+        // updated_at may not exist; retry without it
+        await database_1.default.execute(
+          `UPDATE company_interviews SET ${setClauses}, submitted_at = NOW() WHERE id = ?`,
+          [...Object.values(fields), id]
+        );
+      });
+    }
+
+    // Build edit summary (field-level diff)
+    const summaryParts = [];
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        const oldVal = typeof current[key] === 'object' && current[key] !== null
+          ? JSON.stringify(current[key]) : String(current[key] || '');
+        const newVal = typeof req.body[key] === 'object'
+          ? JSON.stringify(req.body[key]) : String(req.body[key]);
+        if (oldVal !== newVal) summaryParts.push(`${key}: "${oldVal.slice(0, 80)}" → "${newVal.slice(0, 80)}"`);
+      }
+    }
+    const editSummary = summaryParts.length > 0 ? summaryParts.join('; ') : 'Re-submitted (no field changes)';
+
+    // Snapshot: all sections before edit
+    const snapshotBefore = {};
+    for (const key of allowed) snapshotBefore[key] = current[key];
+
+    // Write audit log
+    const editorId = req.adminId || 0;
+    const [editorRows] = await database_1.default.execute(
+      'SELECT full_name FROM admin_users WHERE id = ?', [editorId]
+    );
+    const editorName = editorRows[0]?.full_name || '—';
+    await database_1.default.execute(
+      `INSERT INTO interview_edit_logs (interview_id, editor_id, editor_name, snapshot_before, edit_summary)
+       VALUES (?, ?, ?, ?, ?)`,
+      [id, editorId, editorName, JSON.stringify(snapshotBefore), editSummary]
+    );
+
+    res.json({ ok: true });
+    // Re-run merge in case data changed
+    mergeInterviewToProfile(parseInt(id, 10)).catch(() => {});
+  } catch(e) {
+    console.error('reSubmitInterview error:', e);
+    res.status(500).json({ error: 'Failed to re-submit.' });
+  }
 }
 exports.reSubmitInterview = reSubmitInterview;
