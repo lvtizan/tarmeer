@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
-import { Pencil, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
+import { Pencil, Star, Check, ImagePlus, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { PageSpinner } from '@/components/ui/Spinner';
 import SmartImage from '@/components/ui/SmartImage';
@@ -36,6 +36,19 @@ interface CompanyDetail {
   owner_email: string | null;
   owner_id: number | null;
   is_published?: number;
+  office_type: string | null;
+  one_stop_service: string | null;
+  has_construction_permit: number | null;
+  total_employees: string | null;
+  pm_team_size: string | null;
+  design_team_size: string | null;
+  construction_team: string | null;
+  owner_nationality: string | null;
+  main_project_types: string | null;
+  min_project_value: string | null;
+  max_project_value: string | null;
+  material_sources: string | null;
+  latest_interview_id: number | null;
 }
 
 interface Project {
@@ -245,20 +258,22 @@ function CompanyDetailContent() {
   );
 
   const DetailsCard = () => (
-    <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-2.5 text-sm">
+    <div className="bg-white rounded-xl border border-stone-200 p-5 text-sm">
       <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Details', '详情')}</h2>
-      {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
-      {company.area && <InfoRow label={t('Area', '区域')} value={company.area} />}
-      {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
-      {company.year_established && <InfoRow label={t('Est.', '成立')} value={String(company.year_established)} />}
-      {company.license_number && <InfoRow label={t('License', '执照')} value={company.license_number} />}
-      {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
-      {company.whatsapp && <InfoRow label="WhatsApp" value={company.whatsapp} />}
-      {company.email && <InfoRow label={t('Email', '邮箱')} value={company.email} />}
-      {company.website && <InfoRow label={t('Website', '网站')} value={company.website} isLink />}
-      {company.instagram && <InfoRow label="Instagram" value={company.instagram} isLink />}
-      {company.facebook && <InfoRow label="Facebook" value={company.facebook} isLink />}
-      {company.linkedin && <InfoRow label="LinkedIn" value={company.linkedin} isLink />}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+        {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
+        {company.area && <InfoRow label={t('Area', '区域')} value={company.area} />}
+        {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
+        {company.year_established && <InfoRow label={t('Est.', '成立')} value={String(company.year_established)} />}
+        {company.license_number && <InfoRow label={t('License', '执照')} value={company.license_number} />}
+        {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
+        {company.whatsapp && <InfoRow label="WhatsApp" value={company.whatsapp} />}
+        {company.email && <InfoRow label={t('Email', '邮箱')} value={company.email} />}
+        {company.website && <InfoRow label={t('Website', '网站')} value={company.website} isLink />}
+        {company.instagram && <InfoRow label="Instagram" value={company.instagram} isLink />}
+        {company.facebook && <InfoRow label="Facebook" value={company.facebook} isLink />}
+        {company.linkedin && <InfoRow label="LinkedIn" value={company.linkedin} isLink />}
+      </div>
     </div>
   );
 
@@ -300,6 +315,65 @@ function CompanyDetailContent() {
       )}
     </div>
   );
+
+  const SurveyVerifiedCard = () => {
+    if (!company.latest_interview_id) return null;
+    const VERIFIED_FIELDS: { key: keyof CompanyDetail; label: string }[] = [
+      { key: 'office_type', label: '办公室类型' },
+      { key: 'one_stop_service', label: '一站式服务' },
+      { key: 'total_employees', label: '员工总数' },
+      { key: 'pm_team_size', label: 'PM 团队' },
+      { key: 'design_team_size', label: '设计团队' },
+      { key: 'construction_team', label: '施工团队' },
+      { key: 'min_project_value', label: '最小合同额' },
+      { key: 'max_project_value', label: '最大合同额' },
+    ];
+    const filled = VERIFIED_FIELDS.filter(f => {
+      const v = company[f.key];
+      return v !== null && v !== undefined && v !== '';
+    });
+    if (filled.length === 0) return null;
+
+    function renderValue(key: keyof CompanyDetail) {
+      const v = company[key];
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'string') {
+        try {
+          const parsed = JSON.parse(v);
+          if (Array.isArray(parsed)) return parsed.join(', ');
+        } catch { /* not JSON */ }
+      }
+      return String(v);
+    }
+
+    return (
+      <div className="bg-white rounded-xl border border-green-200 p-5 text-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <CheckCircle2 className="w-4 h-4 text-green-500" />
+          <h2 className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+            {t('Field Verified', '实地认证')}
+          </h2>
+          <a
+            href={`/admin/visit-records?detail=${company.latest_interview_id}`}
+            className="ml-auto text-xs text-[#b8864a] hover:underline"
+          >
+            #{company.latest_interview_id}
+          </a>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+          {filled.map(f => (
+            <div key={String(f.key)} className="flex gap-2 items-start">
+              <span className="text-stone-400 flex-shrink-0 text-xs">{f.label}</span>
+              <span className="text-stone-700 text-xs flex items-center gap-1 min-w-0">
+                <span className="truncate">{renderValue(f.key)}</span>
+                <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const ProjectGrid = ({ cols = 2 }: { cols?: 2 | 3 }) => (
     visibleProjects.length === 0 ? (
@@ -420,17 +494,19 @@ function CompanyDetailContent() {
         <DetailsCard />
         <TagsCard />
         <OwnerCard />
+        <SurveyVerifiedCard />
       </div>
 
       {/* DESKTOP layout */}
       <div className="hidden md:flex md:items-start gap-6">
-        <div className="w-80 flex-shrink-0 space-y-4">
+        <div className="flex-[2] min-w-0 space-y-4">
           <HeaderCard />
           <DetailsCard />
           <TagsCard />
           <OwnerCard />
+          <SurveyVerifiedCard />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-[8] min-w-0">
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-5 pb-4">
               <h2 className="text-base font-bold text-stone-800">
