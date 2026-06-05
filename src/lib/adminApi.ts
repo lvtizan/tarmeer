@@ -1003,7 +1003,9 @@ const FIELD_API_BASE = '/api/field';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fieldRequest(path: string, options: RequestInit = {}): Promise<any> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+  const token = typeof window !== 'undefined'
+    ? (localStorage.getItem('field_token') || localStorage.getItem('admin_token'))
+    : null;
   const res = await fetch(`${FIELD_API_BASE}${path}`, {
     ...options,
     headers: {
@@ -1031,8 +1033,19 @@ export const fieldApi = {
   searchCompanies: (q: string) =>
     fieldRequest(`/companies/search?q=${encodeURIComponent(q)}`),
   getSurveySchema: () => fieldRequest('/survey-schema'),
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('field_token');
+      localStorage.removeItem('field_user');
+    }
+  },
+  loadInterview: (id: number) => fieldRequest(`/interviews/${id}/load`),
+  reSubmit: (id: number, data: Record<string, unknown>) =>
+    fieldRequest(`/interviews/${id}/re-submit`, { method: 'POST', body: JSON.stringify(data) }),
   uploadPhoto: async (id: number, blob: Blob, meta?: { lat?: number; lng?: number; timestamp?: string }): Promise<{ url: string }> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+    const token = typeof window !== 'undefined'
+      ? (localStorage.getItem('field_token') || localStorage.getItem('admin_token'))
+      : null;
     const fd = new FormData();
     fd.append('photo', blob, `photo-${Date.now()}.jpg`);
     if (meta?.lat !== undefined) fd.append('lat', String(meta.lat));
