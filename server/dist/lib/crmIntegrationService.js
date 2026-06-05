@@ -217,7 +217,12 @@ function emailSync(userId, newEmail) {
 function partnerSync(companyId) {
     database_1.default.execute(`SELECT cp.crm_tenant_id, cp.company_name, cp.description, cp.phone,
             cp.website, cp.city, cp.address, cp.trade_license_number,
-            cp.company_type, cp.company_types, cp.services, cp.emirates_served
+            cp.company_type, cp.company_types, cp.services, cp.emirates_served,
+            cp.establishment_year, cp.office_type, cp.one_stop_service,
+            cp.has_construction_permit, cp.total_employees, cp.pm_team_size,
+            cp.design_team_size, cp.construction_team, cp.owner_nationality,
+            cp.main_project_types, cp.min_project_value, cp.max_project_value,
+            cp.material_sources, cp.latest_interview_id, cp.last_interviewed_at
      FROM company_profiles cp WHERE cp.id = ?`, [companyId]).then(([rows]) => {
         const row = rows[0];
         if (!row?.crm_tenant_id)
@@ -225,7 +230,7 @@ function partnerSync(companyId) {
         const companyTypes = parseJsonSafe(row.company_types);
         const services = parseJsonSafe(row.services);
         const emiratesServed = parseJsonSafe(row.emirates_served);
-        return withRetry(() => crmPost('/api/integration/mall/partner/sync', {
+        const payload = {
             tenantId: row.crm_tenant_id,
             businessName: row.company_name,
             businessType: companyTypes[0] || row.company_type || undefined,
@@ -236,7 +241,24 @@ function partnerSync(companyId) {
             description: row.description,
             emiratesServed,
             services,
-        }));
+        };
+        // 问卷采集字段（有值才带，避免覆盖 CRM 侧已有数据）
+        if (row.establishment_year != null) payload.establishmentYear = row.establishment_year;
+        if (row.office_type)              payload.officeType = row.office_type;
+        if (row.one_stop_service)         payload.oneStopService = row.one_stop_service;
+        if (row.has_construction_permit != null) payload.hasConstructionPermit = !!row.has_construction_permit;
+        if (row.total_employees)          payload.totalEmployees = row.total_employees;
+        if (row.pm_team_size)             payload.pmTeamSize = row.pm_team_size;
+        if (row.design_team_size)         payload.designTeamSize = row.design_team_size;
+        if (row.construction_team)        payload.constructionTeam = row.construction_team;
+        if (row.owner_nationality)        payload.ownerNationality = parseJsonSafe(row.owner_nationality);
+        if (row.main_project_types)       payload.mainProjectTypes = parseJsonSafe(row.main_project_types);
+        if (row.min_project_value)        payload.minProjectValue = row.min_project_value;
+        if (row.max_project_value)        payload.maxProjectValue = row.max_project_value;
+        if (row.material_sources)         payload.materialSources = parseJsonSafe(row.material_sources);
+        if (row.latest_interview_id)      payload.latestInterviewId = row.latest_interview_id;
+        if (row.last_interviewed_at)      payload.lastInterviewedAt = row.last_interviewed_at;
+        return withRetry(() => crmPost('/api/integration/mall/partner/sync', payload));
     }).catch(err => console.error('[CRM] partnerSync error:', err));
 }
 /**

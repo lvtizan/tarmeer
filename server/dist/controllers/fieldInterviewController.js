@@ -35,7 +35,123 @@ exports.uploadPhotoMiddleware = (0, multer_1.default)({
         else cb(new Error('Only image files allowed'));
     },
 }).single('photo');
-// POST /api/field/interviews — create draft (public, no auth)
+
+// ── Survey → company_profiles 字段映射 ──────────────────────────────────────
+const YEAR_MAP = {
+    'Before 2000': 1995, '2000-2010': 2005, '2010-2015': 2012,
+    '2015-2020': 2017,   '2020+': 2021,
+};
+// { column, type (null=已存在无需ALTER), extract(sections, interviewId) }
+const SURVEY_FIELD_MAP = [
+    { column: 'establishment_year', type: null,
+      extract: (s) => { const y = s.section_1?.year_established; return y && YEAR_MAP[y] ? YEAR_MAP[y] : undefined; } },
+    { column: 'city',                type: null,
+      extract: (s) => s.section_1?.registration_location || undefined },
+    { column: 'office_type',         type: 'VARCHAR(50)',
+      extract: (s) => s.section_1?.field_3 || undefined },
+    { column: 'one_stop_service',    type: 'VARCHAR(20)',
+      extract: (s) => s.section_2?.one_stop_service || undefined },
+    { column: 'has_construction_permit', type: 'TINYINT(1)',
+      extract: (s) => { const v = s.section_2?.field_3; return v === 'Held' ? 1 : v === 'Not Held' ? 0 : undefined; } },
+    { column: 'total_employees',     type: 'VARCHAR(20)',
+      extract: (s) => s.section_3?.total_employees || undefined },
+    { column: 'pm_team_size',        type: 'VARCHAR(20)',
+      extract: (s) => s.section_3?.pm_team_size || undefined },
+    { column: 'design_team_size',    type: 'VARCHAR(20)',
+      extract: (s) => s.section_3?.design_team_size || undefined },
+    { column: 'construction_team',   type: 'VARCHAR(20)',
+      extract: (s) => s.section_3?.construction_team || undefined },
+    { column: 'owner_nationality',   type: 'JSON',
+      extract: (s) => { const v = s.section_3?.owner_nationality; return Array.isArray(v) && v.length ? v : undefined; } },
+    { column: 'main_project_types',  type: 'JSON',
+      extract: (s) => { const v = s.section_4?.main_project_types; return Array.isArray(v) && v.length ? v : undefined; } },
+    { column: 'min_project_value',   type: 'VARCHAR(50)',
+      extract: (s) => s.section_4?.typical_contract_value || undefined },
+    { column: 'max_project_value',   type: 'VARCHAR(50)',
+      extract: (s) => s.section_4?.field_4 || undefined },
+    { column: 'material_sources',    type: 'JSON',
+      extract: (s) => { const v = s.section_5?.main_material_sources; return Array.isArray(v) && v.length ? v : undefined; } },
+    { column: 'latest_interview_id', type: 'INT',
+      extract: (_s, ivId) => ivId },
+    { column: 'last_interviewed_at', type: 'DATETIME',
+      extract: () => new Date() },
+];
+
+// ── 自动补列（幂等，兼容 MySQL 8.0 — 不支持 ADD COLUMN IF NOT EXISTS）────────
+async function ensureColumns(pool) {
+    const [existing] = await pool.execute(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'company_profiles'`
+    );
+    const existingSet = new Set(existing.map(r => r.COLUMN_NAME));
+    for (const f of SURVEY_FIELD_MAP.filter(f => f.type !== null)) {
+        if (existingSet.has(f.column)) continue;
+        try {
+            await pool.execute(`ALTER TABLE company_profiles ADD COLUMN \`${f.column}\` ${f.type} NULL`);
+            console.log(`[field-merge] added column: ${f.column}`);
+        } catch (e) {
+            console.error(`[field-merge] ensureColumn ${f.column}:`, e.message);
+        }
+    }
+}
+
+// ── 核心合并逻辑（fire-and-forget）──────────────────────────────────────────
+async function mergeInterviewToProfile(interviewId) {
+    try {
+        const [rows] = await database_1.default.execute(`SELECT * FROM company_interviews WHERE id = ? LIMIT 1`, [interviewId]);
+        const iv = rows[0];
+        if (!iv) return;
+
+        // 条件1：必须匹配到已注册装企（profile 来源）
+        if (iv.company_ref_source !== 'profile' || !iv.company_ref_id) {
+            console.log(`[field-merge] #${interviewId}: no profile match, skip`);
+            return;
+        }
+        // 条件2：必须有带经纬度的实地照片
+        const photos = Array.isArray(iv.photos) ? iv.photos : [];
+        const hasGeoPhoto = photos.some(p => p && p.lat != null && p.lng != null);
+        if (!hasGeoPhoto) {
+            console.log(`[field-merge] #${interviewId}: no geo photo, skip`);
+            return;
+        }
+
+        await ensureColumns(database_1.default);
+
+        const sections = {
+            section_1: iv.section_1 || {},
+            section_2: iv.section_2 || {},
+            section_3: iv.section_3 || {},
+            section_4: iv.section_4 || {},
+            section_5: iv.section_5 || {},
+        };
+
+        const setClauses = [];
+        const values = [];
+        for (const f of SURVEY_FIELD_MAP) {
+            const val = f.extract(sections, iv.id);
+            if (val === undefined || val === null) continue;
+            setClauses.push(`\`${f.column}\` = ?`);
+            values.push(typeof val === 'object' && !(val instanceof Date) ? JSON.stringify(val) : val);
+        }
+        if (setClauses.length === 0) return;
+
+        values.push(iv.company_ref_id);
+        await database_1.default.execute(
+            `UPDATE company_profiles SET ${setClauses.join(', ')} WHERE id = ?`, values
+        );
+        console.log(`[field-merge] #${interviewId} -> company_profiles #${iv.company_ref_id} (${setClauses.length} fields)`);
+
+        // 同步 CRM（fire-and-forget，CRM 团队实现接口后生效）
+        try {
+            const crmSvc = require('../lib/crmIntegrationService');
+            crmSvc.partnerSync(iv.company_ref_id);
+        } catch (e) {
+            console.error('[field-merge] CRM sync:', e.message);
+        }
+    } catch (e) {
+        console.error(`[field-merge] #${interviewId} error:`, e.message);
+    }
+}
+
 async function createDraft(req, res) {
     try {
         const [result] = await database_1.default.execute(`INSERT INTO company_interviews (status) VALUES ('draft')`);
@@ -47,7 +163,6 @@ async function createDraft(req, res) {
         res.status(500).json({ error: 'Failed to create draft.' });
     }
 }
-// GET /api/field/interviews/draft?id=N — fetch draft by ID (public)
 async function getMyDraft(req, res) {
     const id = parseInt(String(req.query.id || ''), 10);
     if (!id) return res.json({ draft: null });
@@ -61,12 +176,10 @@ async function getMyDraft(req, res) {
         res.status(500).json({ error: 'Failed to fetch draft.' });
     }
 }
-// PATCH /api/field/interviews/:id — auto-save (public)
 async function saveDraft(req, res) {
     const { id } = req.params;
     const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, } = req.body;
     try {
-        // Verify draft exists
         const [rows] = await database_1.default.execute(`SELECT id FROM company_interviews WHERE id = ? AND status = 'draft'`, [id]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Draft not found or already submitted.' });
@@ -110,7 +223,6 @@ async function saveDraft(req, res) {
         res.status(500).json({ error: 'Failed to save.' });
     }
 }
-// POST /api/field/interviews/:id/submit — submit (public)
 async function submitInterview(req, res) {
     const { id } = req.params;
     try {
@@ -120,12 +232,13 @@ async function submitInterview(req, res) {
         }
         await database_1.default.execute(`UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?`, [id]);
         res.json({ ok: true });
+        // fire-and-forget：满足条件时自动合并 + 同步 CRM
+        mergeInterviewToProfile(parseInt(id, 10)).catch(() => {});
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to submit.' });
     }
 }
-// POST /api/field/interviews/:id/photos — upload watermark photo
 async function uploadPhoto(req, res) {
     const { id } = req.params;
     if (!req.file) {
@@ -158,7 +271,6 @@ async function uploadPhoto(req, res) {
         res.status(500).json({ error: 'Upload failed' });
     }
 }
-// GET /api/field/survey-schema — return current survey schema (falls back to null if not seeded)
 async function getSurveySchema(req, res) {
     try {
         const [rows] = await database_1.default.execute('SELECT schema_json FROM survey_schema WHERE id = 1');
@@ -168,7 +280,6 @@ async function getSurveySchema(req, res) {
         res.json({ schema: null });
     }
 }
-// GET /api/field/companies/search?q= — search all company tables (uae_companies + company_profiles)
 async function searchCompanies(req, res) {
     const q = String(req.query.q || '').trim().slice(0, 100);
     if (!q)
@@ -177,7 +288,7 @@ async function searchCompanies(req, res) {
     try {
         const [rows] = await database_1.default.execute(`(SELECT id, name_en AS name, city, 'uae' AS source FROM uae_companies WHERE name_en LIKE ? AND name_en IS NOT NULL)
                UNION
-               (SELECT id, company_name AS name, city, 'profile' AS source FROM company_profiles WHERE company_name LIKE ? AND deleted_at IS NULL AND status = 'approved')
+               (SELECT id, company_name AS name, city, 'profile' AS source FROM company_profiles WHERE company_name LIKE ? AND deleted_at IS NULL)
                ORDER BY name
                LIMIT 20`, [like, like]);
         res.json({ results: rows });

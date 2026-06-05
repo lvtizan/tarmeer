@@ -308,6 +308,30 @@ export default function AdminSupplierDetailPage() {
   const [togglingPublished, setTogglingPublished] = useState(false);
   const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
+  const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
+  const [savingCatalogId, setSavingCatalogId] = useState<number | null>(null);
+  const catalogInputRef = useRef<HTMLInputElement>(null);
+
+  const startEditCatalog = (c: { id: number; title: string }) => {
+    setEditingCatalogId(c.id);
+    setEditingCatalogTitle(c.title);
+    setTimeout(() => { catalogInputRef.current?.focus(); catalogInputRef.current?.select(); }, 30);
+  };
+  const cancelEditCatalog = () => { setEditingCatalogId(null); setEditingCatalogTitle(''); };
+  const saveCatalogTitle = async (catalogId: number) => {
+    const title = editingCatalogTitle.trim();
+    if (!title) { showToast(t('Name cannot be empty', '名称不能为空'), 'error'); return; }
+    setSavingCatalogId(catalogId);
+    try {
+      await adminApi.request(`/suppliers/catalogs/${catalogId}/title`, { method: 'PATCH', body: JSON.stringify({ title }) });
+      setCatalogs(prev => prev.map(c => c.id === catalogId ? { ...c, title } : c));
+      setEditingCatalogId(null);
+      setEditingCatalogTitle('');
+      showToast(t('Catalog renamed', '目录已重命名'), 'success');
+    } catch { showToast(t('Failed to rename', '重命名失败'), 'error'); }
+    finally { setSavingCatalogId(null); }
+  };
 
   const handleReplaceImage = async (file: File, productId: number) => {
     if (!supplier) return;
@@ -767,22 +791,64 @@ export default function AdminSupplierDetailPage() {
                 <span className="font-normal text-stone-400 normal-case tracking-normal">({catalogs.length})</span>
               </h2>
               <div className="space-y-2">
-                {catalogs.map((c) => (
-                  <a key={c.id} href={c.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
-                    <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
-                      <FileText className="w-4 h-4 text-red-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#2c2c2c] truncate">{c.title}</p>
-                      {c.file_size && (
-                        <p className="text-xs text-stone-400 mt-0.5">
-                          {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
-                        </p>
+                {catalogs.map((c) => {
+                  const isEditing = editingCatalogId === c.id;
+                  const isSaving = savingCatalogId === c.id;
+                  return (
+                    <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
+                      <a href={c.file_url} target="_blank" rel="noopener noreferrer"
+                        onClick={e => isEditing && e.preventDefault()}
+                        className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0 hover:bg-red-100 transition">
+                        <FileText className="w-4 h-4 text-red-500" />
+                      </a>
+                      <div className="flex-1 min-w-0">
+                        {isEditing ? (
+                          <input
+                            ref={catalogInputRef}
+                            value={editingCatalogTitle}
+                            onChange={e => setEditingCatalogTitle(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') saveCatalogTitle(c.id); if (e.key === 'Escape') cancelEditCatalog(); }}
+                            onBlur={() => { if (!isSaving) cancelEditCatalog(); }}
+                            disabled={isSaving}
+                            className="w-full h-8 px-2 rounded-lg border border-[#b8864a] bg-white text-sm text-[#2c2c2c] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/20"
+                          />
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium text-[#2c2c2c] truncate">{c.title}</p>
+                            {c.file_size && (
+                              <p className="text-xs text-stone-400 mt-0.5">
+                                {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      {isEditing ? (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => saveCatalogTitle(c.id)} disabled={isSaving}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-green-600 hover:bg-green-50 transition disabled:opacity-50" title={t('Save', '保存')}>
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button onClick={cancelEditCatalog} disabled={isSaving}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 transition disabled:opacity-50" title={t('Cancel', '取消')}>
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => startEditCatalog(c)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-[#b8864a] hover:bg-stone-100 transition opacity-0 group-hover:opacity-100" title={t('Rename', '重命名')}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <a href={c.file_url} target="_blank" rel="noopener noreferrer"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-[#b8864a] hover:bg-stone-100 transition">
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </div>
                       )}
                     </div>
-                    <Download className="w-4 h-4 text-stone-400 group-hover:text-[#b8864a] transition shrink-0" />
-                  </a>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}

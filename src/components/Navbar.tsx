@@ -67,7 +67,8 @@ export default function Navbar({
   const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
-  const [supplierNavCategories, setSupplierNavCategories] = useState<{ label: string; value: string }[]>([]);
+  const [supplierNavGroups, setSupplierNavGroups] = useState<{ value: string; label: string; categories: { value: string; label: string }[] }[]>([]);
+  const [supplierNavUngrouped, setSupplierNavUngrouped] = useState<{ value: string; label: string }[]>([]);
   const { handleNavClick } = useNavigationHandler();
   const pathname = usePathname();
   const isAuthPage = pathname === '/auth' || pathname === '/login' || pathname === '/register';
@@ -97,8 +98,9 @@ export default function Navbar({
     fetch(`${API_BASE}/public/supplier-categories`)
       .then((r) => r.json())
       .then((d: unknown) => {
-        const data = d as { categories?: { label: string; value: string }[] };
-        if (Array.isArray(data?.categories)) setSupplierNavCategories(data.categories);
+        const data = d as { groups?: { value: string; label: string; categories: { value: string; label: string }[] }[]; ungrouped?: { value: string; label: string }[] };
+        if (Array.isArray(data?.groups)) setSupplierNavGroups(data.groups);
+        if (Array.isArray(data?.ungrouped)) setSupplierNavUngrouped(data.ungrouped);
       })
       .catch(() => {});
   }, []);
@@ -312,14 +314,27 @@ export default function Navbar({
             </Link>
             <div className={`absolute top-full right-0 pt-2 w-max z-50 transition-all duration-150 ${materialsDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
               <div className="bg-white shadow-xl rounded-lg border border-stone-200">
-                <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
-                  {(() => {
-                    const mid = Math.ceil(supplierNavCategories.length / 2);
-                    const cols = [supplierNavCategories.slice(0, mid), supplierNavCategories.slice(mid)];
-                    const colLabels = ['Materials', 'More'];
-                    return cols.map((items, ci) => items.length === 0 ? null : (
+                <div className={`p-6 gap-8 min-w-max grid ${supplierNavGroups.length >= 3 ? 'grid-cols-3' : supplierNavGroups.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                  {supplierNavGroups.length > 0 ? supplierNavGroups.map((group) => (
+                    <div key={group.value}>
+                      <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">{group.label}</h3>
+                      <ul className="space-y-2">
+                        {group.categories.map((item) => {
+                          const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                          return (
+                            <li key={item.value}>
+                              <Link href={to} onClick={() => { setMaterialsDropdownOpen(false); handleClick(to); }} className="text-sm text-stone-600 hover:text-[#b8864a] transition">
+                                {item.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )) : (() => {
+                    const mid = Math.ceil(supplierNavUngrouped.length / 2);
+                    return [supplierNavUngrouped.slice(0, mid), supplierNavUngrouped.slice(mid)].map((items, ci) => items.length === 0 ? null : (
                       <div key={ci}>
-                        <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">{colLabels[ci]}</h3>
                         <ul className="space-y-2">
                           {items.map((item) => {
                             const to = `/materials?category=${encodeURIComponent(item.value)}`;
@@ -469,28 +484,30 @@ export default function Navbar({
               </div>
               {materialsDropdownOpen && (
                 <div className="mt-3 pl-4 space-y-4">
-                  {(() => {
-                    const mid = Math.ceil(supplierNavCategories.length / 2);
-                    const cols = [supplierNavCategories.slice(0, mid), supplierNavCategories.slice(mid)];
-                    const colLabels = ['Materials', 'More'];
-                    return cols.map((items, ci) => items.length === 0 ? null : (
-                      <div key={ci}>
-                        <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{colLabels[ci]}</h3>
-                        <ul className="space-y-1">
-                          {items.map((item) => {
-                            const to = `/materials?category=${encodeURIComponent(item.value)}`;
-                            return (
-                              <li key={item.value}>
-                                <Link href={to} onClick={() => handleClick(to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
-                                  {item.label}
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    ));
-                  })()}
+                  {supplierNavGroups.length > 0 ? supplierNavGroups.map((group) => (
+                    <div key={group.value}>
+                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{group.label}</h3>
+                      <ul className="space-y-1">
+                        {group.categories.map((item) => {
+                          const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                          return (
+                            <li key={item.value}>
+                              <Link href={to} onClick={() => handleClick(to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                                {item.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )) : supplierNavUngrouped.map((item) => {
+                    const to = `/materials?category=${encodeURIComponent(item.value)}`;
+                    return (
+                      <Link key={item.value} href={to} onClick={() => handleClick(to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                        {item.label}
+                      </Link>
+                    );
+                  })}
                   <div className="border-t border-stone-200 pt-2">
                     <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
                       {tr.nav.allSuppliers} {'>'}

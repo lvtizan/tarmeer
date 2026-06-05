@@ -1,0 +1,462 @@
+[
+  {
+    "id": "navbar_service_categories",
+    "name": "Navbar 公司服务分类",
+    "category": "navbar",
+    "check_type": "api_data",
+    "endpoint": "/api/public/service-categories",
+    "expect": {
+      "status": 200,
+      "json_path": "categories",
+      "min_items": 1
+    },
+    "critical": true
+  },
+  {
+    "id": "navbar_supplier_categories",
+    "name": "Navbar 供应商分类 (groups)",
+    "category": "navbar",
+    "check_type": "api_data",
+    "endpoint": "/api/public/supplier-categories",
+    "expect": {
+      "status": 200,
+      "json_path": "groups",
+      "min_items": 1
+    },
+    "critical": true
+  },
+  {
+    "id": "homepage_companies",
+    "name": "首页数据 — 公司目录列表",
+    "category": "homepage",
+    "check_type": "api_data",
+    "endpoint": "/api/companies?limit=3",
+    "expect": {
+      "status": 200,
+      "json_path": "companies",
+      "min_items": 1
+    },
+    "critical": true
+  },
+  {
+    "id": "homepage_suppliers",
+    "name": "首页数据 — 供应商列表",
+    "category": "homepage",
+    "check_type": "api_data",
+    "endpoint": "/api/suppliers?limit=3",
+    "expect": {
+      "status": 200,
+      "json_path": "suppliers",
+      "min_items": 1
+    },
+    "critical": true
+  },
+  {
+    "id": "homepage_blog",
+    "name": "首页数据 — 博客文章列表",
+    "category": "homepage",
+    "check_type": "api_data",
+    "endpoint": "/api/articles/public?limit=3",
+    "expect": {
+      "status": 200,
+      "json_path": "articles",
+      "min_items": 1
+    },
+    "critical": false
+  },
+  {
+    "id": "api_health",
+    "name": "API 健康检查",
+    "category": "api_core",
+    "check_type": "api_data",
+    "endpoint": "/api/health",
+    "expect": {
+      "status": 200,
+      "json_path": "status",
+      "min_items": 1
+    },
+    "critical": true
+  },
+  {
+    "id": "field_survey_schema",
+    "name": "字段调研 — 问卷 Schema",
+    "category": "field",
+    "check_type": "api_data",
+    "endpoint": "/api/field/survey-schema",
+    "expect": {
+      "status": 200,
+      "json_path": "schema",
+      "min_items": 1
+    },
+    "critical": true
+  },
+  {
+    "id": "api_companies_portfolio",
+    "name": "公司作品集 feed",
+    "category": "api_public",
+    "check_type": "api_data",
+    "endpoint": "/api/companies/portfolio?limit=3",
+    "expect": {
+      "status": 200,
+      "json_path": "images",
+      "min_items": 1
+    },
+    "critical": false
+  },
+  {
+    "id": "api_companies_active_services",
+    "name": "公司有效服务标签",
+    "category": "api_public",
+    "check_type": "api_data",
+    "endpoint": "/api/companies/active-services",
+    "expect": {
+      "status": 200,
+      "json_path": "services",
+      "min_items": 1
+    },
+    "critical": false
+  },
+  {
+    "id": "api_site_showcase_images",
+    "name": "站点展示图片",
+    "category": "api_public",
+    "check_type": "api_data",
+    "endpoint": "/api/site/showcase-images",
+    "expect": {
+      "status": 200,
+      "json_path": "images",
+      "min_items": 0
+    },
+    "critical": false
+  },
+  {
+    "id": "api_suppliers_categories",
+    "name": "供应商分类列表",
+    "category": "api_public",
+    "check_type": "api_data",
+    "endpoint": "/api/suppliers/categories",
+    "expect": {
+      "status": 200,
+      "json_path": "groups",
+      "min_items": 1
+    },
+    "critical": false
+  },
+  {
+    "id": "admin_companies_api",
+    "name": "Admin API — 公司列表（需鉴权）",
+    "category": "admin_api",
+    "check_type": "api_auth",
+    "endpoint": "/api/admin/companies?limit=3",
+    "expect": {
+      "status": 401
+    },
+    "critical": true
+  },
+  {
+    "id": "admin_suppliers_api",
+    "name": "Admin API — 供应商列表（需鉴权）",
+    "category": "admin_api",
+    "check_type": "api_auth",
+    "endpoint": "/api/admin/suppliers?limit=3",
+    "expect": {
+      "status": 401
+    },
+    "critical": true
+  },
+  {
+    "id": "admin_users_api",
+    "name": "Admin API — 用户列表（需鉴权）",
+    "category": "admin_api",
+    "check_type": "api_auth",
+    "endpoint": "/api/admin/users?limit=3",
+    "expect": {
+      "status": 401
+    },
+    "critical": true
+  },
+  {
+    "id": "admin_applications_api",
+    "name": "Admin API — 入驻申请（需鉴权）",
+    "category": "admin_api",
+    "check_type": "api_auth",
+    "endpoint": "/api/admin/company-applications?limit=3",
+    "expect": {
+      "status": 401
+    },
+    "critical": true
+  },
+  {
+    "id": "admin_visit_records_api",
+    "name": "Admin API — 字段访问记录（需鉴权）",
+    "category": "admin_api",
+    "check_type": "api_auth",
+    "endpoint": "/api/admin/interviews?limit=3",
+    "expect": {
+      "status": 401
+    },
+    "critical": true
+  },
+  {
+    "id": "admin_designers_api",
+    "name": "Admin API — 设计师列表（需鉴权）",
+    "category": "admin_api",
+    "check_type": "api_auth",
+    "endpoint": "/api/admin/designers?limit=3",
+    "expect": {
+      "status": 401
+    },
+    "critical": false
+  },
+  {
+    "id": "admin_profile_api",
+    "name": "Admin API — 管理员个人信息（需鉴权）",
+    "category": "admin_api",
+    "check_type": "api_auth",
+    "endpoint": "/api/admin/profile",
+    "expect": {
+      "status": 401
+    },
+    "critical": false
+  },
+  {
+    "id": "page_homepage",
+    "name": "前端页面 — 首页 /",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/",
+    "expect": {
+      "status": 200
+    },
+    "critical": true
+  },
+  {
+    "id": "page_companies",
+    "name": "前端页面 — 公司目录 /companies",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/companies",
+    "expect": {
+      "status": 200
+    },
+    "critical": true
+  },
+  {
+    "id": "page_portfolio",
+    "name": "前端页面 — 作品集 /portfolio",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/portfolio",
+    "expect": {
+      "status": 200
+    },
+    "critical": true
+  },
+  {
+    "id": "page_blog",
+    "name": "前端页面 — 博客 /blog",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/blog",
+    "expect": {
+      "status": 200
+    },
+    "critical": true
+  },
+  {
+    "id": "page_materials",
+    "name": "前端页面 — 供应商/材料 /materials",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/materials",
+    "expect": {
+      "status": 200
+    },
+    "critical": true
+  },
+  {
+    "id": "page_contact",
+    "name": "前端页面 — 联系我们 /contact",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/contact",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_faq",
+    "name": "前端页面 — FAQ /faq",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/faq",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_for_companies",
+    "name": "前端页面 — 面向装企 /for-companies",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/for-companies",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_for_homeowners",
+    "name": "前端页面 — 面向业主 /for-homeowners",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/for-homeowners",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_for_suppliers",
+    "name": "前端页面 — 面向供应商 /for-suppliers",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/for-suppliers",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_start",
+    "name": "前端页面 — 注册入口 /start",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/start",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_start_suppliers",
+    "name": "前端页面 — 供应商注册入口 /for-suppliers",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/for-suppliers",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_auth",
+    "name": "前端页面 — 登录 /auth",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/auth",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_privacy",
+    "name": "前端页面 — 隐私政策 /privacy",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/privacy",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_dmca",
+    "name": "前端页面 — DMCA /dmca",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/dmca",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_services_new_home_design",
+    "name": "前端页面 — 新房设计服务 /services/new-home-design",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/services/new-home-design",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_services_soft_decoration",
+    "name": "前端页面 — 软装服务 /services/soft-decoration",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/services/soft-decoration",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_services_house_exterior",
+    "name": "前端页面 — 外立面服务 /services/house-exterior",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/services/house-exterior",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_admin_login",
+    "name": "前端页面 — Admin 登录 /admin/login",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/admin/login",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "page_field_survey",
+    "name": "前端页面 — 字段调研问卷 /field/survey",
+    "category": "frontend_pages",
+    "check_type": "page_200",
+    "endpoint": "/field/survey",
+    "expect": {
+      "status": 200
+    },
+    "critical": false
+  },
+  {
+    "id": "pm2_tarmeer_api",
+    "name": "PM2 进程 — tarmeer-api",
+    "category": "pm2",
+    "check_type": "pm2_online",
+    "expect": {
+      "process": "tarmeer-api"
+    },
+    "critical": true
+  },
+  {
+    "id": "pm2_tarmeer_next",
+    "name": "PM2 进程 — tarmeer-next",
+    "category": "pm2",
+    "check_type": "pm2_online",
+    "expect": {
+      "process": "tarmeer-next"
+    },
+    "critical": true
+  }
+]
