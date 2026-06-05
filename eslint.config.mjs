@@ -23,6 +23,9 @@ const eslintConfig = defineConfig([
     "server/**",
     // Duplicate node_modules directories
     "node_modules 3/**",
+    // Build/utility scripts (CommonJS, not part of Next.js frontend)
+    "scripts/**",
+    "health-check-v2.mjs",
   ]),
   // Downgrade rules that fire extensively in Vite-migrated code.
   // TODO: fix these incrementally after migration stabilises.
