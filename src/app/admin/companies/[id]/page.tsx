@@ -335,8 +335,8 @@ function CompanyDetailContent() {
     });
     if (filled.length === 0) return null;
 
-    function renderValue(key: keyof CompanyDetail) {
-      const v = company[key];
+    const renderValue = (key: keyof CompanyDetail) => {
+      const v = (company as CompanyDetail)[key];
       if (v === null || v === undefined) return '';
       if (typeof v === 'string') {
         try {
