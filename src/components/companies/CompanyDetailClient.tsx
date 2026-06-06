@@ -615,6 +615,36 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
             <div className="mt-2">
               {company.isClaimed && company.projects && company.projects.length > 0 ? (
                 <CompanyProjectsSection company={company} projects={company.projects} />
+              ) : isVn && company.projectImages.length > 0 ? (
+                <section className="py-10 lg:py-14">
+                  <div className="flex items-end justify-between mb-8">
+                    <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Portfolio</h2>
+                    <span className="text-sm text-[#6b6b6b] tabular-nums">
+                      {company.projectImages.length} {company.projectImages.length === 1 ? 'image' : 'images'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {company.projectImages.map((url, i) => (
+                      <div
+                        key={`${url}-${i}`}
+                        className="group cursor-pointer"
+                        onClick={() => {
+                          const idx = allLightboxImages.findIndex(item => item.url === url);
+                          setLightboxIndex(idx >= 0 ? idx : i);
+                          setLightboxOpen(true);
+                        }}
+                      >
+                        <div className="relative aspect-video rounded-xl overflow-hidden bg-stone-100">
+                          <SmartImage
+                            src={url}
+                            alt={`${company.name} portfolio ${i + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ) : (
                 <>
                   {hasProjectCategories && (
