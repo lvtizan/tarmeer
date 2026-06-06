@@ -400,18 +400,20 @@ function AdminVisitRecordsContent() {
           <a
             href="/admin/survey-questions"
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+            title={t('Survey Questions', '问卷题目')}
           >
             <ClipboardList className="w-3.5 h-3.5" />
-            {t('Survey Questions', '问卷题目')}
+            <span className="hidden sm:inline">{t('Survey Questions', '问卷题目')}</span>
           </a>
           <a
             href="/field/survey"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+            title={t('Interview Page', '访谈提交页')}
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            {t('Interview Page', '访谈提交页')}
+            <span className="hidden sm:inline">{t('Interview Page', '访谈提交页')}</span>
           </a>
         </div>
       </div>
@@ -452,69 +454,115 @@ function AdminVisitRecordsContent() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-stone-400 text-sm">{t('No records found.', '暂无记录。')}</div>
       ) : (
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-stone-100 text-left">
-                <th className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={filtered.length > 0 && filtered.every(r => selected.has(r.id))}
-                    onChange={e => handleSelectAll(e.target.checked)}
-                    className="rounded border-stone-300"
-                  />
-                </th>
-                <th className="px-4 py-3 font-medium text-stone-500">#</th>
-                <th className="px-4 py-3 font-medium text-stone-500">{t('Company', '公司')}</th>
-                <th className="px-4 py-3 font-medium text-stone-500">{t('Interviewer', '采访人')}</th>
-                <th className="px-4 py-3 font-medium text-stone-500">{t('Status', '状态')}</th>
-                <th className="px-4 py-3 font-medium text-stone-500">{t('Submitted', '提交时间')}</th>
-                <th className="px-4 py-3 font-medium text-stone-500">{t('Created', '创建时间')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(r => (
-                <tr
-                  key={r.id}
-                  className={`border-b border-stone-50 hover:bg-stone-50 transition-colors cursor-pointer ${selected.has(r.id) ? 'bg-amber-50/40' : ''}`}
-                  onClick={() => openDetail(r.id)}
-                >
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+        <>
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2">
+            {filtered.map(r => (
+              <div
+                key={r.id}
+                className={`bg-white rounded-xl border p-4 cursor-pointer active:bg-stone-50 transition-colors ${selected.has(r.id) ? 'border-amber-300 bg-amber-50/30' : 'border-stone-200'}`}
+                onClick={() => openDetail(r.id)}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-[#2c2c2c] text-[15px] leading-snug">{r.company_name || '—'}</div>
+                    {r.linked_company_name && r.linked_company_name !== r.company_name && r.company_ref_id && (
+                      <a
+                        href={`${r.company_ref_source === 'profile' ? `/admin/profile-companies/${r.company_ref_id}` : `/admin/companies/${r.company_ref_id}`}`}
+                        onClick={e => e.stopPropagation()}
+                        className="text-xs text-[#b8864a] hover:underline flex items-center gap-0.5 mt-0.5"
+                      >
+                        → {r.linked_company_name}
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                      r.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {r.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
+                    </span>
                     <input
                       type="checkbox"
                       checked={selected.has(r.id)}
                       onChange={e => handleSelectOne(r.id, e.target.checked)}
                       className="rounded border-stone-300"
                     />
-                  </td>
-                  <td className="px-4 py-3 text-stone-400">{r.id}</td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-[#2c2c2c]">{r.company_name || '—'}</div>
-                    {r.linked_company_name && r.linked_company_name !== r.company_name && r.company_ref_id && (
-                      <a
-                        href={`${r.company_ref_source === 'profile' ? `/admin/profile-companies/${r.company_ref_id}` : `/admin/companies/${r.company_ref_id}`}`}
-                        onClick={e => e.stopPropagation()}
-                        className="text-xs text-[#b8864a] hover:underline mt-0.5 flex items-center gap-1"
-                      >
-                        → {r.linked_company_name}
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-stone-600">{r.interviewer_name}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      r.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {r.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
-                    </span>
-                  </td>
-                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.submitted_at)}</td>
-                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.created_at)}</td>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-stone-500 flex-wrap">
+                  <span className="font-medium text-stone-600">{r.interviewer_name}</span>
+                  <span className={ADMIN_TIME_CLS}>{formatDate(r.submitted_at || r.created_at)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block bg-white rounded-xl border border-stone-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-stone-100 text-left">
+                  <th className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && filtered.every(r => selected.has(r.id))}
+                      onChange={e => handleSelectAll(e.target.checked)}
+                      className="rounded border-stone-300"
+                    />
+                  </th>
+                  <th className="px-4 py-3 font-medium text-stone-500">#</th>
+                  <th className="px-4 py-3 font-medium text-stone-500">{t('Company', '公司')}</th>
+                  <th className="px-4 py-3 font-medium text-stone-500">{t('Interviewer', '采访人')}</th>
+                  <th className="px-4 py-3 font-medium text-stone-500">{t('Status', '状态')}</th>
+                  <th className="px-4 py-3 font-medium text-stone-500">{t('Submitted', '提交时间')}</th>
+                  <th className="px-4 py-3 font-medium text-stone-500">{t('Created', '创建时间')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map(r => (
+                  <tr
+                    key={r.id}
+                    className={`border-b border-stone-50 hover:bg-stone-50 transition-colors cursor-pointer ${selected.has(r.id) ? 'bg-amber-50/40' : ''}`}
+                    onClick={() => openDetail(r.id)}
+                  >
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(r.id)}
+                        onChange={e => handleSelectOne(r.id, e.target.checked)}
+                        className="rounded border-stone-300"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-stone-400">{r.id}</td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-[#2c2c2c]">{r.company_name || '—'}</div>
+                      {r.linked_company_name && r.linked_company_name !== r.company_name && r.company_ref_id && (
+                        <a
+                          href={`${r.company_ref_source === 'profile' ? `/admin/profile-companies/${r.company_ref_id}` : `/admin/companies/${r.company_ref_id}`}`}
+                          onClick={e => e.stopPropagation()}
+                          className="text-xs text-[#b8864a] hover:underline mt-0.5 flex items-center gap-1"
+                        >
+                          → {r.linked_company_name}
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-stone-600">{r.interviewer_name}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        r.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {r.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
+                      </span>
+                    </td>
+                    <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.submitted_at)}</td>
+                    <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

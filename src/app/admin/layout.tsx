@@ -83,7 +83,7 @@ const adminItems = [
     infoZh: '查看外勤人员提交的所有公司访谈记录。',
   },
   {
-    to: '/admin/staff', labelEn: 'Field Staff', labelZh: '外勤人员', icon: UserCheck, superAdminOnly: true,
+    to: '/admin/staff', labelEn: 'Field Staff', labelZh: '外勤人员', icon: UserCheck, permission: 'can_manage_field_staff' as const,
     infoEn: 'Manage field staff accounts — create, activate, or deactivate.',
     infoZh: '管理外勤账号，包括新建、启用和停用。',
   },

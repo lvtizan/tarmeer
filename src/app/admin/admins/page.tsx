@@ -16,6 +16,7 @@ interface Admin {
     can_sort?: boolean;
     can_view_stats?: boolean;
     can_view_interviews?: boolean;
+    can_manage_field_staff?: boolean;
   } | null;
   is_active: boolean;
   last_login: string | null;
@@ -28,7 +29,7 @@ export default function AdminAdminsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editPermissionsAdmin, setEditPermissionsAdmin] = useState<Admin | null>(null);
-  const [editPermissions, setEditPermissions] = useState({ can_approve: false, can_sort: false, can_view_stats: false, can_view_interviews: false });
+  const [editPermissions, setEditPermissions] = useState({ can_approve: false, can_sort: false, can_view_stats: false, can_view_interviews: false, can_manage_field_staff: false });
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [permError, setPermError] = useState('');
   const [createData, setCreateData] = useState({
@@ -40,6 +41,7 @@ export default function AdminAdminsPage() {
       can_sort: false,
       can_view_stats: true,
       can_view_interviews: false,
+      can_manage_field_staff: false,
     },
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,7 +88,7 @@ export default function AdminAdminsPage() {
         email: '',
         password: '',
         fullName: '',
-        permissions: { can_approve: false, can_sort: false, can_view_stats: true, can_view_interviews: false },
+        permissions: { can_approve: false, can_sort: false, can_view_stats: true, can_view_interviews: false, can_manage_field_staff: false },
       });
       await loadAdmins();
     } catch (err: unknown) {
@@ -103,6 +105,7 @@ export default function AdminAdminsPage() {
       can_sort: !!admin.permissions?.can_sort,
       can_view_stats: !!admin.permissions?.can_view_stats,
       can_view_interviews: !!admin.permissions?.can_view_interviews,
+      can_manage_field_staff: !!admin.permissions?.can_manage_field_staff,
     });
     setPermError('');
   };
@@ -219,7 +222,10 @@ export default function AdminAdminsPage() {
                       {admin.permissions?.can_view_stats && (
                         <span className="px-2 py-0.5 bg-stone-100 text-stone-700 text-xs rounded">{t('Stats', '统计')}</span>
                       )}
-                      {!admin.permissions?.can_approve && !admin.permissions?.can_sort && !admin.permissions?.can_view_stats && !admin.permissions?.can_view_interviews && (
+                      {admin.permissions?.can_manage_field_staff && (
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded">{t('Field Staff', '外勤管理')}</span>
+                      )}
+                      {!admin.permissions?.can_approve && !admin.permissions?.can_sort && !admin.permissions?.can_view_stats && !admin.permissions?.can_view_interviews && !admin.permissions?.can_manage_field_staff && (
                         <span className="text-stone-400 text-xs">{t('No permissions', '无权限')}</span>
                       )}
                       <button
@@ -369,6 +375,18 @@ export default function AdminAdminsPage() {
                     />
                     <span className="text-sm">{t('Can view visit records', '可查看访谈记录')}</span>
                   </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={createData.permissions.can_manage_field_staff}
+                      onChange={(e) => setCreateData({
+                        ...createData,
+                        permissions: { ...createData.permissions, can_manage_field_staff: e.target.checked }
+                      })}
+                      className="w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                    />
+                    <span className="text-sm">{t('Can manage field staff', '可开通/管理外勤人员')}</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -460,6 +478,18 @@ export default function AdminAdminsPage() {
                 <div>
                   <div className="text-[15px] font-medium text-[#2c2c2c]">{t('View Visit Records', '查看访谈记录')}</div>
                   <div className="text-[12px] text-stone-500">{t('View field interview records and visit submissions', '查看外勤访谈记录和拜访提交')}</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editPermissions.can_manage_field_staff}
+                  onChange={(e) => setEditPermissions({ ...editPermissions, can_manage_field_staff: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]"
+                />
+                <div>
+                  <div className="text-[15px] font-medium text-[#2c2c2c]">{t('Manage Field Staff', '外勤人员管理')}</div>
+                  <div className="text-[12px] text-stone-500">{t('Create and activate field staff accounts', '开通和管理外勤人员账号')}</div>
                 </div>
               </label>
             </div>
