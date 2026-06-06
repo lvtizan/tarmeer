@@ -996,6 +996,9 @@ class AdminApiClient {
   async toggleStaff(id: number, is_active: boolean) {
     return this.request(`/staff/${id}`, { method: 'PATCH', body: JSON.stringify({ is_active }) });
   }
+  async updateStaffPermissions(id: number, permissions: Record<string, boolean>) {
+    return this.request(`/staff/${id}/permissions`, { method: 'PATCH', body: JSON.stringify({ permissions }) });
+  }
 }
 
 export const adminApi = new AdminApiClient();

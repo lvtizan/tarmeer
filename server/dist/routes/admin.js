@@ -407,6 +407,7 @@ router.delete('/interviews', fieldAdminController_1.deleteInterviews);
 router.get('/staff', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.listStaff);
 router.post('/staff', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.createStaff);
 router.patch('/staff/:id', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.toggleStaff);
+router.patch('/staff/:id/permissions', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.updateStaffPermissions);
 // Enum management — company types & services
 router.get('/enums/company-types', enumAdminController_1.listCompanyTypes);
 router.post('/enums/company-types', adminAuth_1.requireAdmin, enumAdminController_1.createCompanyType);

@@ -16,6 +16,7 @@ interface StaffMember {
   created_at: string;
   last_login: string | null;
   submitted_count: number;
+  permissions: { can_view_interviews?: boolean } | null;
 }
 
 export default function AdminStaffPage() {
@@ -44,6 +45,23 @@ export default function AdminStaffPage() {
       await adminApi.toggleStaff(id, Boolean(next));
       setStaff(list => list.map(s => s.id === id ? { ...s, is_active: next } : s));
       showToast(next ? t('Staff activated', '已启用') : t('Staff deactivated', '已停用'), 'success');
+    } catch {
+      showToast(t('Failed to update', '更新失败'), 'error');
+    }
+  };
+
+  const handleToggleViewRecords = async (id: number, current: boolean) => {
+    const next = !current;
+    try {
+      await adminApi.updateStaffPermissions(id, { can_view_interviews: next });
+      setStaff(list => list.map(s => s.id === id
+        ? { ...s, permissions: { ...s.permissions, can_view_interviews: next } }
+        : s
+      ));
+      showToast(
+        next ? t('Admin access granted', '已开启后台查看权限') : t('Admin access revoked', '已关闭后台查看权限'),
+        'success'
+      );
     } catch {
       showToast(t('Failed to update', '更新失败'), 'error');
     }
@@ -163,6 +181,7 @@ export default function AdminStaffPage() {
                 <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">{t('Joined', '加入时间')}</th>
                 <th className="px-4 py-3 font-medium text-stone-500 hidden lg:table-cell">{t('Last Login', '最后登录')}</th>
                 <th className="px-4 py-3 font-medium text-stone-500 text-right">{t('Submitted', '提交公司')}</th>
+                <th className="px-4 py-3 font-medium text-stone-500 text-center">{t('View Records', '查看记录')}</th>
                 <th className="px-4 py-3 font-medium text-stone-500">{t('Status', '状态')}</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -187,6 +206,23 @@ export default function AdminStaffPage() {
                     ) : (
                       <span className="text-stone-300 text-sm">—</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      type="button"
+                      title={s.permissions?.can_view_interviews
+                        ? t('Click to revoke admin access', '点击关闭后台查看权限')
+                        : t('Click to grant admin panel access to view records', '点击开启后台查看访谈记录权限')}
+                      onClick={() => handleToggleViewRecords(s.id, Boolean(s.permissions?.can_view_interviews))}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                        s.permissions?.can_view_interviews
+                          ? 'bg-[#f5f0e8] text-[#b8864a] border border-[#d4c4a8]'
+                          : 'bg-stone-100 text-stone-400 border border-stone-200 hover:bg-stone-200'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${s.permissions?.can_view_interviews ? 'bg-[#b8864a]' : 'bg-stone-300'}`} />
+                      {s.permissions?.can_view_interviews ? t('On', '已开启') : t('Off', '关闭')}
+                    </button>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${

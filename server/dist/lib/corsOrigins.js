@@ -38,7 +38,7 @@ const CORS_CONFIG = {
         // 'https://your-domain.com',
     ],
     // 允许的HTTP方法
-    allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     // 允许的请求头
     allowedHeaders: ['Content-Type', 'Authorization'],
     // 是否允许发送凭据

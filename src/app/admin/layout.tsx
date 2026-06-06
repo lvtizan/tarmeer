@@ -152,7 +152,7 @@ function CountrySwitcher() {
 }
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
-  const { admin, logout, hasPermission, isSuperAdmin, isLoading } = useAdmin();
+  const { admin, logout, hasPermission, isSuperAdmin, isFieldStaff, isLoading } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
   const isStandalone = standaloneRoutes.includes(pathname);
@@ -260,7 +260,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const filteredNavItems = navItems.filter(item =>
+  // field_staff should not see the core business nav (Homeowners, Companies, etc.)
+  const filteredNavItems = isFieldStaff ? [] : navItems.filter(item =>
     (!('permission' in item) || !(item as { permission?: string }).permission || hasPermission((item as { permission: 'can_approve' | 'can_sort' | 'can_view_stats' }).permission))
   );
 
@@ -414,7 +415,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 <div>
                   <p className="text-sm font-medium text-[#2c2c2c]">{admin.fullName}</p>
                   <p className="text-xs text-stone-500">
-                    {admin.role === 'super_admin' ? t('Super Admin', '超级管理员') : t('Sub Admin', '子管理员')}
+                    {admin.role === 'super_admin'
+                      ? t('Super Admin', '超级管理员')
+                      : admin.role === 'field_staff'
+                      ? t('Field Staff', '外勤人员')
+                      : t('Sub Admin', '子管理员')}
                   </p>
                 </div>
               </div>

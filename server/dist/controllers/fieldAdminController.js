@@ -10,6 +10,7 @@ exports.deleteInterviews = deleteInterviews;
 exports.listStaff = listStaff;
 exports.createStaff = createStaff;
 exports.toggleStaff = toggleStaff;
+exports.updateStaffPermissions = updateStaffPermissions;
 const database_1 = __importDefault(require("../config/database"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 // GET /api/admin/interviews
@@ -110,7 +111,7 @@ async function deleteInterviews(req, res) {
 async function listStaff(_req, res) {
     try {
         const [rows] = await database_1.default.execute(`
-      SELECT au.id, au.email, au.full_name, au.is_active, au.created_at, au.last_login,
+      SELECT au.id, au.email, au.full_name, au.is_active, au.created_at, au.last_login, au.permissions,
              COUNT(ci.id) AS submitted_count
       FROM admin_users au
       LEFT JOIN company_interviews ci ON ci.interviewer_id = au.id AND ci.status = 'submitted'
@@ -118,7 +119,12 @@ async function listStaff(_req, res) {
       GROUP BY au.id
       ORDER BY au.created_at DESC
     `);
-        res.json({ staff: rows });
+        // Parse permissions JSON for each row
+        const staff = rows.map(r => ({
+            ...r,
+            permissions: typeof r.permissions === 'string' ? JSON.parse(r.permissions || '{}') : (r.permissions || {}),
+        }));
+        res.json({ staff });
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to list staff.' });
@@ -156,5 +162,26 @@ async function toggleStaff(req, res) {
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to update staff.' });
+    }
+}
+// PATCH /api/admin/staff/:id/permissions — update staff permissions
+async function updateStaffPermissions(req, res) {
+    const { id } = req.params;
+    const { permissions } = req.body;
+    if (!permissions || typeof permissions !== 'object') {
+        return res.status(400).json({ error: 'permissions object required.' });
+    }
+    // Only allow safe permission keys for field_staff
+    const allowed = ['can_view_interviews'];
+    const safe = {};
+    for (const key of allowed) {
+        if (key in permissions) safe[key] = Boolean(permissions[key]);
+    }
+    try {
+        await database_1.default.execute('UPDATE admin_users SET permissions = ? WHERE id = ? AND role = ?', [JSON.stringify(safe), id, 'field_staff']);
+        res.json({ ok: true });
+    }
+    catch (e) {
+        res.status(500).json({ error: 'Failed to update permissions.' });
     }
 }

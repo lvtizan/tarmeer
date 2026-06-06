@@ -24,7 +24,8 @@ function LoginContent() {
 
   useEffect(() => {
     if (admin) {
-      router.push(admin.role === 'field_staff' ? '/field/survey' : '/admin');
+      const isLeader = admin.role === 'field_staff' && admin.permissions?.can_view_interviews;
+      router.push(admin.role === 'field_staff' && !isLeader ? '/field/survey' : '/admin');
     }
   }, [admin, router]);
 
@@ -41,7 +42,8 @@ function LoginContent() {
 
     try {
       const result = await login(email, password);
-      router.push(result?.admin?.role === 'field_staff' ? '/field/survey' : '/admin');
+      const isLeader = result?.admin?.role === 'field_staff' && result?.admin?.permissions?.can_view_interviews;
+      router.push(result?.admin?.role === 'field_staff' && !isLeader ? '/field/survey' : '/admin');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
