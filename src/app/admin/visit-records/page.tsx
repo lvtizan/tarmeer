@@ -264,40 +264,35 @@ function AdminVisitRecordsContent() {
 
               {/* Meta — compact inline on mobile, grid on desktop */}
               <div className="pt-3 border-t border-stone-100">
-                {/* Mobile: inline chips */}
-                <div className="sm:hidden flex flex-wrap gap-x-4 gap-y-2 text-xs">
-                  <span className="flex items-center gap-1 text-stone-500">
-                    <span className="text-stone-400">{t('Interviewer', '采访人')}</span>
-                    <span className="font-medium text-stone-700">{detail.interviewer_name || '—'}</span>
-                  </span>
-                  {detail.company_name && (
-                    <span className="flex items-center gap-1 text-stone-500">
-                      <span className="text-stone-400">{t('Interview Subject', '访谈对象')}</span>
+                {/* Mobile: values only, no labels */}
+                <div className="sm:hidden space-y-1 text-sm">
+                  <div className="flex items-center gap-2 flex-wrap text-stone-600">
+                    {detail.interviewer_name && <span className="font-medium text-[#2c2c2c]">{detail.interviewer_name}</span>}
+                    {detail.company_name && <>
+                      <span className="text-stone-300">·</span>
                       {detail.company_ref_id ? (
                         <a
                           href={`${detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}?from=visit-records&recordId=${detail.id}`}
-                          className="font-medium text-[#b8864a] hover:underline inline-flex items-center gap-0.5"
+                          className="text-[#b8864a] hover:underline inline-flex items-center gap-0.5"
                         >
-                          {detail.company_name}<ExternalLink size={10} />
+                          {detail.company_name}<ExternalLink size={11} />
                         </a>
                       ) : (
-                        <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} className="font-medium text-stone-700 inline-flex items-center gap-0.5">
-                          {detail.company_name}<ExternalLink size={10} className="text-stone-400" />
+                        <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} className="text-stone-500 inline-flex items-center gap-0.5">
+                          {detail.company_name}<ExternalLink size={11} className="text-stone-400" />
                         </a>
                       )}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1 text-stone-500">
-                    <span className="text-stone-400">{t('Created', '创建')}</span>
-                    <span className={ADMIN_TIME_CLS}>{formatDate(detail.created_at)}</span>
-                  </span>
-                  {detail.submitted_at && (
-                    <span className="flex items-center gap-1 text-stone-500">
-                      <span className="text-stone-400">{t('Submitted', '提交')}</span>
-                      <span className={ADMIN_TIME_CLS}>{formatDate(detail.submitted_at)}</span>
-                    </span>
-                  )}
-                  <span className="text-stone-400">#{detail.id}</span>
+                    </>}
+                  </div>
+                  <div className={`flex items-center gap-2 flex-wrap ${ADMIN_TIME_CLS}`}>
+                    <span>{formatDate(detail.created_at)}</span>
+                    {detail.submitted_at && <>
+                      <span className="text-stone-300">→</span>
+                      <span>{formatDate(detail.submitted_at)}</span>
+                    </>}
+                    <span className="text-stone-300">·</span>
+                    <span>#{detail.id}</span>
+                  </div>
                 </div>
 
                 {/* Desktop: grid */}
@@ -391,7 +386,7 @@ function AdminVisitRecordsContent() {
                       if (isEmpty) return null;
                       return (
                         <div key={field.key} className="flex items-start gap-4 px-5 py-3.5">
-                          <div className="w-28 sm:w-36 flex-shrink-0 text-xs text-stone-400 pt-0.5 leading-snug">{field.label}</div>
+                          <div className="w-28 sm:w-36 flex-shrink-0 text-sm text-stone-400 pt-0.5 leading-snug">{field.label}</div>
                           <div className="flex-1 min-w-0"><FieldValue value={val} /></div>
                         </div>
                       );
