@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { adminApi, fieldApi } from '@/lib/adminApi';
+import { showConfirm } from '@/components/ui/ConfirmModal';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
@@ -153,17 +154,23 @@ function AdminVisitRecordsContent() {
 
   const handleBatchDelete = async () => {
     const count = selected.size;
-    const confirmed = window.prompt(`删除 ${count} 条访谈记录？输入 DELETE 确认：`);
-    if (confirmed !== 'DELETE') return;
-    setDeleting(true);
-    try {
-      await adminApi.deleteInterviews(Array.from(selected));
-      setSelected(new Set());
-      await fetchRecords();
-    } catch {
-      alert('删除失败，请重试');
-    }
-    setDeleting(false);
+    const ids = Array.from(selected);
+    showConfirm({
+      title: `删除 ${count} 条访谈记录`,
+      message: '此操作不可恢复，记录将被永久删除。',
+      requireText: 'DELETE',
+      onConfirm: async () => {
+        setDeleting(true);
+        try {
+          await adminApi.deleteInterviews(ids);
+          setSelected(new Set());
+          await fetchRecords();
+        } catch {
+          alert('删除失败，请重试');
+        }
+        setDeleting(false);
+      },
+    });
   };
 
   const openDetail = async (id: number) => {
@@ -460,39 +467,50 @@ function AdminVisitRecordsContent() {
             {filtered.map(r => (
               <div
                 key={r.id}
-                className={`bg-white rounded-xl border p-4 cursor-pointer active:bg-stone-50 transition-colors ${selected.has(r.id) ? 'border-amber-300 bg-amber-50/30' : 'border-stone-200'}`}
+                className={`bg-white rounded-xl border flex items-stretch cursor-pointer transition-colors ${selected.has(r.id) ? 'border-amber-300 bg-amber-50/30' : 'border-stone-200'}`}
                 onClick={() => openDetail(r.id)}
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-[#2c2c2c] text-[15px] leading-snug">{r.company_name || '—'}</div>
-                    {r.linked_company_name && r.linked_company_name !== r.company_name && r.company_ref_id && (
-                      <a
-                        href={`${r.company_ref_source === 'profile' ? `/admin/profile-companies/${r.company_ref_id}` : `/admin/companies/${r.company_ref_id}`}`}
-                        onClick={e => e.stopPropagation()}
-                        className="text-xs text-[#b8864a] hover:underline flex items-center gap-0.5 mt-0.5"
-                      >
-                        → {r.linked_company_name}
-                      </a>
+                {/* Checkbox — large touch target on left */}
+                <div
+                  className="flex-shrink-0 flex items-center justify-center w-12 border-r border-stone-100"
+                  onClick={e => { e.stopPropagation(); handleSelectOne(r.id, !selected.has(r.id)); }}
+                >
+                  <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                    style={{ borderColor: selected.has(r.id) ? '#b8864a' : '#d1cdc7', backgroundColor: selected.has(r.id) ? '#b8864a' : 'white' }}
+                  >
+                    {selected.has(r.id) && (
+                      <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                </div>
+
+                {/* Card content */}
+                <div className="flex-1 min-w-0 p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-[#2c2c2c] text-[15px] leading-snug">{r.company_name || '—'}</div>
+                      {r.linked_company_name && r.linked_company_name !== r.company_name && r.company_ref_id && (
+                        <a
+                          href={`${r.company_ref_source === 'profile' ? `/admin/profile-companies/${r.company_ref_id}` : `/admin/companies/${r.company_ref_id}`}`}
+                          onClick={e => e.stopPropagation()}
+                          className="text-xs text-[#b8864a] hover:underline flex items-center gap-0.5 mt-0.5"
+                        >
+                          → {r.linked_company_name}
+                        </a>
+                      )}
+                    </div>
+                    <span className={`flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       r.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                     }`}>
                       {r.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
                     </span>
-                    <input
-                      type="checkbox"
-                      checked={selected.has(r.id)}
-                      onChange={e => handleSelectOne(r.id, e.target.checked)}
-                      className="rounded border-stone-300"
-                    />
                   </div>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-stone-500 flex-wrap">
-                  <span className="font-medium text-stone-600">{r.interviewer_name}</span>
-                  <span className={ADMIN_TIME_CLS}>{formatDate(r.submitted_at || r.created_at)}</span>
+                  <div className="flex items-center gap-3 text-xs text-stone-500 flex-wrap">
+                    <span className="font-medium text-stone-600">{r.interviewer_name}</span>
+                    <span className={ADMIN_TIME_CLS}>{formatDate(r.submitted_at || r.created_at)}</span>
+                  </div>
                 </div>
               </div>
             ))}
