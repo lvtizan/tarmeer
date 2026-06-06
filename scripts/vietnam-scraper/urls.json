@@ -1,77 +1,1437 @@
 [
-  { "url": "https://www.ancuong.com", "category": "building-materials", "note": "Gỗ An Cường - top wood/interior materials brand" },
-  { "url": "https://www.vicostone.com", "category": "building-materials", "note": "Vicostone - quartz stone surfaces" },
-  { "url": "https://www.viglacera.com.vn", "category": "building-materials", "note": "Viglacera - tiles, glass, ceramics" },
-  { "url": "https://vlxdbd.com.vn", "category": "building-materials", "note": "Vật liệu xây dựng Bình Dương" },
-  { "url": "https://www.magisstone.com", "category": "building-materials", "note": "Magis Stone - imported stone" },
-  { "url": "https://www.khosango.com", "category": "building-materials", "note": "Kho Sàn Gỗ - wood flooring" },
-  { "url": "https://www.floordi.com", "category": "building-materials", "note": "Floordi - premium flooring" },
-  { "url": "https://sango9x.com", "category": "building-materials", "note": "Sàn Gỗ 9X - flooring" },
-  { "url": "https://www.muagach.vn", "category": "building-materials", "note": "Mua Gạch - tiles & flooring" },
-  { "url": "https://hinomart.vn", "category": "building-materials", "note": "Hinomart - building materials retail" },
-  { "url": "https://hongphuc.net.vn", "category": "building-materials", "note": "Hồng Phúc - tiles & sanitary" },
-  { "url": "https://www.sonnuocgiasi.vn", "category": "building-materials", "note": "Sơn nước - paint distributor" },
-  { "url": "https://binhminhpaint.com", "category": "building-materials", "note": "Bình Minh Paint - paint" },
-  { "url": "https://www.sonnippon.net.vn", "category": "building-materials", "note": "Sơn Nippon Vietnam" },
-  { "url": "https://phanphoison.com.vn", "category": "building-materials", "note": "Phân phối sơn Dulux/Kova" },
-  { "url": "https://www.nhuatienphuong.vn", "category": "building-materials", "note": "Nhựa Tiền Phong - PVC pipes" },
-  { "url": "https://www.binhminhplastic.com.vn", "category": "building-materials", "note": "Nhựa Bình Minh - plastic pipes" },
-  { "url": "https://www.phanvu.com.vn", "category": "building-materials", "note": "Phan Vũ - concrete piles" },
-  { "url": "https://dongsuh.vn", "category": "building-materials", "note": "Dongsuh - Korean furniture Vietnam" },
-  { "url": "https://www.hoaphat.com.vn", "category": "building-materials", "note": "Hòa Phát - steel & materials" },
-
-  { "url": "https://xhomesg.com.vn", "category": "interior-design", "note": "XHOME - largest interior design co VN" },
-  { "url": "https://morehome.vn", "category": "interior-design", "note": "MoreHome - full service interior" },
-  { "url": "https://s-housing.vn", "category": "interior-design", "note": "S-Housing - 10yr interior design" },
-  { "url": "https://moho.com.vn", "category": "interior-design", "note": "MOHO by Savimex - EU standard furniture" },
-  { "url": "https://amore.vn", "category": "interior-design", "note": "A&More - Hanoi interior design" },
-  { "url": "https://byzan.vn", "category": "interior-design", "note": "Byzan - modern style pioneer" },
-  { "url": "https://congdesign.vn", "category": "interior-design", "note": "Cộng Design - HCMC top 10" },
-  { "url": "https://ikina.vn", "category": "interior-design", "note": "IKINA - feng shui integrated design" },
-  { "url": "https://safurco.com", "category": "interior-design", "note": "Safurco - Da Nang top interior" },
-  { "url": "https://thaicong.com", "category": "interior-design", "note": "Thái Công - luxury European style" },
-  { "url": "https://nhaxinh.com", "category": "interior-design", "note": "Nhà Xinh - residential interior HCMC" },
-  { "url": "https://levindecor.com", "category": "interior-design", "note": "Lê Vin Decor - 15yr office & residential" },
-  { "url": "https://noithatqi.vn", "category": "interior-design", "note": "Qi Concept - apartment & villa design" },
-  { "url": "https://nhadepshouse.com", "category": "interior-design", "note": "S-House - villa & apartment" },
-  { "url": "https://deco-crystal.com", "category": "interior-design", "note": "Crystal Design TPL - office interior" },
-  { "url": "https://akisa.vn", "category": "interior-design", "note": "AKISA - 12yr nationwide" },
-  { "url": "https://klux.com.vn", "category": "interior-design", "note": "KLUX - Hanoi interior & construction" },
-  { "url": "https://chihaodecor.vn", "category": "interior-design", "note": "Chí Hào Decor - HCMC" },
-  { "url": "https://hpdecor.vn", "category": "interior-design", "note": "HPDecor - Hanoi showroom design" },
-  { "url": "https://luxurydecor.vn", "category": "interior-design", "note": "Luxury Decor Vietnam" },
-  { "url": "https://housedesign.vn", "category": "interior-design", "note": "House Design - HCMC" },
-  { "url": "https://www.lanha.vn", "category": "interior-design", "note": "Lanha - HCMC interior" },
-  { "url": "https://hungphatsaigon.vn", "category": "furniture", "note": "Hưng Phát Sài Gòn - premium imported furniture" },
-  { "url": "https://noithatgiaphong.vn", "category": "furniture", "note": "Nội Thất Gia Phong - Da Nang wood & sofa" },
-  { "url": "https://noithatvietadong.vn", "category": "furniture", "note": "Việt Á Đông - walnut wood furniture" },
-  { "url": "https://erado.vn", "category": "furniture", "note": "Erado - imported luxury furniture" },
-  { "url": "https://sofagiuongmanhhe.com", "category": "furniture", "note": "Sofa Giường Mạnh Hệ - sofa beds" },
-  { "url": "https://zito.vn", "category": "furniture", "note": "ZITO - natural wood sofa" },
-  { "url": "https://furnist.vn", "category": "furniture", "note": "Furnist - export standard furniture" },
-  { "url": "https://aacorporation.com", "category": "furniture", "note": "AA Corp - largest furniture group VN" },
-  { "url": "https://woodnet.vn", "category": "furniture", "note": "Woodnet - furniture export 32 countries" },
-
-  { "url": "https://maxhomegroup.vn", "category": "construction", "note": "Maxhome - turnkey construction" },
-  { "url": "https://betaviet.vn", "category": "construction", "note": "BetaViet - villa & architecture 500 staff" },
-  { "url": "https://neohouse.vn", "category": "construction", "note": "NEOHouse - 12yr villa construction HCMC" },
-  { "url": "https://thietkeaq.com", "category": "construction", "note": "Thiết Kế AQ - architecture & interior" },
-  { "url": "https://vking.vn", "category": "construction", "note": "VKing - villa design & build HCMC" },
-  { "url": "https://kienanvinh.com", "category": "construction", "note": "Kiến An Vinh - French-style villas" },
-  { "url": "https://nhaphoviet.com.vn", "category": "construction", "note": "Phố Việt - townhouse & villa HCMC" },
-  { "url": "https://thietkenhadepmoi.com", "category": "construction", "note": "Nhà Đẹp Mới - house design" },
-  { "url": "https://ptthietke.com", "category": "construction", "note": "PT Kiến Trúc - hotel & villa design" },
-
-  { "url": "https://donggia.vn", "category": "furniture", "note": "Đồng Gia - walnut wood interior 13yr" },
-  { "url": "https://noithatbyt.vn", "category": "interior-design", "note": "Nội Thất BYT - HCMC interior" },
-  { "url": "https://work-wonders.com.vn", "category": "interior-design", "note": "Work Wonders - office design" },
-  { "url": "https://www.deco-crystal.com", "category": "interior-design", "note": "Deco Crystal - office fitout" },
-  { "url": "https://thietkenoithatatz.com", "category": "interior-design", "note": "ATZ Design - Hanoi interior" },
-  { "url": "https://chatuy.vn", "category": "interior-design", "note": "Cha Tuy - interior design" },
-  { "url": "https://xluxury.vn", "category": "interior-design", "note": "XLuxury - luxury interior Hanoi" },
-  { "url": "https://neohouse.vn", "category": "construction", "note": "NEOHouse JSC - villa construction" },
-  { "url": "https://www.hpdecor.vn", "category": "interior-design", "note": "HP Decor Hanoi" },
-  { "url": "https://tavaco.vn", "category": "building-materials", "note": "Tavaco - Dulux paint distributor" },
-  { "url": "https://sonnuoctruongkha.com", "category": "building-materials", "note": "Trường Kha - paint distributor HCMC" },
-  { "url": "https://www.khosango.com", "category": "building-materials", "note": "Kho Sàn Gỗ duplicate" }
+  {
+    "url": "https://www.ancuong.com",
+    "category": "building-materials",
+    "note": "Gỗ An Cường - top wood/interior materials brand"
+  },
+  {
+    "url": "https://www.vicostone.com",
+    "category": "building-materials",
+    "note": "Vicostone - quartz stone surfaces"
+  },
+  {
+    "url": "https://www.viglacera.com.vn",
+    "category": "building-materials",
+    "note": "Viglacera - tiles, glass, ceramics"
+  },
+  {
+    "url": "https://vlxdbd.com.vn",
+    "category": "building-materials",
+    "note": "Vật liệu xây dựng Bình Dương"
+  },
+  {
+    "url": "https://www.magisstone.com",
+    "category": "building-materials",
+    "note": "Magis Stone - imported stone"
+  },
+  {
+    "url": "https://www.khosango.com",
+    "category": "building-materials",
+    "note": "Kho Sàn Gỗ - wood flooring"
+  },
+  {
+    "url": "https://www.floordi.com",
+    "category": "building-materials",
+    "note": "Floordi - premium flooring"
+  },
+  {
+    "url": "https://sango9x.com",
+    "category": "building-materials",
+    "note": "Sàn Gỗ 9X - flooring"
+  },
+  {
+    "url": "https://www.muagach.vn",
+    "category": "building-materials",
+    "note": "Mua Gạch - tiles & flooring"
+  },
+  {
+    "url": "https://hinomart.vn",
+    "category": "building-materials",
+    "note": "Hinomart - building materials retail"
+  },
+  {
+    "url": "https://hongphuc.net.vn",
+    "category": "building-materials",
+    "note": "Hồng Phúc - tiles & sanitary"
+  },
+  {
+    "url": "https://www.sonnuocgiasi.vn",
+    "category": "building-materials",
+    "note": "Sơn nước - paint distributor"
+  },
+  {
+    "url": "https://binhminhpaint.com",
+    "category": "building-materials",
+    "note": "Bình Minh Paint - paint"
+  },
+  {
+    "url": "https://www.sonnippon.net.vn",
+    "category": "building-materials",
+    "note": "Sơn Nippon Vietnam"
+  },
+  {
+    "url": "https://phanphoison.com.vn",
+    "category": "building-materials",
+    "note": "Phân phối sơn Dulux/Kova"
+  },
+  {
+    "url": "https://www.nhuatienphuong.vn",
+    "category": "building-materials",
+    "note": "Nhựa Tiền Phong - PVC pipes"
+  },
+  {
+    "url": "https://www.binhminhplastic.com.vn",
+    "category": "building-materials",
+    "note": "Nhựa Bình Minh - plastic pipes"
+  },
+  {
+    "url": "https://www.phanvu.com.vn",
+    "category": "building-materials",
+    "note": "Phan Vũ - concrete piles"
+  },
+  {
+    "url": "https://dongsuh.vn",
+    "category": "building-materials",
+    "note": "Dongsuh - Korean furniture Vietnam"
+  },
+  {
+    "url": "https://www.hoaphat.com.vn",
+    "category": "building-materials",
+    "note": "Hòa Phát - steel & materials"
+  },
+  {
+    "url": "https://xhomesg.com.vn",
+    "category": "interior-design",
+    "note": "XHOME - largest interior design co VN"
+  },
+  {
+    "url": "https://morehome.vn",
+    "category": "interior-design",
+    "note": "MoreHome - full service interior"
+  },
+  {
+    "url": "https://s-housing.vn",
+    "category": "interior-design",
+    "note": "S-Housing - 10yr interior design"
+  },
+  {
+    "url": "https://moho.com.vn",
+    "category": "interior-design",
+    "note": "MOHO by Savimex - EU standard furniture"
+  },
+  {
+    "url": "https://amore.vn",
+    "category": "interior-design",
+    "note": "A&More - Hanoi interior design"
+  },
+  {
+    "url": "https://byzan.vn",
+    "category": "interior-design",
+    "note": "Byzan - modern style pioneer"
+  },
+  {
+    "url": "https://congdesign.vn",
+    "category": "interior-design",
+    "note": "Cộng Design - HCMC top 10"
+  },
+  {
+    "url": "https://ikina.vn",
+    "category": "interior-design",
+    "note": "IKINA - feng shui integrated design"
+  },
+  {
+    "url": "https://safurco.com",
+    "category": "interior-design",
+    "note": "Safurco - Da Nang top interior"
+  },
+  {
+    "url": "https://thaicong.com",
+    "category": "interior-design",
+    "note": "Thái Công - luxury European style"
+  },
+  {
+    "url": "https://nhaxinh.com",
+    "category": "interior-design",
+    "note": "Nhà Xinh - residential interior HCMC"
+  },
+  {
+    "url": "https://levindecor.com",
+    "category": "interior-design",
+    "note": "Lê Vin Decor - 15yr office & residential"
+  },
+  {
+    "url": "https://noithatqi.vn",
+    "category": "interior-design",
+    "note": "Qi Concept - apartment & villa design"
+  },
+  {
+    "url": "https://nhadepshouse.com",
+    "category": "interior-design",
+    "note": "S-House - villa & apartment"
+  },
+  {
+    "url": "https://deco-crystal.com",
+    "category": "interior-design",
+    "note": "Crystal Design TPL - office interior"
+  },
+  {
+    "url": "https://akisa.vn",
+    "category": "interior-design",
+    "note": "AKISA - 12yr nationwide"
+  },
+  {
+    "url": "https://klux.com.vn",
+    "category": "interior-design",
+    "note": "KLUX - Hanoi interior & construction"
+  },
+  {
+    "url": "https://chihaodecor.vn",
+    "category": "interior-design",
+    "note": "Chí Hào Decor - HCMC"
+  },
+  {
+    "url": "https://hpdecor.vn",
+    "category": "interior-design",
+    "note": "HPDecor - Hanoi showroom design"
+  },
+  {
+    "url": "https://luxurydecor.vn",
+    "category": "interior-design",
+    "note": "Luxury Decor Vietnam"
+  },
+  {
+    "url": "https://housedesign.vn",
+    "category": "interior-design",
+    "note": "House Design - HCMC"
+  },
+  {
+    "url": "https://www.lanha.vn",
+    "category": "interior-design",
+    "note": "Lanha - HCMC interior"
+  },
+  {
+    "url": "https://hungphatsaigon.vn",
+    "category": "furniture",
+    "note": "Hưng Phát Sài Gòn - premium imported furniture"
+  },
+  {
+    "url": "https://noithatgiaphong.vn",
+    "category": "furniture",
+    "note": "Nội Thất Gia Phong - Da Nang wood & sofa"
+  },
+  {
+    "url": "https://noithatvietadong.vn",
+    "category": "furniture",
+    "note": "Việt Á Đông - walnut wood furniture"
+  },
+  {
+    "url": "https://erado.vn",
+    "category": "furniture",
+    "note": "Erado - imported luxury furniture"
+  },
+  {
+    "url": "https://sofagiuongmanhhe.com",
+    "category": "furniture",
+    "note": "Sofa Giường Mạnh Hệ - sofa beds"
+  },
+  {
+    "url": "https://zito.vn",
+    "category": "furniture",
+    "note": "ZITO - natural wood sofa"
+  },
+  {
+    "url": "https://furnist.vn",
+    "category": "furniture",
+    "note": "Furnist - export standard furniture"
+  },
+  {
+    "url": "https://aacorporation.com",
+    "category": "furniture",
+    "note": "AA Corp - largest furniture group VN"
+  },
+  {
+    "url": "https://woodnet.vn",
+    "category": "furniture",
+    "note": "Woodnet - furniture export 32 countries"
+  },
+  {
+    "url": "https://maxhomegroup.vn",
+    "category": "construction",
+    "note": "Maxhome - turnkey construction"
+  },
+  {
+    "url": "https://betaviet.vn",
+    "category": "construction",
+    "note": "BetaViet - villa & architecture 500 staff"
+  },
+  {
+    "url": "https://neohouse.vn",
+    "category": "construction",
+    "note": "NEOHouse - 12yr villa construction HCMC"
+  },
+  {
+    "url": "https://thietkeaq.com",
+    "category": "construction",
+    "note": "Thiết Kế AQ - architecture & interior"
+  },
+  {
+    "url": "https://vking.vn",
+    "category": "construction",
+    "note": "VKing - villa design & build HCMC"
+  },
+  {
+    "url": "https://kienanvinh.com",
+    "category": "construction",
+    "note": "Kiến An Vinh - French-style villas"
+  },
+  {
+    "url": "https://nhaphoviet.com.vn",
+    "category": "construction",
+    "note": "Phố Việt - townhouse & villa HCMC"
+  },
+  {
+    "url": "https://thietkenhadepmoi.com",
+    "category": "construction",
+    "note": "Nhà Đẹp Mới - house design"
+  },
+  {
+    "url": "https://ptthietke.com",
+    "category": "construction",
+    "note": "PT Kiến Trúc - hotel & villa design"
+  },
+  {
+    "url": "https://donggia.vn",
+    "category": "furniture",
+    "note": "Đồng Gia - walnut wood interior 13yr"
+  },
+  {
+    "url": "https://noithatbyt.vn",
+    "category": "interior-design",
+    "note": "Nội Thất BYT - HCMC interior"
+  },
+  {
+    "url": "https://work-wonders.com.vn",
+    "category": "interior-design",
+    "note": "Work Wonders - office design"
+  },
+  {
+    "url": "https://www.deco-crystal.com",
+    "category": "interior-design",
+    "note": "Deco Crystal - office fitout"
+  },
+  {
+    "url": "https://thietkenoithatatz.com",
+    "category": "interior-design",
+    "note": "ATZ Design - Hanoi interior"
+  },
+  {
+    "url": "https://chatuy.vn",
+    "category": "interior-design",
+    "note": "Cha Tuy - interior design"
+  },
+  {
+    "url": "https://xluxury.vn",
+    "category": "interior-design",
+    "note": "XLuxury - luxury interior Hanoi"
+  },
+  {
+    "url": "https://neohouse.vn",
+    "category": "construction",
+    "note": "NEOHouse JSC - villa construction"
+  },
+  {
+    "url": "https://www.hpdecor.vn",
+    "category": "interior-design",
+    "note": "HP Decor Hanoi"
+  },
+  {
+    "url": "https://tavaco.vn",
+    "category": "building-materials",
+    "note": "Tavaco - Dulux paint distributor"
+  },
+  {
+    "url": "https://sonnuoctruongkha.com",
+    "category": "building-materials",
+    "note": "Trường Kha - paint distributor HCMC"
+  },
+  {
+    "url": "https://www.khosango.com",
+    "category": "building-materials",
+    "note": "Kho Sàn Gỗ duplicate"
+  },
+  {
+    "url": "https://spacet.vn",
+    "category": "interior-design",
+    "note": "Spacet - VN interior platform"
+  },
+  {
+    "url": "https://noidatviet.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Việt"
+  },
+  {
+    "url": "https://www.cadi-design.com",
+    "category": "interior-design",
+    "note": "CADI Design"
+  },
+  {
+    "url": "https://www.dcinterior.vn",
+    "category": "interior-design",
+    "note": "DC Interior"
+  },
+  {
+    "url": "https://pebblehouse.vn",
+    "category": "interior-design",
+    "note": "Pebble House"
+  },
+  {
+    "url": "https://www.mhdesign.vn",
+    "category": "interior-design",
+    "note": "MH Design"
+  },
+  {
+    "url": "https://www.atriumdesign.com.vn",
+    "category": "interior-design",
+    "note": "Atrium Design"
+  },
+  {
+    "url": "https://noi-that-la-vie.vn",
+    "category": "interior-design",
+    "note": "La Vie Interior"
+  },
+  {
+    "url": "https://www.kienviet.net",
+    "category": "construction",
+    "note": "Kienviet Architecture"
+  },
+  {
+    "url": "https://www.archstudio.vn",
+    "category": "construction",
+    "note": "ArchStudio"
+  },
+  {
+    "url": "https://www.a21studio.com.vn",
+    "category": "construction",
+    "note": "A21 Studio"
+  },
+  {
+    "url": "https://www.votrongnghia.com",
+    "category": "construction",
+    "note": "Vo Trong Nghia Architects"
+  },
+  {
+    "url": "https://www.mia.vn",
+    "category": "interior-design",
+    "note": "MIA Design Studio"
+  },
+  {
+    "url": "https://www.noithatvinhphat.vn",
+    "category": "furniture",
+    "note": "Vĩnh Phát Furniture"
+  },
+  {
+    "url": "https://www.saigondecor.com.vn",
+    "category": "interior-design",
+    "note": "Saigon Decor"
+  },
+  {
+    "url": "https://www.fuhome.com.vn",
+    "category": "furniture",
+    "note": "Fu Home"
+  },
+  {
+    "url": "https://homedesign.vn",
+    "category": "interior-design",
+    "note": "Home Design VN"
+  },
+  {
+    "url": "https://www.studiogreen.vn",
+    "category": "interior-design",
+    "note": "Studio Green"
+  },
+  {
+    "url": "https://www.idealinterior.vn",
+    "category": "interior-design",
+    "note": "Ideal Interior"
+  },
+  {
+    "url": "https://noithatphongphu.vn",
+    "category": "furniture",
+    "note": "Phong Phú Interior"
+  },
+  {
+    "url": "https://www.ehome.com.vn",
+    "category": "interior-design",
+    "note": "eHome"
+  },
+  {
+    "url": "https://www.goldenbell.com.vn",
+    "category": "interior-design",
+    "note": "Golden Bell Design"
+  },
+  {
+    "url": "https://stu.com.vn",
+    "category": "interior-design",
+    "note": "STU Interior"
+  },
+  {
+    "url": "https://www.thietkenhahanoi.com",
+    "category": "construction",
+    "note": "Thiết Kế Nhà Hà Nội"
+  },
+  {
+    "url": "https://www.kientrucnhaxanh.vn",
+    "category": "construction",
+    "note": "Nhà Xanh Architecture"
+  },
+  {
+    "url": "https://www.kientrucana.com",
+    "category": "construction",
+    "note": "ANA Architecture"
+  },
+  {
+    "url": "https://www.bigstudio.com.vn",
+    "category": "interior-design",
+    "note": "Big Studio"
+  },
+  {
+    "url": "https://www.savilla.vn",
+    "category": "construction",
+    "note": "Savilla Architecture"
+  },
+  {
+    "url": "https://www.quangvinhdesign.com",
+    "category": "interior-design",
+    "note": "Quang Vinh Design"
+  },
+  {
+    "url": "https://onehome.vn",
+    "category": "interior-design",
+    "note": "One Home"
+  },
+  {
+    "url": "https://www.neohouse.vn",
+    "category": "interior-design",
+    "note": "Neohouse"
+  },
+  {
+    "url": "https://www.max-decor.com.vn",
+    "category": "interior-design",
+    "note": "Max Decor"
+  },
+  {
+    "url": "https://www.noithatedenhome.vn",
+    "category": "interior-design",
+    "note": "Eden Home"
+  },
+  {
+    "url": "https://www.viethome.vn",
+    "category": "interior-design",
+    "note": "Viet Home"
+  },
+  {
+    "url": "https://www.interiordesign.vn",
+    "category": "interior-design",
+    "note": "Interior Design VN"
+  },
+  {
+    "url": "https://www.roomly.vn",
+    "category": "interior-design",
+    "note": "Roomly"
+  },
+  {
+    "url": "https://www.exhome.vn",
+    "category": "interior-design",
+    "note": "Ex Home"
+  },
+  {
+    "url": "https://noithatleo.vn",
+    "category": "furniture",
+    "note": "Leo Furniture"
+  },
+  {
+    "url": "https://www.gdecor.vn",
+    "category": "interior-design",
+    "note": "GDecor"
+  },
+  {
+    "url": "https://www.alphahome.vn",
+    "category": "interior-design",
+    "note": "Alpha Home"
+  },
+  {
+    "url": "https://www.hgdesign.com.vn",
+    "category": "interior-design",
+    "note": "HG Design"
+  },
+  {
+    "url": "https://www.noithatanphu.vn",
+    "category": "furniture",
+    "note": "An Phú Furniture"
+  },
+  {
+    "url": "https://www.kientrucviet.net",
+    "category": "construction",
+    "note": "Kiến Trúc Việt"
+  },
+  {
+    "url": "https://www.landona.vn",
+    "category": "construction",
+    "note": "Landona Architecture"
+  },
+  {
+    "url": "https://www.studiodimon.vn",
+    "category": "interior-design",
+    "note": "Dimon Studio"
+  },
+  {
+    "url": "https://www.duandesign.vn",
+    "category": "interior-design",
+    "note": "Duân Design"
+  },
+  {
+    "url": "https://www.kos.vn",
+    "category": "interior-design",
+    "note": "KOS Design"
+  },
+  {
+    "url": "https://www.noithatcaocap.vn",
+    "category": "furniture",
+    "note": "High-End Furniture VN"
+  },
+  {
+    "url": "https://www.archplus.vn",
+    "category": "construction",
+    "note": "ArchPlus"
+  },
+  {
+    "url": "https://www.tdc.com.vn",
+    "category": "construction",
+    "note": "TDC Architecture"
+  },
+  {
+    "url": "https://noithathoangsa.vn",
+    "category": "furniture",
+    "note": "Hoàng Sa Furniture"
+  },
+  {
+    "url": "https://www.homevn.com.vn",
+    "category": "interior-design",
+    "note": "Home VN"
+  },
+  {
+    "url": "https://www.kientrucnhaiep.vn",
+    "category": "construction",
+    "note": "Nhà Đẹp Architecture"
+  },
+  {
+    "url": "https://adpdesign.vn",
+    "category": "interior-design",
+    "note": "ADP Design Studio"
+  },
+  {
+    "url": "https://nexhome.vn",
+    "category": "interior-design",
+    "note": "Next Home"
+  },
+  {
+    "url": "https://aspace.vn",
+    "category": "interior-design",
+    "note": "A Space Design"
+  },
+  {
+    "url": "https://ninehouse.vn",
+    "category": "interior-design",
+    "note": "Nine House"
+  },
+  {
+    "url": "https://homeidea.vn",
+    "category": "interior-design",
+    "note": "Home Idea VN"
+  },
+  {
+    "url": "https://luxhome.vn",
+    "category": "interior-design",
+    "note": "Lux Home"
+  },
+  {
+    "url": "https://desino.vn",
+    "category": "interior-design",
+    "note": "Desino Interior"
+  },
+  {
+    "url": "https://indochinedesign.vn",
+    "category": "interior-design",
+    "note": "Indochine Design"
+  },
+  {
+    "url": "https://gstudio.vn",
+    "category": "interior-design",
+    "note": "G Studio Interior"
+  },
+  {
+    "url": "https://goldhouse.vn",
+    "category": "interior-design",
+    "note": "Gold House Design"
+  },
+  {
+    "url": "https://dkstudio.vn",
+    "category": "interior-design",
+    "note": "DK Studio"
+  },
+  {
+    "url": "https://topdesign.com.vn",
+    "category": "interior-design",
+    "note": "Top Design VN"
+  },
+  {
+    "url": "https://cqdesign.vn",
+    "category": "interior-design",
+    "note": "CQ Design"
+  },
+  {
+    "url": "https://kientaogroup.vn",
+    "category": "construction",
+    "note": "Kien Tao Group"
+  },
+  {
+    "url": "https://agdesign.vn",
+    "category": "interior-design",
+    "note": "AG Design"
+  },
+  {
+    "url": "https://hvarchitect.vn",
+    "category": "construction",
+    "note": "HV Architect"
+  },
+  {
+    "url": "https://vnarchitect.vn",
+    "category": "construction",
+    "note": "VN Architect Studio"
+  },
+  {
+    "url": "https://hanoiarchitect.vn",
+    "category": "construction",
+    "note": "Hanoi Architect"
+  },
+  {
+    "url": "https://noithathanoi.vn",
+    "category": "interior-design",
+    "note": "Noi That Hanoi"
+  },
+  {
+    "url": "https://noithatdanang.com",
+    "category": "interior-design",
+    "note": "Interior Da Nang"
+  },
+  {
+    "url": "https://thehome.vn",
+    "category": "interior-design",
+    "note": "The Home VN"
+  },
+  {
+    "url": "https://noithatmodern.vn",
+    "category": "interior-design",
+    "note": "Modern Interior VN"
+  },
+  {
+    "url": "https://jmdesign.vn",
+    "category": "interior-design",
+    "note": "JM Design"
+  },
+  {
+    "url": "https://kimlong.com.vn",
+    "category": "interior-design",
+    "note": "Kim Long Interior"
+  },
+  {
+    "url": "https://nhadepsg.vn",
+    "category": "interior-design",
+    "note": "Nha Dep Saigon"
+  },
+  {
+    "url": "https://vietdesign.vn",
+    "category": "interior-design",
+    "note": "Viet Design"
+  },
+  {
+    "url": "https://kientao.com",
+    "category": "construction",
+    "note": "Kien Tao Architecture"
+  },
+  {
+    "url": "https://homedecor.vn",
+    "category": "interior-design",
+    "note": "Home Decor VN"
+  },
+  {
+    "url": "https://archstudio.com.vn",
+    "category": "construction",
+    "note": "Arch Studio VN"
+  },
+  {
+    "url": "https://abchome.vn",
+    "category": "interior-design",
+    "note": "ABC Home"
+  },
+  {
+    "url": "https://greenidea.vn",
+    "category": "interior-design",
+    "note": "Green Idea Design"
+  },
+  {
+    "url": "https://sangdecor.com.vn",
+    "category": "interior-design",
+    "note": "Sang Decor"
+  },
+  {
+    "url": "https://thindesign.vn",
+    "category": "interior-design",
+    "note": "Thin Design"
+  },
+  {
+    "url": "https://nhadepviet.com",
+    "category": "interior-design",
+    "note": "Nha Dep Viet"
+  },
+  {
+    "url": "https://vninterior.vn",
+    "category": "interior-design",
+    "note": "VN Interior Design"
+  },
+  {
+    "url": "https://decor.vn",
+    "category": "interior-design",
+    "note": "Decor VN"
+  },
+  {
+    "url": "https://udesign.vn",
+    "category": "interior-design",
+    "note": "U Design Studio"
+  },
+  {
+    "url": "https://mdesign.vn",
+    "category": "interior-design",
+    "note": "M Design Studio"
+  },
+  {
+    "url": "https://bdesign.vn",
+    "category": "interior-design",
+    "note": "B Design VN"
+  },
+  {
+    "url": "https://noithatsg.vn",
+    "category": "interior-design",
+    "note": "Interior Saigon"
+  },
+  {
+    "url": "https://kientruc.com.vn",
+    "category": "construction",
+    "note": "Kien Truc VN directory"
+  },
+  {
+    "url": "https://floorii.com",
+    "category": "interior-design",
+    "note": "Floorii"
+  },
+  {
+    "url": "https://noithat24h.vn",
+    "category": "interior-design",
+    "note": "Noi That 24h"
+  },
+  {
+    "url": "https://atelier.com.vn",
+    "category": "interior-design",
+    "note": "Atelier Design"
+  },
+  {
+    "url": "https://phuongdong.vn",
+    "category": "interior-design",
+    "note": "Phuong Dong Design"
+  },
+  {
+    "url": "https://noithatphuongdong.com.vn",
+    "category": "furniture",
+    "note": "Phuong Dong Furniture"
+  },
+  {
+    "url": "https://noithatvinhphuc.com",
+    "category": "furniture",
+    "note": "Vinh Phuc Furniture"
+  },
+  {
+    "url": "https://thietkenha.vn",
+    "category": "construction",
+    "note": "Thiet Ke Nha VN"
+  },
+  {
+    "url": "https://kienviet.com.vn",
+    "category": "construction",
+    "note": "Kien Viet Architecture"
+  },
+  {
+    "url": "https://dacphuong.vn",
+    "category": "interior-design",
+    "note": "Dac Phuong Design"
+  },
+  {
+    "url": "https://lacasa.vn",
+    "category": "interior-design",
+    "note": "La Casa Interior"
+  },
+  {
+    "url": "https://hmdesign.vn",
+    "category": "interior-design",
+    "note": "HM Design Studio"
+  },
+  {
+    "url": "https://navada.vn",
+    "category": "interior-design",
+    "note": "Navada Interior"
+  },
+  {
+    "url": "https://vivudecor.vn",
+    "category": "interior-design",
+    "note": "Vivu Decor"
+  },
+  {
+    "url": "https://vinadesign.vn",
+    "category": "interior-design",
+    "note": "Vina Design"
+  },
+  {
+    "url": "https://lifedesign.vn",
+    "category": "interior-design",
+    "note": "Life Design VN"
+  },
+  {
+    "url": "https://qdesign.vn",
+    "category": "interior-design",
+    "note": "Q Design"
+  },
+  {
+    "url": "https://cozyhouse.vn",
+    "category": "interior-design",
+    "note": "Cozy House"
+  },
+  {
+    "url": "https://nhadephanoi.vn",
+    "category": "interior-design",
+    "note": "Nha Dep Hanoi"
+  },
+  {
+    "url": "https://arcgroup.vn",
+    "category": "construction",
+    "note": "ARC Group"
+  },
+  {
+    "url": "https://acarchitects.vn",
+    "category": "construction",
+    "note": "AC Architects"
+  },
+  {
+    "url": "https://luxdesign.vn",
+    "category": "interior-design",
+    "note": "Lux Design Studio"
+  },
+  {
+    "url": "https://decointerior.vn",
+    "category": "interior-design",
+    "note": "Deco Interior VN"
+  },
+  {
+    "url": "https://viet-house.vn",
+    "category": "interior-design",
+    "note": "Viet House Design"
+  },
+  {
+    "url": "https://a-design.vn",
+    "category": "interior-design",
+    "note": "A Design VN"
+  },
+  {
+    "url": "https://noithatchauphu.com",
+    "category": "furniture",
+    "note": "Chau Phu Furniture"
+  },
+  {
+    "url": "https://tnhomes.vn",
+    "category": "interior-design",
+    "note": "TN Homes"
+  },
+  {
+    "url": "https://noithatbinhduong.com",
+    "category": "furniture",
+    "note": "Binh Duong Interior"
+  },
+  {
+    "url": "https://thietkenoithat.vn",
+    "category": "interior-design",
+    "note": "Interior Design Portal VN"
+  },
+  {
+    "url": "https://noithatsaigon.net",
+    "category": "interior-design",
+    "note": "Interior Saigon"
+  },
+  {
+    "url": "https://vietinterior.com.vn",
+    "category": "interior-design",
+    "note": "Viet Interior"
+  },
+  {
+    "url": "https://nhacuahiendai.vn",
+    "category": "interior-design",
+    "note": "Nha Hien Dai"
+  },
+  {
+    "url": "https://mcdecor.vn",
+    "category": "interior-design",
+    "note": "MC Decor"
+  },
+  {
+    "url": "https://hmdesign.com.vn",
+    "category": "interior-design",
+    "note": "HM Design"
+  },
+  {
+    "url": "https://www.aspace.com.vn",
+    "category": "interior-design",
+    "note": "ASpace Design"
+  },
+  {
+    "url": "https://noithat24h.com",
+    "category": "interior-design",
+    "note": "Interior 24h"
+  },
+  {
+    "url": "https://trandecor.vn",
+    "category": "interior-design",
+    "note": "Tran Decor"
+  },
+  {
+    "url": "https://hanoiinterior.vn",
+    "category": "interior-design",
+    "note": "Hanoi Interior"
+  },
+  {
+    "url": "https://noithatphongcach.vn",
+    "category": "interior-design",
+    "note": "Phong Cach Interior"
+  },
+  {
+    "url": "https://ydesign.vn",
+    "category": "interior-design",
+    "note": "Y Design Studio"
+  },
+  {
+    "url": "https://nhadesign.vn",
+    "category": "interior-design",
+    "note": "Nha Design"
+  },
+  {
+    "url": "https://xaydungdaiviet.vn",
+    "category": "construction",
+    "note": "Dai Viet Construction"
+  },
+  {
+    "url": "https://kientrucmoi.vn",
+    "category": "construction",
+    "note": "Kien Truc Moi"
+  },
+  {
+    "url": "https://kientruc360.vn",
+    "category": "construction",
+    "note": "Kien Truc 360"
+  },
+  {
+    "url": "https://noithathoa.vn",
+    "category": "furniture",
+    "note": "Hoa Furniture"
+  },
+  {
+    "url": "https://noithatvinh.vn",
+    "category": "furniture",
+    "note": "Vinh Interior"
+  },
+  {
+    "url": "https://sangdesign.vn",
+    "category": "interior-design",
+    "note": "Sang Design"
+  },
+  {
+    "url": "https://phuongnhat.com.vn",
+    "category": "interior-design",
+    "note": "Phuong Nhat Design"
+  },
+  {
+    "url": "https://nttdesign.vn",
+    "category": "interior-design",
+    "note": "NTT Design"
+  },
+  {
+    "url": "https://hlddesign.vn",
+    "category": "interior-design",
+    "note": "HLD Design Studio"
+  },
+  {
+    "url": "https://ctarchitects.vn",
+    "category": "construction",
+    "note": "CT Architects"
+  },
+  {
+    "url": "https://kd-design.vn",
+    "category": "interior-design",
+    "note": "KD Design"
+  },
+  {
+    "url": "https://htarchitect.vn",
+    "category": "construction",
+    "note": "HT Architect"
+  },
+  {
+    "url": "https://luxuryinterior.vn",
+    "category": "interior-design",
+    "note": "Luxury Interior VN"
+  },
+  {
+    "url": "https://homedesign.com.vn",
+    "category": "interior-design",
+    "note": "Home Design VN com"
+  },
+  {
+    "url": "https://nhadeptphcm.com",
+    "category": "interior-design",
+    "note": "Nha Dep TPHCM"
+  },
+  {
+    "url": "https://saigonarchitect.vn",
+    "category": "construction",
+    "note": "Saigon Architect"
+  },
+  {
+    "url": "https://hanoiarchitect.com",
+    "category": "construction",
+    "note": "Hanoi Architect com"
+  },
+  {
+    "url": "https://noithat5sao.vn",
+    "category": "interior-design",
+    "note": "5 Star Interior"
+  },
+  {
+    "url": "https://nhaxanh.vn",
+    "category": "construction",
+    "note": "Nha Xanh Architecture"
+  },
+  {
+    "url": "https://noithatxinhdep.vn",
+    "category": "interior-design",
+    "note": "Xinh Dep Interior"
+  },
+  {
+    "url": "https://lacomedesign.vn",
+    "category": "interior-design",
+    "note": "Lacome Design"
+  },
+  {
+    "url": "https://paxdesign.vn",
+    "category": "interior-design",
+    "note": "Pax Design"
+  },
+  {
+    "url": "https://wingsdesign.vn",
+    "category": "interior-design",
+    "note": "Wings Design"
+  },
+  {
+    "url": "https://aokdesign.vn",
+    "category": "interior-design",
+    "note": "AOK Design"
+  },
+  {
+    "url": "https://vietdecor.vn",
+    "category": "interior-design",
+    "note": "Viet Decor"
+  },
+  {
+    "url": "https://homedecor.com.vn",
+    "category": "interior-design",
+    "note": "Home Decor VN com"
+  },
+  {
+    "url": "https://nexinterior.vn",
+    "category": "interior-design",
+    "note": "Nex Interior"
+  },
+  {
+    "url": "https://www.gachvietnam.com.vn",
+    "category": "building-materials",
+    "note": "Gach Viet Nam"
+  },
+  {
+    "url": "https://noithatphuongnam.vn",
+    "category": "furniture",
+    "note": "Phuong Nam Interior"
+  },
+  {
+    "url": "https://noithattamduc.vn",
+    "category": "furniture",
+    "note": "Tam Duc Interior"
+  },
+  {
+    "url": "https://vinhphucinterior.vn",
+    "category": "furniture",
+    "note": "Vinh Phuc Interior"
+  },
+  {
+    "url": "https://www.tropical-space.com",
+    "category": "construction",
+    "note": "Tropical Space VN architects"
+  },
+  {
+    "url": "https://www.sava.vn",
+    "category": "interior-design",
+    "note": "Sava Design"
+  },
+  {
+    "url": "https://adecor.vn",
+    "category": "interior-design",
+    "note": "ADecor Interior"
+  },
+  {
+    "url": "https://nhadep365.vn",
+    "category": "interior-design",
+    "note": "Nha Dep 365"
+  },
+  {
+    "url": "https://www.nhaxanh.net",
+    "category": "construction",
+    "note": "Nha Xanh Architecture"
+  },
+  {
+    "url": "https://noithatthanhhoa.com",
+    "category": "furniture",
+    "note": "Thanh Hoa Interior"
+  },
+  {
+    "url": "https://kientrucminhphu.com",
+    "category": "construction",
+    "note": "Minh Phu Architecture"
+  },
+  {
+    "url": "https://thietkenha.com",
+    "category": "construction",
+    "note": "Thiet Ke Nha com"
+  },
+  {
+    "url": "https://noithatbinhduong.vn",
+    "category": "furniture",
+    "note": "Binh Duong Interior vn"
+  },
+  {
+    "url": "https://abdesign.vn",
+    "category": "interior-design",
+    "note": "AB Design Studio"
+  },
+  {
+    "url": "https://www.furmono.com",
+    "category": "furniture",
+    "note": "Furmono Furniture"
+  },
+  {
+    "url": "https://noithat365.com",
+    "category": "interior-design",
+    "note": "Interior 365"
+  },
+  {
+    "url": "https://noithatxanh.com",
+    "category": "interior-design",
+    "note": "Noi That Xanh"
+  },
+  {
+    "url": "https://elitedesign.vn",
+    "category": "interior-design",
+    "note": "Elite Design VN"
+  },
+  {
+    "url": "https://greeninterior.vn",
+    "category": "interior-design",
+    "note": "Green Interior VN"
+  },
+  {
+    "url": "https://vdesign.vn",
+    "category": "interior-design",
+    "note": "VDesign Studio"
+  },
+  {
+    "url": "https://zdesign.vn",
+    "category": "interior-design",
+    "note": "ZDesign Studio"
+  },
+  {
+    "url": "https://sdesign.vn",
+    "category": "construction",
+    "note": "SDesign - Đà Nẵng"
+  },
+  {
+    "url": "https://dchome.vn",
+    "category": "furniture",
+    "note": "DC Home Nội Thất"
+  },
+  {
+    "url": "https://noithathn.vn",
+    "category": "interior-design",
+    "note": "Nội Thất HN Việt Nam"
+  },
+  {
+    "url": "https://noithatnhatrang.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Nha Trang"
+  },
+  {
+    "url": "https://noithathaiphong.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Hải Phòng"
+  },
+  {
+    "url": "https://nhadephanoi.net",
+    "category": "interior-design",
+    "note": "Nhà Đẹp Hà Nội"
+  },
+  {
+    "url": "https://bestdesign.vn",
+    "category": "interior-design",
+    "note": "Best Design VN"
+  },
+  {
+    "url": "https://idesign.vn",
+    "category": "interior-design",
+    "note": "iDesign VN"
+  },
+  {
+    "url": "https://phuongdong.com.vn",
+    "category": "construction",
+    "note": "Phương Đông Architecture"
+  },
+  {
+    "url": "https://moderndesign.vn",
+    "category": "interior-design",
+    "note": "Modern Design VN"
+  },
+  {
+    "url": "https://designgroup.vn",
+    "category": "interior-design",
+    "note": "Design Group VN"
+  },
+  {
+    "url": "https://homeplus.vn",
+    "category": "interior-design",
+    "note": "Home Plus VN"
+  },
+  {
+    "url": "https://greenspace.vn",
+    "category": "interior-design",
+    "note": "Green Space Design"
+  },
+  {
+    "url": "https://saigon-interior.com",
+    "category": "interior-design",
+    "note": "Saigon Interior"
+  },
+  {
+    "url": "https://apdesign.vn",
+    "category": "interior-design",
+    "note": "AP Design VN"
+  },
+  {
+    "url": "https://kdesign.com.vn",
+    "category": "interior-design",
+    "note": "K Design VN"
+  },
+  {
+    "url": "https://htdesign.vn",
+    "category": "interior-design",
+    "note": "HT Design VN"
+  },
+  {
+    "url": "https://edesign.vn",
+    "category": "interior-design",
+    "note": "EDesign VN"
+  },
+  {
+    "url": "https://thietkenoithat.com",
+    "category": "interior-design",
+    "note": "Thiết Kế Nội Thất"
+  },
+  {
+    "url": "https://indesign.vn",
+    "category": "interior-design",
+    "note": "InDesign VN"
+  },
+  {
+    "url": "https://kientruc365.vn",
+    "category": "construction",
+    "note": "Kiến Trúc 365"
+  },
+  {
+    "url": "https://xuantrang.vn",
+    "category": "interior-design",
+    "note": "Xuân Trang Design"
+  },
+  {
+    "url": "https://kientrucvietnam.com",
+    "category": "construction",
+    "note": "Kiến Trúc Việt Nam"
+  },
+  {
+    "url": "https://noithatmientrung.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Miền Trung"
+  },
+  {
+    "url": "https://noithatbinhdinh.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Bình Định"
+  },
+  {
+    "url": "https://noithattayninh.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Tây Ninh"
+  },
+  {
+    "url": "https://noithatlongan.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Long An"
+  },
+  {
+    "url": "https://noithatthanhhoa.vn",
+    "category": "interior-design",
+    "note": "Nội Thất Thanh Hóa"
+  },
+  {
+    "url": "https://thietkenha365.vn",
+    "category": "construction",
+    "note": "Thiết Kế Nhà 365"
+  },
+  {
+    "url": "https://thietkenha.net",
+    "category": "construction",
+    "note": "Thiết Kế Nhà"
+  },
+  {
+    "url": "https://xaydungviet.net",
+    "category": "construction",
+    "note": "Xây Dựng Việt"
+  },
+  {
+    "url": "https://tkdesign.vn",
+    "category": "interior-design",
+    "note": "TK Design VN"
+  },
+  {
+    "url": "https://noithatthuanphat.vn",
+    "category": "interior-design",
+    "note": "Thuận Phát Nội Thất"
+  }
 ]

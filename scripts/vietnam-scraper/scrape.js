@@ -9,6 +9,10 @@
 const SERVER_MODULES = '/Users/kp/Code/tarmeer-4.0-local/server/node_modules';
 const axios = require(`${SERVER_MODULES}/axios`);
 const cheerio = require(`${SERVER_MODULES}/cheerio`);
+const https = require('https');
+
+// Allow sites with self-signed or expired certs (scraping only)
+const RELAXED_AGENT = new https.Agent({ rejectUnauthorized: false });
 const fs = require('fs');
 const path = require('path');
 
@@ -27,6 +31,7 @@ const SKIP_IMG = [
   /arrow/i, /button/i, /social/i, /pixel/i, /tracking/i,
   /\.svg$/i, /\.gif$/i, /base64/i, /1x1/i, /spacer/i, /blank/i,
   /facebook|twitter|linkedin|youtube|pinterest|google/i,
+  /^data:/i,  // filter out data: URIs (lazy-load SVG placeholders)
 ];
 
 function isProjectImage(src) {
@@ -109,18 +114,50 @@ function scrapeCompany(html, url) {
   };
 }
 
+const TLS_ERRORS = ['TLS', 'SSL', 'certificate', 'secure', 'ECONNRESET', 'socket disconnected'];
+
+async function tryFetch(targetUrl, opts) {
+  try {
+    return await axios.get(targetUrl, { ...opts, headers: HEADERS, timeout: 15000, maxRedirects: 5 });
+  } catch (e) {
+    // If TLS error, retry with relaxed SSL verification
+    if (TLS_ERRORS.some(t => e.message.includes(t))) {
+      return await axios.get(targetUrl, { ...opts, headers: HEADERS, timeout: 15000, maxRedirects: 5, httpsAgent: RELAXED_AGENT });
+    }
+    throw e;
+  }
+}
+
+async function tryWpMedia(siteUrl) {
+  try {
+    const apiUrl = siteUrl.replace(/\/$/, '') + '/wp-json/wp/v2/media?per_page=30&media_type=image';
+    const res = await tryFetch(apiUrl, {});
+    if (!Array.isArray(res.data) || res.data.length === 0) return [];
+    return res.data
+      .map(m => m.source_url || m.guid?.rendered || '')
+      .filter(u => u && isProjectImage(u))
+      .slice(0, 30);
+  } catch { return []; }
+}
+
 async function scrapeUrl(entry) {
   const { url, category, note } = entry;
   console.log(`\n[→] ${url}`);
   try {
-    const res = await axios.get(url, {
-      headers: HEADERS,
-      timeout: 15000,
-      maxRedirects: 5,
-    });
+    const res = await tryFetch(url, {});
     const data = scrapeCompany(res.data, url);
     data.category = category;
     data.note = note;
+
+    // If few images found (likely lazy-loaded WP site), try WP REST API
+    if (data.images.length < 5) {
+      const wpImages = await tryWpMedia(url);
+      if (wpImages.length > data.images.length) {
+        data.images = wpImages;
+        console.log(`    [wp-api] found ${wpImages.length} imgs`);
+      }
+    }
+
     console.log(`    ✓ ${data.company_name} | ${data.images.length} imgs | phone: ${data.phone || '—'}`);
     return { ...data, ok: true };
   } catch (e) {

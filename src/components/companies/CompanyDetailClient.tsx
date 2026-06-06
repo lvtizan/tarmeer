@@ -32,9 +32,10 @@ import SmartImage from '@/components/ui/SmartImage';
 interface CompanyDetailClientProps {
   company: Company;
   slug: string;
+  isVn?: boolean;
 }
 
-export default function CompanyDetailClient({ company, slug }: CompanyDetailClientProps) {
+export default function CompanyDetailClient({ company, slug, isVn = false }: CompanyDetailClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -308,7 +309,7 @@ export default function CompanyDetailClient({ company, slug }: CompanyDetailClie
                   )}
                   <span className="text-[#b8864a] font-medium">{company.projectCount}+ projects</span>
                   <span className="text-stone-300">&middot;</span>
-                  <span className="text-stone-500">{company.city}, UAE</span>
+                  <span className="text-stone-500">{company.city}{isVn ? '' : ', UAE'}</span>
                   {company.foundedYear > 0 && (
                     <>
                       <span className="text-stone-300">&middot;</span>

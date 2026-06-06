@@ -77,6 +77,7 @@ function buildPublicCompanyDetailQuery(slug) {
          uae_companies.google_reviews_count,
          uae_companies.owner_user_id,
          uae_companies.is_signed,
+         uae_companies.country,
          cp.id AS company_profile_id
        FROM uae_companies
        LEFT JOIN company_profiles cp

@@ -15,10 +15,6 @@
     "scraped_at": "2026-06-03T09:19:10.373Z",
     "ok": true
   },
-  "https://www.magisstone.com": {
-    "scraped_at": "2026-06-03T09:19:16.580Z",
-    "ok": false
-  },
   "https://www.khosango.com": {
     "scraped_at": "2026-06-03T09:19:21.645Z",
     "ok": true
@@ -33,10 +29,6 @@
   },
   "https://www.muagach.vn": {
     "scraped_at": "2026-06-03T09:19:48.959Z",
-    "ok": false
-  },
-  "https://hinomart.vn": {
-    "scraped_at": "2026-06-03T09:19:53.163Z",
     "ok": false
   },
   "https://hongphuc.net.vn": {
@@ -58,10 +50,6 @@
   "https://phanphoison.com.vn": {
     "scraped_at": "2026-06-03T09:20:24.245Z",
     "ok": true
-  },
-  "https://www.nhuatienphuong.vn": {
-    "scraped_at": "2026-06-03T09:20:28.397Z",
-    "ok": false
   },
   "https://www.binhminhplastic.com.vn": {
     "scraped_at": "2026-06-03T09:20:38.300Z",
@@ -183,10 +171,6 @@
     "scraped_at": "2026-06-03T09:23:52.358Z",
     "ok": true
   },
-  "https://sofagiuongmanhhe.com": {
-    "scraped_at": "2026-06-03T09:23:56.557Z",
-    "ok": false
-  },
   "https://zito.vn": {
     "scraped_at": "2026-06-03T09:24:02.452Z",
     "ok": true
@@ -198,10 +182,6 @@
   "https://aacorporation.com": {
     "scraped_at": "2026-06-03T09:24:12.009Z",
     "ok": true
-  },
-  "https://woodnet.vn": {
-    "scraped_at": "2026-06-03T09:24:15.703Z",
-    "ok": false
   },
   "https://maxhomegroup.vn": {
     "scraped_at": "2026-06-03T09:24:20.359Z",
@@ -222,10 +202,6 @@
   "https://vking.vn": {
     "scraped_at": "2026-06-03T09:24:49.544Z",
     "ok": true
-  },
-  "https://kienanvinh.com": {
-    "scraped_at": "2026-06-03T09:24:53.157Z",
-    "ok": false
   },
   "https://nhaphoviet.com.vn": {
     "scraped_at": "2026-06-03T09:24:58.632Z",
@@ -277,6 +253,890 @@
   },
   "https://sonnuoctruongkha.com": {
     "scraped_at": "2026-06-03T09:26:11.503Z",
+    "ok": true
+  },
+  "https://spacet.vn": {
+    "scraped_at": "2026-06-04T09:15:57.073Z",
+    "ok": true
+  },
+  "https://noidatviet.vn": {
+    "scraped_at": "2026-06-04T09:16:17.133Z",
+    "ok": false
+  },
+  "https://www.dcinterior.vn": {
+    "scraped_at": "2026-06-04T09:16:26.093Z",
+    "ok": true
+  },
+  "https://www.mhdesign.vn": {
+    "scraped_at": "2026-06-04T09:16:43.664Z",
+    "ok": true
+  },
+  "https://www.kienviet.net": {
+    "scraped_at": "2026-06-04T09:16:58.908Z",
+    "ok": true
+  },
+  "https://www.a21studio.com.vn": {
+    "scraped_at": "2026-06-04T09:17:16.162Z",
+    "ok": true
+  },
+  "https://www.votrongnghia.com": {
+    "scraped_at": "2026-06-04T09:17:19.534Z",
+    "ok": false
+  },
+  "https://www.mia.vn": {
+    "scraped_at": "2026-06-04T09:17:27.410Z",
+    "ok": true
+  },
+  "https://www.saigondecor.com.vn": {
+    "scraped_at": "2026-06-04T09:17:40.012Z",
+    "ok": false
+  },
+  "https://www.ehome.com.vn": {
+    "scraped_at": "2026-06-04T09:18:20.886Z",
+    "ok": true
+  },
+  "https://stu.com.vn": {
+    "scraped_at": "2026-06-04T09:18:31.886Z",
+    "ok": true
+  },
+  "https://www.kientrucnhaxanh.vn": {
+    "scraped_at": "2026-06-04T09:18:54.648Z",
+    "ok": false
+  },
+  "https://www.savilla.vn": {
+    "scraped_at": "2026-06-04T09:19:25.573Z",
+    "ok": false
+  },
+  "https://onehome.vn": {
+    "scraped_at": "2026-06-04T09:19:37.009Z",
+    "ok": true
+  },
+  "https://www.neohouse.vn": {
+    "scraped_at": "2026-06-04T09:19:47.886Z",
+    "ok": true
+  },
+  "https://www.viethome.vn": {
+    "scraped_at": "2026-06-04T09:20:07.941Z",
+    "ok": true
+  },
+  "https://www.interiordesign.vn": {
+    "scraped_at": "2026-06-04T09:20:11.531Z",
+    "ok": false
+  },
+  "https://www.exhome.vn": {
+    "scraped_at": "2026-06-04T09:20:37.591Z",
+    "ok": false
+  },
+  "https://www.gdecor.vn": {
+    "scraped_at": "2026-06-04T09:21:01.138Z",
+    "ok": false
+  },
+  "https://www.alphahome.vn": {
+    "scraped_at": "2026-06-04T09:21:14.869Z",
+    "ok": true
+  },
+  "https://www.noithatanphu.vn": {
+    "scraped_at": "2026-06-04T09:21:38.905Z",
+    "ok": false
+  },
+  "https://www.kientrucviet.net": {
+    "scraped_at": "2026-06-04T09:21:58.753Z",
+    "ok": false
+  },
+  "https://www.homevn.com.vn": {
+    "scraped_at": "2026-06-04T09:23:03.081Z",
+    "ok": true
+  },
+  "https://nexhome.vn": {
+    "scraped_at": "2026-06-04T09:31:57.468Z",
+    "ok": true
+  },
+  "https://desino.vn": {
+    "scraped_at": "2026-06-04T09:32:25.359Z",
+    "ok": true
+  },
+  "https://indochinedesign.vn": {
+    "scraped_at": "2026-06-04T09:32:30.257Z",
+    "ok": true
+  },
+  "https://topdesign.com.vn": {
+    "scraped_at": "2026-06-04T09:33:11.488Z",
+    "ok": false
+  },
+  "https://vnarchitect.vn": {
+    "scraped_at": "2026-06-04T09:33:42.483Z",
+    "ok": true
+  },
+  "https://noithatdanang.com": {
+    "scraped_at": "2026-06-04T09:34:08.941Z",
+    "ok": false
+  },
+  "https://thehome.vn": {
+    "scraped_at": "2026-06-04T09:34:14.173Z",
+    "ok": false
+  },
+  "https://nhadepsg.vn": {
+    "scraped_at": "2026-06-04T09:34:34.795Z",
+    "ok": true
+  },
+  "https://vietdesign.vn": {
+    "scraped_at": "2026-06-04T09:34:41.179Z",
+    "ok": true
+  },
+  "https://kientao.com": {
+    "scraped_at": "2026-06-04T09:34:45.063Z",
+    "ok": true
+  },
+  "https://homedecor.vn": {
+    "scraped_at": "2026-06-04T09:35:03.914Z",
+    "ok": false
+  },
+  "https://nhadepviet.com": {
+    "scraped_at": "2026-06-04T09:35:45.713Z",
+    "ok": false
+  },
+  "https://udesign.vn": {
+    "scraped_at": "2026-06-04T09:36:05.205Z",
+    "ok": true
+  },
+  "https://mdesign.vn": {
+    "scraped_at": "2026-06-04T09:36:11.525Z",
+    "ok": true
+  },
+  "https://noithatsg.vn": {
+    "scraped_at": "2026-06-04T09:36:22.131Z",
+    "ok": true
+  },
+  "https://floorii.com": {
+    "scraped_at": "2026-06-04T09:36:31.634Z",
+    "ok": true
+  },
+  "https://noithat24h.vn": {
+    "scraped_at": "2026-06-04T09:36:51.056Z",
+    "ok": false
+  },
+  "https://phuongdong.vn": {
+    "scraped_at": "2026-06-04T09:37:16.198Z",
+    "ok": false
+  },
+  "https://thietkenha.vn": {
+    "scraped_at": "2026-06-04T09:37:33.739Z",
+    "ok": true
+  },
+  "https://kienviet.com.vn": {
+    "scraped_at": "2026-06-04T09:37:41.063Z",
+    "ok": true
+  },
+  "https://lacasa.vn": {
+    "scraped_at": "2026-06-04T09:44:12.892Z",
+    "ok": true
+  },
+  "https://navada.vn": {
+    "scraped_at": "2026-06-04T09:44:42.536Z",
+    "ok": false
+  },
+  "https://vivudecor.vn": {
+    "scraped_at": "2026-06-04T09:44:49.648Z",
+    "ok": true
+  },
+  "https://vinadesign.vn": {
+    "scraped_at": "2026-06-04T09:44:56.301Z",
+    "ok": true
+  },
+  "https://lifedesign.vn": {
+    "scraped_at": "2026-06-04T09:45:16.825Z",
+    "ok": false
+  },
+  "https://nhadephanoi.vn": {
+    "scraped_at": "2026-06-04T09:45:30.649Z",
+    "ok": true
+  },
+  "https://noithatbinhduong.com": {
+    "scraped_at": "2026-06-04T09:46:09.394Z",
+    "ok": true
+  },
+  "https://thietkenoithat.vn": {
+    "scraped_at": "2026-06-04T09:46:27.435Z",
+    "ok": false
+  },
+  "https://noithat24h.com": {
+    "scraped_at": "2026-06-04T09:47:13.620Z",
+    "ok": false
+  },
+  "https://noithatphongcach.vn": {
+    "scraped_at": "2026-06-04T09:47:34.600Z",
+    "ok": true
+  },
+  "https://noithatvinh.vn": {
+    "scraped_at": "2026-06-04T09:48:34.266Z",
+    "ok": false
+  },
+  "https://luxuryinterior.vn": {
+    "scraped_at": "2026-06-04T09:49:25.654Z",
+    "ok": false
+  },
+  "https://nhaxanh.vn": {
+    "scraped_at": "2026-06-04T09:50:06.710Z",
+    "ok": true
+  },
+  "https://vietdecor.vn": {
+    "scraped_at": "2026-06-04T09:50:34.582Z",
+    "ok": false
+  },
+  "https://noithattamduc.vn": {
+    "scraped_at": "2026-06-04T09:51:15.434Z",
+    "ok": false
+  },
+  "https://www.magisstone.com": {
+    "scraped_at": "2026-06-04T09:53:04.443Z",
+    "ok": false
+  },
+  "https://hinomart.vn": {
+    "scraped_at": "2026-06-04T09:53:12.058Z",
+    "ok": false
+  },
+  "https://www.nhuatienphuong.vn": {
+    "scraped_at": "2026-06-04T09:53:22.340Z",
+    "ok": false
+  },
+  "https://sofagiuongmanhhe.com": {
+    "scraped_at": "2026-06-04T09:53:30.567Z",
+    "ok": false
+  },
+  "https://woodnet.vn": {
+    "scraped_at": "2026-06-04T09:53:46.113Z",
+    "ok": false
+  },
+  "https://www.cadi-design.com": {
+    "scraped_at": "2026-06-04T09:53:58.455Z",
+    "ok": false
+  },
+  "https://pebblehouse.vn": {
+    "scraped_at": "2026-06-04T09:54:04.935Z",
+    "ok": false
+  },
+  "https://www.atriumdesign.com.vn": {
+    "scraped_at": "2026-06-04T09:54:13.490Z",
+    "ok": false
+  },
+  "https://noi-that-la-vie.vn": {
+    "scraped_at": "2026-06-04T09:54:23.830Z",
+    "ok": false
+  },
+  "https://www.archstudio.vn": {
+    "scraped_at": "2026-06-04T09:54:43.713Z",
+    "ok": false
+  },
+  "https://www.noithatvinhphat.vn": {
+    "scraped_at": "2026-06-04T09:54:50.094Z",
+    "ok": false
+  },
+  "https://www.fuhome.com.vn": {
+    "scraped_at": "2026-06-04T09:54:57.798Z",
+    "ok": false
+  },
+  "https://homedesign.vn": {
+    "scraped_at": "2026-06-04T09:55:06.624Z",
+    "ok": false
+  },
+  "https://www.studiogreen.vn": {
+    "scraped_at": "2026-06-04T09:55:14.360Z",
+    "ok": false
+  },
+  "https://www.idealinterior.vn": {
+    "scraped_at": "2026-06-04T09:55:29.290Z",
+    "ok": false
+  },
+  "https://noithatphongphu.vn": {
+    "scraped_at": "2026-06-04T09:55:36.113Z",
+    "ok": false
+  },
+  "https://www.goldenbell.com.vn": {
+    "scraped_at": "2026-06-04T09:55:43.693Z",
+    "ok": false
+  },
+  "https://www.thietkenhahanoi.com": {
+    "scraped_at": "2026-06-04T09:55:52.129Z",
+    "ok": false
+  },
+  "https://www.kientrucana.com": {
+    "scraped_at": "2026-06-04T09:55:57.978Z",
+    "ok": false
+  },
+  "https://www.bigstudio.com.vn": {
+    "scraped_at": "2026-06-04T09:56:04.436Z",
+    "ok": false
+  },
+  "https://www.quangvinhdesign.com": {
+    "scraped_at": "2026-06-04T09:56:10.856Z",
+    "ok": false
+  },
+  "https://www.max-decor.com.vn": {
+    "scraped_at": "2026-06-04T09:56:17.595Z",
+    "ok": false
+  },
+  "https://www.noithatedenhome.vn": {
+    "scraped_at": "2026-06-04T09:56:29.629Z",
+    "ok": false
+  },
+  "https://www.roomly.vn": {
+    "scraped_at": "2026-06-04T09:56:38.753Z",
+    "ok": false
+  },
+  "https://noithatleo.vn": {
+    "scraped_at": "2026-06-04T09:56:45.940Z",
+    "ok": false
+  },
+  "https://www.hgdesign.com.vn": {
+    "scraped_at": "2026-06-04T09:56:52.610Z",
+    "ok": false
+  },
+  "https://www.landona.vn": {
+    "scraped_at": "2026-06-04T09:57:00.397Z",
+    "ok": false
+  },
+  "https://www.studiodimon.vn": {
+    "scraped_at": "2026-06-04T09:57:07.611Z",
+    "ok": false
+  },
+  "https://www.duandesign.vn": {
+    "scraped_at": "2026-06-04T09:57:15.058Z",
+    "ok": false
+  },
+  "https://www.kos.vn": {
+    "scraped_at": "2026-06-04T09:57:22.887Z",
+    "ok": false
+  },
+  "https://www.archplus.vn": {
+    "scraped_at": "2026-06-04T09:57:37.766Z",
+    "ok": false
+  },
+  "https://www.tdc.com.vn": {
+    "scraped_at": "2026-06-04T09:57:44.547Z",
+    "ok": false
+  },
+  "https://noithathoangsa.vn": {
+    "scraped_at": "2026-06-04T09:57:50.776Z",
+    "ok": false
+  },
+  "https://www.kientrucnhaiep.vn": {
+    "scraped_at": "2026-06-04T09:57:57.313Z",
+    "ok": false
+  },
+  "https://adpdesign.vn": {
+    "scraped_at": "2026-06-04T09:58:04.714Z",
+    "ok": false
+  },
+  "https://aspace.vn": {
+    "scraped_at": "2026-06-04T09:58:10.551Z",
+    "ok": false
+  },
+  "https://ninehouse.vn": {
+    "scraped_at": "2026-06-04T09:58:17.306Z",
+    "ok": false
+  },
+  "https://homeidea.vn": {
+    "scraped_at": "2026-06-04T09:58:23.245Z",
+    "ok": false
+  },
+  "https://luxhome.vn": {
+    "scraped_at": "2026-06-04T09:58:29.865Z",
+    "ok": false
+  },
+  "https://gstudio.vn": {
+    "scraped_at": "2026-06-04T09:58:37.885Z",
+    "ok": false
+  },
+  "https://dkstudio.vn": {
+    "scraped_at": "2026-06-04T09:58:51.117Z",
+    "ok": false
+  },
+  "https://cqdesign.vn": {
+    "scraped_at": "2026-06-04T09:58:58.575Z",
+    "ok": false
+  },
+  "https://kientaogroup.vn": {
+    "scraped_at": "2026-06-04T09:59:04.680Z",
+    "ok": false
+  },
+  "https://agdesign.vn": {
+    "scraped_at": "2026-06-04T09:59:11.561Z",
+    "ok": false
+  },
+  "https://hvarchitect.vn": {
+    "scraped_at": "2026-06-04T09:59:18.018Z",
+    "ok": false
+  },
+  "https://hanoiarchitect.vn": {
+    "scraped_at": "2026-06-04T09:59:26.562Z",
+    "ok": false
+  },
+  "https://noithatmodern.vn": {
+    "scraped_at": "2026-06-04T09:59:38.720Z",
+    "ok": false
+  },
+  "https://jmdesign.vn": {
+    "scraped_at": "2026-06-04T09:59:45.863Z",
+    "ok": false
+  },
+  "https://kimlong.com.vn": {
+    "scraped_at": "2026-06-04T09:59:52.038Z",
+    "ok": false
+  },
+  "https://archstudio.com.vn": {
+    "scraped_at": "2026-06-04T09:59:59.381Z",
+    "ok": false
+  },
+  "https://abchome.vn": {
+    "scraped_at": "2026-06-04T10:00:07.908Z",
+    "ok": false
+  },
+  "https://greenidea.vn": {
+    "scraped_at": "2026-06-04T10:00:13.767Z",
+    "ok": false
+  },
+  "https://sangdecor.com.vn": {
+    "scraped_at": "2026-06-04T10:00:24.058Z",
+    "ok": false
+  },
+  "https://thindesign.vn": {
+    "scraped_at": "2026-06-04T10:00:31.025Z",
+    "ok": false
+  },
+  "https://vninterior.vn": {
+    "scraped_at": "2026-06-04T10:00:37.319Z",
+    "ok": false
+  },
+  "https://bdesign.vn": {
+    "scraped_at": "2026-06-04T10:00:49.018Z",
+    "ok": false
+  },
+  "https://kientruc.com.vn": {
+    "scraped_at": "2026-06-04T10:00:59.156Z",
+    "ok": false
+  },
+  "https://atelier.com.vn": {
+    "scraped_at": "2026-06-04T10:01:06.353Z",
+    "ok": false
+  },
+  "https://noithatphuongdong.com.vn": {
+    "scraped_at": "2026-06-04T10:01:14.692Z",
+    "ok": false
+  },
+  "https://noithatvinhphuc.com": {
+    "scraped_at": "2026-06-04T10:01:26.349Z",
+    "ok": false
+  },
+  "https://dacphuong.vn": {
+    "scraped_at": "2026-06-04T10:01:33.171Z",
+    "ok": false
+  },
+  "https://hmdesign.vn": {
+    "scraped_at": "2026-06-04T10:01:40.216Z",
+    "ok": false
+  },
+  "https://qdesign.vn": {
+    "scraped_at": "2026-06-04T10:01:47.214Z",
+    "ok": false
+  },
+  "https://cozyhouse.vn": {
+    "scraped_at": "2026-06-04T10:01:53.618Z",
+    "ok": false
+  },
+  "https://arcgroup.vn": {
+    "scraped_at": "2026-06-04T10:02:01.549Z",
+    "ok": false
+  },
+  "https://acarchitects.vn": {
+    "scraped_at": "2026-06-04T10:02:08.329Z",
+    "ok": false
+  },
+  "https://luxdesign.vn": {
+    "scraped_at": "2026-06-04T10:02:14.825Z",
+    "ok": false
+  },
+  "https://decointerior.vn": {
+    "scraped_at": "2026-06-04T10:02:20.784Z",
+    "ok": false
+  },
+  "https://viet-house.vn": {
+    "scraped_at": "2026-06-04T10:02:27.833Z",
+    "ok": false
+  },
+  "https://a-design.vn": {
+    "scraped_at": "2026-06-04T10:02:34.048Z",
+    "ok": false
+  },
+  "https://noithatchauphu.com": {
+    "scraped_at": "2026-06-04T10:02:40.704Z",
+    "ok": false
+  },
+  "https://tnhomes.vn": {
+    "scraped_at": "2026-06-04T10:02:48.073Z",
+    "ok": false
+  },
+  "https://noithatsaigon.net": {
+    "scraped_at": "2026-06-04T10:02:54.941Z",
+    "ok": false
+  },
+  "https://vietinterior.com.vn": {
+    "scraped_at": "2026-06-04T10:03:02.934Z",
+    "ok": false
+  },
+  "https://nhacuahiendai.vn": {
+    "scraped_at": "2026-06-04T10:03:09.541Z",
+    "ok": false
+  },
+  "https://mcdecor.vn": {
+    "scraped_at": "2026-06-04T10:03:15.359Z",
+    "ok": false
+  },
+  "https://hmdesign.com.vn": {
+    "scraped_at": "2026-06-04T10:03:22.668Z",
+    "ok": false
+  },
+  "https://www.aspace.com.vn": {
+    "scraped_at": "2026-06-04T10:03:29.274Z",
+    "ok": false
+  },
+  "https://trandecor.vn": {
+    "scraped_at": "2026-06-04T10:03:35.313Z",
+    "ok": false
+  },
+  "https://hanoiinterior.vn": {
+    "scraped_at": "2026-06-04T10:03:44.053Z",
+    "ok": false
+  },
+  "https://ydesign.vn": {
+    "scraped_at": "2026-06-04T10:03:50.393Z",
+    "ok": false
+  },
+  "https://nhadesign.vn": {
+    "scraped_at": "2026-06-04T10:03:56.576Z",
+    "ok": false
+  },
+  "https://xaydungdaiviet.vn": {
+    "scraped_at": "2026-06-04T10:04:02.637Z",
+    "ok": false
+  },
+  "https://noithathoa.vn": {
+    "scraped_at": "2026-06-04T10:04:15.568Z",
+    "ok": false
+  },
+  "https://sangdesign.vn": {
+    "scraped_at": "2026-06-04T10:04:27.646Z",
+    "ok": false
+  },
+  "https://phuongnhat.com.vn": {
+    "scraped_at": "2026-06-04T10:04:36.259Z",
+    "ok": false
+  },
+  "https://nttdesign.vn": {
+    "scraped_at": "2026-06-04T10:04:45.792Z",
+    "ok": false
+  },
+  "https://hlddesign.vn": {
+    "scraped_at": "2026-06-04T10:04:54.123Z",
+    "ok": false
+  },
+  "https://ctarchitects.vn": {
+    "scraped_at": "2026-06-04T10:05:00.781Z",
+    "ok": false
+  },
+  "https://kd-design.vn": {
+    "scraped_at": "2026-06-04T10:05:07.344Z",
+    "ok": false
+  },
+  "https://htarchitect.vn": {
+    "scraped_at": "2026-06-04T10:05:14.182Z",
+    "ok": false
+  },
+  "https://homedesign.com.vn": {
+    "scraped_at": "2026-06-04T10:05:22.258Z",
+    "ok": false
+  },
+  "https://nhadeptphcm.com": {
+    "scraped_at": "2026-06-04T10:05:28.443Z",
+    "ok": false
+  },
+  "https://saigonarchitect.vn": {
+    "scraped_at": "2026-06-04T10:05:35.081Z",
+    "ok": false
+  },
+  "https://hanoiarchitect.com": {
+    "scraped_at": "2026-06-04T10:05:41.228Z",
+    "ok": false
+  },
+  "https://noithat5sao.vn": {
+    "scraped_at": "2026-06-04T10:05:47.356Z",
+    "ok": false
+  },
+  "https://noithatxinhdep.vn": {
+    "scraped_at": "2026-06-04T10:05:53.686Z",
+    "ok": false
+  },
+  "https://lacomedesign.vn": {
+    "scraped_at": "2026-06-04T10:06:02.835Z",
+    "ok": false
+  },
+  "https://paxdesign.vn": {
+    "scraped_at": "2026-06-04T10:06:11.468Z",
+    "ok": false
+  },
+  "https://wingsdesign.vn": {
+    "scraped_at": "2026-06-04T10:06:18.304Z",
+    "ok": false
+  },
+  "https://aokdesign.vn": {
+    "scraped_at": "2026-06-04T10:06:25.625Z",
+    "ok": false
+  },
+  "https://homedecor.com.vn": {
+    "scraped_at": "2026-06-04T10:06:38.114Z",
+    "ok": false
+  },
+  "https://nexinterior.vn": {
+    "scraped_at": "2026-06-04T10:06:43.845Z",
+    "ok": false
+  },
+  "https://www.gachvietnam.com.vn": {
+    "scraped_at": "2026-06-04T10:06:56.127Z",
+    "ok": false
+  },
+  "https://noithatphuongnam.vn": {
+    "scraped_at": "2026-06-04T10:07:05.669Z",
+    "ok": false
+  },
+  "https://vinhphucinterior.vn": {
+    "scraped_at": "2026-06-04T10:07:11.859Z",
+    "ok": false
+  },
+  "https://kienanvinh.com": {
+    "scraped_at": "2026-06-04T10:09:22.706Z",
+    "ok": true
+  },
+  "https://www.noithatcaocap.vn": {
+    "scraped_at": "2026-06-04T10:09:26.356Z",
+    "ok": false
+  },
+  "https://goldhouse.vn": {
+    "scraped_at": "2026-06-04T10:09:29.948Z",
+    "ok": true
+  },
+  "https://noithathanoi.vn": {
+    "scraped_at": "2026-06-04T10:09:35.881Z",
+    "ok": true
+  },
+  "https://decor.vn": {
+    "scraped_at": "2026-06-04T10:09:38.996Z",
+    "ok": true
+  },
+  "https://kientruc360.vn": {
+    "scraped_at": "2026-06-04T10:09:44.946Z",
+    "ok": true
+  },
+  "https://www.tropical-space.com": {
+    "scraped_at": "2026-06-04T10:18:00.828Z",
+    "ok": true
+  },
+  "https://www.sava.vn": {
+    "scraped_at": "2026-06-04T10:18:05.087Z",
+    "ok": true
+  },
+  "https://nhadep365.vn": {
+    "scraped_at": "2026-06-04T10:18:17.482Z",
+    "ok": true
+  },
+  "https://www.nhaxanh.net": {
+    "scraped_at": "2026-06-04T10:18:20.833Z",
+    "ok": true
+  },
+  "https://noithatthanhhoa.com": {
+    "scraped_at": "2026-06-04T10:18:23.287Z",
+    "ok": true
+  },
+  "https://kientrucminhphu.com": {
+    "scraped_at": "2026-06-04T10:18:27.234Z",
+    "ok": true
+  },
+  "https://thietkenha.com": {
+    "scraped_at": "2026-06-04T10:18:31.892Z",
+    "ok": true
+  },
+  "https://noithatbinhduong.vn": {
+    "scraped_at": "2026-06-04T10:18:36.369Z",
+    "ok": true
+  },
+  "https://abdesign.vn": {
+    "scraped_at": "2026-06-04T10:18:39.759Z",
+    "ok": true
+  },
+  "https://www.furmono.com": {
+    "scraped_at": "2026-06-04T10:18:44.639Z",
+    "ok": true
+  },
+  "https://noithatxanh.com": {
+    "scraped_at": "2026-06-04T10:18:53.725Z",
+    "ok": true
+  },
+  "https://kientrucmoi.vn": {
+    "scraped_at": "2026-06-04T10:27:33.258Z",
+    "ok": true
+  },
+  "https://adecor.vn": {
+    "scraped_at": "2026-06-04T10:27:41.947Z",
+    "ok": true
+  },
+  "https://noithat365.com": {
+    "scraped_at": "2026-06-04T10:27:47.406Z",
+    "ok": true
+  },
+  "https://elitedesign.vn": {
+    "scraped_at": "2026-06-04T10:40:28.633Z",
+    "ok": true
+  },
+  "https://greeninterior.vn": {
+    "scraped_at": "2026-06-04T10:40:32.969Z",
+    "ok": true
+  },
+  "https://vdesign.vn": {
+    "scraped_at": "2026-06-04T10:40:39.659Z",
+    "ok": true
+  },
+  "https://zdesign.vn": {
+    "scraped_at": "2026-06-04T10:40:43.198Z",
+    "ok": true
+  },
+  "https://sdesign.vn": {
+    "scraped_at": "2026-06-04T10:40:46.695Z",
+    "ok": true
+  },
+  "https://dchome.vn": {
+    "scraped_at": "2026-06-04T10:40:50.704Z",
+    "ok": true
+  },
+  "https://noithathn.vn": {
+    "scraped_at": "2026-06-04T10:40:54.037Z",
+    "ok": true
+  },
+  "https://noithatnhatrang.vn": {
+    "scraped_at": "2026-06-04T10:40:58.347Z",
+    "ok": true
+  },
+  "https://noithathaiphong.vn": {
+    "scraped_at": "2026-06-04T10:41:09.182Z",
+    "ok": true
+  },
+  "https://nhadephanoi.net": {
+    "scraped_at": "2026-06-04T10:41:16.550Z",
+    "ok": true
+  },
+  "https://bestdesign.vn": {
+    "scraped_at": "2026-06-04T10:41:20.040Z",
+    "ok": true
+  },
+  "https://idesign.vn": {
+    "scraped_at": "2026-06-04T10:41:23.651Z",
+    "ok": true
+  },
+  "https://phuongdong.com.vn": {
+    "scraped_at": "2026-06-04T10:41:27.466Z",
+    "ok": true
+  },
+  "https://moderndesign.vn": {
+    "scraped_at": "2026-06-04T10:41:32.715Z",
+    "ok": true
+  },
+  "https://designgroup.vn": {
+    "scraped_at": "2026-06-04T10:41:36.975Z",
+    "ok": true
+  },
+  "https://homeplus.vn": {
+    "scraped_at": "2026-06-04T10:41:43.148Z",
+    "ok": true
+  },
+  "https://greenspace.vn": {
+    "scraped_at": "2026-06-04T10:41:46.737Z",
+    "ok": true
+  },
+  "https://saigon-interior.com": {
+    "scraped_at": "2026-06-04T10:41:49.939Z",
+    "ok": true
+  },
+  "https://apdesign.vn": {
+    "scraped_at": "2026-06-04T10:41:57.645Z",
+    "ok": true
+  },
+  "https://kdesign.com.vn": {
+    "scraped_at": "2026-06-04T10:42:03.343Z",
+    "ok": true
+  },
+  "https://htdesign.vn": {
+    "scraped_at": "2026-06-04T10:42:07.061Z",
+    "ok": true
+  },
+  "https://edesign.vn": {
+    "scraped_at": "2026-06-04T10:42:19.514Z",
+    "ok": true
+  },
+  "https://thietkenoithat.com": {
+    "scraped_at": "2026-06-04T10:42:25.374Z",
+    "ok": true
+  },
+  "https://indesign.vn": {
+    "scraped_at": "2026-06-04T10:42:31.393Z",
+    "ok": true
+  },
+  "https://kientruc365.vn": {
+    "scraped_at": "2026-06-04T10:42:36.737Z",
+    "ok": true
+  },
+  "https://xuantrang.vn": {
+    "scraped_at": "2026-06-04T10:42:41.318Z",
+    "ok": true
+  },
+  "https://kientrucvietnam.com": {
+    "scraped_at": "2026-06-04T10:42:45.080Z",
+    "ok": true
+  },
+  "https://noithatmientrung.vn": {
+    "scraped_at": "2026-06-04T10:52:28.406Z",
+    "ok": true
+  },
+  "https://noithatbinhdinh.vn": {
+    "scraped_at": "2026-06-04T10:52:32.697Z",
+    "ok": true
+  },
+  "https://noithattayninh.vn": {
+    "scraped_at": "2026-06-04T10:52:40.273Z",
+    "ok": true
+  },
+  "https://noithatlongan.vn": {
+    "scraped_at": "2026-06-04T10:52:44.386Z",
+    "ok": true
+  },
+  "https://noithatthanhhoa.vn": {
+    "scraped_at": "2026-06-04T10:52:48.641Z",
+    "ok": true
+  },
+  "https://thietkenha365.vn": {
+    "scraped_at": "2026-06-04T10:52:51.392Z",
+    "ok": true
+  },
+  "https://thietkenha.net": {
+    "scraped_at": "2026-06-04T10:52:54.486Z",
+    "ok": true
+  },
+  "https://xaydungviet.net": {
+    "scraped_at": "2026-06-04T10:52:58.929Z",
+    "ok": true
+  },
+  "https://tkdesign.vn": {
+    "scraped_at": "2026-06-04T10:53:05.670Z",
+    "ok": true
+  },
+  "https://noithatthuanphat.vn": {
+    "scraped_at": "2026-06-05T01:44:41.355Z",
     "ok": true
   }
 }

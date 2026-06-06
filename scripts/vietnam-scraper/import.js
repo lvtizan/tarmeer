@@ -19,7 +19,7 @@ function slugify(str) {
     .replace(/[đ]/g, 'd').replace(/[ơ]/g, 'o').replace(/[ư]/g, 'u')
     .replace(/[ắặẳẵằ]/g, 'a').replace(/[ấầẩẫậ]/g, 'a').replace(/[ắặẳẵằ]/g, 'a')
     .replace(/[ếềểễệ]/g, 'e').replace(/[ốồổỗộ]/g, 'o').replace(/[ớờởỡợ]/g, 'o')
-    .replace(/[ứừửữự]/g, 'u').replace(/[ídíỉịí]/g, 'i').replace(/[ỳỷỹỵ]/g, 'y')
+    .replace(/[ứừửữự]/g, 'u').replace(/[íỉịì]/g, 'i').replace(/[ỳỷỹỵ]/g, 'y')
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
@@ -27,11 +27,65 @@ function slugify(str) {
     .slice(0, 80);
 }
 
-const GENERIC_TITLES = ['trang chủ', 'home', 'homepage', 'trang chu', 'index'];
+const GENERIC_TITLES = [
+  'trang chủ', 'home', 'homepage', 'trang chu', 'index', 'main page',
+  'thiết kế nội thất', 'thiet ke noi that',  // VN interior design generic
+  'thi công nội thất', 'trang chu website',
+  'kiến trúc', 'nội thất',
+  'thiết kế', 'thiet ke', 'xây dựng', 'xay dung',
+  'kiến tạo không gian',  // generic tagline
+];
 
-function extractCompanyName(raw, website, note) {
+// Domains known to not be interior design companies
+const DOMAIN_BLACKLIST = [
+  'mia.vn', 'kienviet.net', 'kienviet.com', 'desino.vn', 'kientao.com', 'floorii.com',
+  'vinadesign.vn',      // printing company
+  'phanphoison.com.vn', // paint distributor
+  'dongsuh.vn',         // Korean furniture (no images after filter)
+  'byzan.vn',           // already deleted from DB
+  's-housing.vn',       // already deleted from DB
+  'nhadepsg.vn',        // SaiGon Grand Homes - all images were flags
+  'nexhome.vn',         // generic "Trang chủ" title, too few images after filter
+  'neohouse.vn',        // duplicate (both neohouse.vn and www.neohouse.vn exist in results)
+  'tropical-space.com', // French clothing store
+  'furmono.com',        // fursuit makers
+  'sava.vn',            // empty placeholder site
+  'nhaxanh.net',        // parked/Cloudflare
+  'noithatthanhhoa.com', // domain for sale
+  'kientrucminhphu.com', // notification page
+  'thietkenha.com',     // domain for sale
+  'noithatxanh.com',    // empty site
+  // kientrucmoi.vn and noithat365.com now use WP API for images
+  'nhadephanoi.net',    // real estate listings site
+  'phuongdong.com.vn',  // hotel (Khách sạn Phương Đông)
+  'homeplus.vn',        // cleaning/household services
+  'indesign.vn',        // printing company (in ấn)
+  'xuantrang.vn',       // cosmetics (Mỹ Phẩm)
+  'noithatnhatrang.vn', // sauna room specialist (phòng xông hơi)
+  'designgroup.vn',     // manufacturing technology company
+  'edesign.vn',         // empty blog (0 images)
+  'noithathaiphong.vn', // 0 images scraped
+  'greenspace.vn',      // CDN hotlink protection (403 on all image downloads)
+  'elitedesign.vn',    // all 20 images removed by quality filter (graphics/flags only)
+  'noithatthanhhoa.vn', // template/demo website ("Mẫu web kiến trúc")
+  'noithatbyt.vn',      // only 1 quality image survived filter
+  'sango9x.com',        // flooring retailer, only 1 quality image
+  'housedesign.vn',     // only 1 quality image survived filter
+  'indochinedesign.vn', // only 1 quality image survived filter
+  'vicostone.com',      // Sitecore CMS media protection, all images 302→homepage
+  'vivudecor.vn',       // JS-lazy-load only, cheerio gets 0 real images (all SVG placeholders)
+];
+
+const MIN_IMAGES = 3; // skip if scraped fewer images than this
+
+function extractCompanyName(rawIn, website, note) {
+  let raw = rawIn;
+  // Strip control characters that can sneak in from HTML parsing
+  raw = raw.replace(/[\x00-\x1F\x7F]/g, '').trim();
+  const normalize = s => s.normalize('NFC').toLowerCase().trim();
+  const GENERIC_NORMALIZED = GENERIC_TITLES.map(normalize);
   // If title is generic, derive name from domain or note
-  if (GENERIC_TITLES.includes(raw.trim().toLowerCase())) {
+  if (GENERIC_NORMALIZED.includes(normalize(raw))) {
     if (note) return note.split(' - ')[0].trim().slice(0, 200);
     try {
       const domain = new URL(website).hostname.replace(/^www\./, '');
@@ -39,11 +93,20 @@ function extractCompanyName(raw, website, note) {
     } catch { return website; }
   }
   // Strip common Vietnamese meta title suffixes
-  return raw
+  const stripped = raw
     .replace(/\s*[-|–|•]\s*.{0,80}$/, '')
     .replace(/\s*\|\s*.{0,80}$/, '')
     .trim()
     .slice(0, 200) || raw.slice(0, 200);
+  // If the stripped result is also generic, fall back to note/domain
+  if (GENERIC_NORMALIZED.includes(normalize(stripped))) {
+    if (note) return note.split(' - ')[0].trim().slice(0, 200);
+    try {
+      const domain = new URL(website).hostname.replace(/^www\./, '');
+      return domain.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).slice(0, 200);
+    } catch { return stripped; }
+  }
+  return stripped;
 }
 
 function categoryToServices(category) {
@@ -63,21 +126,35 @@ async function main() {
   console.log(`\nFound ${successful.length} successful scrapes to import\n`);
   if (DRY_RUN) console.log('[DRY RUN MODE]\n');
 
+  require('/Users/kp/Code/tarmeer-4.0-local/server/node_modules/dotenv').config({ path: '/Users/kp/Code/tarmeer-4.0-local/server/.env' });
   const db = await mysql.createConnection({
-    host: 'localhost', user: 'root', password: '', database: 'tarmeer', port: 3306
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 3306,
   });
 
   let inserted = 0, skipped = 0;
 
   for (const r of successful) {
+    // Skip domains known to be non-interior companies
+    try {
+      const domain = new URL(r.website).hostname.replace(/^www\./, '');
+      if (DOMAIN_BLACKLIST.includes(domain)) { console.log(`  [skip-domain] ${r.website}`); skipped++; continue; }
+    } catch {}
+
+    // Skip entries with too few images (likely wrong-category or empty sites)
+    if ((r.images?.length || 0) < MIN_IMAGES) { console.log(`  [skip-imgs] ${r.website} (${r.images?.length || 0} imgs)`); skipped++; continue; }
+
     const name = extractCompanyName(r.company_name, r.website, r.note);
     if (!name || name.length < 3) { skipped++; continue; }
 
     const baseSlug = 'vn-' + slugify(name);
     let slug = baseSlug;
 
-    // Check for existing slug
-    const [existing] = await db.execute('SELECT id FROM uae_companies WHERE slug = ? OR (website = ? AND country = ?)', [slug, r.website, 'vn']);
+    // Check if website already exists (don't skip just for slug collision - slug will be made unique below)
+    const [existing] = await db.execute('SELECT id FROM uae_companies WHERE website = ? AND country = ?', [r.website, 'vn']);
     if (existing.length > 0) {
       console.log(`  [skip] ${name} (already exists)`);
       skipped++;

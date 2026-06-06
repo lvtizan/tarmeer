@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { fetchPublicCompanyDetail } from '@/lib/publicApi';
 import { getCompanyTypeLabel } from '@/lib/companyData';
 import CompanyDetailClient from '@/components/companies/CompanyDetailClient';
@@ -27,6 +28,9 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const headersList = await headers();
+  const metaCountry = headersList.get('x-country') ?? 'ae';
+  const metaIsVn = metaCountry === 'vn';
   try {
     const company = await fetchPublicCompanyDetail(slug);
     const canonicalSlug = company.slug || slug;
@@ -35,13 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const ogImage = heroImages[0]
       ? `https://www.tarmeer.com${heroImages[0]}`
       : 'https://www.tarmeer.com/images/tarmeer_logo.svg';
-
-    const description = `${company.name}${company.companyType ? ` (${typeLabel})` : ''} provides ${company.services.slice(0, 3).join(', ')} services in ${company.city}, UAE. ${company.shortDescription}`;
+    const locationSuffix = metaIsVn ? '' : ', UAE';
+    const description = `${company.name}${company.companyType ? ` (${typeLabel})` : ''} provides ${company.services.slice(0, 3).join(', ')} services in ${company.city}${locationSuffix}. ${company.shortDescription}`;
 
     return {
       title: `${company.name} - ${typeLabel} in ${company.city} - Tarmeer`,
       description,
-      keywords: `${company.name}, interior design ${company.city}, renovation ${company.city}, ${company.services.slice(0, 5).join(', ')}, UAE, Tarmeer`,
+      keywords: `${company.name}, interior design ${company.city}, renovation ${company.city}, ${company.services.slice(0, 5).join(', ')}, ${metaIsVn ? 'Vietnam' : 'UAE'}, Tarmeer`,
       robots: 'index, follow, max-image-preview:large',
       alternates: {
         canonical: `https://www.tarmeer.com/companies/${canonicalSlug}`,
@@ -73,6 +77,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CompanyDetailPage({ params }: Props) {
   const { slug } = await params;
+  const headersList = await headers();
+  const country = headersList.get('x-country') ?? 'ae';
+  const isVn = country === 'vn';
 
   let company;
   let fetchError: string | null = null;
@@ -116,21 +123,23 @@ export default async function CompanyDetailPage({ params }: Props) {
     address: {
       '@type': 'PostalAddress',
       addressLocality: company.city,
-      addressCountry: 'AE',
+      addressCountry: isVn ? 'VN' : 'AE',
     },
     ...(company.phone ? { telephone: company.phone } : {}),
     url: company.website || `https://www.tarmeer.com/companies/${company.slug || company.id}`,
     ...(heroImages[0] ? { image: `https://www.tarmeer.com${heroImages[0]}` } : {}),
     priceRange: '$$',
-    areaServed: [
-      { '@type': 'City', name: 'Dubai' },
-      { '@type': 'City', name: 'Abu Dhabi' },
-      { '@type': 'City', name: 'Sharjah' },
-      { '@type': 'City', name: 'Ajman' },
-      { '@type': 'City', name: 'Ras Al Khaimah' },
-      { '@type': 'City', name: 'Fujairah' },
-      { '@type': 'City', name: 'Umm Al Quwain' },
-    ],
+    areaServed: isVn
+      ? [{ '@type': 'Country', name: 'Vietnam' }]
+      : [
+          { '@type': 'City', name: 'Dubai' },
+          { '@type': 'City', name: 'Abu Dhabi' },
+          { '@type': 'City', name: 'Sharjah' },
+          { '@type': 'City', name: 'Ajman' },
+          { '@type': 'City', name: 'Ras Al Khaimah' },
+          { '@type': 'City', name: 'Fujairah' },
+          { '@type': 'City', name: 'Umm Al Quwain' },
+        ],
     knowsAbout:
       company.services.length > 0
         ? company.services
@@ -167,7 +176,7 @@ export default async function CompanyDetailPage({ params }: Props) {
         name: `What services does ${company.name} offer in ${company.city}?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `${company.name} offers professional interior design and renovation services in ${company.city}, UAE.${
+          text: `${company.name} offers professional interior design and renovation services in ${company.city}${isVn ? '' : ', UAE'}.${
             company.services.length > 0
               ? ` Their specialties include ${company.services.slice(0, 5).join(', ')}.`
               : ' They serve residential and commercial clients.'
@@ -225,12 +234,12 @@ export default async function CompanyDetailPage({ params }: Props) {
           </ul>
         )}
         <address>
-          {company.city}, UAE
+          {company.city}{isVn ? '' : ', UAE'}
         </address>
       </div>
 
       {/* Interactive client component */}
-      <CompanyDetailClient company={company} slug={slug} />
+      <CompanyDetailClient company={company} slug={slug} isVn={isVn} />
     </>
   );
 }
