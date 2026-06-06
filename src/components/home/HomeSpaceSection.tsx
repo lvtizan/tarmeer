@@ -12,11 +12,11 @@ const AE_SPACE_CARDS = [
 ];
 
 const VN_SPACE_CARDS = [
-  { key: 'Villa' as const, to: '/companies?style=Villa', image: '/images/vn-companies/portfolio/vn-atz-luxury/06.jpg', size: 'large' },
-  { key: 'Apartment' as const, to: '/companies?style=Apartment', image: '/images/vn-companies/portfolio/vn-25-nm-thiet-ke-noi-that-chung-cu-biet-thu-nha-pho-vn-phong/05.jpg', size: 'large' },
-  { key: 'Commercial' as const, to: '/companies?style=Commercial', image: '/images/vn-companies/portfolio/vn-cong-ty-cp-s/01.jpg', size: 'small' },
-  { key: 'Office' as const, to: '/companies?style=Office', image: '/images/vn-companies/portfolio/vn-floorii/12.jpg', size: 'small' },
-  { key: 'Landscape' as const, to: '/companies?service=Landscape', image: '/images/vn-companies/portfolio/vn-atz-luxury/03.jpg', size: 'small' },
+  { key: 'Villa' as const, to: '/companies?service=Interior+Design', image: '/images/vn-companies/portfolio/vn-atz-luxury/06.jpg', size: 'large' },
+  { key: 'Apartment' as const, to: '/companies?service=Fit-Out', image: '/images/vn-companies/portfolio/vn-25-nm-thiet-ke-noi-that-chung-cu-biet-thu-nha-pho-vn-phong/05.jpg', size: 'large' },
+  { key: 'Commercial' as const, to: '/companies?service=Construction', image: '/images/vn-companies/portfolio/vn-cong-ty-cp-s/01.jpg', size: 'small' },
+  { key: 'Office' as const, to: '/companies?service=Architecture', image: '/images/vn-companies/portfolio/vn-floorii/12.jpg', size: 'small' },
+  { key: 'Landscape' as const, to: '/companies?service=Renovation', image: '/images/vn-companies/portfolio/vn-atz-luxury/03.jpg', size: 'small' },
 ];
 
 export default function HomeSpaceSection() {
