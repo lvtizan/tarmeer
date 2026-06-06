@@ -231,76 +231,110 @@ function AdminVisitRecordsContent() {
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : (
           <>
-            <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-lg font-bold text-[#2c2c2c]">{detail.company_name || '—'}</h1>
-                    {detail.linked_company_name && detail.linked_company_name !== detail.company_name && (
-                      <span className="text-xs text-stone-400 flex items-center gap-1">
-                        → {detail.linked_company_name}
-                        {detail.company_ref_id && (
-                          <a
-                            href={detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#b8864a] hover:opacity-70"
-                          >
-                            <ExternalLink size={12} />
-                          </a>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    detail.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {detail.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm pt-1 border-t border-stone-100">
-                <div>
-                  <div className="text-xs text-stone-600 mb-0.5">{t('Interviewer', '采访人')}</div>
-                  <div className="font-medium text-[#2c2c2c]">{detail.interviewer_name}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-stone-600 mb-0.5">{t('Interview Subject', '访谈对象')}</div>
-                  {detail.company_ref_id ? (
-                    <a
-                      href={`${detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}?from=visit-records&recordId=${detail.id}`}
-                      className="font-medium text-[#b8864a] hover:underline inline-flex items-center gap-1"
-                    >
-                      {detail.company_name || '—'}
-                      <ExternalLink size={12} />
-                    </a>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-medium text-[#2c2c2c]">{detail.company_name || '—'}</span>
-                      {detail.company_name && (
+            <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
+              {/* Title row: company name + status badge */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <h1 className="text-[17px] font-bold text-[#2c2c2c] leading-snug">{detail.company_name || '—'}</h1>
+                  {detail.linked_company_name && detail.linked_company_name !== detail.company_name && (
+                    <span className="text-xs text-stone-400 flex items-center gap-1 mt-0.5">
+                      → {detail.linked_company_name}
+                      {detail.company_ref_id && (
                         <a
-                          href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`}
-                          title="在公司库中搜索"
-                          className="text-stone-400 hover:text-[#b8864a] transition-colors"
+                          href={detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#b8864a] hover:opacity-70"
                         >
                           <ExternalLink size={12} />
                         </a>
                       )}
-                    </div>
+                    </span>
                   )}
                 </div>
-                <div>
-                  <div className="text-xs text-stone-600 mb-0.5">{t('Created', '创建时间')}</div>
-                  <div className="text-stone-600">{formatDate(detail.created_at)}</div>
+                <span className={`flex-shrink-0 mt-0.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  detail.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {detail.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
+                </span>
+              </div>
+
+              {/* Meta — compact inline on mobile, grid on desktop */}
+              <div className="pt-3 border-t border-stone-100">
+                {/* Mobile: inline chips */}
+                <div className="sm:hidden flex flex-wrap gap-x-4 gap-y-2 text-xs">
+                  <span className="flex items-center gap-1 text-stone-500">
+                    <span className="text-stone-400">{t('Interviewer', '采访人')}</span>
+                    <span className="font-medium text-stone-700">{detail.interviewer_name || '—'}</span>
+                  </span>
+                  {detail.company_name && (
+                    <span className="flex items-center gap-1 text-stone-500">
+                      <span className="text-stone-400">{t('Interview Subject', '访谈对象')}</span>
+                      {detail.company_ref_id ? (
+                        <a
+                          href={`${detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}?from=visit-records&recordId=${detail.id}`}
+                          className="font-medium text-[#b8864a] hover:underline inline-flex items-center gap-0.5"
+                        >
+                          {detail.company_name}<ExternalLink size={10} />
+                        </a>
+                      ) : (
+                        <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} className="font-medium text-stone-700 inline-flex items-center gap-0.5">
+                          {detail.company_name}<ExternalLink size={10} className="text-stone-400" />
+                        </a>
+                      )}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 text-stone-500">
+                    <span className="text-stone-400">{t('Created', '创建')}</span>
+                    <span className={ADMIN_TIME_CLS}>{formatDate(detail.created_at)}</span>
+                  </span>
+                  {detail.submitted_at && (
+                    <span className="flex items-center gap-1 text-stone-500">
+                      <span className="text-stone-400">{t('Submitted', '提交')}</span>
+                      <span className={ADMIN_TIME_CLS}>{formatDate(detail.submitted_at)}</span>
+                    </span>
+                  )}
+                  <span className="text-stone-400">#{detail.id}</span>
                 </div>
-                <div>
-                  <div className="text-xs text-stone-600 mb-0.5">{t('Submitted', '提交时间')}</div>
-                  <div className="text-stone-600">{formatDate(detail.submitted_at)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-stone-600 mb-0.5">{t('Record ID', '记录编号')}</div>
-                  <div className="text-stone-600">#{detail.id}</div>
+
+                {/* Desktop: grid */}
+                <div className="hidden sm:grid grid-cols-3 gap-x-6 gap-y-3 text-sm">
+                  <div>
+                    <div className="text-xs text-stone-600 mb-0.5">{t('Interviewer', '采访人')}</div>
+                    <div className="font-medium text-[#2c2c2c]">{detail.interviewer_name}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-stone-600 mb-0.5">{t('Interview Subject', '访谈对象')}</div>
+                    {detail.company_ref_id ? (
+                      <a
+                        href={`${detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}?from=visit-records&recordId=${detail.id}`}
+                        className="font-medium text-[#b8864a] hover:underline inline-flex items-center gap-1"
+                      >
+                        {detail.company_name || '—'}<ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-[#2c2c2c]">{detail.company_name || '—'}</span>
+                        {detail.company_name && (
+                          <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} title="在公司库中搜索" className="text-stone-400 hover:text-[#b8864a] transition-colors">
+                            <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs text-stone-600 mb-0.5">{t('Created', '创建时间')}</div>
+                    <div className="text-stone-600">{formatDate(detail.created_at)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-stone-600 mb-0.5">{t('Submitted', '提交时间')}</div>
+                    <div className="text-stone-600">{formatDate(detail.submitted_at)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-stone-600 mb-0.5">{t('Record ID', '记录编号')}</div>
+                    <div className="text-stone-600">#{detail.id}</div>
+                  </div>
                 </div>
               </div>
             </div>
