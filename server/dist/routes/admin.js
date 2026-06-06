@@ -403,10 +403,10 @@ router.get('/interviews', fieldAdminController_1.listInterviews);
 router.get('/interviews/:id', fieldAdminController_1.getInterview);
 router.patch('/interviews/:id', fieldAdminController_1.editInterview);
 router.delete('/interviews', fieldAdminController_1.deleteInterviews);
-// Field staff management (super_admin only)
-router.get('/staff', adminAuth_1.requireSuperAdmin, fieldAdminController_1.listStaff);
-router.post('/staff', adminAuth_1.requireSuperAdmin, fieldAdminController_1.createStaff);
-router.patch('/staff/:id', adminAuth_1.requireSuperAdmin, fieldAdminController_1.toggleStaff);
+// Field staff management (super_admin or can_manage_field_staff)
+router.get('/staff', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.listStaff);
+router.post('/staff', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.createStaff);
+router.patch('/staff/:id', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.toggleStaff);
 // Enum management — company types & services
 router.get('/enums/company-types', enumAdminController_1.listCompanyTypes);
 router.post('/enums/company-types', adminAuth_1.requireAdmin, enumAdminController_1.createCompanyType);

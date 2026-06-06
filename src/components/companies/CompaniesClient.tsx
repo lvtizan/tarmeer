@@ -9,6 +9,7 @@ import type { Company } from '@/lib/companyData';
 import { getCompanyTypeLabel } from '@/lib/companyData';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '@/lib/imageCleanup';
 import { resolveImageUrl } from '@/lib/imageUrl';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
@@ -68,7 +69,8 @@ function FilterOption({
 }
 
 // List Card - Project First
-function CompanyCard({ company, onClick }: { company: Company; onClick: () => void }) {
+function CompanyCard({ company, onClick, isVn }: { company: Company; onClick: () => void; isVn: boolean }) {
+  const { tr } = useSiteLocale();
   const [imgIndex, setImgIndex] = useState(0);
   const [imgRetryIndex, setImgRetryIndex] = useState(0);
   const [failedIndices, setFailedIndices] = useState<number[]>([]);
@@ -162,9 +164,9 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
                 <span className="text-stone-300">&middot;</span>
               </>
             )}
-            <span className="text-[#b8860b] font-medium">{company.projectCount}+ projects</span>
+            <span className="text-[#b8860b] font-medium">{tr.companies.projects(company.projectCount)}</span>
             <span className="text-stone-300">&middot;</span>
-            <span className="text-stone-400">{company.city}, UAE</span>
+            <span className="text-stone-400">{company.city}{isVn ? '' : ', UAE'}</span>
             <span className="text-stone-300">&middot;</span>
             <span className="text-stone-400">Since {company.foundedYear}</span>
           </div>
@@ -209,11 +211,11 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#b8860b] text-[#b8860b] font-semibold text-xs whitespace-nowrap hover:bg-[#b8860b] hover:text-white transition-colors duration-200"
           >
             <Mail className="w-3.5 h-3.5" />
-            Send Message
+            {tr.companies.sendMessage}
           </button>
           <span className="flex items-center gap-1 text-xs text-stone-400">
             <MapPin className="w-3 h-3 flex-shrink-0" />
-            {company.city}, UAE
+            {company.city}{isVn ? '' : ', UAE'}
           </span>
         </div>
       </div>
@@ -228,12 +230,12 @@ function CompanyCard({ company, onClick }: { company: Company; onClick: () => vo
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[#b8860b] text-[#b8860b] font-semibold text-sm whitespace-nowrap hover:bg-[#b8860b] hover:text-white transition-colors duration-200"
         >
           <Mail className="w-4 h-4" />
-          Send Message
+          {tr.companies.sendMessage}
         </button>
         <div className="mt-3 flex items-start gap-1.5 text-xs text-stone-400 text-center leading-snug">
           <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-stone-400" />
           <span>
-            {company.projectCount}+ projects in the {company.city} area
+            {tr.companies.projectsInArea(company.projectCount, company.city)}
           </span>
         </div>
       </div>
@@ -247,6 +249,8 @@ const SHOW_LIMIT = 6;
 export default function CompaniesClient({ initialCompanies }: { initialCompanies: Company[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { tr, lang } = useSiteLocale();
+  const isVn = lang === 'vi';
   const allServices = useServices();
   const [companies] = useState<Company[]>(initialCompanies);
   const [searchQuery, setSearchQuery] = useState('');
@@ -334,9 +338,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
     <>
       {/* City */}
       <div>
-        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">City</h4>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.city}</h4>
         <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
-          <FilterOption compact={compact} selected={!selectedCity} onClick={() => setSelectedCity('')}>All Cities</FilterOption>
+          <FilterOption compact={compact} selected={!selectedCity} onClick={() => setSelectedCity('')}>{tr.companies.allCities}</FilterOption>
           {cityOptions.map((city) => (
             <FilterOption compact={compact} key={city} selected={selectedCity === city} onClick={() => setSelectedCity(city)}>
               {city}
@@ -351,9 +355,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
       {typeOptions.length > 0 && (
         <>
           <div>
-            <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Company Type</h4>
+            <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.companyType}</h4>
             <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
-              <FilterOption compact={compact} selected={!selectedType} onClick={() => setSelectedType('')}>All Types</FilterOption>
+              <FilterOption compact={compact} selected={!selectedType} onClick={() => setSelectedType('')}>{tr.companies.allTypes}</FilterOption>
               {typeOptions.map((type) => (
                 <FilterOption compact={compact} key={type} selected={selectedType === type} onClick={() => setSelectedType(type)}>
                   {getCompanyTypeLabel(type)}
@@ -367,9 +371,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
       {/* Founded */}
       <div>
-        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Founded</h4>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.founded}</h4>
         <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
-          <FilterOption compact={compact} selected={!foundedRange} onClick={() => setFoundedRange('')}>Any</FilterOption>
+          <FilterOption compact={compact} selected={!foundedRange} onClick={() => setFoundedRange('')}>{tr.companies.any}</FilterOption>
           <FilterOption compact={compact} selected={foundedRange === '2015-2026'} onClick={() => setFoundedRange('2015-2026')}>10+ years</FilterOption>
           <FilterOption compact={compact} selected={foundedRange === '2010-2014'} onClick={() => setFoundedRange('2010-2014')}>15+ years</FilterOption>
           <FilterOption compact={compact} selected={foundedRange === '2000-2009'} onClick={() => setFoundedRange('2000-2009')}>25+ years</FilterOption>
@@ -380,7 +384,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
       {/* Style */}
       <div>
-        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Style</h4>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.style}</h4>
         <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
           {(showAllStyles ? styleOptions : styleOptions.slice(0, compact ? styleOptions.length : SHOW_LIMIT)).map((style) => (
             <FilterOption
@@ -400,7 +404,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
             onClick={() => setShowAllStyles((v) => !v)}
             className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
           >
-            {showAllStyles ? 'Show less' : `Show ${styleOptions.length - SHOW_LIMIT} more`}
+            {showAllStyles ? tr.companies.showLess : tr.companies.showMore(styleOptions.length - SHOW_LIMIT)}
           </button>
         )}
       </div>
@@ -409,7 +413,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
       {/* Services */}
       <div>
-        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">Services</h4>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.services}</h4>
         <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
           {(showAllServices ? serviceOptions : serviceOptions.slice(0, compact ? serviceOptions.length : SHOW_LIMIT)).map((service) => (
             <FilterOption
@@ -429,7 +433,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
             onClick={() => setShowAllServices((v) => !v)}
             className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
           >
-            {showAllServices ? 'Show less' : `Show ${serviceOptions.length - SHOW_LIMIT} more`}
+            {showAllServices ? tr.companies.showLess : tr.companies.showMore(serviceOptions.length - SHOW_LIMIT)}
           </button>
         )}
       </div>
@@ -445,15 +449,15 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,74,0.12),transparent_70%)]" />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
           <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mb-10">
-            Find the Right Design & Renovation Pro in UAE
+            {tr.companies.heroHeading}
           </h1>
 
           {/* 3-Step Flow */}
           <div className="grid grid-cols-3 mb-10 max-w-xs sm:max-w-sm mx-auto">
             {[
-              { icon: ClipboardList, label: 'Tell us about your project' },
-              { icon: Users, label: 'Get matched with local professionals' },
-              { icon: Handshake, label: 'Hire the right pro with confidence' },
+              { icon: ClipboardList, label: tr.companies.step1 },
+              { icon: Users, label: tr.companies.step2 },
+              { icon: Handshake, label: tr.companies.step3 },
             ].map((step, i) => (
               <div key={i} className="relative flex flex-col items-center">
                 {i > 0 && (
@@ -475,14 +479,14 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
               <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
               <input
                 type="text"
-                placeholder="Search by city or company name"
+                placeholder={tr.companies.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-12 pl-10 pr-4 bg-white rounded-l-lg text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none"
               />
             </div>
             <button className="h-12 px-6 bg-[#b8864a] hover:bg-[#a67c47] text-white text-sm font-semibold rounded-r-lg transition whitespace-nowrap">
-              Get Started
+              {tr.companies.getStarted}
             </button>
           </div>
 
@@ -494,9 +498,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
         <div className="bg-white border-b border-stone-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-[#1c1917]">Active Filters</span>
+              <span className="text-sm font-medium text-[#1c1917]">{tr.companies.activeFilters}</span>
               <button onClick={clearAllFilters} className="text-sm text-stone-500 hover:text-[#b8860b] transition">
-                Clear all
+                {tr.companies.clearAll}
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -525,7 +529,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-stone-200 bg-white text-sm font-medium text-stone-600 hover:bg-stone-50 transition"
           >
             <SlidersHorizontal className="w-4 h-4" />
-            Filters
+            {tr.companies.filters}
             {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#b8864a]" />}
           </button>
         </div>
@@ -536,7 +540,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
             <div className="absolute inset-0 bg-black/40" onClick={() => setFilterDrawerOpen(false)} />
             <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-sm bg-white overflow-y-auto">
               <div className="flex items-center justify-between p-4 border-b border-stone-200 sticky top-0 bg-white z-10">
-                <h3 className="text-base font-semibold text-[#1c1917]">Filters</h3>
+                <h3 className="text-base font-semibold text-[#1c1917]">{tr.companies.filters}</h3>
                 <button onClick={() => setFilterDrawerOpen(false)} className="p-2 rounded-lg hover:bg-stone-100">
                   <X className="w-5 h-5" />
                 </button>
@@ -548,7 +552,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
                     onClick={() => { clearAllFilters(); setFilterDrawerOpen(false); }}
                     className="w-full py-2.5 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50"
                   >
-                    Clear All Filters
+                    {tr.companies.clearFilters}
                   </button>
                 </div>
               )}
@@ -577,16 +581,17 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
                   >
                     <CompanyCard
                       company={company}
-                      onClick={() => router.push(`/companies/${company.id}`)}
+                      isVn={isVn}
+                      onClick={() => router.push(`/companies/${company.slug || company.id}`)}
                     />
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-20 bg-white rounded-[22px] border border-stone-100">
-                <p className="text-stone-400 mb-4">No designers found matching your criteria</p>
+                <p className="text-stone-400 mb-4">{tr.companies.noCompanies}</p>
                 <button onClick={clearAllFilters} className="text-[#b8860b] hover:underline">
-                  Clear filters
+                  {tr.companies.clearFilters}
                 </button>
               </div>
             )}

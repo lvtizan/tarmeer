@@ -6,29 +6,38 @@ import CompaniesClient from '@/components/companies/CompaniesClient';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: 'Interior Design Companies in UAE - Tarmeer',
-  description:
-    'Browse and compare interior design companies, renovation firms, and fit-out contractors in Dubai, Abu Dhabi, Sharjah. View portfolios and request quotes.',
-  openGraph: {
-    title: 'Interior Design Companies in UAE - Tarmeer',
-    description:
-      'Browse and compare interior design companies, renovation firms, and fit-out contractors in UAE.',
-    url: 'https://www.tarmeer.com/companies',
-    type: 'website',
-    images: [{ url: 'https://www.tarmeer.com/images/tarmeer_logo.svg' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-  },
-  alternates: {
-    canonical: 'https://www.tarmeer.com/companies',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = await headers();
+  const country = headersList.get('x-country') ?? 'ae';
+  const isVn = country === 'vn';
+
+  const title = isVn
+    ? 'Công Ty Thiết Kế Nội Thất tại Việt Nam - Tarmeer'
+    : 'Interior Design Companies in UAE - Tarmeer';
+  const description = isVn
+    ? 'Tìm và so sánh các công ty thiết kế nội thất, thi công, cải tạo hàng đầu tại Việt Nam. Xem hồ sơ năng lực và yêu cầu báo giá.'
+    : 'Browse and compare interior design companies, renovation firms, and fit-out contractors in Dubai, Abu Dhabi, Sharjah. View portfolios and request quotes.';
+  const canonical = isVn ? 'https://vn.tarmeer.com/companies' : 'https://www.tarmeer.com/companies';
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: 'website',
+      images: [{ url: 'https://www.tarmeer.com/images/tarmeer_logo.svg' }],
+    },
+    twitter: { card: 'summary_large_image' },
+    alternates: { canonical },
+  };
+}
 
 export default async function CompaniesPage() {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
+  const isVn = country === 'vn';
 
   const result = await Promise.allSettled([fetchPublicCompanies(300, 'list', country)]);
   const companies = result[0].status === 'fulfilled' ? result[0].value : [];
@@ -36,9 +45,10 @@ export default async function CompaniesPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Interior Design Companies in UAE',
-    description:
-      'Verified interior design and renovation companies across the United Arab Emirates.',
+    name: isVn ? 'Công Ty Thiết Kế Nội Thất tại Việt Nam' : 'Interior Design Companies in UAE',
+    description: isVn
+      ? 'Các công ty thiết kế nội thất và thi công hàng đầu tại Việt Nam.'
+      : 'Verified interior design and renovation companies across the United Arab Emirates.',
     numberOfItems: companies.length,
     itemListElement: companies.slice(0, 30).map((c, i) => ({
       '@type': 'ListItem',
@@ -51,7 +61,7 @@ export default async function CompaniesPage() {
           address: {
             '@type': 'PostalAddress',
             addressLocality: c.city,
-            addressCountry: 'AE',
+            addressCountry: isVn ? 'VN' : 'AE',
           },
         }),
       },

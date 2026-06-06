@@ -645,7 +645,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                     categories={activeCategories}
                     onImageClick={handleImageClick}
                     externalWebsite={
-                      company.isClaimed ? undefined : company.website || undefined
+                      company.isClaimed || isVn ? undefined : company.website || undefined
                     }
                   />
                 </>

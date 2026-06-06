@@ -109,7 +109,15 @@ async function deleteInterviews(req, res) {
 // GET /api/admin/staff
 async function listStaff(_req, res) {
     try {
-        const [rows] = await database_1.default.execute(`SELECT id, email, full_name, is_active, created_at FROM admin_users WHERE role = 'field_staff' ORDER BY created_at DESC`);
+        const [rows] = await database_1.default.execute(`
+      SELECT au.id, au.email, au.full_name, au.is_active, au.created_at, au.last_login,
+             COUNT(ci.id) AS submitted_count
+      FROM admin_users au
+      LEFT JOIN company_interviews ci ON ci.interviewer_id = au.id AND ci.status = 'submitted'
+      WHERE au.role = 'field_staff'
+      GROUP BY au.id
+      ORDER BY au.created_at DESC
+    `);
         res.json({ staff: rows });
     }
     catch (e) {

@@ -26,11 +26,18 @@ export default function Navbar({
   noBorder?: boolean;
   variant?: NavbarVariant;
 }) {
-  const { tr } = useSiteLocale();
+  const { tr, lang } = useSiteLocale();
+  const isVn = lang === 'vi';
 
   const navLinks = [{ to: '/', label: tr.footer.navLinks.Home }];
 
-  const spaceTypeItems = [
+  const spaceTypeItems = isVn ? [
+    { label: tr.spaces.Villa, to: '/companies?service=Interior+Design' },
+    { label: tr.spaces.Apartment, to: '/companies?service=Fit-Out' },
+    { label: tr.spaces.Commercial, to: '/companies?service=Construction' },
+    { label: tr.spaces['Public / Institutional'], to: '/companies?service=Architecture' },
+    { label: tr.spaces['Outdoor / Landscape'], to: '/companies?service=Renovation' },
+  ] : [
     { label: tr.spaces.Villa, to: '/companies?style=Villa' },
     { label: tr.spaces.Apartment, to: '/companies?style=Apartment' },
     { label: tr.spaces.Commercial, to: '/companies?style=Commercial' },

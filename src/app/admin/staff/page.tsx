@@ -14,6 +14,8 @@ interface StaffMember {
   full_name: string;
   is_active: number;
   created_at: string;
+  last_login: string | null;
+  submitted_count: number;
 }
 
 export default function AdminStaffPage() {
@@ -157,8 +159,10 @@ export default function AdminStaffPage() {
             <thead>
               <tr className="border-b border-stone-100 text-left">
                 <th className="px-4 py-3 font-medium text-stone-500">{t('Name', '姓名')}</th>
-                <th className="px-4 py-3 font-medium text-stone-500">{t('Email', '邮箱')}</th>
-                <th className="px-4 py-3 font-medium text-stone-500">{t('Joined', '加入时间')}</th>
+                <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">{t('Email', '邮箱')}</th>
+                <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">{t('Joined', '加入时间')}</th>
+                <th className="px-4 py-3 font-medium text-stone-500 hidden lg:table-cell">{t('Last Login', '最后登录')}</th>
+                <th className="px-4 py-3 font-medium text-stone-500 text-right">{t('Submitted', '提交公司')}</th>
                 <th className="px-4 py-3 font-medium text-stone-500">{t('Status', '状态')}</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -166,9 +170,24 @@ export default function AdminStaffPage() {
             <tbody>
               {staff.map(s => (
                 <tr key={s.id} className="border-b border-stone-50 hover:bg-stone-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-[#2c2c2c]">{s.full_name}</td>
-                  <td className="px-4 py-3 text-stone-500">{s.email}</td>
-                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-[#2c2c2c]">{s.full_name}</div>
+                    <div className="text-xs text-stone-400 sm:hidden">{s.email}</div>
+                  </td>
+                  <td className="px-4 py-3 text-stone-500 hidden sm:table-cell">{s.email}</td>
+                  <td className={`px-4 py-3 hidden md:table-cell ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.created_at)}</td>
+                  <td className={`px-4 py-3 hidden lg:table-cell ${ADMIN_TIME_CLS}`}>
+                    {s.last_login ? formatAdminDateTime(s.last_login) : <span className="text-stone-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {s.submitted_count > 0 ? (
+                      <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full text-xs font-semibold bg-[#f5f0e8] text-[#b8864a]">
+                        {s.submitted_count}
+                      </span>
+                    ) : (
+                      <span className="text-stone-300 text-sm">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       s.is_active

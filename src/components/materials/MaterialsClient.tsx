@@ -161,9 +161,17 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
     fetch(`${API_BASE}/suppliers/categories`)
       .then(r => r.json())
       .then(data => {
-        if (data.categories?.length) {
-          setCategoryOptions(data.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
+        // API returns { groups: [{value, label, categories: [{value, label}]}], ungrouped: [{value, label}] }
+        const flat: { value: string; label: string }[] = [];
+        if (Array.isArray(data.groups)) {
+          for (const g of data.groups) {
+            if (Array.isArray(g.categories)) flat.push(...g.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
+          }
         }
+        if (Array.isArray(data.ungrouped)) {
+          flat.push(...data.ungrouped.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
+        }
+        if (flat.length) setCategoryOptions(flat);
       })
       .catch(() => {});
   }, []);

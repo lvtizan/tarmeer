@@ -25,7 +25,13 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
     { to: '/faq', label: tr.footer.navLinks.FAQ },
   ];
 
-  const footerSpaceLinks = [
+  const footerSpaceLinks = lang === 'vi' ? [
+    { to: '/companies?service=Interior+Design', label: tr.footer.spaceLinks.Villa },
+    { to: '/companies?service=Fit-Out', label: tr.footer.spaceLinks.Apartment },
+    { to: '/companies?service=Construction', label: tr.footer.spaceLinks.Commercial },
+    { to: '/companies?service=Architecture', label: tr.footer.spaceLinks['Public / Institutional'] },
+    { to: '/companies?service=Renovation', label: tr.footer.spaceLinks['Outdoor / Landscape'] },
+  ] : [
     { to: '/companies?style=Villa', label: tr.footer.spaceLinks.Villa },
     { to: '/companies?style=Apartment', label: tr.footer.spaceLinks.Apartment },
     { to: '/companies?style=Commercial', label: tr.footer.spaceLinks.Commercial },

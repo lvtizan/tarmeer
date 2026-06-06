@@ -58,7 +58,7 @@ function FeaturedCompanyGrid({ companies }: { companies: Company[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {companies.map((company) => (
-        <Link key={company.id} href={`/companies/${company.id}`}
+        <Link key={company.id} href={`/companies/${company.slug || company.id}`}
           className="group flex flex-col overflow-hidden rounded-[20px] border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_18px_40px_rgba(28,25,23,0.08)]">
           <StudioImage company={company} className="aspect-video w-full" />
           <div className="flex flex-col p-4">
