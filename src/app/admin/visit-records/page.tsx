@@ -386,7 +386,7 @@ function AdminVisitRecordsContent() {
                       if (isEmpty) return null;
                       return (
                         <div key={field.key} className="flex items-start gap-4 px-5 py-3.5">
-                          <div className="w-28 sm:w-28 sm:w-52 flex-shrink-0 text-sm text-stone-400 pt-0.5 leading-snug">{field.label}</div>
+                          <div className="w-28 sm:w-28 sm:w-52 flex-shrink-0 text-sm text-stone-600 pt-0.5 leading-snug">{field.label}</div>
                           <div className="flex-1 min-w-0"><FieldValue value={val} /></div>
                         </div>
                       );
