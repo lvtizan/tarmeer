@@ -472,7 +472,7 @@ function AdminVisitRecordsContent() {
               >
                 {/* Checkbox — large touch target on left */}
                 <div
-                  className="flex-shrink-0 flex items-center justify-center w-12 border-r border-stone-100"
+                  className="flex-shrink-0 flex items-center justify-center w-12"
                   onClick={e => { e.stopPropagation(); handleSelectOne(r.id, !selected.has(r.id)); }}
                 >
                   <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
