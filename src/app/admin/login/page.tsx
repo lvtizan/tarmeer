@@ -41,9 +41,8 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
-      const isLeader = result?.admin?.role === 'field_staff' && result?.admin?.permissions?.can_view_interviews;
-      router.push(result?.admin?.role === 'field_staff' && !isLeader ? '/field/survey' : '/admin');
+      await login(email, password);
+      // redirect is handled by the useEffect above (watches `admin` which has full permissions)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
