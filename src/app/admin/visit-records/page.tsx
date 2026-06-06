@@ -238,7 +238,7 @@ function AdminVisitRecordsContent() {
               {/* Title row: company name + status badge */}
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="min-w-0">
-                  <h1 className="text-[17px] font-bold text-[#2c2c2c] leading-snug">{detail.company_name || '—'}</h1>
+                  <h1 className="text-[17px] sm:text-[22px] font-bold text-[#2c2c2c] leading-snug">{detail.company_name || '—'}</h1>
                   {detail.linked_company_name && detail.linked_company_name !== detail.company_name && (
                     <span className="text-xs text-stone-400 flex items-center gap-1 mt-0.5">
                       → {detail.linked_company_name}
@@ -295,14 +295,14 @@ function AdminVisitRecordsContent() {
                   </div>
                 </div>
 
-                {/* Desktop: grid */}
-                <div className="hidden sm:grid grid-cols-3 gap-x-6 gap-y-3 text-sm">
-                  <div>
-                    <div className="text-xs text-stone-600 mb-0.5">{t('Interviewer', '采访人')}</div>
-                    <div className="font-medium text-[#2c2c2c]">{detail.interviewer_name}</div>
+                {/* Desktop: 5-col English info bar */}
+                <div className="hidden sm:flex items-start gap-0 text-sm divide-x divide-stone-100">
+                  <div className="pr-6">
+                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Interviewer</div>
+                    <div className="font-medium text-[#2c2c2c]">{detail.interviewer_name || '—'}</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-stone-600 mb-0.5">{t('Interview Subject', '访谈对象')}</div>
+                  <div className="px-6">
+                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Subject</div>
                     {detail.company_ref_id ? (
                       <a
                         href={`${detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}?from=visit-records&recordId=${detail.id}`}
@@ -314,24 +314,24 @@ function AdminVisitRecordsContent() {
                       <div className="flex items-center gap-1.5">
                         <span className="font-medium text-[#2c2c2c]">{detail.company_name || '—'}</span>
                         {detail.company_name && (
-                          <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} title="在公司库中搜索" className="text-stone-400 hover:text-[#b8864a] transition-colors">
+                          <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} title="Search in companies" className="text-stone-400 hover:text-[#b8864a] transition-colors">
                             <ExternalLink size={12} />
                           </a>
                         )}
                       </div>
                     )}
                   </div>
-                  <div>
-                    <div className="text-xs text-stone-600 mb-0.5">{t('Created', '创建时间')}</div>
-                    <div className="text-stone-600">{formatDate(detail.created_at)}</div>
+                  <div className="px-6">
+                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Created</div>
+                    <div className={ADMIN_TIME_CLS}>{formatDate(detail.created_at)}</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-stone-600 mb-0.5">{t('Submitted', '提交时间')}</div>
-                    <div className="text-stone-600">{formatDate(detail.submitted_at)}</div>
+                  <div className="px-6">
+                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Submitted</div>
+                    <div className={ADMIN_TIME_CLS}>{formatDate(detail.submitted_at) || '—'}</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-stone-600 mb-0.5">{t('Record ID', '记录编号')}</div>
-                    <div className="text-stone-600">#{detail.id}</div>
+                  <div className="pl-6">
+                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">ID</div>
+                    <div className="text-stone-500">#{detail.id}</div>
                   </div>
                 </div>
               </div>
@@ -386,7 +386,7 @@ function AdminVisitRecordsContent() {
                       if (isEmpty) return null;
                       return (
                         <div key={field.key} className="flex items-start gap-4 px-5 py-3.5">
-                          <div className="w-28 sm:w-36 flex-shrink-0 text-sm text-stone-400 pt-0.5 leading-snug">{field.label}</div>
+                          <div className="w-28 sm:w-28 sm:w-52 flex-shrink-0 text-sm text-stone-400 pt-0.5 leading-snug">{field.label}</div>
                           <div className="flex-1 min-w-0"><FieldValue value={val} /></div>
                         </div>
                       );
