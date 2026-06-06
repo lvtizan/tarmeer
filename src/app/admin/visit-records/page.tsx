@@ -77,13 +77,16 @@ function parseSection(raw: unknown): Record<string, string | string[]> {
 
 function FieldValue({ value }: { value: string | string[] | undefined }) {
   if (!value || (Array.isArray(value) && value.length === 0) || value === '') {
-    return <span className="text-stone-400 text-sm">—</span>;
+    return <span className="text-stone-300 text-sm">—</span>;
   }
   const arr = Array.isArray(value) ? value : [value];
+  if (arr.length === 1) {
+    return <span className="text-sm font-medium text-[#2c2c2c]">{arr[0]}</span>;
+  }
   return (
     <div className="flex flex-wrap gap-1.5">
       {arr.map((v, i) => (
-        <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-900">
+        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-sm font-medium bg-stone-100 text-stone-700">
           {v}
         </span>
       ))}
@@ -377,19 +380,19 @@ function AdminVisitRecordsContent() {
               });
               if (!hasAnyData) return null;
               return (
-                <div key={section.key} className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
-                  <h2 className="text-xs font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2">
-                    {section.title}
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                <div key={section.key} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                  <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
+                    <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{section.title}</h2>
+                  </div>
+                  <div className="divide-y divide-stone-50">
                     {section.fields.map(field => {
                       const val = sectionData[field.key];
                       const isEmpty = !val || (Array.isArray(val) ? val.length === 0 : val === '');
                       if (isEmpty) return null;
                       return (
-                        <div key={field.key}>
-                          <div className="text-xs text-stone-600 mb-1.5">{field.label}</div>
-                          <FieldValue value={val} />
+                        <div key={field.key} className="flex items-start gap-4 px-5 py-3.5">
+                          <div className="w-28 sm:w-36 flex-shrink-0 text-xs text-stone-400 pt-0.5 leading-snug">{field.label}</div>
+                          <div className="flex-1 min-w-0"><FieldValue value={val} /></div>
                         </div>
                       );
                     })}
@@ -399,11 +402,11 @@ function AdminVisitRecordsContent() {
             })}
 
             {editLogs.length > 0 && (
-              <div className="bg-white rounded-xl border border-stone-200 p-5">
-                <h2 className="text-xs font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-4">
-                  修改历史 ({editLogs.length})
-                </h2>
-                <div className="space-y-3">
+              <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
+                  <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">修改历史 ({editLogs.length})</h2>
+                </div>
+                <div className="p-5 space-y-3">
                   {editLogs.map((log, i) => (
                     <div key={log.id} className="flex gap-3">
                       <div className="flex-shrink-0 w-6 h-6 rounded-full bg-stone-100 flex items-center justify-center text-xs text-stone-500 font-medium mt-0.5">
