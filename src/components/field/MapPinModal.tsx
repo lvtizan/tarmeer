@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X, MapPin } from 'lucide-react';
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
 export interface PinResult {
   address: string;
@@ -16,6 +15,22 @@ interface MapPinModalProps {
   onClose: () => void;
 }
 
+function loadGoogleMaps(apiKey: string): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if ((window as typeof window & { google?: { maps?: unknown } }).google?.maps) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.getElementById('gmaps-script');
+    if (existing) { existing.addEventListener('load', () => resolve()); return; }
+    const script = document.createElement('script');
+    script.id = 'gmaps-script';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker,geocoding&loading=async&v=weekly`;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Google Maps script failed to load'));
+    document.head.appendChild(script);
+  });
+}
+
 export default function MapPinModal({ initialAddress = '', onConfirm, onClose }: MapPinModalProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,19 +41,18 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY!;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 
     async function initMap() {
       try {
-        setOptions({ key: apiKey, v: 'weekly', libraries: ['places', 'marker', 'geocoding'] });
-
-        const { Map } = await importLibrary('maps');
-        const { AdvancedMarkerElement } = await importLibrary('marker');
-        const { Autocomplete } = await importLibrary('places');
-
+        await loadGoogleMaps(apiKey);
         if (!mapRef.current) return;
 
-        const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai
+        const { Map } = await google.maps.importLibrary('maps') as google.maps.MapsLibrary;
+        const { AdvancedMarkerElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
+        const { Autocomplete } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary;
+
+        const defaultCenter = { lat: 25.2048, lng: 55.2708 };
         const map = new Map(mapRef.current, {
           center: defaultCenter,
           zoom: 12,
@@ -53,9 +67,7 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
 
         marker.addListener('dragend', () => {
           const pos = marker.position as google.maps.LatLng;
-          if (pos) {
-            setPinResult(prev => ({ address: prev?.address ?? '', lat: pos.lat(), lng: pos.lng() }));
-          }
+          if (pos) setPinResult(prev => ({ address: prev?.address ?? '', lat: pos.lat(), lng: pos.lng() }));
         });
 
         if (inputRef.current) {
@@ -74,9 +86,8 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
           });
         }
 
-        // Geocode initial address if provided
         if (initialAddress) {
-          const { Geocoder } = await importLibrary('geocoding');
+          const { Geocoder } = await google.maps.importLibrary('geocoding') as google.maps.GeocodingLibrary;
           new Geocoder().geocode({ address: initialAddress }, (results, status) => {
             if (status === 'OK' && results?.[0]?.geometry?.location) {
               const loc = results[0].geometry.location;
@@ -106,12 +117,8 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col" style={{ touchAction: 'none' }}>
-      {/* Header */}
       <div className="bg-white px-3 py-2.5 flex items-center gap-2 shadow-sm">
-        <button
-          onClick={onClose}
-          className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
-        >
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
           <X className="w-4 h-4 text-stone-500" />
         </button>
         <input
@@ -123,7 +130,6 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
         />
       </div>
 
-      {/* Map */}
       <div className="flex-1 relative">
         <div ref={mapRef} className="w-full h-full" />
         {loading && (
@@ -137,16 +143,13 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
           </div>
         )}
         {!loading && !error && (
-          <p
-            className="absolute bottom-20 left-0 right-0 text-center text-xs text-white/80 pointer-events-none select-none"
-            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
-          >
+          <p className="absolute bottom-20 left-0 right-0 text-center text-xs text-white/80 pointer-events-none select-none"
+             style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
             Drag the pin to adjust location
           </p>
         )}
       </div>
 
-      {/* Confirm */}
       <div className="bg-white px-4 py-4">
         <button
           onClick={handleConfirm}
