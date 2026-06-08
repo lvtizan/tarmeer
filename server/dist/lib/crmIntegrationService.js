@@ -92,6 +92,7 @@ async function getCompanyForCRM(companyId) {
             cp.phone, cp.website, cp.city, cp.address, cp.trade_license_number,
             cp.establishment_year, cp.company_type, cp.company_types,
             cp.services, cp.emirates_served, cp.crm_tenant_id,
+            COALESCE(cp.country, 'ae') AS country,
             u.id AS user_id, u.email, u.password AS password_hash,
             u.full_name, u.phone AS user_phone,
             COALESCE(u.google_id, d.google_id) AS google_id
@@ -122,29 +123,32 @@ function parseJsonSafe(v) {
  * Saves crm_tenant_id + crm_provisioned_at + crm_mall_partner_id on success.
  * Idempotent by mallPartnerId on the CRM side.
  */
+// Country code → ITU dial code mapping
+const COUNTRY_DIAL = {
+    ae: '971', vn: '84',  sa: '966', kw: '965',
+    qa: '974', bh: '973', om: '968', eg: '20',
+    cn: '86',  in: '91',  pk: '92',  gb: '44',
+};
 /**
  * Normalize phone to E.164.
- * Handles UAE mobile (05x/5x) and landlines (04x/02x/06x/07x),
- * as well as 00971 prefix and already-formatted +971 numbers with spaces.
+ * country: ISO-3166-1 alpha-2 lowercase (e.g. 'ae', 'vn') — used as fallback
+ * when the number has no country prefix.
  */
-function normalizePhone(raw) {
+function normalizePhone(raw, country = 'ae') {
     if (!raw) return '';
     const digits = raw.replace(/[\s\-().+]/g, '');
     if (!digits) return '';
-    // 00971 international prefix
-    if (digits.startsWith('00971')) return '+971' + digits.slice(5);
-    // Already has 971 country code: mobile (12 digits) or landline (11 digits)
-    if (digits.startsWith('971') && (digits.length === 12 || digits.length === 11)) return '+' + digits;
-    // UAE mobile: 05x + 7 digits = 10 digits
-    if (digits.startsWith('05') && digits.length === 10) return '+971' + digits.slice(1);
-    // UAE mobile without leading zero: 5x + 7 digits = 9 digits
-    if (digits.startsWith('5') && digits.length === 9) return '+971' + digits;
-    // UAE landline: 0[2-9] + 7 or 8 digits = 9 or 10 digits (04=Dubai, 02=Abu Dhabi, 06=Sharjah, 07=RAK…)
-    if (/^0[2-9]/.test(digits) && (digits.length === 9 || digits.length === 10)) return '+971' + digits.slice(1);
-    // Already E.164 or explicit + prefix — strip formatting from original
-    if (raw.startsWith('+')) return '+' + digits;
-    // Unknown format — prepend + to digit string
-    return '+' + digits;
+    // Already explicit E.164 (starts with +)
+    if (raw.trim().startsWith('+')) return '+' + digits;
+    // 00xxx international prefix
+    if (digits.startsWith('00')) return '+' + digits.slice(2);
+    const dialCode = COUNTRY_DIAL[country] || COUNTRY_DIAL.ae;
+    // Local format: leading 0 (e.g. 05x UAE, 09x VN) → strip and prepend dial code
+    if (digits.startsWith('0')) return '+' + dialCode + digits.slice(1);
+    // Digits already contain the dial code without + (e.g. 97155xxx, 84912xxx)
+    if (digits.startsWith(dialCode)) return '+' + digits;
+    // Bare local digits (no leading 0, no country prefix) → prepend dial code
+    return '+' + dialCode + digits;
 }
 async function provision(companyId) {
     const row = await getCompanyForCRM(companyId);
@@ -168,7 +172,7 @@ async function provision(companyId) {
         adminPasswordHash: passwordHash,
         adminGoogleId: googleId,
         adminName: row.full_name || '',
-        adminPhone: normalizePhone(row.phone || row.user_phone || ''),
+        adminPhone: normalizePhone(row.phone || row.user_phone || '', row.country),
         companyName: row.company_name || '',
         businessType: companyTypes[0] || row.company_type || '',
         city: row.city || '',
@@ -225,6 +229,7 @@ function emailSync(userId, newEmail) {
 function partnerSync(companyId) {
     database_1.default.execute(`SELECT cp.crm_tenant_id, cp.company_name, cp.description, cp.phone,
             u.phone AS user_phone,
+            COALESCE(cp.country, 'ae') AS country,
             cp.website, cp.city, cp.address, cp.trade_license_number,
             cp.company_type, cp.company_types, cp.services, cp.emirates_served,
             cp.establishment_year, cp.office_type, cp.one_stop_service,
@@ -243,7 +248,7 @@ function partnerSync(companyId) {
             tenantId: row.crm_tenant_id,
             businessName: row.company_name,
             businessType: companyTypes[0] || row.company_type || undefined,
-            phone: normalizePhone(row.phone || row.user_phone || ''),
+            phone: normalizePhone(row.phone || row.user_phone || '', row.country),
             city: row.city,
             address: row.address,
             tradeRegistrationNo: row.trade_license_number,

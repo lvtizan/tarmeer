@@ -432,6 +432,8 @@ const REQUIRED_COLUMNS = [
     { table: 'company_profiles', column: 'crm_provisioned_at', type: 'DATETIME NULL' },
     { table: 'company_profiles', column: 'crm_mall_partner_id', type: 'VARCHAR(64) NULL' },
     { table: 'company_profiles', column: 'crm_first_login_at', type: 'DATETIME NULL' },
+    // Country of operation — used to normalize phone numbers for CRM (ISO-3166-1 alpha-2)
+    { table: 'company_profiles', column: 'country', type: "VARCHAR(5) NOT NULL DEFAULT 'ae'" },
     // Admin unpublish — allows taking content off the public site without changing status
     { table: 'company_profiles', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     { table: 'uae_companies', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
@@ -755,6 +757,14 @@ async function runAutoMigrate() {
         }
         // 9. Add field_staff role to admin_users ENUM
         await addFieldStaffRole();
+        // 10. Backfill company_profiles.country from users.phone prefix (one-time, idempotent)
+        try {
+            // VN: +84 prefix
+            await database_1.default.execute(`UPDATE company_profiles cp JOIN users u ON u.id = cp.user_id SET cp.country = 'vn' WHERE cp.country = 'ae' AND (u.phone LIKE '+84%' OR u.phone LIKE '084%' OR cp.phone LIKE '+84%')`);
+            // SA: +966 prefix
+            await database_1.default.execute(`UPDATE company_profiles cp JOIN users u ON u.id = cp.user_id SET cp.country = 'sa' WHERE cp.country = 'ae' AND (u.phone LIKE '+966%' OR u.phone LIKE '00966%')`);
+        }
+        catch { /* ignore — country column may not yet exist on first run */ }
         if (changes === 0) {
             console.log(`${TAG} Schema is up to date`);
         }

@@ -86,8 +86,13 @@ async function upsertProfile(req, res) {
         }
         else {
             // INSERT: generate slug from user's email prefix, with collision handling
-            const [userRows] = await database_1.default.execute('SELECT email FROM users WHERE id = ?', [userId]);
+            const [userRows] = await database_1.default.execute('SELECT email, phone FROM users WHERE id = ?', [userId]);
             const userEmail = userRows[0]?.email || '';
+            // Auto-detect country from users.phone prefix (e.g. +84 → vn, +966 → sa, else ae)
+            const rawUserPhone = userRows[0]?.phone || '';
+            const detectedCountry = rawUserPhone.startsWith('+84') || rawUserPhone.startsWith('084') ? 'vn'
+                : rawUserPhone.startsWith('+966') || rawUserPhone.startsWith('00966') ? 'sa'
+                : 'ae';
             const baseHandle = (0, slugify_1.generateEmailHandle)(userEmail);
             let slug = baseHandle;
             let suffix = 2;
@@ -97,8 +102,8 @@ async function upsertProfile(req, res) {
                     break;
                 slug = `${baseHandle}-${suffix++}`;
             }
-            await database_1.default.execute(`INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, company_types, trade_license_number, establishment_year, specialties, emirates_served, branch_addresses, slug, status, onboarding_step, signup_source)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`, [
+            await database_1.default.execute(`INSERT INTO company_profiles (user_id, company_name, description, contact_person, phone, website, city, address, logo_url, services, company_type, company_types, trade_license_number, establishment_year, specialties, emirates_served, branch_addresses, slug, status, onboarding_step, signup_source, country)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`, [
                 userId,
                 payload.company_name,
                 payload.description,
@@ -119,6 +124,7 @@ async function upsertProfile(req, res) {
                 slug,
                 onboardingStep || 0,
                 signupSource,
+                detectedCountry,
             ]);
         }
         // Sync phone back to users table if not already set (PhoneRequiredModal reads users.phone)
