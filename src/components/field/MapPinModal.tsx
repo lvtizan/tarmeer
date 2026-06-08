@@ -73,7 +73,8 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
         markerRef.current = marker;
 
         marker.addListener('dragend', () => {
-          const pos = marker.position as google.maps.LatLng;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pos = marker.position as any;
           if (pos) setPinResult(prev => ({ address: prev?.address ?? '', lat: pos.lat(), lng: pos.lng() }));
         });
 
