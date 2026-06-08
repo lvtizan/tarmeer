@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, MapPin } from 'lucide-react';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const google: any;
+
 export interface PinResult {
   address: string;
   lat: number;
