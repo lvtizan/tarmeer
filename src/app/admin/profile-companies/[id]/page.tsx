@@ -85,21 +85,19 @@ function parseSection(raw: unknown): Record<string, string | string[]> {
   return raw as Record<string, string | string[]>;
 }
 
-// Survey field key → does company profile already have corresponding data?
-const PROFILE_FIELD_COVERAGE: Record<string, (c: CompanyProfile) => boolean> = {
-  year_established: (c) => !!c.establishment_year,
-  registration_location: (c) => !!c.city,
-  main_business_scope: (c) => parseJsonArray(c.services).length > 0,
-  company_type: (c) => parseJsonArray(c.company_type).length > 0,
-  licenses: (c) => !!c.trade_license_number,
-  total_employees: () => false,
-};
+// Survey field keys that map directly to profile fields (used to distinguish "interview-exclusive" fields)
+const MAPPED_SURVEY_KEYS = new Set(['year_established', 'registration_location', 'main_business_scope', 'company_type', 'licenses']);
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, verified }: { label: string; value: string; verified?: boolean }) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 items-start">
       <span className="text-stone-400 w-20 flex-shrink-0">{label}</span>
-      <span className="text-stone-700">{value}</span>
+      <span className="text-stone-700 flex-1">{value}</span>
+      {verified && (
+        <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100" title="访谈已核实">
+          <svg className="w-2.5 h-2.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+        </span>
+      )}
     </div>
   );
 }
@@ -180,6 +178,31 @@ function ProfileCompanyDetailContent() {
     if (activeStyle === 'all') return projects;
     return projects.filter((p) => p.style === activeStyle);
   }, [projects, activeStyle]);
+
+  // Flatten all answered interview fields into { fieldKey: displayValue }
+  const interviewIndex = useMemo((): Record<string, string> => {
+    if (!linkedInterview || !surveySchema.length) return {};
+    const idx: Record<string, string> = {};
+    for (const section of surveySchema) {
+      const sd = parseSection(linkedInterview[section.key]);
+      for (const field of section.fields) {
+        const v = sd[field.key];
+        if (v && !(Array.isArray(v) && v.length === 0)) {
+          idx[field.key] = Array.isArray(v) ? v.join('、') : String(v);
+        }
+      }
+    }
+    return idx;
+  }, [linkedInterview, surveySchema]);
+
+  // Interview fields that have no direct profile counterpart — shown as extra rows
+  const interviewOnlyRows = useMemo(() => {
+    const labels: Record<string, string> = {};
+    for (const sec of surveySchema) for (const f of sec.fields) labels[f.key] = f.label;
+    return Object.entries(interviewIndex)
+      .filter(([k]) => !MAPPED_SURVEY_KEYS.has(k))
+      .map(([k, v]) => ({ key: k, label: labels[k] || k, value: v }));
+  }, [interviewIndex, surveySchema]);
 
   const handleApprove = async () => {
     setIsSubmitting(true);
@@ -526,15 +549,23 @@ function ProfileCompanyDetailContent() {
           <div className="space-y-3">
             {company.contact_person && <InfoRow label={t('Contact', '联系人')} value={company.contact_person} />}
             {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
-            {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
+            {company.city && <InfoRow label={t('City', '城市')} value={company.city} verified={!!interviewIndex['registration_location']} />}
             {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
-            {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} />}
-            {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} />}
+            {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} verified={!!interviewIndex['year_established']} />}
+            {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} verified={!!interviewIndex['licenses']} />}
             {company.website && (
               <div className="flex gap-2">
                 <span className="text-stone-400 w-20 flex-shrink-0">{t('Website', '网站')}</span>
                 <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
               </div>
+            )}
+            {interviewOnlyRows.length > 0 && (
+              <>
+                <div className="border-t border-stone-100 pt-1" />
+                {interviewOnlyRows.map(row => (
+                  <InfoRow key={row.key} label={row.label} value={row.value} verified />
+                ))}
+              </>
             )}
           </div>
           <div className="mt-4 pt-4 border-t border-stone-100">
@@ -609,15 +640,23 @@ function ProfileCompanyDetailContent() {
             <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">{t('Details', '详情')}</h2>
             {company.contact_person && <InfoRow label={t('Contact', '联系人')} value={company.contact_person} />}
             {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
-            {company.city && <InfoRow label={t('City', '城市')} value={company.city} />}
+            {company.city && <InfoRow label={t('City', '城市')} value={company.city} verified={!!interviewIndex['registration_location']} />}
             {company.address && <InfoRow label={t('Address', '地址')} value={company.address} />}
-            {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} />}
-            {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} />}
+            {company.establishment_year && <InfoRow label={t('Est.', '成立')} value={String(company.establishment_year)} verified={!!interviewIndex['year_established']} />}
+            {company.trade_license_number && <InfoRow label={t('License', '执照')} value={company.trade_license_number} verified={!!interviewIndex['licenses']} />}
             {company.website && (
               <div className="flex gap-2">
                 <span className="text-stone-400 w-20 flex-shrink-0">{t('Website', '网站')}</span>
                 <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#b8864a] hover:underline truncate">{company.website}</a>
               </div>
+            )}
+            {interviewOnlyRows.length > 0 && (
+              <>
+                <div className="border-t border-stone-100 pt-1" />
+                {interviewOnlyRows.map(row => (
+                  <InfoRow key={row.key} label={row.label} value={row.value} verified />
+                ))}
+              </>
             )}
             <div className="pt-1 border-t border-stone-100">
               <InfoRow label={t('Joined', '加入时间')} value={new Date(company.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} />
@@ -751,45 +790,6 @@ function ProfileCompanyDetailContent() {
             )}
           </div>
 
-          {/* Interview data panel — shown only when navigating from visit-records */}
-          {fromVisitRecords && linkedInterview && surveySchema.length > 0 && (
-            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              <div className="px-5 pt-5 pb-3 border-b border-stone-100 flex items-center gap-2">
-                <svg className="w-4 h-4 text-[#b8864a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2"/></svg>
-                <h2 className="text-sm font-semibold text-stone-800">{t('Visit Record Survey Data', '访谈问卷数据')}</h2>
-                <span className="text-xs text-stone-400 ml-auto">{t('✓ = already in profile', '✓ = 已录入装企资料')}</span>
-              </div>
-              <div className="p-5 grid grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-5">
-                {surveySchema.map((section) => {
-                  const sectionData = parseSection(linkedInterview[section.key]);
-                  const hasAny = section.fields.some(f => {
-                    const v = sectionData[f.key];
-                    return v && !(Array.isArray(v) && v.length === 0);
-                  });
-                  if (!hasAny) return null;
-                  return section.fields.map((field) => {
-                    const val = sectionData[field.key];
-                    if (!val || (Array.isArray(val) && val.length === 0)) return null;
-                    const inProfile = PROFILE_FIELD_COVERAGE[field.key]?.(company);
-                    const displayVal = Array.isArray(val) ? val.join('、') : val;
-                    return (
-                      <div key={`${section.key}-${field.key}`} className="space-y-0.5">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-stone-400">{field.label}</span>
-                          {inProfile && (
-                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 flex-shrink-0" title={t('Already in company profile', '已录入装企资料')}>
-                              <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm font-medium text-stone-700">{displayVal}</div>
-                      </div>
-                    );
-                  });
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

@@ -19,6 +19,25 @@ interface SurveySection {
 }
 
 const inputCls = 'h-[34px] px-3 rounded-xl border border-stone-200 bg-stone-50/80 text-[13px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white';
+const btnAddCls = 'btn-primary inline-flex items-center justify-center h-[34px] px-4 text-sm disabled:opacity-40';
+
+function AddRow({ value, onChange, onAdd, placeholder, inputCls: cls = 'flex-1' }: {
+  value: string; onChange: (v: string) => void; onAdd: () => void;
+  placeholder?: string; inputCls?: string;
+}) {
+  return (
+    <>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') onAdd(); }}
+        placeholder={placeholder}
+        className={`${inputCls} ${cls}`}
+      />
+      <button onClick={onAdd} disabled={!value.trim()} className={btnAddCls}>添加</button>
+    </>
+  );
+}
 
 function genKey(prefix: string, existing: string[]): string {
   let i = existing.length + 1;
@@ -396,18 +415,7 @@ export default function SurveyQuestionsPage() {
                   <p className="text-xs text-stone-400 mt-0.5">{selectedSection.fields.length} 个问题 · 拖动 ⠿ 调整顺序</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
-                    className={`${inputCls} w-48`}
-                    placeholder="新问题标签…"
-                    value={newFieldLabel}
-                    onChange={(e) => setNewFieldLabel(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addField()}
-                  />
-                  <button
-                    onClick={addField}
-                    disabled={!newFieldLabel.trim()}
-                    className="btn-primary inline-flex items-center justify-center h-[34px] px-4 text-sm disabled:opacity-40"
-                  >添加</button>
+                  <AddRow value={newFieldLabel} onChange={setNewFieldLabel} onAdd={addField} placeholder="新问题标签…" inputCls="w-48" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -448,18 +456,7 @@ export default function SurveyQuestionsPage() {
         <p className="text-sm text-stone-500 mb-5">这里的问题会显示在外勤 App 问卷底部，由 field staff 手动填写回答。</p>
 
         <div className="flex gap-2 mb-4 max-w-2xl">
-          <input
-            value={newQaText}
-            onChange={(e) => setNewQaText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleAddQa(); }}
-            placeholder="输入问题文字…"
-            className={`${inputCls} flex-1`}
-          />
-          <button
-            onClick={handleAddQa}
-            disabled={!newQaText.trim()}
-            className="btn-primary h-[34px] px-4 text-sm disabled:opacity-40"
-          >添加</button>
+          <AddRow value={newQaText} onChange={setNewQaText} onAdd={handleAddQa} placeholder="输入问题文字…" />
         </div>
 
         {qaLoading ? (
