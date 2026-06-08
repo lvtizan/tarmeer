@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Camera, X } from 'lucide-react';
+import { Camera, X, MapPin, Trash2 } from 'lucide-react';
 import { fieldApi } from '@/lib/adminApi';
 import ChipSelect from '@/components/field/ChipSelect';
 import SearchableSelect from '@/components/field/SearchableSelect';
 import WatermarkCamera, { type CapturedPhoto } from '@/components/field/WatermarkCamera';
+import MapPinModal, { type PinResult } from '@/components/field/MapPinModal';
 import { UAE_EMIRATES } from '@/lib/uae-locations';
 
 interface SurveyField {
@@ -33,6 +34,7 @@ interface PhotoRecord {
   lat?: number;
   lng?: number;
   timestamp: string;
+  field_key?: string; // which question this photo belongs to
 }
 
 interface DraftData {
@@ -79,6 +81,11 @@ export default function FieldSurveyPage() {
   const [locEmirate, setLocEmirate] = useState('');
   const [locGroup, setLocGroup] = useState('');
   const [locDistrict, setLocDistrict] = useState('');
+  const [activePhotoFieldKey, setActivePhotoFieldKey] = useState<string | null>(null);
+  const [surveyQuestions, setSurveyQuestions] = useState<{ id: number; question_text: string }[]>([]);
+  const [qaAnswers, setQaAnswers] = useState<Record<number, string>>({});
+  const [locationPin, setLocationPin] = useState<PinResult | null>(null);
+  const [showMapPin, setShowMapPin] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companyNameRef = useRef<HTMLInputElement>(null);
@@ -91,6 +98,14 @@ export default function FieldSurveyPage() {
           setSchema(remoteSchema);
         }
       } catch { /* schema unavailable */ }
+
+      try {
+        const res = await fetch('/api/field/survey-questions');
+        if (res.ok) {
+          const data = await res.json() as { questions: { id: number; question_text: string }[] };
+          setSurveyQuestions(data.questions || []);
+        }
+      } catch { /* no questions yet */ }
 
       try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem('field_draft_id') : null;
@@ -145,9 +160,21 @@ export default function FieldSurveyPage() {
         setPhotos((raw as PhotoRecord[]).map(p => ({ ...p, dataUrl: p.url || '' })));
       }
     }
+    if (draft.qa_answers) {
+      const raw = typeof draft.qa_answers === 'string' ? JSON.parse(draft.qa_answers as string) : draft.qa_answers;
+      if (Array.isArray(raw)) {
+        const map: Record<number, string> = {};
+        (raw as { question_id: number; answer: string }[]).forEach(item => { map[item.question_id] = item.answer; });
+        setQaAnswers(map);
+      }
+    }
+    if (draft.location_pin) {
+      const raw = typeof draft.location_pin === 'string' ? JSON.parse(draft.location_pin as string) : draft.location_pin;
+      if (raw?.lat && raw?.lng) setLocationPin(raw as PinResult);
+    }
   }
 
-  async function handlePhotoTaken(captured: CapturedPhoto) {
+  async function handlePhotoTaken(captured: CapturedPhoto, fieldKey: string | null) {
     const photoId = Date.now().toString();
     const record: PhotoRecord = {
       dataUrl: captured.dataUrl,
@@ -156,14 +183,16 @@ export default function FieldSurveyPage() {
       lat: captured.lat,
       lng: captured.lng,
       timestamp: captured.timestamp,
+      field_key: fieldKey ?? undefined,
     };
     setPhotos(prev => [...prev, { ...record, _id: photoId }]);
-    if (!draftId) return; // show photo locally; upload skipped (no draft yet)
+    if (!draftId) return;
     try {
       const { url } = await fieldApi.uploadPhoto(draftId, captured.blob, {
         lat: captured.lat,
         lng: captured.lng,
         timestamp: captured.timestamp,
+        field_key: fieldKey,
       });
       setPhotos(prev => prev.map((p) => p._id === photoId ? { ...p, url, uploading: false } : p));
     } catch {
@@ -179,6 +208,8 @@ export default function FieldSurveyPage() {
     id: number, cName: string, cRefId: number | null, cRefSource: string,
     secs: AllSections,
     loc?: { emirate: string; group: string; district: string },
+    qaAns?: Record<number, string>,
+    locPin?: PinResult | null,
   ) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
@@ -190,6 +221,8 @@ export default function FieldSurveyPage() {
           company_ref_source: cRefSource,
           ...Object.fromEntries(Object.entries(secs).map(([k, v]) => [k, v])),
           ...(loc !== undefined ? { section_9: loc } : {}),
+          ...(qaAns !== undefined ? { qa_answers: Object.entries(qaAns).map(([qid, answer]) => ({ question_id: Number(qid), answer })) } : {}),
+          ...(locPin !== undefined ? { location_pin: locPin } : {}),
         });
         setSaveStatus('saved');
       } catch {
@@ -201,7 +234,7 @@ export default function FieldSurveyPage() {
   function updateSection(sectionKey: string, fieldKey: string, value: string | string[]) {
     setSections((prev) => {
       const updated = { ...prev, [sectionKey]: { ...(prev[sectionKey] || {}), [fieldKey]: value } };
-      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated, { emirate: locEmirate, group: locGroup, district: locDistrict });
+      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated, { emirate: locEmirate, group: locGroup, district: locDistrict }, qaAnswers, locationPin);
       return updated;
     });
   }
@@ -210,7 +243,7 @@ export default function FieldSurveyPage() {
     setLocEmirate(emirate);
     setLocGroup(group);
     setLocDistrict(district);
-    if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate, group, district });
+    if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate, group, district }, qaAnswers, locationPin);
   }
 
   function handleCompanySearchChange(val: string) {
@@ -251,7 +284,7 @@ export default function FieldSurveyPage() {
     setCompanySearchQuery('');
     setShowSuggestions(false);
     setCompanyNameError(false);
-    if (draftId) triggerSave(draftId, company.name, company.id, src, sections);
+    if (draftId) triggerSave(draftId, company.name, company.id, src, sections, undefined, qaAnswers, locationPin);
   }
 
   function clearSelectedCompany() {
@@ -262,7 +295,7 @@ export default function FieldSurveyPage() {
     setCompanySearchQuery('');
     setShowSuggestions(false);
     // Persist the cleared company to server so reload doesn't restore old company
-    if (draftId) triggerSave(draftId, '', null, 'uae', sections);
+    if (draftId) triggerSave(draftId, '', null, 'uae', sections, undefined, qaAnswers, locationPin);
     setTimeout(() => companyNameRef.current?.focus(), 50);
   }
 
@@ -306,14 +339,31 @@ export default function FieldSurveyPage() {
           const raw = (interview as Record<string, unknown>).photos;
           const parsed = typeof raw === 'string' ? JSON.parse(raw as string) : raw;
           if (Array.isArray(parsed)) {
-            setPhotos(parsed.map((p: { url: string; lat?: number; lng?: number; timestamp?: string }) => ({
+            setPhotos(parsed.map((p: { url: string; lat?: number; lng?: number; timestamp?: string; field_key?: string }) => ({
               dataUrl: p.url || '',
               url: p.url || '',
               lat: p.lat,
               lng: p.lng,
               timestamp: p.timestamp || new Date().toISOString(),
+              field_key: p.field_key,
             })));
           }
+        }
+        // Hydrate qa_answers
+        if ((interview as Record<string, unknown>).qa_answers) {
+          const raw = (interview as Record<string, unknown>).qa_answers;
+          const parsed = typeof raw === 'string' ? JSON.parse(raw as string) : raw;
+          if (Array.isArray(parsed)) {
+            const map: Record<number, string> = {};
+            (parsed as { question_id: number; answer: string }[]).forEach(item => { map[item.question_id] = item.answer; });
+            setQaAnswers(map);
+          }
+        }
+        // Hydrate location_pin
+        if ((interview as Record<string, unknown>).location_pin) {
+          const raw = (interview as Record<string, unknown>).location_pin;
+          const parsed = typeof raw === 'string' ? JSON.parse(raw as string) : raw;
+          if (parsed?.lat && parsed?.lng) setLocationPin(parsed as PinResult);
         }
       }
     } catch(e) {
@@ -335,6 +385,16 @@ export default function FieldSurveyPage() {
     }
     setIsSubmitting(true);
     try {
+      // Final save to ensure all fields are persisted before submit
+      await fieldApi.saveDraft(draftId, {
+        company_name: companyName,
+        company_ref_id: companyRefId,
+        company_ref_source: companyRefSource,
+        ...sections,
+        section_9: { emirate: locEmirate, group: locGroup, district: locDistrict },
+        qa_answers: Object.entries(qaAnswers).map(([qid, answer]) => ({ question_id: Number(qid), answer })),
+        location_pin: locationPin,
+      });
       if (editingInterviewId) {
         await fieldApi.reSubmit(editingInterviewId, {
           company_name: companyName,
@@ -342,6 +402,8 @@ export default function FieldSurveyPage() {
           company_ref_source: companyRefSource,
           ...sections,
           section_9: { emirate: locEmirate, group: locGroup, district: locDistrict },
+          qa_answers: Object.entries(qaAnswers).map(([qid, answer]) => ({ question_id: Number(qid), answer })),
+          location_pin: locationPin,
         });
         setEditingInterviewId(null);
       } else {
@@ -493,43 +555,6 @@ export default function FieldSurveyPage() {
       </div>
 
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
-        {/* Photos section */}
-        <div>
-          <h2 className="text-base font-bold text-[#2c2c2c] mb-3 pl-3 border-l-4 border-[#b8864a]">
-            Photos {photos.length > 0 && <span className="text-stone-400 font-normal text-sm">({photos.length})</span>}
-          </h2>
-          {photos.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {photos.map((photo, idx) => (
-                <div key={photo._id || idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 bg-stone-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photo.dataUrl || photo.url}
-                    alt={`Photo ${idx + 1}`}
-                    className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => setLightboxPhoto(photo)}
-                  />
-                  {photo.uploading && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <div className="w-4 h-4 border border-white/40 border-t-white rounded-full animate-spin" />
-                    </div>
-                  )}
-                  {photo.error && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-red-500/80 text-white text-[10px] text-center py-0.5">failed</div>
-                  )}
-                  <button
-                    onClick={() => removePhoto(idx)}
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-stone-400">{photos.length === 0 ? 'No photos yet — tap 📷 below to add.' : 'Tap a photo to enlarge · tap 📷 to add more.'}</p>
-        </div>
-
         {/* Location section — fixed, always first */}
         {(() => {
           const emirateData = UAE_EMIRATES.find((e) => e.label === locEmirate);
@@ -599,6 +624,36 @@ export default function FieldSurveyPage() {
                     />
                   </div>
                 )}
+
+                {/* Google Maps pin */}
+                <div>
+                  <label className="block text-sm font-medium text-stone-500 mb-2">Company Address Pin</label>
+                  {locationPin ? (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+                      <MapPin className="w-4 h-4 text-green-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-green-800 font-medium truncate">{locationPin.address || 'Pinned'}</p>
+                        <p className="text-xs text-green-600">{locationPin.lat.toFixed(5)}, {locationPin.lng.toFixed(5)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowMapPin(true)}
+                        className="text-xs text-green-600 hover:text-green-800 font-medium shrink-0"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowMapPin(true)}
+                      className="w-full h-12 rounded-xl border-2 border-dashed border-stone-200 flex items-center justify-center gap-2 text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] transition-colors"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-sm">Pin on Google Maps</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -617,35 +672,90 @@ export default function FieldSurveyPage() {
               {section.fields.map((field) => {
                 const sectionData = sections[section.key] || {};
                 const val = sectionData[field.key] ?? (field.type === 'multi' ? [] : '');
+                const fKey = `${section.key}.${field.key}`;
+                const fieldPhotos = photos.filter(p => p.field_key === fKey);
                 return (
                   <div key={field.key}>
-                    <label className="block text-sm font-medium text-stone-500 mb-2">{field.label}</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-stone-500">{field.label}</label>
+                      <button
+                        type="button"
+                        onClick={() => { setActivePhotoFieldKey(fKey); setShowCamera(true); }}
+                        className="flex items-center gap-1 text-xs text-stone-400 hover:text-[#b8864a] transition-colors"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>{fieldPhotos.length > 0 ? `${fieldPhotos.length}` : 'Photo'}</span>
+                      </button>
+                    </div>
                     <ChipSelect
                       options={field.options}
                       value={val}
                       multi={field.type === 'multi'}
                       onChange={(v) => updateSection(section.key, field.key, v)}
                     />
+                    {fieldPhotos.length > 0 && (
+                      <div className="grid grid-cols-4 gap-1.5 mt-2">
+                        {fieldPhotos.map((photo, idx) => (
+                          <div key={photo._id || idx} className="relative aspect-square rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.dataUrl || photo.url}
+                              alt={`Photo ${idx + 1}`}
+                              className="w-full h-full object-cover cursor-pointer"
+                              onClick={() => setLightboxPhoto(photo)}
+                            />
+                            {photo.uploading && (
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                              </div>
+                            )}
+                            {photo.error && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-red-500/80 text-white text-[10px] text-center py-0.5">failed</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           </div>
         ))}
+
+        {/* Q&A section */}
+        {surveyQuestions.length > 0 && (
+          <div>
+            <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
+              Q&amp;A
+            </h2>
+            <div className="space-y-5">
+              {surveyQuestions.map((q) => (
+                <div key={q.id}>
+                  <label className="block text-sm font-medium text-stone-600 mb-2">{q.question_text}</label>
+                  <textarea
+                    value={qaAnswers[q.id] ?? ''}
+                    onChange={(e) => {
+                      const newAns = { ...qaAnswers, [q.id]: e.target.value };
+                      setQaAnswers(newAns);
+                      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate: locEmirate, group: locGroup, district: locDistrict }, newAns, locationPin);
+                    }}
+                    placeholder="Enter answer…"
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-[14px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a] resize-none"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 flex gap-3">
-        <button
-          onClick={() => setShowCamera(true)}
-          className="flex items-center justify-center gap-2 h-12 px-5 rounded-2xl border-2 border-[#b8864a] text-[#b8864a] font-semibold text-[15px] active:bg-[#b8864a]/10 transition flex-shrink-0"
-        >
-          <Camera className="w-5 h-5" />
-          <span>Photo</span>
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3">
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="btn-primary flex-1 h-12 disabled:opacity-50"
+          className="btn-primary w-full h-12 disabled:opacity-50"
         >
           {isSubmitting ? 'Submitting…' : 'Submit Survey'}
         </button>
@@ -654,15 +764,28 @@ export default function FieldSurveyPage() {
       {/* Watermark Camera overlay */}
       {showCamera && (
         <WatermarkCamera
-          onClose={() => setShowCamera(false)}
-          onPhotoTaken={handlePhotoTaken}
+          onClose={() => { setShowCamera(false); setActivePhotoFieldKey(null); }}
+          onPhotoTaken={(photo) => handlePhotoTaken(photo, activePhotoFieldKey)}
+        />
+      )}
+
+      {/* Google Maps pin modal */}
+      {showMapPin && (
+        <MapPinModal
+          initialAddress={locationPin?.address ?? companyRefName}
+          onClose={() => setShowMapPin(false)}
+          onConfirm={(result) => {
+            setLocationPin(result);
+            setShowMapPin(false);
+            if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate: locEmirate, group: locGroup, district: locDistrict }, qaAnswers, result);
+          }}
         />
       )}
 
       {/* Lightbox */}
       {lightboxPhoto && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
           onClick={() => setLightboxPhoto(null)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -670,12 +793,25 @@ export default function FieldSurveyPage() {
             src={lightboxPhoto.dataUrl || lightboxPhoto.url}
             alt="Photo preview"
             className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
           />
+          {/* Close — top right */}
           <button
             onClick={() => setLightboxPhoto(null)}
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"
           >
             <X className="w-5 h-5 text-white" />
+          </button>
+          {/* Delete — bottom right, iPhone Photos style */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setPhotos(prev => prev.filter(p => p._id ? p._id !== lightboxPhoto._id : p !== lightboxPhoto));
+              setLightboxPhoto(null);
+            }}
+            className="absolute bottom-8 right-6 w-12 h-12 rounded-full bg-black/50 flex items-center justify-center"
+          >
+            <Trash2 className="w-5 h-5 text-white" />
           </button>
         </div>
       )}

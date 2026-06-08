@@ -3,10 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const adminAuth_1 = require("../middleware/adminAuth");
 const fieldInterviewController_1 = require("../controllers/fieldInterviewController");
+const surveyQuestionsController_1 = require("../controllers/surveyQuestionsController");
 const router = (0, express_1.Router)();
 
 // Public routes (no auth needed)
 router.get('/survey-schema', fieldInterviewController_1.getSurveySchema);
+router.get('/survey-questions', surveyQuestionsController_1.listQuestions);
 router.get('/companies/search', fieldInterviewController_1.searchCompanies);
 
 // Protected routes (field staff or super admin)

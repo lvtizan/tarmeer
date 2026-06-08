@@ -1046,7 +1046,7 @@ export const fieldApi = {
   loadInterview: (id: number) => fieldRequest(`/interviews/${id}/load`),
   reSubmit: (id: number, data: Record<string, unknown>) =>
     fieldRequest(`/interviews/${id}/re-submit`, { method: 'POST', body: JSON.stringify(data) }),
-  uploadPhoto: async (id: number, blob: Blob, meta?: { lat?: number; lng?: number; timestamp?: string }): Promise<{ url: string }> => {
+  uploadPhoto: async (id: number, blob: Blob, meta?: { lat?: number; lng?: number; timestamp?: string; field_key?: string | null }): Promise<{ url: string }> => {
     const token = typeof window !== 'undefined'
       ? (localStorage.getItem('field_token') || localStorage.getItem('admin_token'))
       : null;
@@ -1055,6 +1055,7 @@ export const fieldApi = {
     if (meta?.lat !== undefined) fd.append('lat', String(meta.lat));
     if (meta?.lng !== undefined) fd.append('lng', String(meta.lng));
     if (meta?.timestamp) fd.append('timestamp', meta.timestamp);
+    if (meta?.field_key) fd.append('field_key', meta.field_key);
     const res = await fetch(`${FIELD_API_BASE}/interviews/${id}/photos`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},

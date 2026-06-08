@@ -107,6 +107,9 @@ export default function SurveyQuestionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [qaQuestions, setQaQuestions] = useState<{ id: number; question_text: string; is_active: number }[]>([]);
+  const [qaLoading, setQaLoading] = useState(false);
+  const [newQaText, setNewQaText] = useState('');
 
   // Section drag
   const secDragIdx = useRef(-1);
@@ -142,7 +145,58 @@ export default function SurveyQuestionsPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadQaQuestions = useCallback(async () => {
+    setQaLoading(true);
+    try {
+      const data = await adminApi.request('/survey-questions?active=false');
+      setQaQuestions(data.questions || []);
+    } catch {
+      showToast('加载 Q&A 问题失败', 'error');
+    } finally {
+      setQaLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); loadQaQuestions(); }, [load, loadQaQuestions]);
+
+  async function handleAddQa() {
+    const text = newQaText.trim();
+    if (!text) return;
+    try {
+      const q = await adminApi.request('/survey-questions', { method: 'POST', body: JSON.stringify({ question_text: text }) });
+      setQaQuestions(prev => [...prev, q]);
+      setNewQaText('');
+      showToast('已添加', 'success');
+    } catch {
+      showToast('添加失败', 'error');
+    }
+  }
+
+  async function handleToggleQa(id: number, active: boolean) {
+    try {
+      await adminApi.request(`/survey-questions/${id}`, { method: 'PATCH', body: JSON.stringify({ is_active: active }) });
+      setQaQuestions(prev => prev.map(q => q.id === id ? { ...q, is_active: active ? 1 : 0 } : q));
+    } catch {
+      showToast('操作失败', 'error');
+    }
+  }
+
+  async function handleDeleteQa(id: number) {
+    showConfirm({
+      title: '删除问题',
+      message: '删除后该问题不再出现在问卷中，已填写的历史答案仍保留。',
+      confirmLabel: '确认删除',
+      onConfirm: async () => {
+        try {
+          await adminApi.request(`/survey-questions/${id}`, { method: 'DELETE' });
+          setQaQuestions(prev => prev.filter(q => q.id !== id));
+          showToast('已删除', 'success');
+        } catch {
+          showToast('删除失败', 'error');
+        }
+      },
+    });
+  }
 
   async function save() {
     setSaving(true);
@@ -386,6 +440,53 @@ export default function SurveyQuestionsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Q&A 模块 */}
+      <div className="mt-10 pt-8 border-t border-stone-100">
+        <h2 className="text-lg font-bold text-[#2c2c2c] mb-1">Q&amp;A 模块</h2>
+        <p className="text-sm text-stone-500 mb-5">这里的问题会显示在外勤 App 问卷底部，由 field staff 手动填写回答。</p>
+
+        <div className="flex gap-2 mb-4 max-w-2xl">
+          <input
+            value={newQaText}
+            onChange={(e) => setNewQaText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAddQa(); }}
+            placeholder="输入问题文字…"
+            className={`${inputCls} flex-1`}
+          />
+          <button
+            onClick={handleAddQa}
+            disabled={!newQaText.trim()}
+            className="btn-primary h-[34px] px-4 text-sm disabled:opacity-40"
+          >添加</button>
+        </div>
+
+        {qaLoading ? (
+          <div className="text-center text-stone-400 py-6 text-sm">加载中…</div>
+        ) : qaQuestions.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-8 text-center text-sm text-stone-400 max-w-2xl">
+            暂无 Q&amp;A 问题
+          </div>
+        ) : (
+          <div className="space-y-2 max-w-2xl">
+            {qaQuestions.map((q) => (
+              <div key={q.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border bg-white ${q.is_active ? 'border-stone-200' : 'border-stone-100 opacity-50'}`}>
+                <p className="flex-1 text-sm text-[#1c1917]">{q.question_text}</p>
+                <button
+                  onClick={() => handleToggleQa(q.id, !q.is_active)}
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${q.is_active ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
+                >
+                  {q.is_active ? '启用' : '禁用'}
+                </button>
+                <button
+                  onClick={() => handleDeleteQa(q.id)}
+                  className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                >删除</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

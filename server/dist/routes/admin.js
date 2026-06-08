@@ -471,4 +471,11 @@ router.put('/survey-schema', adminAuth_1.authenticateAdmin, adminAuth_1.requireA
         res.status(500).json({ error: 'Failed to save schema' });
     }
 });
+// Survey Q&A questions management
+const surveyQuestionsController_1 = require("../controllers/surveyQuestionsController");
+router.get('/survey-questions', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.listQuestions);
+router.post('/survey-questions', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.createQuestion);
+router.patch('/survey-questions/:id', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.updateQuestion);
+router.delete('/survey-questions/:id', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.deleteQuestion);
+router.post('/survey-questions/reorder', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.reorderQuestions);
 exports.default = router;

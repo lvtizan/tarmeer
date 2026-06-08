@@ -127,6 +127,14 @@ async function ensureInterviewColumns() {
       await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN country VARCHAR(5) NOT NULL DEFAULT 'ae'`);
       console.log('[field] added column: country');
     }
+    if (!existingSet.has('qa_answers')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN qa_answers JSON NULL`);
+      console.log('[field] added column: qa_answers');
+    }
+    if (!existingSet.has('location_pin')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN location_pin JSON NULL`);
+      console.log('[field] added column: location_pin');
+    }
   } catch(e) {
     console.error('[field] ensureInterviewColumns:', e.message);
   }
@@ -224,7 +232,7 @@ async function getMyDraft(req, res) {
 }
 async function saveDraft(req, res) {
     const { id } = req.params;
-    const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, } = req.body;
+    const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, qa_answers, location_pin, } = req.body;
     try {
         const [rows] = await database_1.default.execute(`SELECT id FROM company_interviews WHERE id = ? AND status = 'draft'`, [id]);
         if (rows.length === 0) {
@@ -257,6 +265,10 @@ async function saveDraft(req, res) {
             fields.section_9 = JSON.stringify(section_9);
         if (photos !== undefined)
             fields.photos = JSON.stringify(photos);
+        if (qa_answers !== undefined)
+            fields.qa_answers = JSON.stringify(qa_answers);
+        if (location_pin !== undefined)
+            fields.location_pin = location_pin ? JSON.stringify(location_pin) : null;
         if (Object.keys(fields).length === 0)
             return res.json({ ok: true });
         const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
@@ -318,6 +330,7 @@ async function uploadPhoto(req, res) {
             lat: req.body.lat ? parseFloat(req.body.lat) : undefined,
             lng: req.body.lng ? parseFloat(req.body.lng) : undefined,
             timestamp: req.body.timestamp || new Date().toISOString(),
+            field_key: req.body.field_key || undefined,
         };
         const existing = rows[0].photos || [];
         const updated = [...existing, meta];
