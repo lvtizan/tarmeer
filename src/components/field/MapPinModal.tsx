@@ -20,13 +20,18 @@ interface MapPinModalProps {
 
 function loadGoogleMaps(apiKey: string): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
-  if ((window as typeof window & { google?: { maps?: unknown } }).google?.maps) return Promise.resolve();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((window as any).google?.maps?.Map) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const existing = document.getElementById('gmaps-script');
-    if (existing) { existing.addEventListener('load', () => resolve()); return; }
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('Google Maps script failed to load')));
+      return;
+    }
     const script = document.createElement('script');
     script.id = 'gmaps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker,geocoding&loading=async&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker,geometry`;
     script.async = true;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error('Google Maps script failed to load'));
@@ -57,21 +62,15 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
         await loadGoogleMaps(apiKey);
         if (!mapRef.current) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (typeof (google as any).maps?.importLibrary !== 'function') {
-          setError('Google Maps failed to load (API key may be invalid).');
+        const gmaps = (google as any).maps;
+        if (!gmaps?.Map) {
+          setError('Google Maps failed to load. Please check your API key.');
           setLoading(false);
           return;
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { Map } = await google.maps.importLibrary('maps') as any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { AdvancedMarkerElement } = await google.maps.importLibrary('marker') as any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { Autocomplete } = await google.maps.importLibrary('places') as any;
-
         const defaultCenter = { lat: 25.2048, lng: 55.2708 };
-        const map = new Map(mapRef.current, {
+        const map = new gmaps.Map(mapRef.current, {
           center: defaultCenter,
           zoom: 12,
           mapId: 'tarmeer-field-survey',
@@ -80,17 +79,27 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
           fullscreenControl: false,
         });
 
-        const marker = new AdvancedMarkerElement({ map, position: defaultCenter, gmpDraggable: true });
+        // Use AdvancedMarkerElement if available, fallback to Marker
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let marker: any;
+        if (gmaps.marker?.AdvancedMarkerElement) {
+          marker = new gmaps.marker.AdvancedMarkerElement({ map, position: defaultCenter, gmpDraggable: true });
+        } else {
+          marker = new gmaps.Marker({ map, position: defaultCenter, draggable: true });
+        }
         markerRef.current = marker;
 
         marker.addListener('dragend', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const pos = marker.position as any;
-          if (pos) setPinResult(prev => ({ address: prev?.address ?? '', lat: pos.lat(), lng: pos.lng() }));
+          if (!pos) return;
+          const lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
+          const lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
+          setPinResult(prev => ({ address: prev?.address ?? '', lat, lng }));
         });
 
-        if (inputRef.current) {
-          const autocomplete = new Autocomplete(inputRef.current, { fields: ['formatted_address', 'geometry'] });
+        if (inputRef.current && gmaps.places?.Autocomplete) {
+          const autocomplete = new gmaps.places.Autocomplete(inputRef.current, { fields: ['formatted_address', 'geometry'] });
           autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
             if (!place.geometry?.location) return;
@@ -100,21 +109,27 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
             setAddress(addr);
             map.panTo({ lat, lng });
             map.setZoom(17);
-            marker.position = { lat, lng };
+            if (gmaps.marker?.AdvancedMarkerElement) {
+              marker.position = { lat, lng };
+            } else {
+              marker.setPosition({ lat, lng });
+            }
             setPinResult({ address: addr, lat, lng });
           });
         }
 
-        if (initialAddress) {
+        if (initialAddress && gmaps.Geocoder) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { Geocoder } = await google.maps.importLibrary('geocoding') as any;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          new Geocoder().geocode({ address: initialAddress }, (results: any, status: any) => {
+          new gmaps.Geocoder().geocode({ address: initialAddress }, (results: any, status: any) => {
             if (status === 'OK' && results?.[0]?.geometry?.location) {
               const loc = results[0].geometry.location;
               map.panTo(loc);
               map.setZoom(17);
-              marker.position = loc;
+              if (gmaps.marker?.AdvancedMarkerElement) {
+                marker.position = loc;
+              } else {
+                marker.setPosition(loc);
+              }
               setPinResult({ address: initialAddress, lat: loc.lat(), lng: loc.lng() });
             }
           });
