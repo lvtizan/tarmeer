@@ -8,13 +8,14 @@ import { Save } from 'lucide-react';
 interface SurveyField {
   key: string;
   label: string;
-  type: 'single' | 'multi';
+  type: 'single' | 'multi' | 'text';
   options: string[];
 }
 
 interface SurveySection {
   title: string;
   key: string;
+  sectionType: 'single' | 'multi' | 'text';
   fields: SurveyField[];
 }
 
@@ -55,6 +56,7 @@ function FieldRow({
   onChange: (updated: SurveyField) => void; onDelete: () => void;
 }) {
   const [optInput, setOptInput] = useState('');
+  const [showTypeMenu, setShowTypeMenu] = useState(false);
 
   function addOption() {
     const v = optInput.trim();
@@ -67,9 +69,18 @@ function FieldRow({
     onChange({ ...field, options: field.options.filter((o) => o !== opt) });
   }
 
-  function toggleType() {
-    onChange({ ...field, type: field.type === 'single' ? 'multi' : 'single' });
-  }
+  const TYPE_OPTIONS = [
+    { value: 'single', label: '单选', cls: 'text-blue-600 hover:bg-blue-50' },
+    { value: 'multi',  label: '多选', cls: 'text-purple-600 hover:bg-purple-50' },
+    { value: 'text',   label: '问答', cls: 'text-green-600 hover:bg-green-50' },
+  ] as const;
+
+  const current = TYPE_OPTIONS.find((o) => o.value === field.type) ?? TYPE_OPTIONS[0];
+  const typeBadgeCls = field.type === 'single'
+    ? 'bg-blue-50 text-blue-600'
+    : field.type === 'multi'
+    ? 'bg-purple-50 text-purple-600'
+    : 'bg-green-50 text-green-600';
 
   return (
     <div
@@ -91,31 +102,51 @@ function FieldRow({
           }}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
         />
-        <button
-          onClick={toggleType}
-          className={`shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${field.type === 'single' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-purple-50 text-purple-600 hover:bg-purple-100'}`}
-        >
-          {field.type === 'single' ? '单选' : '多选'}
-        </button>
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setShowTypeMenu((v) => !v)}
+            className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors ${typeBadgeCls}`}
+          >
+            {current.label} ▾
+          </button>
+          {showTypeMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowTypeMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-xl border border-stone-200 shadow-lg overflow-hidden min-w-[80px]">
+                {TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { onChange({ ...field, type: opt.value }); setShowTypeMenu(false); }}
+                    className={`w-full text-left text-[12px] font-medium px-3 py-2 transition-colors ${opt.cls} ${field.type === opt.value ? 'font-bold' : ''}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
         <button onClick={onDelete} className="shrink-0 text-xs text-red-400 hover:text-red-600 transition-colors">删除</button>
       </div>
-      {/* Options row */}
-      <div className="flex flex-wrap items-center gap-1.5 px-4 pb-2.5 pl-11">
-        {field.options.map((opt) => (
-          <span key={opt} className="inline-flex items-center gap-1 text-[12px] bg-stone-100 text-stone-600 rounded-full px-2.5 py-0.5">
-            {opt}
-            <button onClick={() => removeOption(opt)} className="text-stone-400 hover:text-red-500 transition-colors leading-none">×</button>
-          </span>
-        ))}
-        <input
-          value={optInput}
-          onChange={(e) => setOptInput(e.target.value)}
-          onBlur={addOption}
-          onKeyDown={(e) => { if (e.key === 'Enter') addOption(); }}
-          placeholder="+ 选项"
-          className="h-[26px] px-2.5 rounded-full border border-dashed border-stone-300 bg-transparent text-[12px] text-stone-500 placeholder:text-stone-400 focus:outline-none focus:border-[#B8864A] focus:text-stone-700 w-24"
-        />
-      </div>
+      {/* Options row — hidden for text/open-ended type */}
+      {field.type !== 'text' && (
+        <div className="flex flex-wrap items-center gap-1.5 px-4 pb-2.5 pl-11">
+          {field.options.map((opt) => (
+            <span key={opt} className="inline-flex items-center gap-1 text-[12px] bg-stone-100 text-stone-600 rounded-full px-2.5 py-0.5">
+              {opt}
+              <button onClick={() => removeOption(opt)} className="text-stone-400 hover:text-red-500 transition-colors leading-none">×</button>
+            </span>
+          ))}
+          <input
+            value={optInput}
+            onChange={(e) => setOptInput(e.target.value)}
+            onBlur={addOption}
+            onKeyDown={(e) => { if (e.key === 'Enter') addOption(); }}
+            placeholder="+ 选项"
+            className="h-[26px] px-2.5 rounded-full border border-dashed border-stone-300 bg-transparent text-[12px] text-stone-500 placeholder:text-stone-400 focus:outline-none focus:border-[#B8864A] focus:text-stone-700 w-24"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -126,10 +157,6 @@ export default function SurveyQuestionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [qaQuestions, setQaQuestions] = useState<{ id: number; question_text: string; is_active: number }[]>([]);
-  const [qaLoading, setQaLoading] = useState(false);
-  const [newQaText, setNewQaText] = useState('');
-
   // Section drag
   const secDragIdx = useRef(-1);
   const secOverIdx = useRef(-1);
@@ -143,6 +170,8 @@ export default function SurveyQuestionsPage() {
   const [fldOver, setFldOver] = useState(-1);
 
   // Adding new section
+  const [showTypePicker, setShowTypePicker] = useState(false);
+  const [pendingSectionType, setPendingSectionType] = useState<'single' | 'multi' | 'text' | null>(null);
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const newSecRef = useRef<HTMLInputElement>(null);
@@ -164,58 +193,7 @@ export default function SurveyQuestionsPage() {
     }
   }, []);
 
-  const loadQaQuestions = useCallback(async () => {
-    setQaLoading(true);
-    try {
-      const data = await adminApi.request('/survey-questions?active=false');
-      setQaQuestions(data.questions || []);
-    } catch {
-      showToast('加载 Q&A 问题失败', 'error');
-    } finally {
-      setQaLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); loadQaQuestions(); }, [load, loadQaQuestions]);
-
-  async function handleAddQa() {
-    const text = newQaText.trim();
-    if (!text) return;
-    try {
-      const q = await adminApi.request('/survey-questions', { method: 'POST', body: JSON.stringify({ question_text: text }) });
-      setQaQuestions(prev => [...prev, q]);
-      setNewQaText('');
-      showToast('已添加', 'success');
-    } catch {
-      showToast('添加失败', 'error');
-    }
-  }
-
-  async function handleToggleQa(id: number, active: boolean) {
-    try {
-      await adminApi.request(`/survey-questions/${id}`, { method: 'PATCH', body: JSON.stringify({ is_active: active }) });
-      setQaQuestions(prev => prev.map(q => q.id === id ? { ...q, is_active: active ? 1 : 0 } : q));
-    } catch {
-      showToast('操作失败', 'error');
-    }
-  }
-
-  async function handleDeleteQa(id: number) {
-    showConfirm({
-      title: '删除问题',
-      message: '删除后该问题不再出现在问卷中，已填写的历史答案仍保留。',
-      confirmLabel: '确认删除',
-      onConfirm: async () => {
-        try {
-          await adminApi.request(`/survey-questions/${id}`, { method: 'DELETE' });
-          setQaQuestions(prev => prev.filter(q => q.id !== id));
-          showToast('已删除', 'success');
-        } catch {
-          showToast('删除失败', 'error');
-        }
-      },
-    });
-  }
+  useEffect(() => { load(); }, [load]);
 
   async function save() {
     setSaving(true);
@@ -272,13 +250,15 @@ export default function SurveyQuestionsPage() {
 
   function addSection() {
     const title = newSectionTitle.trim();
-    if (!title) { setAddingSection(false); return; }
+    if (!title || !pendingSectionType) { setAddingSection(false); setShowTypePicker(false); setPendingSectionType(null); return; }
     const key = genKey('section', sections.map((s) => s.key));
-    const newSec: SurveySection = { title, key, fields: [] };
+    const newSec: SurveySection = { title, key, sectionType: pendingSectionType, fields: [] };
     mutate((prev) => [...prev, newSec]);
     setSelectedKey(key);
     setAddingSection(false);
+    setShowTypePicker(false);
     setNewSectionTitle('');
+    setPendingSectionType(null);
   }
 
   // ---- Field ops ----
@@ -314,9 +294,10 @@ export default function SurveyQuestionsPage() {
   function addField() {
     const label = newFieldLabel.trim();
     if (!label || !selectedKey) return;
-    const existingKeys = sections.find((s) => s.key === selectedKey)?.fields.map((f) => f.key) ?? [];
+    const sec = sections.find((s) => s.key === selectedKey);
+    const existingKeys = sec?.fields.map((f) => f.key) ?? [];
     const key = genKey('field', existingKeys);
-    const newField: SurveyField = { key, label, type: 'single', options: [] };
+    const newField: SurveyField = { key, label, type: sec?.sectionType ?? 'single', options: [] };
     mutate((prev) => prev.map((s) => {
       if (s.key !== selectedKey) return s;
       return { ...s, fields: [...s.fields, newField] };
@@ -346,12 +327,14 @@ export default function SurveyQuestionsPage() {
         <div className="w-[360px] shrink-0 bg-white rounded-2xl border border-stone-200 overflow-hidden">
           <div className="px-3 pt-3 pb-1 flex items-center justify-between">
             <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">节（拖动排序）</p>
-            <button
-              onClick={() => { setAddingSection(true); setNewSectionTitle(''); setTimeout(() => newSecRef.current?.focus(), 50); }}
-              className="text-xs text-[#b8864a] hover:text-[#a07040] font-medium transition-colors"
-            >
-              + 新增节
-            </button>
+            {!showTypePicker && !addingSection && (
+              <button
+                onClick={() => setShowTypePicker(true)}
+                className="text-xs text-[#b8864a] hover:text-[#a07040] font-medium transition-colors"
+              >
+                + 新增节
+              </button>
+            )}
           </div>
           <div className="p-2 space-y-0.5">
             {sections.map((sec, idx) => {
@@ -381,6 +364,11 @@ export default function SurveyQuestionsPage() {
                       if (e.key === 'Escape') { (e.target as HTMLInputElement).value = sec.title; (e.target as HTMLInputElement).blur(); }
                     }}
                   />
+                  {sec.sectionType && (
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sec.sectionType === 'single' ? 'bg-blue-50 text-blue-500' : sec.sectionType === 'multi' ? 'bg-purple-50 text-purple-500' : 'bg-green-50 text-green-500'}`}>
+                      {sec.sectionType === 'single' ? '单选' : sec.sectionType === 'multi' ? '多选' : 'QA'}
+                    </span>
+                  )}
                   <span className={`text-[11px] shrink-0 tabular-nums ${isSelected ? 'text-[#b8864a]/70' : 'text-stone-400'}`}>{sec.fields.length}</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteSection(sec.key); }}
@@ -389,14 +377,41 @@ export default function SurveyQuestionsPage() {
                 </div>
               );
             })}
-            {addingSection && (
-              <div className="flex items-center gap-1.5 px-2 py-1">
+            {/* Step 1: pick section type */}
+            {showTypePicker && !addingSection && (
+              <div className="px-2 py-2 border-t border-stone-100">
+                <p className="text-[11px] text-stone-400 mb-1.5 px-1">选择节类型</p>
+                <div className="flex gap-1.5">
+                  {(['single', 'multi', 'text'] as const).map((t) => {
+                    const label = t === 'single' ? '单选' : t === 'multi' ? '多选' : 'QA模块';
+                    const cls = t === 'single'
+                      ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
+                      : t === 'multi'
+                      ? 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+                      : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100';
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => { setPendingSectionType(t); setShowTypePicker(false); setAddingSection(true); setNewSectionTitle(''); setTimeout(() => newSecRef.current?.focus(), 50); }}
+                        className={`flex-1 text-[12px] font-semibold py-1.5 rounded-lg border transition-colors ${cls}`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button onClick={() => setShowTypePicker(false)} className="mt-1.5 w-full text-[11px] text-stone-400 hover:text-stone-600 transition-colors">取消</button>
+              </div>
+            )}
+            {/* Step 2: enter section name */}
+            {addingSection && pendingSectionType && (
+              <div className="flex items-center gap-1.5 px-2 py-1 border-t border-stone-100">
                 <input
                   ref={newSecRef}
                   value={newSectionTitle}
                   onChange={(e) => setNewSectionTitle(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') addSection(); if (e.key === 'Escape') { setAddingSection(false); setNewSectionTitle(''); } }}
-                  onBlur={addSection}
+                  onKeyDown={(e) => { if (e.key === 'Enter') addSection(); if (e.key === 'Escape') { setAddingSection(false); setNewSectionTitle(''); setPendingSectionType(null); } }}
+                  onBlur={() => { if (newSectionTitle.trim()) addSection(); else { setAddingSection(false); setPendingSectionType(null); } }}
                   placeholder="节标题…"
                   className="flex-1 min-w-0 h-8 px-3 text-sm rounded-xl border border-[#b8864a]/40 bg-white focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
                 />
@@ -450,41 +465,6 @@ export default function SurveyQuestionsPage() {
         </div>
       </div>
 
-      {/* Q&A 模块 */}
-      <div className="mt-10 pt-8 border-t border-stone-100">
-        <h2 className="text-lg font-bold text-[#2c2c2c] mb-1">Q&amp;A 模块</h2>
-        <p className="text-sm text-stone-500 mb-5">这里的问题会显示在外勤 App 问卷底部，由 field staff 手动填写回答。</p>
-
-        <div className="flex gap-2 mb-4 max-w-2xl">
-          <AddRow value={newQaText} onChange={setNewQaText} onAdd={handleAddQa} placeholder="输入问题文字…" />
-        </div>
-
-        {qaLoading ? (
-          <div className="text-center text-stone-400 py-6 text-sm">加载中…</div>
-        ) : qaQuestions.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-8 text-center text-sm text-stone-400 max-w-2xl">
-            暂无 Q&amp;A 问题
-          </div>
-        ) : (
-          <div className="space-y-2 max-w-2xl">
-            {qaQuestions.map((q) => (
-              <div key={q.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border bg-white ${q.is_active ? 'border-stone-200' : 'border-stone-100 opacity-50'}`}>
-                <p className="flex-1 text-sm text-[#1c1917]">{q.question_text}</p>
-                <button
-                  onClick={() => handleToggleQa(q.id, !q.is_active)}
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${q.is_active ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'}`}
-                >
-                  {q.is_active ? '启用' : '禁用'}
-                </button>
-                <button
-                  onClick={() => handleDeleteQa(q.id)}
-                  className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                >删除</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

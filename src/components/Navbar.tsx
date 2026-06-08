@@ -79,7 +79,7 @@ export default function Navbar({
   const { handleNavClick } = useNavigationHandler();
   const pathname = usePathname();
   const isAuthPage = pathname === '/auth' || pathname === '/login' || pathname === '/register';
-  const isPortalPage = pathname.startsWith('/company') || pathname.startsWith('/supplier') || pathname.startsWith('/auth/callback') || pathname.startsWith('/admin');
+  const isPortalPage = pathname.startsWith('/company') || pathname.startsWith('/supplier') || pathname.startsWith('/auth/callback') || pathname.startsWith('/admin') || pathname.startsWith('/field');
 
   const dropdownPanelRef = useRef<HTMLDivElement>(null);
   const [dropdownLeft, setDropdownLeft] = useState(0);

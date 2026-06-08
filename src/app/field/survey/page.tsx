@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Camera, X, MapPin, Trash2 } from 'lucide-react';
+import { Camera, X, MapPin, Trash2, ChevronDown } from 'lucide-react';
 import { fieldApi } from '@/lib/adminApi';
 import ChipSelect from '@/components/field/ChipSelect';
 import SearchableSelect from '@/components/field/SearchableSelect';
@@ -82,10 +82,9 @@ export default function FieldSurveyPage() {
   const [locGroup, setLocGroup] = useState('');
   const [locDistrict, setLocDistrict] = useState('');
   const [activePhotoFieldKey, setActivePhotoFieldKey] = useState<string | null>(null);
-  const [surveyQuestions, setSurveyQuestions] = useState<{ id: number; question_text: string }[]>([]);
-  const [qaAnswers, setQaAnswers] = useState<Record<number, string>>({});
   const [locationPin, setLocationPin] = useState<PinResult | null>(null);
   const [showMapPin, setShowMapPin] = useState(false);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,14 +98,6 @@ export default function FieldSurveyPage() {
           setSchema(remoteSchema);
         }
       } catch { /* schema unavailable */ }
-
-      try {
-        const res = await fetch('/api/field/survey-questions');
-        if (res.ok) {
-          const data = await res.json() as { questions: { id: number; question_text: string }[] };
-          setSurveyQuestions(data.questions || []);
-        }
-      } catch { /* no questions yet */ }
 
       try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem('field_draft_id') : null;
@@ -165,14 +156,6 @@ export default function FieldSurveyPage() {
         setPhotos((raw as PhotoRecord[]).map(p => ({ ...p, dataUrl: p.url || '' })));
       }
     }
-    if (draft.qa_answers) {
-      const raw = typeof draft.qa_answers === 'string' ? JSON.parse(draft.qa_answers as string) : draft.qa_answers;
-      if (Array.isArray(raw)) {
-        const map: Record<number, string> = {};
-        (raw as { question_id: number; answer: string }[]).forEach(item => { map[item.question_id] = item.answer; });
-        setQaAnswers(map);
-      }
-    }
     if (draft.location_pin) {
       const raw = typeof draft.location_pin === 'string' ? JSON.parse(draft.location_pin as string) : draft.location_pin;
       if (raw?.lat && raw?.lng) setLocationPin(raw as PinResult);
@@ -213,7 +196,6 @@ export default function FieldSurveyPage() {
     id: number, cName: string, cRefId: number | null, cRefSource: string,
     secs: AllSections,
     loc?: { emirate: string; group: string; district: string },
-    qaAns?: Record<number, string>,
     locPin?: PinResult | null,
   ) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -226,7 +208,6 @@ export default function FieldSurveyPage() {
           company_ref_source: cRefSource,
           ...Object.fromEntries(Object.entries(secs).map(([k, v]) => [k, v])),
           ...(loc !== undefined ? { section_9: loc } : {}),
-          ...(qaAns !== undefined ? { qa_answers: Object.entries(qaAns).map(([qid, answer]) => ({ question_id: Number(qid), answer })) } : {}),
           ...(locPin !== undefined ? { location_pin: locPin } : {}),
         });
         setSaveStatus('saved');
@@ -239,7 +220,7 @@ export default function FieldSurveyPage() {
   function updateSection(sectionKey: string, fieldKey: string, value: string | string[]) {
     setSections((prev) => {
       const updated = { ...prev, [sectionKey]: { ...(prev[sectionKey] || {}), [fieldKey]: value } };
-      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated, { emirate: locEmirate, group: locGroup, district: locDistrict }, qaAnswers, locationPin);
+      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated, { emirate: locEmirate, group: locGroup, district: locDistrict }, locationPin);
       return updated;
     });
   }
@@ -248,7 +229,7 @@ export default function FieldSurveyPage() {
     setLocEmirate(emirate);
     setLocGroup(group);
     setLocDistrict(district);
-    if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate, group, district }, qaAnswers, locationPin);
+    if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate, group, district }, locationPin);
   }
 
   function handleCompanySearchChange(val: string) {
@@ -289,7 +270,8 @@ export default function FieldSurveyPage() {
     setCompanySearchQuery('');
     setShowSuggestions(false);
     setCompanyNameError(false);
-    if (draftId) triggerSave(draftId, company.name, company.id, src, sections, undefined, qaAnswers, locationPin);
+    setShowCompanyDropdown(false);
+    if (draftId) triggerSave(draftId, company.name, company.id, src, sections, undefined, locationPin);
   }
 
   function clearSelectedCompany() {
@@ -300,7 +282,7 @@ export default function FieldSurveyPage() {
     setCompanySearchQuery('');
     setShowSuggestions(false);
     // Persist the cleared company to server so reload doesn't restore old company
-    if (draftId) triggerSave(draftId, '', null, 'uae', sections, undefined, qaAnswers, locationPin);
+    if (draftId) triggerSave(draftId, '', null, 'uae', sections, undefined, locationPin);
     setTimeout(() => companyNameRef.current?.focus(), 50);
   }
 
@@ -354,16 +336,6 @@ export default function FieldSurveyPage() {
             })));
           }
         }
-        // Hydrate qa_answers
-        if ((interview as Record<string, unknown>).qa_answers) {
-          const raw = (interview as Record<string, unknown>).qa_answers;
-          const parsed = typeof raw === 'string' ? JSON.parse(raw as string) : raw;
-          if (Array.isArray(parsed)) {
-            const map: Record<number, string> = {};
-            (parsed as { question_id: number; answer: string }[]).forEach(item => { map[item.question_id] = item.answer; });
-            setQaAnswers(map);
-          }
-        }
         // Hydrate location_pin
         if ((interview as Record<string, unknown>).location_pin) {
           const raw = (interview as Record<string, unknown>).location_pin;
@@ -397,7 +369,6 @@ export default function FieldSurveyPage() {
         company_ref_source: companyRefSource,
         ...sections,
         section_9: { emirate: locEmirate, group: locGroup, district: locDistrict },
-        qa_answers: Object.entries(qaAnswers).map(([qid, answer]) => ({ question_id: Number(qid), answer })),
         location_pin: locationPin,
       });
       if (editingInterviewId) {
@@ -407,7 +378,6 @@ export default function FieldSurveyPage() {
           company_ref_source: companyRefSource,
           ...sections,
           section_9: { emirate: locEmirate, group: locGroup, district: locDistrict },
-          qa_answers: Object.entries(qaAnswers).map(([qid, answer]) => ({ question_id: Number(qid), answer })),
           location_pin: locationPin,
         });
         setEditingInterviewId(null);
@@ -543,28 +513,23 @@ export default function FieldSurveyPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7] pb-28">
       {/* 顶部：已选公司 + 保存状态 */}
-      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-stone-400 leading-none mb-0.5">Surveying</p>
-            <p className="text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</p>
-            {editingInterviewId && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium ml-1">
-                Editing #{editingInterviewId}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={clearSelectedCompany}
-            className="shrink-0 text-xs text-stone-400 hover:text-[#b8864a] transition-colors font-medium"
-          >
-            Change
-          </button>
-          <span className={`shrink-0 text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
-            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
+      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => { setCompanySearchQuery(''); setCompanySuggestions([]); setShowCompanyDropdown(true); }}
+          className="flex-1 min-w-0 flex items-center gap-1.5 text-left active:opacity-70 transition-opacity"
+        >
+          <span className="text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</span>
+          <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" />
+        </button>
+        {editingInterviewId && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium shrink-0">
+            Editing #{editingInterviewId}
           </span>
-        </div>
+        )}
+        <span className={`shrink-0 text-xs ${saveStatus === 'saving' ? 'text-stone-400' : saveStatus === 'saved' ? 'text-green-600' : 'text-stone-300'}`}>
+          {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
+        </span>
       </div>
 
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
@@ -588,20 +553,15 @@ export default function FieldSurveyPage() {
                 Project Location
               </h2>
               <div className="space-y-3">
-                {/* Level 1: Emirate — plain select, no search */}
+                {/* Level 1: Emirate */}
                 <div>
                   <label className="block text-sm font-medium text-stone-500 mb-2">Emirate</label>
-                  <select
+                  <SearchableSelect
+                    options={UAE_EMIRATES.map((e) => e.label)}
                     value={locEmirate}
-                    onChange={(e) => updateLocation(e.target.value, '', '')}
-                    className="w-full h-[48px] px-4 rounded-xl border border-stone-200 bg-white text-[15px] text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a] appearance-none"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
-                  >
-                    <option value="">Select emirate…</option>
-                    {UAE_EMIRATES.map((e) => (
-                      <option key={e.value} value={e.label}>{e.label}</option>
-                    ))}
-                  </select>
+                    placeholder="Select emirate…"
+                    onChange={(v) => updateLocation(v, '', '')}
+                  />
                 </div>
 
                 {/* Level 2: Sector (Dubai) or District (others) */}
@@ -684,7 +644,7 @@ export default function FieldSurveyPage() {
             <div className="space-y-5">
               {section.fields.map((field) => {
                 const sectionData = sections[section.key] || {};
-                const val = sectionData[field.key] ?? (field.type === 'multi' ? [] : '');
+                const val = sectionData[field.key] ?? (field.type === 'multi' ? [] : field.type === 'text' ? '' : '');
                 const fKey = `${section.key}.${field.key}`;
                 const fieldPhotos = photos.filter(p => p.field_key === fKey);
                 return (
@@ -694,18 +654,28 @@ export default function FieldSurveyPage() {
                       <button
                         type="button"
                         onClick={() => { setActivePhotoFieldKey(fKey); setShowCamera(true); }}
-                        className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-stone-100 text-stone-500 hover:bg-[#b8864a]/10 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70 shrink-0"
+                        className="flex items-center gap-1.5 h-[44px] px-4 rounded-2xl border border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/50 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70 shrink-0"
                       >
                         <Camera className="w-4 h-4" />
                         <span>{fieldPhotos.length > 0 ? fieldPhotos.length : 'Photo'}</span>
                       </button>
                     </div>
-                    <ChipSelect
-                      options={field.options}
-                      value={val}
-                      multi={field.type === 'multi'}
-                      onChange={(v) => updateSection(section.key, field.key, v)}
-                    />
+                    {field.type === 'text' ? (
+                      <textarea
+                        value={String(val)}
+                        onChange={(e) => updateSection(section.key, field.key, e.target.value)}
+                        placeholder="输入回答…"
+                        rows={3}
+                        className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a] resize-none"
+                      />
+                    ) : (
+                      <ChipSelect
+                        options={field.options}
+                        value={val}
+                        multi={field.type === 'multi'}
+                        onChange={(v) => updateSection(section.key, field.key, v)}
+                      />
+                    )}
                     {fieldPhotos.length > 0 && (
                       <div className="grid grid-cols-4 gap-1.5 mt-2">
                         {fieldPhotos.map((photo, idx) => (
@@ -736,32 +706,6 @@ export default function FieldSurveyPage() {
           </div>
         ))}
 
-        {/* Q&A section */}
-        {surveyQuestions.length > 0 && (
-          <div>
-            <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
-              Q&amp;A
-            </h2>
-            <div className="space-y-5">
-              {surveyQuestions.map((q) => (
-                <div key={q.id}>
-                  <label className="block text-sm font-medium text-stone-600 mb-2">{q.question_text}</label>
-                  <textarea
-                    value={qaAnswers[q.id] ?? ''}
-                    onChange={(e) => {
-                      const newAns = { ...qaAnswers, [q.id]: e.target.value };
-                      setQaAnswers(newAns);
-                      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate: locEmirate, group: locGroup, district: locDistrict }, newAns, locationPin);
-                    }}
-                    placeholder="Enter answer…"
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-[14px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a] resize-none"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3">
@@ -775,6 +719,58 @@ export default function FieldSurveyPage() {
       </div>
 
       {/* Watermark Camera overlay */}
+      {/* Company switch overlay */}
+      {showCompanyDropdown && (
+        <div className="fixed inset-0 z-40 bg-[#faf9f7] flex flex-col">
+          <div className="bg-white border-b border-stone-100 px-4 py-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowCompanyDropdown(false)}
+              className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
+            >
+              <X className="w-4 h-4 text-stone-500" />
+            </button>
+            <input
+              value={companySearchQuery}
+              onChange={(e) => handleCompanySearchChange(e.target.value)}
+              placeholder="Search company name…"
+              autoFocus
+              autoComplete="off"
+              className="flex-1 h-10 px-4 rounded-xl border border-stone-200 bg-stone-50 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 pt-4">
+            {companySuggestions.length > 0 && (
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                {companySuggestions.map((c) => (
+                  <div key={c.id} className="border-b border-stone-100 last:border-0">
+                    <div className="flex items-center gap-3 px-4 py-3.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-medium text-[#1c1917] truncate">{c.name}</p>
+                        {c.city && <p className="text-xs text-stone-400 mt-0.5">{c.city}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => selectCompany(c)}
+                        className="shrink-0 h-10 px-5 rounded-full bg-[#b8864a] text-white text-sm font-semibold active:opacity-80 transition-opacity"
+                      >
+                        Select
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {companySearchQuery.length >= 1 && !companySearching && companySuggestions.length === 0 && (
+              <p className="mt-6 text-center text-sm text-stone-400">No companies found</p>
+            )}
+            {companySearchQuery.length === 0 && (
+              <p className="mt-6 text-center text-xs text-stone-300">Type to search companies</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {showCamera && (
         <WatermarkCamera
           onClose={() => { setShowCamera(false); setActivePhotoFieldKey(null); }}
@@ -790,7 +786,7 @@ export default function FieldSurveyPage() {
           onConfirm={(result) => {
             setLocationPin(result);
             setShowMapPin(false);
-            if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate: locEmirate, group: locGroup, district: locDistrict }, qaAnswers, result);
+            if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate: locEmirate, group: locGroup, district: locDistrict }, result);
           }}
         />
       )}
