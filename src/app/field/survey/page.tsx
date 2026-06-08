@@ -654,7 +654,7 @@ export default function FieldSurveyPage() {
                       <textarea
                         value={String(val)}
                         onChange={(e) => updateSection(section.key, field.key, e.target.value)}
-                        placeholder="输入回答…"
+                        placeholder="Enter answer…"
                         rows={3}
                         className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a] resize-none"
                       />
