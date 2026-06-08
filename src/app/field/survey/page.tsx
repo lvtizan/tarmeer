@@ -649,17 +649,7 @@ export default function FieldSurveyPage() {
                 const fieldPhotos = photos.filter(p => p.field_key === fKey);
                 return (
                   <div key={field.key}>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium text-stone-500">{field.label}</label>
-                      <button
-                        type="button"
-                        onClick={() => { setActivePhotoFieldKey(fKey); setShowCamera(true); }}
-                        className="flex items-center gap-1.5 h-[44px] px-4 rounded-2xl border border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/50 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70 shrink-0"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>{fieldPhotos.length > 0 ? fieldPhotos.length : 'Photo'}</span>
-                      </button>
-                    </div>
+                    <label className="block text-sm font-medium text-stone-500 mb-2">{field.label}</label>
                     {field.type === 'text' ? (
                       <textarea
                         value={String(val)}
@@ -676,6 +666,14 @@ export default function FieldSurveyPage() {
                         onChange={(v) => updateSection(section.key, field.key, v)}
                       />
                     )}
+                    <button
+                      type="button"
+                      onClick={() => { setActivePhotoFieldKey(fKey); setShowCamera(true); }}
+                      className="mt-2 flex items-center gap-1.5 h-[44px] px-4 rounded-2xl border border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/50 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>{fieldPhotos.length > 0 ? `${fieldPhotos.length} Photo${fieldPhotos.length > 1 ? 's' : ''}` : 'Photo'}</span>
+                    </button>
                     {fieldPhotos.length > 0 && (
                       <div className="grid grid-cols-4 gap-1.5 mt-2">
                         {fieldPhotos.map((photo, idx) => (
