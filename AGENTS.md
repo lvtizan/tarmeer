@@ -21,9 +21,34 @@ This version has breaking changes — APIs, conventions, and file structure may 
 |------|---------|
 | 前端代码上线 | `git push` → SSH: `git pull && next build && pm2 restart tarmeer-next` |
 | 静态图片上线 | `rsync -avz public/images/vn-companies/ root@47.91.108.104:/tarmeer/tarmeer_web_portal/images/vn-companies/` |
-| 后端代码上线 | `bash deploy-backend-ecs.sh` |
+| 后端代码上线 | 见下方后端部署规则 |
 
 `deploy-simple.sh` 已废弃（部署到旧 Vite 目录），**不要用它部署前端代码**。
+
+**后端部署规则（凡改 `server/dist/` 下任何文件，必须同步到生产）：**
+
+`deploy-backend-ecs.sh` 需要完整 `server/package.json`，本地不满足条件，**改用 rsync 增量同步**：
+
+```bash
+# 只同步改动的文件（例如改了 controller 和 routes）
+rsync -avz server/dist/controllers/fieldAdminController.js \
+           server/dist/routes/admin.js \
+  -e "ssh -i ~/.ssh/tarmeer_ecs" \
+  root@47.91.108.104:/tarmeer/tarmeer_api/dist/
+
+# 同步完必须重启后端
+ssh -i ~/.ssh/tarmeer_ecs root@47.91.108.104 "pm2 restart tarmeer-api"
+```
+
+批量同步所有 dist 文件：
+```bash
+rsync -avz server/dist/ \
+  -e "ssh -i ~/.ssh/tarmeer_ecs" \
+  root@47.91.108.104:/tarmeer/tarmeer_api/dist/
+ssh -i ~/.ssh/tarmeer_ecs root@47.91.108.104 "pm2 restart tarmeer-api"
+```
+
+**判断标准：改了 `server/dist/` = 必须 rsync 后端 + pm2 restart tarmeer-api。改了 `src/` = 只需前端部署。两者都改 = 先后端后前端。**
 
 ### 第三步：新增 VN 公司图片后必须 rsync
 
