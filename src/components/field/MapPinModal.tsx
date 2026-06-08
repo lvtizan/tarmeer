@@ -34,7 +34,8 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
 export default function MapPinModal({ initialAddress = '', onConfirm, onClose }: MapPinModalProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerRef = useRef<any>(null);
   const [address, setAddress] = useState(initialAddress);
   const [pinResult, setPinResult] = useState<PinResult | null>(null);
   const [loading, setLoading] = useState(true);
