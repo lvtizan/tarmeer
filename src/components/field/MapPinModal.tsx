@@ -73,29 +73,18 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
         const map = new gmaps.Map(mapRef.current, {
           center: defaultCenter,
           zoom: 12,
-          mapId: 'tarmeer-field-survey',
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
         });
 
-        // Use AdvancedMarkerElement if available, fallback to Marker
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let marker: any;
-        if (gmaps.marker?.AdvancedMarkerElement) {
-          marker = new gmaps.marker.AdvancedMarkerElement({ map, position: defaultCenter, gmpDraggable: true });
-        } else {
-          marker = new gmaps.Marker({ map, position: defaultCenter, draggable: true });
-        }
+        const marker: any = new gmaps.Marker({ map, position: defaultCenter, draggable: true });
         markerRef.current = marker;
 
         marker.addListener('dragend', () => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const pos = marker.position as any;
-          if (!pos) return;
-          const lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat;
-          const lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng;
-          setPinResult(prev => ({ address: prev?.address ?? '', lat, lng }));
+          const pos = marker.getPosition();
+          if (pos) setPinResult(prev => ({ address: prev?.address ?? '', lat: pos.lat(), lng: pos.lng() }));
         });
 
         if (inputRef.current && gmaps.places?.Autocomplete) {
@@ -109,11 +98,7 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
             setAddress(addr);
             map.panTo({ lat, lng });
             map.setZoom(17);
-            if (gmaps.marker?.AdvancedMarkerElement) {
-              marker.position = { lat, lng };
-            } else {
-              marker.setPosition({ lat, lng });
-            }
+            marker.setPosition({ lat, lng });
             setPinResult({ address: addr, lat, lng });
           });
         }
@@ -125,11 +110,7 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
               const loc = results[0].geometry.location;
               map.panTo(loc);
               map.setZoom(17);
-              if (gmaps.marker?.AdvancedMarkerElement) {
-                marker.position = loc;
-              } else {
-                marker.setPosition(loc);
-              }
+              marker.setPosition(loc);
               setPinResult({ address: initialAddress, lat: loc.lat(), lng: loc.lng() });
             }
           });
