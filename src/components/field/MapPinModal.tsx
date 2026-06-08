@@ -52,9 +52,12 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
         await loadGoogleMaps(apiKey);
         if (!mapRef.current) return;
 
-        const { Map } = await google.maps.importLibrary('maps') as google.maps.MapsLibrary;
-        const { AdvancedMarkerElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
-        const { Autocomplete } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { Map } = await google.maps.importLibrary('maps') as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { AdvancedMarkerElement } = await google.maps.importLibrary('marker') as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { Autocomplete } = await google.maps.importLibrary('places') as any;
 
         const defaultCenter = { lat: 25.2048, lng: 55.2708 };
         const map = new Map(mapRef.current, {
@@ -91,8 +94,10 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
         }
 
         if (initialAddress) {
-          const { Geocoder } = await google.maps.importLibrary('geocoding') as google.maps.GeocodingLibrary;
-          new Geocoder().geocode({ address: initialAddress }, (results, status) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { Geocoder } = await google.maps.importLibrary('geocoding') as any;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          new Geocoder().geocode({ address: initialAddress }, (results: any, status: any) => {
             if (status === 'OK' && results?.[0]?.geometry?.location) {
               const loc = results[0].geometry.location;
               map.panTo(loc);
