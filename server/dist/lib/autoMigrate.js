@@ -765,6 +765,13 @@ async function runAutoMigrate() {
             await database_1.default.execute(`UPDATE company_profiles cp JOIN users u ON u.id = cp.user_id SET cp.country = 'sa' WHERE cp.country = 'ae' AND (u.phone LIKE '+966%' OR u.phone LIKE '00966%')`);
         }
         catch { /* ignore — country column may not yet exist on first run */ }
+        // 11. Strip trunk 0 from company_profiles.phone where +CC0XXX stored (e.g. +971050xxx → +97150xxx)
+        try {
+            await database_1.default.execute(`UPDATE company_profiles SET phone = CONCAT('+971', SUBSTRING(phone, 6)) WHERE phone LIKE '+9710%' AND LENGTH(phone) >= 12`);
+            await database_1.default.execute(`UPDATE company_profiles SET phone = CONCAT('+84', SUBSTRING(phone, 5)) WHERE phone LIKE '+840%' AND LENGTH(phone) >= 11`);
+            await database_1.default.execute(`UPDATE company_profiles SET phone = CONCAT('+966', SUBSTRING(phone, 6)) WHERE phone LIKE '+9660%' AND LENGTH(phone) >= 13`);
+        }
+        catch { /* ignore */ }
         if (changes === 0) {
             console.log(`${TAG} Schema is up to date`);
         }

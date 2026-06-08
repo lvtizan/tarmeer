@@ -139,7 +139,14 @@ function normalizePhone(raw, country = 'ae') {
     const digits = raw.replace(/[\s\-().+]/g, '');
     if (!digits) return '';
     // Already explicit E.164 (starts with +)
-    if (raw.trim().startsWith('+')) return '+' + digits;
+    // Strip trunk 0 if accidentally left after country code (e.g. +971050xxx → +97150xxx)
+    if (raw.trim().startsWith('+')) {
+        const sortedCodes = Object.values(COUNTRY_DIAL).sort((a, b) => b.length - a.length);
+        for (const code of sortedCodes) {
+            if (digits.startsWith(code + '0')) return '+' + code + digits.slice(code.length + 1);
+        }
+        return '+' + digits;
+    }
     // 00xxx international prefix
     if (digits.startsWith('00')) return '+' + digits.slice(2);
     const dialCode = COUNTRY_DIAL[country] || COUNTRY_DIAL.ae;
