@@ -122,21 +122,29 @@ function parseJsonSafe(v) {
  * Saves crm_tenant_id + crm_provisioned_at + crm_mall_partner_id on success.
  * Idempotent by mallPartnerId on the CRM side.
  */
-/** Normalize phone to E.164. Handles UAE numbers: +971XXXXXXXXX, 05XXXXXXXX, 009715XXXXXXXX */
+/**
+ * Normalize phone to E.164.
+ * Handles UAE mobile (05x/5x) and landlines (04x/02x/06x/07x),
+ * as well as 00971 prefix and already-formatted +971 numbers with spaces.
+ */
 function normalizePhone(raw) {
+    if (!raw) return '';
     const digits = raw.replace(/[\s\-().+]/g, '');
-    if (!digits)
-        return '';
-    if (digits.startsWith('00971'))
-        return '+971' + digits.slice(5);
-    if (digits.startsWith('971') && digits.length === 12)
-        return '+' + digits;
-    if (digits.startsWith('05') && digits.length === 10)
-        return '+971' + digits.slice(1);
-    if (digits.startsWith('5') && digits.length === 9)
-        return '+971' + digits;
-    // Return as-is if already has + or unknown format
-    return raw.startsWith('+') ? raw : '+' + digits;
+    if (!digits) return '';
+    // 00971 international prefix
+    if (digits.startsWith('00971')) return '+971' + digits.slice(5);
+    // Already has 971 country code: mobile (12 digits) or landline (11 digits)
+    if (digits.startsWith('971') && (digits.length === 12 || digits.length === 11)) return '+' + digits;
+    // UAE mobile: 05x + 7 digits = 10 digits
+    if (digits.startsWith('05') && digits.length === 10) return '+971' + digits.slice(1);
+    // UAE mobile without leading zero: 5x + 7 digits = 9 digits
+    if (digits.startsWith('5') && digits.length === 9) return '+971' + digits;
+    // UAE landline: 0[2-9] + 7 or 8 digits = 9 or 10 digits (04=Dubai, 02=Abu Dhabi, 06=Sharjah, 07=RAK…)
+    if (/^0[2-9]/.test(digits) && (digits.length === 9 || digits.length === 10)) return '+971' + digits.slice(1);
+    // Already E.164 or explicit + prefix — strip formatting from original
+    if (raw.startsWith('+')) return '+' + digits;
+    // Unknown format — prepend + to digit string
+    return '+' + digits;
 }
 async function provision(companyId) {
     const row = await getCompanyForCRM(companyId);
@@ -216,6 +224,7 @@ function emailSync(userId, newEmail) {
  */
 function partnerSync(companyId) {
     database_1.default.execute(`SELECT cp.crm_tenant_id, cp.company_name, cp.description, cp.phone,
+            u.phone AS user_phone,
             cp.website, cp.city, cp.address, cp.trade_license_number,
             cp.company_type, cp.company_types, cp.services, cp.emirates_served,
             cp.establishment_year, cp.office_type, cp.one_stop_service,
@@ -223,7 +232,7 @@ function partnerSync(companyId) {
             cp.design_team_size, cp.construction_team, cp.owner_nationality,
             cp.main_project_types, cp.min_project_value, cp.max_project_value,
             cp.material_sources, cp.latest_interview_id, cp.last_interviewed_at
-     FROM company_profiles cp WHERE cp.id = ?`, [companyId]).then(([rows]) => {
+     FROM company_profiles cp JOIN users u ON u.id = cp.user_id WHERE cp.id = ?`, [companyId]).then(([rows]) => {
         const row = rows[0];
         if (!row?.crm_tenant_id)
             return;
@@ -234,6 +243,7 @@ function partnerSync(companyId) {
             tenantId: row.crm_tenant_id,
             businessName: row.company_name,
             businessType: companyTypes[0] || row.company_type || undefined,
+            phone: normalizePhone(row.phone || row.user_phone || ''),
             city: row.city,
             address: row.address,
             tradeRegistrationNo: row.trade_license_number,

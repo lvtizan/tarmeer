@@ -30,11 +30,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
 `deploy-backend-ecs.sh` 需要完整 `server/package.json`，本地不满足条件，**改用 rsync 增量同步**：
 
 ```bash
-# 只同步改动的文件（例如改了 controller 和 routes）
+# ⚠️ 多文件 rsync 必须分开写，目标路径必须指定到文件名
+# 原因：rsync 多文件时会把所有文件展平到目标目录根，导致路径错误
 rsync -avz server/dist/controllers/fieldAdminController.js \
-           server/dist/routes/admin.js \
   -e "ssh -i ~/.ssh/tarmeer_ecs" \
-  root@47.91.108.104:/tarmeer/tarmeer_api/dist/
+  root@47.91.108.104:/tarmeer/tarmeer_api/dist/controllers/fieldAdminController.js
+
+rsync -avz server/dist/routes/admin.js \
+  -e "ssh -i ~/.ssh/tarmeer_ecs" \
+  root@47.91.108.104:/tarmeer/tarmeer_api/dist/routes/admin.js
 
 # 同步完必须重启后端
 ssh -i ~/.ssh/tarmeer_ecs root@47.91.108.104 "pm2 restart tarmeer-api"
@@ -95,6 +99,71 @@ location ^~ /api/ {
 ssh -i ~/.ssh/tarmeer_ecs root@47.91.108.104
 node /tmp/purge-vn-missing.js   # 删除文件不存在的图片引用
 ```
+
+### 修改前必须：全量搜索所有相关位置，统一修正
+
+**凡是要修改某个逻辑（字段同步、格式化、校验、状态变更等），必须先用 Grep 搜索整个 `server/dist/` 和 `src/` 中所有涉及该逻辑的位置，再统一修正，不得只改一处。**
+
+例：修 `partnerSync` 缺少 phone → 须同时找到所有调用 `UPDATE company_profiles` 的地方，逐一判断是否需要补 partnerSync。
+
+---
+
+### 第六步：功能完成后必须跑本地验收测试（不得跳过）
+
+**凡是写了代码，必须在告知用户"完成"之前运行以下命令，确认全部通过：**
+
+```bash
+node scripts/harness/smoke-test.mjs
+```
+
+覆盖范围：
+- TypeScript 类型检查（`tsc --noEmit`）
+- 后端关键路由存在性（401 = 路由已注册；404 = 忘记注册路由；500 = 服务崩溃）
+- 前端可达性（localhost:5180 返回 200）
+
+**任何一项失败 = 不能声称"完成"，必须先修复。**
+
+如需新增路由到 smoke-test，在 `scripts/harness/smoke-test.mjs` 的 `ADMIN_ROUTES` 数组里追加一行。
+
+---
+
+### 第七步：问题复盘机制（每次修完 bug/失误后必做）
+
+**凡是在生产上出现的问题、踩过的坑、遗漏的步骤，修完之后必须立即归档，不得只修不记。**
+
+归档位置按问题类型分：
+
+| 问题类型 | 归档位置 |
+|---------|---------|
+| 部署/发布流程疏漏 | 更新本文件（AGENTS.md）对应步骤 |
+| 代码 bug、组件误用 | `memory/pitfalls.md` |
+| 后端 API / DB 问题 | `memory/backend-patterns.md` |
+| UI / 样式问题 | `memory/ui-patterns.md` |
+| 部署/服务器操作 | `memory/deployment.md` |
+
+归档格式（追加到对应文件末尾）：
+
+```
+## [日期] [标题]
+- **现象**：用户看到了什么 / 什么功能失效
+- **根因**：一句话说清为什么
+- **修复**：做了什么
+- **预防规则**：下次开发前必须做什么（写进 checklist 或这里）
+```
+
+**不归档 = 没修完。** 这是工作流的最后一步，不能省略。
+
+---
+
+## VN Footer Contact Rules（锁定，不得修改）
+
+改 `src/components/Footer.tsx` 时，VN 站（`lang === 'vi'`）底部联系方式块必须：
+
+1. 显示 **两个** 号码（来自 `VN_WHATSAPP_NUMBERS`）：+84 886 770 218 和 +84 888 175 938
+2. 标签格式：`Zalo / WhatsApp: {号码}`（不得简化为只写 WhatsApp）
+3. 两个号码缺一不可
+
+**违反以上任何一条 = 必须还原。**
 
 ---
 

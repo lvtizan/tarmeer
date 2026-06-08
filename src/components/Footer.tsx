@@ -110,7 +110,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
                   onClick={() => trackAnalyticsEvent('click_whatsapp', { source: 'footer' })}
                   className="text-sm text-white/80 hover:text-[#c6a065] transition block mb-2"
                 >
-                  WhatsApp: {label}
+                  Zalo / WhatsApp: {label}
                 </a>
               ))
             ) : (

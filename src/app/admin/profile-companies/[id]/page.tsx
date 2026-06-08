@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { ExternalLink, Pencil, Trash2, Star, Check, ImagePlus, Eye, EyeOff } from 'lucide-react';
-import { adminApi } from '@/lib/adminApi';
+import { adminApi, fieldApi } from '@/lib/adminApi';
 import { useAdmin } from '@/contexts/AdminContext';
 import { PageSpinner } from '@/components/ui/Spinner';
 import SmartImage from '@/components/ui/SmartImage';
@@ -71,10 +71,29 @@ const COMPANY_TYPE_LABELS: Record<string, string> = {
   furnishing: '软装公司',
 };
 
+interface SchemaField { key: string; label: string; }
+interface SchemaSection { title: string; key: string; fields: SchemaField[]; }
+
 function parseJsonArray(val: string | null | undefined): string[] {
   if (!val) return [];
   try { return JSON.parse(val); } catch { return []; }
 }
+
+function parseSection(raw: unknown): Record<string, string | string[]> {
+  if (!raw) return {};
+  if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return {}; } }
+  return raw as Record<string, string | string[]>;
+}
+
+// Survey field key → does company profile already have corresponding data?
+const PROFILE_FIELD_COVERAGE: Record<string, (c: CompanyProfile) => boolean> = {
+  year_established: (c) => !!c.establishment_year,
+  registration_location: (c) => !!c.city,
+  main_business_scope: (c) => parseJsonArray(c.services).length > 0,
+  company_type: (c) => parseJsonArray(c.company_type).length > 0,
+  licenses: (c) => !!c.trade_license_number,
+  total_employees: () => false,
+};
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -115,6 +134,11 @@ function ProfileCompanyDetailContent() {
   const [deleteReason, setDeleteReason] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [togglingPublished, setTogglingPublished] = useState(false);
+  const [linkedInterview, setLinkedInterview] = useState<Record<string, unknown> | null>(null);
+  const [surveySchema, setSurveySchema] = useState<SchemaSection[]>([]);
+
+  const recordId = searchParams.get('recordId');
+  const fromVisitRecords = searchParams.get('from') === 'visit-records';
 
   const loadDetail = () => {
     if (!id) { setLoading(false); return; }
@@ -130,6 +154,22 @@ function ProfileCompanyDetailContent() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadDetail(); }, [id]);
+
+  useEffect(() => {
+    if (!recordId) return;
+    adminApi.getInterview(Number(recordId))
+      .then((data: unknown) => {
+        const d = data as { interview?: Record<string, unknown> };
+        setLinkedInterview(d.interview ?? (data as Record<string, unknown>));
+      })
+      .catch(() => {});
+    fieldApi.getSurveySchema()
+      .then((res: { schema: SchemaSection[] | null }) => {
+        if (res?.schema && Array.isArray(res.schema)) setSurveySchema(res.schema);
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordId]);
 
   const styles = useMemo(() => {
     const all = projects.flatMap((p) => p.style ? [p.style] : []);
@@ -319,6 +359,11 @@ function ProfileCompanyDetailContent() {
     return 'companies';
   })();
 
+  const backHref = fromVisitRecords
+    ? `/admin/visit-records${recordId ? `?detail=${recordId}` : ''}`
+    : `/admin/companies?tab=${backTab}`;
+  const backLabel = fromVisitRecords ? t('Back to Visit Records', '返回访谈列表') : t('Back to Companies', '返回公司列表');
+
   if (loading) return <PageSpinner />;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
   if (!company) return <div className="p-6 text-stone-400">{t('Company not found.', '公司未找到')}</div>;
@@ -329,11 +374,11 @@ function ProfileCompanyDetailContent() {
   return (
     <div className="w-full space-y-4">
       <button
-        onClick={() => router.push(`/admin/companies?tab=${backTab}`)}
+        onClick={() => router.push(backHref)}
         className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        {t('Back to Companies', '返回公司列表')}
+        {backLabel}
       </button>
 
       {actionError && (
@@ -350,9 +395,14 @@ function ProfileCompanyDetailContent() {
           <div>
             <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
             <div className="flex flex-wrap gap-1.5 mt-1.5">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
-                {COMPANY_TYPE_LABELS[company.company_type] || company.company_type}
-              </span>
+              {(parseJsonArray(company.company_type).length > 0
+                ? parseJsonArray(company.company_type)
+                : [company.company_type]
+              ).map((ct, i) => (
+                <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
+                  {COMPANY_TYPE_LABELS[ct] || ct}
+                </span>
+              ))}
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>
                 {company.status}
               </span>
@@ -516,16 +566,21 @@ function ProfileCompanyDetailContent() {
       </div>
 
       {/* DESKTOP layout */}
-      <div className="hidden md:flex md:items-start gap-6">
-        {/* LEFT sidebar */}
-        <div className="w-80 flex-shrink-0 space-y-4">
+      <div className="hidden md:grid md:grid-cols-10 md:items-start gap-6">
+        {/* LEFT sidebar — 2/10 */}
+        <div className="col-span-2 space-y-4">
           {/* Header card */}
           <div className="bg-white rounded-xl border border-stone-200 p-5 space-y-3">
             {company.logo_url && <SmartImage src={company.logo_url} alt={company.company_name} className="w-16 h-16 rounded-xl object-contain bg-stone-50 border border-stone-100" />}
             <div>
               <h1 className="text-lg font-bold text-stone-800">{company.company_name}</h1>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{COMPANY_TYPE_LABELS[company.company_type] || company.company_type}</span>
+                {(parseJsonArray(company.company_type).length > 0
+                  ? parseJsonArray(company.company_type)
+                  : [company.company_type]
+                ).map((ct, i) => (
+                  <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{COMPANY_TYPE_LABELS[ct] || ct}</span>
+                ))}
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${COMPANY_STATUS_COLORS[company.status] || 'bg-stone-100 text-stone-600'}`}>{company.status}</span>
               </div>
               <div className="flex flex-wrap gap-2 mt-1.5">
@@ -621,8 +676,8 @@ function ProfileCompanyDetailContent() {
           </div>
         </div>
 
-        {/* RIGHT: Portfolio */}
-        <div className="flex-1 min-w-0">
+        {/* RIGHT: Portfolio + Interview data — 8/10 */}
+        <div className="col-span-8 space-y-4">
           <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-5 pb-4">
               <h2 className="text-base font-bold text-stone-800">
@@ -695,6 +750,46 @@ function ProfileCompanyDetailContent() {
               </div>
             )}
           </div>
+
+          {/* Interview data panel — shown only when navigating from visit-records */}
+          {fromVisitRecords && linkedInterview && surveySchema.length > 0 && (
+            <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+              <div className="px-5 pt-5 pb-3 border-b border-stone-100 flex items-center gap-2">
+                <svg className="w-4 h-4 text-[#b8864a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2"/></svg>
+                <h2 className="text-sm font-semibold text-stone-800">{t('Visit Record Survey Data', '访谈问卷数据')}</h2>
+                <span className="text-xs text-stone-400 ml-auto">{t('✓ = already in profile', '✓ = 已录入装企资料')}</span>
+              </div>
+              <div className="p-5 grid grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-5">
+                {surveySchema.map((section) => {
+                  const sectionData = parseSection(linkedInterview[section.key]);
+                  const hasAny = section.fields.some(f => {
+                    const v = sectionData[f.key];
+                    return v && !(Array.isArray(v) && v.length === 0);
+                  });
+                  if (!hasAny) return null;
+                  return section.fields.map((field) => {
+                    const val = sectionData[field.key];
+                    if (!val || (Array.isArray(val) && val.length === 0)) return null;
+                    const inProfile = PROFILE_FIELD_COVERAGE[field.key]?.(company);
+                    const displayVal = Array.isArray(val) ? val.join('、') : val;
+                    return (
+                      <div key={`${section.key}-${field.key}`} className="space-y-0.5">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-stone-400">{field.label}</span>
+                          {inProfile && (
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-600 flex-shrink-0" title={t('Already in company profile', '已录入装企资料')}>
+                              <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm font-medium text-stone-700">{displayVal}</div>
+                      </div>
+                    );
+                  });
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

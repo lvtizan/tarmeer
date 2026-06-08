@@ -15,6 +15,17 @@ const UAE_CITIES = [
   'Umm Al Quwain',
 ];
 
+const VN_CITIES = [
+  'Hồ Chí Minh',
+  'Hà Nội',
+  'Đà Nẵng',
+  'Bình Dương',
+  'Đồng Nai',
+  'Cần Thơ',
+  'Hải Phòng',
+  'Nha Trang',
+];
+
 interface ServiceInquiryCardProps {
   title: string;
   subtitle?: string;
@@ -30,6 +41,8 @@ interface ServiceInquiryCardProps {
   companySlug?: string;
   /** Minimal mode: only phone + area (used on homepage) */
   minimal?: boolean;
+  /** Vietnam site: show VN cities */
+  isVn?: boolean;
 }
 
 export default function ServiceInquiryCard({
@@ -43,7 +56,9 @@ export default function ServiceInquiryCard({
   companyName,
   companySlug,
   minimal = false,
+  isVn = false,
 }: ServiceInquiryCardProps) {
+  const CITIES = isVn ? VN_CITIES : UAE_CITIES;
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -150,8 +165,8 @@ export default function ServiceInquiryCard({
           value={form.city}
           onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
         >
-          <option value="">Select city</option>
-          {UAE_CITIES.map((city) => (
+          <option value="">{isVn ? 'Chọn thành phố' : 'Select city'}</option>
+          {CITIES.map((city) => (
             <option key={city} value={city}>
               {city}
             </option>

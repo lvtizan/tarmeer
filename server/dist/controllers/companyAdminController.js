@@ -749,6 +749,11 @@ async function editCompanyProfile(req, res) {
         values.push(id);
         await database_1.default.execute(`UPDATE company_profiles SET ${updates.join(', ')} WHERE id = ?`, values);
         const [rows] = await database_1.default.execute('SELECT * FROM company_profiles WHERE id = ?', [id]);
+        // Fire-and-forget CRM sync if this company is provisioned
+        if (rows[0]?.crm_tenant_id) {
+            const { partnerSync } = require('../lib/crmIntegrationService');
+            partnerSync(Number(id));
+        }
         res.json({ profile: rows[0] });
     }
     catch (error) {

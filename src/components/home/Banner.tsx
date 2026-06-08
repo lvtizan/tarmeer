@@ -88,7 +88,7 @@ export default function Banner() {
         body: JSON.stringify({
           name: name.trim() || '',
           phone: `${phoneRegion.code}${phone}`,
-          city: 'Dubai',
+          city: lang === 'vi' ? 'Hồ Chí Minh' : 'Dubai',
           area_range: `${numericArea}m²`,
           source_page: 'home-banner',
         }),

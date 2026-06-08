@@ -123,6 +123,10 @@ async function ensureInterviewColumns() {
       await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN company_ref_source VARCHAR(20) NULL DEFAULT 'uae'`);
       console.log('[field] added column: company_ref_source');
     }
+    if (!existingSet.has('country')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN country VARCHAR(5) NOT NULL DEFAULT 'ae'`);
+      console.log('[field] added column: country');
+    }
   } catch(e) {
     console.error('[field] ensureInterviewColumns:', e.message);
   }

@@ -690,6 +690,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                 title={`Get in touch with ${company.name}`}
                 companyName={company.name}
                 companySlug={company.id}
+                isVn={isVn}
               />
 
               {/* Contact Info Card — hidden for claimed companies */}
@@ -838,6 +839,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                 companySlug={company.id}
                 inline
                 className="mt-4"
+                isVn={isVn}
               />
             </div>
           </motion.div>
