@@ -6,6 +6,14 @@ export const WHATSAPP_NUMBER = '971588388922';
 export const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
 export const INSTAGRAM_URL = 'https://www.instagram.com/tarmeermall';
 
+// Vietnam site
+export const VN_ADDRESS = 'Tòa nhà Viva Riverside, Số 1472 Võ Văn Kiệt, Phường Bình Tiên, Thành Phố Hồ Chí Minh, Việt Nam';
+export const VN_GOOGLE_MAPS_URL = 'https://www.google.com/maps/search/Tòa+nhà+Viva+Riverside,+Số+1472+Võ+Văn+Kiệt,+Phường+Bình+Tiên,+Thành+Phố+Hồ+Chí+Minh';
+export const VN_WHATSAPP_NUMBERS = [
+  { label: '+84 886 770 218', link: 'https://wa.me/84886770218' },
+  { label: '+84 888 175 938', link: 'https://wa.me/84888175938' },
+];
+
 // Time intervals (in milliseconds)
 export const STORAGE_SYNC_INTERVAL_MS = 1000;
 export const SCROLL_TIMEOUT_MS = 80;
