@@ -86,6 +86,7 @@ export default function FieldSurveyPage() {
   const [qaAnswers, setQaAnswers] = useState<Record<number, string>>({});
   const [locationPin, setLocationPin] = useState<PinResult | null>(null);
   const [showMapPin, setShowMapPin] = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companySearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companyNameRef = useRef<HTMLInputElement>(null);
@@ -109,22 +110,26 @@ export default function FieldSurveyPage() {
 
       try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem('field_draft_id') : null;
+        let loaded = false;
         if (storedId) {
           const { draft } = await fieldApi.getDraft(Number(storedId)) as { draft: DraftData };
           if (draft) {
             hydrateDraft(draft);
-            return;
+            loaded = true;
           }
         }
-        const { id } = await fieldApi.createDraft() as { id: number };
-        setDraftId(id);
-        if (typeof window !== 'undefined') localStorage.setItem('field_draft_id', String(id));
+        if (!loaded) {
+          const { id } = await fieldApi.createDraft() as { id: number };
+          setDraftId(id);
+          if (typeof window !== 'undefined') localStorage.setItem('field_draft_id', String(id));
+        }
       } catch (err: unknown) {
         const status = (err as { status?: number })?.status;
         if (status === 401 || status === 403) {
           alert('Session expired — please refresh the page and log in again.');
         }
-        // other errors: silent (network blip, etc.)
+      } finally {
+        setInitializing(false);
       }
     })();
   }, []);
@@ -418,6 +423,14 @@ export default function FieldSurveyPage() {
     }
   }
 
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-[#faf9f7] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#faf9f7] flex flex-col items-center justify-center px-6">
@@ -681,10 +694,10 @@ export default function FieldSurveyPage() {
                       <button
                         type="button"
                         onClick={() => { setActivePhotoFieldKey(fKey); setShowCamera(true); }}
-                        className="flex items-center gap-1 text-xs text-stone-400 hover:text-[#b8864a] transition-colors"
+                        className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-stone-100 text-stone-500 hover:bg-[#b8864a]/10 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70 shrink-0"
                       >
-                        <Camera className="w-3.5 h-3.5" />
-                        <span>{fieldPhotos.length > 0 ? `${fieldPhotos.length}` : 'Photo'}</span>
+                        <Camera className="w-4 h-4" />
+                        <span>{fieldPhotos.length > 0 ? fieldPhotos.length : 'Photo'}</span>
                       </button>
                     </div>
                     <ChipSelect

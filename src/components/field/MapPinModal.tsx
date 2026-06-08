@@ -49,8 +49,19 @@ export default function MapPinModal({ initialAddress = '', onConfirm, onClose }:
 
     async function initMap() {
       try {
+        if (!apiKey) {
+          setError('Google Maps API key not configured. Please contact support.');
+          setLoading(false);
+          return;
+        }
         await loadGoogleMaps(apiKey);
         if (!mapRef.current) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (typeof (google as any).maps?.importLibrary !== 'function') {
+          setError('Google Maps failed to load (API key may be invalid).');
+          setLoading(false);
+          return;
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { Map } = await google.maps.importLibrary('maps') as any;
