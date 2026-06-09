@@ -1,34 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, RefreshCw } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
 import { labelCompanyType } from '@/lib/companyTypeLabel';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 
 type Row = Awaited<ReturnType<typeof adminApi.getSignedCompanies>>['companies'][number];
 
 export default function AdminSignedCompaniesPage() {
   const router = useRouter();
+  const { country } = useAdminCountry();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminApi.getSignedCompanies();
+      const data = await adminApi.getSignedCompanies(country);
       setRows(data.companies || []);
     } catch {
       setRows([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [country]);
 
   useEffect(() => { document.title = '已签约装企 — Tarmeer Admin'; }, []);
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const goDetail = (r: Row) => {
     if (r.source === 'profile') router.push(`/admin/profile-companies/${r.id}`);

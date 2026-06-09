@@ -6,6 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import { TableSpinner } from '@/components/ui/Spinner';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { useAdminT } from '@/hooks/useAdminLang';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 type StatusFilter = 'all' | 'new' | 'processing' | 'resolved' | 'rejected';
@@ -35,6 +36,7 @@ function truncate(str: string | null, max: number): string {
 
 export default function AdminComplaintsPage() {
   const { t } = useAdminT();
+  const { country } = useAdminCountry();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -67,6 +69,7 @@ export default function AdminComplaintsPage() {
         page, limit: 20,
         status: statusFilter === 'all' ? undefined : statusFilter,
         search: search || undefined,
+        country,
       });
       setComplaints(result.complaints);
       setTotal(result.pagination.total);
@@ -75,7 +78,7 @@ export default function AdminComplaintsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, search, country]);
 
   useEffect(() => { loadComplaints(); }, [loadComplaints]);
 

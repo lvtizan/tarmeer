@@ -845,12 +845,13 @@ class AdminApiClient {
   }
 
   // Complaint management
-  async getComplaints(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+  async getComplaints(params?: { page?: number; limit?: number; status?: string; search?: string; country?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.status) query.set('status', params.status);
     if (params?.search) query.set('search', params.search);
+    if (params?.country) query.set('country', params.country);
     return this.request(`/complaints?${query}`);
   }
 

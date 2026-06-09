@@ -546,110 +546,11 @@ export default function FieldSurveyPage() {
       </div>
 
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
-        {/* Location section — fixed, always first */}
-        {(() => {
-          const emirateData = UAE_EMIRATES.find((e) => e.label === locEmirate);
-          const isDubai = !!emirateData?.groups;
-          const groupData = emirateData?.groups?.find((g) => g.label === locGroup);
-
-          // options for level 2
-          const level2Options = isDubai
-            ? (emirateData.groups!.map((g) => g.label))
-            : (emirateData?.districts ?? []);
-
-          // options for level 3 (Dubai only)
-          const level3Options = isDubai ? (groupData?.districts ?? []) : [];
-
-          return (
-            <div>
-              <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
-                Project Location
-              </h2>
-              <div className="space-y-3">
-                {/* Level 1: Emirate */}
-                <div>
-                  <label className="block text-sm font-medium text-stone-500 mb-2">Emirate</label>
-                  <SearchableSelect
-                    options={UAE_EMIRATES.map((e) => e.label)}
-                    value={locEmirate}
-                    placeholder="Select emirate…"
-                    onChange={(v) => updateLocation(v, '', '')}
-                  />
-                </div>
-
-                {/* Level 2: Sector (Dubai) or District (others) */}
-                {locEmirate && (
-                  <div>
-                    <label className="block text-sm font-medium text-stone-500 mb-2">
-                      {isDubai ? 'Sector / Area' : 'District'}
-                    </label>
-                    <SearchableSelect
-                      options={level2Options}
-                      value={isDubai ? locGroup : locDistrict}
-                      placeholder={isDubai ? 'Select sector…' : 'Search district…'}
-                      onChange={(v) => {
-                        if (isDubai) {
-                          updateLocation(locEmirate, v, '');
-                        } else {
-                          updateLocation(locEmirate, '', v);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Level 3: District within sector (Dubai only) */}
-                {isDubai && locGroup && (
-                  <div>
-                    <label className="block text-sm font-medium text-stone-500 mb-2">District</label>
-                    <SearchableSelect
-                      options={level3Options}
-                      value={locDistrict}
-                      placeholder="Search district…"
-                      onChange={(v) => updateLocation(locEmirate, locGroup, v)}
-                    />
-                  </div>
-                )}
-
-                {/* Google Maps pin */}
-                <div>
-                  <label className="block text-sm font-medium text-stone-500 mb-2">Company Address Pin</label>
-                  {locationPin ? (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
-                      <MapPin className="w-4 h-4 text-green-600 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-green-800 font-medium truncate">{locationPin.address || 'Pinned'}</p>
-                        <p className="text-xs text-green-600">{locationPin.lat.toFixed(5)}, {locationPin.lng.toFixed(5)}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowMapPin(true)}
-                        className="text-xs text-green-600 hover:text-green-800 font-medium shrink-0"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowMapPin(true)}
-                      className="w-full h-12 rounded-xl border-2 border-dashed border-stone-200 flex items-center justify-center gap-2 text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] transition-colors"
-                    >
-                      <MapPin className="w-4 h-4" />
-                      <span className="text-sm">Pin on Google Maps</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
         {!schema ? (
           <div className="flex justify-center py-8">
             <div className="w-5 h-5 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
           </div>
-        ) : schema.map((section) => (
+        ) : schema.map((section, sectionIndex) => (
           <div key={section.key}>
             <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
               {section.title}
@@ -713,6 +614,93 @@ export default function FieldSurveyPage() {
                   </div>
                 );
               })}
+              {sectionIndex === 0 && (() => {
+                const emirateData = UAE_EMIRATES.find((e) => e.label === locEmirate);
+                const isDubai = !!emirateData?.groups;
+                const groupData = emirateData?.groups?.find((g) => g.label === locGroup);
+                const level2Options = isDubai ? emirateData.groups!.map((g) => g.label) : (emirateData?.districts ?? []);
+                const level3Options = isDubai ? (groupData?.districts ?? []) : [];
+                return (
+                  <>
+                    {/* 服务区域 sub-section */}
+                    <div>
+                      <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
+                        服务区域
+                      </h2>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-stone-500 mb-2">Emirate</label>
+                          <SearchableSelect
+                            options={UAE_EMIRATES.map((e) => e.label)}
+                            value={locEmirate}
+                            placeholder="Select emirate…"
+                            onChange={(v) => updateLocation(v, '', '')}
+                          />
+                        </div>
+                        {locEmirate && (
+                          <div>
+                            <label className="block text-sm font-medium text-stone-500 mb-2">
+                              {isDubai ? 'Sector / Area' : 'District'}
+                            </label>
+                            <SearchableSelect
+                              options={level2Options}
+                              value={isDubai ? locGroup : locDistrict}
+                              placeholder={isDubai ? 'Select sector…' : 'Search district…'}
+                              onChange={(v) => {
+                                if (isDubai) { updateLocation(locEmirate, v, ''); }
+                                else { updateLocation(locEmirate, '', v); }
+                              }}
+                            />
+                          </div>
+                        )}
+                        {isDubai && locGroup && (
+                          <div>
+                            <label className="block text-sm font-medium text-stone-500 mb-2">District</label>
+                            <SearchableSelect
+                              options={level3Options}
+                              value={locDistrict}
+                              placeholder="Search district…"
+                              onChange={(v) => updateLocation(locEmirate, locGroup, v)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Company Address Pin sub-section */}
+                    <div>
+                      <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
+                        Company Address Pin
+                      </h2>
+                      {locationPin ? (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+                          <MapPin className="w-4 h-4 text-green-600 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-green-800 font-medium truncate">{locationPin.address || 'Pinned'}</p>
+                            <p className="text-xs text-green-600">{locationPin.lat.toFixed(5)}, {locationPin.lng.toFixed(5)}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowMapPin(true)}
+                            className="text-xs text-green-600 hover:text-green-800 font-medium shrink-0"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowMapPin(true)}
+                          className="w-full h-12 rounded-xl border-2 border-dashed border-stone-200 flex items-center justify-center gap-2 text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] transition-colors"
+                        >
+                          <MapPin className="w-4 h-4" />
+                          <span className="text-sm">Pin on Google Maps</span>
+                        </button>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         ))}
