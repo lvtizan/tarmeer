@@ -269,10 +269,10 @@ function CompanyDetailContent() {
         {company.phone && <InfoRow label={t('Phone', '电话')} value={company.phone} />}
         {company.whatsapp && <InfoRow label="WhatsApp" value={company.whatsapp} />}
         {company.email && <InfoRow label={t('Email', '邮箱')} value={company.email} />}
-        {company.website && <InfoRow label={t('Website', '网站')} value={company.website} isLink />}
-        {company.instagram && <InfoRow label="Instagram" value={company.instagram} isLink />}
-        {company.facebook && <InfoRow label="Facebook" value={company.facebook} isLink />}
-        {company.linkedin && <InfoRow label="LinkedIn" value={company.linkedin} isLink />}
+        {company.website && <div className="col-span-2"><InfoRow label={t('Website', '网站')} value={company.website} isLink /></div>}
+        {company.instagram && <div className="col-span-2"><InfoRow label="Instagram" value={company.instagram} isLink /></div>}
+        {company.facebook && <div className="col-span-2"><InfoRow label="Facebook" value={company.facebook} isLink /></div>}
+        {company.linkedin && <div className="col-span-2"><InfoRow label="LinkedIn" value={company.linkedin} isLink /></div>}
       </div>
     </div>
   );
