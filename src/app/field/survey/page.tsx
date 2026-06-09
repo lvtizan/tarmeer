@@ -598,7 +598,35 @@ export default function FieldSurveyPage() {
                   </div>
                 )}
 
-                {/* Google Maps pin — temporarily hidden (API key expired) */}
+                {/* Google Maps pin */}
+                <div>
+                  <label className="block text-sm font-medium text-stone-500 mb-2">Company Address Pin</label>
+                  {locationPin ? (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+                      <MapPin className="w-4 h-4 text-green-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-green-800 font-medium truncate">{locationPin.address || 'Pinned'}</p>
+                        <p className="text-xs text-green-600">{locationPin.lat.toFixed(5)}, {locationPin.lng.toFixed(5)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowMapPin(true)}
+                        className="text-xs text-green-600 hover:text-green-800 font-medium shrink-0"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowMapPin(true)}
+                      className="w-full h-12 rounded-xl border-2 border-dashed border-stone-200 flex items-center justify-center gap-2 text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] transition-colors"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-sm">Pin on Google Maps</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
