@@ -414,8 +414,11 @@ class AdminApiClient {
     return this.request(`/activity-logs?${query.toString()}`);
   }
 
-  async getVisitorOverview(): Promise<VisitorOverview> {
-    return this.request('/visitors/overview');
+  async getVisitorOverview(country?: string): Promise<VisitorOverview> {
+    const query = new URLSearchParams();
+    if (country) query.set('country', country);
+    const qs = query.toString();
+    return this.request(`/visitors/overview${qs ? `?${qs}` : ''}`);
   }
 
   async getDailyRegistrations(params: { startDate?: string; endDate?: string } = {}): Promise<{

@@ -203,7 +203,7 @@ export default function AdminAnalyticsNextPage() {
       adminApi.getDailyStats(30, country) as Promise<any>,
       adminApi.getRegistrationSources(country),
       adminApi.getCompanyVisitors({ country }) as Promise<any>,
-      adminApi.getVisitorOverview() as Promise<any>,
+      adminApi.getVisitorOverview(country) as Promise<any>,
       adminApi.getSignedCompanies(country) as Promise<any>,
     ]).then((results) => {
       if (cancelled) return;
