@@ -16,6 +16,7 @@ interface UAEMapLeafletProps {
   visitorCities:      CityData[];
   homeownerCities?:   CityData[];
   companyTypeCities?: CompanyTypeCity[];
+  country?:           string;
 }
 
 const GOLD = '#B8864A';
@@ -140,6 +141,36 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'fujairah':                [25.1288, 56.3265],
   '富查伊拉':                [25.1288, 56.3265],
   'dibba':                   [25.6196, 56.2694],
+  // Vietnam cities
+  'ho chi minh city':        [10.7769, 106.7009],
+  'ho chi minh':             [10.7769, 106.7009],
+  'hcmc':                    [10.7769, 106.7009],
+  'saigon':                  [10.7769, 106.7009],
+  'hồ chí minh':             [10.7769, 106.7009],
+  'hanoi':                   [21.0285, 105.8542],
+  'hà nội':                  [21.0285, 105.8542],
+  'ha noi':                  [21.0285, 105.8542],
+  'da nang':                 [16.0471, 108.2068],
+  'đà nẵng':                 [16.0471, 108.2068],
+  'hai phong':               [20.8449, 106.6881],
+  'hải phòng':               [20.8449, 106.6881],
+  'can tho':                 [10.0452, 105.7469],
+  'cần thơ':                 [10.0452, 105.7469],
+  'hue':                     [16.4637, 107.5909],
+  'huế':                     [16.4637, 107.5909],
+  'nha trang':               [12.2388, 109.1968],
+  'vung tau':                [10.3460, 107.0843],
+  'vũng tàu':                [10.3460, 107.0843],
+  'long an':                 [10.5432, 106.4018],
+  'binh duong':              [10.9804, 106.6519],
+  'bình dương':              [10.9804, 106.6519],
+  'dong nai':                [11.0686, 107.1676],
+  'đồng nai':                [11.0686, 107.1676],
+  'quy nhon':                [13.7829, 109.2196],
+  'bien hoa':                [10.9481, 106.8138],
+  'biên hòa':                [10.9481, 106.8138],
+  'thai nguyen':             [21.5942, 105.8480],
+  'thái nguyên':             [21.5942, 105.8480],
 };
 
 interface AggCity {
@@ -257,6 +288,7 @@ function makeCardIcon(city: AggCity, side: 'left'|'right', rank: number, scale =
 
 const UAE_BOUNDS    = L.latLngBounds([22.3, 51.5], [26.5, 56.8]);
 const GCC_BOUNDS    = L.latLngBounds([20.5, 46], [30.8, 60]);
+const VN_BOUNDS     = L.latLngBounds([8.0, 102.0], [23.5, 110.0]);
 const CARD_OFFSET_PX = 180;
 const TOP_CALLOUT_N  = 5;
 
@@ -409,8 +441,9 @@ function spawnDeltaToast(
 }
 
 export default function UAEMapLeaflet({
-  companyCities, inquiryCities, visitorCities, homeownerCities = [], companyTypeCities = [],
+  companyCities, inquiryCities, visitorCities, homeownerCities = [], companyTypeCities = [], country,
 }: UAEMapLeafletProps) {
+  const isVN = country === 'vn';
   const { lang } = useAdminT();
   const mapDivRef      = useRef<HTMLDivElement>(null);
   const mapRef         = useRef<L.Map | null>(null);
@@ -438,7 +471,7 @@ export default function UAEMapLeaflet({
             const gccZoom = mapRef.current.getBoundsZoom(GCC_BOUNDS, false);
             mapRef.current.setView([25.3463, 55.4209], gccZoom + 1, { animate: false });
           } else {
-            mapRef.current.fitBounds(UAE_BOUNDS, { padding: [40, 40] });
+            mapRef.current.fitBounds(isVN ? VN_BOUNDS : UAE_BOUNDS, { padding: [40, 40] });
           }
           for (let i = 0; i < cardMarkersRef.current.length; i++) {
             const m = cardMarkersRef.current[i];
@@ -509,7 +542,7 @@ export default function UAEMapLeaflet({
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       subdomains: 'abcd', maxZoom: 19,
     }).addTo(map);
-    map.fitBounds(UAE_BOUNDS, { padding:[24, 24] });
+    map.fitBounds(isVN ? VN_BOUNDS : UAE_BOUNDS, { padding:[24, 24] });
     mapRef.current = map;
     const handler = () => syncCallouts(map);
     map.on('moveend', handler).on('zoomend', handler);
@@ -517,6 +550,13 @@ export default function UAEMapLeaflet({
     return () => { map.remove(); mapRef.current = null; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refit map bounds when country prop changes
+  useEffect(() => {
+    if (!mapRef.current || !mapReady) return;
+    mapRef.current.fitBounds(isVN ? VN_BOUNDS : UAE_BOUNDS, { padding: [24, 24] });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVN]);
 
   useEffect(() => {
     const map = mapRef.current;

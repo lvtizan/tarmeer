@@ -20,6 +20,7 @@ import { Users, Building2, HandCoins, TrendingUp, Globe, Eye, BadgeCheck, Packag
 import { adminApi } from '@/lib/adminApi';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { labelCompanyType } from '@/lib/companyTypeLabel';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 
 const UAEMap = dynamic(() => import('@/components/admin/UAEMapLeaflet'), { ssr: false });
 
@@ -177,6 +178,7 @@ function LeaderboardBars({ items, labelWidth = 148, max = 10, colors }: {
 
 export default function AdminAnalyticsNextPage() {
   const { lang } = useAdminT();
+  const { country } = useAdminCountry();
   const [daily, setDaily] = useState<DayRow[]>([]);
   const [signupSources, setSignupSources] = useState<SourceItem[]>([]);
   const [companyTypes, setCompanyTypes]   = useState<SourceItem[]>([]);
@@ -198,11 +200,11 @@ export default function AdminAnalyticsNextPage() {
     let cancelled = false;
     const num = (v: any) => Number(v) || 0;
     Promise.allSettled([
-      adminApi.getDailyStats(30) as Promise<any>,
-      adminApi.getRegistrationSources(),
-      adminApi.getCompanyVisitors() as Promise<any>,
+      adminApi.getDailyStats(30, country) as Promise<any>,
+      adminApi.getRegistrationSources(country),
+      adminApi.getCompanyVisitors({ country }) as Promise<any>,
       adminApi.getVisitorOverview() as Promise<any>,
-      adminApi.getSignedCompanies() as Promise<any>,
+      adminApi.getSignedCompanies(country) as Promise<any>,
     ]).then((results) => {
       if (cancelled) return;
       const labels = ['getDailyStats', 'getRegistrationSources', 'getCompanyVisitors', 'getVisitorOverview', 'getSignedCompanies'];
@@ -243,7 +245,7 @@ export default function AdminAnalyticsNextPage() {
       setSignedCount(num(signed?.total));
     }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [country]);
 
   const totals = daily.reduce((acc, r) => ({
     homeowner: acc.homeowner + (r.new_homeowners || 0),
@@ -429,6 +431,7 @@ export default function AdminAnalyticsNextPage() {
           visitorCities={visitorCities}
           homeownerCities={homeownerCities}
           companyTypeCities={companyTypeCities}
+          country={country}
         />
       </Suspense>
     </div>

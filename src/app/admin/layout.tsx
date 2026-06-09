@@ -12,7 +12,7 @@ import { adminApi } from '@/lib/adminApi';
 import Avatar from '@/components/ui/Avatar';
 import SidebarNavLink from '@/components/ui/SidebarNavLink';
 import TarmeerLogo from '@/components/TarmeerLogo';
-import ToastContainer from '@/components/ui/Toast';
+import ToastContainer, { showToast } from '@/components/ui/Toast';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { AdminLangContext, type AdminLang } from '@/hooks/useAdminLang';
 import AdminGlobalSearch from '@/components/admin/AdminGlobalSearch';
@@ -127,16 +127,21 @@ const NOTIFICATION_MAP: Record<string, string> = {
 
 function CountrySwitcher() {
   const { country, setCountry } = useAdminCountry();
-  const options: { value: AdminCountry; flag: string; label: string }[] = [
-    { value: 'ae', flag: '🇦🇪', label: 'UAE' },
-    { value: 'vn', flag: '🇻🇳', label: 'VN' },
+  const options: { value: AdminCountry; flag: string; label: string; toastMsg: string }[] = [
+    { value: 'ae', flag: '🇦🇪', label: 'UAE', toastMsg: '已切换到迪拜站点 🇦🇪' },
+    { value: 'vn', flag: '🇻🇳', label: 'VN', toastMsg: '已切换到越南站点 🇻🇳' },
   ];
   return (
     <div className="flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 p-0.5">
       {options.map(o => (
         <button
           key={o.value}
-          onClick={() => setCountry(o.value)}
+          onClick={() => {
+            if (country !== o.value) {
+              setCountry(o.value);
+              showToast(o.toastMsg, 'info');
+            }
+          }}
           className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
             country === o.value
               ? 'bg-white shadow-sm text-[#2c2c2c]'

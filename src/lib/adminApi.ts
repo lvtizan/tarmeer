@@ -392,8 +392,10 @@ class AdminApiClient {
     return this.request(`/stats/registrations?days=${days}`);
   }
 
-  async getDailyStats(days = 30) {
-    return this.request(`/stats/daily?days=${days}`);
+  async getDailyStats(days = 30, country?: string) {
+    const query = new URLSearchParams({ days: String(days) });
+    if (country) query.set('country', country);
+    return this.request(`/stats/daily?${query.toString()}`);
   }
 
   async getStatsOverview(startDate?: string, endDate?: string) {
@@ -436,7 +438,7 @@ class AdminApiClient {
     return this.request(`/visitors?${query.toString()}`);
   }
 
-  async getCompanyVisitors(params: { startDate?: string; endDate?: string } = {}): Promise<{
+  async getCompanyVisitors(params: { startDate?: string; endDate?: string; country?: string } = {}): Promise<{
     companies: Array<{
       page_path: string;
       company_name: string;
@@ -450,6 +452,7 @@ class AdminApiClient {
     const query = new URLSearchParams();
     if (params.startDate) query.set('startDate', params.startDate);
     if (params.endDate) query.set('endDate', params.endDate);
+    if (params.country) query.set('country', params.country);
     return this.request(`/analytics/company-visitors?${query.toString()}`);
   }
 
@@ -792,7 +795,7 @@ class AdminApiClient {
     return this.request(`/roles/companies/${companyId}/projects/${projectId}/restore`, { method: 'PUT' });
   }
 
-  async getSignedCompanies(): Promise<{
+  async getSignedCompanies(country?: string): Promise<{
     companies: Array<{
       id: number; slug: string; company_name: string; company_type: string;
       city: string | null; logo_url: string | null; weight_score: number;
@@ -800,7 +803,10 @@ class AdminApiClient {
     }>;
     total: number;
   }> {
-    return this.request('/signed-companies');
+    const query = new URLSearchParams();
+    if (country) query.set('country', country);
+    const qs = query.toString();
+    return this.request(`/signed-companies${qs ? `?${qs}` : ''}`);
   }
 
   async setSupplierHomeOrder(id: number, displayOrder: number) {
@@ -969,8 +975,11 @@ class AdminApiClient {
     return this.request(`/activity-log/user/${userId}${query ? `?${query}` : ''}`);
   }
 
-  async getRegistrationSources(): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }>; company_cities?: Array<{ city: string; count: number }>; inquiry_cities?: Array<{ city: string; count: number }>; visitor_cities?: Array<{ city: string; count: number }>; homeowner_cities?: Array<{ city: string; count: number }>; company_type_cities?: Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }> }> {
-    return this.request('/stats/registration-sources');
+  async getRegistrationSources(country?: string): Promise<{ signup_sources: Array<{ source: string; count: number }>; company_types: Array<{ type: string; count: number }>; company_cities?: Array<{ city: string; count: number }>; inquiry_cities?: Array<{ city: string; count: number }>; visitor_cities?: Array<{ city: string; count: number }>; homeowner_cities?: Array<{ city: string; count: number }>; company_type_cities?: Array<{ type: string; count: number; topCities: Array<{ city: string; count: number }> }> }> {
+    const query = new URLSearchParams();
+    if (country) query.set('country', country);
+    const qs = query.toString();
+    return this.request(`/stats/registration-sources${qs ? `?${qs}` : ''}`);
   }
 
   // Field interviews (admin view)
