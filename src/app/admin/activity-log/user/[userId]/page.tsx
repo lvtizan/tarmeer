@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { adminApi } from '@/lib/adminApi';
 import { formatAdminDateTime } from '@/lib/formatTime';
@@ -101,9 +101,10 @@ function getRoleBadge(role: string | null) {
   return null;
 }
 
-function UserTimelineContent({ userId }: { userId: string }) {
+function UserTimelineContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { userId } = useParams<{ userId: string }>();
 
   const roleParam = searchParams.get('role') || undefined;
   const uid = Number(userId);
@@ -397,10 +398,10 @@ function UserTimelineContent({ userId }: { userId: string }) {
   );
 }
 
-export default function AdminUserTimelinePage({ params }: { params: { userId: string } }) {
+export default function AdminUserTimelinePage() {
   return (
     <Suspense fallback={<div className="p-8 text-stone-400 text-sm">加载中...</div>}>
-      <UserTimelineContent userId={params.userId} />
+      <UserTimelineContent />
     </Suspense>
   );
 }

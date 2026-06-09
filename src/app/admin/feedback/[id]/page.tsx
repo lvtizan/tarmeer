@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { formatAdminDateTime } from '@/lib/formatTime';
@@ -26,8 +26,8 @@ const SOURCE_LABEL: Record<string, string> = {
   website: '官网 / Website',
 };
 
-export default function AdminFeedbackDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function AdminFeedbackDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { t } = useAdminT();
   const [item, setItem] = useState<FeedbackDetail | null>(null);

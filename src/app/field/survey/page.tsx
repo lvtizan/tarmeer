@@ -517,7 +517,19 @@ export default function FieldSurveyPage() {
       <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center gap-2">
         <button
           type="button"
-          onClick={() => { setCompanySearchQuery(''); setCompanySuggestions([]); setShowCompanyDropdown(true); }}
+          onClick={() => {
+            const q = companyRefName;
+            setCompanySearchQuery(q);
+            setCompanySuggestions([]);
+            setShowCompanyDropdown(true);
+            if (q.length >= 1) {
+              setCompanySearching(true);
+              fieldApi.searchCompanies(q)
+                .then(({ results }: { results: CompanySuggestion[] }) => { setCompanySuggestions(results); setShowSuggestions(results.length > 0); })
+                .catch(() => setShowSuggestions(false))
+                .finally(() => setCompanySearching(false));
+            }
+          }}
           className="flex-1 min-w-0 flex items-center gap-1.5 text-left active:opacity-70 transition-opacity"
         >
           <span className="text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</span>

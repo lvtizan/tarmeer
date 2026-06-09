@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { ArrowLeft, Eye, MousePointerClick, FolderOpen, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import { adminApi, AdminDesignerDetail, AdminDesignerProject } from '@/lib/adminApi';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -19,8 +20,8 @@ const projectStatusStyles: Record<string, string> = {
   rejected: 'bg-red-100 text-red-700',
 };
 
-export default function AdminDesignerDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function AdminDesignerDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const { t } = useAdminT();
   const { hasPermission } = useAdmin();
   const [detail, setDetail] = useState<AdminDesignerDetail | null>(null);

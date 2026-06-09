@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Trash2 } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { PageSpinner } from '@/components/ui/Spinner';
@@ -42,8 +42,8 @@ const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-stone-100 text-stone-600',
 };
 
-export default function AdminProjectDetailPage({ params }: { params: { companyId: string; projectId: string } }) {
-  const { companyId, projectId } = params;
+export default function AdminProjectDetailPage() {
+  const { id: companyId, projectId } = useParams<{ id: string; projectId: string }>();
   const { t } = useAdminT();
   const router = useRouter();
 
