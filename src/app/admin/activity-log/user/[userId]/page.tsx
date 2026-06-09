@@ -230,7 +230,7 @@ function UserTimelineContent() {
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             {(userRole === 'company') && (
               <button
-                onClick={() => router.push(`/admin/profile-companies?search=${encodeURIComponent(userName)}`)}
+                onClick={() => router.push(`/admin/companies?tab=registered&search=${encodeURIComponent(userName)}`)}
                 className="h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs text-[#44403c] hover:bg-stone-50 transition-colors"
               >
                 查看公司主页

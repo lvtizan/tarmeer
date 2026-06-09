@@ -152,7 +152,7 @@ function getEntityLink(group: AggregatedGroup, entityName: string): string | nul
   if (action === 'view_company' || action === 'submit_inquiry') return `/admin/companies?search=${encodeURIComponent(entityName)}`;
   if (target_type === 'company_profile' || target_type === 'company') {
     if (latest.target_id) return `/admin/profile-companies/${latest.target_id}`;
-    return `/admin/profile-companies?search=${encodeURIComponent(entityName)}`;
+    return `/admin/companies?tab=registered&search=${encodeURIComponent(entityName)}`;
   }
   if (target_type === 'project' && latest.target_id && actor_company_profile_id) {
     return `/admin/profile-companies/${actor_company_profile_id}/projects/${latest.target_id}`;
