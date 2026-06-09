@@ -1,43 +1,77 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, ExternalLink, ImageOff } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, ImageOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
-
-const CONFIG_KEY = 'showcase_images';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 
 export default function AdminShowcaseImagesPage() {
   const { t } = useAdminT();
+  const { country } = useAdminCountry();
+  const configKey = country === 'vn' ? 'showcase_images_vn' : 'showcase_images';
+
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newUrl, setNewUrl] = useState('');
+
+  // VN image picker state
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerImages, setPickerImages] = useState<string[]>([]);
+  const [pickerLoading, setPickerLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await adminApi.request('/system-config');
       const row = (data.config as { config_key: string; config_value: string }[])
-        .find((r: { config_key: string; config_value: string }) => r.config_key === CONFIG_KEY);
+        .find((r: { config_key: string; config_value: string }) => r.config_key === configKey);
       if (row) {
         try { setImages(JSON.parse(row.config_value)); } catch { setImages([]); }
+      } else {
+        setImages([]);
       }
     } catch {
       showToast('加载失败', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [configKey]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadPickerImages = async () => {
+    if (pickerImages.length > 0) return; // already loaded
+    setPickerLoading(true);
+    try {
+      const data = await adminApi.request(`/portfolio-images?country=${country}`);
+      setPickerImages(data.images || []);
+    } catch {
+      showToast('图片加载失败', 'error');
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const togglePicker = () => {
+    const next = !pickerOpen;
+    setPickerOpen(next);
+    if (next) loadPickerImages();
+  };
+
+  const addFromPicker = (url: string) => {
+    if (images.includes(url)) return;
+    const next = [...images, url];
+    save(next);
+  };
 
   const save = async (imgs: string[]) => {
     setSaving(true);
     try {
       await adminApi.request('/system-config', {
         method: 'PUT',
-        body: JSON.stringify({ configs: [{ key: CONFIG_KEY, value: JSON.stringify(imgs) }] }),
+        body: JSON.stringify({ configs: [{ key: configKey, value: JSON.stringify(imgs) }] }),
       });
       setImages(imgs);
       showToast(t('Saved', '已保存'), 'success');
@@ -104,6 +138,47 @@ export default function AdminShowcaseImagesPage() {
           <Plus className="w-4 h-4" />
           {t('Add', '添加')}
         </button>
+      </div>
+
+      {/* VN portfolio image picker */}
+      <div className="mb-6 rounded-xl border border-stone-200 overflow-hidden">
+        <button
+          onClick={togglePicker}
+          className="w-full flex items-center justify-between px-4 py-3 bg-stone-50 hover:bg-stone-100 transition text-sm font-medium text-[#44403c]"
+        >
+          <span>从{country === 'vn' ? '越南' : 'UAE'}装企图库选取</span>
+          {pickerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+        {pickerOpen && (
+          <div className="p-4">
+            {pickerLoading ? (
+              <div className="text-sm text-stone-400 py-6 text-center">加载中…</div>
+            ) : pickerImages.length === 0 ? (
+              <div className="text-sm text-stone-400 py-6 text-center">暂无图片</div>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                {pickerImages.map((url, i) => {
+                  const added = images.includes(url);
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => !added && addFromPicker(url)}
+                      className={`relative rounded-lg overflow-hidden aspect-[2/3] cursor-pointer group ${added ? 'ring-2 ring-[#B8864A] opacity-60 cursor-default' : 'hover:ring-2 hover:ring-[#B8864A]'}`}
+                    >
+                      <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" onError={e => { (e.target as HTMLImageElement).style.opacity = '0.2'; }} />
+                      {!added && (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                          <Plus className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                      {added && <div className="absolute inset-0 flex items-center justify-center text-[#B8864A] text-xs font-bold">✓</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Image grid */}

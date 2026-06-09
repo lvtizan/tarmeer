@@ -41,7 +41,7 @@ const ENABLE_FACEBOOK_AUTH = process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_AUTH === 't
 
 type AuthStep = 'initial' | 'password' | 'done';
 
-export default function AuthClient() {
+export default function AuthClient({ country }: { country?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +62,7 @@ export default function AuthClient() {
   const [panelImages, setPanelImages] = useState<string[]>(PANEL_FALLBACK);
 
   useEffect(() => {
-    fetch(`${API_BASE}/site/showcase-images`)
+    fetch(`${API_BASE}/site/showcase-images${country === 'vn' ? '?country=vn' : ''}`)
       .then(r => r.ok ? r.json() : null)
       .then((data: { images?: string[] } | null) => {
         if (data?.images && Array.isArray(data.images) && data.images.length >= 9) {

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { headers } from 'next/headers';
 import AuthClient from '@/components/auth/AuthClient';
 
 export const metadata: Metadata = {
@@ -9,10 +10,12 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://www.tarmeer.com/auth' },
 };
 
-export default function AuthPage() {
+export default async function AuthPage() {
+  const headersList = await headers();
+  const country = headersList.get('x-country') ?? 'ae';
   return (
     <Suspense>
-      <AuthClient />
+      <AuthClient country={country} />
     </Suspense>
   );
 }
