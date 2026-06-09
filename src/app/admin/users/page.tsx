@@ -10,6 +10,7 @@ import UserEditModal from '@/components/admin/UserEditModal';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import { useAdminT } from '@/hooks/useAdminLang';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
 
@@ -129,6 +130,7 @@ function PermissionModal({ user, onClose, onSaved }: { user: UserRecord; onClose
 
 export default function AdminUsersPage() {
   const { t } = useAdminT();
+  const { country } = useAdminCountry();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -159,7 +161,7 @@ export default function AdminUsersPage() {
     setLoading(true);
     setError('');
     try {
-      const result = await adminApi.getUsers({ page, limit: 20, search: search || undefined });
+      const result = await adminApi.getUsers({ page, limit: 20, search: search || undefined, country });
       setUsers(result.users);
       setTotal(result.pagination.total);
     } catch (err: any) {
@@ -167,7 +169,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, search, country]);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 

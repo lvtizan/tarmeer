@@ -153,6 +153,7 @@ function CountrySwitcher() {
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const { admin, logout, hasPermission, isSuperAdmin, isFieldStaff, isLoading } = useAdmin();
+  const { country } = useAdminCountry();
   const router = useRouter();
   const pathname = usePathname();
   const isStandalone = standaloneRoutes.includes(pathname);
@@ -181,11 +182,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const fetchMenuCounts = useCallback(async () => {
     try {
       const [usersRes, companiesRes, homeownerInqRes, companyInqRes, todayRes] = await Promise.all([
-        adminApi.getUsers({ page: 1, limit: 1 }),
-        adminApi.getRegisteredCompanies({ page: 1, limit: 1 }),
-        adminApi.getInquiries({ page: 1, limit: 1, type: 'homeowner' }),
-        adminApi.getInquiries({ page: 1, limit: 1, type: 'company' }),
-        adminApi.request('/stats/today-new').catch(() => null),
+        adminApi.getUsers({ page: 1, limit: 1, country }),
+        adminApi.getRegisteredCompanies({ page: 1, limit: 1, country }),
+        adminApi.getInquiries({ page: 1, limit: 1, type: 'homeowner', country }),
+        adminApi.getInquiries({ page: 1, limit: 1, type: 'company', country }),
+        adminApi.request(`/stats/today-new?country=${country}`).catch(() => null),
       ]);
       setMenuCounts({
         '/admin/users': usersRes?.pagination?.total ?? 0,
@@ -200,7 +201,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         });
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [country]);
 
   useEffect(() => {
     fetchNotificationCounts();

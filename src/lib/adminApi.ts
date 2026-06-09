@@ -519,13 +519,14 @@ class AdminApiClient {
   }
 
   // User management
-  async getUsers(params?: { page?: number; limit?: number; role?: string; status?: string; search?: string }) {
+  async getUsers(params?: { page?: number; limit?: number; role?: string; status?: string; search?: string; country?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.role) query.set('role', params.role);
     if (params?.status) query.set('status', params.status);
     if (params?.search) query.set('search', params.search);
+    if (params?.country) query.set('country', params.country);
     return this.request(`/users?${query.toString()}`);
   }
 
@@ -575,7 +576,7 @@ class AdminApiClient {
   }
 
   // Inquiry management
-  async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string; deleted?: boolean; type?: string }) {
+  async getInquiries(params?: { page?: number; limit?: number; status?: string; search?: string; deleted?: boolean; type?: string; country?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
@@ -583,6 +584,7 @@ class AdminApiClient {
     if (params?.search) query.set('search', params.search);
     if (params?.deleted) query.set('deleted', 'true');
     if (params?.type) query.set('type', params.type);
+    if (params?.country) query.set('country', params.country);
     return this.request(`/inquiries?${query.toString()}`);
   }
 
@@ -650,7 +652,7 @@ class AdminApiClient {
     });
   }
 
-  async getRegisteredCompanies(params?: { page?: number; limit?: number; status?: string; company_type?: string; search?: string; sort_by?: string; sort_dir?: string }) {
+  async getRegisteredCompanies(params?: { page?: number; limit?: number; status?: string; company_type?: string; search?: string; sort_by?: string; sort_dir?: string; country?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
@@ -659,6 +661,7 @@ class AdminApiClient {
     if (params?.search) query.set('search', params.search);
     if (params?.sort_by) query.set('sort_by', params.sort_by);
     if (params?.sort_dir) query.set('sort_dir', params.sort_dir);
+    if (params?.country) query.set('country', params.country);
     return this.request(`/roles/companies?${query.toString()}`);
   }
 

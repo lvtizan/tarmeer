@@ -114,6 +114,7 @@ export default function AdminCompaniesPage() {
         search: profileSearch || undefined,
         sort_by: profileUpdatedSortActive ? 'updated_at' : profileSortActive ? 'project_count' : undefined,
         sort_dir: profileUpdatedSortActive ? profileUpdatedSortDir : profileSortActive ? profileSortDir : undefined,
+        country,
       });
       setProfiles(result.companies);
       setProfileTotal(result.total);
@@ -122,7 +123,7 @@ export default function AdminCompaniesPage() {
       }
     } catch (err: any) { setError(err.message); }
     finally { setProfileLoading(false); }
-  }, [profilePage, profileStatusFilter, profileSearch, profileSortActive, profileSortDir, profileUpdatedSortActive, profileUpdatedSortDir]);
+  }, [profilePage, profileStatusFilter, profileSearch, profileSortActive, profileSortDir, profileUpdatedSortActive, profileUpdatedSortDir, country]);
 
   const loadPending = useCallback(async () => {
     setPendingLoading(true);
@@ -133,6 +134,7 @@ export default function AdminCompaniesPage() {
         search: pendingSearch || undefined,
         sort_by: pendingSortActive ? 'project_count' : 'pending_projects',
         sort_dir: pendingSortActive ? pendingSortDir : undefined,
+        country,
       });
       setPendingProfiles(result.companies);
       setPendingTotal(result.total);
@@ -141,7 +143,7 @@ export default function AdminCompaniesPage() {
       }
     } catch (err: any) { setError(err.message); }
     finally { setPendingLoading(false); }
-  }, [pendingPage, pendingStatusFilter, pendingSearch, pendingSortActive, pendingSortDir]);
+  }, [pendingPage, pendingStatusFilter, pendingSearch, pendingSortActive, pendingSortDir, country]);
 
   const loadCompanies = useCallback(async () => {
     setCompanyLoading(true);
@@ -169,14 +171,14 @@ export default function AdminCompaniesPage() {
 
   const loadTabBadges = useCallback(async () => {
     const [profilesRes, pendingRes, directoryRes] = await Promise.allSettled([
-      adminApi.getRegisteredCompanies({ page: 1, limit: 1 }),
-      adminApi.getRegisteredCompanies({ page: 1, limit: 1, status: 'pending' }),
-      adminApi.getCompanies({ page: 1, limit: 1 }),
+      adminApi.getRegisteredCompanies({ page: 1, limit: 1, country }),
+      adminApi.getRegisteredCompanies({ page: 1, limit: 1, status: 'pending', country }),
+      adminApi.getCompanies({ page: 1, limit: 1, country }),
     ]);
     if (profilesRes.status === 'fulfilled') setProfileBadgeTotal(profilesRes.value.total || 0);
     if (pendingRes.status === 'fulfilled') setPendingBadgeTotal(pendingRes.value.total || 0);
     if (directoryRes.status === 'fulfilled') setDirectoryBadgeTotal(directoryRes.value.pagination?.total || 0);
-  }, []);
+  }, [country]);
 
   const fetchHomeOrderCount = useCallback(async () => {
     try {

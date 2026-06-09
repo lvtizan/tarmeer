@@ -9,6 +9,7 @@ import { TableSpinner } from '@/components/ui/Spinner';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 
 /* ── Floating Tooltip (portal-free, renders outside table overflow) ── */
 function FloatingTip({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
@@ -103,6 +104,7 @@ const CRM_LABEL: Record<string, string> = {
 };
 
 export default function AdminInquiriesPage() {
+  const { country } = useAdminCountry();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -141,6 +143,7 @@ export default function AdminInquiriesPage() {
         search: search || undefined,
         deleted: viewMode === 'deleted',
         type: typeFilter,
+        country,
       });
       setInquiries(result.inquiries);
       setTotal(result.pagination.total);
@@ -149,7 +152,7 @@ export default function AdminInquiriesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, search, viewMode, typeFilter]);
+  }, [page, statusFilter, search, viewMode, typeFilter, country]);
 
   useEffect(() => {
     setSelected(new Set());
