@@ -13,7 +13,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
   const { tr, lang } = useSiteLocale();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const pathname = usePathname();
-  const hidden = pathname === '/auth' || pathname.startsWith('/company') || pathname.startsWith('/supplier') || pathname.startsWith('/auth/callback') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+  const hidden = pathname === '/auth' || pathname.startsWith('/company') || pathname.startsWith('/supplier') || pathname.startsWith('/auth/callback') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/field');
   if (hidden) return null;
 
   const footerNavLinks = [

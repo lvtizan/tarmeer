@@ -128,6 +128,7 @@ export default function FieldSurveyPage() {
   function hydrateDraft(draft: DraftData) {
     setDraftId(draft.id);
     setCompanyName(draft.company_name || '');
+    setCompanyRefName(draft.company_name || '');
     setCompanyRefId(draft.company_ref_id || null);
     const restored: AllSections = {};
     for (let i = 1; i <= 8; i++) {
