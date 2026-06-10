@@ -398,12 +398,63 @@ if (!walkDirId) {
   }
 }
 
+// ─── UC18 注册 pending_profile → 邮箱验证后服务端自动建档 ───────────────────
+console.log('[UC18] 公司注册带 pending_profile → verify-email 后自动建 company_profiles（type/country 正确）');
+{
+  const email = `uc18_${MARK}@walk.local`;
+  const phone = `+84891${String(TS).slice(-6)}`;
+  const reg = await req('POST', '/auth/register', {
+    email, password: TEST_PASSWORD, full_name: 'WALK PA Contact', phone, role: 'company',
+    pending_profile: {
+      company_name: `WALK PA Company ${MARK}`, company_type: 'fitout_contractor',
+      city: 'Hồ Chí Minh', phone, services: ['Interior Design'],
+      contact_person: 'WALK PA Contact', establishment_year: 2021,
+    },
+  });
+  if (reg.status !== 201) ng('注册请求', `${reg.status} ${JSON.stringify(reg.body)}`);
+  else {
+    const token = sql(`SELECT verification_token FROM users WHERE email='${email}'`);
+    if (!token) ng('前置', '取不到 verification_token');
+    else {
+      const ver = await req('POST', '/auth/verify-email', { token });
+      const row = sql(`SELECT cp.company_type, cp.country, cp.status FROM company_profiles cp JOIN users u ON u.id=cp.user_id WHERE u.email='${email}'`);
+      const [ctype, country, status] = row.split('\t');
+      if (ver.status === 200 && ctype === 'fitout_contractor' && country === 'vn' && status === 'pending') {
+        ok(`verify 后自动建档：type='${ctype}' country='${country}' status='${status}'`);
+      } else ng('自动建档', `verify=${ver.status} row='${row}'（预期 fitout_contractor/vn/pending）`);
+      const cleared = sql(`SELECT pending_actions IS NULL FROM users WHERE email='${email}'`);
+      if (cleared === '1') ok('pending_actions 已清空');
+      else ng('pending_actions 清空', `IS NULL = '${cleared}'`);
+    }
+  }
+}
+
+// ─── UC19 lead-backfill：company_type 为 NULL 的线索不再 500 ────────────────
+console.log('[UC19] 线索 company_type=NULL → 登录后 GET /auth/company/profile 自动建档（fallback type + country）');
+{
+  const email = `uc19_${MARK}@walk.local`;
+  const phone = `+84892${String(TS).slice(-6)}`;
+  sql(`INSERT INTO company_leads (contact_name, phone, company_name, city, email, company_type) VALUES ('WALK Lead Contact', '${phone}', 'WALK Lead Company ${MARK}', 'Hà Nội', '${email}', NULL)`);
+  const auth = await registerAndLogin(email, TEST_PASSWORD, phone, 'company');
+  if (auth.error) ng('注册/登录', auth.error);
+  else {
+    const prof = await req('GET', '/auth/company/profile', null, auth.token);
+    const created = prof.body?.profile;
+    if (prof.status !== 200) ng('getProfile', `${prof.status} ${JSON.stringify(prof.body)}（修复前此处 500）`);
+    else if (!created) ng('自动建档', 'profile 为 null，lead-backfill 未生效');
+    else if (created.company_type === 'renovation_company' && created.country === 'vn') {
+      ok(`backfill 成功：type 兜底='${created.company_type}' country='${created.country}'`);
+    } else ng('字段', `type='${created.company_type}'（预期 renovation_company）country='${created.country}'（预期 vn）`);
+  }
+}
+
 // ─── 清理测试数据 ────────────────────────────────────────────────────────────
 console.log('\n清理测试数据…');
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);
 sql(`DELETE FROM complaints WHERE reporter_email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM company_interviews WHERE company_name LIKE 'WALK %'`);
 sql(`DELETE FROM company_profiles WHERE company_name LIKE 'WALK % Company ${MARK}'`);
+sql(`DELETE FROM company_leads WHERE company_name LIKE 'WALK Lead Company ${MARK}'`);
 sql(`DELETE sp FROM supplier_profiles sp JOIN supplier_users su ON sp.supplier_user_id=su.id WHERE su.email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM supplier_users WHERE email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM users WHERE email LIKE '%${MARK}@walk.local'`);

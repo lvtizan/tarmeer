@@ -16,6 +16,8 @@ const parseJsonField_1 = require("../lib/parseJsonField");
 const activityLogger_1 = require("../lib/activityLogger");
 const enumCache_1 = require("../lib/enumCache");
 const crmIntegrationService_1 = require("../lib/crmIntegrationService");
+const companyProfileAutoCreate_1 = require("../lib/companyProfileAutoCreate");
+const pendingActions = require("../lib/pendingActions");
 
 // Ensure branch_addresses column exists
 (async () => {
@@ -174,7 +176,13 @@ async function getProfile(req, res) {
     try {
         const userId = req.user.userId;
         let [rows] = await database_1.default.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
-        // Auto-create profile from company_leads if user has no profile yet
+        // Auto-create profile if user has no profile yet:
+        // 1) stale users.pending_actions (users verified via the email link before applyAll existed)
+        // 2) matched company_leads row
+        if (rows.length === 0) {
+            await pendingActions.applyAll(userId).catch(() => { });
+            [rows] = await database_1.default.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+        }
         if (rows.length === 0) {
             const [userRows] = await database_1.default.execute('SELECT phone, email FROM users WHERE id = ?', [userId]);
             const userPhone = userRows[0]?.phone;
@@ -190,13 +198,17 @@ async function getProfile(req, res) {
                 lead = leadRows[0];
             }
             if (lead) {
-                const leadSlug = (0, slugify_1.slugify)(lead.company_name || '');
-                await database_1.default.execute(`INSERT INTO company_profiles (user_id, company_name, contact_person, phone, city, address, company_type, establishment_year, slug, status, description, services, specialties, onboarding_step, signup_source)
-           VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, 'pending', '', '["Interior Design"]', '[]', 0, 'company-lead-backfill')`, [userId, lead.company_name, lead.contact_name, lead.phone, lead.city || null, lead.company_type || null, lead.year_established || null, leadSlug]);
-                await database_1.default.execute("UPDATE users SET active_role = 'company' WHERE id = ?", [userId]);
+                await (0, companyProfileAutoCreate_1.createCompanyProfileIfMissing)(userId, {
+                    company_name: lead.company_name,
+                    contact_person: lead.contact_name,
+                    phone: lead.phone,
+                    city: lead.city,
+                    company_type: lead.company_type,
+                    establishment_year: lead.year_established,
+                    services: ['Interior Design'],
+                    signup_source: 'company-lead-backfill',
+                });
                 [rows] = await database_1.default.execute('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
-                // Lead-backfill creates a real company_profile row → push event
-                analyticsEvents_1.analyticsEvents.notifyChange('company');
             }
         }
         if (rows.length === 0) {
