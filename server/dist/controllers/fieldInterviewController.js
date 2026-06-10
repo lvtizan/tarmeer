@@ -205,9 +205,11 @@ async function mergeInterviewToProfile(interviewId) {
 async function createDraft(req, res) {
     try {
         const interviewerId = req.adminId || null;
+        // 国家归属取外勤本人所属国家（admin_users.country），手填公司名也能正确落桶
+        const staffCountry = ['ae', 'vn', 'sa'].includes(req.admin?.country) ? req.admin.country : 'ae';
         const [result] = await database_1.default.execute(
-            `INSERT INTO company_interviews (status, interviewer_id) VALUES ('draft', ?)`,
-            [interviewerId]
+            `INSERT INTO company_interviews (status, interviewer_id, country) VALUES ('draft', ?, ?)`,
+            [interviewerId, staffCountry]
         );
         const id = result.insertId;
         res.status(201).json({ id });
@@ -299,6 +301,33 @@ async function saveDraft(req, res) {
         res.status(500).json({ error: 'Failed to save.' });
     }
 }
+// 提交时自动绑定：公司名在同国家内精确匹配（忽略大小写）且唯一 → 写入 company_ref；
+// 匹配不上的留空，由管理员在后台手动绑定
+async function autoBindCompanyRef(interviewId) {
+    try {
+        const [rows] = await database_1.default.execute(
+            `SELECT company_name, company_ref_id, country FROM company_interviews WHERE id = ? LIMIT 1`, [interviewId]);
+        const iv = rows[0];
+        if (!iv || iv.company_ref_id || !iv.company_name || !iv.company_name.trim()) return;
+        const name = iv.company_name.trim();
+        const country = iv.country || 'ae';
+        const [matches] = await database_1.default.execute(
+            `(SELECT id, 'uae' AS source FROM uae_companies WHERE LOWER(name_en) = LOWER(?) AND country = ?)
+             UNION ALL
+             (SELECT id, 'profile' AS source FROM company_profiles WHERE LOWER(company_name) = LOWER(?) AND deleted_at IS NULL AND country = ?)
+             LIMIT 2`,
+            [name, country, name, country]);
+        if (matches.length === 1) {
+            await database_1.default.execute(
+                `UPDATE company_interviews SET company_ref_id = ?, company_ref_source = ? WHERE id = ?`,
+                [matches[0].id, matches[0].source, interviewId]);
+            console.log(`[field] auto-bound interview #${interviewId} -> ${matches[0].source}#${matches[0].id} (${name})`);
+        }
+    }
+    catch (e) {
+        console.error('[field] autoBindCompanyRef:', e.message);
+    }
+}
 async function submitInterview(req, res) {
     const { id } = req.params;
     try {
@@ -306,6 +335,7 @@ async function submitInterview(req, res) {
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Draft not found.' });
         }
+        await autoBindCompanyRef(parseInt(id, 10));
         await database_1.default.execute(`UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?`, [id]);
         // Write initial audit log
         try {
@@ -376,8 +406,12 @@ async function searchCompanies(req, res) {
   const q = String(req.query.q || '').trim().slice(0, 100);
   if (!q) return res.json({ results: [] });
   const like = `%${q}%`;
-  // 国家数据隔离：只能搜到本人所属国家的公司，防止跨国家错误关联
-  const staffCountry = ['ae', 'vn', 'sa'].includes(req.admin?.country) ? req.admin.country : 'ae';
+  // 国家数据隔离：外勤只能搜到本人所属国家的公司；超管可用 ?country= 指定（后台按访谈国家绑定）
+  const VALID = ['ae', 'vn', 'sa'];
+  const requested = String(req.query.country || '');
+  const staffCountry = (req.admin?.role === 'super_admin' && VALID.includes(requested))
+      ? requested
+      : (VALID.includes(req.admin?.country) ? req.admin.country : 'ae');
   try {
     const [rows] = await database_1.default.execute(
       `(SELECT id, name_en AS name, city, 'uae' AS source FROM uae_companies WHERE name_en LIKE ? AND name_en IS NOT NULL AND country = ?)

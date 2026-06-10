@@ -1071,8 +1071,8 @@ export const fieldApi = {
     fieldRequest(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   submit: (id: number) =>
     fieldRequest(`/interviews/${id}/submit`, { method: 'POST' }),
-  searchCompanies: (q: string) =>
-    fieldRequest(`/companies/search?q=${encodeURIComponent(q)}`),
+  searchCompanies: (q: string, country?: string) =>
+    fieldRequest(`/companies/search?q=${encodeURIComponent(q)}${country ? `&country=${country}` : ''}`),
   getSurveySchema: () => fieldRequest('/survey-schema'),
   logout: () => {
     if (typeof window !== 'undefined') {

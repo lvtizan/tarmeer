@@ -29,7 +29,15 @@ interface PhotoEntry {
   timestamp?: string;
 }
 
+interface BindCandidate {
+  id: number;
+  name: string;
+  city: string | null;
+  source: 'uae' | 'profile';
+}
+
 interface VisitRecordDetail extends VisitRecord {
+  country?: string;
   section_1: Record<string, string | string[]> | null;
   section_2: Record<string, string | string[]> | null;
   section_3: Record<string, string | string[]> | null;
@@ -111,6 +119,11 @@ function AdminVisitRecordsContent() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [editLogs, setEditLogs] = useState<EditLog[]>([]);
+  const [bindOpen, setBindOpen] = useState(false);
+  const [bindQuery, setBindQuery] = useState('');
+  const [bindResults, setBindResults] = useState<BindCandidate[]>([]);
+  const [bindSearching, setBindSearching] = useState(false);
+  const [binding, setBinding] = useState(false);
 
   useEffect(() => {
     fieldApi.getSurveySchema()
@@ -180,12 +193,60 @@ function AdminVisitRecordsContent() {
     setSelectedId(id);
     setDetail(null);
     setDetailLoading(true);
+    setBindOpen(false); setBindQuery(''); setBindResults([]);
     try {
       const data = await adminApi.getInterview(id);
       setDetail(data.interview || data);
       setEditLogs(data.edit_logs || []);
     } catch {}
     setDetailLoading(false);
+  };
+
+  // 绑定公司：按访谈所属国家搜索（国家数据隔离），选中后 PATCH company_ref
+  const handleBindSearch = async (q: string) => {
+    setBindQuery(q);
+    if (!q.trim()) { setBindResults([]); return; }
+    setBindSearching(true);
+    try {
+      const { results } = await fieldApi.searchCompanies(q.trim(), detail?.country || country) as { results: BindCandidate[] };
+      setBindResults(results || []);
+    } catch {
+      setBindResults([]);
+    } finally {
+      setBindSearching(false);
+    }
+  };
+
+  const handleBind = async (candidate: BindCandidate) => {
+    if (!detail || binding) return;
+    setBinding(true);
+    try {
+      await adminApi.updateInterview(detail.id, {
+        company_ref_id: candidate.id,
+        company_ref_source: candidate.source,
+      });
+      setBindOpen(false); setBindQuery(''); setBindResults([]);
+      await openDetail(detail.id);
+      await fetchRecords();
+    } catch {
+      alert(t('Failed to bind company', '绑定失败，请重试'));
+    } finally {
+      setBinding(false);
+    }
+  };
+
+  const handleUnbind = async () => {
+    if (!detail || binding) return;
+    setBinding(true);
+    try {
+      await adminApi.updateInterview(detail.id, { company_ref_id: null });
+      await openDetail(detail.id);
+      await fetchRecords();
+    } catch {
+      alert(t('Failed to unbind', '解绑失败，请重试'));
+    } finally {
+      setBinding(false);
+    }
   };
 
   const filtered = records.filter(r => {
@@ -239,20 +300,76 @@ function AdminVisitRecordsContent() {
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="min-w-0">
                   <h1 className="text-[17px] sm:text-[22px] font-bold text-[#2c2c2c] leading-snug">{detail.company_name || '—'}</h1>
-                  {detail.linked_company_name && detail.linked_company_name !== detail.company_name && (
-                    <span className="text-xs text-stone-400 flex items-center gap-1 mt-0.5">
-                      → {detail.linked_company_name}
-                      {detail.company_ref_id && (
-                        <a
-                          href={detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#b8864a] hover:opacity-70"
-                        >
-                          <ExternalLink size={12} />
-                        </a>
-                      )}
-                    </span>
+                  {/* 绑定状态 + 操作 */}
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {detail.company_ref_id ? (
+                      <>
+                        <span className="text-xs text-stone-400 flex items-center gap-1">
+                          → {detail.linked_company_name || `#${detail.company_ref_id}`}
+                          <a
+                            href={detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#b8864a] hover:opacity-70"
+                          >
+                            <ExternalLink size={12} />
+                          </a>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
+                          className="text-xs text-stone-400 hover:text-[#b8864a] underline decoration-dotted"
+                        >{t('Rebind', '改绑')}</button>
+                        <button
+                          type="button"
+                          onClick={handleUnbind}
+                          disabled={binding}
+                          className="text-xs text-stone-400 hover:text-red-500 underline decoration-dotted disabled:opacity-50"
+                        >{t('Unbind', '解绑')}</button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{t('Not bound', '未绑定公司')}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
+                          className="text-xs text-[#b8864a] hover:underline font-medium"
+                        >{t('Bind company', '绑定公司')}</button>
+                      </>
+                    )}
+                  </div>
+                  {/* 绑定搜索面板 */}
+                  {bindOpen && (
+                    <div className="mt-2 w-full sm:w-96 border border-stone-200 rounded-xl bg-stone-50/60 p-3">
+                      <input
+                        value={bindQuery}
+                        onChange={(e) => handleBindSearch(e.target.value)}
+                        placeholder={t('Search companies in this country…', '搜索本国公司…')}
+                        autoFocus
+                        className="w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a]"
+                      />
+                      <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+                        {bindSearching ? (
+                          <p className="text-xs text-stone-400 py-2 text-center">{t('Searching…', '搜索中…')}</p>
+                        ) : bindResults.length === 0 ? (
+                          <p className="text-xs text-stone-400 py-2 text-center">{bindQuery.trim() ? t('No match', '无匹配公司') : t('Type to search', '输入公司名搜索')}</p>
+                        ) : bindResults.map(c => (
+                          <button
+                            key={`${c.source}-${c.id}`}
+                            type="button"
+                            disabled={binding}
+                            onClick={() => handleBind(c)}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border border-stone-100 hover:border-[#b8864a]/50 text-left transition-colors disabled:opacity-50"
+                          >
+                            <span className="flex-1 min-w-0 text-sm text-[#2c2c2c] truncate">{c.name}</span>
+                            {c.city && <span className="text-xs text-stone-400 shrink-0">{c.city}</span>}
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${c.source === 'profile' ? 'bg-blue-50 text-blue-600' : 'bg-stone-100 text-stone-500'}`}>
+                              {c.source === 'profile' ? t('Registered', '注册') : t('Directory', '目录')}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
                 <span className={`flex-shrink-0 mt-0.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

@@ -280,6 +280,37 @@ console.log('[UC11] 实地调研创建+提交（VN 公司）→ company_intervie
   }
 }
 
+// ─── UC13 手填公司名提交 → 同国家精确匹配自动绑定 ───────────────────────────
+console.log('[UC13] 手填公司名提交调研 → 自动绑定同国家精确匹配的公司');
+{
+  const draft = await req('POST', '/field/interviews', {}, adminToken);
+  const ivId = draft.body?.id;
+  if (!ivId) ng('创建草稿', `${draft.status} ${JSON.stringify(draft.body)}`);
+  else {
+    await req('PATCH', `/field/interviews/${ivId}`, { company_name: `WALK AE Company ${MARK}`, section_1: { note: 'autobind' } }, adminToken);
+    await req('POST', `/field/interviews/${ivId}/submit`, {}, adminToken);
+    const row = sql(`SELECT company_ref_id, company_ref_source, country FROM company_interviews WHERE id=${ivId}`);
+    const [refId, refSource, ivCountry] = row.split('\t');
+    if (refSource === 'profile' && refId !== 'NULL' && ivCountry === 'ae') ok(`自动绑定 profile#${refId}，country='ae'`);
+    else ng('自动绑定', `ref=${refSource}#${refId} country=${ivCountry}`);
+
+    // ─ UC14 后台改绑到 VN 公司 → country 跟随同步
+    console.log('[UC14] 后台改绑到 VN 公司 → 访谈 country 同步为 vn');
+    if (!vnCompanyProfileId) ng('前置条件', 'UC3 未创建 VN 公司');
+    else {
+      const patch = await req('PATCH', `/admin/interviews/${ivId}`, {
+        company_ref_id: Number(vnCompanyProfileId), company_ref_source: 'profile',
+      }, adminToken);
+      if (patch.status !== 200) ng('改绑', `${patch.status} ${JSON.stringify(patch.body)}`);
+      else {
+        const c = sql(`SELECT country FROM company_interviews WHERE id=${ivId}`);
+        if (c === 'vn') ok("country 已同步为 'vn'");
+        else ng('country 同步', `实际='${c}'`);
+      }
+    }
+  }
+}
+
 // ─── UC12 外勤人员创建（归入当前国家）────────────────────────────────────────
 console.log('[UC12] VN 视图创建外勤人员 → staff?country=vn 可见、ae 不可见');
 {
@@ -302,7 +333,7 @@ console.log('[UC12] VN 视图创建外勤人员 → staff?country=vn 可见、ae
 console.log('\n清理测试数据…');
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);
 sql(`DELETE FROM complaints WHERE reporter_email LIKE '%${MARK}@walk.local'`);
-sql(`DELETE FROM company_interviews WHERE company_name LIKE 'WALK VN Survey %'`);
+sql(`DELETE FROM company_interviews WHERE company_name LIKE 'WALK %'`);
 sql(`DELETE FROM company_profiles WHERE company_name LIKE 'WALK % Company ${MARK}'`);
 sql(`DELETE sp FROM supplier_profiles sp JOIN supplier_users su ON sp.supplier_user_id=su.id WHERE su.email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM supplier_users WHERE email LIKE '%${MARK}@walk.local'`);

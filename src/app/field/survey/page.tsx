@@ -350,8 +350,8 @@ export default function FieldSurveyPage() {
   }
 
   async function handleSubmit() {
-    // Validate: must select a company from the system
-    if (!companyRefId) {
+    // Validate: company name is required (binding happens server-side / in admin)
+    if (!companyName.trim()) {
       setCompanyNameError(true);
       companyNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       companyNameRef.current?.focus();
@@ -427,114 +427,14 @@ export default function FieldSurveyPage() {
     );
   }
 
-  /* ── 未选公司：搜索界面 ── */
-  if (!companyRefId) {
-    return (
-      <div className="min-h-screen bg-[#faf9f7] flex flex-col">
-        {/* Hero 引导区 */}
-        <div className="bg-white border-b border-stone-100 px-6 pt-12 pb-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#b8864a]/10 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-[#b8864a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-[#1c1917] mb-2">Field Survey</h1>
-          <p className="text-[15px] text-stone-500 leading-relaxed">
-            Search for a registered company<br />then tap <strong className="font-semibold text-[#b8864a]">Match</strong> to start the survey
-          </p>
-        </div>
-
-        {/* 搜索区 */}
-        <div className="flex-1 px-4 pt-5 max-w-lg mx-auto w-full">
-          <input
-            ref={companyNameRef}
-            value={companySearchQuery}
-            onChange={(e) => handleCompanySearchChange(e.target.value)}
-            placeholder="Search company name…"
-            autoComplete="off"
-            autoFocus
-            className="w-full h-[52px] px-5 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm"
-          />
-          {companySuggestions.length > 0 && (
-            <div className="mt-3 bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-              {companySuggestions.map((c) => (
-                <div key={c.id} className="border-b border-stone-100 last:border-0">
-                  {/* Company row */}
-                  <div className="flex items-center gap-3 px-4 py-3.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-medium text-[#1c1917] truncate">{c.name}</p>
-                      {c.city && <p className="text-xs text-stone-400 mt-0.5">{c.city}</p>}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => selectCompany(c)}
-                      className="shrink-0 h-8 px-4 rounded-full bg-[#b8864a] text-white text-sm font-semibold active:opacity-80 transition-opacity"
-                    >
-                      Match
-                    </button>
-                  </div>
-                  {/* Historical interviews */}
-                  {c.interviews && c.interviews.length > 0 && (
-                    <div className="px-4 pb-3 space-y-1.5 bg-stone-50/60">
-                      <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wide mb-1">Previous records</p>
-                      {c.interviews.map(iv => (
-                        <div key={iv.id} className="flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <span className="text-xs text-stone-500">{iv.interviewer_name}</span>
-                            <span className="text-xs text-stone-300 mx-1.5">·</span>
-                            <span className="text-xs text-stone-400">{new Date(iv.submitted_at).toLocaleDateString()}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => loadExistingInterview(c, iv.id)}
-                            className="shrink-0 h-7 px-3 rounded-full border border-[#b8864a] text-[#b8864a] text-xs font-semibold active:opacity-80 transition-opacity"
-                          >
-                            修改
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {companySearchQuery.length >= 1 && !companySearching && companySuggestions.length === 0 && (
-            <p className="mt-6 text-center text-sm text-stone-400">No companies found</p>
-          )}
-          {companySearchQuery.length === 0 && (
-            <p className="mt-6 text-center text-xs text-stone-300">Type to search companies</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  /* ── 已选公司：问卷界面 ── */
+  /* ── 问卷界面（公司名直接手填，绑定由后台完成）── */
   return (
     <div className="min-h-screen bg-[#faf9f7] pb-28">
-      {/* 顶部：已选公司 + 保存状态 */}
+      {/* 顶部：标题 + 保存状态 */}
       <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            const q = companyRefName;
-            setCompanySearchQuery(q);
-            setCompanySuggestions([]);
-            setShowCompanyDropdown(true);
-            if (q.length >= 1) {
-              setCompanySearching(true);
-              fieldApi.searchCompanies(q)
-                .then(({ results }: { results: CompanySuggestion[] }) => { setCompanySuggestions(results); setShowSuggestions(results.length > 0); })
-                .catch(() => setShowSuggestions(false))
-                .finally(() => setCompanySearching(false));
-            }
-          }}
-          className="flex-1 min-w-0 flex items-center gap-1.5 text-left active:opacity-70 transition-opacity"
-        >
-          <span className="text-[15px] font-semibold text-[#1c1917] truncate">{companyRefName}</span>
-          <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" />
-        </button>
+        <span className="flex-1 min-w-0 text-[15px] font-semibold text-[#1c1917] truncate">
+          {companyName.trim() || 'Field Survey'}
+        </span>
         {editingInterviewId && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium shrink-0">
             Editing #{editingInterviewId}
@@ -546,6 +446,30 @@ export default function FieldSurveyPage() {
       </div>
 
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
+        {/* 公司名称：手填，不再搜索匹配 */}
+        <div>
+          <label className="block text-sm font-medium text-stone-500 mb-2">
+            Company Name <span className="text-red-400">*</span>
+          </label>
+          <input
+            ref={companyNameRef}
+            value={companyName}
+            onChange={(e) => {
+              const v = e.target.value;
+              setCompanyName(v);
+              setCompanyNameError(false);
+              // 手动改名后清除旧的绑定，绑定由提交时自动匹配或后台完成
+              if (companyRefId) { setCompanyRefId(null); setCompanyRefSource('uae'); }
+              if (draftId) triggerSave(draftId, v, null, 'uae', sections, undefined, locationPin);
+            }}
+            placeholder="Enter company name…"
+            autoComplete="off"
+            className={`w-full h-[52px] px-5 rounded-2xl border bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] shadow-sm ${companyNameError ? 'border-red-400' : 'border-stone-200'}`}
+          />
+          {companyNameError && (
+            <p className="mt-1.5 text-xs text-red-500">Please enter the company name first</p>
+          )}
+        </div>
         {!schema ? (
           <div className="flex justify-center py-8">
             <div className="w-5 h-5 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />

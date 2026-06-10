@@ -91,7 +91,7 @@ async function getInterview(req, res) {
 // PATCH /api/admin/interviews/:id — super admin edit
 async function editInterview(req, res) {
     const { id } = req.params;
-    const allowed = ['company_name', 'company_ref_id', 'section_1', 'section_2', 'section_3',
+    const allowed = ['company_name', 'company_ref_id', 'company_ref_source', 'section_1', 'section_2', 'section_3',
         'section_4', 'section_5', 'section_6', 'section_7', 'section_8', 'section_9'];
     const fields = {};
     for (const key of allowed) {
@@ -104,6 +104,16 @@ async function editInterview(req, res) {
     if (Object.keys(fields).length === 0)
         return res.json({ ok: true });
     try {
+        // 绑定/改绑公司时按被绑定公司同步国家归属（国家数据隔离规则）
+        if (fields.company_ref_id) {
+            const source = fields.company_ref_source || 'uae';
+            const table = source === 'profile' ? 'company_profiles' : 'uae_companies';
+            const [refRows] = await database_1.default.execute(`SELECT country FROM ${table} WHERE id = ? LIMIT 1`, [fields.company_ref_id]);
+            const refCountry = refRows[0]?.country;
+            if (refCountry === 'ae' || refCountry === 'vn' || refCountry === 'sa') {
+                fields.country = refCountry;
+            }
+        }
         const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
         await database_1.default.execute(`UPDATE company_interviews SET ${setClauses} WHERE id = ?`, [...Object.values(fields), id]);
         res.json({ ok: true });
