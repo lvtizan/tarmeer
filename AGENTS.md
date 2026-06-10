@@ -108,22 +108,25 @@ node /tmp/purge-vn-missing.js   # 删除文件不存在的图片引用
 
 ---
 
-### 第六步：功能完成后必须跑本地验收测试（不得跳过）
+### 第六步：做完必须建用例自检，全部绿灯才能通知用户（不得跳过）
 
-**凡是写了代码，必须在告知用户"完成"之前运行以下命令，确认全部通过：**
+**铁律：每次写完代码 → 为本次改动建/补用例 → 自测全绿 → 才能告知用户"完成"。报告里必须附测试结果（如 14/14 PASS）。**
 
-```bash
-node scripts/harness/smoke-test.mjs
-```
+按改动类型执行（可叠加）：
 
-覆盖范围：
-- TypeScript 类型检查（`tsc --noEmit`）
-- 后端关键路由存在性（401 = 路由已注册；404 = 忘记注册路由；500 = 服务崩溃）
-- 前端可达性（localhost:5180 返回 200）
+| 改动类型 | 必跑 |
+|---------|------|
+| 任何代码改动 | `node scripts/harness/smoke-test.mjs`（tsc + 路由 + 前端可达） |
+| 国家相关 / 用户侧写入口 / admin 过滤 | `node scripts/harness/country-walkthrough.mjs`（14 用例） |
+| 新功能 / 新行为 | **必须为新行为追加用例**（walkthrough 加 UC，或 smoke-test 加路由，或新建脚本），不允许只靠手测 |
+| 要部署的前端改动 | 本地 `node_modules/.bin/next build` 验证 exit=0（防止线上 build 失败） |
 
-**任何一项失败 = 不能声称"完成"，必须先修复。**
+注意事项：
+- walkthrough 含注册接口，**同一后端进程连跑两次会被限流 429** → 跑之前先重启本地后端
+- 本地跑过 `next build` 后会覆盖 `.next`，**必须重启 5180 dev server**
+- 用例自检 = 模拟真实用户路径（写入 → 按预期视图查询断言），不是只 curl 一下 200
 
-如需新增路由到 smoke-test，在 `scripts/harness/smoke-test.mjs` 的 `ADMIN_ROUTES` 数组里追加一行。
+**任何一项失败 / 任何新行为没有用例 = 不能声称"完成"。**
 
 ---
 
