@@ -883,8 +883,9 @@ class AdminApiClient {
   }
 
   // Notification counts
-  async getNotificationCounts() {
-    return this.request('/notifications/counts');
+  async getNotificationCounts(country?: string) {
+    const qs = country ? `?country=${country}` : '';
+    return this.request(`/notifications/counts${qs}`);
   }
 
   async markNotificationSeen(page: string) {

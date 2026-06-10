@@ -311,6 +311,31 @@ console.log('[UC13] 手填公司名提交调研 → 自动绑定同国家精确�
   }
 }
 
+// ─── UC15 访谈记录菜单计数 + 已读交互 ───────────────────────────────────────
+console.log('[UC15] 提交调研 → notifications/counts 的 totalInterviews/newInterviews 增长 → mark-seen 归零');
+{
+  const before = await adminGet('/admin/notifications/counts?country=ae');
+  const t0 = before.body?.totalInterviews ?? -1;
+  const draft = await req('POST', '/field/interviews', {}, adminToken);
+  const ivId = draft.body?.id;
+  if (!ivId || t0 < 0) ng('前置', `draft=${ivId} total0=${t0}`);
+  else {
+    await req('PATCH', `/field/interviews/${ivId}`, { company_name: `WALK Count Test ${MARK}`, section_1: { note: 'count' } }, adminToken);
+    await req('POST', `/field/interviews/${ivId}/submit`, {}, adminToken);
+    const after = await adminGet('/admin/notifications/counts?country=ae');
+    const t1 = after.body?.totalInterviews ?? -1;
+    const n1 = after.body?.newInterviews ?? -1;
+    if (t1 === t0 + 1 && n1 >= 1) ok(`totalInterviews ${t0}→${t1}，newInterviews=${n1}`);
+    else ng('计数', `total ${t0}→${t1}，new=${n1}`);
+
+    const seen = await req('PUT', '/admin/notifications/mark-seen?page=visit-records', null, adminToken);
+    const cleared = await adminGet('/admin/notifications/counts?country=ae');
+    const n2 = cleared.body?.newInterviews ?? -1;
+    if (seen.status === 200 && n2 === 0) ok('mark-seen 后 newInterviews=0');
+    else ng('已读清零', `seen=${seen.status} new=${n2}`);
+  }
+}
+
 // ─── UC12 外勤人员创建（归入当前国家）────────────────────────────────────────
 console.log('[UC12] VN 视图创建外勤人员 → staff?country=vn 可见、ae 不可见');
 {

@@ -73,11 +73,6 @@ const adminItems = [
     infoZh: '处理举报/投诉工单，补全调查记录并完成闭环。',
   },
   {
-    to: '/admin/feedback', labelEn: 'Feedback', labelZh: '用户反馈', icon: MessageSquare,
-    infoEn: 'View feedback and suggestions submitted via the website footer and company portal.',
-    infoZh: '查看通过官网底部和装企后台提交的反馈意见。',
-  },
-  {
     to: '/admin/visit-records', labelEn: 'Visit Records', labelZh: '访谈记录', icon: MapPin, permission: 'can_view_interviews' as const,
     infoEn: 'View all field visit records submitted by field staff.',
     infoZh: '查看外勤人员提交的所有公司访谈记录。',
@@ -86,6 +81,11 @@ const adminItems = [
     to: '/admin/staff', labelEn: 'Field Staff', labelZh: '外勤人员', icon: UserCheck, permission: 'can_manage_field_staff' as const,
     infoEn: 'Manage field staff accounts — create, activate, or deactivate.',
     infoZh: '管理外勤账号，包括新建、启用和停用。',
+  },
+  {
+    to: '/admin/feedback', labelEn: 'Feedback', labelZh: '用户反馈', icon: MessageSquare,
+    infoEn: 'View feedback and suggestions submitted via the website footer and company portal.',
+    infoZh: '查看通过官网底部和装企后台提交的反馈意见。',
   },
   {
     to: '/admin/admins', labelEn: 'Admin Users', labelZh: '管理员', icon: UserCog, superAdminOnly: true,
@@ -123,6 +123,7 @@ const NOTIFICATION_MAP: Record<string, string> = {
   '/admin/companies': 'newCompanyApps',
   '/admin/users': 'newUsers',
   '/admin/feedback': 'newFeedback',
+  '/admin/visit-records': 'newInterviews',
 };
 
 function CountrySwitcher() {
@@ -177,12 +178,14 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   // NOTE: all hooks must be declared before any conditional return (Rules of Hooks)
   const fetchNotificationCounts = useCallback(async () => {
     try {
-      const data = await adminApi.getNotificationCounts();
+      const data = await adminApi.getNotificationCounts(country);
       setNotifCounts(data);
+      // 访谈记录菜单总数（仅已提交，按当前国家）随通知计数一起刷新
+      setMenuCounts(prev => ({ ...prev, '/admin/visit-records': data.totalInterviews ?? 0 }));
     } catch {
       // Silently ignore notification count errors
     }
-  }, []);
+  }, [country]);
 
   const fetchMenuCounts = useCallback(async () => {
     try {
@@ -229,6 +232,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         newCompanyApps: 'companies',
         newUsers: 'users',
         newFeedback: 'feedback',
+        newInterviews: 'visit-records',
       };
       const pageKey = pageKeyMap[notifKey];
       if (pageKey) {
@@ -389,6 +393,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                   </div>
                   {filteredAdminItems.map((item) => {
                     const Icon = item.icon;
+                    const notifKey = NOTIFICATION_MAP[item.to];
+                    const newCount = notifKey ? (notifCounts[notifKey] ?? 0) : 0;
                     return (
                       <SidebarNavLink
                         key={item.to}
@@ -399,6 +405,14 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                         <Icon className="w-5 h-5 shrink-0" />
                         <span className="flex items-center gap-1.5">
                           <span>{t(item.labelEn, item.labelZh)}</span>
+                          {menuCounts[item.to] != null && menuCounts[item.to] > 0 && (
+                            <span className="text-[11px] text-stone-400 font-normal">{menuCounts[item.to]}</span>
+                          )}
+                          {newCount > 0 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#b8864a] text-white leading-none">
+                              +{newCount}
+                            </span>
+                          )}
                           <span
                             className="relative inline-flex items-center"
                             onMouseEnter={(e) => showTooltip(e, t(item.infoEn, item.infoZh))}

@@ -117,7 +117,7 @@ async function updateComplaintStatus(req, res) {
 async function markNotificationSeen(req, res) {
     try {
         const page = req.query.page;
-        const validPages = ['inquiries', 'companies', 'complaints', 'users', 'feedback'];
+        const validPages = ['inquiries', 'companies', 'complaints', 'users', 'feedback', 'visit-records'];
         if (!page || !validPages.includes(page)) {
             return res.status(400).json({ error: 'Invalid page. Must be one of: ' + validPages.join(', ') });
         }
@@ -150,21 +150,35 @@ async function getLastSeenAt(adminId, pageKey) {
 async function getNewCounts(req, res) {
     try {
         const adminId = req.adminId;
+        // 访谈统计按国家过滤（company_interviews.country）；其余计数暂不分国家
+        const ncCountry = ['ae', 'vn', 'sa'].includes(req.query.country) ? req.query.country : null;
+        const ivCountryWhere = ncCountry ? ' AND country = ?' : '';
+        const ivCountryParams = ncCountry ? [ncCountry] : [];
         let newComplaints = 0;
         let newDesignerApps = 0;
         let newCompanyApps = 0;
         let newInquiries = 0;
         let newUsers = 0;
         let newFeedback = 0;
+        let newInterviews = 0;
+        let totalInterviews = 0;
         let pendingProjectCompanies = 0;
         let pendingProjectCount = 0;
         if (adminId) {
-            const [seenInquiries, seenCompanies, seenComplaints, seenUsers] = await Promise.all([
+            const [seenInquiries, seenCompanies, seenComplaints, seenUsers, seenInterviews] = await Promise.all([
                 getLastSeenAt(adminId, 'inquiries'),
                 getLastSeenAt(adminId, 'companies'),
                 getLastSeenAt(adminId, 'complaints'),
                 getLastSeenAt(adminId, 'users'),
+                getLastSeenAt(adminId, 'visit-records'),
             ]);
+            try {
+                newInterviews = await countBySql(`SELECT COUNT(*) as count FROM company_interviews WHERE status = 'submitted' AND submitted_at > ?${ivCountryWhere}`, [seenInterviews, ...ivCountryParams]);
+            }
+            catch (error) {
+                if (!isRecoverableSchemaError(error))
+                    throw error;
+            }
             try {
                 newComplaints = await countBySql(`SELECT COUNT(*) as count FROM complaints WHERE status = 'pending' AND created_at > ?`, [seenComplaints]);
             }
@@ -249,13 +263,17 @@ async function getNewCounts(req, res) {
         }
         newFeedback = await (0, feedbackController_1.getUnreadFeedbackCount)();
         try {
+            totalInterviews = await countBySql(`SELECT COUNT(*) as count FROM company_interviews WHERE status = 'submitted'${ivCountryWhere}`, ivCountryParams);
+        }
+        catch { /* non-critical */ }
+        try {
             const [rows] = await database_1.default.execute(`SELECT COUNT(DISTINCT company_profile_id) as companies, COUNT(*) as total
          FROM projects WHERE status = 'pending' AND deleted_at IS NULL`);
             pendingProjectCompanies = rows[0]?.companies || 0;
             pendingProjectCount = rows[0]?.total || 0;
         }
         catch { /* non-critical */ }
-        res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers, newFeedback, pendingProjectCompanies, pendingProjectCount });
+        res.json({ newComplaints, newDesignerApps, newCompanyApps, newInquiries, newUsers, newFeedback, newInterviews, totalInterviews, pendingProjectCompanies, pendingProjectCount });
     }
     catch (error) {
         console.error('Get new counts error:', error);
