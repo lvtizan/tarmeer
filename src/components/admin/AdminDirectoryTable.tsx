@@ -22,6 +22,13 @@ interface CompanyRecord {
 
 type SortDir = 'asc' | 'desc';
 
+const AVATAR_COLORS = ['#b8864a','#4a9e8b','#6b7abd','#c0665c','#7a9e4a','#9e6b7a','#4a7a9e','#c08840'];
+function nameToColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
 interface AdminDirectoryTableProps {
   companies: CompanyRecord[];
   loading: boolean;
@@ -139,7 +146,9 @@ export default function AdminDirectoryTable({
                   {c.logo_url ? (
                     <SmartImage src={c.logo_url} alt="" className="w-8 h-8 rounded-lg object-contain bg-stone-100" />
                   ) : (
-                    <div className="w-8 h-8 rounded-lg bg-stone-200" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: nameToColor(c.name_en) }}>
+                      {c.name_en?.charAt(0).toUpperCase() || '?'}
+                    </div>
                   )}
                   <span className="font-medium text-stone-800">{c.name_en}</span>
                 </div>
