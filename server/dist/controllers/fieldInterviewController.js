@@ -230,6 +230,18 @@ async function getMyDraft(req, res) {
         res.status(500).json({ error: 'Failed to fetch draft.' });
     }
 }
+// 根据关联公司（profile = company_profiles / uae = uae_companies）查国家，查不到返回 null
+async function resolveCompanyRefCountry(refId, refSource) {
+    try {
+        const table = refSource === 'profile' ? 'company_profiles' : 'uae_companies';
+        const [rows] = await database_1.default.execute(`SELECT country FROM ${table} WHERE id = ? LIMIT 1`, [refId]);
+        const c = rows[0]?.country;
+        return c === 'vn' || c === 'sa' || c === 'ae' ? c : null;
+    }
+    catch {
+        return null;
+    }
+}
 async function saveDraft(req, res) {
     const { id } = req.params;
     const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, qa_answers, location_pin, } = req.body;
@@ -269,6 +281,12 @@ async function saveDraft(req, res) {
             fields.qa_answers = JSON.stringify(qa_answers);
         if (location_pin !== undefined)
             fields.location_pin = location_pin ? JSON.stringify(location_pin) : null;
+        // 关联公司变更时，按被关联公司推导调研记录的国家归属（无关联则保持默认 'ae'）
+        if (company_ref_id) {
+            const refCountry = await resolveCompanyRefCountry(company_ref_id, company_ref_source || 'uae');
+            if (refCountry)
+                fields.country = refCountry;
+        }
         if (Object.keys(fields).length === 0)
             return res.json({ ok: true });
         const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
@@ -358,14 +376,16 @@ async function searchCompanies(req, res) {
   const q = String(req.query.q || '').trim().slice(0, 100);
   if (!q) return res.json({ results: [] });
   const like = `%${q}%`;
+  // 国家数据隔离：只能搜到本人所属国家的公司，防止跨国家错误关联
+  const staffCountry = ['ae', 'vn', 'sa'].includes(req.admin?.country) ? req.admin.country : 'ae';
   try {
     const [rows] = await database_1.default.execute(
-      `(SELECT id, name_en AS name, city, 'uae' AS source FROM uae_companies WHERE name_en LIKE ? AND name_en IS NOT NULL)
+      `(SELECT id, name_en AS name, city, 'uae' AS source FROM uae_companies WHERE name_en LIKE ? AND name_en IS NOT NULL AND country = ?)
        UNION
-       (SELECT id, company_name AS name, city, 'profile' AS source FROM company_profiles WHERE company_name LIKE ? AND deleted_at IS NULL)
+       (SELECT id, company_name AS name, city, 'profile' AS source FROM company_profiles WHERE company_name LIKE ? AND deleted_at IS NULL AND country = ?)
        ORDER BY name
        LIMIT 20`,
-      [like, like]
+      [like, staffCountry, like, staffCountry]
     );
 
     // For each company, fetch recent submitted interviews
@@ -426,6 +446,11 @@ async function reSubmitInterview(req, res) {
       if (req.body[key] !== undefined) {
         fields[key] = typeof req.body[key] === 'object' ? JSON.stringify(req.body[key]) : req.body[key];
       }
+    }
+    // 与 saveDraft 一致：关联公司变更时同步国家归属
+    if (req.body.company_ref_id) {
+      const refCountry = await resolveCompanyRefCountry(req.body.company_ref_id, req.body.company_ref_source || current.company_ref_source || 'uae');
+      if (refCountry) fields.country = refCountry;
     }
     if (Object.keys(fields).length > 0) {
       const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');

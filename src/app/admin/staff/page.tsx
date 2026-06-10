@@ -4,6 +4,7 @@ import { adminApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { UserCheck, Plus, X } from 'lucide-react';
 import PasswordInput from '@/components/admin/PasswordInput';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
@@ -21,6 +22,7 @@ interface StaffMember {
 
 export default function AdminStaffPage() {
   const { t } = useAdminT();
+  const { country } = useAdminCountry();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -31,13 +33,14 @@ export default function AdminStaffPage() {
   const fetchStaff = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminApi.getStaff();
+      const data = await adminApi.getStaff(country);
       setStaff(data.staff || []);
     } catch {}
     setLoading(false);
-  }, []);
+  }, [country]);
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
+  useEffect(() => { setShowForm(false); setFormError(''); }, [country]);
 
   const handleToggle = async (id: number, currentActive: number) => {
     const next = currentActive ? 0 : 1;
@@ -80,7 +83,7 @@ export default function AdminStaffPage() {
     }
     setSubmitting(true);
     try {
-      await adminApi.createStaff({ email: form.email, fullName: form.fullName, password: form.password });
+      await adminApi.createStaff({ email: form.email, fullName: form.fullName, password: form.password, country });
       showToast(t('Staff created', '人员已创建'), 'success');
       setForm({ email: '', fullName: '', password: '' });
       setShowForm(false);

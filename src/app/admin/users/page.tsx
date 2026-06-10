@@ -173,6 +173,8 @@ export default function AdminUsersPage() {
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
+  useEffect(() => { setPage(1); }, [country]);
+
   useEffect(() => {
     updateSearchParams(page, search);
   }, [page, search]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -162,6 +162,8 @@ export default function AdminInquiriesPage() {
     }
   }, [viewMode, typeFilter]);
 
+  useEffect(() => { setPage(1); }, [country]);
+
   useEffect(() => { loadInquiries(); }, [loadInquiries]);
 
   useEffect(() => {
@@ -178,6 +180,7 @@ export default function AdminInquiriesPage() {
   const handleExport = () => {
     const url = adminApi.getInquiriesExportUrl({
       status: statusFilter === 'all' ? undefined : statusFilter,
+      country,
     });
     window.open(url, '_blank');
   };

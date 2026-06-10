@@ -431,13 +431,14 @@ class AdminApiClient {
     return this.request(`/analytics/daily-registrations?${query.toString()}`);
   }
 
-  async getVisitors(params: { page?: number; limit?: number } = {}): Promise<{
+  async getVisitors(params: { page?: number; limit?: number; country?: string } = {}): Promise<{
     visitors: VisitorRecord[];
     pagination: { page: number; limit: number; total: number; pages: number };
   }> {
     const query = new URLSearchParams();
     if (params.page) query.set('page', String(params.page));
     if (params.limit) query.set('limit', String(params.limit));
+    if (params.country) query.set('country', params.country);
     return this.request(`/visitors?${query.toString()}`);
   }
 
@@ -623,9 +624,10 @@ class AdminApiClient {
     });
   }
 
-  getInquiriesExportUrl(params?: { status?: string }) {
+  getInquiriesExportUrl(params?: { status?: string; country?: string }) {
     const query = new URLSearchParams();
     if (params?.status) query.set('status', params.status);
+    if (params?.country) query.set('country', params.country);
     const token = this.getToken();
     if (token) query.set('token', token);
     return `${API_BASE}/admin/inquiries/export?${query.toString()}`;
@@ -1021,10 +1023,11 @@ class AdminApiClient {
   }
 
   // Field staff management
-  async getStaff() {
-    return this.request('/staff');
+  async getStaff(country?: string) {
+    const qs = country ? `?country=${country}` : '';
+    return this.request(`/staff${qs}`);
   }
-  async createStaff(data: { email: string; password: string; fullName: string }) {
+  async createStaff(data: { email: string; password: string; fullName: string; country?: string }) {
     return this.request('/staff', { method: 'POST', body: JSON.stringify(data) });
   }
   async toggleStaff(id: number, is_active: boolean) {

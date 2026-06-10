@@ -5,10 +5,12 @@ import { Globe, Eye, RefreshCw } from 'lucide-react';
 import { adminApi, type VisitorRecord } from '@/lib/adminApi';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 import BackToAnalytics from '@/components/admin/BackToAnalytics';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
 
 const PAGE_SIZE = 50;
 
 export default function AdminVisitorsPage() {
+  const { country } = useAdminCountry();
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
   const [overview, setOverview] = useState<{ totalVisits: number; uniqueIpCount: number } | null>(null);
   const [page, setPage] = useState(1);
@@ -21,8 +23,8 @@ export default function AdminVisitorsPage() {
     setLoading(true);
     try {
       const [vRes, oRes] = await Promise.all([
-        adminApi.getVisitors({ page, limit: PAGE_SIZE }),
-        adminApi.getVisitorOverview(),
+        adminApi.getVisitors({ page, limit: PAGE_SIZE, country }),
+        adminApi.getVisitorOverview(country),
       ]);
       setVisitors(vRes.visitors || []);
       setPages(vRes.pagination?.pages || 1);
@@ -36,7 +38,8 @@ export default function AdminVisitorsPage() {
   };
 
   useEffect(() => { document.title = '访客列表 — Tarmeer Admin'; }, []);
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, country]);
+  useEffect(() => { setPage(1); }, [country]);
 
   const filtered = visitors.filter(v => {
     if (filterPublic === 'public') return v.isPublicIp;

@@ -88,15 +88,48 @@ function parseSection(raw: unknown): Record<string, string | string[]> {
 // Survey field keys that map directly to profile fields (used to distinguish "interview-exclusive" fields)
 const MAPPED_SURVEY_KEYS = new Set(['year_established', 'registration_location', 'main_business_scope', 'company_type', 'licenses']);
 
+function VerifiedBadge() {
+  return (
+    <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100" title="访谈已核实">
+      <svg className="w-2.5 h-2.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+    </span>
+  );
+}
+
 function InfoRow({ label, value, verified }: { label: string; value: string; verified?: boolean }) {
+  // 长标签（问卷题目）放不进 w-20 窄列：改为上下两行排版
+  if (label.length > 12) {
+    return (
+      <div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-stone-400 leading-snug">{label}</span>
+          {verified && <VerifiedBadge />}
+        </div>
+        <div className="text-stone-700 mt-0.5 break-words">{value}</div>
+      </div>
+    );
+  }
   return (
     <div className="flex gap-2 items-start">
       <span className="text-stone-400 w-20 flex-shrink-0">{label}</span>
-      <span className="text-stone-700 flex-1">{value}</span>
-      {verified && (
-        <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100" title="访谈已核实">
-          <svg className="w-2.5 h-2.5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-        </span>
+      <span className="text-stone-700 flex-1 break-words">{value}</span>
+      {verified && <VerifiedBadge />}
+    </div>
+  );
+}
+
+function CollapsibleDescription({ text }: { text: string }) {
+  const { t } = useAdminT();
+  const [expanded, setExpanded] = useState(false);
+  // 约 5 行的字符量阈值；短文本不显示折叠按钮
+  const collapsible = text.length > 220;
+  return (
+    <div>
+      <p className={`text-sm text-stone-600 leading-relaxed break-words ${collapsible && !expanded ? 'line-clamp-5' : ''}`}>{text}</p>
+      {collapsible && (
+        <button type="button" onClick={() => setExpanded(v => !v)} className="mt-1 text-xs text-[#b8864a] hover:underline">
+          {expanded ? t('Collapse', '收起') : t('Show more', '展开全部')}
+        </button>
       )}
     </div>
   );
@@ -442,7 +475,7 @@ function ProfileCompanyDetailContent() {
               </button>
             </div>
           </div>
-          {company.description && <p className="text-sm text-stone-600 leading-relaxed break-all">{company.description}</p>}
+          {company.description && <CollapsibleDescription text={company.description} />}
           {canApprove && company.status === 'pending' && (
             <div className="flex gap-2 pt-1">
               <button onClick={handleApprove} disabled={isSubmitting} className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50">{t('Approve', '通过')}</button>
@@ -620,7 +653,7 @@ function ProfileCompanyDetailContent() {
                 <button onClick={() => setShowDeleteModal(true)} className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} />{t('Delete', '删除')}</button>
               </div>
             </div>
-            {company.description && <p className="text-sm text-stone-600 leading-relaxed break-all">{company.description}</p>}
+            {company.description && <CollapsibleDescription text={company.description} />}
             {canApprove && company.status === 'pending' && (
               <div className="flex gap-2 pt-1">
                 <button onClick={handleApprove} disabled={isSubmitting} className="flex-1 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50">{t('Approve', '通过')}</button>

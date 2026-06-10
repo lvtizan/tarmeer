@@ -47,10 +47,11 @@ async function getComplaints(req, res) {
         let where = 'WHERE 1=1';
         const params = [];
         if (country && VALID_COUNTRIES.has(country)) {
+            // vn- 前缀只覆盖目录公司；注册公司 slug 由 email 生成，须按 company_profiles.country 兜底
             if (country === 'vn') {
-                where += " AND c.company_slug LIKE 'vn-%'";
+                where += " AND (c.company_slug LIKE 'vn-%' OR c.company_slug IN (SELECT slug FROM company_profiles WHERE country = 'vn'))";
             } else {
-                where += " AND (c.company_slug IS NULL OR c.company_slug NOT LIKE 'vn-%')";
+                where += " AND (c.company_slug IS NULL OR (c.company_slug NOT LIKE 'vn-%' AND c.company_slug NOT IN (SELECT slug FROM company_profiles WHERE country = 'vn')))";
             }
         }
         if (status) {

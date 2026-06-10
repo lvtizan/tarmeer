@@ -557,8 +557,8 @@ async function getRegistrationSources(req, res) {
         let inqCityWhere = 'WHERE deleted_at IS NULL AND city IS NOT NULL AND city != \'\'';
         const inqCityParams = [];
         if (cValid) {
-            if (country === 'vn') { inqCityWhere += " AND company_id IN (SELECT id FROM company_profiles WHERE country = ?)"; inqCityParams.push('vn'); }
-            else if (country === 'ae') { inqCityWhere += " AND (company_id IS NULL OR company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?))"; inqCityParams.push('vn'); }
+            if (country === 'vn') { inqCityWhere += " AND (company_id IN (SELECT id FROM company_profiles WHERE country = ?) OR phone LIKE '+84%' OR phone LIKE '084%')"; inqCityParams.push('vn'); }
+            else if (country === 'ae') { inqCityWhere += " AND (company_id IS NULL OR company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?)) AND (phone IS NULL OR (phone NOT LIKE '+84%' AND phone NOT LIKE '084%'))"; inqCityParams.push('vn'); }
         }
         const [inquiryCities] = await database_1.default.execute(`SELECT COALESCE(city, 'Unknown') as city, COUNT(*) as count
        FROM design_inquiries ${inqCityWhere}
@@ -742,8 +742,8 @@ async function getDailyStatsReport(req, res) {
     let inqCountryWhere = '';
     const inqCountryParams = [];
     if (cValid) {
-        if (country === 'vn') { inqCountryWhere = " AND company_id IN (SELECT id FROM company_profiles WHERE country = ?)"; inqCountryParams.push('vn'); }
-        else if (country === 'ae') { inqCountryWhere = " AND (company_id IS NULL OR company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?))"; inqCountryParams.push('vn'); }
+        if (country === 'vn') { inqCountryWhere = " AND (company_id IN (SELECT id FROM company_profiles WHERE country = ?) OR phone LIKE '+84%' OR phone LIKE '084%')"; inqCountryParams.push('vn'); }
+        else if (country === 'ae') { inqCountryWhere = " AND (company_id IS NULL OR company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?)) AND (phone IS NULL OR (phone NOT LIKE '+84%' AND phone NOT LIKE '084%'))"; inqCountryParams.push('vn'); }
     }
     try {
         // Generate a date series for the requested range

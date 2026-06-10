@@ -167,6 +167,21 @@ node scripts/harness/smoke-test.mjs
 
 ---
 
+## 国家数据隔离规则（铁律，违反 = 必须返工）
+
+AE / VN / SA 三个国家的数据**严禁串联**（数据混桶）和**文字窜联**（A 国视图出现 B 国语言的公司名/内容）。
+
+1. **跨表引用必须成对存储 `(ref_id, ref_source)`**，禁止只存 id 靠默认值猜表。
+   反面教材（2026-06-10）：问卷 saveDraft 对缺失的 `company_ref_source` 默认 `'uae'`，实际引用的是 company_profiles；VN 公司导入 uae_companies 后占用了相同 ID 区间，阿联酋访谈记录立刻冒出越南公司名。
+2. **任何解析公司引用的 JOIN 必须带国家一致性条件**，如 `AND uc.country = ci.country`。即使数据錯了，错国家的文字也不允许漏出来（显示层兜底）。
+3. **所有列表 / 统计 / 导出 / 搜索接口必须接受并应用 `country` 参数**；admin 页面必须从 `useAdminCountry()` 取 country 传给每一个请求，并在 country 变化时重置分页/缓存。
+4. **所有用户侧写入口落库时必须确定国家归属**，机制总表见 `docs/testing/country-bucketing.md`（phone 前缀 / country 字段 / slug / page_path）。
+5. **外勤/问卷场景按操作人所属国家（`admin_users.country`）过滤公司搜索**，从源头禁止跨国家关联。
+6. **任何 AE 视图出现越南文（或反之）= P0 bug**，第一时间排查引用解析链（ref_source → JOIN → country 条件）。
+7. **新增/修改写入口或国家相关查询后，必须跑 `node scripts/harness/country-walkthrough.mjs` 且全绿**（12 个国家归属用例）。
+
+---
+
 ## Field Survey Rules
 
 **NEVER hardcode the survey schema (section titles, field keys, field labels, or options)** in any frontend file — not in the survey page, not in the admin visit-records detail view, nowhere.

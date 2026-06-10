@@ -41,6 +41,8 @@ export default function AdminShowcaseImagesPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => { setPickerImages([]); setPickerOpen(false); }, [country]);
+
   const loadPickerImages = async () => {
     if (pickerImages.length > 0) return; // already loaded
     setPickerLoading(true);

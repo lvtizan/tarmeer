@@ -13,6 +13,22 @@ exports.toggleStaff = toggleStaff;
 exports.updateStaffPermissions = updateStaffPermissions;
 const database_1 = __importDefault(require("../config/database"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const STAFF_VALID_COUNTRIES = new Set(['ae', 'vn', 'sa']);
+// 自动补列（幂等）：外勤人员按国家隔离需要 admin_users.country
+async function ensureStaffCountryColumn() {
+    try {
+        const [existing] = await database_1.default.execute(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admin_users'`);
+        const existingSet = new Set(existing.map(r => r.COLUMN_NAME));
+        if (!existingSet.has('country')) {
+            await database_1.default.execute(`ALTER TABLE admin_users ADD COLUMN country VARCHAR(5) NOT NULL DEFAULT 'ae'`);
+            console.log('[field] added column: admin_users.country');
+        }
+    }
+    catch (e) {
+        console.error('[field] ensureStaffCountryColumn:', e.message);
+    }
+}
+ensureStaffCountryColumn();
 // GET /api/admin/interviews
 async function listInterviews(req, res) {
     const country = req.query.country || req.country || 'ae';
@@ -28,8 +44,8 @@ async function listInterviews(req, res) {
              END AS linked_company_name
       FROM company_interviews ci
       LEFT JOIN admin_users au ON au.id = ci.interviewer_id
-      LEFT JOIN uae_companies uc ON uc.id = ci.company_ref_id AND ci.company_ref_source = 'uae'
-      LEFT JOIN company_profiles cp ON cp.id = ci.company_ref_id AND ci.company_ref_source = 'profile'
+      LEFT JOIN uae_companies uc ON uc.id = ci.company_ref_id AND ci.company_ref_source = 'uae' AND uc.country = ci.country
+      LEFT JOIN company_profiles cp ON cp.id = ci.company_ref_id AND ci.company_ref_source = 'profile' AND cp.country = ci.country
       WHERE ci.country = ?
       ORDER BY ci.updated_at DESC
       LIMIT 200
@@ -45,10 +61,16 @@ async function getInterview(req, res) {
     const { id } = req.params;
     try {
         const [rows] = await database_1.default.execute(`
-      SELECT ci.*, COALESCE(au.full_name, '—') AS interviewer_name, uc.name_en AS linked_company_name
+      SELECT ci.*, COALESCE(au.full_name, '—') AS interviewer_name,
+             CASE ci.company_ref_source
+               WHEN 'uae'     THEN uc.name_en
+               WHEN 'profile' THEN cp.company_name
+               ELSE NULL
+             END AS linked_company_name
       FROM company_interviews ci
       LEFT JOIN admin_users au ON au.id = ci.interviewer_id
-      LEFT JOIN uae_companies uc ON uc.id = ci.company_ref_id
+      LEFT JOIN uae_companies uc ON uc.id = ci.company_ref_id AND ci.company_ref_source = 'uae' AND uc.country = ci.country
+      LEFT JOIN company_profiles cp ON cp.id = ci.company_ref_id AND ci.company_ref_source = 'profile' AND cp.country = ci.country
       WHERE ci.id = ?
     `, [id]);
         const items = rows;
@@ -108,17 +130,18 @@ async function deleteInterviews(req, res) {
     }
 }
 // GET /api/admin/staff
-async function listStaff(_req, res) {
+async function listStaff(req, res) {
+    const country = STAFF_VALID_COUNTRIES.has(req.query.country) ? req.query.country : 'ae';
     try {
         const [rows] = await database_1.default.execute(`
-      SELECT au.id, au.email, au.full_name, au.is_active, au.created_at, au.last_login, au.permissions,
+      SELECT au.id, au.email, au.full_name, au.is_active, au.created_at, au.last_login, au.permissions, au.country,
              COUNT(ci.id) AS submitted_count
       FROM admin_users au
       LEFT JOIN company_interviews ci ON ci.interviewer_id = au.id AND ci.status = 'submitted'
-      WHERE au.role = 'field_staff'
+      WHERE au.role = 'field_staff' AND au.country = ?
       GROUP BY au.id
       ORDER BY au.created_at DESC
-    `);
+    `, [country]);
         // Parse permissions JSON for each row
         const staff = rows.map(r => ({
             ...r,
@@ -133,6 +156,8 @@ async function listStaff(_req, res) {
 // POST /api/admin/staff
 async function createStaff(req, res) {
     const { email, password, fullName } = req.body;
+    // 新增人员归入管理后台当前切换的国家（前端必传；缺省回落 ae）
+    const country = STAFF_VALID_COUNTRIES.has(req.body.country) ? req.body.country : 'ae';
     if (!email || !password || !fullName) {
         return res.status(400).json({ error: 'email, password, fullName required.' });
     }
@@ -145,7 +170,7 @@ async function createStaff(req, res) {
             return res.status(409).json({ error: 'Email already exists.' });
         }
         const hashed = await bcryptjs_1.default.hash(password, 12);
-        const [result] = await database_1.default.execute(`INSERT INTO admin_users (email, password, full_name, role) VALUES (?, ?, ?, 'field_staff')`, [email.toLowerCase().trim(), hashed, fullName.trim()]);
+        const [result] = await database_1.default.execute(`INSERT INTO admin_users (email, password, full_name, role, country) VALUES (?, ?, ?, 'field_staff', ?)`, [email.toLowerCase().trim(), hashed, fullName.trim(), country]);
         res.status(201).json({ id: result.insertId });
     }
     catch (e) {

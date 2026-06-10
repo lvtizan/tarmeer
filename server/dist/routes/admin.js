@@ -109,6 +109,9 @@ router.get('/stats/registration-events', sseAuthAdapter, adminAuth_1.authenticat
         analyticsEvents_1.analyticsEvents.off('change', onChange);
     });
 });
+// ============ Excel 导出（浏览器 window.open 无法带 Authorization header，复用 ?token= 适配）============
+router.get('/activity-log/export', sseAuthAdapter, adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, activityLogController_1.exportActivityLogs);
+router.get('/inquiries/export', sseAuthAdapter, adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, inquiryController_1.exportInquiries);
 // ============ Protected routes (require admin auth) ============
 // All routes below require authentication
 router.use(adminAuth_1.authenticateAdmin);
@@ -124,7 +127,6 @@ router.get('/stats/registration-sources', (0, adminAuth_1.requirePermission)('ca
 router.get('/stats/daily', (0, adminAuth_1.requirePermission)('can_view_stats'), designerAdminController_1.getDailyStatsReport);
 router.get('/stats/today-new', analyticsAdminController_1.getTodayNew);
 router.get('/activity-log/stats', activityLogController_1.getActivityLogStats);
-router.get('/activity-log/export', activityLogController_1.exportActivityLogs);
 router.get('/activity-log/top-users', activityLogController_1.getTopActiveUsers);
 router.get('/activity-log/user/:userId', activityLogController_1.getUserTimeline);
 router.get('/activity-log', activityLogController_1.getActivityLogs);
@@ -150,7 +152,6 @@ router.put('/projects/:projectId/reject', (0, adminAuth_1.requirePermission)('ca
 router.get('/rejection-templates', designerAdminController_1.getRejectionTemplates);
 // Inquiry management (admin)
 router.get('/inquiries', inquiryController_1.getInquiries);
-router.get('/inquiries/export', inquiryController_1.exportInquiries);
 router.put('/inquiries/:id/status', inquiryController_1.updateInquiryStatus);
 router.put('/inquiries/batch-delete', inquiryController_1.batchDeleteInquiries);
 router.put('/inquiries/batch-restore', inquiryController_1.batchRestoreInquiries);

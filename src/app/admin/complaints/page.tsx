@@ -82,6 +82,8 @@ export default function AdminComplaintsPage() {
 
   useEffect(() => { loadComplaints(); }, [loadComplaints]);
 
+  useEffect(() => { setPage(1); }, [country]);
+
   useEffect(() => {
     const params: Record<string, string> = {};
     if (page > 1) params.page = String(page);
