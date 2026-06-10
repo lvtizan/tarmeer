@@ -381,9 +381,13 @@ async function runAdminDataChecks() {
 }
 
 // ── PM2 check ────────────────────────────────────────────────────────────────
+// cron 环境 PATH 极简：pm2 的 shebang (#!/usr/bin/env node) 也找不到 node。
+// 解法：用当前 node 进程自身 (process.execPath) 直接执行 pm2 的 JS 入口，完全不依赖 PATH。
+const PM2_BIN = existsSync('/usr/local/bin/pm2') ? '/usr/local/bin/pm2' : 'pm2';
+const PM2_CMD = `"${process.execPath}" ${PM2_BIN}`;
 function checkPM2(name) {
   try {
-    const out = execSync('pm2 list --no-color 2>/dev/null', { timeout: 10000 }).toString();
+    const out = execSync(`${PM2_CMD} list --no-color 2>/dev/null`, { timeout: 10000 }).toString();
     const lines = out.split('\n').filter(l => l.includes(name));
     if (lines.length === 0) return { ok: false, detail: 'Process not found in pm2 list' };
     const online = lines.some(l => l.includes('online'));
@@ -396,7 +400,7 @@ function checkPM2(name) {
 
 function restartPM2(name) {
   try {
-    execSync(`pm2 restart ${name} --update-env 2>/dev/null`, { timeout: 30000 });
+    execSync(`${PM2_CMD} restart ${name} --update-env 2>/dev/null`, { timeout: 30000 });
     return true;
   } catch { return false; }
 }
