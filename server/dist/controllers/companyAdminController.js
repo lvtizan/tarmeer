@@ -65,6 +65,8 @@ exports.deleteUAECompanyProjectDetail = deleteUAECompanyProjectDetail;
 exports.listSignedCompanies = listSignedCompanies;
 exports.toggleCompanyProfileSigned = toggleCompanyProfileSigned;
 exports.toggleDirectorySigned = toggleDirectorySigned;
+exports.toggleCompanyProfileCertified = toggleCompanyProfileCertified;
+exports.toggleDirectoryCertified = toggleDirectoryCertified;
 exports.toggleCompanyProfilePublished = toggleCompanyProfilePublished;
 exports.toggleDirectoryPublished = toggleDirectoryPublished;
 exports.toggleProjectPublished = toggleProjectPublished;
@@ -290,6 +292,7 @@ async function listCompanies(req, res) {
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM uae_companies c ${where}`, params);
         const total = countRows[0].total;
         const [rows] = await database_1.default.execute(`SELECT c.id, c.name_en, c.slug, c.city, c.logo_url, c.owner_user_id,
+              c.is_signed, c.is_certified,
               COALESCE(c.display_order, 0) as display_order,
               COALESCE(c.home_display_order, 0) as home_display_order,
               COALESCE(c.list_display_order, 0) as list_display_order,
@@ -1162,10 +1165,11 @@ async function toggleCompanyProfileSigned(req, res) {
         res.status(500).json({ error: 'Failed to update signed status.' });
     }
 }
-// PUT /admin/companies/:id/toggle-signed (for directory companies)
+// PUT /admin/companies/:companyId/toggle-signed (for directory companies)
+// 注意路由参数名是 companyId（之前读 req.params.id 导致此开关一直 500）
 async function toggleDirectorySigned(req, res) {
     try {
-        const { id } = req.params;
+        const id = req.params.companyId || req.params.id;
         const { is_signed } = req.body;
         await database_1.default.execute('UPDATE uae_companies SET is_signed = ? WHERE id = ?', [is_signed ? 1 : 0, id]);
         res.json({ ok: true });
@@ -1173,6 +1177,32 @@ async function toggleDirectorySigned(req, res) {
     catch (error) {
         console.error('Toggle directory signed error:', error);
         res.status(500).json({ error: 'Failed to update signed status.' });
+    }
+}
+// PUT /admin/roles/companies/:id/toggle-certified（¥1000 普通认证，与 VIP 并存）
+async function toggleCompanyProfileCertified(req, res) {
+    try {
+        const { id } = req.params;
+        const { is_certified } = req.body;
+        await database_1.default.execute('UPDATE company_profiles SET is_certified = ? WHERE id = ?', [is_certified ? 1 : 0, id]);
+        res.json({ ok: true });
+    }
+    catch (error) {
+        console.error('Toggle company profile certified error:', error);
+        res.status(500).json({ error: 'Failed to update certified status.' });
+    }
+}
+// PUT /admin/companies/:companyId/toggle-certified (for directory companies)
+async function toggleDirectoryCertified(req, res) {
+    try {
+        const { companyId } = req.params;
+        const { is_certified } = req.body;
+        await database_1.default.execute('UPDATE uae_companies SET is_certified = ? WHERE id = ?', [is_certified ? 1 : 0, companyId]);
+        res.json({ ok: true });
+    }
+    catch (error) {
+        console.error('Toggle directory certified error:', error);
+        res.status(500).json({ error: 'Failed to update certified status.' });
     }
 }
 // PUT /admin/roles/companies/:id/toggle-published

@@ -354,6 +354,50 @@ console.log('[UC12] VN 视图创建外勤人员 → staff?country=vn 可见、ae
   }
 }
 
+// ─── UC16 认证开关（¥1000 普通认证，与 VIP 并存）────────────────────────────
+console.log('[UC16] 目录公司认证开关 → 公开详情 is_certified 跟随变化');
+let walkDirId = null;
+{
+  sql(`INSERT INTO uae_companies (name_en, slug, phone, country, is_active, is_published) VALUES ('WALK Dir Co ${MARK}', 'walk-dir-${MARK}', '+97150${String(TS).slice(-7)}', 'ae', 1, 1)`);
+  walkDirId = sql(`SELECT id FROM uae_companies WHERE slug='walk-dir-${MARK}'`);
+  if (!walkDirId) ng('建测试目录公司', 'INSERT 失败');
+  else {
+    const on = await req('PUT', `/admin/companies/${walkDirId}/toggle-certified`, { is_certified: true }, adminToken);
+    const det1 = await req('GET', `/companies/walk-dir-${MARK}`);
+    const off = await req('PUT', `/admin/companies/${walkDirId}/toggle-certified`, { is_certified: false }, adminToken);
+    const det2 = await req('GET', `/companies/walk-dir-${MARK}`);
+    const c1 = det1.body?.company?.is_certified;
+    const c2 = det2.body?.company?.is_certified;
+    if (on.status === 200 && off.status === 200 && c1 === true && c2 === false) ok('开→详情 true，关→详情 false');
+    else ng('认证开关', `on=${on.status} off=${off.status} c1=${c1} c2=${c2}`);
+  }
+}
+
+// ─── UC17 电话点击显隐 + 计数 + 去重 ────────────────────────────────────────
+console.log('[UC17] 详情不返回电话 → reveal 返回完整号并计数 → 同 IP 当天去重 → 统计可见');
+if (!walkDirId) {
+  ng('前置条件', 'UC16 未建出目录公司');
+} else {
+  const det = await req('GET', `/companies/walk-dir-${MARK}`);
+  const leaked = det.body?.company?.phone;
+  const hasPhone = det.body?.company?.has_phone;
+  if (leaked) ng('电话泄漏', `详情接口返回了完整电话 ${leaked}`);
+  else if (!hasPhone) ng('has_phone 标志', '应为 true');
+  else {
+    const r1 = await req('POST', '/phone-reveals', { target_type: 'uae', target_id: Number(walkDirId) });
+    const r2 = await req('POST', '/phone-reveals', { target_type: 'uae', target_id: Number(walkDirId) });
+    const cnt = sql(`SELECT COUNT(*) FROM phone_reveals WHERE target_type='uae' AND target_id=${walkDirId}`);
+    const ctry = sql(`SELECT country FROM phone_reveals WHERE target_type='uae' AND target_id=${walkDirId} LIMIT 1`);
+    if (r1.status === 200 && r1.body?.phone && r2.status === 200 && cnt === '1' && ctry === 'ae') {
+      ok(`reveal 返回电话，计数 1（去重生效），country='ae'`);
+    } else ng('reveal/计数', `r1=${r1.status} phone=${!!r1.body?.phone} r2=${r2.status} cnt=${cnt} country=${ctry}`);
+    const stats = await adminGet('/admin/analytics/phone-reveals?country=ae&days=7');
+    const inTop = (stats.body?.top || []).some(t => t.target_type === 'uae' && String(t.target_id) === String(walkDirId));
+    if (stats.status === 200 && inTop) ok('admin 统计排行可见');
+    else ng('统计', `${stats.status} inTop=${inTop}`);
+  }
+}
+
 // ─── 清理测试数据 ────────────────────────────────────────────────────────────
 console.log('\n清理测试数据…');
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);
@@ -364,6 +408,8 @@ sql(`DELETE sp FROM supplier_profiles sp JOIN supplier_users su ON sp.supplier_u
 sql(`DELETE FROM supplier_users WHERE email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM users WHERE email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM admin_users WHERE email LIKE '%${MARK}@walk.local' AND role='field_staff'`);
+sql(`DELETE FROM phone_reveals WHERE target_type='uae' AND target_id IN (SELECT id FROM uae_companies WHERE slug LIKE 'walk-dir-%')`);
+sql(`DELETE FROM uae_companies WHERE slug LIKE 'walk-dir-%'`);
 
 // ─── 汇总 ────────────────────────────────────────────────────────────────────
 console.log(`\n${'─'.repeat(50)}`);

@@ -40,6 +40,12 @@ export interface Company {
   isClaimed: boolean;
   /** true if the company has signed a contract with Tarmeer */
   isSigned?: boolean;
+  /** true if the company purchased the basic certification (普通认证, coexists with isSigned/VIP) */
+  isCertified?: boolean;
+  /** true if a phone exists server-side and can be revealed via POST /api/phone-reveals */
+  hasPhone?: boolean;
+  /** numeric DB id (uae_companies.id) — needed for phone reveal */
+  numericId?: number;
   /** computed weight score for sorting */
   weightScore?: number;
   /** Project list for project cards (claimed companies only) */

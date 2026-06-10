@@ -134,6 +134,9 @@ function sanitizePublicCompany(company) {
         project_count: portfolio_images.length,
         is_claimed: isClaimed,
         is_signed: !!(company.is_signed),
+        is_certified: !!(company.is_certified),
+        // 完整电话只从 POST /api/phone-reveals 返回（点击计数）；这里只告诉前台"有没有电话可看"
+        has_phone: !isClaimed && !!toPublicString(company.phone),
         company_profile_id: company.company_profile_id ?? null,
     };
 }

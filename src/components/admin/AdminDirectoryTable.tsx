@@ -18,6 +18,8 @@ interface CompanyRecord {
   owner_name: string | null;
   owner_email: string | null;
   project_count: number;
+  is_signed?: boolean;
+  is_certified?: boolean;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -41,6 +43,8 @@ interface AdminDirectoryTableProps {
   sortDir: SortDir;
   sortActive: boolean;
   onSortToggle: () => void;
+  onToggleSigned?: (id: number, isSigned: boolean) => void;
+  onToggleCertified?: (id: number, isCertified: boolean) => void;
 }
 
 export default function AdminDirectoryTable({
@@ -55,6 +59,8 @@ export default function AdminDirectoryTable({
   sortDir,
   sortActive,
   onSortToggle,
+  onToggleSigned,
+  onToggleCertified,
 }: AdminDirectoryTableProps) {
   const router = useRouter();
   const { t } = useAdminT();
@@ -120,13 +126,15 @@ export default function AdminDirectoryTable({
             </th>
             <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Home Order', '首页排序')}</th>
             <th className="text-left px-4 py-3 font-medium text-stone-600">{t('List Order', '列表排序')}</th>
+            <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Signed', '已签约')}</th>
+            <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Certified', '认证')}</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
-            <TableSpinner colSpan={7} />
+            <TableSpinner colSpan={9} />
           ) : companies.length === 0 ? (
-            <tr><td colSpan={7} className="text-center py-12 text-stone-400">{t('No records', '暂无数据')}</td></tr>
+            <tr><td colSpan={9} className="text-center py-12 text-stone-400">{t('No records', '暂无数据')}</td></tr>
           ) : companies.map((c) => (
             <tr
               key={c.id}
@@ -196,6 +204,23 @@ export default function AdminDirectoryTable({
                     className="w-16 px-2 py-1 text-xs border rounded disabled:opacity-50"
                   />
                 </div>
+              </td>
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => onToggleSigned?.(c.id, !c.is_signed)}
+                  className={`w-9 h-5 rounded-full relative transition-colors ${c.is_signed ? 'bg-[#b8864a]' : 'bg-stone-300'}`}
+                >
+                  <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-transform ${c.is_signed ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                </button>
+              </td>
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => onToggleCertified?.(c.id, !c.is_certified)}
+                  title="普通认证（¥1000）"
+                  className={`w-9 h-5 rounded-full relative transition-colors ${c.is_certified ? 'bg-blue-500' : 'bg-stone-300'}`}
+                >
+                  <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-transform ${c.is_certified ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                </button>
               </td>
             </tr>
           ))}

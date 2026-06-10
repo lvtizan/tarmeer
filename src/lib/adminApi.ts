@@ -909,6 +909,30 @@ class AdminApiClient {
     });
   }
 
+  // 普通认证（¥1000，与 VIP 并存）
+  async toggleCompanyCertified(id: number, isCertified: boolean) {
+    return this.request(`/roles/companies/${id}/toggle-certified`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_certified: isCertified }),
+    });
+  }
+
+  async toggleDirectoryCertified(id: number, isCertified: boolean) {
+    return this.request(`/companies/${id}/toggle-certified`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_certified: isCertified }),
+    });
+  }
+
+  async getPhoneRevealStats(params: { country?: string; days?: number } = {}) {
+    const qs = new URLSearchParams();
+    if (params.country) qs.set('country', params.country);
+    if (params.days) qs.set('days', String(params.days));
+    return this.request(`/analytics/phone-reveals?${qs.toString()}`);
+  }
+
   // Unpublish toggles
   async toggleCompanyPublished(id: number, isPublished: boolean) {
     return this.request(`/roles/companies/${id}/toggle-published`, {

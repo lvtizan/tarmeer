@@ -25,6 +25,7 @@ interface CompanyProfileRecord {
   created_at: string;
   updated_at?: string;
   is_signed?: boolean;
+  is_certified?: boolean;
   weight_score?: number;
   pending_project_count?: number;
 }
@@ -46,6 +47,7 @@ interface AdminCompaniesTableTabProps {
   onSortToggle: () => void;
   onBulkUnapprove?: (ids: number[]) => void;
   onToggleSigned?: (id: number, isSigned: boolean) => void;
+  onToggleCertified?: (id: number, isCertified: boolean) => void;
   updatedSortActive?: boolean;
   updatedSortDir?: SortDir;
   onUpdatedSortToggle?: () => void;
@@ -66,6 +68,7 @@ export default function AdminCompaniesTableTab({
   onSortToggle,
   onBulkUnapprove,
   onToggleSigned,
+  onToggleCertified,
   updatedSortActive,
   updatedSortDir,
   onUpdatedSortToggle,
@@ -166,6 +169,7 @@ export default function AdminCompaniesTableTab({
               <th className="text-left px-4 py-3 font-medium text-stone-600">Home Order</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">List Order</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">已签约</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">认证</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Weight</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">Joined</th>
               <th
@@ -178,9 +182,9 @@ export default function AdminCompaniesTableTab({
           </thead>
           <tbody>
             {loading ? (
-              <TableSpinner colSpan={11} />
+              <TableSpinner colSpan={12} />
             ) : profiles.length === 0 ? (
-              <tr><td colSpan={11} className="text-center py-12 text-stone-400">No records</td></tr>
+              <tr><td colSpan={12} className="text-center py-12 text-stone-400">No records</td></tr>
             ) : profiles.map((c) => (
               <tr
                 key={c.id}
@@ -262,6 +266,15 @@ export default function AdminCompaniesTableTab({
                     className={`w-9 h-5 rounded-full relative transition-colors ${c.is_signed ? 'bg-[#b8864a]' : 'bg-stone-300'}`}
                   >
                     <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-transform ${c.is_signed ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                  </button>
+                </td>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => onToggleCertified?.(c.id, !c.is_certified)}
+                    title="普通认证（¥1000）"
+                    className={`w-9 h-5 rounded-full relative transition-colors ${c.is_certified ? 'bg-blue-500' : 'bg-stone-300'}`}
+                  >
+                    <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-transform ${c.is_certified ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
                   </button>
                 </td>
                 <td className="px-4 py-3 text-stone-600 text-[15px] tabular-nums font-mono">{c.weight_score ?? '—'}</td>

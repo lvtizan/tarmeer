@@ -21,6 +21,7 @@ import { adminApi } from '@/lib/adminApi';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { labelCompanyType } from '@/lib/companyTypeLabel';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
+import PhoneRevealStats from '@/components/admin/PhoneRevealStats';
 
 const UAEMap = dynamic(() => import('@/components/admin/UAEMapLeaflet'), { ssr: false });
 
@@ -423,6 +424,8 @@ export default function AdminAnalyticsNextPage() {
           <LeaderboardBars items={sourceItems} max={10} labelWidth={160} colors="multi" />
         </div>
       </div>
+
+      <PhoneRevealStats country={country} />
 
       <Suspense fallback={<div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 h-[480px] animate-pulse" />}>
         <UAEMap

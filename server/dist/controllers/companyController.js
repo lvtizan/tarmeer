@@ -420,7 +420,10 @@ async function getPublicProjectDetail(req, res) {
                 logo: company.logo_url,
                 city: company.city,
                 address: company.address || null,
-                phone: company.phone || null,
+                // 完整电话只从 POST /api/phone-reveals 返回（点击计数）
+                phone: null,
+                has_phone: !!(company.phone),
+                company_source: companySource,
                 email: company.email || null,
                 website: company.website || null,
                 instagram: company.instagram || null,
@@ -508,7 +511,7 @@ async function getCompanyBySlug(req, res) {
         if (!company) {
             const [cpRows] = await database_1.default.execute(`SELECT cp.id, cp.slug, cp.company_name AS name_en, cp.description, cp.city,
                 cp.phone, cp.website, cp.services, cp.specialties, cp.logo_url,
-                cp.status, cp.linked_uae_company_id, cp.is_signed,
+                cp.status, cp.linked_uae_company_id, cp.is_signed, cp.is_certified,
                 u.email
          FROM company_profiles cp
          JOIN users u ON u.id = cp.user_id
@@ -559,6 +562,7 @@ async function getCompanyBySlug(req, res) {
                     }
                 }
                 company.is_signed = !!(company.is_signed);
+                company.is_certified = !!(company.is_certified);
                 company.portfolio_images = JSON.stringify(categoriesObj);
                 company.portfolio_categories = null;
                 // Hide contact info for registered companies — business rule:
@@ -717,7 +721,7 @@ async function getCompaniesByServiceCity(req, res) {
         // Match directory companies (uae_companies) — services is a JSON array, use JSON_CONTAINS
         const [dirRows] = await database_1.default.query(`SELECT uc.slug, uc.name_en AS name, uc.city, uc.description,
               uc.weight_score, uc.portfolio_images, uc.logo_url,
-              uc.owner_user_id, uc.is_signed
+              uc.owner_user_id, uc.is_signed, uc.is_certified
        FROM uae_companies uc
        WHERE uc.is_active = 1
          AND LOWER(uc.city) = LOWER(?)
@@ -729,7 +733,7 @@ async function getCompaniesByServiceCity(req, res) {
        LIMIT 30`, [city, service, `%${safeService}%`]);
         // Match registered companies (company_profiles) — services is a JSON array, use JSON_CONTAINS
         const [regRows] = await database_1.default.query(`SELECT cp.slug, cp.company_name AS name, cp.city, cp.description, cp.company_type,
-              cp.weight_score, cp.is_signed
+              cp.weight_score, cp.is_signed, cp.is_certified
        FROM company_profiles cp
        WHERE cp.status = 'approved'
          AND cp.deleted_at IS NULL
@@ -749,6 +753,7 @@ async function getCompaniesByServiceCity(req, res) {
             logo_url: r.logo_url,
             is_claimed: !!(r.owner_user_id),
             is_signed: !!(r.is_signed),
+            is_certified: !!(r.is_certified),
             weight_score: r.weight_score,
         }));
         const regMapped = (Array.isArray(regRows) ? regRows : []).map((r) => ({
@@ -760,6 +765,7 @@ async function getCompaniesByServiceCity(req, res) {
             logo_url: null,
             is_claimed: true,
             is_signed: !!(r.is_signed),
+            is_certified: !!(r.is_certified),
             weight_score: r.weight_score,
         }));
         // Combine, sort by weight_score, deduplicate by slug (dirRows take priority)

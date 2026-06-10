@@ -147,6 +147,9 @@ function CompanyCard({ company, onClick, isVn }: { company: Company; onClick: ()
               {company.isSigned && (
                 <span className="inline-flex items-center mr-1.5 px-1.5 py-[2px] rounded bg-gradient-to-b from-[#d4a853] to-[#b8864a] text-white text-[10px] font-bold tracking-wider leading-none shrink-0 align-middle">Gold</span>
               )}
+              {company.isCertified && (
+                <span className="inline-flex items-center mr-1.5 px-1.5 py-[2px] rounded bg-blue-500 text-white text-[10px] font-bold tracking-wider leading-none shrink-0 align-middle">✓</span>
+              )}
               {company.name}
               {!company.isSigned && company.isClaimed && (
                 <BadgeCheck className="inline w-4 h-4 ml-1 text-[#b8864a]/70 shrink-0" />

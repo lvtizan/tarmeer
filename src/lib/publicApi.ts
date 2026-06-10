@@ -69,6 +69,8 @@ interface PublicCompanyRecord {
   cover_image_url?: string | null;
   is_claimed?: boolean;
   is_signed?: boolean;
+  is_certified?: boolean;
+  has_phone?: boolean;
   weight_score?: number;
 }
 
@@ -327,6 +329,9 @@ function toCompany(company: PublicCompanyRecord): Company {
     portfolioCategoriesByProject: Object.keys(portfolioCategoriesByProject).length > 0 ? portfolioCategoriesByProject : undefined,
     isClaimed: !!company.is_claimed,
     isSigned: !!company.is_signed,
+    isCertified: !!company.is_certified,
+    hasPhone: !!company.has_phone,
+    numericId: typeof company.id === 'number' ? company.id : undefined,
     companyType: company.company_type || undefined,
     weightScore: company.weight_score ?? undefined,
     projects: Array.isArray(company.projects)

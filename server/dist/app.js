@@ -54,6 +54,7 @@ const companyApplications_1 = __importDefault(require("./routes/companyApplicati
 const inquiries_1 = __importDefault(require("./routes/inquiries"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
 const complaints_1 = __importDefault(require("./routes/complaints"));
+const phoneReveals_1 = __importDefault(require("./routes/phoneReveals"));
 const companyLeads_1 = __importDefault(require("./routes/companyLeads"));
 const articles_1 = __importDefault(require("./routes/articles"));
 const supplierAuth_1 = __importDefault(require("./routes/supplierAuth"));
@@ -416,6 +417,7 @@ app.use('/api/company-applications', companyApplications_1.default);
 app.use('/api/inquiries', inquiries_1.default);
 app.use('/api/notifications', notifications_1.default);
 app.use('/api/complaints', complaints_1.default);
+app.use('/api/phone-reveals', phoneReveals_1.default);
 app.use('/api/company-leads', companyLeads_1.default);
 app.use('/api/articles', articles_1.default);
 app.use('/api/supplier/auth', supplierAuth_1.default);

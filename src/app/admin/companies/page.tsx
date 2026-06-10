@@ -424,6 +424,14 @@ export default function AdminCompaniesPage() {
               alert(err.message || 'Failed to update signed status.');
             }
           }}
+          onToggleCertified={async (id, isCertified) => {
+            try {
+              await adminApi.toggleCompanyCertified(id, isCertified);
+              setProfiles(prev => prev.map(p => p.id === id ? { ...p, is_certified: isCertified } : p));
+            } catch (err: any) {
+              alert(err.message || 'Failed to update certified status.');
+            }
+          }}
           onBulkUnapprove={async (ids) => {
             try {
               await adminApi.bulkUnapproveCompanies(ids);
@@ -449,6 +457,22 @@ export default function AdminCompaniesPage() {
           sortDir={directorySortDir}
           sortActive={directorySortActive}
           onSortToggle={() => toggleSort(directorySortActive, setDirectorySortActive, directorySortDir, setDirectorySortDir, setCompanyPage)}
+          onToggleSigned={async (id, isSigned) => {
+            try {
+              await adminApi.toggleDirectorySigned(id, isSigned);
+              setCompanies(prev => prev.map(c => c.id === id ? { ...c, is_signed: isSigned } : c));
+            } catch (err: any) {
+              alert(err.message || 'Failed to update signed status.');
+            }
+          }}
+          onToggleCertified={async (id, isCertified) => {
+            try {
+              await adminApi.toggleDirectoryCertified(id, isCertified);
+              setCompanies(prev => prev.map(c => c.id === id ? { ...c, is_certified: isCertified } : c));
+            } catch (err: any) {
+              alert(err.message || 'Failed to update certified status.');
+            }
+          }}
         />
       )}
 

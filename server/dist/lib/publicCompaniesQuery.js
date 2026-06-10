@@ -47,6 +47,7 @@ function buildPublicCompaniesListQuery(input) {
          google_reviews_count,
          owner_user_id,
          is_signed,
+         is_certified,
          country
        FROM uae_companies
        WHERE is_active = 1 AND is_published = 1 ${spaceWhere} AND country = ?
@@ -77,6 +78,7 @@ function buildPublicCompanyDetailQuery(slug) {
          uae_companies.google_reviews_count,
          uae_companies.owner_user_id,
          uae_companies.is_signed,
+         uae_companies.is_certified,
          uae_companies.country,
          cp.id AS company_profile_id
        FROM uae_companies

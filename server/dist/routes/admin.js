@@ -55,6 +55,7 @@ const inquiryController_1 = require("../controllers/inquiryController");
 const complaintController_1 = require("../controllers/complaintController");
 const feedbackController_1 = require("../controllers/feedbackController");
 const companyAdminController_1 = require("../controllers/companyAdminController");
+const phoneRevealController_1 = require("../controllers/phoneRevealController");
 const analyticsAdminController_1 = require("../controllers/analyticsAdminController");
 const supplierAdminController_1 = require("../controllers/supplierAdminController");
 const globalSearchController_1 = require("../controllers/globalSearchController");
@@ -135,6 +136,7 @@ router.get('/visitors', (0, adminAuth_1.requirePermission)('can_view_stats'), vi
 router.get('/analytics/overview', (0, adminAuth_1.requirePermission)('can_view_stats'), analyticsAdminController_1.getAnalyticsOverview);
 router.get('/analytics/company-visitors', (0, adminAuth_1.requirePermission)('can_view_stats'), analyticsAdminController_1.getCompanyVisitors);
 router.get('/analytics/events', (0, adminAuth_1.requirePermission)('can_view_stats'), analyticsAdminController_1.listAnalyticsEvents);
+router.get('/analytics/phone-reveals', (0, adminAuth_1.requirePermission)('can_view_stats'), phoneRevealController_1.getPhoneRevealStats);
 router.get('/analytics/daily-registrations', (0, adminAuth_1.requirePermission)('can_view_stats'), analyticsAdminController_1.getDailyRegistrations);
 router.get('/analytics/daily-visits', (0, adminAuth_1.requirePermission)('can_view_stats'), analyticsAdminController_1.getDailyVisits);
 // Designer management
@@ -222,6 +224,9 @@ router.put('/roles/companies/:companyId/projects/:projectId/restore', companyAdm
 // Weight system: toggle signed status
 router.put('/roles/companies/:id/toggle-signed', companyAdminController_1.toggleCompanyProfileSigned);
 router.put('/companies/:companyId/toggle-signed', companyAdminController_1.toggleDirectorySigned);
+// 普通认证开关（¥1000，与 VIP 并存）
+router.put('/roles/companies/:id/toggle-certified', companyAdminController_1.toggleCompanyProfileCertified);
+router.put('/companies/:companyId/toggle-certified', companyAdminController_1.toggleDirectoryCertified);
 // Admin unpublish: toggle visibility on public site
 router.put('/roles/companies/:id/toggle-published', companyAdminController_1.toggleCompanyProfilePublished);
 router.put('/companies/:companyId/toggle-published', companyAdminController_1.toggleDirectoryPublished);
