@@ -1061,6 +1061,46 @@ class AdminApiClient {
   async updateStaffPermissions(id: number, permissions: Record<string, boolean>) {
     return this.request(`/staff/${id}/permissions`, { method: 'PATCH', body: JSON.stringify({ permissions }) });
   }
+
+  // Expert management
+  async getExperts(params: { country?: string; status?: string; search?: string } = {}): Promise<{
+    experts: Array<{
+      id: number; slug: string; full_name: string; avatar_url: string | null;
+      services: string[]; city: string | null; phone: string | null;
+      user_email: string | null; status: 'pending' | 'approved' | 'rejected';
+      country: string; is_certified: boolean; is_signed: boolean;
+      certificates: string[]; license_url: string | null;
+      experience_years: number | null; created_at: string;
+    }>;
+  }> {
+    const query = new URLSearchParams();
+    if (params.country) query.set('country', params.country);
+    if (params.status) query.set('status', params.status);
+    if (params.search) query.set('search', params.search);
+    const qs = query.toString();
+    return this.request(`/experts${qs ? `?${qs}` : ''}`);
+  }
+
+  async updateExpertStatus(id: number, status: 'approved' | 'rejected' | 'pending') {
+    return this.request(`/experts/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async toggleExpertCertified(id: number, isCertified: boolean) {
+    return this.request(`/experts/${id}/toggle-certified`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_certified: isCertified }),
+    });
+  }
+
+  async toggleExpertSigned(id: number, isSigned: boolean) {
+    return this.request(`/experts/${id}/toggle-signed`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_signed: isSigned }),
+    });
+  }
 }
 
 export const adminApi = new AdminApiClient();

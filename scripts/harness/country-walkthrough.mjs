@@ -448,6 +448,60 @@ console.log('[UC19] 线索 company_type=NULL → 登录后 GET /auth/company/pro
   }
 }
 
+// ─── UC20 专家全链路（注册落桶→审核→认证→电话点击→留言收件箱）──────────────
+console.log('[UC20] VN 专家：注册→资料→审核→认证→电话 reveal→留言→收件箱/数据');
+{
+  const email = `uc20_${MARK}@walk.local`;
+  const expPhone = `+84893${String(TS).slice(-6)}`;
+  const auth = await registerAndLogin(email, TEST_PASSWORD, expPhone, 'expert');
+  if (auth.error) ng('专家注册/登录', auth.error);
+  else {
+    const prof = await req('POST', '/experts/me', {
+      full_name: `WALK VN Expert ${MARK}`, phone: expPhone, city: 'Hồ Chí Minh',
+      services: ['Interior Design'], experience_years: 8, birth_year: 1990,
+      bio: 'walkthrough expert', skills: ['Tiling'],
+      work_history: [{ from: '2018', to: '2024', org: 'Test Co', role: 'Lead' }],
+    }, auth.token);
+    const slug = prof.body?.slug;
+    const expertId = prof.body?.id;
+    if (prof.status !== 201 || !slug) ng('创建专家资料', `${prof.status} ${JSON.stringify(prof.body)}`);
+    else {
+      const inVn = await adminGet('/admin/experts?country=vn');
+      const inAe = await adminGet('/admin/experts?country=ae');
+      const fVn = (inVn.body?.experts || []).some(e => e.id === expertId);
+      const fAe = (inAe.body?.experts || []).some(e => e.id === expertId);
+      if (fVn && !fAe) ok('专家落入 VN 桶，AE 不可见'); else ng('专家落桶', `vn=${fVn} ae=${fAe}`);
+
+      const before = await req('GET', `/experts/${slug}`);
+      await req('PUT', `/admin/experts/${expertId}/status`, { status: 'approved' }, adminToken);
+      const after = await req('GET', `/experts/${slug}`);
+      if (before.status === 404 && after.status === 200) ok('审核前 404，通过后公开可见');
+      else ng('审核流转', `before=${before.status} after=${after.status}`);
+
+      await req('PUT', `/admin/experts/${expertId}/toggle-certified`, { is_certified: true }, adminToken);
+      const certed = await req('GET', `/experts/${slug}`);
+      if (certed.body?.expert?.is_certified === true) ok('认证开关 → 公开详情 is_certified=true');
+      else ng('专家认证', JSON.stringify(certed.body?.expert?.is_certified));
+
+      const rev = await req('POST', '/phone-reveals', { target_type: 'expert', target_id: expertId });
+      const revCount = sql(`SELECT COUNT(*) FROM phone_reveals WHERE target_type='expert' AND target_id=${expertId}`);
+      const revCountry = sql(`SELECT country FROM phone_reveals WHERE target_type='expert' AND target_id=${expertId} LIMIT 1`);
+      if (rev.status === 200 && rev.body?.phone === expPhone && revCount === '1' && revCountry === 'vn') {
+        ok("reveal 返回电话，计数 1，country='vn'");
+      } else ng('专家电话 reveal', `${rev.status} cnt=${revCount} country=${revCountry}`);
+
+      const msgPhone = `+84894${String(TS).slice(-6)}`;
+      const inq = await req('POST', '/inquiries', { name: 'WALK Expert Msg', phone: msgPhone, message: 'hello expert', expert_id: expertId, area_range: 'N/A' });
+      const inbox = await req('GET', '/experts/me/inquiries', null, auth.token);
+      const stats = await req('GET', '/experts/me/stats', null, auth.token);
+      const inInbox = (inbox.body?.inquiries || []).some(i => i.phone === msgPhone);
+      if (inq.status === 201 && inInbox && stats.body?.phoneReveals === 1 && stats.body?.inquiries === 1) {
+        ok('留言进收件箱，我的数据（点击 1 / 留言 1）正确');
+      } else ng('留言/数据', `inq=${inq.status} inbox=${inInbox} stats=${JSON.stringify(stats.body)}`);
+    }
+  }
+}
+
 // ─── 清理测试数据 ────────────────────────────────────────────────────────────
 console.log('\n清理测试数据…');
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);
@@ -461,6 +515,8 @@ sql(`DELETE FROM users WHERE email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM admin_users WHERE email LIKE '%${MARK}@walk.local' AND role='field_staff'`);
 sql(`DELETE FROM phone_reveals WHERE target_type='uae' AND target_id IN (SELECT id FROM uae_companies WHERE slug LIKE 'walk-dir-%')`);
 sql(`DELETE FROM uae_companies WHERE slug LIKE 'walk-dir-%'`);
+sql(`DELETE FROM phone_reveals WHERE target_type='expert' AND target_id IN (SELECT id FROM expert_profiles WHERE full_name LIKE 'WALK %')`);
+sql(`DELETE FROM expert_profiles WHERE full_name LIKE 'WALK %'`);
 
 // ─── 汇总 ────────────────────────────────────────────────────────────────────
 console.log(`\n${'─'.repeat(50)}`);

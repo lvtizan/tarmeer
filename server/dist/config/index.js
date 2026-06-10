@@ -1,0 +1,56 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.config = void 0;
+const dotenv_1 = __importDefault(require("dotenv"));
+const oauth_1 = require("./oauth");
+dotenv_1.default.config();
+function getEnvVar(key) {
+    const value = process.env[key];
+    if (!value) {
+        throw new Error(`Environment variable ${key} must be set`);
+    }
+    return value;
+}
+exports.config = {
+    port: parseInt(process.env.PORT || '3002'),
+    nodeEnv: process.env.NODE_ENV || 'development',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5179',
+    database: {
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || '3306'),
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '',
+        name: process.env.DB_NAME || 'tarmeer',
+    },
+    jwt: {
+        secret: process.env.JWT_SECRET || 'dev_jwt_secret_min_32_chars_for_local_testing_only',
+        expiresIn: '7d',
+        // 添加密钥轮换支持（未来扩展）
+        rotationEnabled: process.env.JWT_ROTATION_ENABLED === 'true',
+        rotationInterval: process.env.JWT_ROTATION_INTERVAL || '30d',
+    },
+    smtp: {
+        host: process.env.SMTP_HOST || 'smtpdm.aliyun.com',
+        port: parseInt(process.env.SMTP_PORT || '465'),
+        secure: process.env.SMTP_SECURE !== 'false',
+        user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || '',
+        from: process.env.SMTP_FROM || 'noreply@mail.kptom.com',
+        fromName: process.env.SMTP_FROM_NAME || 'Tarmeer',
+        replyTo: process.env.SMTP_REPLY_TO || process.env.SMTP_FROM || 'noreply@mail.kptom.com',
+        returnPath: process.env.SMTP_RETURN_PATH || process.env.SMTP_FROM || 'noreply@mail.kptom.com',
+    },
+    notificationEmail: 'lvyiming@kp99.cn',
+    oauth: oauth_1.oauthConfig,
+    vision: {
+        credentialsPath: process.env.GOOGLE_VISION_CREDENTIALS || '',
+        apiKey: process.env.GEMINI_API_KEY || '',
+        enabled: process.env.GOOGLE_VISION_ENABLED === 'true',
+        maxLabels: 15,
+        minConfidence: 0.7,
+    },
+};
+exports.default = exports.config;

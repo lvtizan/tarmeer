@@ -56,6 +56,7 @@ const complaintController_1 = require("../controllers/complaintController");
 const feedbackController_1 = require("../controllers/feedbackController");
 const companyAdminController_1 = require("../controllers/companyAdminController");
 const phoneRevealController_1 = require("../controllers/phoneRevealController");
+const expertController_1 = require("../controllers/expertController");
 const analyticsAdminController_1 = require("../controllers/analyticsAdminController");
 const supplierAdminController_1 = require("../controllers/supplierAdminController");
 const globalSearchController_1 = require("../controllers/globalSearchController");
@@ -227,6 +228,11 @@ router.put('/companies/:companyId/toggle-signed', companyAdminController_1.toggl
 // 普通认证开关（¥1000，与 VIP 并存）
 router.put('/roles/companies/:id/toggle-certified', companyAdminController_1.toggleCompanyProfileCertified);
 router.put('/companies/:companyId/toggle-certified', companyAdminController_1.toggleDirectoryCertified);
+// 专家管理
+router.get('/experts', expertController_1.adminListExperts);
+router.put('/experts/:id/status', expertController_1.adminUpdateExpertStatus);
+router.put('/experts/:id/toggle-certified', expertController_1.adminToggleExpertCertified);
+router.put('/experts/:id/toggle-signed', expertController_1.adminToggleExpertSigned);
 // Admin unpublish: toggle visibility on public site
 router.put('/roles/companies/:id/toggle-published', companyAdminController_1.toggleCompanyProfilePublished);
 router.put('/companies/:companyId/toggle-published', companyAdminController_1.toggleDirectoryPublished);

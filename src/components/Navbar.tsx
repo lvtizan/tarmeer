@@ -31,19 +31,12 @@ export default function Navbar({
 
   const navLinks = [{ to: '/', label: tr.footer.navLinks.Home }];
 
-  const spaceTypeItems = isVn ? [
-    { label: tr.spaces.Villa, to: '/companies?service=Interior+Design' },
-    { label: tr.spaces.Apartment, to: '/companies?service=Fit-Out' },
-    { label: tr.spaces.Commercial, to: '/companies?service=Construction' },
-    { label: tr.spaces['Public / Institutional'], to: '/companies?service=Architecture' },
-    { label: tr.spaces['Outdoor / Landscape'], to: '/companies?service=Renovation' },
-  ] : [
-    { label: tr.spaces.Villa, to: '/companies?style=Villa' },
-    { label: tr.spaces.Apartment, to: '/companies?style=Apartment' },
-    { label: tr.spaces.Commercial, to: '/companies?style=Commercial' },
-    { label: tr.spaces['Public / Institutional'], to: '/companies?style=Office' },
-    { label: tr.spaces['Outdoor / Landscape'], to: '/companies?service=Landscape' },
-  ];
+  // 找专家 — 双语文案（组件内处理，不改翻译文件）
+  const findExpertsLabel = isVn ? 'Tìm Chuyên Gia' : 'Find Experts';
+  const allExpertsLabel = isVn ? 'Tất cả chuyên gia' : 'All Experts';
+
+  // 空间类型 label：已有翻译则用翻译，后台新配置项直接显示 key
+  const spaceLabel = (key: string) => (tr.spaces as Record<string, string>)[key] ?? key;
 
   const portfolioCategories: Record<string, { label: string; to: string }[]> = {
     [tr.nav.byRoom]: [
@@ -70,10 +63,12 @@ export default function Navbar({
 
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [expertsDropdownOpen, setExpertsDropdownOpen] = useState(false);
   const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
+  const [spaceTypes, setSpaceTypes] = useState<{ key: string; to: string }[]>([]);
   const [supplierNavGroups, setSupplierNavGroups] = useState<{ value: string; label: string; categories: { value: string; label: string }[] }[]>([]);
   const [supplierNavUngrouped, setSupplierNavUngrouped] = useState<{ value: string; label: string }[]>([]);
   const { handleNavClick } = useNavigationHandler();
@@ -85,14 +80,14 @@ export default function Navbar({
   const [dropdownLeft, setDropdownLeft] = useState(0);
 
   useLayoutEffect(() => {
-    if (!dropdownOpen) { setHoveredCategory(null); setDropdownLeft(0); return; }
+    if (!expertsDropdownOpen) { setHoveredCategory(null); setDropdownLeft(0); return; }
     setHoveredCategory((prev) => prev ?? navCategories[0]?.name ?? null);
     const el = dropdownPanelRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const overflow = rect.right - (window.innerWidth - 60);
     setDropdownLeft(overflow > 0 ? -overflow : 0);
-  }, [dropdownOpen, navCategories]);
+  }, [expertsDropdownOpen, navCategories]);
 
   useEffect(() => {
     fetch(`${API_BASE}/public/service-categories`)
@@ -111,6 +106,17 @@ export default function Navbar({
       })
       .catch(() => {});
   }, []);
+
+  // 找公司下拉的空间类型 — 后台可配置，按国家拉取
+  useEffect(() => {
+    fetch(`${API_BASE}/site/space-types?country=${isVn ? 'vn' : 'ae'}`)
+      .then((r) => r.json())
+      .then((d: unknown) => {
+        const data = d as { items?: { key: string; to: string }[] };
+        if (Array.isArray(data?.items)) setSpaceTypes(data.items);
+      })
+      .catch(() => {});
+  }, [isVn]);
 
   if ((isAuthPage && !forceShowOnAuth) || isPortalPage) return null;
 
@@ -144,6 +150,7 @@ export default function Navbar({
     handleNavClick(to);
     setOpen(false);
     setDropdownOpen(false);
+    setExpertsDropdownOpen(false);
     setPortfolioDropdownOpen(false);
     setMaterialsDropdownOpen(false);
   };
@@ -209,11 +216,11 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Find Company Dropdown */}
+          {/* Find Company Dropdown — 空间类型（后台可配置） */}
           <div
             className="relative"
             onMouseEnter={() => setDropdownOpen(true)}
-            onMouseLeave={() => { setDropdownOpen(false); setHoveredCategory(null); }}
+            onMouseLeave={() => setDropdownOpen(false)}
           >
             <Link
               href="/companies"
@@ -223,24 +230,54 @@ export default function Navbar({
               {tr.nav.findCompany}
               <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </Link>
+            <div className={`absolute top-full left-0 pt-2 w-max z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+              <div className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
+                <div className="p-6 min-w-[192px]">
+                  <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{tr.nav.spaceType}</h3>
+                  <ul className="space-y-2">
+                    {spaceTypes.map((item) => (
+                      <li key={item.to}>
+                        <Link href={item.to} onClick={() => handleClick(item.to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block">
+                          {spaceLabel(item.key)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="border-t border-stone-200 px-6 py-3 bg-stone-50">
+                  <Link href="/companies" onClick={() => handleClick('/companies')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
+                    {tr.nav.allCompanies} {'>'}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Find Experts Dropdown — 服务类型两级（service_categories） */}
+          <div
+            className="relative"
+            onMouseEnter={() => setExpertsDropdownOpen(true)}
+            onMouseLeave={() => { setExpertsDropdownOpen(false); setHoveredCategory(null); }}
+          >
+            <Link
+              href="/experts"
+              onClick={() => { setExpertsDropdownOpen(false); handleClick('/experts'); }}
+              className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+            >
+              {findExpertsLabel}
+              <ChevronDown className={`w-4 h-4 transition-transform ${expertsDropdownOpen ? 'rotate-180' : ''}`} />
+            </Link>
             <div
-              className={`absolute top-full pt-2 z-50 transition-all duration-150 ${dropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              className={`absolute top-full pt-2 z-50 transition-all duration-150 ${expertsDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
               style={{ left: dropdownLeft }}
             >
               <div ref={dropdownPanelRef} className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
+                <div className="border-b border-stone-200 px-6 py-3 bg-stone-50">
+                  <Link href="/experts" onClick={() => handleClick('/experts')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
+                    {allExpertsLabel} {'>'}
+                  </Link>
+                </div>
                 <div className="flex">
-                  <div className="p-6 w-48 border-r border-stone-100 flex-shrink-0">
-                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{tr.nav.spaceType}</h3>
-                    <ul className="space-y-2">
-                      {spaceTypeItems.map((item) => (
-                        <li key={item.to}>
-                          <Link href={item.to} onClick={() => handleClick(item.to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block">
-                            {item.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                   <div className="p-6 w-52 border-r border-stone-100 flex-shrink-0">
                     <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{tr.nav.serviceType}</h3>
                     <ul className="space-y-1">
@@ -262,7 +299,7 @@ export default function Navbar({
                   {(() => {
                     const tallest = navCategories.reduce((a, b) => b.subs.length > a.subs.length ? b : a, { name: '', subs: [] as string[] });
                     return (
-                      <div className="w-[220px] flex-shrink-0 border-l border-stone-100 relative">
+                      <div className="w-[220px] flex-shrink-0 relative">
                         <div className="p-6 invisible pointer-events-none" aria-hidden="true">
                           <h3 className="text-xs font-bold uppercase tracking-wider mb-3">x</h3>
                           <ul className="space-y-2">
@@ -281,8 +318,8 @@ export default function Navbar({
                               {cat.subs.map((svc) => (
                                 <li key={svc}>
                                   <Link
-                                    href={`/companies?service=${encodeURIComponent(svc)}`}
-                                    onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)}
+                                    href={`/experts?service=${encodeURIComponent(svc)}`}
+                                    onClick={() => handleClick(`/experts?service=${encodeURIComponent(svc)}`)}
                                     className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
                                   >
                                     {svc}
@@ -295,11 +332,6 @@ export default function Navbar({
                       </div>
                     );
                   })()}
-                </div>
-                <div className="border-t border-stone-200 px-6 py-3 bg-stone-50">
-                  <Link href="/companies" onClick={() => handleClick('/companies')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-                    {tr.nav.allCompanies} {'>'}
-                  </Link>
                 </div>
               </div>
             </div>
@@ -451,11 +483,37 @@ export default function Navbar({
                 <div className="mt-3 pl-4 space-y-4">
                   <div>
                     <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{tr.nav.spaceType}</h4>
-                    {spaceTypeItems.map((item) => (
+                    {spaceTypes.map((item) => (
                       <Link key={item.to} href={item.to} onClick={() => handleClick(item.to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
-                        {item.label}
+                        {spaceLabel(item.key)}
                       </Link>
                     ))}
+                  </div>
+                  <div className="border-t border-stone-200 pt-2">
+                    <Link href="/companies" onClick={() => handleClick('/companies')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
+                      {tr.nav.allCompanies} {'>'}
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Find Experts */}
+            <div className="py-2">
+              <div className="flex items-center justify-between">
+                <Link href="/experts" onClick={() => handleClick('/experts')} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
+                  {findExpertsLabel}
+                </Link>
+                <button onClick={() => setExpertsDropdownOpen(!expertsDropdownOpen)} className="p-1 text-[#2c2c2c]/60 hover:text-[#2c2c2c] transition">
+                  <ChevronDown className={`w-4 h-4 transition-transform ${expertsDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              {expertsDropdownOpen && (
+                <div className="mt-3 pl-4 space-y-4">
+                  <div>
+                    <Link href="/experts" onClick={() => handleClick('/experts')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
+                      {allExpertsLabel} {'>'}
+                    </Link>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{tr.nav.serviceType}</h4>
@@ -463,17 +521,12 @@ export default function Navbar({
                       <div key={cat.name} className="py-1">
                         <p className="text-xs font-semibold text-stone-500 mb-1">{cat.name}</p>
                         {cat.subs.map((svc: string) => (
-                          <Link key={svc} href={`/companies?service=${encodeURIComponent(svc)}`} onClick={() => handleClick(`/companies?service=${encodeURIComponent(svc)}`)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
+                          <Link key={svc} href={`/experts?service=${encodeURIComponent(svc)}`} onClick={() => handleClick(`/experts?service=${encodeURIComponent(svc)}`)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
                             {svc}
                           </Link>
                         ))}
                       </div>
                     ))}
-                  </div>
-                  <div className="border-t border-stone-200 pt-2">
-                    <Link href="/companies" onClick={() => handleClick('/companies')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
-                      {tr.nav.allCompanies} {'>'}
-                    </Link>
                   </div>
                 </div>
               )}

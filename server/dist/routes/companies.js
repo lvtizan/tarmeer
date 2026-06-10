@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const companyController_1 = require("../controllers/companyController");
+const router = (0, express_1.Router)();
+router.get('/', companyController_1.getCompanies);
+router.get('/active-services', companyController_1.getActiveServices);
+router.get('/by-service-city', companyController_1.getCompaniesByServiceCity);
+router.get('/portfolio', companyController_1.getPortfolioFeed);
+router.get('/portfolio/tags', companyController_1.getPortfolioTags);
+router.get('/portfolio/image/:companySlug/:projectSlug/:imageIndex', companyController_1.getPortfolioImage);
+router.get('/:companySlug/projects/:projectSlug', companyController_1.getPublicProjectDetail);
+router.get('/:slug', companyController_1.getCompanyBySlug);
+exports.default = router;

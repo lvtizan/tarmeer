@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail,
   CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin,
-  UserCheck, HandCoins, Images, MessageSquare,
+  UserCheck, HandCoins, Images, MessageSquare, Hammer,
 } from 'lucide-react';
 import { AdminProvider, useAdmin } from '@/contexts/AdminContext';
 import { adminApi } from '@/lib/adminApi';
@@ -81,6 +81,11 @@ const adminItems = [
     to: '/admin/staff', labelEn: 'Field Staff', labelZh: '外勤人员', icon: UserCheck, permission: 'can_manage_field_staff' as const,
     infoEn: 'Manage field staff accounts — create, activate, or deactivate.',
     infoZh: '管理外勤账号，包括新建、启用和停用。',
+  },
+  {
+    to: '/admin/experts', labelEn: 'Experts', labelZh: '专家管理', icon: Hammer,
+    infoEn: 'Review expert profiles, certifications (¥1000) and VIP status.',
+    infoZh: '审核专家资料，管理认证（¥1000）与 VIP 标志。',
   },
   {
     to: '/admin/feedback', labelEn: 'Feedback', labelZh: '用户反馈', icon: MessageSquare,
