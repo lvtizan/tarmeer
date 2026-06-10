@@ -798,6 +798,24 @@ class AdminApiClient {
     return this.request(`/roles/companies/${companyId}/projects/${projectId}/restore`, { method: 'PUT' });
   }
 
+  // UAE directory company project management (delegates to linked profile)
+  async getUAECompanyProject(companyId: string, projectId: string) {
+    return this.request(`/companies/${companyId}/projects/${projectId}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async updateUAECompanyProject(companyId: string, projectId: string, data: any) {
+    return this.request(`/companies/${companyId}/projects/${projectId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUAECompanyProject(companyId: string, projectId: string) {
+    return this.request(`/companies/${companyId}/projects/${projectId}`, { method: 'DELETE' });
+  }
+
   async getSignedCompanies(country?: string): Promise<{
     companies: Array<{
       id: number; slug: string; company_name: string; company_type: string;

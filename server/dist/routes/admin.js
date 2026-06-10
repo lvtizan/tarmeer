@@ -179,6 +179,9 @@ router.get('/companies/:companyId/detail', companyAdminController_1.getScrapedCo
 router.get('/companies/:companyId/full-detail', companyAdminController_1.getCompanyFullDetail);
 router.delete('/companies/:companyId/portfolio-image', adminAuth_1.requireAdmin, companyAdminController_1.deleteDirectoryPortfolioImage);
 router.put('/companies/:companyId/edit', companyAdminController_1.editScrapedCompany);
+router.get('/companies/:uaeCompanyId/projects/:projectId', companyAdminController_1.getUAECompanyProjectDetail);
+router.put('/companies/:uaeCompanyId/projects/:projectId', companyAdminController_1.updateUAECompanyProjectDetail);
+router.delete('/companies/:uaeCompanyId/projects/:projectId', companyAdminController_1.deleteUAECompanyProjectDetail);
 // User management
 router.get('/users', userAdminController_1.listUsers);
 router.get('/users/:id', userAdminController_1.getUserDetail);
@@ -371,6 +374,47 @@ router.post('/showcase-images/optimize', adminAuth_1.requireSuperAdmin, async (r
     catch (err) {
         console.error('Showcase optimize error:', err);
         res.status(500).json({ error: 'Optimization failed' });
+    }
+});
+// Portfolio images picker — returns flattened image URLs from companies of given country
+router.get('/portfolio-images', adminAuth_1.requireAdmin, async (req, res) => {
+    const country = typeof req.query.country === 'string' ? req.query.country.trim() : 'ae';
+    const VALID = new Set(['ae', 'vn', 'sa']);
+    if (!VALID.has(country)) return res.status(400).json({ error: 'Invalid country.' });
+    try {
+        const images = [];
+        if (country === 'vn') {
+            // VN: scraped companies in uae_companies with country='vn'
+            const [rows] = await database_1.default.execute(
+                "SELECT slug, portfolio_images FROM uae_companies WHERE country = 'vn' AND portfolio_images IS NOT NULL AND portfolio_images != '[]' ORDER BY weight_score DESC LIMIT 100"
+            );
+            for (const row of rows) {
+                let imgs = [];
+                try { imgs = JSON.parse(row.portfolio_images); } catch { continue; }
+                if (!Array.isArray(imgs)) continue;
+                for (const url of imgs) {
+                    if (typeof url === 'string' && url.trim()) images.push(url.trim());
+                }
+            }
+        } else {
+            // AE: registered company projects
+            const [rows] = await database_1.default.execute(
+                "SELECT p.images FROM projects p JOIN company_profiles cp ON p.company_profile_id = cp.id WHERE (cp.country = ? OR cp.country IS NULL OR cp.country = '') AND p.status = 'published' AND p.deleted_at IS NULL ORDER BY p.id DESC LIMIT 200",
+                [country]
+            );
+            for (const row of rows) {
+                let imgs = [];
+                try { imgs = JSON.parse(row.images); } catch { continue; }
+                if (!Array.isArray(imgs)) continue;
+                for (const url of imgs) {
+                    if (typeof url === 'string' && url.trim()) images.push(url.trim());
+                }
+            }
+        }
+        res.json({ images: [...new Set(images)].slice(0, 500) });
+    } catch (err) {
+        console.error('Portfolio images error:', err);
+        res.status(500).json({ error: 'Failed to load portfolio images.' });
     }
 });
 // Supplier management

@@ -625,7 +625,7 @@ export default function FieldSurveyPage() {
                     {/* 服务区域 sub-section */}
                     <div>
                       <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
-                        服务区域
+                        Service Area
                       </h2>
                       <div className="space-y-3">
                         <div>

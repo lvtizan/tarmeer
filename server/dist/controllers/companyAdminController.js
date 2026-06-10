@@ -59,6 +59,9 @@ exports.updateAdminProject = updateAdminProject;
 exports.createAdminProject = createAdminProject;
 exports.deleteAdminProject = deleteAdminProject;
 exports.restoreAdminProject = restoreAdminProject;
+exports.getUAECompanyProjectDetail = getUAECompanyProjectDetail;
+exports.updateUAECompanyProjectDetail = updateUAECompanyProjectDetail;
+exports.deleteUAECompanyProjectDetail = deleteUAECompanyProjectDetail;
 exports.listSignedCompanies = listSignedCompanies;
 exports.toggleCompanyProfileSigned = toggleCompanyProfileSigned;
 exports.toggleDirectorySigned = toggleDirectorySigned;
@@ -1109,19 +1112,31 @@ async function restoreAdminProject(req, res) {
 }
 // ====== Weight System ======
 // GET /admin/signed-companies — 列出所有 is_signed=1 的公司（合并 company_profiles + uae_companies）
-async function listSignedCompanies(_req, res) {
+async function listSignedCompanies(req, res) {
     try {
+        const country = req.query.country;
+        const VALID_COUNTRIES = new Set(['ae', 'vn', 'sa']);
+        let cpCountryWhere = '';
+        const cpParams = [];
+        let ucCountryWhere = '';
+        const ucParams = [];
+        if (country && VALID_COUNTRIES.has(country)) {
+            cpCountryWhere = ' AND cp.country = ?';
+            cpParams.push(country);
+            ucCountryWhere = ' AND uc.country = ?';
+            ucParams.push(country);
+        }
         // 注意：uae_companies 没有 company_type 列（只有 categories JSON），不要 SELECT
         const [profileRows] = await database_1.default.execute(`SELECT cp.id, cp.slug, cp.company_name, cp.company_type, cp.city, cp.logo_url,
               cp.weight_score, cp.created_at, cp.linked_uae_company_id
        FROM company_profiles cp
-       WHERE cp.is_signed = 1 AND cp.deleted_at IS NULL
-       ORDER BY cp.weight_score DESC, cp.created_at DESC`);
+       WHERE cp.is_signed = 1 AND cp.deleted_at IS NULL${cpCountryWhere}
+       ORDER BY cp.weight_score DESC, cp.created_at DESC`, cpParams);
         const [scrapedRows] = await database_1.default.execute(`SELECT uc.id, uc.slug, uc.name_en AS company_name, NULL AS company_type, uc.city, uc.logo_url,
               uc.weight_score, uc.created_at
        FROM uae_companies uc
-       WHERE uc.is_signed = 1
-       ORDER BY uc.weight_score DESC, uc.created_at DESC`);
+       WHERE uc.is_signed = 1${ucCountryWhere}
+       ORDER BY uc.weight_score DESC, uc.created_at DESC`, ucParams);
         const profiles = profileRows.map((r) => ({ ...r, source: 'profile' }));
         const linkedIds = new Set(profiles.map((p) => p.linked_uae_company_id).filter(Boolean));
         const scraped = scrapedRows
@@ -1303,5 +1318,46 @@ async function adminCrmProvisionCompany(req, res) {
     catch (err) {
         console.error('[Admin CRM] provision error:', err);
         res.status(502).json({ error: err.message || 'CRM provision failed' });
+    }
+}
+// Helper: find company_profiles.id linked to a uae_companies row
+async function findLinkedProfileId(uaeCompanyId) {
+    const [rows] = await database_1.default.execute(`SELECT id FROM company_profiles WHERE linked_uae_company_id = ? OR user_id = (SELECT owner_user_id FROM uae_companies WHERE id = ? LIMIT 1) LIMIT 1`, [uaeCompanyId, uaeCompanyId]);
+    return rows.length > 0 ? String(rows[0].id) : null;
+}
+// GET /admin/companies/:uaeCompanyId/projects/:projectId
+async function getUAECompanyProjectDetail(req, res) {
+    try {
+        const profileId = await findLinkedProfileId(req.params.uaeCompanyId);
+        if (!profileId) return res.status(404).json({ error: 'No linked profile found.' });
+        req.params.companyId = profileId;
+        return getAdminProject(req, res);
+    } catch (err) {
+        console.error('getUAECompanyProjectDetail error:', err);
+        res.status(500).json({ error: 'Failed to get project.' });
+    }
+}
+// PUT /admin/companies/:uaeCompanyId/projects/:projectId
+async function updateUAECompanyProjectDetail(req, res) {
+    try {
+        const profileId = await findLinkedProfileId(req.params.uaeCompanyId);
+        if (!profileId) return res.status(404).json({ error: 'No linked profile found.' });
+        req.params.companyId = profileId;
+        return updateAdminProject(req, res);
+    } catch (err) {
+        console.error('updateUAECompanyProjectDetail error:', err);
+        res.status(500).json({ error: 'Failed to update project.' });
+    }
+}
+// DELETE /admin/companies/:uaeCompanyId/projects/:projectId
+async function deleteUAECompanyProjectDetail(req, res) {
+    try {
+        const profileId = await findLinkedProfileId(req.params.uaeCompanyId);
+        if (!profileId) return res.status(404).json({ error: 'No linked profile found.' });
+        req.params.companyId = profileId;
+        return deleteAdminProject(req, res);
+    } catch (err) {
+        console.error('deleteUAECompanyProjectDetail error:', err);
+        res.status(500).json({ error: 'Failed to delete project.' });
     }
 }

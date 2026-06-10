@@ -214,6 +214,12 @@ export default function AdminCompaniesPage() {
     setDirectorySortActive(false);
   }, [tab]);
 
+  useEffect(() => {
+    setProfilePage(1);
+    setPendingPage(1);
+    setCompanyPage(1);
+  }, [country]);
+
   const handleBind = async () => {
     if (!bindCompanyId || !bindUserId) return;
     setBindSubmitting(true);

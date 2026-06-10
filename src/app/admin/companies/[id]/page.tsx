@@ -386,6 +386,7 @@ function CompanyDetailContent() {
         {visibleProjects.map((project) => (
           <div
             key={project.id}
+            onClick={() => { if (project.id > 0) router.push(`/admin/companies/${id}/projects/${project.id}`); }}
             className="bg-white rounded-xl border border-stone-200 overflow-hidden group cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="aspect-video bg-stone-100 overflow-hidden relative">
