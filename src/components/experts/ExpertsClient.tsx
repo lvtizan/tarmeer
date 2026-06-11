@@ -37,52 +37,65 @@ function buildExpertsUrl(service: string, city: string, certified: boolean, page
 }
 
 function ExpertListCard({ expert, isVn }: { expert: ExpertListItem; isVn: boolean }) {
-  return (
-    <Link
-      href={`/experts/${expert.slug}`}
-      className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 py-5 gap-4 sm:gap-6"
-    >
-      {/* Avatar */}
-      <div className="flex-shrink-0">
-        <Avatar name={expert.full_name} avatarUrl={expert.avatar_url || ''} size="xl" />
-      </div>
+  const avatarUrl = expert.avatar_url || '';
 
-      {/* Info */}
-      <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
+  return (
+    <div className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 cursor-pointer py-4 gap-3 sm:gap-5">
+      {/* Left — rectangular cover (avatar) */}
+      <Link
+        href={`/experts/${expert.slug}`}
+        className="w-full sm:w-[280px] md:w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100 rounded-xl sm:rounded-none"
+      >
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl}
+            alt={expert.full_name}
+            className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-50 to-stone-100">
+            <span className="font-serif text-4xl text-stone-200">{expert.full_name.charAt(0)}</span>
+          </div>
+        )}
+      </Link>
+
+      {/* Right — info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
           {/* Name + badges */}
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors">
+          <Link href={`/experts/${expert.slug}`} className="block mb-1">
+            <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors inline">
               {expert.full_name}
             </h3>
+            {' '}
             <ExpertBadges isSigned={expert.is_signed} isCertified={expert.is_certified} isVn={isVn} />
-          </div>
+          </Link>
 
-          {/* Meta row */}
-          <div className="flex items-center gap-4 text-sm text-stone-500 flex-wrap mb-2">
-            {Number(expert.experience_years) > 0 && (
-              <span className="flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5" />
-                {isVn
-                  ? `${expert.experience_years} năm kinh nghiệm`
-                  : `${expert.experience_years} yrs experience`}
-              </span>
-            )}
-            {expert.city && (
-              <span className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                {expert.city}{isVn ? '' : ', UAE'}
-              </span>
-            )}
-          </div>
+          {/* Meta: experience · city */}
+          <p className="text-sm text-stone-500 mb-2">
+            {[
+              Number(expert.experience_years) > 0
+                ? (isVn ? `${expert.experience_years} năm kinh nghiệm` : `${expert.experience_years} yrs experience`)
+                : null,
+              expert.city ? `${expert.city}${isVn ? '' : ', UAE'}` : null,
+            ]
+              .filter(Boolean)
+              .map((part, i) => (
+                <span key={i}>
+                  {i > 0 && <span className="mx-1.5 text-stone-300">·</span>}
+                  {i === 0 ? <span className="text-[#b8860b] font-medium">{part}</span> : part}
+                </span>
+              ))}
+          </p>
 
           {/* Service tags */}
           {expert.services.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 mt-1">
               {expert.services.slice(0, 5).map((svc) => (
                 <span
                   key={svc}
-                  className="px-2.5 py-0.5 text-xs text-stone-500 border border-stone-200 rounded bg-white"
+                  className="px-2.5 py-0.5 text-xs text-stone-600 border border-stone-200 rounded bg-white"
                 >
                   {svc}
                 </span>
@@ -95,13 +108,22 @@ function ExpertListCard({ expert, isVn }: { expert: ExpertListItem; isVn: boolea
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="flex-shrink-0 flex items-center sm:items-start pt-0 sm:pt-1">
-        <span className="inline-flex items-center px-4 py-2 rounded-lg border border-[#b8864a] text-[#b8864a] text-sm font-medium group-hover:bg-[#b8864a] group-hover:text-white transition-colors whitespace-nowrap">
+      {/* CTA — right column */}
+      <div className="flex-shrink-0 flex flex-col items-end justify-between gap-3 sm:min-w-[140px]">
+        <Link
+          href={`/experts/${expert.slug}`}
+          className="inline-flex items-center px-5 py-2 rounded-full border border-[#b8864a] text-[#b8864a] text-sm font-medium hover:bg-[#b8864a] hover:text-white transition-colors whitespace-nowrap"
+        >
           {isVn ? 'Xem hồ sơ' : 'View Profile'}
-        </span>
+        </Link>
+        {expert.city && (
+          <p className="text-xs text-stone-400 flex items-center gap-1 text-right">
+            <MapPin className="w-3 h-3 flex-shrink-0" />
+            {isVn ? `Khu vực ${expert.city}` : `Based in ${expert.city}`}
+          </p>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
