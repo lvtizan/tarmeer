@@ -70,6 +70,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
+  // ── Project detail pages ──────────────────────────────────────
+  const projectRoutes: MetadataRoute.Sitemap = [];
+  try {
+    let page = 1;
+    while (true) {
+      const batch = await fetchJson<{
+        projects: Array<{ slug: string; companySlug: string; updated_at?: string }>;
+        pagination: { total: number };
+      }>(`/companies/portfolio?page=${page}&limit=100`);
+      if (!batch?.projects?.length) break;
+      for (const p of batch.projects) {
+        if (p.companySlug && p.slug) {
+          projectRoutes.push({
+            url: `${BASE}/companies/${p.companySlug}/${p.slug}`,
+            lastModified: p.updated_at ? new Date(p.updated_at) : now,
+            changeFrequency: 'monthly' as const,
+            priority: 0.7,
+          });
+        }
+      }
+      if (projectRoutes.length >= (batch.pagination?.total ?? 0)) break;
+      page++;
+    }
+  } catch { /* skip */ }
+
   // ── Material supplier pages ───────────────────────────────────
   const suppliersData = await fetchJson<{ suppliers: Array<{ slug: string; updated_at?: string }> }>(
     '/suppliers/public?limit=200'
@@ -101,5 +126,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  return [...staticRoutes, ...guideRoutes, ...serviceCityRoutes, ...companyRoutes, ...blogRoutes, ...supplierRoutes];
+  return [...staticRoutes, ...guideRoutes, ...serviceCityRoutes, ...companyRoutes, ...projectRoutes, ...blogRoutes, ...supplierRoutes];
 }

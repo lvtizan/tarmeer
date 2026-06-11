@@ -11,16 +11,14 @@ const nextConfig: NextConfig = {
         { source: "/api/:path*", destination: "http://localhost:3002/api/:path*" },
         { source: "/uploads/:path*", destination: "http://localhost:3002/uploads/:path*" },
       ] : []),
-      {
-        source: "/@:slug",
-        destination: "/companies/:slug",
-      },
     ];
   },
 
   // Legacy redirects (301) preserved from existing Vite app
   async redirects() {
     return [
+      // @slug shorthand → canonical company URL (prevents duplicate content)
+      { source: "/@:slug", destination: "/companies/:slug", permanent: true },
       // More-specific designer routes must come before the catch-all
       { source: "/designers/apply", destination: "/onboarding", permanent: true },
       { source: "/designers/:slug/projects/:projectSlug", destination: "/companies/:slug", permanent: true },

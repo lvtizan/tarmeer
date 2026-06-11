@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import ExpertDetailClient from '@/components/experts/ExpertDetailClient';
 import type { ExpertDetail } from '@/components/experts/types';
 
@@ -24,6 +25,9 @@ async function fetchExpert(slug: string): Promise<ExpertDetail | null> {
       skills: Array.isArray(e.skills) ? e.skills : [],
       work_history: Array.isArray(e.work_history) ? e.work_history : [],
       certificates: Array.isArray(e.certificates) ? e.certificates : [],
+      projects: Array.isArray(e.projects)
+        ? e.projects.map(p => ({ ...p, images: Array.isArray(p.images) ? p.images : [], tags: Array.isArray(p.tags) ? p.tags : [] }))
+        : [],
     };
   } catch {
     return null;
@@ -91,20 +95,7 @@ export default async function ExpertDetailPage({ params }: Props) {
 
   const expert = await fetchExpert(slug);
 
-  if (!expert) {
-    return (
-      <div className="min-h-screen bg-[#faf9f7] flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl text-[#2c2c2c] mb-4">
-            {isVn ? 'Không tìm thấy chuyên gia' : 'Expert not found'}
-          </h1>
-          <a href="/experts" className="text-[#c6a065] hover:underline">
-            {isVn ? 'Quay lại danh sách chuyên gia' : 'Back to Experts'}
-          </a>
-        </div>
-      </div>
-    );
-  }
+  if (!expert) notFound();
 
   const jsonLd = {
     '@context': 'https://schema.org',

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import SupplierDetailClient from '@/components/materials/SupplierDetailClient';
 
 const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
@@ -83,6 +84,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SupplierDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const supplier = await fetchSupplierBasic(slug);
+  if (!supplier) notFound();
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',

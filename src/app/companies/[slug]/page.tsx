@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
-import { permanentRedirect } from 'next/navigation';
+import { permanentRedirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { fetchPublicCompanyDetail } from '@/lib/publicApi';
 import { getCompanyTypeLabel } from '@/lib/companyData';
@@ -90,20 +90,7 @@ export default async function CompanyDetailPage({ params }: Props) {
     fetchError = err instanceof Error ? err.message : 'Failed to load company';
   }
 
-  if (fetchError || !company) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl text-[#2c2c2c] mb-4">
-            {fetchError || 'Company not found'}
-          </h1>
-          <a href="/companies" className="text-[#c6a065] hover:underline">
-            Back to Companies
-          </a>
-        </div>
-      </div>
-    );
-  }
+  if (fetchError || !company) notFound();
 
   // Server-side canonical redirect: if URL uses numeric ID or non-canonical slug,
   // 308 redirect to the real slug. This prevents Google from indexing non-canonical URLs.
