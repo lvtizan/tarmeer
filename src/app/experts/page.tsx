@@ -44,9 +44,17 @@ interface ExpertsResponse {
   pagination?: ExpertsPagination;
 }
 
-async function fetchExperts(country: string, service: string, page: number): Promise<ExpertsResponse> {
+async function fetchExperts(
+  country: string,
+  service: string,
+  city: string,
+  certified: boolean,
+  page: number,
+): Promise<ExpertsResponse> {
   const params = new URLSearchParams({ country });
   if (service) params.set('service', service);
+  if (city) params.set('city', city);
+  if (certified) params.set('certified', '1');
   if (page > 1) params.set('page', String(page));
   try {
     const res = await fetch(`${API_BASE}/experts?${params.toString()}`, { cache: 'no-store' });
@@ -68,9 +76,11 @@ export default async function ExpertsPage({ searchParams }: Props) {
 
   const sp = await searchParams;
   const service = typeof sp.service === 'string' ? sp.service : '';
+  const city = typeof sp.city === 'string' ? sp.city : '';
+  const certified = sp.certified === '1';
   const pageNum = Math.max(1, Number(typeof sp.page === 'string' ? sp.page : '1') || 1);
 
-  const data = await fetchExperts(country, service, pageNum);
+  const data = await fetchExperts(country, service, city, certified, pageNum);
   const experts = Array.isArray(data.experts)
     ? data.experts.map((e) => ({
         ...e,
@@ -112,7 +122,15 @@ export default async function ExpertsPage({ searchParams }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Suspense>
-        <ExpertsClient experts={experts} pagination={pagination} service={service} isVn={isVn} />
+        <ExpertsClient
+          experts={experts}
+          pagination={pagination}
+          service={service}
+          city={city}
+          certified={certified}
+          isVn={isVn}
+          country={country}
+        />
       </Suspense>
     </>
   );

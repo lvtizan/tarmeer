@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { X, MapPin, Check, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck, SlidersHorizontal } from 'lucide-react';
+import { X, MapPin, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck } from 'lucide-react';
+import FilterOption from '@/components/shared/FilterOption';
+import ActiveFilterChip from '@/components/shared/ActiveFilterChip';
+import FilterSidebar from '@/components/shared/FilterSidebar';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useServices } from '@/hooks/useServices';
@@ -11,62 +14,6 @@ import { getImageFallbackCandidates, getNextRenderableImageIndex } from '@/lib/i
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
-function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 rounded-full text-sm text-[#1c1917]">
-      {label}
-      <button onClick={onRemove} className="hover:bg-stone-200 rounded-full p-0.5 transition">
-        <X className="w-3 h-3" />
-      </button>
-    </span>
-  );
-}
-
-function FilterOption({
-  selected,
-  onClick,
-  children,
-  compact,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  compact?: boolean;
-}) {
-  if (compact) {
-    return (
-      <button
-        onClick={onClick}
-        className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 ${
-          selected
-            ? 'bg-[#b8864a] border-[#b8864a] text-white'
-            : 'border-stone-200 text-stone-600 bg-white hover:bg-stone-50'
-        }`}
-      >
-        {children}
-      </button>
-    );
-  }
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${
-        selected
-          ? 'bg-[#f5f0e8] border border-[#d4c4a8] text-[#1c1917]'
-          : 'text-stone-500 hover:bg-stone-50'
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-          selected ? 'border-[#b8860b] bg-white' : 'border-stone-300'
-        }`}>
-          {selected && <Check className="w-3 h-3 text-[#b8860b]" strokeWidth={3} />}
-        </div>
-        {children}
-      </div>
-    </button>
-  );
-}
 
 // List Card - Project First
 function CompanyCard({ company, onClick, isVn }: { company: Company; onClick: () => void; isVn: boolean }) {
@@ -270,8 +217,6 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
   const [showAllStyles, setShowAllStyles] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
   const [foundedRange, setFoundedRange] = useState<string>('');
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-
   const cityOptions = useMemo(
     () => [...new Set(companies.map((c) => c.city).filter(Boolean))].sort(),
     [companies]
@@ -325,7 +270,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
   };
 
   const hasActiveFilters = useMemo(() => {
-    return searchQuery || selectedCity || selectedType || selectedStyles.length > 0 || selectedServices.length > 0 || foundedRange;
+    return Boolean(searchQuery || selectedCity || selectedType || selectedStyles.length > 0 || selectedServices.length > 0 || foundedRange);
   }, [searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, foundedRange]);
 
   const getFoundedLabel = (range: string) => {
@@ -524,64 +469,21 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
       {/* Main Content - Two Column (Sidebar + List) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-8">
-
-        {/* Mobile filter button */}
-        <div className="lg:hidden mb-3">
-          <button
-            onClick={() => setFilterDrawerOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-stone-200 bg-white text-sm font-medium text-stone-600 hover:bg-stone-50 transition"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            {tr.companies.filters}
-            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#b8864a]" />}
-          </button>
-        </div>
-
-        {/* Mobile filter drawer */}
-        {filterDrawerOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setFilterDrawerOpen(false)} />
-            <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-sm bg-white overflow-y-auto">
-              <div className="flex items-center justify-between p-4 border-b border-stone-200 sticky top-0 bg-white z-10">
-                <h3 className="text-base font-semibold text-[#1c1917]">{tr.companies.filters}</h3>
-                <button onClick={() => setFilterDrawerOpen(false)} className="p-2 rounded-lg hover:bg-stone-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-5 space-y-6">{renderFilters(true)}</div>
-              {hasActiveFilters && (
-                <div className="sticky bottom-0 bg-white border-t border-stone-200 p-4">
-                  <button
-                    onClick={() => { clearAllFilters(); setFilterDrawerOpen(false); }}
-                    className="w-full py-2.5 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:bg-stone-50"
-                  >
-                    {tr.companies.clearFilters}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         <div className="flex gap-8">
-          {/* Left Sidebar - Filters */}
-          <aside className="w-60 flex-shrink-0 hidden lg:block">
-            <div className="lg:sticky lg:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto custom-scrollbar">
-              <div className="bg-white rounded-[22px] border border-stone-100 p-5 shadow-sm shadow-stone-100/50 space-y-6">
-                {renderFilters()}
-              </div>
-            </div>
-          </aside>
+          <FilterSidebar
+            hasActiveFilters={hasActiveFilters}
+            onClearAll={clearAllFilters}
+            renderFilters={renderFilters}
+            filtersLabel={tr.companies.filters}
+            clearLabel={tr.companies.clearFilters}
+          />
 
-          {/* Main - Company List (full remaining width) */}
+          {/* Main - Company List */}
           <div className="flex-1 min-w-0">
             {filteredCompanies.length > 0 ? (
               <div>
                 {filteredCompanies.map((company) => (
-                  <div
-                    key={company.id}
-                    className="relative"
-                  >
+                  <div key={company.id} className="relative">
                     <CompanyCard
                       company={company}
                       isVn={isVn}
@@ -602,38 +504,12 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
         </div>
       </div>
 
-      {/* Custom scrollbar + hover animation styles */}
       <style>{`
-        .custom-scrollbar {
-          scrollbar-width: none;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: transparent;
-          border-radius: 2px;
-        }
-        .custom-scrollbar:hover {
-          scrollbar-width: thin;
-          scrollbar-color: #d6d3d1 transparent;
-        }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-          background: #d6d3d1;
-        }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
-          background: #a8a29e;
-        }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateX(8px); }
           to { opacity: 1; transform: translateX(0); }
         }
-        .animate-fade-in {
-          animation: fadeIn 0.2s ease-out;
-        }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
       `}</style>
     </div>
   );
