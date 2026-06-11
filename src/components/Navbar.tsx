@@ -253,8 +253,8 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Find Experts Dropdown — 服务类型两级（service_categories） */}
-          <div
+          {/* Find Experts Dropdown — VN only */}
+          {isVn && <div
             className="relative"
             onMouseEnter={() => setExpertsDropdownOpen(true)}
             onMouseLeave={() => { setExpertsDropdownOpen(false); setHoveredCategory(null); }}
@@ -335,7 +335,7 @@ export default function Navbar({
                 </div>
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Materials Dropdown */}
           <div
@@ -498,8 +498,8 @@ export default function Navbar({
               )}
             </div>
 
-            {/* Mobile Find Experts */}
-            <div className="py-2">
+            {/* Mobile Find Experts — VN only */}
+            {isVn && <div className="py-2">
               <div className="flex items-center justify-between">
                 <Link href="/experts" onClick={() => handleClick('/experts')} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
                   {findExpertsLabel}
@@ -530,7 +530,7 @@ export default function Navbar({
                   </div>
                 </div>
               )}
-            </div>
+            </div>}
 
             {/* Mobile Materials */}
             <div className="py-2">
