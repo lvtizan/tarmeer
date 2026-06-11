@@ -15,13 +15,17 @@ import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
   MAX_ESTIMATED_PAYLOAD_BYTES, MAX_TOTAL_UPLOAD_BYTES, buildUploadSizeMessage,
 } from '@/lib/projectImageUpload';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 /* ── Constants ── */
 
 const AREA_OPTIONS = ['<50m²', '50-100m²', '100-200m²', '200-500m²', '>500m²'];
-const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 const STAGE_OPTIONS = ['Researching', 'Has Design', 'Ready to Start', 'In Progress'];
-const BUDGET_OPTIONS = ['<50K AED', '50-100K', '100-300K', '300K-1M', '>1M AED'];
+const BUDGET_OPTIONS_BY_COUNTRY: Record<string, string[]> = {
+  ae: ['<50K AED', '50-100K', '100-300K', '300K-1M', '>1M AED'],
+  vn: ['<200M VND', '200-500M', '500M-1B', '1-2B', '2B+ VND'],
+};
 
 const fieldCls = "h-12 w-full rounded-lg border border-stone-200 bg-white px-4 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 transition-colors";
 const textareaCls = "w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 resize-none transition-colors";
@@ -51,7 +55,7 @@ interface UserData {
   created_at: string;
 }
 
-const EMPTY: Profile = { area_range: '', city: 'Dubai', address: '', phone: '', stage: '', budget_range: '', notes: '' };
+const EMPTY: Profile = { area_range: '', city: '', address: '', phone: '', stage: '', budget_range: '', notes: '' };
 
 function reorder<T>(items: T[], from: number, to: number): T[] {
   if (from === to) return items;
@@ -107,6 +111,10 @@ function buildChecklist(profile: Profile | null, photoCount: number): ChecklistS
    ════════════════════════════════════════════════════════════ */
 
 export default function HomeownerDashboardPage() {
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
+  const EMIRATES = c.cities;
+  const BUDGET_OPTIONS = BUDGET_OPTIONS_BY_COUNTRY[c.code];
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [switchingRole, setSwitchingRole] = useState(false);
@@ -122,7 +130,7 @@ export default function HomeownerDashboardPage() {
     }
   };
 
-  const [profile, setProfile] = useState<Profile>(EMPTY);
+  const [profile, setProfile] = useState<Profile>({ ...EMPTY, city: c.defaultCity });
   const [isNew, setIsNew] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -154,7 +162,7 @@ export default function HomeownerDashboardPage() {
         if (d && d.area_range) {
           setProfile({
             area_range: d.area_range || '',
-            city: d.city || 'Dubai',
+            city: d.city || c.defaultCity,
             address: d.address || '',
             phone: d.phone || userPhone || '',
             stage: d.stage || '',
@@ -367,7 +375,7 @@ export default function HomeownerDashboardPage() {
                     Phone <span className="text-red-500">*</span>
                   </label>
                   <input type="tel" value={profile.phone} onChange={e => set('phone', e.target.value)}
-                    onBlur={triggerSave} placeholder="+971 50 123 4567" className={fieldCls} />
+                    onBlur={triggerSave} placeholder={c.phonePlaceholder} className={fieldCls} />
                 </div>
 
                 {/* Address */}

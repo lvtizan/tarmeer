@@ -7,30 +7,34 @@ import Providers from "@/components/Providers";
 import { SiteLocaleProvider } from "@/contexts/SiteLocaleContext";
 import type { SiteLang } from "@/i18n/site-translations";
 import { WHATSAPP_LINK } from "@/lib/constants";
+import { getCountry } from "@/lib/country";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Tarmeer | Interior Design & Build — UAE",
-    template: "%s | Tarmeer",
-  },
-  description:
-    "Tarmeer offers interior design and build services in the UAE. Find your designer, full-case and soft decoration packages. Sharjah, Dubai.",
-  metadataBase: new URL("https://www.tarmeer.com"),
-  openGraph: {
-    type: "website",
-    siteName: "Tarmeer",
-    locale: "en_US",
-  },
-  twitter: {
-    card: "summary_large_image",
-    site: "@TarmeerUAE",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const c = getCountry((await headers()).get('x-country'));
+  return {
+    title: {
+      default: `Tarmeer | Interior Design & Build — ${c.name}`,
+      template: "%s | Tarmeer",
+    },
+    description:
+      `Tarmeer offers interior design and build services in ${c.name}. Find your designer, full-case and soft decoration packages. ${c.cities.slice(0, 2).join(', ')}.`,
+    metadataBase: new URL(c.baseUrl),
+    openGraph: {
+      type: "website",
+      siteName: "Tarmeer",
+      locale: c.code === 'vn' ? "vi_VN" : "en_US",
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: "@TarmeerUAE",
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

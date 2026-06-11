@@ -2,9 +2,11 @@ export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { MapPin, ChevronRight, Building2 } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUrl';
+import { getCountry, type CountryConfig } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
 
@@ -104,6 +106,14 @@ interface ServiceCityCompany {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** 把 FAQ 文案里的国家名/货币换成当前站点的值（AE 站为 no-op） */
+function localizeText(text: string, country: CountryConfig): string {
+  if (country.code === 'ae') return text;
+  return text
+    .replace(/\bUAE\b/g, country.name)
+    .replace(/\bAED\b/g, country.currency);
+}
+
 function getCompanyThumb(c: ServiceCityCompany): string | null {
   if (c.logo_url) return resolveImageUrl(c.logo_url);
   if (!c.portfolio_images) return null;
@@ -178,22 +188,23 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { service, city } = await params;
+  const c = getCountry((await headers()).get('x-country'));
   const serviceLabel = SERVICE_LABELS[service] ?? service;
   const cityLabel = CITY_LABELS[city] ?? city;
-  const pageTitle = `${serviceLabel} Companies in ${cityLabel}, UAE`;
-  const pageDescription = `Find the best ${serviceLabel.toLowerCase()} companies in ${cityLabel}, UAE. Browse verified profiles, portfolios & reviews on Tarmeer.`;
-  const canonical = `https://www.tarmeer.com/services/${service}/${city}`;
+  const pageTitle = `${serviceLabel} Companies in ${cityLabel}, ${c.name}`;
+  const pageDescription = `Find the best ${serviceLabel.toLowerCase()} companies in ${cityLabel}, ${c.name}. Browse verified profiles, portfolios & reviews on Tarmeer.`;
+  const canonical = `${c.baseUrl}/services/${service}/${city}`;
   return {
     title: pageTitle,
     description: pageDescription,
-    keywords: `${serviceLabel} ${cityLabel}, ${serviceLabel} companies UAE, ${serviceLabel.toLowerCase()} ${cityLabel.toLowerCase()}, interior design UAE, renovation UAE`,
+    keywords: `${serviceLabel} ${cityLabel}, ${serviceLabel} companies ${c.name}, ${serviceLabel.toLowerCase()} ${cityLabel.toLowerCase()}, interior design ${c.name}, renovation ${c.name}`,
     alternates: { canonical },
     openGraph: {
       type: 'website',
       title: `${pageTitle} | Tarmeer`,
       description: pageDescription,
       url: canonical,
-      images: [{ url: 'https://www.tarmeer.com/og-default.jpg' }],
+      images: [{ url: `${c.baseUrl}/og-default.jpg` }],
     },
     twitter: { card: 'summary_large_image' },
   };
@@ -201,12 +212,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ServiceCityPage({ params }: Props) {
   const { service, city } = await params;
+  const c = getCountry((await headers()).get('x-country'));
 
   if (!(service in SERVICE_LABELS) || !(city in CITY_LABELS)) notFound();
 
   const serviceLabel = SERVICE_LABELS[service];
   const cityLabel = CITY_LABELS[city];
-  const canonical = `https://www.tarmeer.com/services/${service}/${city}`;
+  const canonical = `${c.baseUrl}/services/${service}/${city}`;
 
   // Fetch companies server-side
   let companies: ServiceCityCompany[] = [];
@@ -221,23 +233,26 @@ export default async function ServiceCityPage({ params }: Props) {
     // fail silently — show empty state
   }
 
-  const faqs = SERVICE_FAQS[service] ?? [];
+  const faqs = (SERVICE_FAQS[service] ?? []).map((f) => ({
+    q: localizeText(f.q, c),
+    a: localizeText(f.a, c),
+  }));
   const relatedCities = Object.entries(CITY_LABELS).filter(([slug]) => slug !== city);
 
   // JSON-LD
   const breadcrumbSchema = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com' },
-      { '@type': 'ListItem', position: 2, name: serviceLabel, item: `https://www.tarmeer.com/services/${service}` },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
+      { '@type': 'ListItem', position: 2, name: serviceLabel, item: `${c.baseUrl}/services/${service}` },
       { '@type': 'ListItem', position: 3, name: cityLabel, item: canonical },
     ],
   };
   const itemListSchema = {
     '@context': 'https://schema.org', '@type': 'ItemList',
-    name: `${serviceLabel} Companies in ${cityLabel}, UAE`,
+    name: `${serviceLabel} Companies in ${cityLabel}, ${c.name}`,
     numberOfItems: companies.length,
-    itemListElement: companies.map((c, idx) => ({ '@type': 'ListItem', position: idx + 1, url: `https://www.tarmeer.com/@${c.slug}` })),
+    itemListElement: companies.map((co, idx) => ({ '@type': 'ListItem', position: idx + 1, url: `${c.baseUrl}/@${co.slug}` })),
   };
   const faqSchema = faqs.length > 0 ? {
     '@context': 'https://schema.org', '@type': 'FAQPage',
@@ -263,11 +278,11 @@ export default async function ServiceCityPage({ params }: Props) {
         {/* Hero */}
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#2c2c2c] mb-3">
-            {serviceLabel} Companies in {cityLabel}, UAE
+            {serviceLabel} Companies in {cityLabel}, {c.name}
           </h1>
           <p className="text-[15px] text-[#6b6b6b] leading-relaxed max-w-3xl">
             Looking for trusted {serviceLabel.toLowerCase()} professionals in {cityLabel}?
-            Tarmeer connects homeowners and businesses across the UAE with verified{' '}
+            Tarmeer connects homeowners and businesses across {c.name} with verified{' '}
             {serviceLabel.toLowerCase()} companies that have a proven track record.
             Browse portfolios, compare services, and contact the right team for your project
             in {cityLabel} — whether you need a full transformation or a targeted upgrade.
@@ -314,7 +329,7 @@ export default async function ServiceCityPage({ params }: Props) {
         <section className="mb-12 bg-white rounded-2xl border border-stone-200 shadow-sm p-6 sm:p-8 text-center">
           <h2 className="text-xl font-bold text-[#2c2c2c] mb-2">Find the Right {serviceLabel} Company</h2>
           <p className="text-[15px] text-[#6b6b6b] mb-6 max-w-md mx-auto">
-            Browse our full directory of verified interior design and renovation companies across the UAE.
+            Browse our full directory of verified interior design and renovation companies across {c.name}.
           </p>
           <Link href="/companies" className="btn-primary">Browse All Companies</Link>
         </section>
@@ -322,7 +337,7 @@ export default async function ServiceCityPage({ params }: Props) {
         {/* Related cities */}
         <section aria-label="Explore other cities">
           <h2 className="text-base font-semibold text-[#2c2c2c] mb-3">
-            {serviceLabel} Companies in Other UAE Cities
+            {serviceLabel} Companies in Other {c.name} Cities
           </h2>
           <div className="flex flex-wrap gap-2">
             {relatedCities.map(([slug, label]) => (

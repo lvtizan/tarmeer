@@ -6,6 +6,8 @@ import { X } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '@/lib/imageUrl';
 import { fetchPortfolioFeed, type PortfolioProject } from '@/lib/publicApi';
 import { DEFAULT_RATIO, GAP, TARGET_ROW_HEIGHT, justifyRows } from '@/lib/justifyRows';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const MAX_IMAGES_PER_GROUP = 12;
 
@@ -324,6 +326,8 @@ function clearCache() {
 }
 
 export default function PortfolioClient() {
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
   const searchParams = useSearchParams();
   const urlTag = searchParams.get('tag') || '';
 
@@ -551,10 +555,10 @@ export default function PortfolioClient() {
   }, [singles]);
 
   return (
-    <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
+    <div className="min-h-screen bg-white">
       <div ref={headingRef} className="max-w-[1400px] mx-auto px-4 pt-8 pb-5">
         <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-1">Portfolio</h1>
-        <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from UAE&apos;s top professionals</p>
+        <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from {c.name}&apos;s top professionals</p>
       </div>
 
       {isFilterSticky && <div style={{ height: filterBarHeight }} />}

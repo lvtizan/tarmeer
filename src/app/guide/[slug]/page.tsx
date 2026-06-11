@@ -1,5 +1,10 @@
+// 迪拜专属指南 — 必须在请求时读 x-country 才能让 VN 站 404，故强制动态渲染
+// （沿用 blog/[slug]、companies/[slug]/[projectSlug] 的约定：force-dynamic + generateStaticParams 共存）
+export const dynamic = 'force-dynamic';
+
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { ChevronRight, Home, CheckCircle2 } from 'lucide-react';
 
@@ -500,6 +505,9 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  // 这些是迪拜专属装修指南 —— VN 站隐藏（返回最简 metadata，页面组件走 notFound）
+  const country = (await headers()).get('x-country');
+  if (country === 'vn') return {};
   const { slug } = await params;
   const guide = GUIDES[slug];
   if (!guide) return {};
@@ -521,6 +529,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function GuidePage({ params }: Props) {
+  // 迪拜专属指南（成本表/许可流程均为迪拜本地内容）—— VN 站访问一律 404
+  const country = (await headers()).get('x-country');
+  if (country === 'vn') notFound();
   const { slug } = await params;
   const guide = GUIDES[slug];
   if (!guide) notFound();

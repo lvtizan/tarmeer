@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Camera, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import Avatar from '@/components/ui/Avatar';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 interface UserData {
   full_name?: string;
@@ -13,6 +15,8 @@ interface UserData {
 }
 
 export default function DashboardProfilePage() {
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
@@ -123,7 +127,7 @@ export default function DashboardProfilePage() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+971 50 123 4567"
+                placeholder={c.phonePlaceholder}
                 className="h-12 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-800 outline-none transition placeholder:text-stone-400 focus:border-[#b8864a] focus:ring-4 focus:ring-[#b8864a]/10"
               />
             </div>

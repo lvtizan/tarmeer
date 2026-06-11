@@ -5,17 +5,21 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle, X, MapPin, CircleDollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { dedupeProjectCards } from '@/lib/imageCleanup';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang, type CountryConfig } from '@/lib/country';
 
-const serviceJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Service',
-  name: 'New Home Interior Design',
-  description: 'Complete interior design package for new homes including floor plans, 3D renderings, construction drawings, and material specifications.',
-  provider: { '@type': 'Organization', name: 'Tarmeer', url: 'https://www.tarmeer.com' },
-  areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
-  serviceType: 'Interior Design',
-  url: 'https://www.tarmeer.com/services/new-home-design',
-};
+function buildServiceJsonLd(c: CountryConfig) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'New Home Interior Design',
+    description: 'Complete interior design package for new homes including floor plans, 3D renderings, construction drawings, and material specifications.',
+    provider: { '@type': 'Organization', name: 'Tarmeer', url: c.baseUrl },
+    areaServed: { '@type': 'Country', name: c.fullName },
+    serviceType: 'Interior Design',
+    url: `${c.baseUrl}/services/new-home-design`,
+  };
+}
 
 const SERVICES = [
   {
@@ -51,13 +55,20 @@ const SERVICES = [
 ];
 
 const PROJECTS_RAW = [
-  { id: 'p1', title: 'Modern Villa - Dubai Marina', area: '450 m²', style: 'Contemporary', coverImage: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80', images: ['https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80', 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&q=80', 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&q=80'], address: 'Dubai Marina, UAE', cost: 'AED 850,000', description: 'A stunning contemporary villa featuring open-plan living spaces, floor-to-ceiling windows, and premium finishes throughout.', year: '2024' },
-  { id: 'p2', title: 'Palm Jumeirah Apartment', area: '280 m²', style: 'Minimalist', coverImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80', images: ['https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&q=80', 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80', 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80'], address: 'Palm Jumeirah, Dubai', cost: 'AED 520,000', description: 'Elegant minimalist apartment with breathtaking ocean views. Clean lines and neutral palette.', year: '2024' },
-  { id: 'p3', title: 'Downtown Penthouse', area: '520 m²', style: 'Luxury', coverImage: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80', images: ['https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&q=80', 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80', 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80'], address: 'Downtown Dubai, UAE', cost: 'AED 1,200,000', description: 'Exclusive penthouse with panoramic Burj Khalifa views. Marble floors and designer fixtures.', year: '2023' },
+  { id: 'p1', title: 'Modern Villa', area: '450 m²', style: 'Contemporary', coverImage: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80', images: ['https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80', 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&q=80', 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&q=80'], ae: { address: 'Dubai Marina, UAE', cost: 'AED 850,000' }, vn: { cost: 'VND 3,500,000,000' }, description: 'A stunning contemporary villa featuring open-plan living spaces, floor-to-ceiling windows, and premium finishes throughout.', year: '2024' },
+  { id: 'p2', title: 'Seaside Apartment', area: '280 m²', style: 'Minimalist', coverImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80', images: ['https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&q=80', 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80', 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80'], ae: { address: 'Palm Jumeirah, Dubai', cost: 'AED 520,000' }, vn: { cost: 'VND 2,200,000,000' }, description: 'Elegant minimalist apartment with breathtaking ocean views. Clean lines and neutral palette.', year: '2024' },
+  { id: 'p3', title: 'City Penthouse', area: '520 m²', style: 'Luxury', coverImage: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80', images: ['https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1200&q=80', 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80', 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80'], ae: { address: 'Downtown Dubai, UAE', cost: 'AED 1,200,000' }, vn: { cost: 'VND 5,000,000,000' }, description: 'Exclusive penthouse with panoramic city views. Marble floors and designer fixtures.', year: '2023' },
 ];
 
 const DISPLAY_PROJECTS = dedupeProjectCards(PROJECTS_RAW);
 type DisplayProject = (typeof DISPLAY_PROJECTS)[number];
+
+/** 按国家本地化示例项目的地址/造价（AE 用酋长国地址 + AED，VN 用默认城市 + VND） */
+function localizeProject(p: DisplayProject, c: CountryConfig): { address: string; cost: string } {
+  return c.code === 'vn'
+    ? { address: c.defaultCity, cost: p.vn.cost }
+    : { address: p.ae.address, cost: p.ae.cost };
+}
 
 function SimpleGallery({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
@@ -80,6 +91,9 @@ function SimpleGallery({ images, title }: { images: string[]; title: string }) {
 }
 
 function ProjectModal({ project, onClose }: { project: DisplayProject; onClose: () => void }) {
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
+  const { address, cost } = localizeProject(project, c);
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: '', whatsapp: '', description: '' });
@@ -95,7 +109,7 @@ function ProjectModal({ project, onClose }: { project: DisplayProject; onClose: 
     e.preventDefault();
     setSubmitted(true);
     const text = `Hi, I'm interested in a project like "${project.title}". Name: ${form.name}. WhatsApp: ${form.whatsapp}. Requirements: ${form.description}.`;
-    window.open(`https://wa.me/971501234567?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`${c.whatsappLink}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
@@ -116,14 +130,14 @@ function ProjectModal({ project, onClose }: { project: DisplayProject; onClose: 
                 <MapPin className="w-5 h-5 text-[#b8864a] shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-[#2c2c2c] text-sm uppercase tracking-wider">Address</h3>
-                  <p className="text-[#2c2c2c] mt-1">{project.address}</p>
+                  <p className="text-[#2c2c2c] mt-1">{address}</p>
                 </div>
               </div>
               <div className="flex gap-3 items-start">
                 <CircleDollarSign className="w-5 h-5 text-[#b8864a] shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-[#2c2c2c] text-sm uppercase tracking-wider">Project cost</h3>
-                  <p className="text-[#2c2c2c] mt-1">{project.cost}</p>
+                  <p className="text-[#2c2c2c] mt-1">{cost}</p>
                 </div>
               </div>
               <div>
@@ -148,7 +162,7 @@ function ProjectModal({ project, onClose }: { project: DisplayProject; onClose: 
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[#2c2c2c] mb-1">WhatsApp number <span className="text-red-500">*</span></label>
-                      <input type="tel" required value={form.whatsapp} onChange={(e) => setForm((p) => ({ ...p, whatsapp: e.target.value }))} placeholder="+971 50 123 4567" className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-[#b8864a]" />
+                      <input type="tel" required value={form.whatsapp} onChange={(e) => setForm((p) => ({ ...p, whatsapp: e.target.value }))} placeholder={c.phonePlaceholder} className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-[#b8864a]" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[#2c2c2c] mb-1">Requirement description <span className="text-red-500">*</span></label>
@@ -167,6 +181,9 @@ function ProjectModal({ project, onClose }: { project: DisplayProject; onClose: 
 }
 
 export default function NewHomeDesignClient() {
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
+  const serviceJsonLd = buildServiceJsonLd(c);
   const [selectedProject, setSelectedProject] = useState<DisplayProject | null>(null);
 
   return (

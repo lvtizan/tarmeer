@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import SupplierDetailClient from '@/components/materials/SupplierDetailClient';
+import { getCountry } from '@/lib/country';
 
 const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
 
@@ -37,13 +39,14 @@ async function fetchSupplierBasic(slug: string): Promise<{ company_name: string;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const c = getCountry((await headers()).get('x-country'));
   const supplier = await fetchSupplierBasic(slug);
 
   if (!supplier) {
     return { title: 'Supplier Not Found | Tarmeer' };
   }
 
-  const title = `${supplier.company_name} — Materials & Suppliers | Tarmeer UAE`;
+  const title = `${supplier.company_name} — Materials & Suppliers | Tarmeer ${c.name}`;
   const description =
     supplier.description
       ? `${supplier.description.slice(0, 155)} | Tarmeer`
@@ -55,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
-      url: `https://www.tarmeer.com/materials/suppliers/${slug}`,
+      url: `${c.baseUrl}/materials/suppliers/${slug}`,
       type: 'website',
     },
     twitter: {
@@ -64,12 +67,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
     },
     alternates: {
-      canonical: `https://www.tarmeer.com/materials/suppliers/${slug}`,
+      canonical: `${c.baseUrl}/materials/suppliers/${slug}`,
     },
     keywords: [
       supplier.company_name,
-      'building materials UAE',
-      'material supplier Dubai',
+      `building materials ${c.name}`,
+      `material supplier ${c.defaultCity}`,
       'renovation supplies',
       'Tarmeer',
     ],
@@ -83,6 +86,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SupplierDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  const c = getCountry((await headers()).get('x-country'));
   const supplier = await fetchSupplierBasic(slug);
   if (!supplier) notFound();
 
@@ -90,9 +94,9 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com' },
-      { '@type': 'ListItem', position: 2, name: 'Materials', item: 'https://www.tarmeer.com/materials' },
-      { '@type': 'ListItem', position: 3, name: supplier?.company_name ?? slug, item: `https://www.tarmeer.com/materials/suppliers/${slug}` },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
+      { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
+      { '@type': 'ListItem', position: 3, name: supplier?.company_name ?? slug, item: `${c.baseUrl}/materials/suppliers/${slug}` },
     ],
   };
 

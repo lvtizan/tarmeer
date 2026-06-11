@@ -5,60 +5,28 @@ import HomeDesignSection from '@/components/home/HomeDesignSection';
 import HomeSpaceSection from '@/components/home/HomeSpaceSection';
 import HomeSupplierSection from '@/components/home/HomeSupplierSection';
 import { fetchPublicCompanies } from '@/lib/publicApi';
+import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: 'Tarmeer - Find Interior Design & Renovation Companies in UAE',
-  description:
-    'Connect with top interior designers, renovation companies, and fit-out professionals across Dubai, Abu Dhabi, and UAE. Browse portfolios, compare services, get personalized quotes.',
-  openGraph: {
-    title: 'Tarmeer - Find Interior Design & Renovation Companies in UAE',
-    description: 'Connect with top interior designers and renovation companies in UAE.',
-    url: 'https://www.tarmeer.com/',
-    images: [{ url: 'https://www.tarmeer.com/images/hero/hero-living-1.jpg', width: 1200, height: 630 }],
-  },
-  alternates: { canonical: 'https://www.tarmeer.com/' },
-  keywords:
-    'interior design UAE, renovation companies Dubai, fit-out Abu Dhabi, interior designer, home renovation, Tarmeer, villa design, apartment renovation',
-};
-
-const websiteJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'Tarmeer',
-  url: 'https://www.tarmeer.com',
-  description: 'Find and compare interior design and renovation companies across the UAE.',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: 'https://www.tarmeer.com/companies?q={search_term_string}',
-    'query-input': 'required name=search_term_string',
-  },
-};
-
-const orgJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Tarmeer',
-  url: 'https://www.tarmeer.com',
-  logo: 'https://www.tarmeer.com/logo.png',
-  description:
-    'UAE interior design platform connecting homeowners with verified design companies. Serving 50+ companies across Dubai, Abu Dhabi, Sharjah, and other emirates.',
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: 'Industrial Area 2',
-    addressLocality: 'Sharjah',
-    addressCountry: 'AE',
-  },
-  contactPoint: {
-    '@type': 'ContactPoint',
-    telephone: '+971-58-838-8922',
-    contactType: 'customer service',
-    availableLanguage: ['English', 'Arabic'],
-  },
-  sameAs: ['https://www.instagram.com/tarmeer.ae/'],
-  areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const c = getCountry((await headers()).get('x-country'));
+  const cityList = c.cities.slice(0, 2).join(', ');
+  return {
+    title: `Tarmeer - Find Interior Design & Renovation Companies in ${c.name}`,
+    description:
+      `Connect with top interior designers, renovation companies, and fit-out professionals across ${cityList}, and ${c.name}. Browse portfolios, compare services, get personalized quotes.`,
+    openGraph: {
+      title: `Tarmeer - Find Interior Design & Renovation Companies in ${c.name}`,
+      description: `Connect with top interior designers and renovation companies in ${c.name}.`,
+      url: `${c.baseUrl}/`,
+      images: [{ url: `${c.baseUrl}/images/hero/hero-living-1.jpg`, width: 1200, height: 630 }],
+    },
+    alternates: { canonical: `${c.baseUrl}/` },
+    keywords:
+      `interior design ${c.name}, renovation companies ${c.cities[0]}, fit-out ${c.cities[1] ?? c.defaultCity}, interior designer, home renovation, Tarmeer, villa design, apartment renovation`,
+  };
+}
 
 interface Supplier {
   id: number;
@@ -87,6 +55,45 @@ async function fetchSuppliers(): Promise<Supplier[]> {
 export default async function HomePage() {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
+  const c = getCountry(country);
+
+  const cityList = c.cities.slice(0, 3).join(', ');
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Tarmeer',
+    url: c.baseUrl,
+    description: `Find and compare interior design and renovation companies across ${c.name}.`,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${c.baseUrl}/companies?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
+  const orgJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Tarmeer',
+    url: c.baseUrl,
+    logo: `${c.baseUrl}/logo.png`,
+    description:
+      `${c.name} interior design platform connecting homeowners with verified design companies. Serving 50+ companies across ${cityList}, and other cities.`,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Industrial Area 2',
+      addressLocality: c.addressLocality,
+      addressCountry: c.isoCode,
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: c.telephone,
+      contactType: 'customer service',
+      availableLanguage: c.code === 'vn' ? ['Vietnamese', 'English'] : ['English', 'Arabic'],
+    },
+    sameAs: ['https://www.instagram.com/tarmeer.ae/'],
+    areaServed: { '@type': 'Country', name: c.fullName },
+  };
 
   const isAe = !country || country === 'ae';
   const [companiesResult, suppliersResult] = await Promise.allSettled([

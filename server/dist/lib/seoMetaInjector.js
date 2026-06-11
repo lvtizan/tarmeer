@@ -16,18 +16,44 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPageMeta = getPageMeta;
 exports.injectMeta = injectMeta;
 const database_1 = __importDefault(require("../config/database"));
-const BASE_URL = 'https://www.tarmeer.com';
 const SITE_NAME = 'Tarmeer';
-const DEFAULT_IMAGE = `${BASE_URL}/images/og-default.jpg`;
+// 国家配置 — 与 src/lib/country.ts 对齐（AE 默认 / VN 越南）。
+// 禁止硬编码 UAE/Dubai/AED/www.tarmeer.com，一律按 country 取值。
+const COUNTRY_SEO = {
+    ae: {
+        name: 'UAE',
+        fullName: 'United Arab Emirates',
+        isoCode: 'AE',
+        defaultCity: 'Dubai',
+        baseUrl: 'https://www.tarmeer.com',
+    },
+    vn: {
+        name: 'Vietnam',
+        fullName: 'Vietnam',
+        isoCode: 'VN',
+        defaultCity: 'Ho Chi Minh City',
+        baseUrl: 'https://vn.tarmeer.com',
+    },
+};
+function getCountrySeo(country) {
+    return country === 'vn' ? COUNTRY_SEO.vn : COUNTRY_SEO.ae;
+}
 function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-async function getPageMeta(pathname) {
+async function getPageMeta(pathname, country) {
+    const C = getCountrySeo(country);
+    const BASE_URL = C.baseUrl;
+    const COUNTRY_NAME = C.name; // "UAE" / "Vietnam"
+    const COUNTRY_FULL = C.fullName; // "United Arab Emirates" / "Vietnam"
+    const COUNTRY_ISO = C.isoCode; // "AE" / "VN"
+    const DEFAULT_CITY = C.defaultCity; // "Dubai" / "Ho Chi Minh City"
+    const DEFAULT_IMAGE = `${BASE_URL}/images/og-default.jpg`;
     // Static pages
     const staticMeta = {
         '/': {
-            title: 'Tarmeer | Interior Design & Build — UAE',
-            description: 'Find top renovation companies in UAE. Browse portfolios, compare services, and get quotes.',
+            title: `Tarmeer | Interior Design & Build — ${COUNTRY_NAME}`,
+            description: `Find top renovation companies in ${COUNTRY_NAME}. Browse portfolios, compare services, and get quotes.`,
             canonical: BASE_URL,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -43,21 +69,21 @@ async function getPageMeta(pathname) {
             },
         },
         '/companies': {
-            title: 'Renovation Companies in UAE | Tarmeer',
-            description: 'Browse 100+ renovation and interior design companies across UAE. Compare portfolios, services, and reviews.',
+            title: `Renovation Companies in ${COUNTRY_NAME} | Tarmeer`,
+            description: `Browse 100+ renovation and interior design companies across ${COUNTRY_NAME}. Compare portfolios, services, and reviews.`,
             canonical: `${BASE_URL}/companies`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
                 '@context': 'https://schema.org',
                 '@type': 'CollectionPage',
-                name: 'Renovation Companies in UAE',
+                name: `Renovation Companies in ${COUNTRY_NAME}`,
                 url: `${BASE_URL}/companies`,
-                description: 'Browse renovation and interior design companies across the UAE.',
+                description: `Browse renovation and interior design companies across ${COUNTRY_NAME}.`,
             },
         },
         '/portfolio': {
             title: 'Interior Design Portfolio | Tarmeer',
-            description: 'Explore stunning interior design projects from top UAE companies. Residential, commercial, hospitality.',
+            description: `Explore stunning interior design projects from top ${COUNTRY_NAME} companies. Residential, commercial, hospitality.`,
             canonical: `${BASE_URL}/portfolio`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -65,12 +91,12 @@ async function getPageMeta(pathname) {
                 '@type': 'CollectionPage',
                 name: 'Interior Design Portfolio',
                 url: `${BASE_URL}/portfolio`,
-                description: 'Interior design and renovation project inspiration from UAE companies.',
+                description: `Interior design and renovation project inspiration from ${COUNTRY_NAME} companies.`,
             },
         },
         '/faq': {
             title: 'FAQ — Tarmeer',
-            description: 'Frequently asked questions about interior design and renovation in UAE.',
+            description: `Frequently asked questions about interior design and renovation in ${COUNTRY_NAME}.`,
             canonical: `${BASE_URL}/faq`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -79,10 +105,10 @@ async function getPageMeta(pathname) {
                 mainEntity: [
                     {
                         '@type': 'Question',
-                        name: 'How does Tarmeer help homeowners in the UAE?',
+                        name: `How does Tarmeer help homeowners in ${COUNTRY_NAME}?`,
                         acceptedAnswer: {
                             '@type': 'Answer',
-                            text: 'Tarmeer helps homeowners browse portfolios, compare renovation companies, and send project inquiries to relevant providers in the UAE.',
+                            text: `Tarmeer helps homeowners browse portfolios, compare renovation companies, and send project inquiries to relevant providers in ${COUNTRY_NAME}.`,
                         },
                     },
                     {
@@ -111,7 +137,7 @@ async function getPageMeta(pathname) {
         },
         '/blog': {
             title: 'Interior Design Blog | Tarmeer',
-            description: 'Tips, trends, and insights on interior design and renovation in UAE.',
+            description: `Tips, trends, and insights on interior design and renovation in ${COUNTRY_NAME}.`,
             canonical: `${BASE_URL}/blog`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -119,11 +145,11 @@ async function getPageMeta(pathname) {
                 '@type': 'CollectionPage',
                 name: 'Interior Design Blog',
                 url: `${BASE_URL}/blog`,
-                description: 'Interior design and renovation articles for UAE homeowners and companies.',
+                description: `Interior design and renovation articles for ${COUNTRY_NAME} homeowners and companies.`,
             },
         },
         '/for-companies': {
-            title: 'Join Tarmeer — Get More Clients in UAE',
+            title: `Join Tarmeer — Get More Clients in ${COUNTRY_NAME}`,
             description: 'Create a company page with GEO and SEO optimization, smart photo tagging, and portfolio discovery on Tarmeer.',
             canonical: `${BASE_URL}/for-companies`,
             ogImage: DEFAULT_IMAGE,
@@ -132,11 +158,11 @@ async function getPageMeta(pathname) {
                 '@type': 'WebPage',
                 name: 'Join Tarmeer for Companies',
                 url: `${BASE_URL}/for-companies`,
-                description: 'Tarmeer helps UAE renovation and design companies publish profiles, portfolios, and service pages for customer discovery.',
+                description: `Tarmeer helps ${COUNTRY_NAME} renovation and design companies publish profiles, portfolios, and service pages for customer discovery.`,
             },
         },
         '/for-homeowners': {
-            title: 'Find Renovation Companies in UAE | Tarmeer',
+            title: `Find Renovation Companies in ${COUNTRY_NAME} | Tarmeer`,
             description: 'Compare verified renovation companies, browse real portfolios, and send your project inquiry through Tarmeer.',
             canonical: `${BASE_URL}/for-homeowners`,
             ogImage: DEFAULT_IMAGE,
@@ -145,12 +171,12 @@ async function getPageMeta(pathname) {
                 '@type': 'WebPage',
                 name: 'Tarmeer for Homeowners',
                 url: `${BASE_URL}/for-homeowners`,
-                description: 'Compare UAE renovation companies and start a home renovation inquiry with Tarmeer.',
+                description: `Compare ${COUNTRY_NAME} renovation companies and start a home renovation inquiry with Tarmeer.`,
             },
         },
         '/for-suppliers': {
             title: 'List Your Showroom on Tarmeer — Supplier Portal',
-            description: 'List your furniture, stone, lighting, or materials showroom on Tarmeer and get discovered by interior designers across UAE.',
+            description: `List your furniture, stone, lighting, or materials showroom on Tarmeer and get discovered by interior designers across ${COUNTRY_NAME}.`,
             canonical: `${BASE_URL}/for-suppliers`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -158,49 +184,49 @@ async function getPageMeta(pathname) {
                 '@type': 'WebPage',
                 name: 'Tarmeer Supplier Portal',
                 url: `${BASE_URL}/for-suppliers`,
-                description: 'Material suppliers can list products, catalogs, and showroom information for UAE design firms on Tarmeer.',
+                description: `Material suppliers can list products, catalogs, and showroom information for ${COUNTRY_NAME} design firms on Tarmeer.`,
             },
         },
         '/start': {
-            title: 'How to Start a Renovation Project in UAE | Tarmeer',
-            description: 'A step-by-step guide for homeowners starting a renovation or interior design project with Tarmeer in the UAE.',
+            title: `How to Start a Renovation Project in ${COUNTRY_NAME} | Tarmeer`,
+            description: `A step-by-step guide for homeowners starting a renovation or interior design project with Tarmeer in ${COUNTRY_NAME}.`,
             canonical: `${BASE_URL}/start`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
                 '@context': 'https://schema.org',
                 '@type': 'HowTo',
                 name: 'How to start a renovation project with Tarmeer',
-                description: 'A practical guide for homeowners planning renovation and design work in the UAE.',
+                description: `A practical guide for homeowners planning renovation and design work in ${COUNTRY_NAME}.`,
             },
         },
         '/start-suppliers': {
             title: 'How to Get Started as a Supplier on Tarmeer | Material Supplier Onboarding',
-            description: 'Step-by-step guide for material suppliers joining Tarmeer UAE. List products and catalogs, get matched to design firms, and receive verified inquiries.',
+            description: `Step-by-step guide for material suppliers joining Tarmeer ${COUNTRY_NAME}. List products and catalogs, get matched to design firms, and receive verified inquiries.`,
             canonical: `${BASE_URL}/start-suppliers`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
                 '@context': 'https://schema.org',
                 '@type': 'HowTo',
                 name: 'How to join Tarmeer as a material supplier',
-                description: 'Step-by-step onboarding guide for material suppliers joining Tarmeer UAE.',
+                description: `Step-by-step onboarding guide for material suppliers joining Tarmeer ${COUNTRY_NAME}.`,
             },
         },
         '/materials': {
-            title: 'Material Suppliers in UAE — Furniture, Stone, Lighting | Tarmeer',
-            description: 'Browse verified building material suppliers from China and Dubai. Furniture, marble, lighting, flooring and more for UAE renovation projects.',
+            title: `Material Suppliers in ${COUNTRY_NAME} — Furniture, Stone, Lighting | Tarmeer`,
+            description: `Browse verified building material suppliers. Furniture, marble, lighting, flooring and more for ${COUNTRY_NAME} renovation projects.`,
             canonical: `${BASE_URL}/materials`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
                 '@context': 'https://schema.org',
                 '@type': 'CollectionPage',
-                name: 'Material Suppliers in UAE',
+                name: `Material Suppliers in ${COUNTRY_NAME}`,
                 url: `${BASE_URL}/materials`,
-                description: 'Browse furniture, stone, lighting, flooring, and building material suppliers for UAE renovation projects.',
+                description: `Browse furniture, stone, lighting, flooring, and building material suppliers for ${COUNTRY_NAME} renovation projects.`,
             },
         },
         '/services/new-home-design': {
             title: 'New Home Design Service - Floor Plans & 3D Renderings | Tarmeer',
-            description: 'Explore Tarmeer new home design packages with floor plans, visuals, construction drawings, and UAE renovation company matching.',
+            description: `Explore Tarmeer new home design packages with floor plans, visuals, construction drawings, and ${COUNTRY_NAME} renovation company matching.`,
             canonical: `${BASE_URL}/services/new-home-design`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -208,12 +234,12 @@ async function getPageMeta(pathname) {
                 '@type': 'Service',
                 name: 'New Home Design Service',
                 provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
-                areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+                areaServed: { '@type': 'Country', name: COUNTRY_FULL },
             },
         },
         '/services/soft-decoration': {
             title: 'Soft Decoration & Furniture Design Service | Tarmeer',
-            description: 'Explore soft decoration, furniture selection, and interior styling services for villas, apartments, and family homes in the UAE.',
+            description: `Explore soft decoration, furniture selection, and interior styling services for villas, apartments, and family homes in ${COUNTRY_NAME}.`,
             canonical: `${BASE_URL}/services/soft-decoration`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -221,12 +247,12 @@ async function getPageMeta(pathname) {
                 '@type': 'Service',
                 name: 'Soft Decoration Design Service',
                 provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
-                areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+                areaServed: { '@type': 'Country', name: COUNTRY_FULL },
             },
         },
         '/services/house-exterior': {
             title: 'House Exterior Design Service - Facade & Landscape | Tarmeer',
-            description: 'Explore exterior design services for UAE villas and standalone homes, including facade direction and landscape-ready documentation.',
+            description: `Explore exterior design services for ${COUNTRY_NAME} villas and standalone homes, including facade direction and landscape-ready documentation.`,
             canonical: `${BASE_URL}/services/house-exterior`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -234,7 +260,7 @@ async function getPageMeta(pathname) {
                 '@type': 'Service',
                 name: 'House Exterior Design Service',
                 provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
-                areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
+                areaServed: { '@type': 'Country', name: COUNTRY_FULL },
             },
         },
         '/privacy': {
@@ -266,7 +292,7 @@ async function getPageMeta(pathname) {
         }
         if (company) {
             const name = company.name_en || slug;
-            const desc = (company.description || '').slice(0, 160) || `${name} — Interior design and renovation company in ${company.city || 'UAE'}`;
+            const desc = (company.description || '').slice(0, 160) || `${name} — Interior design and renovation company in ${company.city || DEFAULT_CITY}`;
             const image = company.logo_url ? `${BASE_URL}${company.logo_url}` : DEFAULT_IMAGE;
             return {
                 title: `${name} | Tarmeer`,
@@ -280,7 +306,7 @@ async function getPageMeta(pathname) {
                     description: desc,
                     url: `${BASE_URL}/companies/${slug}`,
                     image,
-                    address: { '@type': 'PostalAddress', addressLocality: company.city || 'UAE', addressCountry: 'AE' },
+                    address: { '@type': 'PostalAddress', addressLocality: company.city || DEFAULT_CITY, addressCountry: COUNTRY_ISO },
                 },
             };
         }
@@ -358,10 +384,10 @@ async function getPageMeta(pathname) {
         const sup = rows[0];
         if (sup) {
             const name = sup.company_name || slug;
-            const desc = (sup.description || '').slice(0, 160) || `${name} — building material supplier in UAE`;
+            const desc = (sup.description || '').slice(0, 160) || `${name} — building material supplier in ${COUNTRY_NAME}`;
             const image = sup.logo_url ? `${BASE_URL}${sup.logo_url}` : DEFAULT_IMAGE;
             return {
-                title: `${name} — Material Supplier UAE | Tarmeer`,
+                title: `${name} — Material Supplier ${COUNTRY_NAME} | Tarmeer`,
                 description: desc,
                 canonical: `${BASE_URL}/materials/suppliers/${slug}`,
                 ogImage: image,
@@ -373,7 +399,7 @@ async function getPageMeta(pathname) {
                     url: `${BASE_URL}/materials/suppliers/${slug}`,
                     image,
                     ...(sup.store_address && {
-                        address: { '@type': 'PostalAddress', streetAddress: sup.store_address, addressCountry: 'AE' },
+                        address: { '@type': 'PostalAddress', streetAddress: sup.store_address, addressCountry: COUNTRY_ISO },
                     }),
                 },
             };

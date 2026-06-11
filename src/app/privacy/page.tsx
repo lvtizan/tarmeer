@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { getCountry } from '@/lib/country';
+import { ADDRESS, VN_ADDRESS } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -13,7 +16,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const c = getCountry((await headers()).get('x-country'));
+  const address = c.code === 'vn' ? VN_ADDRESS : ADDRESS;
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -106,8 +111,8 @@ export default function PrivacyPage() {
             If you have any questions about this Privacy Policy or our privacy practices, please contact us at:
           </p>
           <p className="text-[#6b6b6b] mb-4">
-            WhatsApp: +971 58 838 8922<br />
-            Address: 1 - 2a 147 street - Al Sajaa - Sharjah - United Arab Emirates
+            WhatsApp: {c.whatsappDisplay}<br />
+            Address: {address}
           </p>
 
           <p className="text-[#6b6b6b] mt-8 text-sm">

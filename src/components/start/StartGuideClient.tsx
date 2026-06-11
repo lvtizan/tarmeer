@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang, type CountryConfig } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -54,12 +56,12 @@ function ImgTile({ src, fallback, className }: { src?: string; fallback: string;
   );
 }
 
-function Step1Image() {
+function Step1Image({ c }: { c: CountryConfig }) {
   const fields = [
-    { label: 'Company Name', placeholder: 'Al Mansoori Interiors LLC' },
+    { label: 'Company Name', placeholder: c.code === 'vn' ? 'An Phát Interiors' : 'Al Mansoori Interiors LLC' },
     { label: 'Contact Person', placeholder: 'Your full name' },
-    { label: 'Phone Number', placeholder: '+971 50 000 0000' },
-    { label: 'City', placeholder: 'Dubai' },
+    { label: 'Phone Number', placeholder: c.phonePlaceholder },
+    { label: 'City', placeholder: c.defaultCity },
     { label: 'Work Email', placeholder: 'you@company.com' },
   ];
   return (
@@ -67,7 +69,7 @@ function Step1Image() {
       <div style={{ transform: 'scale(0.62)', transformOrigin: 'top center', width: '100%' }}>
         <div className="bg-white rounded-2xl mx-4 px-5 pt-5 pb-4 shadow-2xl">
           <div className="text-[22px] font-bold text-[#1a1410] mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>Register Your Company</div>
-          <div className="text-[13px] text-stone-400 mb-4">Join 2,000+ companies on Tarmeer UAE</div>
+          <div className="text-[13px] text-stone-400 mb-4">Join 2,000+ companies on Tarmeer {c.name}</div>
           {fields.map(f => (
             <div key={f.label} className="mb-3">
               <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">{f.label}</div>
@@ -163,7 +165,8 @@ function Step4Image({ images }: { images: string[] }) {
   );
 }
 
-function Step5Image() {
+function Step5Image({ c }: { c: CountryConfig }) {
+  const budget = c.code === 'vn' ? 'VND 350M–500M' : 'AED 80,000–120,000';
   return (
     <div className="h-full overflow-hidden flex flex-col" style={{ background: '#dfe7d0' }}>
       <div className="flex-shrink-0 px-3 py-2.5 flex items-center gap-2.5" style={{ background: '#075E54' }}>
@@ -177,7 +180,7 @@ function Step5Image() {
         <div className="bg-white rounded-xl rounded-tl-sm px-3 py-2 shadow-sm">
           <div className="text-[11px] font-bold mb-1.5" style={{ color: '#075E54' }}>New Lead Assigned</div>
           <div className="space-y-0.5">
-            {[['Client', 'Ahmad Al Mansoori'], ['Project', 'Kitchen & Bathroom Renovation'], ['Location', 'Dubai Marina'], ['Budget', 'AED 80,000–120,000']].map(([k, v]) => (
+            {[['Client', 'Ahmad Al Mansoori'], ['Project', 'Kitchen & Bathroom Renovation'], ['Location', c.defaultCity], ['Budget', budget]].map(([k, v]) => (
               <div key={k} className="text-[11px] text-stone-700"><span className="text-stone-400">{k}: </span><strong>{v}</strong></div>
             ))}
           </div>
@@ -216,29 +219,34 @@ const STEPS = [
   },
 ];
 
-const howToJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'HowTo',
-  name: 'How to Join Tarmeer as a Company',
-  description: 'Step-by-step guide for construction and renovation companies joining Tarmeer UAE.',
-  totalTime: 'PT20M',
-  step: STEPS.map((s, i) => ({
-    '@type': 'HowToStep',
-    position: i + 1,
-    name: s.title,
-    text: s.body,
-  })),
-};
+function buildHowToJsonLd(c: CountryConfig) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to Join Tarmeer as a Company',
+    description: `Step-by-step guide for construction and renovation companies joining Tarmeer ${c.name}.`,
+    totalTime: 'PT20M',
+    step: STEPS.map((s, i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: s.title,
+      text: s.body,
+    })),
+  };
+}
 
 export default function StartGuideClient() {
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
+  const howToJsonLd = buildHowToJsonLd(c);
   const images = useProjectImages(8);
 
   const renderImage = (index: number) => {
-    if (index === 0) return <Step1Image />;
+    if (index === 0) return <Step1Image c={c} />;
     if (index === 1) return <Step2Image />;
     if (index === 2) return <Step3Image images={images} />;
     if (index === 3) return <Step4Image images={images.slice(5, 8)} />;
-    return <Step5Image />;
+    return <Step5Image c={c} />;
   };
 
   return (
@@ -258,7 +266,7 @@ export default function StartGuideClient() {
             <em className="not-italic text-[#d4a96a]">Tarmeer</em>
           </h1>
           <p className="text-[17px] text-white/60 font-light max-w-sm mx-auto leading-relaxed">
-            UAE&apos;s leading interior design &amp; renovation platform. Connect with homeowners actively looking for your services.
+            {c.name}&apos;s leading interior design &amp; renovation platform. Connect with homeowners actively looking for your services.
           </p>
         </div>
       </section>

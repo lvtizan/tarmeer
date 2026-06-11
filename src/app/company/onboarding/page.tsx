@@ -14,6 +14,8 @@ import {
   buildUploadSizeMessage,
 } from '@/lib/projectImageUpload';
 import { getDroppedImageFiles } from '@/lib/dropFiles';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -33,8 +35,6 @@ const STYLES = [
   { value: 'industrial', label: 'Industrial' },
 ];
 
-const CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
-
 const SPECIALTIES = [
   'Villa', 'Apartment', 'Commercial', 'Hospitality', 'Retail', 'Office',
   'Education', 'Healthcare', 'F&B', 'Mixed-Use',
@@ -51,11 +51,6 @@ const COMPANY_TYPES = [
   { value: 'furnishing', label: 'Furnishing' },
 ];
 
-const CITY_OPTIONS = [
-  { value: '', label: 'Select city' },
-  ...CITIES.map(c => ({ value: c, label: c })),
-];
-
 const INPUT_CLS =
   'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
 
@@ -64,6 +59,12 @@ const LABEL_CLS = 'block text-xs font-medium uppercase tracking-wider text-stone
 export default function CompanyOnboardingPage() {
   const router = useRouter();
   const SERVICES = useServices();
+  const { lang } = useSiteLocale();
+  const country = countryFromLang(lang);
+  const CITY_OPTIONS = [
+    { value: '', label: 'Select city' },
+    ...country.cities.map(city => ({ value: city, label: city })),
+  ];
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);

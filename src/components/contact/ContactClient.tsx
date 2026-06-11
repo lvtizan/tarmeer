@@ -2,8 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { Building2, Megaphone, MessageCircle, Store, MapPin, ArrowRight } from 'lucide-react';
-import { WHATSAPP_LINK, ADDRESS, GOOGLE_MAPS_URL } from '@/lib/constants';
+import { ADDRESS, GOOGLE_MAPS_URL, VN_ADDRESS, VN_GOOGLE_MAPS_URL } from '@/lib/constants';
 import { trackAnalyticsEvent } from '@/lib/analytics';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const PRIMARY = '#b8864a';
 
@@ -25,40 +27,43 @@ const PARTNER_BENEFITS = [
   },
 ];
 
-const APPLICATION_GUIDE = [
-  'Company or brand name',
-  'Main product category',
-  'Target market in the UAE',
-  'Preferred collaboration model',
-];
-
-const contactJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'ContactPage',
-  name: 'Contact Tarmeer',
-  url: 'https://www.tarmeer.com/contact',
-  mainEntity: {
-    '@type': 'Organization',
-    name: 'Tarmeer',
-    url: 'https://www.tarmeer.com',
-    telephone: '+971-58-838-8922',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: 'Industrial Area 2',
-      addressLocality: 'Sharjah',
-      addressCountry: 'AE',
-    },
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: '+971-58-838-8922',
-      contactType: 'customer service',
-      availableLanguage: ['English', 'Arabic'],
-    },
-  },
-};
-
 export default function ContactClient() {
   const router = useRouter();
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
+  const address = c.code === 'vn' ? VN_ADDRESS : ADDRESS;
+  const mapsUrl = c.code === 'vn' ? VN_GOOGLE_MAPS_URL : GOOGLE_MAPS_URL;
+
+  const APPLICATION_GUIDE = [
+    'Company or brand name',
+    'Main product category',
+    `Target market in ${c.name}`,
+    'Preferred collaboration model',
+  ];
+
+  const contactJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: 'Contact Tarmeer',
+    url: `${c.baseUrl}/contact`,
+    mainEntity: {
+      '@type': 'Organization',
+      name: 'Tarmeer',
+      url: c.baseUrl,
+      telephone: c.telephone,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: c.addressLocality,
+        addressCountry: c.isoCode,
+      },
+      contactPoint: {
+        '@type': 'ContactPoint',
+        telephone: c.telephone,
+        contactType: 'customer service',
+      },
+    },
+  };
+
   const handleBack = () => {
     if (window.history.length > 1) router.back();
     else router.push('/');
@@ -83,7 +88,7 @@ export default function ContactClient() {
             Join Our Showroom Alliance
           </h1>
           <p className="mt-4 max-w-[72ch] text-[15px] leading-7 text-stone-600">
-            Expand your brand through Tarmeer&apos;s showroom network, social media ecosystem, and daily customer inquiries. We help partners increase visibility and business opportunities across the UAE.
+            Expand your brand through Tarmeer&apos;s showroom network, social media ecosystem, and daily customer inquiries. We help partners increase visibility and business opportunities across {c.name}.
           </p>
 
           <div className="mt-7 grid grid-cols-1 gap-3.5 md:grid-cols-3">
@@ -116,7 +121,7 @@ export default function ContactClient() {
                 ))}
               </ul>
               <p className="mt-4 text-xs text-stone-500">
-                Ideal for brands, suppliers, and showroom partners looking to scale in the UAE.
+                Ideal for brands, suppliers, and showroom partners looking to scale in {c.name}.
               </p>
             </div>
 
@@ -127,7 +132,7 @@ export default function ContactClient() {
               </p>
               <div className="mt-4 space-y-3">
                 <a
-                  href={WHATSAPP_LINK}
+                  href={c.whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackAnalyticsEvent('click_whatsapp', { source: 'contact_partnership' })}
@@ -155,11 +160,11 @@ export default function ContactClient() {
               <MapPin className="mt-0.5 h-5 w-5 shrink-0" style={{ color: PRIMARY }} />
               <div>
                 <h2 className="text-sm font-semibold text-[#2c2c2c]">Showroom Address</h2>
-                <p className="mt-1 text-sm">{ADDRESS}</p>
+                <p className="mt-1 text-sm">{address}</p>
               </div>
             </div>
             <a
-              href={GOOGLE_MAPS_URL}
+              href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-stone-200 px-4 text-sm font-semibold text-[#2c2c2c] hover:bg-stone-50"

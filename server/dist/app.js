@@ -474,7 +474,7 @@ app.get('/api/seo-render', async (req, res) => {
     if (!html)
         return res.status(500).send('index.html not found');
     try {
-        const meta = await (0, seoMetaInjector_1.getPageMeta)(pathname);
+        const meta = await (0, seoMetaInjector_1.getPageMeta)(pathname, req.country);
         if (meta) {
             res.set('Content-Type', 'text/html; charset=utf-8');
             res.set('X-Robots-Tag', meta.robots || 'index,follow');
@@ -491,11 +491,13 @@ app.get('/api/seo-render', async (req, res) => {
             res.set('Content-Type', 'text/html; charset=utf-8');
             res.set('X-Robots-Tag', 'noindex');
             res.set('Cache-Control', 'no-cache');
+            // 按国家取站点根 URL（AE: www.tarmeer.com / VN: vn.tarmeer.com）
+            const notFoundBaseUrl = req.country === 'vn' ? 'https://vn.tarmeer.com' : 'https://www.tarmeer.com';
             return res.status(404).send((0, seoMetaInjector_1.injectMeta)(html, {
                 title: 'Not Found | Tarmeer',
                 description: 'The page you are looking for does not exist or has been removed.',
-                canonical: 'https://www.tarmeer.com/',
-                ogImage: 'https://www.tarmeer.com/images/og-default.jpg',
+                canonical: `${notFoundBaseUrl}/`,
+                ogImage: `${notFoundBaseUrl}/images/og-default.jpg`,
             }));
         }
     }
