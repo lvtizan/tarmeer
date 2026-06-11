@@ -4,13 +4,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowRight, Check, MapPin, Phone, Ruler, DollarSign, ImagePlus,
+  Check, MapPin, Phone, Ruler, DollarSign, ImagePlus,
   Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase,
   ClipboardList, ImageUp, Handshake,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getDroppedImageFiles } from '@/lib/dropFiles';
-import Avatar from '@/components/ui/Avatar';
 import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
   MAX_ESTIMATED_PAYLOAD_BYTES, MAX_TOTAL_UPLOAD_BYTES, buildUploadSizeMessage,
@@ -23,8 +22,8 @@ const EMIRATES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'F
 const STAGE_OPTIONS = ['Researching', 'Has Design', 'Ready to Start', 'In Progress'];
 const BUDGET_OPTIONS = ['<50K AED', '50-100K', '100-300K', '300K-1M', '>1M AED'];
 
-const fieldCls = "h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 transition-colors";
-const textareaCls = "w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 resize-none transition-colors";
+const fieldCls = "h-12 w-full rounded-lg border border-stone-200 bg-white px-4 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 transition-colors";
+const textareaCls = "w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 resize-none transition-colors";
 const labelCls = "mb-2 block text-sm font-semibold text-stone-700";
 const tagActive = "border-[#b8864a] bg-[#b8864a] text-white";
 const tagInactive = "border-stone-200 bg-stone-50 text-stone-700 hover:border-[#b8864a]/45";
@@ -66,9 +65,9 @@ function reorder<T>(items: T[], from: number, to: number): T[] {
 function buildChecklist(profile: Profile | null, photoCount: number) {
   const hasReq = !!(profile?.area_range && profile?.city && profile?.phone);
   return [
-    { step: 1, title: 'Submit renovation requirements', description: 'Area, city, phone and budget — helps us match you with companies.', done: hasReq, to: '#requirements' },
-    { step: 2, title: 'Upload renovation progress', description: 'Share before/after photos of your project. Optional but helps others!', done: photoCount > 0, to: '#photos' },
-    { step: 3, title: 'Get matched with a company', description: 'Our team will connect you with a verified renovation company.', done: false, to: '/companies' },
+    { step: 1, title: 'Submit renovation requirements', done: hasReq, to: '#requirements', icon: ClipboardList },
+    { step: 2, title: 'Upload renovation photos', done: photoCount > 0, to: '#photos', icon: ImageUp },
+    { step: 3, title: 'Get matched with a company', done: false, to: '/companies', icon: Handshake },
   ];
 }
 
@@ -142,7 +141,6 @@ export default function HomeownerDashboardPage() {
     })();
   }, []);
 
-  // Listen for phone-saved event from PhoneRequiredModal
   useEffect(() => {
     const handler = (e: Event) => {
       const phone = (e as CustomEvent).detail?.phone;
@@ -221,59 +219,64 @@ export default function HomeownerDashboardPage() {
 
   return (
     <div className="w-full">
-      <div className="mx-auto w-full max-w-[1440px] px-6 lg:px-7 space-y-6">
 
-        {/* ── Sticky top bar ── */}
-        <div className="sticky top-3 z-20 rounded-[24px] border border-stone-200 bg-[#faf9f7]/95 px-5 py-3.5 shadow-[0_12px_30px_rgba(28,18,8,0.08)] backdrop-blur md:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-[#2c2c2c]">Hi {firstName}, let&apos;s renovate!</h1>
-              <p className="text-sm text-stone-500">Complete the steps below to get matched with a company.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {saveText && (
-                <span className={`text-sm font-medium ${saveText === 'Saved' ? 'text-emerald-600' : 'text-stone-400'}`}>
-                  {saving && <span className="inline-block w-3 h-3 border-2 border-[#b8864a] border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />}
-                  {saveText}
-                </span>
-              )}
-            </div>
-          </div>
-          {/* Checklist bar — horizontal step flow */}
-          <div className="mt-3 rounded-2xl border border-stone-200 bg-white px-5 py-4">
-            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">
-              Get Started — {completedSteps}/{checklist.length} done
-            </div>
-            <div className="grid grid-cols-3 max-w-sm mx-auto">
-              {[
-                { icon: ClipboardList, item: checklist[0] },
-                { icon: ImageUp,       item: checklist[1] },
-                { icon: Handshake,     item: checklist[2] },
-              ].map(({ icon: Icon, item }, i) => (
+      {/* ── Hero — same visual as /companies ── */}
+      <section className="relative bg-[#2c2620] overflow-hidden -mx-6 -mt-6 md:-mx-10 md:-mt-10 mb-6">
+        <div className="absolute inset-0 opacity-[0.04] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.8)_1px,transparent_0)] [background-size:32px_32px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,74,0.12),transparent_70%)]" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-14 text-center">
+          <h1 className="font-serif text-[28px] sm:text-[34px] text-white font-medium leading-tight mb-3">
+            Hi {firstName}, let&apos;s renovate!
+          </h1>
+          <p className="text-white/60 text-sm mb-10">
+            Complete the steps below to get matched with the right company.
+          </p>
+
+          {/* 3-Step Flow */}
+          <div className="grid grid-cols-3 max-w-xs sm:max-w-sm mx-auto mb-10">
+            {checklist.map((item, i) => {
+              const Icon = item.icon;
+              return (
                 <a key={item.step} href={item.to} className="relative flex flex-col items-center group">
                   {i > 0 && (
-                    <div className={`absolute top-5 left-[-50%] right-1/2 h-px ${item.done || checklist[i - 1].done ? 'bg-[#b8864a]/40' : 'bg-stone-200'}`} />
+                    <div className={`absolute top-6 left-[-50%] right-1/2 h-px ${item.done || checklist[i - 1].done ? 'bg-[#b8864a]/60' : 'bg-white/25'}`} />
                   )}
-                  <div className={`relative z-10 w-10 h-10 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  <div className={`relative z-10 w-12 h-12 rounded-full border flex items-center justify-center transition-colors ${
                     item.done
-                      ? 'border-[#b8864a] bg-[#b8864a]/10'
-                      : 'border-stone-200 bg-white group-hover:border-[#b8864a]/50'
+                      ? 'border-[#b8864a] bg-[#b8864a]/20'
+                      : 'border-white/30 bg-[#2c2620] group-hover:border-white/50'
                   }`}>
                     {item.done
-                      ? <Check className="w-4 h-4 text-[#b8864a]" />
-                      : <Icon className="w-4 h-4 text-stone-400 group-hover:text-[#b8864a] transition-colors" />
+                      ? <Check className="w-5 h-5 text-[#b8864a]" />
+                      : <Icon className="w-5 h-5 text-white/80" />
                     }
                   </div>
-                  <p className={`text-xs leading-snug text-center mt-2 px-1 ${
-                    item.done ? 'text-stone-400 line-through' : 'text-stone-600 group-hover:text-[#b8864a] transition-colors'
+                  <p className={`text-xs sm:text-sm leading-snug text-center mt-2.5 px-1 ${
+                    item.done ? 'text-white/40 line-through' : 'text-white/70'
                   }`}>
                     {item.title}
                   </p>
                 </a>
-              ))}
-            </div>
+              );
+            })}
+          </div>
+
+          {/* CTA */}
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Link
+              href="/companies"
+              className="h-11 px-6 bg-[#b8864a] hover:bg-[#a67c47] text-white text-sm font-semibold rounded-lg transition"
+            >
+              Browse Companies →
+            </Link>
+            <span className="text-white/40 text-xs">
+              {completedSteps}/{checklist.length} steps done
+            </span>
           </div>
         </div>
+      </section>
+
+      <div className="mx-auto max-w-[840px] space-y-4">
 
         {/* ── Company switch banner ── */}
         <div className="rounded-2xl border border-[#b8864a]/20 bg-[#b8864a]/5 px-5 py-3.5 flex items-center justify-between gap-4">
@@ -290,215 +293,202 @@ export default function HomeownerDashboardPage() {
           </button>
         </div>
 
-        {/* ══════ Two column grid ══════ */}
-        <div id="requirements" className="grid w-full items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
+        {/* ── Main form card ── */}
+        <section className="rounded-[24px] border border-stone-200 bg-white shadow-[0_20px_60px_rgba(28,18,8,0.05)]">
 
-          {/* ── LEFT: Renovation Requirements ── */}
-          <section className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-[0_20px_60px_rgba(28,18,8,0.05)]">
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-[#2c2c2c]">Renovation Requirements</h2>
-              <p className="text-sm text-stone-500">Fill in your project details. Changes save automatically.</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* Area */}
-              <div className="md:col-span-2">
-                <label className={labelCls}>
-                  <Ruler className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
-                  Property Area <span className="text-red-500">*</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {AREA_OPTIONS.map(opt => (
-                    <button key={opt} type="button" onClick={() => setAndSave('area_range', profile.area_range === opt ? '' : opt)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${profile.area_range === opt ? tagActive : tagInactive}`}>
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* City */}
-              <div>
-                <label className={labelCls}>
-                  <MapPin className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
-                  City <span className="text-red-500">*</span>
-                </label>
-                <select value={profile.city} onChange={e => { set('city', e.target.value); triggerSave(); }}
-                  className={fieldCls + " appearance-none cursor-pointer"}>
-                  {EMIRATES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className={labelCls}>
-                  <Phone className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
-                  Phone <span className="text-red-500">*</span>
-                </label>
-                <input type="tel" value={profile.phone} onChange={e => set('phone', e.target.value)}
-                  onBlur={triggerSave} placeholder="+971 50 123 4567" className={fieldCls} />
-              </div>
-
-              {/* Address */}
-              <div className="md:col-span-2">
-                <label className={labelCls}>Address</label>
-                <input type="text" value={profile.address} onChange={e => set('address', e.target.value)}
-                  onBlur={triggerSave} placeholder="Your property address" className={fieldCls} />
-              </div>
-
-              {/* Stage */}
-              <div className="md:col-span-2">
-                <label className={labelCls}>Project Stage</label>
-                <div className="flex flex-wrap gap-2">
-                  {STAGE_OPTIONS.map(opt => (
-                    <button key={opt} type="button" onClick={() => setAndSave('stage', profile.stage === opt ? '' : opt)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${profile.stage === opt ? tagActive : tagInactive}`}>
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Budget */}
-              <div className="md:col-span-2">
-                <label className={labelCls}><DollarSign className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />Budget</label>
-                <div className="flex flex-wrap gap-2">
-                  {BUDGET_OPTIONS.map(opt => (
-                    <button key={opt} type="button" onClick={() => setAndSave('budget_range', profile.budget_range === opt ? '' : opt)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${profile.budget_range === opt ? tagActive : tagInactive}`}>
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div className="md:col-span-2">
-                <label className={labelCls}>Notes</label>
-                <textarea value={profile.notes} rows={3} onChange={e => set('notes', e.target.value)}
-                  onBlur={triggerSave} placeholder="Style preferences, special requirements..." className={textareaCls} />
-              </div>
-            </div>
-          </section>
-
-          {/* ── RIGHT: Profile Summary ── */}
-          <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
-            <section className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-[0_18px_50px_rgba(28,18,8,0.06)]">
-              <h2 className="text-lg font-bold text-[#2c2c2c] mb-4">Profile Summary</h2>
-              <div className="flex items-center gap-4 mb-5">
-                <Avatar name={user?.full_name || 'U'} avatarUrl={user?.avatar_url} size="lg" />
-                <div>
-                  <h3 className="text-lg font-bold text-[#2c2c2c]">{user?.full_name || 'Your Name'}</h3>
-                  <p className="text-sm text-stone-500">{user?.email}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-stone-50 rounded-xl border border-stone-100 px-4 py-3">
-                  <div className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">City</div>
-                  <div className="text-sm font-semibold text-[#2c2c2c]">{profile.city || 'Not set'}</div>
-                </div>
-                <div className="bg-stone-50 rounded-xl border border-stone-100 px-4 py-3">
-                  <div className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">Area</div>
-                  <div className="text-sm font-semibold text-[#2c2c2c]">{profile.area_range || 'Not set'}</div>
-                </div>
-                <div className="bg-stone-50 rounded-xl border border-stone-100 px-4 py-3">
-                  <div className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">Stage</div>
-                  <div className="text-sm font-semibold text-[#2c2c2c]">{profile.stage || 'Not set'}</div>
-                </div>
-                <div className="bg-stone-50 rounded-xl border border-stone-100 px-4 py-3">
-                  <div className="text-[11px] text-stone-400 uppercase tracking-wider mb-1">Budget</div>
-                  <div className="text-sm font-semibold text-[#2c2c2c]">{profile.budget_range || 'Not set'}</div>
-                </div>
-              </div>
-              <Link href="/dashboard/profile" className="mt-4 block text-center text-sm font-medium text-[#b8864a] hover:text-[#a67c47]">
-                Edit personal info →
-              </Link>
-            </section>
-          </aside>
-        </div>
-
-        {/* ══════ Renovation Progress Photos ══════ */}
-        <section id="photos" className="rounded-[24px] border border-stone-200 bg-white p-[18px] shadow-[0_18px_50px_rgba(28,18,8,0.06)]">
-          <div className="mb-2.5 flex items-start justify-between gap-3">
+          {/* Card header */}
+          <div className="flex items-center justify-between gap-4 px-6 pt-6 pb-5 border-b border-stone-100">
             <div>
-              <h2 className="text-lg font-bold text-[#2c2c2c]">My Renovation Progress</h2>
-              <p className="mt-0.5 text-xs text-stone-500">
-                {imageUrls.length > 0
-                  ? `${imageUrls.length} photos · ${formatFileSize(imageUrls.reduce((s, u) => s + estimateDataUrlBytes(u), 0))}`
-                  : 'Upload before/after photos of your renovation journey'}
-              </p>
+              <h2 id="requirements" className="text-xl font-bold text-[#2c2c2c]">Renovation Requirements</h2>
+              <p className="mt-0.5 text-sm text-stone-500">Fill in your project details. Changes save automatically.</p>
             </div>
-            {imageUrls[coverIndex] && (
-              <div className="w-[128px] rounded-xl border border-stone-200 bg-stone-50 p-1.5">
-                <div className="text-[10px] font-semibold text-stone-500">Cover</div>
-                <div className="mt-1 aspect-video w-full rounded-lg bg-cover bg-center"
-                  style={{ backgroundImage: `url(${imageUrls[coverIndex]})` }} />
-              </div>
+            {saveText && (
+              <span className={`text-sm font-medium flex items-center gap-1.5 ${saveText === 'Saved' ? 'text-emerald-600' : 'text-stone-400'}`}>
+                {saving && <span className="inline-block w-3 h-3 border-2 border-[#b8864a] border-t-transparent rounded-full animate-spin" />}
+                {saveText}
+              </span>
             )}
           </div>
 
-          {uploadNotice && (
-            <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 flex items-center justify-between">
-              {uploadNotice}
-              <button type="button" onClick={() => setUploadNotice('')}><X className="w-3 h-3" /></button>
-            </div>
-          )}
+          <div className="px-6 py-5 space-y-6">
 
-          {/* Drop zone */}
-          <input id="ho-gallery" type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={isPrepping} />
-          <input id="ho-folder" type="file" accept="image/*" multiple {...{ webkitdirectory: '', directory: '' } as React.InputHTMLAttributes<HTMLInputElement>} className="hidden" onChange={handleFileSelect} disabled={isPrepping} />
-
-          <label htmlFor="ho-gallery"
-            onDrop={handleDrop}
-            onDragOver={e => { e.preventDefault(); setIsDropActive(true); }}
-            onDragLeave={() => setIsDropActive(false)}
-            className={`flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed px-3 py-3 transition ${
-              isDropActive ? 'border-[#b8864a] bg-amber-50' : 'border-stone-300 bg-stone-50 hover:bg-stone-100'
-            }`}>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
-              <ImagePlus className="h-5 w-5 text-stone-500" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="font-semibold text-[#2c2c2c]">{isPrepping ? 'Processing...' : 'Drop photos or folders here'}</div>
-              <div className="text-xs text-stone-500">Share your renovation progress — before, during, after!</div>
-            </div>
-            <label htmlFor="ho-folder" onClick={e => e.stopPropagation()}
-              className="shrink-0 flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 cursor-pointer hover:bg-stone-50">
-              <FolderOpen className="w-3.5 h-3.5" /> Select Folder
-            </label>
-          </label>
-
-          {/* Image grid */}
-          <div className="mt-3 max-h-[420px] overflow-y-auto">
-            {imageUrls.length > 0 ? (
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-6">
-                {imageUrls.map((url, i) => (
-                  <div key={i} draggable
-                    onDragStart={() => setDraggedIdx(i)}
-                    onDragOver={e => { e.preventDefault(); if (dragOverIdx !== i) setDragOverIdx(i); }}
-                    onDrop={e => { e.preventDefault(); if (draggedIdx !== null) moveImage(draggedIdx, i); setDraggedIdx(null); setDragOverIdx(null); }}
-                    onDragEnd={() => { setDraggedIdx(null); setDragOverIdx(null); }}
-                    className={`group relative aspect-square overflow-hidden rounded-xl border bg-stone-100 transition ${
-                      coverIndex === i ? 'border-[#b8864a] ring-2 ring-[#b8864a]/35' : dragOverIdx === i ? 'border-[#b8864a]/70' : 'border-stone-200'
-                    } ${draggedIdx === i ? 'opacity-80 cursor-grabbing' : 'cursor-grab'}`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className="h-full w-full object-cover" />
-                    {coverIndex === i && <div className="absolute left-1.5 top-1.5 rounded-full bg-[#b8864a] px-2 py-0.5 text-[10px] font-semibold text-white">Cover</div>}
-                    <div className="absolute right-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white"><GripVertical className="h-3.5 w-3.5" /></div>
-                    <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition" />
-                    <div className="absolute inset-x-1.5 bottom-1.5 grid h-6 grid-cols-3 gap-1 opacity-0 group-hover:opacity-100 transition">
-                      <button type="button" onClick={() => setPreviewIdx(i)} className="rounded-md bg-white text-[10px] font-semibold text-stone-700"><Eye className="mx-auto h-3 w-3" /></button>
-                      <button type="button" onClick={() => setCoverIndex(i)} className="rounded-md bg-white text-[10px] font-semibold text-stone-700">{coverIndex === i ? '✓' : 'Set'}</button>
-                      <button type="button" onClick={() => removeImage(i)} className="rounded-md bg-white text-[10px] font-semibold text-red-600"><Trash2 className="mx-auto h-3 w-3" /></button>
-                    </div>
+            {/* ── Section: Property Details ── */}
+            <div>
+              <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">Property Details</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* Area */}
+                <div className="md:col-span-2">
+                  <label className={labelCls}>
+                    <Ruler className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
+                    Property Area <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {AREA_OPTIONS.map(opt => (
+                      <button key={opt} type="button" onClick={() => setAndSave('area_range', profile.area_range === opt ? '' : opt)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${profile.area_range === opt ? tagActive : tagInactive}`}>
+                        {opt}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* City */}
+                <div>
+                  <label className={labelCls}>
+                    <MapPin className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <select value={profile.city} onChange={e => { set('city', e.target.value); triggerSave(); }}
+                    className={fieldCls + " appearance-none cursor-pointer"}>
+                    {EMIRATES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className={labelCls}>
+                    <Phone className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />
+                    Phone <span className="text-red-500">*</span>
+                  </label>
+                  <input type="tel" value={profile.phone} onChange={e => set('phone', e.target.value)}
+                    onBlur={triggerSave} placeholder="+971 50 123 4567" className={fieldCls} />
+                </div>
+
+                {/* Address */}
+                <div className="md:col-span-2">
+                  <label className={labelCls}>Address</label>
+                  <input type="text" value={profile.address} onChange={e => set('address', e.target.value)}
+                    onBlur={triggerSave} placeholder="Your property address" className={fieldCls} />
+                </div>
               </div>
-            ) : (
-              <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-10 text-center text-sm text-stone-500">
-                Upload photos to share your renovation progress with the community.
+            </div>
+
+            <hr className="border-stone-100" />
+
+            {/* ── Section: Project Details ── */}
+            <div>
+              <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">Project Details</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* Stage */}
+                <div className="md:col-span-2">
+                  <label className={labelCls}>Project Stage</label>
+                  <div className="flex flex-wrap gap-2">
+                    {STAGE_OPTIONS.map(opt => (
+                      <button key={opt} type="button" onClick={() => setAndSave('stage', profile.stage === opt ? '' : opt)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${profile.stage === opt ? tagActive : tagInactive}`}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Budget */}
+                <div className="md:col-span-2">
+                  <label className={labelCls}><DollarSign className="inline w-3.5 h-3.5 text-[#b8864a] mr-1" />Budget</label>
+                  <div className="flex flex-wrap gap-2">
+                    {BUDGET_OPTIONS.map(opt => (
+                      <button key={opt} type="button" onClick={() => setAndSave('budget_range', profile.budget_range === opt ? '' : opt)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${profile.budget_range === opt ? tagActive : tagInactive}`}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="md:col-span-2">
+                  <label className={labelCls}>Notes</label>
+                  <textarea value={profile.notes} rows={3} onChange={e => set('notes', e.target.value)}
+                    onBlur={triggerSave} placeholder="Style preferences, special requirements..." className={textareaCls} />
+                </div>
               </div>
-            )}
+            </div>
+
+            <hr className="border-stone-100" />
+
+            {/* ── Section: Renovation Photos ── */}
+            <div id="photos">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-0.5">Renovation Photos</h3>
+                  <p className="text-xs text-stone-500">
+                    {imageUrls.length > 0
+                      ? `${imageUrls.length} photos · ${formatFileSize(imageUrls.reduce((s, u) => s + estimateDataUrlBytes(u), 0))}`
+                      : 'Share before/after photos of your renovation journey'}
+                  </p>
+                </div>
+                {imageUrls[coverIndex] && (
+                  <div className="w-[96px] rounded-xl border border-stone-200 bg-stone-50 p-1.5">
+                    <div className="text-[10px] font-semibold text-stone-500 mb-1">Cover</div>
+                    <div className="aspect-video w-full rounded-lg bg-cover bg-center"
+                      style={{ backgroundImage: `url(${imageUrls[coverIndex]})` }} />
+                  </div>
+                )}
+              </div>
+
+              {uploadNotice && (
+                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 flex items-center justify-between">
+                  {uploadNotice}
+                  <button type="button" onClick={() => setUploadNotice('')}><X className="w-3 h-3" /></button>
+                </div>
+              )}
+
+              <input id="ho-gallery" type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={isPrepping} />
+              <input id="ho-folder" type="file" accept="image/*" multiple {...{ webkitdirectory: '', directory: '' } as React.InputHTMLAttributes<HTMLInputElement>} className="hidden" onChange={handleFileSelect} disabled={isPrepping} />
+
+              <label htmlFor="ho-gallery"
+                onDrop={handleDrop}
+                onDragOver={e => { e.preventDefault(); setIsDropActive(true); }}
+                onDragLeave={() => setIsDropActive(false)}
+                className={`flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed px-3 py-3 transition ${
+                  isDropActive ? 'border-[#b8864a] bg-amber-50' : 'border-stone-300 bg-stone-50 hover:bg-stone-100'
+                }`}>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                  <ImagePlus className="h-5 w-5 text-stone-500" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-[#2c2c2c]">{isPrepping ? 'Processing...' : 'Drop photos or folders here'}</div>
+                  <div className="text-xs text-stone-500">Before, during, after — share your renovation journey</div>
+                </div>
+                <label htmlFor="ho-folder" onClick={e => e.stopPropagation()}
+                  className="shrink-0 flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 cursor-pointer hover:bg-stone-50">
+                  <FolderOpen className="w-3.5 h-3.5" /> Select Folder
+                </label>
+              </label>
+
+              <div className="mt-3">
+                {imageUrls.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-6">
+                    {imageUrls.map((url, i) => (
+                      <div key={i} draggable
+                        onDragStart={() => setDraggedIdx(i)}
+                        onDragOver={e => { e.preventDefault(); if (dragOverIdx !== i) setDragOverIdx(i); }}
+                        onDrop={e => { e.preventDefault(); if (draggedIdx !== null) moveImage(draggedIdx, i); setDraggedIdx(null); setDragOverIdx(null); }}
+                        onDragEnd={() => { setDraggedIdx(null); setDragOverIdx(null); }}
+                        className={`group relative aspect-square overflow-hidden rounded-xl border bg-stone-100 transition ${
+                          coverIndex === i ? 'border-[#b8864a] ring-2 ring-[#b8864a]/35' : dragOverIdx === i ? 'border-[#b8864a]/70' : 'border-stone-200'
+                        } ${draggedIdx === i ? 'opacity-80 cursor-grabbing' : 'cursor-grab'}`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                        {coverIndex === i && <div className="absolute left-1.5 top-1.5 rounded-full bg-[#b8864a] px-2 py-0.5 text-[10px] font-semibold text-white">Cover</div>}
+                        <div className="absolute right-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white"><GripVertical className="h-3.5 w-3.5" /></div>
+                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition" />
+                        <div className="absolute inset-x-1.5 bottom-1.5 grid h-6 grid-cols-3 gap-1 opacity-0 group-hover:opacity-100 transition">
+                          <button type="button" onClick={() => setPreviewIdx(i)} className="rounded-md bg-white text-[10px] font-semibold text-stone-700"><Eye className="mx-auto h-3 w-3" /></button>
+                          <button type="button" onClick={() => setCoverIndex(i)} className="rounded-md bg-white text-[10px] font-semibold text-stone-700">{coverIndex === i ? '✓' : 'Set'}</button>
+                          <button type="button" onClick={() => removeImage(i)} className="rounded-md bg-white text-[10px] font-semibold text-red-600"><Trash2 className="mx-auto h-3 w-3" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-8 text-center text-sm text-stone-400">
+                    Upload photos to share your renovation progress with the community.
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
         </section>
       </div>
