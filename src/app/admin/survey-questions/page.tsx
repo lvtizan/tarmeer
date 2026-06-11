@@ -10,6 +10,7 @@ interface SurveyField {
   label: string;
   type: 'single' | 'multi' | 'text';
   options: string[];
+  required?: boolean;
 }
 
 interface SurveySection {
@@ -126,6 +127,13 @@ function FieldRow({
             </>
           )}
         </div>
+        <button
+          onClick={() => onChange({ ...field, required: !field.required })}
+          title={field.required ? '必填（点击取消）' : '非必填（点击设为必填）'}
+          className={`shrink-0 text-[13px] transition-colors ${field.required ? 'text-red-500 hover:text-red-700' : 'text-stone-300 hover:text-stone-500'}`}
+        >
+          {field.required ? '必填' : '选填'}
+        </button>
         <button onClick={onDelete} className="shrink-0 text-xs text-red-400 hover:text-red-600 transition-colors">删除</button>
       </div>
       {/* Options row — hidden for text/open-ended type */}

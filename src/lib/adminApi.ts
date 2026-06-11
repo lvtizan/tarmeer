@@ -1170,4 +1170,22 @@ export const fieldApi = {
     }
     return res.json();
   },
+  uploadAttachment: async (id: number, file: File): Promise<{ url: string; name: string; type: string; size: number }> => {
+    const token = typeof window !== 'undefined'
+      ? (localStorage.getItem('field_token') || localStorage.getItem('admin_token'))
+      : null;
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    const res = await fetch(`${FIELD_API_BASE}/interviews/${id}/attachments`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+    if (!res.ok) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = await res.json().catch(() => ({})) as any;
+      throw new Error(err.error || `Upload failed: ${res.status}`);
+    }
+    return res.json();
+  },
 };

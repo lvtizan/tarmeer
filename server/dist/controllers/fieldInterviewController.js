@@ -36,6 +36,35 @@ exports.uploadPhotoMiddleware = (0, multer_1.default)({
     },
 }).single('photo');
 
+const FIELD_ATTACHMENTS_DIR = path_1.default.join(__dirname, '..', '..', 'public', 'uploads', 'field-attachments');
+if (!fs_1.default.existsSync(FIELD_ATTACHMENTS_DIR)) {
+    fs_1.default.mkdirSync(FIELD_ATTACHMENTS_DIR, { recursive: true, mode: 0o755 });
+}
+const _ALLOWED_ATTACHMENT_TYPES = new Set([
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
+const _attachmentStorage = multer_1.default.diskStorage({
+    destination: (_req, _file, cb) => cb(null, FIELD_ATTACHMENTS_DIR),
+    filename: (_req, file, cb) => {
+        const ext = path_1.default.extname(file.originalname).toLowerCase() || '.bin';
+        const name = `fa-${Date.now()}-${crypto_1.default.randomBytes(4).toString('hex')}${ext}`;
+        cb(null, name);
+    },
+});
+exports.uploadAttachmentMiddleware = (0, multer_1.default)({
+    storage: _attachmentStorage,
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+        if (_ALLOWED_ATTACHMENT_TYPES.has(file.mimetype)) cb(null, true);
+        else cb(new Error('File type not allowed'));
+    },
+}).single('file');
+
 // ── Survey → company_profiles 字段映射 ──────────────────────────────────────
 const YEAR_MAP = {
     'Before 2000': 1995, '2000-2010': 2005, '2010-2015': 2012,
@@ -134,6 +163,10 @@ async function ensureInterviewColumns() {
     if (!existingSet.has('location_pin')) {
       await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN location_pin JSON NULL`);
       console.log('[field] added column: location_pin');
+    }
+    if (!existingSet.has('attachments')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN attachments JSON NULL`);
+      console.log('[field] added column: attachments');
     }
   } catch(e) {
     console.error('[field] ensureInterviewColumns:', e.message);
@@ -393,6 +426,40 @@ async function uploadPhoto(req, res) {
         res.status(500).json({ error: 'Upload failed' });
     }
 }
+async function uploadAttachment(req, res) {
+    const { id } = req.params;
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+    try {
+        const [rows] = await database_1.default.execute('SELECT attachments FROM company_interviews WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            fs_1.default.unlinkSync(req.file.path);
+            return res.status(404).json({ error: 'Interview not found' });
+        }
+        await fs_1.default.promises.chmod(req.file.path, 0o644);
+        const url = `/uploads/field-attachments/${req.file.filename}`;
+        const meta = {
+            url,
+            name: req.file.originalname,
+            type: req.file.mimetype,
+            size: req.file.size,
+            uploaded_at: new Date().toISOString(),
+        };
+        const existing = rows[0].attachments || [];
+        const updated = [...existing, meta];
+        await database_1.default.execute('UPDATE company_interviews SET attachments = ? WHERE id = ?', [JSON.stringify(updated), id]);
+        res.json({ url, name: meta.name, type: meta.type, size: meta.size });
+    }
+    catch (e) {
+        console.error('uploadAttachment error:', e);
+        if (req.file?.path) {
+            try { fs_1.default.unlinkSync(req.file.path); } catch {}
+        }
+        res.status(500).json({ error: 'Upload failed' });
+    }
+}
+exports.uploadAttachment = uploadAttachment;
 async function getSurveySchema(req, res) {
     try {
         const [rows] = await database_1.default.execute('SELECT schema_json FROM survey_schema WHERE id = 1');
