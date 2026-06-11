@@ -63,7 +63,7 @@ function parseImageEntries(value: unknown): ImageEntry[] {
 
 function CompanyProjectsInner() {
   const dynamicServiceCategories = useServiceCategories();
-  const [searchParams] = useSearchParams() as unknown as [URLSearchParams, (params: URLSearchParams) => void];
+  const searchParams = useSearchParams();
   const highlightId = searchParams.get('projectId') ? Number(searchParams.get('projectId')) : null;
 
   const [mode, setMode] = useState<'list' | 'form'>('list');

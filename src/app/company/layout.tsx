@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import {
   Building2, FolderOpen, FileText, User, ImagePlus, Settings,
-  MessageSquare, ExternalLink, ArrowRightLeft, LogOut,
+  MessageSquare, ExternalLink, ArrowRightLeft, LogOut, Inbox,
 } from 'lucide-react';
 import TarmeerLogo from '@/components/TarmeerLogo';
 import PhoneRequiredModal from '@/components/PhoneRequiredModal';
@@ -37,7 +37,9 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const token = typeof window !== 'undefined' ? api.getToken() : null;
-  const [authValid, setAuthValid] = useState<boolean | null>(token ? null : false);
+  // 初始统一为 null，保证 SSR 与 CSR 首屏渲染一致（避免 hydration mismatch）；
+  // 真正的鉴权状态由下方 useEffect 决定。
+  const [authValid, setAuthValid] = useState<boolean | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [companyType, setCompanyType] = useState('');
@@ -115,12 +117,12 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
     return <>{children}</>;
   }
 
-  if (!token || authValid === false) {
-    return <div className="min-h-screen flex items-center justify-center text-stone-400">Redirecting...</div>;
+  if (authValid === null) {
+    return <div className="min-h-screen flex items-center justify-center text-stone-400">Checking session...</div>;
   }
 
-  if (authValid !== true) {
-    return <div className="min-h-screen flex items-center justify-center text-stone-400">Checking session...</div>;
+  if (authValid === false) {
+    return <div className="min-h-screen flex items-center justify-center text-stone-400">Redirecting...</div>;
   }
 
   return (
@@ -153,6 +155,10 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
               <Link href="/company/articles" className={navCls('/company/articles', pathname)}>
                 <FileText className="w-5 h-5" />
                 <span className="text-sm font-medium">Articles</span>
+              </Link>
+              <Link href="/company/inquiries" className={navCls('/company/inquiries', pathname)}>
+                <Inbox className="w-5 h-5" />
+                <span className="text-sm font-medium">Inquiries</span>
               </Link>
               <Link href="/company/profile" className={navCls('/company/profile', pathname)}>
                 <User className="w-5 h-5" />
@@ -225,6 +231,10 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
         <Link href="/company/upload" className={mobileNavCls('/company/upload', pathname)}>
           <ImagePlus className="w-5 h-5" />
           Upload
+        </Link>
+        <Link href="/company/inquiries" className={mobileNavCls('/company/inquiries', pathname)}>
+          <Inbox className="w-5 h-5" />
+          Inbox
         </Link>
         <Link href="/company/profile" className={mobileNavCls('/company/profile', pathname)}>
           <User className="w-5 h-5" />
