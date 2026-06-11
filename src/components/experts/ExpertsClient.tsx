@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MapPin, Briefcase, ChevronLeft, ChevronRight, Users, BadgeCheck } from 'lucide-react';
+import {
+  MapPin, Briefcase, ChevronLeft, ChevronRight, Users,
+  BadgeCheck, ClipboardList, Handshake, Search,
+} from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import { ExpertBadges } from './ExpertBadges';
 import FilterSidebar from '@/components/shared/FilterSidebar';
@@ -33,6 +36,75 @@ function buildExpertsUrl(service: string, city: string, certified: boolean, page
   return qs ? `/experts?${qs}` : '/experts';
 }
 
+function ExpertListCard({ expert, isVn }: { expert: ExpertListItem; isVn: boolean }) {
+  return (
+    <Link
+      href={`/experts/${expert.slug}`}
+      className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 py-5 gap-4 sm:gap-6"
+    >
+      {/* Avatar */}
+      <div className="flex-shrink-0">
+        <Avatar name={expert.full_name} avatarUrl={expert.avatar_url || ''} size="xl" />
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
+        <div>
+          {/* Name + badges */}
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="font-semibold text-[17px] text-[#1c1917] group-hover:text-[#b8860b] transition-colors">
+              {expert.full_name}
+            </h3>
+            <ExpertBadges isSigned={expert.is_signed} isCertified={expert.is_certified} isVn={isVn} />
+          </div>
+
+          {/* Meta row */}
+          <div className="flex items-center gap-4 text-sm text-stone-500 flex-wrap mb-2">
+            {Number(expert.experience_years) > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5" />
+                {isVn
+                  ? `${expert.experience_years} năm kinh nghiệm`
+                  : `${expert.experience_years} yrs experience`}
+              </span>
+            )}
+            {expert.city && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
+                {expert.city}{isVn ? '' : ', UAE'}
+              </span>
+            )}
+          </div>
+
+          {/* Service tags */}
+          {expert.services.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {expert.services.slice(0, 5).map((svc) => (
+                <span
+                  key={svc}
+                  className="px-2.5 py-0.5 text-xs text-stone-500 border border-stone-200 rounded bg-white"
+                >
+                  {svc}
+                </span>
+              ))}
+              {expert.services.length > 5 && (
+                <span className="px-2 py-0.5 text-xs text-stone-400">+{expert.services.length - 5}</span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="flex-shrink-0 flex items-center sm:items-start pt-0 sm:pt-1">
+        <span className="inline-flex items-center px-4 py-2 rounded-lg border border-[#b8864a] text-[#b8864a] text-sm font-medium group-hover:bg-[#b8864a] group-hover:text-white transition-colors whitespace-nowrap">
+          {isVn ? 'Xem hồ sơ' : 'View Profile'}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export default function ExpertsClient({
   experts,
   pagination,
@@ -45,6 +117,7 @@ export default function ExpertsClient({
   const router = useRouter();
   const [serviceChips, setServiceChips] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetch(`${API_BASE}/public/service-categories`)
@@ -83,6 +156,11 @@ export default function ExpertsClient({
 
   const hasActiveFilters = Boolean(service || city || certified);
   const clearAll = () => goTo('', '', false, 1);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    goTo(searchQuery.trim() || service, city, certified, 1);
+  };
 
   const pageNumbers = useMemo(() => {
     const nums: number[] = [];
@@ -188,45 +266,98 @@ export default function ExpertsClient({
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="font-serif text-3xl sm:text-4xl text-[#1c1917] mb-2">
-            {isVn ? 'Tìm Chuyên Gia' : 'Find Experts'}
-          </h1>
-          <p className="text-stone-500 text-sm sm:text-base">
+      {/* Hero */}
+      <section className="relative bg-[#2c2620] overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.8)_1px,transparent_0)] [background-size:32px_32px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,74,0.12),transparent_70%)]" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
+          <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mb-10">
             {isVn
-              ? 'Kết nối với các chuyên gia thiết kế, thi công và hoàn thiện nội thất đã được xác minh.'
-              : 'Connect with verified interior design, fit-out and finishing professionals.'}
-          </p>
-        </div>
+              ? 'Tìm Chuyên Gia Thiết Kế & Thi Công Phù Hợp'
+              : 'Find the Right Design & Renovation Expert in UAE'}
+          </h1>
 
-        {/* Active filter chips */}
-        {hasActiveFilters && (
-          <div className="flex flex-wrap gap-2 mb-5">
-            {service && (
-              <ActiveFilterChip label={service} onRemove={() => goTo('', city, certified, 1)} />
-            )}
-            {city && (
-              <ActiveFilterChip label={city} onRemove={() => goTo(service, '', certified, 1)} />
-            )}
-            {certified && (
-              <ActiveFilterChip
-                label={isVn ? 'Đã chứng nhận' : 'Certified'}
-                onRemove={() => goTo(service, city, false, 1)}
-              />
-            )}
-            <button
-              onClick={clearAll}
-              className="text-xs text-stone-400 hover:text-stone-600 underline underline-offset-2 transition"
-            >
-              {isVn ? 'Xóa tất cả' : 'Clear all'}
-            </button>
+          {/* 3-Step Flow */}
+          <div className="grid grid-cols-3 mb-10 max-w-xs sm:max-w-sm mx-auto">
+            {[
+              {
+                icon: ClipboardList,
+                label: isVn ? 'Chia sẻ dự án của bạn' : 'Tell us about your project',
+              },
+              {
+                icon: Users,
+                label: isVn ? 'Kết nối với chuyên gia' : 'Get matched with local experts',
+              },
+              {
+                icon: Handshake,
+                label: isVn ? 'Thuê với sự tự tin' : 'Hire the right pro with confidence',
+              },
+            ].map((step, i) => (
+              <div key={i} className="relative flex flex-col items-center">
+                {i > 0 && (
+                  <div className="absolute top-6 left-[-50%] right-1/2 h-px bg-white/25" />
+                )}
+                <div className="relative z-10 w-12 h-12 rounded-full border border-white/30 bg-[#2c2620] flex items-center justify-center">
+                  <step.icon className="w-5 h-5 text-white/80" />
+                </div>
+                <p className="text-white/70 text-xs sm:text-sm leading-snug text-center mt-2.5 px-1">
+                  {step.label}
+                </p>
+              </div>
+            ))}
           </div>
-        )}
 
-        {/* Layout: sidebar + grid */}
-        <div className="flex gap-6 items-start">
+          {/* Search */}
+          <form onSubmit={handleSearch} className="max-w-md mx-auto flex gap-0">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                type="text"
+                placeholder={isVn ? 'Tìm theo tên hoặc chuyên môn' : 'Search by name or specialty'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-12 pl-10 pr-4 bg-white rounded-l-lg text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="h-12 px-6 bg-[#b8864a] hover:bg-[#a67c47] text-white text-sm font-semibold rounded-r-lg transition whitespace-nowrap"
+            >
+              {isVn ? 'Tìm kiếm' : 'Get Started'}
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* Active Filters bar */}
+      {hasActiveFilters && (
+        <div className="bg-white border-b border-stone-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-[#1c1917]">
+                {isVn ? 'Bộ lọc đang dùng' : 'Active filters'}
+              </span>
+              <button onClick={clearAll} className="text-sm text-stone-500 hover:text-[#b8860b] transition">
+                {isVn ? 'Xóa tất cả' : 'Clear all'}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {service && <ActiveFilterChip label={service} onRemove={() => goTo('', city, certified, 1)} />}
+              {city && <ActiveFilterChip label={city} onRemove={() => goTo(service, '', certified, 1)} />}
+              {certified && (
+                <ActiveFilterChip
+                  label={isVn ? 'Đã chứng nhận' : 'Certified'}
+                  onRemove={() => goTo(service, city, false, 1)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-8">
+        <div className="flex gap-8">
           <FilterSidebar
             hasActiveFilters={hasActiveFilters}
             onClearAll={clearAll}
@@ -235,93 +366,30 @@ export default function ExpertsClient({
             clearLabel={isVn ? 'Xóa tất cả' : 'Clear filters'}
           />
 
-          {/* Main content */}
+          {/* Expert List */}
           <div className="flex-1 min-w-0">
-            {pagination.total > 0 && (
-              <p className="text-sm text-stone-500 mb-4">
-                {isVn ? `${pagination.total} chuyên gia` : `${pagination.total} experts`}
-              </p>
-            )}
-
-            {/* Expert cards */}
             {experts.length === 0 ? (
-              <div className="text-center py-20 bg-white border border-stone-200/60 rounded-2xl">
+              <div className="text-center py-20 bg-white rounded-[22px] border border-stone-100">
                 <Users className="w-10 h-10 mx-auto text-stone-300 mb-4" />
                 <p className="font-serif text-xl text-[#1c1917] mb-2">
                   {isVn ? 'Chưa tìm thấy chuyên gia phù hợp' : 'No experts found'}
                 </p>
                 <p className="text-sm text-stone-500 mb-5">
-                  {isVn
-                    ? 'Hãy thử chọn dịch vụ khác hoặc xem tất cả chuyên gia.'
-                    : 'Try a different filter, or browse all experts.'}
+                  {isVn ? 'Hãy thử bộ lọc khác.' : 'Try a different filter.'}
                 </p>
                 {hasActiveFilters && (
                   <button
-                    type="button"
                     onClick={clearAll}
-                    className="inline-flex items-center px-4 py-2 rounded-lg bg-[#1c1917] text-white text-sm font-medium hover:bg-[#b8864a] transition"
+                    className="text-[#b8860b] hover:underline text-sm"
                   >
-                    {isVn ? 'Xem tất cả chuyên gia' : 'View all experts'}
+                    {isVn ? 'Xóa bộ lọc' : 'Clear filters'}
                   </button>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+              <div>
                 {experts.map((expert) => (
-                  <Link
-                    key={expert.id}
-                    href={`/experts/${expert.slug}`}
-                    className="group bg-white border border-stone-200/60 rounded-2xl p-5 hover:shadow-md hover:border-[#b8864a]/40 transition"
-                  >
-                    <div className="flex items-start gap-3.5">
-                      <Avatar name={expert.full_name} avatarUrl={expert.avatar_url || ''} size="lg" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                          <h3 className="font-semibold text-[16px] text-[#1c1917] group-hover:text-[#b8864a] transition truncate">
-                            {expert.full_name}
-                          </h3>
-                          <ExpertBadges
-                            isSigned={expert.is_signed}
-                            isCertified={expert.is_certified}
-                            isVn={isVn}
-                          />
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-stone-400 flex-wrap">
-                          {Number(expert.experience_years) > 0 && (
-                            <span className="flex items-center gap-1">
-                              <Briefcase className="w-3 h-3" />
-                              {isVn
-                                ? `${expert.experience_years} năm kinh nghiệm`
-                                : `${expert.experience_years} yrs experience`}
-                            </span>
-                          )}
-                          {expert.city && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {expert.city}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {expert.services.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3.5">
-                        {expert.services.slice(0, 4).map((svc) => (
-                          <span
-                            key={svc}
-                            className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded"
-                          >
-                            {svc}
-                          </span>
-                        ))}
-                        {expert.services.length > 4 && (
-                          <span className="px-2 py-0.5 text-[11px] text-stone-400">
-                            +{expert.services.length - 4}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </Link>
+                  <ExpertListCard key={expert.id} expert={expert} isVn={isVn} />
                 ))}
               </div>
             )}
