@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { safeRemoveItem } from '@/lib/storage';
 import { SettingsSection, SettingsRow } from '@/components/portal/SettingsCard';
 
-export default function DashboardSettingsPage() {
+export default function CompanySettingsPage() {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -32,10 +32,10 @@ export default function DashboardSettingsPage() {
       <SettingsSection title="Account">
         <SettingsRow
           icon={<ShieldCheck className="w-4 h-4" />}
-          title="Profile"
-          desc="Update your name, phone & city"
+          title="Company Profile"
+          desc="Update company info, services & contact"
           actionLabel="Edit Profile →"
-          onAction={() => router.push('/dashboard/profile')}
+          onAction={() => router.push('/company/profile')}
           divider
         />
         <SettingsRow

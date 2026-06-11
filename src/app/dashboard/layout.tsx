@@ -1,19 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Home, User, FolderOpen, Settings, MessageSquare,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import PhoneRequiredModal from '@/components/PhoneRequiredModal';
-import SidebarNavLink from '@/components/ui/SidebarNavLink';
 import FeedbackModal from '@/components/FeedbackModal';
+import { PortalDesktopNav, PortalMobileNav, type PortalNavItem } from '@/components/portal/PortalNav';
+
+const HOMEOWNER_NAV: PortalNavItem[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: Home, end: true },
+  { href: '/dashboard/projects', label: 'Projects', icon: FolderOpen },
+  { href: '/dashboard/profile', label: 'Profile', icon: User },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -53,13 +58,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const mobileNavItems = [
-    { href: '/dashboard', label: 'Home', icon: Home, exact: true },
-    { href: '/dashboard/projects', label: 'Projects', icon: FolderOpen, exact: false },
-    { href: '/dashboard/profile', label: 'Profile', icon: User, exact: false },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings, exact: false },
-  ];
-
   return (
     <div className="flex flex-1 overflow-hidden bg-[#faf9f7]">
       <PhoneRequiredModal blocking />
@@ -67,24 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar — desktop only */}
       <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r border-stone-200 bg-white fixed top-14 sm:top-16 bottom-0 left-0 z-10 overflow-y-auto">
         <div className="flex-1 p-6">
-          <nav className="flex flex-col gap-1">
-            <SidebarNavLink to="/dashboard" end>
-              <Home className="w-5 h-5" />
-              <span className="text-sm font-medium">Dashboard</span>
-            </SidebarNavLink>
-            <SidebarNavLink to="/dashboard/projects">
-              <FolderOpen className="w-5 h-5" />
-              <span className="text-sm font-medium">Projects</span>
-            </SidebarNavLink>
-            <SidebarNavLink to="/dashboard/profile">
-              <User className="w-5 h-5" />
-              <span className="text-sm font-medium">Profile</span>
-            </SidebarNavLink>
-            <SidebarNavLink to="/dashboard/settings">
-              <Settings className="w-5 h-5" />
-              <span className="text-sm font-medium">Settings</span>
-            </SidebarNavLink>
-          </nav>
+          <PortalDesktopNav items={HOMEOWNER_NAV} />
         </div>
       </aside>
 
@@ -104,21 +85,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="homeowner_portal" />
 
       {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 z-20 flex justify-around items-center h-16 pb-[env(safe-area-inset-bottom)]">
-        {mobileNavItems.map(({ href, label, icon: Icon, exact }) => {
-          const isActive = exact ? pathname === href : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex flex-col items-center gap-1 py-2 px-3 ${isActive ? 'text-[#b8864a]' : 'text-stone-400'}`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      <PortalMobileNav items={HOMEOWNER_NAV} />
     </div>
   );
 }

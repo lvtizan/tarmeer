@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Check, MapPin, Phone, Ruler, DollarSign, ImagePlus,
-  Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase,
-  ClipboardList, ImageUp, Handshake,
+  Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase, Zap,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getDroppedImageFiles } from '@/lib/dropFiles';
+import WelcomeHeader from '@/components/portal/WelcomeHeader';
+import HighlightBanner from '@/components/portal/HighlightBanner';
+import OnboardingStepper, { type PortalStep } from '@/components/portal/OnboardingStepper';
 import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
   MAX_ESTIMATED_PAYLOAD_BYTES, MAX_TOTAL_UPLOAD_BYTES, buildUploadSizeMessage,
@@ -62,12 +63,42 @@ function reorder<T>(items: T[], from: number, to: number): T[] {
 
 /* ── Checklist builder ── */
 
-function buildChecklist(profile: Profile | null, photoCount: number) {
+interface ChecklistStep {
+  step: number;
+  label: string;
+  desc: string;
+  done: boolean;
+  to: string;
+  actionLabel: string;
+}
+
+function buildChecklist(profile: Profile | null, photoCount: number): ChecklistStep[] {
   const hasReq = !!(profile?.area_range && profile?.city && profile?.phone);
   return [
-    { step: 1, title: 'Submit renovation requirements', done: hasReq, to: '#requirements', icon: ClipboardList },
-    { step: 2, title: 'Upload renovation photos', done: photoCount > 0, to: '#photos', icon: ImageUp },
-    { step: 3, title: 'Get matched with a company', done: false, to: '/companies', icon: Handshake },
+    {
+      step: 1,
+      label: 'Submit Requirements',
+      desc: hasReq ? 'Project details saved' : 'Add area, city & phone',
+      done: hasReq,
+      to: '#requirements',
+      actionLabel: hasReq ? 'Edit Details' : 'Complete Now',
+    },
+    {
+      step: 2,
+      label: 'Upload Photos',
+      desc: photoCount > 0 ? `${photoCount} photo${photoCount !== 1 ? 's' : ''} uploaded` : 'Share before/after photos',
+      done: photoCount > 0,
+      to: '#photos',
+      actionLabel: photoCount > 0 ? 'Add More' : 'Upload Now',
+    },
+    {
+      step: 3,
+      label: 'Get Matched',
+      desc: 'Browse verified companies and send your needs',
+      done: false,
+      to: '/companies',
+      actionLabel: 'Browse Companies',
+    },
   ];
 }
 
@@ -217,66 +248,48 @@ export default function HomeownerDashboardPage() {
   const checklist = buildChecklist(isNew ? null : profile, imageUrls.length);
   const completedSteps = checklist.filter(c => c.done).length;
 
+  const goStep = (to: string) => {
+    if (to.startsWith('#')) {
+      document.querySelector(to)?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      router.push(to);
+    }
+  };
+
+  const portalSteps: PortalStep[] = checklist.map((s) => ({
+    label: s.label,
+    desc: s.desc,
+    done: s.done,
+    actionLabel: s.actionLabel,
+    onAction: () => goStep(s.to),
+  }));
+
   return (
     <div className="w-full">
 
-      {/* ── Hero — same visual as /companies ── */}
-      <section className="relative bg-[#2c2620] overflow-hidden -mx-6 -mt-6 md:-mx-10 md:-mt-10 mb-6">
-        <div className="absolute inset-0 opacity-[0.04] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.8)_1px,transparent_0)] [background-size:32px_32px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,74,0.12),transparent_70%)]" />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-14 text-center">
-          <h1 className="font-serif text-[28px] sm:text-[34px] text-white font-medium leading-tight mb-3">
-            Hi {firstName}, let&apos;s renovate!
-          </h1>
-          <p className="text-white/60 text-sm mb-10">
-            Complete the steps below to get matched with the right company.
-          </p>
+      <div className="mx-auto max-w-[1080px] space-y-6">
 
-          {/* 3-Step Flow */}
-          <div className="grid grid-cols-3 max-w-xs sm:max-w-sm mx-auto mb-10">
-            {checklist.map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <a key={item.step} href={item.to} className="relative flex flex-col items-center group">
-                  {i > 0 && (
-                    <div className={`absolute top-6 left-[-50%] right-1/2 h-px ${item.done || checklist[i - 1].done ? 'bg-[#b8864a]/60' : 'bg-white/25'}`} />
-                  )}
-                  <div className={`relative z-10 w-12 h-12 rounded-full border flex items-center justify-center transition-colors ${
-                    item.done
-                      ? 'border-[#b8864a] bg-[#b8864a]/20'
-                      : 'border-white/30 bg-[#2c2620] group-hover:border-white/50'
-                  }`}>
-                    {item.done
-                      ? <Check className="w-5 h-5 text-[#b8864a]" />
-                      : <Icon className="w-5 h-5 text-white/80" />
-                    }
-                  </div>
-                  <p className={`text-xs sm:text-sm leading-snug text-center mt-2.5 px-1 ${
-                    item.done ? 'text-white/40 line-through' : 'text-white/70'
-                  }`}>
-                    {item.title}
-                  </p>
-                </a>
-              );
-            })}
-          </div>
+        {/* ── Welcome header ── */}
+        <WelcomeHeader
+          title={`Hi ${firstName}, let's renovate!`}
+          subtitle="Complete the steps below to get matched with the right company."
+        />
 
-          {/* CTA */}
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Link
-              href="/companies"
-              className="h-11 px-6 bg-[#b8864a] hover:bg-[#a67c47] text-white text-sm font-semibold rounded-lg transition"
-            >
-              Browse Companies →
-            </Link>
-            <span className="text-white/40 text-xs">
-              {completedSteps}/{checklist.length} steps done
-            </span>
-          </div>
-        </div>
-      </section>
+        {/* ── Highlight banner ── */}
+        <HighlightBanner
+          icon={Zap}
+          title="The more we know, the better we match"
+          subtitle={
+            <>
+              <span className="text-[#d4a96a] font-semibold">{completedSteps}</span> of {checklist.length} steps done. Complete your details to connect with verified companies.
+            </>
+          }
+          ctaLabel="Browse Companies"
+          onCta={() => router.push('/companies')}
+        />
 
-      <div className="mx-auto max-w-[840px] space-y-4">
+        {/* ── Getting Started stepper ── */}
+        <OnboardingStepper steps={portalSteps} />
 
         {/* ── Company switch banner ── */}
         <div className="rounded-2xl border border-[#b8864a]/20 bg-[#b8864a]/5 px-5 py-3.5 flex items-center justify-between gap-4">
@@ -293,7 +306,10 @@ export default function HomeownerDashboardPage() {
           </button>
         </div>
 
-        {/* ── Main form card ── */}
+        {/* ── 表单 + 照片 双列 ── */}
+        <div className="grid gap-4 items-start xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+
+        {/* 左：Renovation Requirements 表单 */}
         <section className="rounded-[24px] border border-stone-200 bg-white shadow-[0_20px_60px_rgba(28,18,8,0.05)]">
 
           {/* Card header */}
@@ -404,27 +420,30 @@ export default function HomeownerDashboardPage() {
               </div>
             </div>
 
-            <hr className="border-stone-100" />
+          </div>
+        </section>
 
-            {/* ── Section: Renovation Photos ── */}
-            <div id="photos">
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div>
-                  <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-0.5">Renovation Photos</h3>
-                  <p className="text-xs text-stone-500">
-                    {imageUrls.length > 0
-                      ? `${imageUrls.length} photos · ${formatFileSize(imageUrls.reduce((s, u) => s + estimateDataUrlBytes(u), 0))}`
-                      : 'Share before/after photos of your renovation journey'}
-                  </p>
-                </div>
-                {imageUrls[coverIndex] && (
-                  <div className="w-[96px] rounded-xl border border-stone-200 bg-stone-50 p-1.5">
-                    <div className="text-[10px] font-semibold text-stone-500 mb-1">Cover</div>
-                    <div className="aspect-video w-full rounded-lg bg-cover bg-center"
-                      style={{ backgroundImage: `url(${imageUrls[coverIndex]})` }} />
-                  </div>
-                )}
+        {/* 右：Renovation Photos 卡片（sticky，进页面即可见） */}
+        <section id="photos" className="rounded-[24px] border border-stone-200 bg-white shadow-[0_20px_60px_rgba(28,18,8,0.05)] xl:sticky xl:top-6">
+          <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-5 border-b border-stone-100">
+            <div>
+              <h2 className="text-xl font-bold text-[#2c2c2c]">Renovation Photos</h2>
+              <p className="mt-0.5 text-sm text-stone-500">
+                {imageUrls.length > 0
+                  ? `${imageUrls.length} photos · ${formatFileSize(imageUrls.reduce((s, u) => s + estimateDataUrlBytes(u), 0))}`
+                  : 'Share before/after photos of your renovation journey'}
+              </p>
+            </div>
+            {imageUrls[coverIndex] && (
+              <div className="w-[80px] rounded-xl border border-stone-200 bg-stone-50 p-1.5 shrink-0">
+                <div className="text-[10px] font-semibold text-stone-500 mb-1">Cover</div>
+                <div className="aspect-video w-full rounded-lg bg-cover bg-center"
+                  style={{ backgroundImage: `url(${imageUrls[coverIndex]})` }} />
               </div>
+            )}
+          </div>
+
+          <div className="px-6 py-5">
 
               {uploadNotice && (
                 <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 flex items-center justify-between">
@@ -458,7 +477,7 @@ export default function HomeownerDashboardPage() {
 
               <div className="mt-3">
                 {imageUrls.length > 0 ? (
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-6">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {imageUrls.map((url, i) => (
                       <div key={i} draggable
                         onDragStart={() => setDraggedIdx(i)}
@@ -488,9 +507,8 @@ export default function HomeownerDashboardPage() {
                 )}
               </div>
             </div>
-
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
 
       {/* ── Image preview lightbox ── */}
