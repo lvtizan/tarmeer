@@ -11,6 +11,7 @@ import AuthCardShell from './AuthCardShell';
 import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from './authCardStyles';
 import { useVerificationPoller } from '@/hooks/useVerificationPoller';
 import TarmeerLogo from '@/components/TarmeerLogo';
+import { getCountry } from '@/lib/country';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
@@ -42,6 +43,7 @@ const ENABLE_FACEBOOK_AUTH = process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_AUTH === 't
 type AuthStep = 'initial' | 'password' | 'done';
 
 export default function AuthClient({ country }: { country?: string }) {
+  const c = getCountry(country);
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -155,7 +157,7 @@ export default function AuthClient({ country }: { country?: string }) {
     setError(null);
     try {
       const res = await api.post('/auth/register', {
-        email, password, full_name: '', phone: '', city: 'Dubai',
+        email, password, full_name: '', phone: '', city: c.defaultCity,
         role: authRole, signup_source: 'auth-page',
       }) as { message?: string };
       setSuccess(res?.message || 'Account created! Please check your email to verify.');
@@ -235,17 +237,17 @@ export default function AuthClient({ country }: { country?: string }) {
           <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#1a1714] to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1714] via-[#1a1714]/65 to-transparent pointer-events-none" />
           <div className="relative z-10 p-12 pb-14">
-            <p className="text-[#B8864A] text-[11px] font-medium tracking-[0.2em] uppercase mb-4">UAE&apos;s Renovation Platform</p>
+            <p className="text-[#B8864A] text-[11px] font-medium tracking-[0.2em] uppercase mb-4">{c.name}&apos;s Renovation Platform</p>
             <h1 className="font-serif text-[38px] text-white leading-[1.15] mb-4">
               Your Home<br />Renovation<br />Starts Here
             </h1>
             <p className="text-stone-400 text-[15px] leading-relaxed max-w-[340px]">
-              Connect with top renovation companies and design studios across the UAE.
+              Connect with top renovation companies and design studios across {c.name}.
             </p>
             <div className="mt-8 flex gap-8">
               <div><p className="text-white text-2xl font-semibold">500+</p><p className="text-stone-500 text-xs mt-0.5">Verified Companies</p></div>
               <div><p className="text-white text-2xl font-semibold">12K+</p><p className="text-stone-500 text-xs mt-0.5">Projects Completed</p></div>
-              <div><p className="text-white text-2xl font-semibold">UAE</p><p className="text-stone-500 text-xs mt-0.5">Coverage</p></div>
+              <div><p className="text-white text-2xl font-semibold">{c.name}</p><p className="text-stone-500 text-xs mt-0.5">Coverage</p></div>
             </div>
             <div className="mt-6 pt-4 border-t border-white/10">
               <span className="text-stone-600 text-[11px]">&copy; {new Date().getFullYear()} Tarmeer</span>

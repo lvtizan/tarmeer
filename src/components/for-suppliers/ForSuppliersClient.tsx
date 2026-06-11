@@ -6,6 +6,8 @@ import { ChevronRight, Mail, Lock, Eye, EyeOff, Check, Package, Search, Globe } 
 import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from '@/components/auth/authCardStyles';
 import AuthCardShell from '@/components/auth/AuthCardShell';
 import LoadingButton from '@/components/ui/LoadingButton';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -328,7 +330,8 @@ function SupplierAuthCard() {
   );
 }
 
-const FEATURES = [
+// China/Dubai 指供应商货源（保留）；UAE 指目标市场（按国家化）
+const getFeatures = (countryName: string) => [
   {
     icon: Package,
     tag: 'LIST PRODUCTS',
@@ -339,20 +342,23 @@ const FEATURES = [
   {
     icon: Search,
     tag: 'GET DISCOVERED',
-    title: 'Reach UAE Designers',
+    title: `Reach ${countryName} Designers`,
     desc: ['Your profile appears when renovation companies search materials in your categories.', 'SEO-optimised listing included.'],
     checks: ['China & Dubai supplier directory', 'Category & origin filtering', 'SEO-optimised profile page'],
   },
   {
     icon: Globe,
     tag: 'SUPPLY CHAIN ACCESS',
-    title: "Enter UAE's Renovation Supply Chain",
-    desc: ["Tarmeer connects UAE renovation companies with verified China and Dubai suppliers.", "Your listing becomes part of how they source."],
+    title: `Enter ${countryName}'s Renovation Supply Chain`,
+    desc: [`Tarmeer connects ${countryName} renovation companies with verified China and Dubai suppliers.`, "Your listing becomes part of how they source."],
     checks: ['Access to China supply chain network', 'Listed in renovation company searches', 'Verified supplier presence on Tarmeer'],
   },
 ];
 
 export default function ForSuppliersClient() {
+  const { lang } = useSiteLocale();
+  const c = countryFromLang(lang);
+  const FEATURES = getFeatures(c.name);
   return (
     <div>
       {/* Hero */}
@@ -366,14 +372,14 @@ export default function ForSuppliersClient() {
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 lg:py-24 grid lg:grid-cols-[1fr_auto] gap-8 lg:gap-10 items-center">
           <div>
             <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
-              UAE&apos;S INTERIOR DESIGN PLATFORM
+              {c.name.toUpperCase()}&apos;S INTERIOR DESIGN PLATFORM
             </p>
             <h1 className="font-serif text-4xl lg:text-5xl font-bold text-white leading-tight mt-4">
               Renovation Companies Are Sourcing{' '}
               <span className="text-[#c6a065]">Your Materials</span>
             </h1>
             <p className="text-lg text-white/70 mt-6 max-w-lg">
-              Tarmeer is where UAE renovation companies source materials. List your products and catalogue to be discovered by designers and project managers actively sourcing from China and Dubai.
+              Tarmeer is where {c.name} renovation companies source materials. List your products and catalogue to be discovered by designers and project managers actively sourcing from China and Dubai.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">

@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { submitComplaint } from '@/lib/api';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 export default function DmcaClient() {
+  const c = countryFromLang(useSiteLocale().lang);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -135,7 +138,7 @@ export default function DmcaClient() {
               <p className="text-[#2c2c2c] font-medium mb-2">Tarmeer Copyright Agent</p>
               <p className="text-[#6b6b6b] text-sm leading-relaxed">
                 Email: copyright@tarmeer.com<br />
-                WhatsApp: +971 58 838 8922<br />
+                WhatsApp: {c.whatsappDisplay}<br />
                 Address: 1 - 2a 147 street - Al Sajaa - Sharjah - United Arab Emirates
               </p>
             </div>
@@ -207,7 +210,7 @@ export default function DmcaClient() {
                     name="phone"
                     value={form.phone}
                     onChange={handleChange}
-                    placeholder="+971 50 123 4567"
+                    placeholder={c.phonePlaceholder}
                     className={inputClass}
                   />
                 </div>

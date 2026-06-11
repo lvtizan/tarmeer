@@ -85,7 +85,7 @@ export function getCompanyTypeLabel(type?: string): string {
 
 export function summarizeCompanyDescription(description: string): string {
   const trimmed = description.trim();
-  if (!trimmed) return 'UAE renovation and interior design company.';
+  if (!trimmed) return 'Renovation and interior design company.';
   if (trimmed.length <= 120) return trimmed;
   return `${trimmed.slice(0, 117).trimEnd()}...`;
 }

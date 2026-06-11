@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch {
     return {
       title: 'Company Profile - Tarmeer',
-      description: 'Find top interior design and renovation companies in the UAE on Tarmeer.',
+      description: `Find top interior design and renovation companies in ${metaIsVn ? 'Vietnam' : 'the UAE'} on Tarmeer.`,
       alternates: {
         canonical: `https://www.tarmeer.com/companies/${slug}`,
       },

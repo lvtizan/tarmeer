@@ -3,8 +3,10 @@ export const dynamic = 'force-dynamic';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import ProjectDetailClient from '@/components/companies/ProjectDetailClient';
 import { fetchPublicProjectDetail } from '@/lib/publicApi';
+import { getCountry } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
 
@@ -43,6 +45,7 @@ export async function generateStaticParams(): Promise<Array<{ slug: string; proj
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug: companySlug, projectSlug } = await params;
+  const c = getCountry((await headers()).get('x-country'));
   try {
     const data = await fetchPublicProjectDetail(companySlug, projectSlug);
     const { project, company } = data;
@@ -54,12 +57,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       if (tagPool.length >= 3) break;
     }
     const tagLabel = tagPool.join(' ') || 'Interior Design';
-    const locationLabel = project.location || company.city || 'UAE';
+    const locationLabel = project.location || company.city || c.name;
     const canonicalUrl = `https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`;
 
     const title = `${project.title} - ${tagLabel} Design in ${locationLabel} by ${company.name} | Tarmeer`;
     const desc = [
-      `${project.title}${project.year ? ` (${project.year})` : ''} — a ${tagLabel.toLowerCase()} project by ${company.name} in ${locationLabel}, UAE.`,
+      `${project.title}${project.year ? ` (${project.year})` : ''} — a ${tagLabel.toLowerCase()} project by ${company.name} in ${locationLabel}, ${c.name}.`,
       project.description ? project.description.slice(0, 160) : `Browse ${project.images.length} high-quality photos.`,
     ].join(' ').slice(0, 320);
 
@@ -72,7 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: desc,
       keywords: [...new Set([
         project.title, ...tagPool, project.location, company.city, company.name,
-        'interior design', 'renovation', 'UAE', 'Dubai', 'Tarmeer', ...(project.tags || []),
+        'interior design', 'renovation', c.name, c.defaultCity, 'Tarmeer', ...(project.tags || []),
       ].filter(Boolean).map((k) => k!.toLowerCase()))].join(', '),
       openGraph: {
         title,
@@ -99,6 +102,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProjectDetailPage({ params }: PageProps) {
   const { slug: companySlug, projectSlug } = await params;
+  const c = getCountry((await headers()).get('x-country'));
 
   let initialData: Awaited<ReturnType<typeof fetchPublicProjectDetail>> | null = null;
   try {
@@ -118,7 +122,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     if (!tagPool.some((x) => x.toLowerCase() === t.toLowerCase())) tagPool.push(t);
     if (tagPool.length >= 3) break;
   }
-  const locationLabel = project.location || company.city || 'UAE';
+  const locationLabel = project.location || company.city || c.name;
 
   const galleryJsonLd = {
     '@context': 'https://schema.org',
@@ -133,7 +137,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     locationCreated: {
       '@type': 'Place',
       name: locationLabel,
-      address: { '@type': 'PostalAddress', addressCountry: 'AE', addressLocality: locationLabel },
+      address: { '@type': 'PostalAddress', addressCountry: c.isoCode, addressLocality: locationLabel },
     },
     genre: project.style,
     keywords: (project.tags || []).join(', '),

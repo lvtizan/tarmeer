@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { headers } from 'next/headers';
 import BlogClient from '@/components/blog/BlogClient';
+import { getCountry } from '@/lib/country';
+
+export const dynamic = 'force-dynamic';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -29,38 +33,27 @@ interface ArticlesResponse {
 }
 
 const pageTitle = 'Blog - Interior Design Insights | Tarmeer';
-const pageDescription =
-  'Explore interior design articles, tips, and insights from top UAE design companies on the Tarmeer blog.';
 
-export const metadata: Metadata = {
-  title: pageTitle,
-  description: pageDescription,
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const c = getCountry((await headers()).get('x-country'));
+  const pageDescription = `Explore interior design articles, tips, and insights from top ${c.name} design companies on the Tarmeer blog.`;
+  return {
     title: pageTitle,
     description: pageDescription,
-    images: [{ url: 'https://www.tarmeer.com/og-image.png' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-  },
-  keywords: 'interior design blog, UAE design tips, Tarmeer articles, home decor insights',
-  alternates: {
-    canonical: 'https://www.tarmeer.com/blog',
-  },
-};
-
-const collectionPageJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: pageTitle,
-  description: pageDescription,
-  url: 'https://www.tarmeer.com/blog',
-  publisher: {
-    '@type': 'Organization',
-    name: 'Tarmeer',
-    url: 'https://www.tarmeer.com',
-  },
-};
+    openGraph: {
+      title: pageTitle,
+      description: pageDescription,
+      images: [{ url: `${c.baseUrl}/og-image.png` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+    },
+    keywords: `interior design blog, ${c.name} design tips, Tarmeer articles, home decor insights`,
+    alternates: {
+      canonical: `${c.baseUrl}/blog`,
+    },
+  };
+}
 
 async function fetchFirstPage(): Promise<{ articles: Article[]; pagination: Pagination | null }> {
   try {
@@ -79,7 +72,21 @@ async function fetchFirstPage(): Promise<{ articles: Article[]; pagination: Pagi
 }
 
 export default async function BlogPage() {
+  const c = getCountry((await headers()).get('x-country'));
   const { articles, pagination } = await fetchFirstPage();
+
+  const collectionPageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: pageTitle,
+    description: `Explore interior design articles, tips, and insights from top ${c.name} design companies on the Tarmeer blog.`,
+    url: `${c.baseUrl}/blog`,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Tarmeer',
+      url: c.baseUrl,
+    },
+  };
 
   return (
     <>

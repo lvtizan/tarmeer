@@ -11,6 +11,8 @@ import {
 import { fetchPublicProjectDetail, type PublicProjectDetailData } from '@/lib/publicApi';
 import SmartImage from '@/components/ui/SmartImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const SAVED_PROJECTS_KEY = 'saved-projects';
 
@@ -37,6 +39,8 @@ interface Props {
 }
 
 export default function ProjectDetailClient({ companySlug, projectSlug, initialData }: Props) {
+  const country = countryFromLang(useSiteLocale().lang);
+  const isVn = country.code === 'vn';
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromPortfolio = searchParams.get('from') === 'portfolio';
@@ -268,7 +272,7 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
                       <Link href={companyHref} className="font-serif text-[16px] text-[#1c1917] hover:text-[#b8864a] transition truncate block">
                         {company.name}
                       </Link>
-                      {company.city && <p className="text-xs text-stone-500 mt-0.5">{company.city}, UAE</p>}
+                      {company.city && <p className="text-xs text-stone-500 mt-0.5">{company.city}{isVn ? '' : ', UAE'}</p>}
                     </div>
                   </div>
                   <Link href={companyHref} className="mt-4 inline-flex w-full items-center justify-center px-4 py-2 border border-stone-200 rounded-2xl text-sm font-medium text-[#2c2c2c] hover:border-[#b8864a] hover:text-[#b8864a] transition">
@@ -340,7 +344,7 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
                   </Link>
                   {company.city && (
                     <p className="text-sm text-stone-500 mt-0.5 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {company.city}, UAE
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {company.city}{isVn ? '' : ', UAE'}
                     </p>
                   )}
                 </div>
@@ -396,7 +400,7 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-[#c6a065] flex-shrink-0" />
                   <dt className="text-stone-500">Location:</dt>
-                  <dd className="text-[#2c2c2c]">{project.location || company.city}, UAE</dd>
+                  <dd className="text-[#2c2c2c]">{project.location || company.city}{isVn ? '' : ', UAE'}</dd>
                 </div>
               )}
               {project.cost && (

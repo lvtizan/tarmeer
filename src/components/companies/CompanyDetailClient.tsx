@@ -797,7 +797,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                   )}
                   <div className="flex justify-between">
                     <dt className="text-stone-500">Location</dt>
-                    <dd className="text-[#1c1917]">{company.city}, UAE</dd>
+                    <dd className="text-[#1c1917]">{company.city}{isVn ? '' : ', UAE'}</dd>
                   </div>
                   {company.foundedYear > 0 && (
                     <div className="flex justify-between">

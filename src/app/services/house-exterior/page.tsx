@@ -1,23 +1,30 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { ArrowLeft, CheckCircle, CircleGauge, Layers3, Ruler, Sparkles } from 'lucide-react';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
+import { getCountry } from '@/lib/country';
 
-export const metadata: Metadata = {
-  title: 'House Exterior Design Service - Facade & Landscape | Tarmeer',
-  description: 'Professional house exterior design service in the UAE. Facade concepts, material selection, layout drawings, and construction-ready documentation for villas and homes.',
-  openGraph: {
-    title: 'House Exterior Design Service | Tarmeer',
-    description: 'Facade design, material selection, and construction documentation for UAE homes.',
-    images: [{ url: 'https://www.tarmeer.com/og-default.jpg' }],
-    type: 'website',
-    url: 'https://www.tarmeer.com/services/house-exterior',
-  },
-  twitter: { card: 'summary_large_image' },
-  keywords: ['house exterior design UAE', 'facade design', 'villa exterior', 'landscape design', 'construction drawings', 'Tarmeer'],
-  robots: { index: true, follow: true },
-  alternates: { canonical: 'https://www.tarmeer.com/services/house-exterior' },
-};
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const c = getCountry((await headers()).get('x-country'));
+  return {
+    title: 'House Exterior Design Service - Facade & Landscape | Tarmeer',
+    description: `Professional house exterior design service in ${c.name}. Facade concepts, material selection, layout drawings, and construction-ready documentation for villas and homes.`,
+    openGraph: {
+      title: 'House Exterior Design Service | Tarmeer',
+      description: `Facade design, material selection, and construction documentation for ${c.name} homes.`,
+      images: [{ url: `${c.baseUrl}/og-default.jpg` }],
+      type: 'website',
+      url: `${c.baseUrl}/services/house-exterior`,
+    },
+    twitter: { card: 'summary_large_image' },
+    keywords: [`house exterior design ${c.name}`, 'facade design', 'villa exterior', 'landscape design', 'construction drawings', 'Tarmeer'],
+    robots: { index: true, follow: true },
+    alternates: { canonical: `${c.baseUrl}/services/house-exterior` },
+  };
+}
 
 const HIGHLIGHTS = [
   {
@@ -46,18 +53,20 @@ const DELIVERABLES = [
   'Coordination notes for contractors',
 ];
 
-const serviceJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Service',
-  name: 'House Exterior Design',
-  description: 'Exterior design service for villas and standalone homes including facade direction, material language, layout drawings, and construction-ready documentation.',
-  provider: { '@type': 'Organization', name: 'Tarmeer', url: 'https://www.tarmeer.com' },
-  areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
-  serviceType: 'Exterior Design',
-  url: 'https://www.tarmeer.com/services/house-exterior',
-};
+export default async function HouseExteriorDesignPage() {
+  const c = getCountry((await headers()).get('x-country'));
 
-export default function HouseExteriorDesignPage() {
+  const serviceJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'House Exterior Design',
+    description: 'Exterior design service for villas and standalone homes including facade direction, material language, layout drawings, and construction-ready documentation.',
+    provider: { '@type': 'Organization', name: 'Tarmeer', url: c.baseUrl },
+    areaServed: { '@type': 'Country', name: c.fullName },
+    serviceType: 'Exterior Design',
+    url: `${c.baseUrl}/services/house-exterior`,
+  };
+
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }} />

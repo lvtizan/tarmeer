@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Building2 } from 'lucide-react';
 import type { PublicArticle } from '@/app/blog/[slug]/page';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -88,6 +90,7 @@ interface BlogDetailClientProps {
 }
 
 export default function BlogDetailClient({ article }: BlogDetailClientProps) {
+  const country = countryFromLang(useSiteLocale().lang);
   const [relatedCases, setRelatedCases] = useState<RelatedCase[]>([]);
   const [relatedArticles, setRelatedArticles] = useState<RelatedArticle[]>([]);
 
@@ -214,7 +217,7 @@ export default function BlogDetailClient({ article }: BlogDetailClientProps) {
             Looking for renovation professionals?
           </p>
           <p className="text-[15px] text-[#6b6b6b] mb-5">
-            Browse verified interior design companies across the UAE.
+            Browse verified interior design companies across {country.name}.
           </p>
           <Link href="/companies" className="btn-primary inline-block">
             Find Companies

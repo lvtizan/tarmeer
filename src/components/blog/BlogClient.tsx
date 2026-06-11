@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Calendar, Building2 } from 'lucide-react';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -31,6 +33,7 @@ interface BlogClientProps {
 }
 
 export default function BlogClient({ initialArticles, initialPagination }: BlogClientProps) {
+  const c = countryFromLang(useSiteLocale().lang);
   const [articles, setArticles] = useState<Article[]>(initialArticles);
   const [pagination, setPagination] = useState<Pagination | null>(initialPagination);
   const [page, setPage] = useState(1);
@@ -56,7 +59,7 @@ export default function BlogClient({ initialArticles, initialPagination }: BlogC
           Blog
         </h1>
         <p className="text-[15px] text-[var(--color-tarmeer-muted)] mb-10">
-          Interior design insights and inspiration from top UAE companies
+          Interior design insights and inspiration from top {c.name} companies
         </p>
 
         {loading ? (

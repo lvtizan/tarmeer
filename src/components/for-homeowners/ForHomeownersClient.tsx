@@ -7,6 +7,8 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import { validatePhone, isPhoneComplete } from '@/lib/phoneValidation';
 import { DollarSign, Image, UserCheck, CheckCircle } from 'lucide-react';
 import { t, type Lang } from '@/i18n/forHomeowners';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { countryFromLang } from '@/lib/country';
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -15,31 +17,28 @@ const fadeUp = {
   transition: { duration: 0.5 },
 };
 
-const CITIES = [
-  { value: '', label: '' },
-  { value: 'Dubai', label: 'Dubai' },
-  { value: 'Abu Dhabi', label: 'Abu Dhabi' },
-  { value: 'Sharjah', label: 'Sharjah' },
-  { value: 'Ajman', label: 'Ajman' },
-  { value: 'Ras Al Khaimah', label: 'Ras Al Khaimah' },
-  { value: 'Other', label: 'Other' },
-];
-
-const pageJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebPage',
-  name: 'Find Renovation Companies in UAE | Tarmeer',
-  description: 'Compare verified renovation companies in UAE. Browse real portfolios and get free quotes.',
-  url: 'https://www.tarmeer.com/for-homeowners',
-  publisher: {
-    '@type': 'Organization',
-    name: 'Tarmeer',
-    url: 'https://www.tarmeer.com',
-    logo: 'https://www.tarmeer.com/images/tarmeer_logo.svg',
-  },
-};
-
 export default function ForHomeownersClient() {
+  const c = countryFromLang(useSiteLocale().lang);
+  const CITIES = [
+    { value: '', label: '' },
+    ...c.cities.map((city) => ({ value: city, label: city })),
+    { value: 'Other', label: 'Other' },
+  ];
+
+  const pageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: `Find Renovation Companies in ${c.name} | Tarmeer`,
+    description: `Compare verified renovation companies in ${c.name}. Browse real portfolios and get free quotes.`,
+    url: `${c.baseUrl}/for-homeowners`,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Tarmeer',
+      url: c.baseUrl,
+      logo: `${c.baseUrl}/images/tarmeer_logo.svg`,
+    },
+  };
+
   const [lang, setLang] = useState<Lang>('en');
   const [area, setArea] = useState('');
   const [city, setCity] = useState('');
@@ -51,8 +50,8 @@ export default function ForHomeownersClient() {
   const handlePhoneChange = (val: string) => {
     const digits = val.replace(/\D/g, '');
     setPhone(digits);
-    if (isPhoneComplete(digits, '+971')) {
-      setPhoneError(validatePhone(digits, '+971'));
+    if (isPhoneComplete(digits, c.phoneCode)) {
+      setPhoneError(validatePhone(digits, c.phoneCode));
     } else {
       setPhoneError(null);
     }
@@ -61,7 +60,7 @@ export default function ForHomeownersClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!area || !city || !phone) return;
-    const err = validatePhone(phone, '+971');
+    const err = validatePhone(phone, c.phoneCode);
     if (err) { setPhoneError(err); return; }
     setSubmitting(true);
     try {
@@ -70,7 +69,7 @@ export default function ForHomeownersClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: 'Website Visitor',
-          phone: `+971${phone}`,
+          phone: `${c.phoneCode}${phone}`,
           city,
           area_range: `${area}m²`,
           message: 'From homeowner landing page',
@@ -154,7 +153,7 @@ export default function ForHomeownersClient() {
                   <div>
                     <label className="text-sm font-medium text-stone-500 block mb-1">{t(lang, 'phone')}</label>
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center justify-center h-[50px] px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#6b6b6b] select-none">+971</span>
+                      <span className="flex items-center justify-center h-[50px] px-4 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#6b6b6b] select-none">{c.phoneCode}</span>
                       <input
                         type="tel"
                         inputMode="numeric"

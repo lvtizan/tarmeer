@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import BlogDetailClient from '@/components/blog/BlogDetailClient';
+import { getCountry } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
 
@@ -66,13 +68,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const c = getCountry((await headers()).get('x-country'));
   const article = await fetchArticle(slug);
 
   if (!article) {
     return {
       title: 'Article Not Found | Tarmeer Blog',
       description: 'The article you are looking for could not be found on the Tarmeer blog.',
-      alternates: { canonical: 'https://www.tarmeer.com/blog' },
+      alternates: { canonical: `${c.baseUrl}/blog` },
     };
   }
 
@@ -81,10 +84,10 @@ export async function generateMetadata({
   const pageDescription =
     article.seo_description ||
     article.excerpt ||
-    `Read ${article.title} on the Tarmeer blog. Expert interior design and renovation insights for UAE homeowners.`;
-  const canonicalUrl = `https://www.tarmeer.com/blog/${article.slug}`;
+    `Read ${article.title} on the Tarmeer blog. Expert interior design and renovation insights for ${c.name} homeowners.`;
+  const canonicalUrl = `${c.baseUrl}/blog/${article.slug}`;
   const coverImage =
-    article.cover_image || 'https://www.tarmeer.com/images/tarmeer_logo.svg';
+    article.cover_image || `${c.baseUrl}/images/tarmeer_logo.svg`;
   const isoDate = new Date(article.created_at).toISOString();
   const tags = parseTags(article.tags);
 
@@ -106,7 +109,7 @@ export async function generateMetadata({
       description: pageDescription,
       images: [coverImage],
     },
-    keywords: `interior design UAE, renovation tips, ${tags.join(', ')}, Tarmeer blog`,
+    keywords: `interior design ${c.name}, renovation tips, ${tags.join(', ')}, Tarmeer blog`,
     alternates: { canonical: canonicalUrl },
     robots: 'index, follow, max-image-preview:large, max-snippet:-1',
   };
@@ -118,6 +121,7 @@ export default async function BlogDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const c = getCountry((await headers()).get('x-country'));
   const article = await fetchArticle(slug);
 
   if (!article) {
@@ -129,10 +133,10 @@ export default async function BlogDetailPage({
   const pageDescription =
     article.seo_description ||
     article.excerpt ||
-    `Read ${article.title} on the Tarmeer blog. Expert interior design and renovation insights for UAE homeowners.`;
-  const canonicalUrl = `https://www.tarmeer.com/blog/${article.slug}`;
+    `Read ${article.title} on the Tarmeer blog. Expert interior design and renovation insights for ${c.name} homeowners.`;
+  const canonicalUrl = `${c.baseUrl}/blog/${article.slug}`;
   const coverImage =
-    article.cover_image || 'https://www.tarmeer.com/images/tarmeer_logo.svg';
+    article.cover_image || `${c.baseUrl}/images/tarmeer_logo.svg`;
   const isoDate = new Date(article.created_at).toISOString();
   const tags = parseTags(article.tags);
   const wordCount =
@@ -151,16 +155,16 @@ export default async function BlogDetailPage({
       '@type': 'Organization',
       name: article.company_name || 'Tarmeer',
       url: article.company_slug
-        ? `https://www.tarmeer.com/companies/${article.company_slug}`
-        : 'https://www.tarmeer.com',
+        ? `${c.baseUrl}/companies/${article.company_slug}`
+        : c.baseUrl,
     },
     publisher: {
       '@type': 'Organization',
       name: 'Tarmeer',
-      url: 'https://www.tarmeer.com',
+      url: c.baseUrl,
       logo: {
         '@type': 'ImageObject',
-        url: 'https://www.tarmeer.com/images/tarmeer_logo.svg',
+        url: `${c.baseUrl}/images/tarmeer_logo.svg`,
       },
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
@@ -173,8 +177,8 @@ export default async function BlogDetailPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
-      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.tarmeer.com/blog' },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${c.baseUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${c.baseUrl}/blog` },
       { '@type': 'ListItem', position: 3, name: article.title, item: canonicalUrl },
     ],
   };
