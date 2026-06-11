@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowRight, Check, MapPin, Phone, Ruler, DollarSign, ImagePlus,
   Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase,
+  ClipboardList, ImageUp, Handshake,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getDroppedImageFiles } from '@/lib/dropFiles';
@@ -238,22 +239,36 @@ export default function HomeownerDashboardPage() {
               )}
             </div>
           </div>
-          {/* Checklist bar */}
-          <div className="mt-3 rounded-2xl border border-stone-200 bg-white px-4 py-3">
-            <div className="text-sm font-semibold text-[#2c2c2c] mb-2">Get Started — {completedSteps}/{checklist.length} done</div>
-            <div className="space-y-2">
-              {checklist.map(item => (
-                <a key={item.step} href={item.to}
-                  className="flex items-center gap-3 group">
-                  <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                    item.done ? 'bg-[#b8864a]/10 text-[#b8864a]' : 'bg-stone-100 text-stone-400'
+          {/* Checklist bar — horizontal step flow */}
+          <div className="mt-3 rounded-2xl border border-stone-200 bg-white px-5 py-4">
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-4">
+              Get Started — {completedSteps}/{checklist.length} done
+            </div>
+            <div className="grid grid-cols-3 max-w-sm mx-auto">
+              {[
+                { icon: ClipboardList, item: checklist[0] },
+                { icon: ImageUp,       item: checklist[1] },
+                { icon: Handshake,     item: checklist[2] },
+              ].map(({ icon: Icon, item }, i) => (
+                <a key={item.step} href={item.to} className="relative flex flex-col items-center group">
+                  {i > 0 && (
+                    <div className={`absolute top-5 left-[-50%] right-1/2 h-px ${item.done || checklist[i - 1].done ? 'bg-[#b8864a]/40' : 'bg-stone-200'}`} />
+                  )}
+                  <div className={`relative z-10 w-10 h-10 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    item.done
+                      ? 'border-[#b8864a] bg-[#b8864a]/10'
+                      : 'border-stone-200 bg-white group-hover:border-[#b8864a]/50'
                   }`}>
-                    {item.done ? <Check className="w-3.5 h-3.5" /> : item.step}
+                    {item.done
+                      ? <Check className="w-4 h-4 text-[#b8864a]" />
+                      : <Icon className="w-4 h-4 text-stone-400 group-hover:text-[#b8864a] transition-colors" />
+                    }
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <span className={`text-sm font-medium ${item.done ? 'text-stone-400 line-through' : 'text-[#2c2c2c] group-hover:text-[#b8864a]'}`}>{item.title}</span>
-                  </div>
-                  {!item.done && <ArrowRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#b8864a]" />}
+                  <p className={`text-xs leading-snug text-center mt-2 px-1 ${
+                    item.done ? 'text-stone-400 line-through' : 'text-stone-600 group-hover:text-[#b8864a] transition-colors'
+                  }`}>
+                    {item.title}
+                  </p>
                 </a>
               ))}
             </div>
