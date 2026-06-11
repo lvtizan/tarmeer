@@ -20,12 +20,27 @@ export interface ExpertWorkHistoryItem {
   role?: string;
 }
 
+export interface ExpertProjectItem {
+  id: number;
+  title: string;
+  description?: string | null;
+  style?: string | null;
+  location?: string | null;
+  area?: string | null;
+  year?: number | null;
+  cost?: string | null;
+  images: string[];
+  tags?: string[];
+  slug?: string | null;
+}
+
 export interface ExpertDetail extends ExpertListItem {
   bio?: string | null;
   skills: string[];
   work_history: ExpertWorkHistoryItem[];
   certificates: string[];
   license_verified?: boolean | number;
+  projects?: ExpertProjectItem[];
 }
 
 export interface ExpertsPagination {
