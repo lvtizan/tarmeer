@@ -9,27 +9,27 @@ import { fetchPublicProjectDetail } from '@/lib/publicApi';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
 
 interface PageProps {
-  params: Promise<{ companySlug: string; projectSlug: string }>;
+  params: Promise<{ slug: string; projectSlug: string }>;
 }
 
-export async function generateStaticParams(): Promise<Array<{ companySlug: string; projectSlug: string }>> {
+export async function generateStaticParams(): Promise<Array<{ slug: string; projectSlug: string }>> {
   try {
     const res = await fetch(`${API_BASE}/companies?limit=500`, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json() as { companies?: Array<{ slug?: string; id?: number }> };
     const companies = data.companies ?? [];
 
-    const results: Array<{ companySlug: string; projectSlug: string }> = [];
+    const results: Array<{ slug: string; projectSlug: string }> = [];
 
     await Promise.allSettled(
       companies.filter((c) => c.slug || c.id).slice(0, 100).map(async (c) => {
         try {
-          const slug = c.slug ?? String(c.id);
-          const pRes = await fetch(`${API_BASE}/companies/${slug}/projects?limit=50`, { next: { revalidate: 3600 } });
+          const companySlug = c.slug ?? String(c.id);
+          const pRes = await fetch(`${API_BASE}/companies/${companySlug}/projects?limit=50`, { next: { revalidate: 3600 } });
           if (!pRes.ok) return;
           const pData = await pRes.json() as { projects?: Array<{ slug?: string }> };
           for (const p of (pData.projects ?? [])) {
-            if (p.slug) results.push({ companySlug: slug, projectSlug: p.slug });
+            if (p.slug) results.push({ slug: companySlug, projectSlug: p.slug });
           }
         } catch { /* skip */ }
       })
@@ -42,7 +42,7 @@ export async function generateStaticParams(): Promise<Array<{ companySlug: strin
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { companySlug, projectSlug } = await params;
+  const { slug: companySlug, projectSlug } = await params;
   try {
     const data = await fetchPublicProjectDetail(companySlug, projectSlug);
     const { project, company } = data;
@@ -98,7 +98,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProjectDetailPage({ params }: PageProps) {
-  const { companySlug, projectSlug } = await params;
+  const { slug: companySlug, projectSlug } = await params;
 
   let initialData: Awaited<ReturnType<typeof fetchPublicProjectDetail>> | null = null;
   try {
