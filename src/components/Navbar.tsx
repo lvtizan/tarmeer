@@ -61,6 +61,7 @@ export default function Navbar({
     ],
   };
 
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [expertsDropdownOpen, setExpertsDropdownOpen] = useState(false);
@@ -118,9 +119,12 @@ export default function Navbar({
       .catch(() => {});
   }, [isVn]);
 
+  // 仅客户端读取登录态，保证 SSR 与 CSR 首屏一致（避免 hydration mismatch）
+  useEffect(() => { setMounted(true); }, []);
+
   if ((isAuthPage && !forceShowOnAuth) || isPortalPage) return null;
 
-  const isLoggedIn = Boolean(api.getToken());
+  const isLoggedIn = mounted && Boolean(api.getToken());
   const user = safeGetJSON<Record<string, unknown>>('user') || safeGetJSON<Record<string, unknown>>('designer');
   const activeRole = typeof window !== 'undefined' ? localStorage.getItem('active_role') : null;
   const isAdminAuthVariant = variant === 'admin-auth';
