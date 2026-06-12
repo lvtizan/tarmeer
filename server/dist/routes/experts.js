@@ -32,6 +32,7 @@ const upload = (0, multer_1.default)({
 
 // 公开
 router.get('/', expertController_1.listPublicExperts);
+router.get('/cities', expertController_1.listExpertCities);
 
 // 个人中心（auth）— 注意必须先于 /:slug 注册
 router.get('/me', auth_1.authenticate, expertController_1.getMyExpertProfile);

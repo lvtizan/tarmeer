@@ -19,6 +19,23 @@ const projectImageStorage_1 = require("../lib/projectImageStorage");
 const slugify_1 = require("../lib/slugify");
 const tagEngine_1 = require("../services/tagEngine");
 const activityLogger_1 = require("../lib/activityLogger");
+
+// 自动迁移：projects 表加 expert_profile_id 列
+async function ensureExpertProjectColumn() {
+    try {
+        const [cols] = await database_1.default.execute(
+            `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'projects' AND COLUMN_NAME = 'expert_profile_id'`
+        );
+        if (cols.length === 0) {
+            await database_1.default.execute(`ALTER TABLE projects ADD COLUMN expert_profile_id INT NULL, ADD INDEX idx_expert_profile (expert_profile_id)`);
+            console.log('[projects] added column: expert_profile_id');
+        }
+    } catch (e) {
+        console.error('[projects] ensureExpertProjectColumn:', e.message);
+    }
+}
+ensureExpertProjectColumn();
+
 function normalizeProject(project) {
     return {
         ...project,
@@ -74,12 +91,23 @@ async function createProject(req, res) {
         const [cpRows] = await database_1.default.execute('SELECT id, status FROM company_profiles WHERE user_id = ? LIMIT 1', [userId]);
         const companyProfile = cpRows[0] || null;
         const companyProfileId = companyProfile?.id || null;
-        // If the company is already approved, auto-publish the project
-        const finalStatus = companyProfile?.status === 'approved' ? 'published' : values.status;
-        const [result] = await database_1.default.execute(`INSERT INTO projects (designer_id, company_profile_id, title, description, style, space_type, location, area, year, cost, images, tags, service_tags, status, rejection_reason, video_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`, [
+
+        // If no company profile, check for expert profile
+        let expertProfileId = null;
+        if (!companyProfileId) {
+            const [epRows] = await database_1.default.execute('SELECT id, status FROM expert_profiles WHERE user_id = ? LIMIT 1', [userId]);
+            if (epRows[0]) expertProfileId = epRows[0].id;
+        }
+
+        // Auto-publish if owner is approved
+        const ownerApproved = companyProfile?.status === 'approved';
+        const finalStatus = ownerApproved ? 'published' : values.status;
+
+        const [result] = await database_1.default.execute(`INSERT INTO projects (designer_id, company_profile_id, expert_profile_id, title, description, style, space_type, location, area, year, cost, images, tags, service_tags, status, rejection_reason, video_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`, [
             null,
             companyProfileId,
+            expertProfileId,
             values.title,
             values.description,
             values.style,
@@ -175,7 +203,8 @@ async function getMyProjects(req, res) {
         const userId = req.user.userId;
         const [projects] = await database_1.default.execute(`SELECT id, title, description, style, location, area, year, cost, images, tags, service_tags, status, rejection_reason, created_at, updated_at
        FROM projects
-       WHERE company_profile_id IN (SELECT id FROM company_profiles WHERE user_id = ?)`, [userId]);
+       WHERE company_profile_id IN (SELECT id FROM company_profiles WHERE user_id = ?)
+          OR expert_profile_id IN (SELECT id FROM expert_profiles WHERE user_id = ?)`, [userId, userId]);
         // Avoid sorting large JSON image payloads inside MySQL, which can exhaust sort memory.
         const normalizedProjects = projects
             .sort(compareProjectsNewestFirst)
@@ -249,10 +278,17 @@ async function updateProject(req, res) {
         if (project.length === 0) {
             return res.status(404).json({ error: 'Project not found.' });
         }
-        // Permission check: verify user owns this project via company_profiles
+        // Permission check: verify user owns this project via company_profiles or expert_profiles
         const projectRow = project[0];
-        const [ownerCheck] = await database_1.default.execute('SELECT id FROM company_profiles WHERE id = ? AND user_id = ?', [projectRow.company_profile_id, req.user.userId]);
-        if (ownerCheck.length === 0) {
+        let isOwner = false;
+        if (projectRow.company_profile_id) {
+            const [ownerCheck] = await database_1.default.execute('SELECT id FROM company_profiles WHERE id = ? AND user_id = ?', [projectRow.company_profile_id, req.user.userId]);
+            isOwner = ownerCheck.length > 0;
+        } else if (projectRow.expert_profile_id) {
+            const [ownerCheck] = await database_1.default.execute('SELECT id FROM expert_profiles WHERE id = ? AND user_id = ?', [projectRow.expert_profile_id, req.user.userId]);
+            isOwner = ownerCheck.length > 0;
+        }
+        if (!isOwner) {
             return res.status(403).json({ error: 'You cannot edit another designer\'s project.' });
         }
         await database_1.default.execute(`UPDATE projects
@@ -307,10 +343,17 @@ async function deleteProject(req, res) {
         if (project.length === 0) {
             return res.status(404).json({ error: 'Project not found.' });
         }
-        // Permission check: verify user owns this project via company_profiles
+        // Permission check: verify user owns this project via company_profiles or expert_profiles
         const delProjectRow = project[0];
-        const [delOwnerCheck] = await database_1.default.execute('SELECT id FROM company_profiles WHERE id = ? AND user_id = ?', [delProjectRow.company_profile_id, req.user.userId]);
-        if (delOwnerCheck.length === 0) {
+        let isDelOwner = false;
+        if (delProjectRow.company_profile_id) {
+            const [ck] = await database_1.default.execute('SELECT id FROM company_profiles WHERE id = ? AND user_id = ?', [delProjectRow.company_profile_id, req.user.userId]);
+            isDelOwner = ck.length > 0;
+        } else if (delProjectRow.expert_profile_id) {
+            const [ck] = await database_1.default.execute('SELECT id FROM expert_profiles WHERE id = ? AND user_id = ?', [delProjectRow.expert_profile_id, req.user.userId]);
+            isDelOwner = ck.length > 0;
+        }
+        if (!isDelOwner) {
             return res.status(403).json({ error: 'You cannot delete another designer\'s project.' });
         }
         await database_1.default.execute('DELETE FROM projects WHERE id = ?', [id]);

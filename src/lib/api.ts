@@ -165,6 +165,13 @@ class ApiClient {
     });
   }
 
+  async patch(endpoint: string, data: unknown) {
+    return this.request(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getMe() {
     return this.get('/auth/me');
   }

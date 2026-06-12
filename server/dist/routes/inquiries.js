@@ -26,7 +26,8 @@ const inquiryLimiter = (0, express_rate_limit_1.default)({
 // Public: submit inquiry (rate limited)
 router.post('/', inquiryLimiter, [
     (0, express_validator_1.body)('phone').notEmpty().withMessage('Phone is required'),
-    (0, express_validator_1.body)('area_range').notEmpty().withMessage('Area range is required'),
+    // 专家询价无面积：area_range 仅装企询价（无 expert_id）必填
+    (0, express_validator_1.body)('area_range').if((0, express_validator_1.body)('expert_id').not().exists()).notEmpty().withMessage('Area range is required'),
 ], handleValidation, inquiryController_1.submitInquiry);
 // Authenticated: get my received inquiries
 router.get('/mine', auth_1.authenticate, inquiryController_1.getMyInquiries);

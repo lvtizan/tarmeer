@@ -50,17 +50,18 @@ const MAX_AREA_LENGTH = 64;
 async function submitInquiry(req, res) {
     try {
         const { name, phone, city, area_range, message, company_id, expert_id, source_company_name, source_company_slug, source_page } = req.body;
-        if (!phone || !area_range) {
+        // 专家询价无面积字段：area_range 仅装企询价必填
+        if (!phone || (!area_range && !expert_id)) {
             return res.status(400).json({ error: 'Phone and area range are required.' });
         }
         if (city && !VALID_CITIES.includes(city)) {
             return res.status(400).json({ error: 'Invalid city.' });
         }
-        if (typeof area_range !== 'string' || area_range.length === 0 || area_range.length > MAX_AREA_LENGTH) {
+        if (area_range && (typeof area_range !== 'string' || area_range.length > MAX_AREA_LENGTH)) {
             return res.status(400).json({ error: 'Invalid area.' });
         }
         const [result] = await database_1.default.execute(`INSERT INTO design_inquiries (name, phone, city, area_range, message, company_id, expert_id, source_company_name, source_company_slug)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [name || null, phone, city || null, area_range, message || null, company_id || null, expert_id || null, source_company_name || null, source_company_slug || null]);
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [name || null, phone, city || null, area_range || '', message || null, company_id || null, expert_id || null, source_company_name || null, source_company_slug || null]);
         const inquiryId = result.insertId;
         // Push to admin SSE subscribers (real-time map animation)
         analyticsEvents_1.analyticsEvents.notifyChange('inquiry');

@@ -1,63 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  MapPin, Briefcase, Phone, ShieldCheck, X,
-  ChevronLeft, ChevronRight, CheckCircle2,
+  MapPin, Briefcase, ShieldCheck, X,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import { resolveImageUrl } from '@/lib/imageUrl';
-import { validatePhone, isPhoneComplete, phoneDigitCount } from '@/lib/phoneValidation';
 import { ExpertBadges } from './ExpertBadges';
-import type { ExpertDetail } from './types';
+import { ExpertInquiryForm, RevealExpertPhone } from './ExpertContactSidebar';
+import ProjectsShowcaseSection from '@/components/shared/ProjectsShowcaseSection';
+import type { ExpertDetail, ExpertProjectItem } from './types';
 
 interface ExpertDetailClientProps {
   expert: ExpertDetail;
   isVn: boolean;
 }
 
-/** 电话点击才显示：完整号码只从 reveal 接口返回，同时记一次点击（真实需求统计）。
- *  与 CompanyDetailClient.RevealPhoneRow 同款交互，target_type='expert'。 */
-function RevealExpertPhone({ expertId, isVn }: { expertId: number; isVn: boolean }) {
-  const [phone, setPhone] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const reveal = async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const res = await fetch('/api/phone-reveals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target_type: 'expert', target_id: expertId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.phone) setPhone(data.phone);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (phone) {
-    return (
-      <a href={`tel:${phone}`} className="inline-flex items-center gap-2.5 text-[#1c1917] font-medium hover:text-[#b8864a] transition">
-        <Phone className="w-4 h-4 text-[#c6a065]" /> {phone}
-      </a>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={reveal}
-      disabled={loading}
-      className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-lg border border-[#b8864a] text-[#b8864a] text-sm font-medium hover:bg-[#b8864a] hover:text-white transition disabled:opacity-50"
-    >
-      <Phone className="w-4 h-4" /> {loading ? '…' : isVn ? 'Xem số điện thoại' : 'Show phone number'}
-    </button>
-  );
-}
-
-/** Minimal lightbox for certificate images */
 function CertificateLightbox({ images, index, onClose, onNavigate }: {
   images: string[];
   index: number;
@@ -119,126 +80,135 @@ function CertificateLightbox({ images, index, onClose, onNavigate }: {
   );
 }
 
-/** 留言表单：手机号按国家码校验（vi→+84，否则 +971），area_range 留言场景固定 'N/A' */
-function ExpertInquiryForm({ expertId, isVn }: { expertId: number; isVn: boolean }) {
-  const countryCode = isVn ? '+84' : '+971';
-  const [name, setName] = useState('');
-  const [digits, setDigits] = useState('');
-  const [message, setMessage] = useState('');
-  const [touched, setTouched] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
+function ProjectDetailSheet({ project, onClose }: { project: ExpertProjectItem; onClose: () => void }) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const images = Array.isArray(project.images) ? project.images : [];
 
-  const phoneError = touched ? validatePhone(digits, countryCode) : null;
-  const phoneComplete = isPhoneComplete(digits, countryCode);
-  const canSubmit = Boolean(name.trim() && message.trim() && phoneComplete && !validatePhone(digits, countryCode));
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft' && imgIdx > 0) setImgIdx(i => i - 1);
+      if (e.key === 'ArrowRight' && imgIdx < images.length - 1) setImgIdx(i => i + 1);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [imgIdx, images.length, onClose]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit || submitting) return;
-    setSubmitting(true);
-    setError('');
-    try {
-      const res = await fetch('/api/inquiries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          phone: countryCode + digits,
-          message: message.trim(),
-          expert_id: expertId,
-          area_range: 'N/A',
-          source_page: typeof window !== 'undefined' ? window.location.href : '',
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { message?: string })?.message || `Request failed (${res.status})`);
-      }
-      setSubmitted(true);
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error && err.message
-          ? err.message
-          : isVn ? 'Gửi không thành công, vui lòng thử lại.' : 'Failed to submit. Please try again.'
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (submitted) {
-    return (
-      <div className="text-center py-8">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-100 flex items-center justify-center">
-          <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-        </div>
-        <p className="text-sm font-semibold text-[#1c1917]">
-          {isVn ? 'Đã gửi tin nhắn!' : 'Message sent!'}
-        </p>
-        <p className="text-xs text-stone-500 mt-1">
-          {isVn ? 'Chuyên gia sẽ liên hệ với bạn sớm.' : "We'll get back to you soon."}
-        </p>
-      </div>
-    );
-  }
-
-  const inputCls =
-    'h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors';
+  const meta: { icon: React.ReactNode; label: string }[] = [
+    ...(project.style ? [{ icon: null, label: project.style }] : []),
+    ...(project.location ? [{ icon: <MapPin className="w-3.5 h-3.5" />, label: project.location }] : []),
+    ...(project.area ? [{ icon: null, label: project.area }] : []),
+    ...(project.year ? [{ icon: null, label: String(project.year) }] : []),
+    ...(project.cost ? [{ icon: null, label: project.cost }] : []),
+  ];
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit}>
-      {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-      <input
-        type="text"
-        placeholder={isVn ? 'Họ và tên' : 'Your name'}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className={inputCls}
-      />
-      <div>
-        <div className={`flex h-12 rounded-lg border bg-stone-50 overflow-hidden focus-within:ring-2 transition ${
-          phoneError
-            ? 'border-red-400 focus-within:border-red-400 focus-within:ring-red-400/20'
-            : 'border-stone-200 focus-within:border-[#b8864a] focus-within:ring-[#b8864a]/40'
-        }`}>
-          <span className="flex items-center px-3 text-sm text-stone-500 border-r border-stone-200 bg-stone-100/60 shrink-0">
-            {countryCode}
-          </span>
-          <input
-            type="tel"
-            placeholder={'0'.repeat(phoneDigitCount(countryCode))}
-            value={digits}
-            maxLength={phoneDigitCount(countryCode)}
-            onChange={(e) => setDigits(e.target.value.replace(/[^0-9]/g, ''))}
-            onBlur={() => setTouched(true)}
-            className="flex-1 h-full px-3 bg-transparent text-sm text-[#2c2c2c] placeholder:text-stone-400 focus:outline-none min-w-0"
-          />
-        </div>
-        {phoneError && <p className="text-xs text-red-500 mt-1.5">{phoneError}</p>}
-      </div>
-      <textarea
-        placeholder={isVn ? 'Nội dung tin nhắn' : 'Your message'}
-        rows={4}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors"
-      />
-      <button
-        type="submit"
-        disabled={!canSubmit || submitting}
-        className="w-full h-12 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+    <div className="fixed inset-0 z-[100] bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <div
+        className="bg-white w-full sm:max-w-3xl rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl max-h-[92vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
       >
-        {submitting
-          ? (isVn ? 'Đang gửi...' : 'Sending...')
-          : (isVn ? 'Gửi tin nhắn' : 'Send Message')}
-      </button>
-    </form>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-stone-100 shrink-0">
+          <h3 className="font-semibold text-[#1c1917] text-base line-clamp-1 pr-4">{project.title}</h3>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-full hover:bg-stone-100 transition shrink-0">
+            <X className="w-5 h-5 text-stone-500" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1">
+          {/* Main image */}
+          {images.length > 0 && (
+            <div className="relative bg-stone-100">
+              <div className="relative h-64 sm:h-96">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={resolveImageUrl(images[imgIdx])}
+                  alt={project.title}
+                  className="w-full h-full object-cover"
+                />
+                {images.length > 1 && (
+                  <>
+                    {imgIdx > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setImgIdx(i => i - 1)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white shadow transition"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-[#1c1917]" />
+                      </button>
+                    )}
+                    {imgIdx < images.length - 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setImgIdx(i => i + 1)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white shadow transition"
+                      >
+                        <ChevronRight className="w-5 h-5 text-[#1c1917]" />
+                      </button>
+                    )}
+                    <div className="absolute bottom-2 right-3 px-2 py-0.5 rounded-full bg-black/50 text-white text-xs">
+                      {imgIdx + 1} / {images.length}
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Thumbnail strip */}
+              {images.length > 1 && (
+                <div className="flex gap-2 px-4 py-3 overflow-x-auto">
+                  {images.map((img, i) => (
+                    <button key={i} type="button" onClick={() => setImgIdx(i)} className="shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={resolveImageUrl(img)}
+                        alt=""
+                        className={`h-14 w-20 object-cover rounded-lg transition ${i === imgIdx ? 'ring-2 ring-[#b8864a]' : 'opacity-60 hover:opacity-90'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Details */}
+          <div className="px-5 py-5 space-y-4">
+            {meta.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {meta.map((m, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-600 text-xs font-medium">
+                    {m.icon}{m.label}
+                  </span>
+                ))}
+              </div>
+            )}
+            {project.description && (
+              <p className="text-sm text-stone-600 leading-relaxed">{project.description}</p>
+            )}
+            {Array.isArray(project.tags) && project.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {project.tags.map((tag, i) => (
+                  <span key={i} className="px-2.5 py-0.5 text-[11px] text-[#8b6914] bg-[#f5f0e8] rounded-full font-medium">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
+
 export default function ExpertDetailClient({ expert, isVn }: ExpertDetailClientProps) {
+  const router = useRouter();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const currentYear = new Date().getFullYear();
@@ -251,137 +221,228 @@ export default function ExpertDetailClient({ expert, isVn }: ExpertDetailClientP
   }
   if (expert.city) metaParts.push(expert.city);
 
-  const sectionTitle = 'font-serif text-xl text-[#1c1917] mb-4';
+  const cardCls = 'bg-white border border-stone-200/60 rounded-2xl p-6';
+  const sectionTitle = 'font-serif text-lg text-[#1c1917] mb-4';
+
+  const projects = expert.projects || [];
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-6">
-        {/* 1. Header card */}
-        <div className="bg-white border border-stone-200/60 rounded-2xl p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-start gap-5">
-            <Avatar name={expert.full_name} avatarUrl={expert.avatar_url || ''} size="xl" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <h1 className="font-serif text-2xl sm:text-3xl text-[#1c1917]">{expert.full_name}</h1>
-                <ExpertBadges isSigned={expert.is_signed} isCertified={expert.is_certified} isVn={isVn} />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+
+          {/* ── Left main column ── */}
+          <div className="flex-1 min-w-0 space-y-5">
+
+            {/* Header card */}
+            <div className={cardCls}>
+              <div className="flex flex-col sm:flex-row items-start gap-5">
+                <Avatar name={expert.full_name} avatarUrl={expert.avatar_url || ''} size="xl" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <h1 className="font-serif text-2xl sm:text-3xl text-[#1c1917]">{expert.full_name}</h1>
+                    <ExpertBadges isSigned={expert.is_signed} isCertified={expert.is_certified} isVn={isVn} />
+                  </div>
+                  {expert.services.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {expert.services.map((svc) => (
+                        <span key={svc} className="px-2.5 py-0.5 text-[11px] text-[#8b6914] bg-[#f5f0e8] rounded-full font-medium">
+                          {svc}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {metaParts.length > 0 && (
+                    <p className="text-sm text-stone-500 flex items-center gap-1.5 flex-wrap">
+                      {metaParts.map((part, i) => (
+                        <span key={part} className="flex items-center gap-1.5">
+                          {i > 0 && <span className="text-stone-300">·</span>}
+                          {part}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                </div>
               </div>
-              {expert.services.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {expert.services.map((svc) => (
-                    <span key={svc} className="px-2.5 py-0.5 text-[11px] text-[#8b6914] bg-[#f5f0e8] rounded-full font-medium">
-                      {svc}
+            </div>
+
+            {/* Bio */}
+            {expert.bio && (
+              <div className={cardCls}>
+                <h2 className={sectionTitle}>{isVn ? 'Giới thiệu' : 'About'}</h2>
+                <p className="text-[15px] text-stone-600 leading-relaxed whitespace-pre-line">{expert.bio}</p>
+              </div>
+            )}
+
+            {/* Work history */}
+            {expert.work_history.length > 0 && (
+              <div className={cardCls}>
+                <h2 className={sectionTitle}>{isVn ? 'Kinh nghiệm làm việc' : 'Work Experience'}</h2>
+                <ol className="relative border-l border-stone-200 ml-1.5 space-y-6">
+                  {expert.work_history.map((item, i) => (
+                    <li key={`${item.org}-${i}`} className="pl-5 relative">
+                      <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#b8864a] ring-4 ring-[#b8864a]/15" />
+                      <p className="text-xs text-stone-400 mb-0.5">
+                        {[item.from, item.to].filter(Boolean).join(' – ')}
+                      </p>
+                      <p className="text-[15px] font-semibold text-[#1c1917]">{item.org}</p>
+                      {item.role && <p className="text-sm text-stone-500">{item.role}</p>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Skills */}
+            {expert.skills.length > 0 && (
+              <div className={cardCls}>
+                <h2 className={sectionTitle}>{isVn ? 'Kỹ năng' : 'Skills'}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {expert.skills.map((skill) => (
+                    <span key={skill} className="px-3 py-1.5 text-sm text-stone-600 border border-stone-200 rounded-full bg-stone-50">
+                      {skill}
                     </span>
                   ))}
                 </div>
-              )}
-              {metaParts.length > 0 && (
-                <p className="text-sm text-stone-500 flex items-center gap-1.5 flex-wrap">
-                  {metaParts.map((part, i) => (
-                    <span key={part} className="flex items-center gap-1.5">
-                      {i > 0 && <span className="text-stone-300">·</span>}
-                      {part}
-                    </span>
-                  ))}
+              </div>
+            )}
+
+            {/* Certificates */}
+            {(expert.certificates.length > 0 || Boolean(expert.license_verified)) && (
+              <div className={cardCls}>
+                <h2 className={sectionTitle}>{isVn ? 'Chứng chỉ' : 'Certificates'}</h2>
+                {Boolean(expert.license_verified) && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium mb-4">
+                    <ShieldCheck className="w-4 h-4" />
+                    {isVn ? 'Giấy phép kinh doanh đã được xác minh ✓' : 'Business license verified ✓'}
+                  </div>
+                )}
+                {expert.certificates.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {expert.certificates.map((cert, i) => (
+                      <button
+                        key={`${cert}-${i}`}
+                        type="button"
+                        onClick={() => setLightboxIndex(i)}
+                        className="group aspect-[4/3] rounded-xl overflow-hidden border border-stone-200 bg-stone-50 hover:border-[#b8864a]/50 transition"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={resolveImageUrl(cert)}
+                          alt={`${expert.full_name} certificate ${i + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition duration-300"
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Projects showcase — shared grid (same component as company detail) */}
+            {projects.length > 0 && (
+              <div className={cardCls}>
+                <h2 className={sectionTitle}>
+                  {isVn ? 'Dự án tiêu biểu' : 'Featured Projects'}
+                  <span className="ml-2 text-sm font-normal text-stone-400">({projects.length})</span>
+                </h2>
+                <ProjectsShowcaseSection
+                  variant="expert"
+                  title={isVn ? 'Dự án tiêu biểu' : 'Featured Projects'}
+                  projects={projects.map((proj) => ({
+                    key: proj.id,
+                    title: proj.title,
+                    description: proj.description,
+                    style: proj.style,
+                    location: proj.location,
+                    area: proj.area,
+                    images: Array.isArray(proj.images) ? proj.images : [],
+                  }))}
+                  onProjectClick={(p) => {
+                    const proj = projects.find((x) => x.id === p.key);
+                    if (proj?.slug) router.push(`/experts/${expert.slug}/${proj.slug}`);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Mobile: inquiry form (all countries, below content on small screens) */}
+            <div className="lg:hidden">
+              <div className={cardCls}>
+                <h2 className={sectionTitle}>
+                  {isVn ? 'Gửi tin nhắn cho chuyên gia' : 'Message this expert'}
+                </h2>
+                <p className="text-xs text-stone-500 -mt-2 mb-4">
+                  {isVn
+                    ? 'Mô tả nhu cầu của bạn, chuyên gia sẽ phản hồi trực tiếp.'
+                    : 'Describe your project and the expert will get back to you directly.'}
                 </p>
+                <ExpertInquiryForm expertId={expert.id} isVn={isVn} />
+              </div>
+              {isVn && Boolean(expert.has_phone) && (
+                <div className={`${cardCls} mt-5`}>
+                  <h2 className={sectionTitle}>Liên hệ trực tiếp</h2>
+                  <RevealExpertPhone expertId={expert.id} isVn={isVn} />
+                </div>
               )}
             </div>
           </div>
-        </div>
 
-        {/* 2. Bio */}
-        {expert.bio && (
-          <div className="bg-white border border-stone-200/60 rounded-2xl p-6 sm:p-8">
-            <h2 className={sectionTitle}>{isVn ? 'Giới thiệu' : 'About'}</h2>
-            <p className="text-[15px] text-stone-600 leading-relaxed whitespace-pre-line">{expert.bio}</p>
-          </div>
-        )}
+          {/* ── Right sticky sidebar (desktop only) ── */}
+          <div className="hidden lg:block w-[320px] flex-shrink-0">
+            <div className="sticky top-20 space-y-4">
 
-        {/* 3. Work history timeline */}
-        {expert.work_history.length > 0 && (
-          <div className="bg-white border border-stone-200/60 rounded-2xl p-6 sm:p-8">
-            <h2 className={sectionTitle}>{isVn ? 'Kinh nghiệm làm việc' : 'Work Experience'}</h2>
-            <ol className="relative border-l border-stone-200 ml-1.5 space-y-6">
-              {expert.work_history.map((item, i) => (
-                <li key={`${item.org}-${i}`} className="pl-5 relative">
-                  <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#b8864a] ring-4 ring-[#b8864a]/15" />
-                  <p className="text-xs text-stone-400 mb-0.5">
-                    {[item.from, item.to].filter(Boolean).join(' – ')}
-                  </p>
-                  <p className="text-[15px] font-semibold text-[#1c1917]">{item.org}</p>
-                  {item.role && <p className="text-sm text-stone-500">{item.role}</p>}
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
+              {/* Inquiry form card — all countries */}
+              <div className={cardCls}>
+                <h2 className="font-serif text-base text-[#1c1917] mb-1">
+                  {isVn ? 'Gửi tin nhắn cho chuyên gia' : 'Message this expert'}
+                </h2>
+                <p className="text-xs text-stone-500 mb-4">
+                  {isVn
+                    ? 'Mô tả nhu cầu của bạn, chuyên gia sẽ phản hồi trực tiếp.'
+                    : 'Describe your project and the expert will get back to you directly.'}
+                </p>
+                <ExpertInquiryForm expertId={expert.id} isVn={isVn} />
+              </div>
 
-        {/* 4. Skills */}
-        {expert.skills.length > 0 && (
-          <div className="bg-white border border-stone-200/60 rounded-2xl p-6 sm:p-8">
-            <h2 className={sectionTitle}>{isVn ? 'Kỹ năng' : 'Skills'}</h2>
-            <div className="flex flex-wrap gap-2">
-              {expert.skills.map((skill) => (
-                <span key={skill} className="px-3 py-1.5 text-sm text-stone-600 border border-stone-200 rounded-full bg-stone-50">
-                  {skill}
-                </span>
-              ))}
+              {/* Phone reveal card — VN only */}
+              {isVn && Boolean(expert.has_phone) && (
+                <div className={cardCls}>
+                  <h2 className="font-serif text-base text-[#1c1917] mb-3">Liên hệ trực tiếp</h2>
+                  <RevealExpertPhone expertId={expert.id} isVn={isVn} />
+                </div>
+              )}
+
+              {/* Quick facts */}
+              {(Number(expert.experience_years) > 0 || expert.city) && (
+                <div className={cardCls}>
+                  <div className="space-y-2.5 text-sm">
+                    {Number(expert.experience_years) > 0 && (
+                      <div className="flex items-center gap-2.5 text-stone-600">
+                        <Briefcase className="w-4 h-4 text-[#b8864a] shrink-0" />
+                        <span>
+                          {isVn
+                            ? `${expert.experience_years} năm kinh nghiệm`
+                            : `${expert.experience_years} years experience`}
+                        </span>
+                      </div>
+                    )}
+                    {expert.city && (
+                      <div className="flex items-center gap-2.5 text-stone-600">
+                        <MapPin className="w-4 h-4 text-[#b8864a] shrink-0" />
+                        <span>{expert.city}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
-
-        {/* 5. Certificates + license verified */}
-        {(expert.certificates.length > 0 || Boolean(expert.license_verified)) && (
-          <div className="bg-white border border-stone-200/60 rounded-2xl p-6 sm:p-8">
-            <h2 className={sectionTitle}>{isVn ? 'Chứng chỉ' : 'Certificates'}</h2>
-            {Boolean(expert.license_verified) && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium mb-4">
-                <ShieldCheck className="w-4 h-4" />
-                {isVn ? 'Giấy phép kinh doanh đã được xác minh ✓' : 'Business license verified ✓'}
-              </div>
-            )}
-            {expert.certificates.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {expert.certificates.map((cert, i) => (
-                  <button
-                    key={`${cert}-${i}`}
-                    type="button"
-                    onClick={() => setLightboxIndex(i)}
-                    className="group aspect-[4/3] rounded-xl overflow-hidden border border-stone-200 bg-stone-50 hover:border-[#b8864a]/50 transition"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={resolveImageUrl(cert)}
-                      alt={`${expert.full_name} certificate ${i + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-[1.03] transition duration-300"
-                      loading="lazy"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 6. Contact phone */}
-        {Boolean(expert.has_phone) && (
-          <div className="bg-white border border-stone-200/60 rounded-2xl p-6 sm:p-8">
-            <h2 className={sectionTitle}>{isVn ? 'Liên hệ' : 'Contact'}</h2>
-            <RevealExpertPhone expertId={expert.id} isVn={isVn} />
-          </div>
-        )}
-
-        {/* 7. Inquiry form */}
-        <div className="bg-white border border-stone-200/60 rounded-2xl p-6 sm:p-8">
-          <h2 className={sectionTitle}>{isVn ? 'Gửi tin nhắn cho chuyên gia' : 'Message this expert'}</h2>
-          <p className="text-xs text-stone-500 -mt-2 mb-4">
-            {isVn
-              ? 'Mô tả nhu cầu của bạn, chuyên gia sẽ phản hồi trực tiếp.'
-              : 'Describe your project and the expert will get back to you directly.'}
-          </p>
-          <ExpertInquiryForm expertId={expert.id} isVn={isVn} />
         </div>
       </div>
 
+      {/* Certificate lightbox */}
       {lightboxIndex !== null && expert.certificates.length > 0 && (
         <CertificateLightbox
           images={expert.certificates}
@@ -390,6 +451,7 @@ export default function ExpertDetailClient({ expert, isVn }: ExpertDetailClientP
           onNavigate={setLightboxIndex}
         />
       )}
+
     </div>
   );
 }
