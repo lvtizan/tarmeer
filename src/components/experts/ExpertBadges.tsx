@@ -1,3 +1,5 @@
+import { BadgeCheck } from 'lucide-react';
+
 /** Gold (signed) + Verified (certified) badges — shared by experts list cards and expert detail header.
  *  Styles mirror the company Gold badge in src/components/companies/CompaniesClient.tsx. */
 export function GoldBadge() {
@@ -9,10 +11,12 @@ export function GoldBadge() {
 }
 
 export function VerifiedBadge({ isVn = false }: { isVn?: boolean }) {
+  // 花瓣环形 + 勾的认证 icon（与装企认证一致），紧凑不抢眼
   return (
-    <span className="inline-flex items-center gap-0.5 px-1.5 py-[2px] rounded bg-blue-500 text-white text-[10px] font-bold tracking-wider leading-none shrink-0 align-middle">
-      ✓ {isVn ? 'Đã xác minh' : 'Verified'}
-    </span>
+    <BadgeCheck
+      className="w-[18px] h-[18px] text-[#b8864a] shrink-0 align-middle"
+      aria-label={isVn ? 'Đã xác minh' : 'Verified'}
+    />
   );
 }
 
