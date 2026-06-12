@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, MapPin, Briefcase,
   Calendar, FolderOpen, Mail, ChevronLeft, ChevronRight,
-  Share2, ExternalLink, X, BadgeCheck, Link2, CheckCircle2, Phone,
+  Share2, ExternalLink, X, BadgeCheck, Link2, CheckCircle2,
 } from 'lucide-react';
 
 /** Inline Instagram icon — not available in this lucide-react version */
@@ -26,52 +26,14 @@ import { normalizePortfolioCategories } from '@/lib/categoryNormalize';
 import MasonryGallery from '@/components/MasonryGallery';
 import CompanyProjectsSection from '@/components/CompanyProjectsSection';
 import Lightbox from '@/components/Lightbox';
-import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
+import UnifiedInquiryForm from '@/components/shared/UnifiedInquiryForm';
+import PhoneRevealButton from '@/components/shared/PhoneRevealButton';
 import SmartImage from '@/components/ui/SmartImage';
 
 interface CompanyDetailClientProps {
   company: Company;
   slug: string;
   isVn?: boolean;
-}
-
-/** 电话点击才显示：完整号码只从 reveal 接口返回，同时记一次点击（真实需求统计） */
-function RevealPhoneRow({ targetId, isVn }: { targetId?: number; isVn?: boolean }) {
-  const [phone, setPhone] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  if (!targetId) return null;
-  const reveal = async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const res = await fetch('/api/phone-reveals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target_type: 'uae', target_id: targetId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.phone) setPhone(data.phone);
-    } finally {
-      setLoading(false);
-    }
-  };
-  if (phone) {
-    return (
-      <a href={`tel:${phone}`} className="flex items-center gap-2.5 text-stone-600 hover:text-[#b8864a] transition">
-        <Phone className="w-4 h-4 text-[#c6a065]" /> {phone}
-      </a>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={reveal}
-      disabled={loading}
-      className="flex items-center gap-2.5 text-[#b8864a] hover:underline disabled:opacity-50"
-    >
-      <Phone className="w-4 h-4" /> {loading ? '…' : isVn ? 'Xem số điện thoại' : 'Show phone number'}
-    </button>
-  );
 }
 
 export default function CompanyDetailClient({ company, slug, isVn = false }: CompanyDetailClientProps) {
@@ -615,7 +577,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                 <section className="py-6 border-b border-stone-100 lg:hidden">
                   <h2 className="text-lg font-semibold text-[#1c1917] mb-3">Contact</h2>
                   <div className="space-y-2.5 text-sm">
-                    {company.hasPhone && <RevealPhoneRow targetId={company.numericId} isVn={isVn} />}
+                    {company.hasPhone && <PhoneRevealButton targetType="uae" targetId={company.numericId} isVn={isVn} />}
                     {company.email && (
                       <a
                         href={`mailto:${company.email}`}
@@ -731,7 +693,8 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
           {/* Right: Sticky Inquiry Sidebar */}
           <div ref={sidebarRef} className="hidden lg:block w-[320px] flex-shrink-0">
             <div className="sticky top-20 space-y-4">
-              <ServiceInquiryCard
+              <UnifiedInquiryForm
+                variant="company"
                 title={`Get in touch with ${company.name}`}
                 companyName={company.name}
                 companySlug={company.id}
@@ -744,7 +707,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                   <div className="border border-stone-200 rounded-xl p-5">
                     <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Contact Info</h3>
                     <div className="space-y-2.5 text-sm">
-                      {company.hasPhone && <RevealPhoneRow targetId={company.numericId} isVn={isVn} />}
+                      {company.hasPhone && <PhoneRevealButton targetType="uae" targetId={company.numericId} isVn={isVn} />}
                       {company.email && (
                         <a
                           href={`mailto:${company.email}`}
@@ -879,7 +842,8 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                   <X className="w-4 h-4 text-stone-400" />
                 </button>
               </div>
-              <ServiceInquiryCard
+              <UnifiedInquiryForm
+                variant="company"
                 title={`Get in touch with ${company.name}`}
                 companyName={company.name}
                 companySlug={company.id}
