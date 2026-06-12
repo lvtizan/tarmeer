@@ -191,9 +191,8 @@ export default function ExpertDetailClient({ expert, isVn }: ExpertDetailClientP
               )}
             </div>
 
-            {/* Header — Below carousel */}
+            {/* Header — Below carousel（头像只在右侧 Contact 卡，左栏不重复）*/}
             <div className="flex items-start gap-4 mt-5">
-              <Avatar name={expert.full_name} avatarUrl={expert.avatar_url || ''} size="xl" className="flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <h1 className="font-serif text-2xl font-semibold text-[#1c1917] flex items-center gap-2 flex-wrap">
                   {expert.full_name}
