@@ -4,10 +4,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Check, Search, Camera, Phone, Gift, Shield, Users } from 'lucide-react';
 import { t, type Lang } from '@/i18n/forCompanies';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import CompanySignupForm from './CompanySignupForm';
 
 export default function ForCompaniesClient() {
-  const [lang, setLang] = useState<Lang>('en');
+  // VN 站默认越南语；AE 站默认英语，第二语言为阿拉伯语
+  const isVn = useSiteLocale().lang === 'vi';
+  const secondLang: Lang = isVn ? 'vi' : 'ar';
+  const [lang, setLang] = useState<Lang>(isVn ? 'vi' : 'en');
 
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -28,10 +32,10 @@ export default function ForCompaniesClient() {
             EN
           </button>
           <button
-            onClick={() => setLang('ar')}
-            className={`px-3 py-1 text-sm font-medium rounded-md transition ${lang === 'ar' ? 'bg-[#b8864a] text-white' : 'text-white/60'}`}
+            onClick={() => setLang(secondLang)}
+            className={`px-3 py-1 text-sm font-medium rounded-md transition ${lang === secondLang ? 'bg-[#b8864a] text-white' : 'text-white/60'}`}
           >
-            AR
+            {isVn ? 'VI' : 'AR'}
           </button>
         </div>
 
@@ -101,9 +105,9 @@ export default function ForCompaniesClient() {
 
             {/* Big title */}
             <h1 className="font-serif text-[2.5rem] sm:text-[3.2rem] lg:text-[3.8rem] font-bold text-white leading-[1.1] tracking-tight">
-              {lang === 'ar' ? t(lang, 'headline') : (
+              {lang === 'en' ? (
                 <>Homeowners Are<br />Looking <span className="text-[#c6a065]">for You</span></>
-              )}
+              ) : t(lang, 'headline')}
             </h1>
 
             {/* Subtitle */}

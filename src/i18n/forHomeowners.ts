@@ -1,4 +1,4 @@
-export type Lang = 'en' | 'ar';
+export type Lang = 'en' | 'ar' | 'vi';
 
 const translations = {
   en: {
@@ -83,6 +83,51 @@ const translations = {
     trustCities: '\u0645\u062f\u0646 \u0645\u063a\u0637\u0627\u0629',
     privacy: '\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u062e\u0635\u0648\u0635\u064a\u0629',
     contactUs: '\u0627\u062a\u0635\u0644 \u0628\u0646\u0627',
+  },
+  vi: {
+    // Header
+    backToTarmeer: 'Quay l\u1ea1i Tarmeer',
+    // Hero
+    tagline: 'T\u00ecm C\u00f4ng ty C\u1ea3i t\u1ea1o Ho\u00e0n h\u1ea3o cho B\u1ea1n',
+    headline: 'C\u1ea3i t\u1ea1o Ng\u00f4i nh\u00e0 c\u1ee7a B\u1ea1n t\u1ea1i Vi\u1ec7t Nam',
+    subtitle: 'So s\u00e1nh c\u00e1c c\u00f4ng ty \u0111\u00e3 x\u00e1c minh, xem portfolio th\u1ef1c t\u1ebf v\u00e0 nh\u1eadn b\u00e1o gi\u00e1 mi\u1ec5n ph\u00ed \u2014 t\u1ea5t c\u1ea3 t\u1ea1i m\u1ed9t n\u01a1i.',
+    // Form
+    formTitle: 'Nh\u1eadn B\u00e1o gi\u00e1 Mi\u1ec5n ph\u00ed',
+    area: 'Di\u1ec7n t\u00edch (m\u00b2)',
+    areaPlaceholder: 'VD: 150',
+    city: 'Th\u00e0nh ph\u1ed1',
+    cityPlaceholder: 'Ch\u1ecdn th\u00e0nh ph\u1ed1 c\u1ee7a b\u1ea1n',
+    phone: 'S\u1ed1 \u0111i\u1ec7n tho\u1ea1i',
+    phonePlaceholder: 'VD: 090 123 4567',
+    submit: 'Nh\u1eadn B\u00e1o gi\u00e1 Mi\u1ec5n ph\u00ed',
+    submitting: '\u0110ang g\u1eedi...',
+    successTitle: '\u0110\u00e3 nh\u1eadn y\u00eau c\u1ea7u!',
+    successMessage: '\u0110\u1ed9i ng\u0169 c\u1ee7a ch\u00fang t\u00f4i s\u1ebd k\u1ebft n\u1ed1i b\u1ea1n v\u1edbi nh\u1eefng c\u00f4ng ty ph\u00f9 h\u1ee3p nh\u1ea5t cho d\u1ef1 \u00e1n c\u1ee7a b\u1ea1n. B\u1ea1n s\u1ebd nh\u1eadn \u0111\u01b0\u1ee3c cu\u1ed9c g\u1ecdi trong v\u00f2ng 24 gi\u1edd.',
+    successBrowse: 'Xem c\u00e1c C\u00f4ng ty',
+    // Pain points
+    painTitle: 'V\u00ec sao Ch\u1ee7 nh\u00e0 ch\u1ecdn Tarmeer',
+    pain1Title: 'So s\u00e1nh & Ti\u1ebft ki\u1ec7m',
+    pain1Desc: 'Nh\u1eadn nhi\u1ec1u b\u00e1o gi\u00e1 t\u1eeb c\u00e1c c\u00f4ng ty \u0111\u00e3 x\u00e1c minh. Kh\u00f4ng c\u00f2n \u0111o\u00e1n m\u00f2 v\u1ec1 gi\u00e1 \u2014 xem gi\u00e1 th\u1ecb tr\u01b0\u1eddng th\u1ef1c t\u1ebf c\u1ea1nh nhau.',
+    pain2Title: 'Portfolio Th\u1ef1c t\u1ebf',
+    pain2Desc: 'Xem h\u00e0ng ngh\u00ecn \u1ea3nh d\u1ef1 \u00e1n th\u1ef1c t\u1ebf. \u0110\u00e1nh gi\u00e1 ch\u1ea5t l\u01b0\u1ee3ng c\u00f4ng vi\u1ec7c tr\u01b0\u1edbc khi quy\u1ebft \u0111\u1ecbnh.',
+    pain3Title: 'K\u1ebft n\u1ed1i Chuy\u00ean gia',
+    pain3Desc: 'Cho ch\u00fang t\u00f4i bi\u1ebft y\u00eau c\u1ea7u v\u00e0 ng\u00e2n s\u00e1ch c\u1ee7a b\u1ea1n. Ch\u00fang t\u00f4i k\u1ebft n\u1ed1i b\u1ea1n v\u1edbi nh\u1eefng c\u00f4ng ty chuy\u00ean v\u1ec1 lo\u1ea1i d\u1ef1 \u00e1n c\u1ee7a b\u1ea1n.',
+    // How it works
+    howTitle: 'C\u00e1ch th\u1ee9c Ho\u1ea1t \u0111\u1ed9ng',
+    step1Title: 'G\u1eedi Y\u00eau c\u1ea7u c\u1ee7a B\u1ea1n',
+    step1Desc: 'Cho ch\u00fang t\u00f4i bi\u1ebft v\u1ec1 kh\u00f4ng gian, phong c\u00e1ch y\u00eau th\u00edch v\u00e0 ng\u00e2n s\u00e1ch c\u1ee7a b\u1ea1n. Ch\u1ec9 m\u1ea5t ch\u01b0a \u0111\u1ebfn 2 ph\u00fat.',
+    step2Title: '\u0110\u01b0\u1ee3c K\u1ebft n\u1ed1i',
+    step2Desc: 'Ch\u00fang t\u00f4i k\u1ebft n\u1ed1i b\u1ea1n v\u1edbi 3-5 c\u00f4ng ty \u0111\u00e3 \u0111\u01b0\u1ee3c tuy\u1ec3n ch\u1ecdn ph\u00f9 h\u1ee3p v\u1edbi quy m\u00f4 v\u00e0 ng\u00e2n s\u00e1ch d\u1ef1 \u00e1n c\u1ee7a b\u1ea1n.',
+    step3Title: 'B\u1eaft \u0111\u1ea7u D\u1ef1 \u00e1n',
+    step3Desc: 'So s\u00e1nh \u0111\u1ec1 xu\u1ea5t, gh\u00e9 th\u0103m showroom v\u00e0 ch\u1ecdn c\u00f4ng ty b\u1ea1n tin t\u01b0\u1edfng. Ch\u00fang t\u00f4i lu\u00f4n \u0111\u1ed3ng h\u00e0nh c\u00f9ng b\u1ea1n.',
+    // Trust
+    trustTitle: '\u0110\u01b0\u1ee3c Ch\u1ee7 nh\u00e0 tr\u00ean kh\u1eafp Vi\u1ec7t Nam Tin t\u01b0\u1edfng',
+    trustCompanies: 'C\u00f4ng ty \u0110\u00e3 x\u00e1c minh',
+    trustProjects: '\u1ea2nh D\u1ef1 \u00e1n',
+    trustCities: 'Th\u00e0nh ph\u1ed1 Ph\u1ee7 s\u00f3ng',
+    // Footer
+    privacy: 'Ch\u00ednh s\u00e1ch B\u1ea3o m\u1eadt',
+    contactUs: 'Li\u00ean h\u1ec7',
   },
 } as const;
 

@@ -18,7 +18,10 @@ const fadeUp = {
 };
 
 export default function ForHomeownersClient() {
-  const c = countryFromLang(useSiteLocale().lang);
+  const siteLang = useSiteLocale().lang;
+  const c = countryFromLang(siteLang);
+  const isVn = siteLang === 'vi';
+  const secondLang: Lang = isVn ? 'vi' : 'ar';
   const CITIES = [
     { value: '', label: '' },
     ...c.cities.map((city) => ({ value: city, label: city })),
@@ -39,7 +42,7 @@ export default function ForHomeownersClient() {
     },
   };
 
-  const [lang, setLang] = useState<Lang>('en');
+  const [lang, setLang] = useState<Lang>(isVn ? 'vi' : 'en');
   const [area, setArea] = useState('');
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
@@ -96,10 +99,10 @@ export default function ForHomeownersClient() {
               EN
             </button>
             <button
-              onClick={() => setLang('ar')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition ${lang === 'ar' ? 'bg-[#b8864a] text-white' : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}
+              onClick={() => setLang(secondLang)}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition ${lang === secondLang ? 'bg-[#b8864a] text-white' : 'text-[#6b6b6b] hover:text-[#2c2c2c]'}`}
             >
-              AR
+              {isVn ? 'VI' : 'AR'}
             </button>
           </div>
         </div>
