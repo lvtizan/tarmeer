@@ -770,7 +770,6 @@ async function runAutoMigrate() {
         // 10b. Backfill homeowner_profiles.country from phone prefix (one-time, idempotent)
         try {
             await database_1.default.execute(`UPDATE homeowner_profiles SET country = 'vn' WHERE country = 'ae' AND (phone LIKE '+84%' OR phone LIKE '084%')`);
-            await database_1.default.execute(`UPDATE homeowner_profiles SET country = 'sa' WHERE country = 'ae' AND (phone LIKE '+966%' OR phone LIKE '00966%')`);
         }
         catch { /* ignore — country column may not yet exist on first run */ }
         // 11. Strip trunk 0 from company_profiles.phone where +CC0XXX stored (e.g. +971050xxx → +97150xxx)

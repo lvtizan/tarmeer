@@ -155,7 +155,7 @@ app.use((req, res, next) => {
 // Country context middleware — reads x-country header set by Next.js middleware
 app.use((req, _res, next) => {
     const h = req.headers['x-country'];
-    req.country = (typeof h === 'string' && ['ae', 'vn', 'sa'].includes(h)) ? h : 'ae';
+    req.country = (typeof h === 'string' && ['ae', 'vn'].includes(h)) ? h : 'ae';
     next();
 });
 app.use(express_1.default.json({

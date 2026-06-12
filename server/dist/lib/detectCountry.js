@@ -11,17 +11,15 @@ exports.COUNTRY_PHONE_PREFIXES = void 0;
 // 各国手机号前缀（正向匹配国家）。ae 是残余/默认桶，无正向前缀。
 const COUNTRY_PHONE_PREFIXES = {
     vn: ['+84%', '084%'],
-    sa: ['+966%', '00966%'],
 };
 exports.COUNTRY_PHONE_PREFIXES = COUNTRY_PHONE_PREFIXES;
 // 正向匹配的国家（有专属 phone 前缀 / company country）。ae = 不属于任何正向国家的残余桶。
-const POSITIVE_COUNTRIES = ['vn', 'sa'];
+const POSITIVE_COUNTRIES = ['vn'];
 
-// 写入口：按手机号前缀判定国家归属（+84/084=vn，+966/00966=sa，否则 ae）。
+// 写入口：按手机号前缀判定国家归属（+84/084=vn，否则 ae）。
 function detectCountry(rawPhone) {
     const p = String(rawPhone || '');
     if (p.startsWith('+84') || p.startsWith('084')) return 'vn';
-    if (p.startsWith('+966') || p.startsWith('00966')) return 'sa';
     return 'ae';
 }
 

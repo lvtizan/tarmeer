@@ -77,7 +77,7 @@ async function getCompanies(req, res) {
         const spaceWhere = spaceTags && spaceTags.length > 0
             ? ` AND JSON_OVERLAPS(COALESCE(specialties, '[]'), '${JSON.stringify(spaceTags)}')`
             : '';
-        const countryQP = typeof req.query.country === 'string' && ['ae', 'vn', 'sa'].includes(req.query.country) ? req.query.country : null;
+        const countryQP = typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null;
         const country = countryQP || req.country || 'ae';
         const [countResult] = await database_1.default.execute(`SELECT COUNT(*) as total FROM uae_companies WHERE is_active = 1 AND is_published = 1${spaceWhere} AND country = ?`, [country]);
         const total = countResult[0]?.total || 0;

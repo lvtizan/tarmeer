@@ -11,7 +11,7 @@
 // 一律从这里取，禁止硬编码 UAE/Dubai/AED/+971。
 // 国家数据隔离规则见 AGENTS.md。
 
-export type CountryCode = 'ae' | 'vn' | 'sa';
+export type CountryCode = 'ae' | 'vn';
 
 /**
  * 站点语言维度（UI 文案）。收敛到此处一份，site-translations.ts re-export。
@@ -23,7 +23,7 @@ export type SiteLang = 'en' | 'vi' | 'ar';
 
 export interface CountryConfig {
   code: CountryCode;
-  /** 站点 UI 语言（注入 SiteLocaleProvider）— ae→en / vn→vi / sa→en（SA 跑英文） */
+  /** 站点 UI 语言（注入 SiteLocaleProvider）— ae→en / vn→vi */
   lang: SiteLang;
   /** 简称，用于正文 "in {name}" — "UAE" / "Vietnam" */
   name: string;
@@ -91,26 +91,6 @@ export const COUNTRY: Record<CountryCode, CountryConfig> = {
     telephone: '+84-886-770-218',
     domain: 'vn.tarmeer.com',
     baseUrl: 'https://vn.tarmeer.com',
-  },
-  sa: {
-    code: 'sa',
-    // SA 站 UI 跑英文（与 AE/迪拜一致，非阿语）。'ar' 仅保留给 AE 落地页的英/阿切换，不作主站语言。
-    lang: 'en',
-    name: 'Saudi Arabia',
-    fullName: 'Saudi Arabia',
-    isoCode: 'SA',
-    defaultCity: 'Riyadh',
-    addressLocality: 'Riyadh',
-    cities: ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', 'Al Khobar', 'Tabuk', 'Abha'],
-    currency: 'SAR',
-    phoneCode: '+966',
-    phonePlaceholder: '+966 50 123 4567',
-    // TODO(sa): 以下 whatsapp/domain 为占位，上线前需业务确认真实号码与子域名
-    whatsappDisplay: '+966 58 838 8922',
-    whatsappLink: 'https://wa.me/966588388922',
-    telephone: '+966-58-838-8922',
-    domain: 'sa.tarmeer.com',
-    baseUrl: 'https://sa.tarmeer.com',
   },
 };
 
