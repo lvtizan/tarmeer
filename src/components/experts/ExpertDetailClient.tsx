@@ -384,29 +384,6 @@ export default function ExpertDetailClient({ expert, isVn }: ExpertDetailClientP
           <div className="hidden lg:block w-[320px] flex-shrink-0">
             <div className="sticky top-20 space-y-4">
               <ExpertContactCard expert={expert} isVn={isVn} />
-
-              {/* Quick facts */}
-              {(yearsExp > 0 || expert.city) && (
-                <div className="border border-stone-200 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-[#1c1917] mb-3">{isVn ? 'Thông tin nhanh' : 'Quick Info'}</h3>
-                  <div className="space-y-2.5 text-sm">
-                    {yearsExp > 0 && (
-                      <div className="flex items-center gap-2.5 text-stone-600">
-                        <Briefcase className="w-4 h-4 text-[#b8864a] shrink-0" />
-                        <span>
-                          {isVn ? `${yearsExp} năm kinh nghiệm` : `${yearsExp} years experience`}
-                        </span>
-                      </div>
-                    )}
-                    {expert.city && (
-                      <div className="flex items-center gap-2.5 text-stone-600">
-                        <MapPin className="w-4 h-4 text-[#b8864a] shrink-0" />
-                        <span>{expert.city}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
