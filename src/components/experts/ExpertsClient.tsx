@@ -37,19 +37,20 @@ function buildExpertsUrl(service: string, city: string, certified: boolean, page
 }
 
 function ExpertListCard({ expert, isVn }: { expert: ExpertListItem; isVn: boolean }) {
-  const avatarUrl = expert.avatar_url || '';
+  // 封面优先用专家项目图，其次头像，再首字母
+  const coverUrl = expert.cover_image || expert.avatar_url || '';
 
   return (
     <div className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 cursor-pointer py-4 gap-3 sm:gap-5">
-      {/* Left — rectangular cover (avatar) */}
+      {/* Left — rectangular cover (project image) */}
       <Link
         href={`/experts/${expert.slug}`}
         className="w-full sm:w-[280px] md:w-[316px] h-[200px] flex-shrink-0 overflow-hidden bg-stone-100 rounded-xl sm:rounded-none"
       >
-        {avatarUrl ? (
+        {coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={avatarUrl}
+            src={coverUrl}
             alt={expert.full_name}
             className="w-full h-full object-cover group-hover:brightness-95 transition duration-300"
           />

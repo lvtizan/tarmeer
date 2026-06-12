@@ -119,7 +119,22 @@ function publicExpertShape(r, full) {
 }
 
 // ── 公开接口 ─────────────────────────────────────────────────────────────────
-// GET /api/experts?country=&service=&city=&page=&limit=
+// GET /api/experts/cities?country=
+async function listExpertCities(req, res) {
+    try {
+        const country = VALID_COUNTRIES.has(req.query.country) ? req.query.country : 'ae';
+        const [rows] = await database_1.default.execute(
+            `SELECT DISTINCT city FROM expert_profiles WHERE status = 'approved' AND country = ? AND city IS NOT NULL ORDER BY city`,
+            [country]
+        );
+        res.json({ cities: rows.map(r => r.city).filter(Boolean) });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed.' });
+    }
+}
+exports.listExpertCities = listExpertCities;
+
+// GET /api/experts?country=&service=&city=&certified=&page=&limit=
 async function listPublicExperts(req, res) {
     try {
         const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -136,10 +151,31 @@ async function listPublicExperts(req, res) {
             where += ' AND LOWER(city) = LOWER(?)';
             params.push(String(req.query.city).slice(0, 100));
         }
+        if (req.query.certified === '1') {
+            where += ' AND is_certified = 1';
+        }
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) AS total FROM expert_profiles ${where}`, params);
         const [rows] = await database_1.default.query(`SELECT * FROM expert_profiles ${where} ORDER BY is_signed DESC, is_certified DESC, updated_at DESC LIMIT ${limit} OFFSET ${offset}`, params);
+        // 列表封面 = 专家首个 published 项目首图；批量查避免 N+1
+        const ids = rows.map(r => r.id);
+        const coverById = {};
+        if (ids.length > 0) {
+            const placeholders = ids.map(() => '?').join(',');
+            const [projRows] = await database_1.default.query(
+                `SELECT expert_profile_id, images FROM projects
+                 WHERE expert_profile_id IN (${placeholders}) AND status = 'published'
+                 ORDER BY created_at ASC`,
+                ids
+            );
+            for (const pr of projRows) {
+                if (coverById[pr.expert_profile_id]) continue; // 取最早一个项目
+                let imgs = pr.images;
+                try { imgs = typeof imgs === 'string' ? JSON.parse(imgs) : (imgs || []); } catch { imgs = []; }
+                if (Array.isArray(imgs) && imgs.length > 0) coverById[pr.expert_profile_id] = imgs[0];
+            }
+        }
         res.json({
-            experts: rows.map(r => publicExpertShape(r, false)),
+            experts: rows.map(r => ({ ...publicExpertShape(r, false), cover_image: coverById[r.id] || null })),
             pagination: { page, limit, total: Number(countRows[0]?.total || 0) },
         });
     }
@@ -154,7 +190,20 @@ async function getPublicExpert(req, res) {
     try {
         const [rows] = await database_1.default.execute(`SELECT * FROM expert_profiles WHERE slug = ? AND status = 'approved' LIMIT 1`, [req.params.slug]);
         if (rows.length === 0) return res.status(404).json({ error: 'Expert not found.' });
-        res.json({ expert: publicExpertShape(rows[0], true) });
+        const expert = rows[0];
+        // Include published projects for this expert
+        const [projectRows] = await database_1.default.execute(
+            `SELECT id, title, description, style, location, area, year, cost, images, tags, slug, created_at
+             FROM projects WHERE expert_profile_id = ? AND status = 'published'
+             ORDER BY created_at DESC LIMIT 20`,
+            [expert.id]
+        );
+        const projects = projectRows.map(p => ({
+            ...p,
+            images: (() => { try { return typeof p.images === 'string' ? JSON.parse(p.images) : (p.images || []); } catch { return []; } })(),
+            tags: (() => { try { return typeof p.tags === 'string' ? JSON.parse(p.tags) : (p.tags || []); } catch { return []; } })(),
+        }));
+        res.json({ expert: { ...publicExpertShape(expert, true), projects } });
     }
     catch (e) {
         console.error('getPublicExpert error:', e);

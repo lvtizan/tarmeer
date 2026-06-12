@@ -3,6 +3,7 @@ export interface ExpertListItem {
   slug: string;
   full_name: string;
   avatar_url?: string | null;
+  cover_image?: string | null;
   services: string[];
   birth_year?: number | null;
   experience_years?: number | null;
