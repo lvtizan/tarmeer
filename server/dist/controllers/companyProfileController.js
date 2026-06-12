@@ -15,6 +15,7 @@ const slugify_1 = require("../lib/slugify");
 const parseJsonField_1 = require("../lib/parseJsonField");
 const activityLogger_1 = require("../lib/activityLogger");
 const enumCache_1 = require("../lib/enumCache");
+const detectCountry_1 = require("../lib/detectCountry");
 const crmIntegrationService_1 = require("../lib/crmIntegrationService");
 const companyProfileAutoCreate_1 = require("../lib/companyProfileAutoCreate");
 const pendingActions = require("../lib/pendingActions");
@@ -92,9 +93,7 @@ async function upsertProfile(req, res) {
             const userEmail = userRows[0]?.email || '';
             // Auto-detect country from users.phone prefix (e.g. +84 → vn, +966 → sa, else ae)
             const rawUserPhone = userRows[0]?.phone || '';
-            const detectedCountry = rawUserPhone.startsWith('+84') || rawUserPhone.startsWith('084') ? 'vn'
-                : rawUserPhone.startsWith('+966') || rawUserPhone.startsWith('00966') ? 'sa'
-                : 'ae';
+            const detectedCountry = detectCountry_1.detectCountry(rawUserPhone);
             const baseHandle = (0, slugify_1.generateEmailHandle)(userEmail);
             let slug = baseHandle;
             let suffix = 2;

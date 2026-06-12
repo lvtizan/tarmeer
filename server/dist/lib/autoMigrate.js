@@ -440,6 +440,8 @@ const REQUIRED_COLUMNS = [
     { table: 'supplier_profiles', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     { table: 'projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     { table: 'supplier_projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
+    // 国家归属 — 业主需求按 phone 前缀定国家（隔离铁律，见 AGENTS.md / detectCountry.js）
+    { table: 'homeowner_profiles', column: 'country', type: "VARCHAR(5) NOT NULL DEFAULT 'ae'" },
 ];
 // 需要确保 NULL 的字段（OAuth 用户没有密码）
 const NULLABLE_COLUMNS = [
@@ -763,6 +765,12 @@ async function runAutoMigrate() {
             await database_1.default.execute(`UPDATE company_profiles cp JOIN users u ON u.id = cp.user_id SET cp.country = 'vn' WHERE cp.country = 'ae' AND (u.phone LIKE '+84%' OR u.phone LIKE '084%' OR cp.phone LIKE '+84%')`);
             // SA: +966 prefix
             await database_1.default.execute(`UPDATE company_profiles cp JOIN users u ON u.id = cp.user_id SET cp.country = 'sa' WHERE cp.country = 'ae' AND (u.phone LIKE '+966%' OR u.phone LIKE '00966%')`);
+        }
+        catch { /* ignore — country column may not yet exist on first run */ }
+        // 10b. Backfill homeowner_profiles.country from phone prefix (one-time, idempotent)
+        try {
+            await database_1.default.execute(`UPDATE homeowner_profiles SET country = 'vn' WHERE country = 'ae' AND (phone LIKE '+84%' OR phone LIKE '084%')`);
+            await database_1.default.execute(`UPDATE homeowner_profiles SET country = 'sa' WHERE country = 'ae' AND (phone LIKE '+966%' OR phone LIKE '00966%')`);
         }
         catch { /* ignore — country column may not yet exist on first run */ }
         // 11. Strip trunk 0 from company_profiles.phone where +CC0XXX stored (e.g. +971050xxx → +97150xxx)

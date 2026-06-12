@@ -21,6 +21,7 @@ exports.getDailyStatsReport = getDailyStatsReport;
 exports.getRegistrationStats = getRegistrationStats;
 exports.getRejectionTemplates = getRejectionTemplates;
 const database_1 = __importDefault(require("../config/database"));
+const detectCountry_1 = require("../lib/detectCountry");
 const adminController_1 = require("./adminController");
 const projectReview_1 = require("../lib/projectReview");
 const parseJsonField_1 = require("../lib/parseJsonField");
@@ -530,15 +531,11 @@ async function getRegistrationSources(req, res) {
         // Qualified with `u.` alias, for queries that JOIN users AS u with another table
         let userPhoneWhereU = '';
         if (cValid) {
-            if (country === 'vn') {
-                userPhoneWhere = " AND (phone LIKE ? OR phone LIKE ?)";
-                userPhoneWhereU = " AND (u.phone LIKE ? OR u.phone LIKE ?)";
-                userPhoneParams.push('+84%', '084%');
-            } else if (country === 'ae') {
-                userPhoneWhere = " AND (phone IS NULL OR (phone NOT LIKE ? AND phone NOT LIKE ?))";
-                userPhoneWhereU = " AND (u.phone IS NULL OR (u.phone NOT LIKE ? AND u.phone NOT LIKE ?))";
-                userPhoneParams.push('+84%', '084%');
-            }
+            const f = detectCountry_1.phoneCountryWhere(country, 'phone');
+            const fU = detectCountry_1.phoneCountryWhere(country, 'u.phone');
+            userPhoneWhere = f.sql;
+            userPhoneWhereU = fU.sql;
+            userPhoneParams.push(...f.params);
         }
         // Company country conditions
         let cpWhere = 'WHERE deleted_at IS NULL';
@@ -557,8 +554,9 @@ async function getRegistrationSources(req, res) {
         let inqCityWhere = 'WHERE deleted_at IS NULL AND city IS NOT NULL AND city != \'\'';
         const inqCityParams = [];
         if (cValid) {
-            if (country === 'vn') { inqCityWhere += " AND (company_id IN (SELECT id FROM company_profiles WHERE country = ?) OR phone LIKE '+84%' OR phone LIKE '084%')"; inqCityParams.push('vn'); }
-            else if (country === 'ae') { inqCityWhere += " AND (company_id IS NULL OR company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?)) AND (phone IS NULL OR (phone NOT LIKE '+84%' AND phone NOT LIKE '084%'))"; inqCityParams.push('vn'); }
+            const f = detectCountry_1.inquiryCountryWhere(country, 'phone', 'company_id');
+            inqCityWhere += f.sql;
+            inqCityParams.push(...f.params);
         }
         const [inquiryCities] = await database_1.default.execute(`SELECT COALESCE(city, 'Unknown') as city, COUNT(*) as count
        FROM design_inquiries ${inqCityWhere}
@@ -731,8 +729,9 @@ async function getDailyStatsReport(req, res) {
     let userPhoneWhere = '';
     const userPhoneParams = [];
     if (cValid) {
-        if (country === 'vn') { userPhoneWhere = " AND (phone LIKE ? OR phone LIKE ?)"; userPhoneParams.push('+84%', '084%'); }
-        else if (country === 'ae') { userPhoneWhere = " AND (phone IS NULL OR (phone NOT LIKE ? AND phone NOT LIKE ?))"; userPhoneParams.push('+84%', '084%'); }
+        const f = detectCountry_1.phoneCountryWhere(country, 'phone');
+        userPhoneWhere = f.sql;
+        userPhoneParams.push(...f.params);
     }
     // Company country filter
     let cpCountryWhere = '';
@@ -742,8 +741,9 @@ async function getDailyStatsReport(req, res) {
     let inqCountryWhere = '';
     const inqCountryParams = [];
     if (cValid) {
-        if (country === 'vn') { inqCountryWhere = " AND (company_id IN (SELECT id FROM company_profiles WHERE country = ?) OR phone LIKE '+84%' OR phone LIKE '084%')"; inqCountryParams.push('vn'); }
-        else if (country === 'ae') { inqCountryWhere = " AND (company_id IS NULL OR company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?)) AND (phone IS NULL OR (phone NOT LIKE '+84%' AND phone NOT LIKE '084%'))"; inqCountryParams.push('vn'); }
+        const f = detectCountry_1.inquiryCountryWhere(country, 'phone', 'company_id');
+        inqCountryWhere = f.sql;
+        inqCountryParams.push(...f.params);
     }
     try {
         // Generate a date series for the requested range

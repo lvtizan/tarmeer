@@ -1,4 +1,5 @@
-export type SiteLang = 'en' | 'vi';
+// SiteLang 收敛到国家配置中心一处定义，此处 re-export 保持既有 import 路径不变。
+export type { SiteLang } from '@/lib/country';
 
 export const siteTranslations = {
   en: {

@@ -16,6 +16,7 @@ const config_1 = __importDefault(require("../config"));
 const emailService_1 = require("../services/emailService");
 const notificationService_1 = require("../services/notificationService");
 const slugify_1 = require("../lib/slugify");
+const detectCountry_1 = require("../lib/detectCountry");
 const TEMP_EMAIL_DOMAINS = [
     'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email',
     'mailinator.com', 'guerrillamailblock.com', 'sharklasers.com', 'grr.la',
@@ -72,9 +73,7 @@ async function register(req, res) {
         }
         // 按手机号前缀判定国家（与 companyProfileController 的 detectedCountry 规则一致）
         const rawPhone = phone || '';
-        const detectedCountry = rawPhone.startsWith('+84') || rawPhone.startsWith('084') ? 'vn'
-            : rawPhone.startsWith('+966') || rawPhone.startsWith('00966') ? 'sa'
-                : 'ae';
+        const detectedCountry = detectCountry_1.detectCountry(rawPhone);
         await database_1.default.execute(`INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, status, contact_phone, country) VALUES (?, ?, ?, 'pending', ?, ?)`, [userId, displayName, slug, phone || null, detectedCountry]);
         const frontendUrl = resolveFrontendUrl(req);
         // Send verification email + admin notification (fire-and-forget)

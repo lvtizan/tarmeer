@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       siteName: "Tarmeer",
-      locale: c.code === 'vn' ? "vi_VN" : "en_US",
+      locale: c.code === 'vn' ? "vi_VN" : c.code === 'sa' ? "ar_SA" : "en_US",
     },
     twitter: {
       card: "summary_large_image",
@@ -43,10 +43,10 @@ export default async function RootLayout({
 }) {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
-  const lang: SiteLang = country === 'vn' ? 'vi' : 'en';
+  const lang: SiteLang = getCountry(country).lang;
 
   return (
-    <html lang={lang === 'vi' ? 'vi' : 'en'} className="scroll-smooth">
+    <html lang={lang} className="scroll-smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

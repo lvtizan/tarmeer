@@ -21,7 +21,9 @@ export function SiteLocaleProvider({
   lang: SiteLang;
   children: React.ReactNode;
 }) {
-  const tr = siteTranslations[lang] as SiteTranslations;
+  // 内容表可能尚未覆盖某语言（如 'ar' 待补），缺失时回退到 'en'，避免 tr 为 undefined 致组件崩溃。
+  const tr = ((siteTranslations as Record<string, unknown>)[lang]
+    ?? siteTranslations.en) as SiteTranslations;
   return (
     <SiteLocaleContext.Provider value={{ lang, tr }}>
       {children}

@@ -13,6 +13,7 @@ exports.getMyInquiries = getMyInquiries;
 exports.updateMyInquiryStatus = updateMyInquiryStatus;
 exports.resendCrmSync = resendCrmSync;
 const database_1 = __importDefault(require("../config/database"));
+const detectCountry_1 = require("../lib/detectCountry");
 const exceljs_1 = __importDefault(require("exceljs"));
 const analyticsEvents_1 = require("../lib/analyticsEvents");
 const notificationService_1 = require("../services/notificationService");
@@ -147,13 +148,9 @@ async function getInquiries(req, res) {
         if (country && VALID_COUNTRIES.has(country)) {
             // 归属规则：公司归属优先（company_id → company_profiles.country），
             // 无公司关联时按手机号前缀兜底（+84/084 = VN），否则归 AE
-            if (country === 'vn') {
-                where += " AND (di.company_id IN (SELECT id FROM company_profiles WHERE country = ?) OR di.phone LIKE '+84%' OR di.phone LIKE '084%')";
-                params.push('vn');
-            } else if (country === 'ae') {
-                where += " AND (di.company_id IS NULL OR di.company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?)) AND (di.phone IS NULL OR (di.phone NOT LIKE '+84%' AND di.phone NOT LIKE '084%'))";
-                params.push('vn');
-            }
+            const f = detectCountry_1.inquiryCountryWhere(country, 'di.phone', 'di.company_id');
+            where += f.sql;
+            params.push(...f.params);
         }
         // Group by phone: count duplicates, keep only the latest row per phone.
         // Use a derived column alias via a subquery to satisfy ONLY_FULL_GROUP_BY.
@@ -233,14 +230,9 @@ async function exportInquiries(req, res) {
         const EXPORT_VALID_COUNTRIES = new Set(['ae', 'vn', 'sa']);
         if (exportCountry && EXPORT_VALID_COUNTRIES.has(exportCountry)) {
             // 归属规则须与 getInquiries 完全一致
-            if (exportCountry === 'vn') {
-                where += " AND (di.company_id IN (SELECT id FROM company_profiles WHERE country = ?) OR di.phone LIKE '+84%' OR di.phone LIKE '084%')";
-                params.push('vn');
-            }
-            else if (exportCountry === 'ae') {
-                where += " AND (di.company_id IS NULL OR di.company_id NOT IN (SELECT id FROM company_profiles WHERE country = ?)) AND (di.phone IS NULL OR (di.phone NOT LIKE '+84%' AND di.phone NOT LIKE '084%'))";
-                params.push('vn');
-            }
+            const f = detectCountry_1.inquiryCountryWhere(exportCountry, 'di.phone', 'di.company_id');
+            where += f.sql;
+            params.push(...f.params);
         }
         const [rows] = await database_1.default.execute(`SELECT di.*,
         cp.company_name

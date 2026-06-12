@@ -78,12 +78,7 @@ async function ensureExpertTables() {
 }
 ensureExpertTables();
 
-function detectCountry(rawPhone) {
-    const p = String(rawPhone || '');
-    if (p.startsWith('+84') || p.startsWith('084')) return 'vn';
-    if (p.startsWith('+966') || p.startsWith('00966')) return 'sa';
-    return 'ae';
-}
+const { detectCountry } = require("../lib/detectCountry");
 
 function parseJson(v) {
     if (v == null) return null;

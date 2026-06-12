@@ -8,6 +8,7 @@ exports.getProfile = getProfile;
 exports.getAssignedDesigner = getAssignedDesigner;
 const database_1 = __importDefault(require("../config/database"));
 const analyticsEvents_1 = require("../lib/analyticsEvents");
+const detectCountry_1 = require("../lib/detectCountry");
 const homeownerProjectSerialization_1 = require("../lib/homeownerProjectSerialization");
 /**
  * POST /api/homeowner/profile
@@ -20,15 +21,17 @@ async function upsertProfile(req, res) {
         if (!area_range || !city || !phone) {
             return res.status(400).json({ error: 'Area range, city, and phone are required.' });
         }
+        // 国家归属：按手机号前缀定国家（隔离铁律，见 AGENTS.md）
+        const country = detectCountry_1.detectCountry(phone);
         // Check if profile exists
         const [existing] = await database_1.default.execute('SELECT id FROM homeowner_profiles WHERE user_id = ?', [userId]);
         if (existing.length > 0) {
             // Update
-            await database_1.default.execute(`UPDATE homeowner_profiles SET area_range = ?, city = ?, address = ?, phone = ?, stage = ?, budget_range = ?, notes = ? WHERE user_id = ?`, [area_range, city, address || null, phone, stage || null, budget_range || null, notes || null, userId]);
+            await database_1.default.execute(`UPDATE homeowner_profiles SET area_range = ?, city = ?, address = ?, phone = ?, stage = ?, budget_range = ?, notes = ?, country = ? WHERE user_id = ?`, [area_range, city, address || null, phone, stage || null, budget_range || null, notes || null, country, userId]);
         }
         else {
             // Create
-            await database_1.default.execute(`INSERT INTO homeowner_profiles (user_id, area_range, city, address, phone, stage, budget_range, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [userId, area_range, city, address || null, phone, stage || null, budget_range || null, notes || null]);
+            await database_1.default.execute(`INSERT INTO homeowner_profiles (user_id, area_range, city, address, phone, stage, budget_range, notes, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [userId, area_range, city, address || null, phone, stage || null, budget_range || null, notes || null, country]);
             // Push to admin SSE subscribers (only on create, not update)
             analyticsEvents_1.analyticsEvents.notifyChange('homeowner');
         }

@@ -14,6 +14,7 @@ exports.forceVerifyUserEmail = forceVerifyUserEmail;
 exports.deleteUser = deleteUser;
 exports.restoreUser = restoreUser;
 const database_1 = __importDefault(require("../config/database"));
+const detectCountry_1 = require("../lib/detectCountry");
 const adminController_1 = require("./adminController");
 const pendingActions = require("../lib/pendingActions");
 // List users with pagination, filters, search
@@ -43,13 +44,9 @@ async function listUsers(req, res) {
         const country = req.query.country;
         const VALID_COUNTRIES = new Set(['ae', 'vn', 'sa']);
         if (country && VALID_COUNTRIES.has(country)) {
-            if (country === 'vn') {
-                where += " AND (phone LIKE ? OR phone LIKE ?)";
-                params.push('+84%', '084%');
-            } else if (country === 'ae') {
-                where += " AND (phone IS NULL OR (phone NOT LIKE ? AND phone NOT LIKE ?))";
-                params.push('+84%', '084%');
-            }
+            const f = detectCountry_1.phoneCountryWhere(country, 'phone');
+            where += f.sql;
+            params.push(...f.params);
         }
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM users ${where}`, params);
         const total = countRows[0].total;

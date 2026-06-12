@@ -19,14 +19,7 @@ const slugify_1 = require("./slugify");
 const analyticsEvents_1 = require("./analyticsEvents");
 // Matches the company_profiles.company_type column default
 const FALLBACK_COMPANY_TYPE = 'renovation_company';
-function detectCountryFromPhone(phone) {
-    const p = String(phone || '');
-    if (p.startsWith('+84') || p.startsWith('084'))
-        return 'vn';
-    if (p.startsWith('+966') || p.startsWith('00966'))
-        return 'sa';
-    return 'ae';
-}
+const { detectCountry: detectCountryFromPhone } = require("./detectCountry");
 /**
  * Create a pending company profile for the user if they don't have one yet.
  * Returns the profile id (existing or newly created), or null if data is unusable.

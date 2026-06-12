@@ -15,6 +15,7 @@ exports.updateCompanyListDisplayOrder = updateCompanyListDisplayOrder;
 exports.deleteCompanyProfile = deleteCompanyProfile;
 exports.restoreCompanyProfile = restoreCompanyProfile;
 const database_1 = __importDefault(require("../config/database"));
+const detectCountry_1 = require("../lib/detectCountry");
 const adminController_1 = require("./adminController");
 const activityLogger_1 = require("../lib/activityLogger");
 async function hasColumn(table, column) {
@@ -37,13 +38,9 @@ async function listHomeowners(req, res) {
         let homeownerWhere = 'WHERE 1=1';
         const homeownerParams = [];
         if (country && VALID_COUNTRIES.has(country)) {
-            if (country === 'vn') {
-                homeownerWhere += " AND (u.phone LIKE ? OR u.phone LIKE ?)";
-                homeownerParams.push('+84%', '084%');
-            } else {
-                homeownerWhere += " AND (u.phone IS NULL OR (u.phone NOT LIKE ? AND u.phone NOT LIKE ?))";
-                homeownerParams.push('+84%', '084%');
-            }
+            const f = detectCountry_1.phoneCountryWhere(country, 'u.phone');
+            homeownerWhere += f.sql;
+            homeownerParams.push(...f.params);
         }
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM homeowner_profiles hp JOIN users u ON u.id = hp.user_id ${homeownerWhere}`, homeownerParams);
         const total = countRows[0].total;

@@ -11,10 +11,20 @@
 // 一律从这里取，禁止硬编码 UAE/Dubai/AED/+971。
 // 国家数据隔离规则见 AGENTS.md。
 
-export type CountryCode = 'ae' | 'vn';
+export type CountryCode = 'ae' | 'vn' | 'sa';
+
+/**
+ * 站点语言维度（UI 文案）。收敛到此处一份，site-translations.ts re-export。
+ * 加新国家时在这里加语言码，并在对应 CountryConfig.lang 指定。
+ * ⚠️ 内容表（siteTranslations）可能尚未覆盖某语言（如 'ar' 待补），
+ *    SiteLocaleContext 必须对缺失语言回退到 'en'。
+ */
+export type SiteLang = 'en' | 'vi' | 'ar';
 
 export interface CountryConfig {
   code: CountryCode;
+  /** 站点 UI 语言（注入 SiteLocaleProvider）— ae→en / vn→vi / sa→ar */
+  lang: SiteLang;
   /** 简称，用于正文 "in {name}" — "UAE" / "Vietnam" */
   name: string;
   /** 全称，用于 schema.org Country.name — "United Arab Emirates" / "Vietnam" */
@@ -48,6 +58,7 @@ export interface CountryConfig {
 export const COUNTRY: Record<CountryCode, CountryConfig> = {
   ae: {
     code: 'ae',
+    lang: 'en',
     name: 'UAE',
     fullName: 'United Arab Emirates',
     isoCode: 'AE',
@@ -65,6 +76,7 @@ export const COUNTRY: Record<CountryCode, CountryConfig> = {
   },
   vn: {
     code: 'vn',
+    lang: 'vi',
     name: 'Vietnam',
     fullName: 'Vietnam',
     isoCode: 'VN',
@@ -80,14 +92,33 @@ export const COUNTRY: Record<CountryCode, CountryConfig> = {
     domain: 'vn.tarmeer.com',
     baseUrl: 'https://vn.tarmeer.com',
   },
+  sa: {
+    code: 'sa',
+    lang: 'ar',
+    name: 'Saudi Arabia',
+    fullName: 'Saudi Arabia',
+    isoCode: 'SA',
+    defaultCity: 'Riyadh',
+    addressLocality: 'Riyadh',
+    cities: ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', 'Al Khobar', 'Tabuk', 'Abha'],
+    currency: 'SAR',
+    phoneCode: '+966',
+    phonePlaceholder: '+966 50 123 4567',
+    // TODO(sa): 以下 whatsapp/domain 为占位，上线前需业务确认真实号码与子域名
+    whatsappDisplay: '+966 58 838 8922',
+    whatsappLink: 'https://wa.me/966588388922',
+    telephone: '+966-58-838-8922',
+    domain: 'sa.tarmeer.com',
+    baseUrl: 'https://sa.tarmeer.com',
+  },
 };
 
-/** server component：从 x-country header 取配置（兜底 ae） */
+/** server component：从 x-country header 取配置（查表，未知码兜底 ae）。加国家无需改此函数。 */
 export function getCountry(code?: string | null): CountryConfig {
-  return code === 'vn' ? COUNTRY.vn : COUNTRY.ae;
+  return code && code in COUNTRY ? COUNTRY[code as CountryCode] : COUNTRY.ae;
 }
 
-/** client component：从 useSiteLocale().lang 取配置（'vi' → vn，兜底 ae） */
+/** client component：从 useSiteLocale().lang 反查配置（按 lang 查表，未知兜底 ae）。加国家无需改此函数。 */
 export function countryFromLang(lang?: string | null): CountryConfig {
-  return lang === 'vi' ? COUNTRY.vn : COUNTRY.ae;
+  return Object.values(COUNTRY).find((c) => c.lang === lang) ?? COUNTRY.ae;
 }

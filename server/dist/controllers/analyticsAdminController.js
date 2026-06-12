@@ -10,6 +10,7 @@ exports.getDailyRegistrations = getDailyRegistrations;
 exports.getDailyVisits = getDailyVisits;
 exports.getTodayNew = getTodayNew;
 const database_1 = __importDefault(require("../config/database"));
+const detectCountry_1 = require("../lib/detectCountry");
 const analyticsEventStore_1 = require("../lib/analyticsEventStore");
 function toDateString(input) {
     if (typeof input !== 'string')
@@ -325,17 +326,11 @@ async function getTodayNew(req, res) {
         let companySql = 'SELECT COUNT(*) AS n FROM company_profiles WHERE DATE(created_at) = CURDATE()';
         const companyParams = [];
         if (country && VALID_COUNTRIES.has(country)) {
-            if (country === 'vn') {
-                homeownerSql += " AND (phone LIKE ? OR phone LIKE ?)";
-                homeownerParams.push('+84%', '084%');
-                companySql += " AND country = ?";
-                companyParams.push('vn');
-            } else if (country === 'ae') {
-                homeownerSql += " AND (phone IS NULL OR (phone NOT LIKE ? AND phone NOT LIKE ?))";
-                homeownerParams.push('+84%', '084%');
-                companySql += " AND country != ?";
-                companyParams.push('vn');
-            }
+            const f = detectCountry_1.phoneCountryWhere(country, 'phone');
+            homeownerSql += f.sql;
+            homeownerParams.push(...f.params);
+            companySql += " AND country = ?";
+            companyParams.push(country);
         }
         const [[homeowners], [companies], [suppliers]] = await Promise.all([
             database_1.default.execute(homeownerSql, homeownerParams),

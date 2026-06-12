@@ -276,7 +276,7 @@ async function listCompanies(req, res) {
         const limit = parseInt(req.query.limit) || 20;
         const offset = (page - 1) * limit;
         const { claimed, search } = req.query;
-        const country = (req.query.country && ['ae','vn'].includes(req.query.country)) ? req.query.country : (req.country || 'ae');
+        const country = (req.query.country && ['ae','vn','sa'].includes(req.query.country)) ? req.query.country : (req.country || 'ae');
         let where = 'WHERE c.country = ?';
         const params = [country];
         if (claimed === 'claimed') {
