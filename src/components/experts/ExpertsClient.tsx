@@ -11,6 +11,7 @@ import Avatar from '@/components/ui/Avatar';
 import { ExpertBadges } from './ExpertBadges';
 import FilterSidebar from '@/components/shared/FilterSidebar';
 import FilterOption from '@/components/shared/FilterOption';
+import SearchableFilterList from '@/components/shared/SearchableFilterList';
 import ActiveFilterChip from '@/components/shared/ActiveFilterChip';
 import type { ExpertListItem, ExpertsPagination } from './types';
 
@@ -197,72 +198,56 @@ export default function ExpertsClient({
     <>
       {/* Services */}
       {serviceOptions.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">
-            {isVn ? 'Dịch vụ' : 'Service'}
-          </p>
-          {compact ? (
+        compact ? (
+          <div>
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">
+              {isVn ? 'Dịch vụ' : 'Service'}
+            </p>
             <div className="flex flex-wrap gap-2">
               {serviceOptions.map((svc) => (
-                <FilterOption
-                  key={svc}
-                  selected={service === svc}
-                  onClick={() => goTo(service === svc ? '' : svc, city, certified, 1)}
-                  compact
-                >
+                <FilterOption key={svc} selected={service === svc} onClick={() => goTo(service === svc ? '' : svc, city, certified, 1)} compact>
                   {svc}
                 </FilterOption>
               ))}
             </div>
-          ) : (
-            <div className="space-y-0.5">
-              {serviceOptions.map((svc) => (
-                <FilterOption
-                  key={svc}
-                  selected={service === svc}
-                  onClick={() => goTo(service === svc ? '' : svc, city, certified, 1)}
-                >
-                  {svc}
-                </FilterOption>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <SearchableFilterList
+            title={isVn ? 'Dịch vụ' : 'Service'}
+            options={serviceOptions}
+            selected={service}
+            onToggle={(svc) => goTo(service === svc ? '' : svc, city, certified, 1)}
+            searchPlaceholder={isVn ? 'Tìm dịch vụ…' : 'Search service…'}
+            noResultsText={isVn ? 'Không tìm thấy' : 'No results'}
+          />
+        )
       )}
 
       {/* Cities */}
       {cities.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">
-            {isVn ? 'Thành phố' : 'City'}
-          </p>
-          {compact ? (
+        compact ? (
+          <div>
+            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3">
+              {isVn ? 'Thành phố' : 'City'}
+            </p>
             <div className="flex flex-wrap gap-2">
               {cities.map((ct) => (
-                <FilterOption
-                  key={ct}
-                  selected={city === ct}
-                  onClick={() => goTo(service, city === ct ? '' : ct, certified, 1)}
-                  compact
-                >
+                <FilterOption key={ct} selected={city === ct} onClick={() => goTo(service, city === ct ? '' : ct, certified, 1)} compact>
                   {ct}
                 </FilterOption>
               ))}
             </div>
-          ) : (
-            <div className="space-y-0.5">
-              {cities.map((ct) => (
-                <FilterOption
-                  key={ct}
-                  selected={city === ct}
-                  onClick={() => goTo(service, city === ct ? '' : ct, certified, 1)}
-                >
-                  {ct}
-                </FilterOption>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <SearchableFilterList
+            title={isVn ? 'Thành phố' : 'City'}
+            options={cities}
+            selected={city}
+            onToggle={(ct) => goTo(service, city === ct ? '' : ct, certified, 1)}
+            searchPlaceholder={isVn ? 'Tìm thành phố…' : 'Search city…'}
+            noResultsText={isVn ? 'Không tìm thấy' : 'No results'}
+          />
+        )
       )}
 
       {/* Certified toggle */}
