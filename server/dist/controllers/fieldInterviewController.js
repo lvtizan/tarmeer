@@ -168,6 +168,18 @@ async function ensureInterviewColumns() {
       await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN attachments JSON NULL`);
       console.log('[field] added column: attachments');
     }
+    if (!existingSet.has('filled_by')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN filled_by VARCHAR(120) NULL`);
+      console.log('[field] added column: filled_by');
+    }
+    // 公开问卷无外勤人员：interviewer_id 允许为空
+    const [nullCheck] = await database_1.default.execute(
+      `SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'company_interviews' AND COLUMN_NAME = 'interviewer_id'`
+    );
+    if (nullCheck[0] && nullCheck[0].IS_NULLABLE === 'NO') {
+      await database_1.default.execute(`ALTER TABLE company_interviews MODIFY interviewer_id INT NULL`);
+      console.log('[field] interviewer_id -> nullable');
+    }
   } catch(e) {
     console.error('[field] ensureInterviewColumns:', e.message);
   }
@@ -238,11 +250,13 @@ async function mergeInterviewToProfile(interviewId) {
 async function createDraft(req, res) {
     try {
         const interviewerId = req.adminId || null;
-        // 国家归属取外勤本人所属国家（admin_users.country），手填公司名也能正确落桶
-        const staffCountry = ['ae', 'vn', 'sa'].includes(req.admin?.country) ? req.admin.country : 'ae';
+        // 国家归属：登录外勤取本人 admin_users.country；公开填写按站点 x-country（req.country）
+        const country = ['ae', 'vn', 'sa'].includes(req.admin?.country)
+            ? req.admin.country
+            : (['ae', 'vn', 'sa'].includes(req.country) ? req.country : 'ae');
         const [result] = await database_1.default.execute(
             `INSERT INTO company_interviews (status, interviewer_id, country) VALUES ('draft', ?, ?)`,
-            [interviewerId, staffCountry]
+            [interviewerId, country]
         );
         const id = result.insertId;
         res.status(201).json({ id });
@@ -279,13 +293,15 @@ async function resolveCompanyRefCountry(refId, refSource) {
 }
 async function saveDraft(req, res) {
     const { id } = req.params;
-    const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, qa_answers, location_pin, } = req.body;
+    const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, qa_answers, location_pin, filled_by, } = req.body;
     try {
         const [rows] = await database_1.default.execute(`SELECT id FROM company_interviews WHERE id = ? AND status = 'draft'`, [id]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Draft not found or already submitted.' });
         }
         const fields = {};
+        if (filled_by !== undefined)
+            fields.filled_by = filled_by ? String(filled_by).slice(0, 120) : null;
         if (company_name !== undefined)
             fields.company_name = String(company_name).slice(0, 200);
         if (company_ref_id !== undefined)

@@ -69,6 +69,7 @@ interface DraftData {
 
 export default function FieldSurveyPage() {
   const [draftId, setDraftId] = useState<number | null>(null);
+  const [filledBy, setFilledBy] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyRefId, setCompanyRefId] = useState<number | null>(null);
   const [companyRefSource, setCompanyRefSource] = useState<string>('uae');
@@ -119,11 +120,8 @@ export default function FieldSurveyPage() {
           setDraftId(id);
           if (typeof window !== 'undefined') localStorage.setItem('field_draft_id', String(id));
         }
-      } catch (err: unknown) {
-        const status = (err as { status?: number })?.status;
-        if (status === 401 || status === 403) {
-          alert('Session expired — please refresh the page and log in again.');
-        }
+      } catch {
+        // 公开问卷无需登录；初始化失败静默（用户可刷新重试）
       } finally {
         setInitializing(false);
       }
@@ -135,6 +133,7 @@ export default function FieldSurveyPage() {
     setCompanyName(draft.company_name || '');
     setCompanyRefId(draft.company_ref_id || null);
     setCompanyRefSource(draft.company_ref_source || 'uae');
+    if (typeof draft.filled_by === 'string') setFilledBy(draft.filled_by);
     const restored: AllSections = {};
     for (let i = 1; i <= 8; i++) {
       const key = `section_${i}`;
@@ -232,6 +231,7 @@ export default function FieldSurveyPage() {
     secs: AllSections,
     areas?: ServiceArea[],
     locPin?: PinResult | null,
+    filledByArg?: string,
   ) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
@@ -244,6 +244,7 @@ export default function FieldSurveyPage() {
           ...Object.fromEntries(Object.entries(secs).map(([k, v]) => [k, v])),
           ...(areas !== undefined ? { section_9: { areas } } : {}),
           ...(locPin !== undefined ? { location_pin: locPin } : {}),
+          ...(filledByArg !== undefined ? { filled_by: filledByArg } : {}),
         });
         setSaveStatus('saved');
       } catch {
@@ -335,6 +336,7 @@ export default function FieldSurveyPage() {
         ...sections,
         section_9: { areas: serviceAreas },
         location_pin: locationPin,
+        filled_by: filledBy,
       });
       if (editingInterviewId) {
         await fieldApi.reSubmit(editingInterviewId, {
@@ -752,6 +754,25 @@ export default function FieldSurveyPage() {
             </div>
           </div>
         ))}
+
+        {/* 填写人（非必填）*/}
+        {schema && schema.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-stone-500 mb-2">
+              Filled by <span className="text-stone-400 font-normal">(optional)</span>
+            </label>
+            <input
+              value={filledBy}
+              onChange={(e) => {
+                const v = e.target.value;
+                setFilledBy(v);
+                if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, serviceAreas, locationPin, v);
+              }}
+              placeholder="Your name…"
+              className="w-full h-[52px] px-5 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a]"
+            />
+          </div>
+        )}
 
         {/* 共享隐藏文件输入：每道题的 File 按钮通过 activeAttachmentFieldKey 复用 */}
         <input

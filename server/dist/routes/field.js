@@ -9,6 +9,13 @@ const router = (0, express_1.Router)();
 // Public routes (no auth needed)
 router.get('/survey-schema', fieldInterviewController_1.getSurveySchema);
 router.get('/survey-questions', surveyQuestionsController_1.listQuestions);
+// 问卷公开填写（无需登录）：国家归属按站点 x-country；interviewer_id 为空
+router.post('/interviews', fieldInterviewController_1.createDraft);
+router.get('/interviews/draft', fieldInterviewController_1.getMyDraft);
+router.patch('/interviews/:id', fieldInterviewController_1.saveDraft);
+router.post('/interviews/:id/submit', fieldInterviewController_1.submitInterview);
+router.post('/interviews/:id/photos', fieldInterviewController_1.uploadPhotoMiddleware, fieldInterviewController_1.uploadPhoto);
+router.post('/interviews/:id/attachments', fieldInterviewController_1.uploadAttachmentMiddleware, fieldInterviewController_1.uploadAttachment);
 
 // Protected routes (field staff or super admin)
 // authenticateAdmin sets req.adminId; requireAdmin fetches from DB and sets req.admin;
@@ -16,13 +23,8 @@ router.get('/survey-questions', surveyQuestionsController_1.listQuestions);
 router.use(adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, adminAuth_1.requireFieldOrSuperAdmin);
 // 公司搜索必须登录：按人员所属国家过滤，禁止跨国家关联（国家数据隔离规则）
 router.get('/companies/search', fieldInterviewController_1.searchCompanies);
-router.post('/interviews', fieldInterviewController_1.createDraft);
-router.get('/interviews/draft', fieldInterviewController_1.getMyDraft);
+// 加载/重提已提交访谈（含完整数据）= admin 编辑专用，保持登录避免数据暴露
 router.get('/interviews/:id/load', fieldInterviewController_1.loadInterview);
-router.patch('/interviews/:id', fieldInterviewController_1.saveDraft);
-router.post('/interviews/:id/submit', fieldInterviewController_1.submitInterview);
 router.post('/interviews/:id/re-submit', fieldInterviewController_1.reSubmitInterview);
-router.post('/interviews/:id/photos', fieldInterviewController_1.uploadPhotoMiddleware, fieldInterviewController_1.uploadPhoto);
-router.post('/interviews/:id/attachments', fieldInterviewController_1.uploadAttachmentMiddleware, fieldInterviewController_1.uploadAttachment);
 
 exports.default = router;

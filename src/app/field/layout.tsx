@@ -9,8 +9,8 @@ export default function FieldLayout({ children }: { children: React.ReactNode })
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Login page never redirects
-    if (pathname === '/field/login') {
+    // 公开页：登录页 + 问卷（无需登录，任何人可填）
+    if (pathname === '/field/login' || pathname === '/field/survey') {
       setReady(true);
       return;
     }

@@ -50,6 +50,7 @@ interface VisitRecordDetail extends VisitRecord {
   section_8: Record<string, string | string[]> | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   section_9: any;  // { areas: [{ emirate, sectors:[{group,districts}] }] }（兼容旧结构）
+  filled_by?: string | null;  // 公开问卷填写人（非必填）
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   location_pin?: any;  // { lat, lng, address }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -456,6 +457,12 @@ function AdminVisitRecordsContent() {
                     <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Interviewer</div>
                     <div className="font-medium text-[#2c2c2c]">{detail.interviewer_name || '—'}</div>
                   </div>
+                  {detail.filled_by && (
+                    <div className="px-6">
+                      <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Filled by</div>
+                      <div className="font-medium text-[#2c2c2c]">{detail.filled_by}</div>
+                    </div>
+                  )}
                   <div className="px-6">
                     <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Subject</div>
                     {detail.company_ref_id ? (
