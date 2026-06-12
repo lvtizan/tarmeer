@@ -75,7 +75,7 @@ export default function FieldSurveyPage() {
   const [editingInterviewId, setEditingInterviewId] = useState<number | null>(null);
   const [locEmirate, setLocEmirate] = useState('');
   const [locGroup, setLocGroup] = useState('');
-  const [locDistrict, setLocDistrict] = useState('');
+  const [locDistricts, setLocDistricts] = useState<string[]>([]);
   const [locationPin, setLocationPin] = useState<PinResult | null>(null);
   const [showMapPin, setShowMapPin] = useState(false);
   const [activePhotoFieldKey, setActivePhotoFieldKey] = useState<string | null>(null);
@@ -137,10 +137,12 @@ export default function FieldSurveyPage() {
     }
     if (draft.section_9) {
       try {
-        const loc = typeof draft.section_9 === 'string' ? JSON.parse(draft.section_9 as string) : draft.section_9 as { emirate?: string; group?: string; district?: string };
+        const loc = typeof draft.section_9 === 'string' ? JSON.parse(draft.section_9 as string) : draft.section_9 as { emirate?: string; group?: string; district?: string; districts?: string[] };
         if (loc.emirate) setLocEmirate(String(loc.emirate));
         if (loc.group) setLocGroup(String(loc.group));
-        if (loc.district) setLocDistrict(String(loc.district));
+        // districts 多选；兼容旧数据的单个 district 字符串
+        if (Array.isArray(loc.districts)) setLocDistricts(loc.districts);
+        else if (loc.district) setLocDistricts([String(loc.district)]);
       } catch { /* ignore */ }
     }
     setSections(restored);
@@ -205,7 +207,7 @@ export default function FieldSurveyPage() {
   const triggerSave = useCallback((
     id: number, cName: string, cRefId: number | null, cRefSource: string,
     secs: AllSections,
-    loc?: { emirate: string; group: string; district: string },
+    loc?: { emirate: string; group: string; districts: string[] },
     locPin?: PinResult | null,
   ) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -230,16 +232,16 @@ export default function FieldSurveyPage() {
   function updateSection(sectionKey: string, fieldKey: string, value: string | string[]) {
     setSections((prev) => {
       const updated = { ...prev, [sectionKey]: { ...(prev[sectionKey] || {}), [fieldKey]: value } };
-      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated, { emirate: locEmirate, group: locGroup, district: locDistrict }, locationPin);
+      if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, updated, { emirate: locEmirate, group: locGroup, districts: locDistricts }, locationPin);
       return updated;
     });
   }
 
-  function updateLocation(emirate: string, group: string, district: string) {
+  function updateLocation(emirate: string, group: string, districts: string[]) {
     setLocEmirate(emirate);
     setLocGroup(group);
-    setLocDistrict(district);
-    if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate, group, district }, locationPin);
+    setLocDistricts(districts);
+    if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate, group, districts }, locationPin);
   }
 
   function validateRequired(): boolean {
@@ -281,7 +283,7 @@ export default function FieldSurveyPage() {
         company_ref_id: companyRefId,
         company_ref_source: companyRefSource,
         ...sections,
-        section_9: { emirate: locEmirate, group: locGroup, district: locDistrict },
+        section_9: { emirate: locEmirate, group: locGroup, districts: locDistricts },
         location_pin: locationPin,
       });
       if (editingInterviewId) {
@@ -290,7 +292,7 @@ export default function FieldSurveyPage() {
           company_ref_id: companyRefId,
           company_ref_source: companyRefSource,
           ...sections,
-          section_9: { emirate: locEmirate, group: locGroup, district: locDistrict },
+          section_9: { emirate: locEmirate, group: locGroup, districts: locDistricts },
           location_pin: locationPin,
         });
         setEditingInterviewId(null);
@@ -392,7 +394,7 @@ export default function FieldSurveyPage() {
               setCompanyName(v);
               setCompanyNameError(false);
               if (companyRefId) { setCompanyRefId(null); setCompanyRefSource('uae'); }
-              if (draftId) triggerSave(draftId, v, null, 'uae', sections, { emirate: locEmirate, group: locGroup, district: locDistrict }, locationPin);
+              if (draftId) triggerSave(draftId, v, null, 'uae', sections, { emirate: locEmirate, group: locGroup, districts: locDistricts }, locationPin);
             }}
             placeholder="Enter company name…"
             autoComplete="off"
@@ -514,36 +516,37 @@ export default function FieldSurveyPage() {
                           options={UAE_EMIRATES.map((e) => e.label)}
                           value={locEmirate}
                           placeholder="Select emirate…"
-                          onChange={(v) => updateLocation(v, '', '')}
+                          onChange={(v) => updateLocation(v, '', [])}
                         />
                       </div>
-                      {locEmirate && (
+                      {/* 迪拜：先选 Sector/Area（单选），再多选 District；其他酋长国直接多选 District */}
+                      {locEmirate && isDubai && (
                         <div>
-                          <label className="block text-sm font-medium text-stone-500 mb-2">
-                            {isDubai ? 'Sector / Area' : 'District'}
-                          </label>
+                          <label className="block text-sm font-medium text-stone-500 mb-2">Sector / Area</label>
                           <SearchableSelect
                             options={level2Options}
-                            value={isDubai ? locGroup : locDistrict}
-                            placeholder={isDubai ? 'Select sector…' : 'Search district…'}
-                            onChange={(v) => {
-                              if (isDubai) { updateLocation(locEmirate, v, ''); }
-                              else { updateLocation(locEmirate, '', v); }
-                            }}
+                            value={locGroup}
+                            placeholder="Select sector…"
+                            onChange={(v) => updateLocation(locEmirate, v, [])}
                           />
                         </div>
                       )}
-                      {isDubai && locGroup && (
-                        <div>
-                          <label className="block text-sm font-medium text-stone-500 mb-2">District</label>
-                          <SearchableSelect
-                            options={level3Options}
-                            value={locDistrict}
-                            placeholder="Search district…"
-                            onChange={(v) => updateLocation(locEmirate, locGroup, v)}
-                          />
-                        </div>
-                      )}
+                      {locEmirate && (!isDubai || locGroup) && (() => {
+                        const districtOptions = isDubai ? level3Options : level2Options;
+                        return (
+                          <div>
+                            <label className="block text-sm font-medium text-stone-500 mb-2">
+                              District <span className="text-stone-400 font-normal">(select all that apply)</span>
+                            </label>
+                            <ChipSelect
+                              options={districtOptions}
+                              value={locDistricts}
+                              multi={true}
+                              onChange={(v) => updateLocation(locEmirate, locGroup, Array.isArray(v) ? v : v ? [v] : [])}
+                            />
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -674,7 +677,7 @@ export default function FieldSurveyPage() {
           onConfirm={(result) => {
             setLocationPin(result);
             setShowMapPin(false);
-            if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate: locEmirate, group: locGroup, district: locDistrict }, result);
+            if (draftId) triggerSave(draftId, companyName, companyRefId, companyRefSource, sections, { emirate: locEmirate, group: locGroup, districts: locDistricts }, result);
           }}
         />
       )}
