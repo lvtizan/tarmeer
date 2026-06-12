@@ -444,6 +444,7 @@ async function uploadAttachment(req, res) {
             name: req.file.originalname,
             type: req.file.mimetype,
             size: req.file.size,
+            field_key: req.body.field_key || undefined,
             uploaded_at: new Date().toISOString(),
         };
         const existing = rows[0].attachments || [];

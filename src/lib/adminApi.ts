@@ -1170,12 +1170,13 @@ export const fieldApi = {
     }
     return res.json();
   },
-  uploadAttachment: async (id: number, file: File): Promise<{ url: string; name: string; type: string; size: number }> => {
+  uploadAttachment: async (id: number, file: File, fieldKey?: string | null): Promise<{ url: string; name: string; type: string; size: number }> => {
     const token = typeof window !== 'undefined'
       ? (localStorage.getItem('field_token') || localStorage.getItem('admin_token'))
       : null;
     const fd = new FormData();
     fd.append('file', file, file.name);
+    if (fieldKey) fd.append('field_key', fieldKey);
     const res = await fetch(`${FIELD_API_BASE}/interviews/${id}/attachments`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},

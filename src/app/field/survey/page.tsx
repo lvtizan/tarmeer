@@ -47,12 +47,16 @@ interface AttachmentRecord {
   size?: number;
   uploading?: boolean;
   error?: string;
+  field_key?: string;  // 归属哪道题
 }
 
+interface SectorGroup {
+  group: string;       // 迪拜的 Sector/Area；非迪拜为空
+  districts: string[];
+}
 interface ServiceArea {
   emirate: string;
-  group: string;
-  districts: string[];
+  sectors: SectorGroup[];  // 非迪拜只有一组(group=''); 迪拜可多组
 }
 
 interface DraftData {
@@ -80,11 +84,12 @@ export default function FieldSurveyPage() {
   const [companyNameError, setCompanyNameError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
   const [editingInterviewId, setEditingInterviewId] = useState<number | null>(null);
-  // 服务区域支持多套（跨地区服务的装企可加多套 Emirate+District）
-  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([{ emirate: '', group: '', districts: [] }]);
+  // 服务区域支持多套（跨地区服务的装企可加多套 Emirate+District；迪拜每套可多 Sector）
+  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([{ emirate: '', sectors: [{ group: '', districts: [] }] }]);
   const [locationPin, setLocationPin] = useState<PinResult | null>(null);
   const [showMapPin, setShowMapPin] = useState(false);
   const [activePhotoFieldKey, setActivePhotoFieldKey] = useState<string | null>(null);
+  const [activeAttachmentFieldKey, setActiveAttachmentFieldKey] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companyNameRef = useRef<HTMLInputElement>(null);
@@ -143,16 +148,22 @@ export default function FieldSurveyPage() {
     }
     if (draft.section_9) {
       try {
-        const loc = typeof draft.section_9 === 'string' ? JSON.parse(draft.section_9 as string) : draft.section_9 as { emirate?: string; group?: string; district?: string; districts?: string[]; areas?: ServiceArea[] };
-        const normArea = (a: { emirate?: string; group?: string; district?: string; districts?: string[] }): ServiceArea => ({
-          emirate: String(a.emirate || ''),
-          group: String(a.group || ''),
-          districts: Array.isArray(a.districts) ? a.districts : (a.district ? [String(a.district)] : []),
-        });
-        if (Array.isArray(loc.areas) && loc.areas.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const loc: any = typeof draft.section_9 === 'string' ? JSON.parse(draft.section_9 as string) : draft.section_9;
+        // 归一化一套 area：兼容旧 {emirate,group,districts/district} 与新 {emirate,sectors:[]}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const normArea = (a: any): ServiceArea => {
+          if (Array.isArray(a?.sectors)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const sectors = a.sectors.map((s: any) => ({ group: String(s.group || ''), districts: Array.isArray(s.districts) ? s.districts : [] }));
+            return { emirate: String(a.emirate || ''), sectors: sectors.length ? sectors : [{ group: '', districts: [] }] };
+          }
+          const districts = Array.isArray(a?.districts) ? a.districts : (a?.district ? [String(a.district)] : []);
+          return { emirate: String(a?.emirate || ''), sectors: [{ group: String(a?.group || ''), districts }] };
+        };
+        if (Array.isArray(loc?.areas) && loc.areas.length > 0) {
           setServiceAreas(loc.areas.map(normArea));
-        } else if (loc.emirate || loc.districts || loc.district) {
-          // 兼容旧单套结构
+        } else if (loc?.emirate || loc?.districts || loc?.district || loc?.sectors) {
           setServiceAreas([normArea(loc)]);
         }
       } catch { /* ignore */ }
@@ -202,13 +213,13 @@ export default function FieldSurveyPage() {
     }
   }
 
-  async function handleFilesSelected(files: FileList) {
+  async function handleFilesSelected(files: FileList, fieldKey: string | null) {
     if (!draftId) return;
     for (const file of Array.from(files)) {
       const attId = `${Date.now()}-${Math.random()}`;
-      setAttachments(prev => [...prev, { _id: attId, name: file.name, url: '', type: file.type, size: file.size, uploading: true }]);
+      setAttachments(prev => [...prev, { _id: attId, name: file.name, url: '', type: file.type, size: file.size, uploading: true, field_key: fieldKey ?? undefined }]);
       try {
-        const result = await fieldApi.uploadAttachment(draftId, file);
+        const result = await fieldApi.uploadAttachment(draftId, file, fieldKey);
         setAttachments(prev => prev.map(a => a._id === attId ? { ...a, url: result.url, uploading: false } : a));
       } catch {
         setAttachments(prev => prev.map(a => a._id === attId ? { ...a, uploading: false, error: 'Upload failed' } : a));
@@ -258,11 +269,29 @@ export default function FieldSurveyPage() {
     persistAreas(serviceAreas.map((a, i) => (i === idx ? { ...a, ...patch } : a)));
   }
   function addArea() {
-    persistAreas([...serviceAreas, { emirate: '', group: '', districts: [] }]);
+    persistAreas([...serviceAreas, { emirate: '', sectors: [{ group: '', districts: [] }] }]);
   }
   function removeArea(idx: number) {
     const next = serviceAreas.filter((_, i) => i !== idx);
-    persistAreas(next.length > 0 ? next : [{ emirate: '', group: '', districts: [] }]);
+    persistAreas(next.length > 0 ? next : [{ emirate: '', sectors: [{ group: '', districts: [] }] }]);
+  }
+  // 迪拜多 Sector 操作（在某套 area 内）
+  function updateSector(areaIdx: number, secIdx: number, patch: Partial<SectorGroup>) {
+    persistAreas(serviceAreas.map((a, i) =>
+      i === areaIdx ? { ...a, sectors: a.sectors.map((s, j) => (j === secIdx ? { ...s, ...patch } : s)) } : a
+    ));
+  }
+  function addSector(areaIdx: number) {
+    persistAreas(serviceAreas.map((a, i) =>
+      i === areaIdx ? { ...a, sectors: [...a.sectors, { group: '', districts: [] }] } : a
+    ));
+  }
+  function removeSector(areaIdx: number, secIdx: number) {
+    persistAreas(serviceAreas.map((a, i) => {
+      if (i !== areaIdx) return a;
+      const sectors = a.sectors.filter((_, j) => j !== secIdx);
+      return { ...a, sectors: sectors.length ? sectors : [{ group: '', districts: [] }] };
+    }));
   }
 
   function validateRequired(): boolean {
@@ -444,6 +473,7 @@ export default function FieldSurveyPage() {
                 const errKey = `${section.key}.${field.key}`;
                 const hasError = fieldErrors.has(errKey);
                 const fieldPhotos = photos.filter(p => p.field_key === fKey);
+                const fieldAttachments = attachments.filter(a => a.field_key === fKey);
                 return (
                   <div key={field.key} data-field-error={hasError ? 'true' : undefined}>
                     <label className={`block text-sm font-medium mb-2 ${hasError ? 'text-red-500' : 'text-stone-500'}`}>
@@ -482,14 +512,25 @@ export default function FieldSurveyPage() {
                     {hasError && (
                       <p className="mt-1.5 text-xs text-red-500">This field is required</p>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => { setActivePhotoFieldKey(fKey); setShowCamera(true); }}
-                      className="mt-2 flex items-center gap-1.5 h-[44px] px-4 rounded-2xl border border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/50 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70"
-                    >
-                      <Camera className="w-4 h-4" />
-                      <span>{fieldPhotos.length > 0 ? `${fieldPhotos.length} Photo${fieldPhotos.length > 1 ? 's' : ''}` : 'Photo'}</span>
-                    </button>
+                    {/* 每道题：拍照（多张）+ 附件（多个）并排 */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setActivePhotoFieldKey(fKey); setShowCamera(true); }}
+                        className="flex items-center gap-1.5 h-[44px] px-4 rounded-2xl border border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/50 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70"
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span>{fieldPhotos.length > 0 ? `${fieldPhotos.length} Photo${fieldPhotos.length > 1 ? 's' : ''}` : 'Photo'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setActiveAttachmentFieldKey(fKey); fileInputRef.current?.click(); }}
+                        className="flex items-center gap-1.5 h-[44px] px-4 rounded-2xl border border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/50 hover:text-[#b8864a] text-[13px] font-medium transition-colors active:opacity-70"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                        <span>{fieldAttachments.length > 0 ? `${fieldAttachments.length} File${fieldAttachments.length > 1 ? 's' : ''}` : 'File'}</span>
+                      </button>
+                    </div>
                     {fieldPhotos.length > 0 && (
                       <div className="grid grid-cols-4 gap-1.5 mt-2">
                         {fieldPhotos.map((photo, idx) => (
@@ -508,6 +549,37 @@ export default function FieldSurveyPage() {
                             )}
                             {photo.error && (
                               <div className="absolute bottom-0 left-0 right-0 bg-red-500/80 text-white text-[10px] text-center py-0.5">failed</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {fieldAttachments.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        {fieldAttachments.map((att) => (
+                          <div key={att._id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-stone-200 bg-white">
+                            {att.type.startsWith('image/') && att.url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={att.url} alt={att.name} className="w-8 h-8 rounded-md object-cover shrink-0 border border-stone-200" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-md bg-amber-50 shrink-0 flex items-center justify-center">
+                                <FileText className="w-4 h-4 text-[#b8864a]" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12px] font-medium text-[#1c1917] truncate">{att.name}</p>
+                              {att.error && <p className="text-[11px] text-red-500">{att.error}</p>}
+                            </div>
+                            {att.uploading ? (
+                              <div className="w-3.5 h-3.5 border border-stone-300 border-t-[#b8864a] rounded-full animate-spin shrink-0" />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setAttachments(prev => prev.filter(a => a._id !== att._id))}
+                                className="shrink-0 text-stone-300 hover:text-red-400 transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
                             )}
                           </div>
                         ))}
@@ -538,10 +610,7 @@ export default function FieldSurveyPage() {
                       {serviceAreas.map((area, idx) => {
                         const emirateData = UAE_EMIRATES.find((e) => e.label === area.emirate);
                         const isDubai = !!emirateData?.groups;
-                        const groupData = emirateData?.groups?.find((g) => g.label === area.group);
-                        const level2Options = isDubai ? emirateData.groups!.map((g) => g.label) : (emirateData?.districts ?? []);
-                        const level3Options = isDubai ? (groupData?.districts ?? []) : [];
-                        const districtOptions = isDubai ? level3Options : level2Options;
+                        const sectorOptions = isDubai ? emirateData.groups!.map((g) => g.label) : [];
                         return (
                           <div key={idx} className="relative rounded-2xl border border-stone-200 bg-white/60 p-4 space-y-3">
                             {(serviceAreas.length > 1 || idx > 0) && (
@@ -563,32 +632,83 @@ export default function FieldSurveyPage() {
                                 options={UAE_EMIRATES.map((e) => e.label)}
                                 value={area.emirate}
                                 placeholder="Select emirate…"
-                                onChange={(v) => updateArea(idx, { emirate: v, group: '', districts: [] })}
+                                onChange={(v) => updateArea(idx, { emirate: v, sectors: [{ group: '', districts: [] }] })}
                               />
                             </div>
-                            {area.emirate && isDubai && (
-                              <div>
-                                <label className="block text-sm font-medium text-stone-500 mb-2">Sector / Area</label>
-                                <SearchableSelect
-                                  options={level2Options}
-                                  value={area.group}
-                                  placeholder="Select sector…"
-                                  onChange={(v) => updateArea(idx, { group: v, districts: [] })}
-                                />
-                              </div>
-                            )}
-                            {area.emirate && (!isDubai || area.group) && (
+
+                            {/* 非迪拜：直接多选 District（单组 sectors[0]）*/}
+                            {area.emirate && !isDubai && (
                               <div>
                                 <label className="block text-sm font-medium text-stone-500 mb-2">
                                   District <span className="text-stone-400 font-normal">(select all that apply)</span>
                                 </label>
                                 <MultiSelectDropdown
-                                  options={districtOptions}
-                                  value={area.districts}
-                                  onChange={(v) => updateArea(idx, { districts: v })}
+                                  options={emirateData?.districts ?? []}
+                                  value={area.sectors[0]?.districts ?? []}
+                                  onChange={(v) => updateSector(idx, 0, { districts: v })}
                                   placeholder="Select districts…"
                                   searchPlaceholder="Search district…"
                                 />
+                              </div>
+                            )}
+
+                            {/* 迪拜：多组 Sector + District，可加可删 */}
+                            {area.emirate && isDubai && (
+                              <div className="space-y-3">
+                                {area.sectors.map((sec, sIdx) => {
+                                  const gData = emirateData!.groups!.find((g) => g.label === sec.group);
+                                  const distOptions = gData?.districts ?? [];
+                                  return (
+                                    <div key={sIdx} className="rounded-xl border border-stone-200/80 bg-stone-50/40 p-3 space-y-2.5">
+                                      <div className="flex items-center justify-between">
+                                        <label className="block text-sm font-medium text-stone-500">
+                                          Sector / Area{area.sectors.length > 1 ? ` ${sIdx + 1}` : ''}
+                                        </label>
+                                        <div className="flex items-center gap-1">
+                                          {sIdx === area.sectors.length - 1 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => addSector(idx)}
+                                              className="flex items-center gap-1 h-7 px-2.5 rounded-lg border border-[#b8864a]/40 text-[#b8864a] text-[12px] font-medium hover:bg-[#b8864a]/5 transition-colors"
+                                            >
+                                              <span className="leading-none">+</span> Sector
+                                            </button>
+                                          )}
+                                          {area.sectors.length > 1 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => removeSector(idx, sIdx)}
+                                              aria-label="Remove sector"
+                                              className="w-7 h-7 rounded-full flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <SearchableSelect
+                                        options={sectorOptions}
+                                        value={sec.group}
+                                        placeholder="Select sector…"
+                                        onChange={(v) => updateSector(idx, sIdx, { group: v, districts: [] })}
+                                      />
+                                      {sec.group && (
+                                        <div>
+                                          <label className="block text-sm font-medium text-stone-500 mb-2">
+                                            District <span className="text-stone-400 font-normal">(select all that apply)</span>
+                                          </label>
+                                          <MultiSelectDropdown
+                                            options={distOptions}
+                                            value={sec.districts}
+                                            onChange={(v) => updateSector(idx, sIdx, { districts: v })}
+                                            placeholder="Select districts…"
+                                            searchPlaceholder="Search district…"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -633,70 +753,15 @@ export default function FieldSurveyPage() {
           </div>
         ))}
 
-        {/* 附件上传 */}
-        {schema && schema.length > 0 && (
-          <div>
-            <h2 className="text-base font-bold text-[#2c2c2c] mb-4 pl-3 border-l-4 border-[#b8864a]">
-              Attachments
-            </h2>
-            <p className="text-xs text-stone-400 mb-3">Images, PDFs, Word documents — multiple files supported</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              className="hidden"
-              onChange={(e) => { if (e.target.files?.length) handleFilesSelected(e.target.files); e.target.value = ''; }}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 h-[44px] px-4 rounded-2xl border border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/50 hover:text-[#b8864a] text-[13px] font-medium transition-colors"
-            >
-              <Paperclip className="w-4 h-4" />
-              Add Files
-            </button>
-
-            {attachments.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {attachments.map((att, idx) => (
-                  <div key={att._id || idx} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-stone-200 bg-white">
-                    {att.type.startsWith('image/') ? (
-                      att.url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={att.url} alt={att.name} className="w-10 h-10 rounded-lg object-cover shrink-0 border border-stone-200" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-stone-100 shrink-0 flex items-center justify-center">
-                          <Camera className="w-4 h-4 text-stone-400" />
-                        </div>
-                      )
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-amber-50 shrink-0 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-[#b8864a]" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#1c1917] truncate">{att.name}</p>
-                      {att.size && <p className="text-xs text-stone-400">{(att.size / 1024).toFixed(0)} KB</p>}
-                      {att.error && <p className="text-xs text-red-500">{att.error}</p>}
-                    </div>
-                    {att.uploading ? (
-                      <div className="w-4 h-4 border border-stone-300 border-t-[#b8864a] rounded-full animate-spin shrink-0" />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
-                        className="shrink-0 text-stone-300 hover:text-red-400 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {/* 共享隐藏文件输入：每道题的 File 按钮通过 activeAttachmentFieldKey 复用 */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+          className="hidden"
+          onChange={(e) => { if (e.target.files?.length) handleFilesSelected(e.target.files, activeAttachmentFieldKey); e.target.value = ''; }}
+        />
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3">
