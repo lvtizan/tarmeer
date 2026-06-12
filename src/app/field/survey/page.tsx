@@ -5,6 +5,7 @@ import { Camera, X, MapPin, Trash2, Paperclip, FileText } from 'lucide-react';
 import { fieldApi } from '@/lib/adminApi';
 import ChipSelect from '@/components/field/ChipSelect';
 import SearchableSelect from '@/components/field/SearchableSelect';
+import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import WatermarkCamera, { type CapturedPhoto } from '@/components/field/WatermarkCamera';
 import MapPinModal, { type PinResult } from '@/components/field/MapPinModal';
 import { UAE_EMIRATES } from '@/lib/uae-locations';
@@ -538,11 +539,12 @@ export default function FieldSurveyPage() {
                             <label className="block text-sm font-medium text-stone-500 mb-2">
                               District <span className="text-stone-400 font-normal">(select all that apply)</span>
                             </label>
-                            <ChipSelect
+                            <MultiSelectDropdown
                               options={districtOptions}
                               value={locDistricts}
-                              multi={true}
-                              onChange={(v) => updateLocation(locEmirate, locGroup, Array.isArray(v) ? v : v ? [v] : [])}
+                              onChange={(v) => updateLocation(locEmirate, locGroup, v)}
+                              placeholder="Select districts…"
+                              searchPlaceholder="Search district…"
                             />
                           </div>
                         );
