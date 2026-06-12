@@ -20,6 +20,8 @@ interface VisitRecord {
   status: 'draft' | 'submitted';
   submitted_at: string | null;
   created_at: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  section_9?: any;  // 服务区域（列表列展示）
 }
 
 interface PhotoEntry {
@@ -46,8 +48,44 @@ interface VisitRecordDetail extends VisitRecord {
   section_6: Record<string, string | string[]> | null;
   section_7: Record<string, string | string[]> | null;
   section_8: Record<string, string | string[]> | null;
-  section_9: Record<string, string | string[]> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  section_9: any;  // { areas: [{ emirate, sectors:[{group,districts}] }] }（兼容旧结构）
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  location_pin?: any;  // { lat, lng, address }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  attachments?: any;
   photos?: string | PhotoEntry[] | null;
+}
+
+interface SvcArea { emirate: string; sectors: Array<{ group: string; districts: string[] }> }
+
+// 解析服务区域（兼容旧 {emirate,group,districts} / 新 {areas:[{emirate,sectors}]}）
+function parseServiceAreas(raw: unknown): SvcArea[] {
+  if (!raw) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let obj: any = raw;
+  if (typeof raw === 'string') { try { obj = JSON.parse(raw); } catch { return []; } }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const normArea = (a: any): SvcArea => {
+    if (Array.isArray(a?.sectors)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return { emirate: String(a.emirate || ''), sectors: a.sectors.map((s: any) => ({ group: String(s.group || ''), districts: Array.isArray(s.districts) ? s.districts : [] })) };
+    }
+    const districts = Array.isArray(a?.districts) ? a.districts : (a?.district ? [String(a.district)] : []);
+    return { emirate: String(a?.emirate || ''), sectors: [{ group: String(a?.group || ''), districts }] };
+  };
+  const areas = Array.isArray(obj?.areas) ? obj.areas : ((obj?.emirate || obj?.districts || obj?.sectors) ? [obj] : []);
+  return areas.map(normArea).filter((a: SvcArea) => a.emirate || a.sectors.some(s => s.districts.length > 0));
+}
+
+// 一套区域压成一行文本（列表用）
+function svcAreaToLine(a: SvcArea): string {
+  const parts = a.sectors.map(s => {
+    const ds = s.districts.join(', ');
+    return s.group ? (ds ? `${s.group}: ${ds}` : s.group) : ds;
+  }).filter(Boolean);
+  const tail = parts.join('; ');
+  return tail ? `${a.emirate} — ${tail}` : a.emirate;
 }
 
 interface EditLog {
@@ -513,6 +551,70 @@ function AdminVisitRecordsContent() {
               );
             })}
 
+            {/* Service Area（多套） */}
+            {(() => {
+              const areas = parseServiceAreas(detail.section_9);
+              if (areas.length === 0) return null;
+              return (
+                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                  <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
+                    <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Service Area', '服务区域')}</h2>
+                  </div>
+                  <div className="divide-y divide-stone-50">
+                    {areas.map((a, i) => (
+                      <div key={i} className="px-5 py-3.5">
+                        <div className="text-sm font-medium text-[#2c2c2c] mb-1.5">
+                          {areas.length > 1 ? `${t('Area', '区域')} ${i + 1} — ` : ''}{a.emirate || '—'}
+                        </div>
+                        <div className="space-y-1.5">
+                          {a.sectors.map((s, j) => (
+                            <div key={j} className="flex items-start gap-2 flex-wrap">
+                              {s.group && <span className="text-xs text-stone-500 pt-1">{s.group}:</span>}
+                              <div className="flex flex-wrap gap-1.5">
+                                {s.districts.length > 0
+                                  ? s.districts.map(d => (
+                                      <span key={d} className="px-2 py-0.5 rounded-md bg-[#b8864a]/10 text-[#b8864a] text-xs">{d}</span>
+                                    ))
+                                  : <span className="text-xs text-stone-300">—</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Company Address Pin */}
+            {(() => {
+              const raw = detail.location_pin;
+              if (!raw) return null;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              let pin: any = raw;
+              if (typeof raw === 'string') { try { pin = JSON.parse(raw); } catch { return null; } }
+              if (!pin?.lat || !pin?.lng) return null;
+              return (
+                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                  <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
+                    <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Company Address Pin', '公司地址定位')}</h2>
+                  </div>
+                  <div className="px-5 py-3.5">
+                    {pin.address && <p className="text-sm text-[#2c2c2c] mb-1">{pin.address}</p>}
+                    <a
+                      href={`https://www.google.com/maps?q=${pin.lat},${pin.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#b8864a] hover:underline"
+                    >
+                      {Number(pin.lat).toFixed(5)}, {Number(pin.lng).toFixed(5)} ↗
+                    </a>
+                  </div>
+                </div>
+              );
+            })()}
+
             {editLogs.length > 0 && (
               <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
                 <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
@@ -680,6 +782,7 @@ function AdminVisitRecordsContent() {
                   </th>
                   <th className="px-4 py-3 font-medium text-stone-500">#</th>
                   <th className="px-4 py-3 font-medium text-stone-500">{t('Company', '公司')}</th>
+                  <th className="px-4 py-3 font-medium text-stone-500">{t('Service Area', '服务区域')}</th>
                   <th className="px-4 py-3 font-medium text-stone-500">{t('Interviewer', '采访人')}</th>
                   <th className="px-4 py-3 font-medium text-stone-500">{t('Status', '状态')}</th>
                   <th className="px-4 py-3 font-medium text-stone-500">{t('Submitted', '提交时间')}</th>
@@ -713,6 +816,19 @@ function AdminVisitRecordsContent() {
                           → {r.linked_company_name}
                         </a>
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-stone-600 max-w-[260px]">
+                      {(() => {
+                        const areas = parseServiceAreas(r.section_9);
+                        if (areas.length === 0) return <span className="text-stone-300">—</span>;
+                        return (
+                          <div className="space-y-0.5">
+                            {areas.map((a, i) => (
+                              <div key={i} className="text-xs text-stone-600 truncate" title={svcAreaToLine(a)}>{svcAreaToLine(a)}</div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-stone-600">{r.interviewer_name}</td>
                     <td className="px-4 py-3">

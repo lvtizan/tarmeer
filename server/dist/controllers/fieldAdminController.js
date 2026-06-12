@@ -35,7 +35,7 @@ async function listInterviews(req, res) {
     try {
         const [rows] = await database_1.default.execute(`
       SELECT ci.id, ci.company_name, ci.status, ci.submitted_at, ci.created_at,
-             ci.company_ref_id, ci.company_ref_source,
+             ci.company_ref_id, ci.company_ref_source, ci.section_9,
              COALESCE(au.full_name, '—') AS interviewer_name,
              CASE ci.company_ref_source
                WHEN 'uae'     THEN uc.name_en
