@@ -23,7 +23,7 @@ export type SiteLang = 'en' | 'vi' | 'ar';
 
 export interface CountryConfig {
   code: CountryCode;
-  /** 站点 UI 语言（注入 SiteLocaleProvider）— ae→en / vn→vi / sa→ar */
+  /** 站点 UI 语言（注入 SiteLocaleProvider）— ae→en / vn→vi / sa→en（SA 跑英文） */
   lang: SiteLang;
   /** 简称，用于正文 "in {name}" — "UAE" / "Vietnam" */
   name: string;
@@ -94,7 +94,8 @@ export const COUNTRY: Record<CountryCode, CountryConfig> = {
   },
   sa: {
     code: 'sa',
-    lang: 'ar',
+    // SA 站 UI 跑英文（与 AE/迪拜一致，非阿语）。'ar' 仅保留给 AE 落地页的英/阿切换，不作主站语言。
+    lang: 'en',
     name: 'Saudi Arabia',
     fullName: 'Saudi Arabia',
     isoCode: 'SA',

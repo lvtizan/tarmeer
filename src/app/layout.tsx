@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       siteName: "Tarmeer",
-      locale: c.code === 'vn' ? "vi_VN" : c.code === 'sa' ? "ar_SA" : "en_US",
+      locale: c.code === 'vn' ? "vi_VN" : "en_US",
     },
     twitter: {
       card: "summary_large_image",
