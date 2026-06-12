@@ -1,4 +1,6 @@
-export type Lang = 'en' | 'ar' | 'vi';
+// 语言维度统一到国家配置中心一处定义（SiteLang），避免与 country.ts 重复定义漂移。
+import type { SiteLang } from '@/lib/country';
+export type Lang = SiteLang;
 
 const translations = {
   en: {
