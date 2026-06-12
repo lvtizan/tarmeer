@@ -16,6 +16,11 @@ const GCC_PHONE_OPTIONS = [
   { label: 'Oman', code: '+968', maxDigits: 8 },
   { label: 'Bahrain', code: '+973', maxDigits: 8 },
 ];
+const VN_PHONE_OPTIONS = [
+  { label: 'Vietnam', code: '+84', maxDigits: 10 },
+];
+// VN 站用 +84，AE/GCC 站用海湾区号
+const PHONE_OPTIONS_BY_LANG = (lang: string) => (lang === 'vi' ? VN_PHONE_OPTIONS : GCC_PHONE_OPTIONS);
 
 const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
@@ -72,8 +77,9 @@ interface CompanySignupFormProps {
 export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const router = useRouter();
 
+  const PHONE_OPTIONS = PHONE_OPTIONS_BY_LANG(lang);
   const [contactName, setContactName] = useState('');
-  const [phoneRegion, setPhoneRegion] = useState(GCC_PHONE_OPTIONS[0]);
+  const [phoneRegion, setPhoneRegion] = useState(PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyTypes, setCompanyTypes] = useState<string[]>([]);
@@ -614,11 +620,11 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   <AdminSelect
                     value={phoneRegion.code}
                     onChange={(code) => {
-                      const next = GCC_PHONE_OPTIONS.find((o) => o.code === code) || GCC_PHONE_OPTIONS[0];
+                      const next = PHONE_OPTIONS.find((o) => o.code === code) || PHONE_OPTIONS[0];
                       setPhoneRegion(next);
                       setPhoneDigits((d) => d.slice(0, next.maxDigits));
                     }}
-                    options={GCC_PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} (${o.code})` }))}
+                    options={PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} (${o.code})` }))}
                     className="shrink-0 w-[150px]"
                   />
                   <input

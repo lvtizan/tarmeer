@@ -4,12 +4,14 @@
 // 下拉面板 + 搜索 + 复选框；trigger 显示已选 chips（自适应换行，不溢出）。
 // 选项多（如街区/服务类型）时用它，替代平铺 chip。
 //
+// 弹层用 portal + fixed 渲染到 body：不会被父级 overflow-hidden（如 hero 区）裁切。
 // 用法：
 //   <MultiSelectDropdown options={['A','B']} value={sel} onChange={setSel}
 //     placeholder="Select…" maxSelected={5} />
 //   options 支持 string[] 或 {value,label}[]
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface MultiSelectOption {
   value: string;
@@ -53,18 +55,42 @@ export default function MultiSelectDropdown({
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => setMounted(true), []);
+
+  const reposition = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
 
   useEffect(() => {
     if (!open) { setSearch(''); return; }
-    const handleOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    reposition();
+    const onScroll = () => reposition();
+    const onOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
-    document.addEventListener('mousedown', handleOutside);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    document.addEventListener('mousedown', onOutside);
     const t = setTimeout(() => searchRef.current?.focus(), 50);
-    return () => { document.removeEventListener('mousedown', handleOutside); clearTimeout(t); };
-  }, [open]);
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+      document.removeEventListener('mousedown', onOutside);
+      clearTimeout(t);
+    };
+  }, [open, reposition]);
 
   const atMax = maxSelected != null && value.length >= maxSelected;
   const filtered = search
@@ -76,8 +102,71 @@ export default function MultiSelectDropdown({
     else if (!atMax) onChange([...value, v]);
   }
 
+  const panel = open && rect && mounted ? createPortal(
+    <div
+      ref={panelRef}
+      style={{ position: 'fixed', top: rect.top, left: rect.left, width: rect.width, zIndex: 9999 }}
+      className="bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden"
+    >
+      {searchable && (
+        <div className="px-3 py-2.5 border-b border-stone-100">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              ref={searchRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full h-9 pl-8 pr-3 text-sm border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#b8864a] focus:bg-white transition"
+            />
+          </div>
+          {atMax && maxReachedHint && (
+            <p className="text-[11px] text-amber-600 mt-1.5 text-center">{maxReachedHint}</p>
+          )}
+        </div>
+      )}
+      <ul className="overflow-y-auto max-h-60">
+        {filtered.length === 0 ? (
+          <li className="px-5 py-3 text-sm text-stone-400 text-center">{noResultsText}</li>
+        ) : (
+          filtered.map((o) => {
+            const isSelected = value.includes(o.value);
+            const isDisabled = !isSelected && atMax;
+            return (
+              <li key={o.value}>
+                <button
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => toggle(o.value)}
+                  className={`w-full flex items-center gap-3 px-5 py-3 text-[14px] text-left transition ${
+                    isDisabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-stone-50 cursor-pointer'
+                  } ${isSelected ? 'text-[#b8864a] bg-[#b8864a]/5' : 'text-[#1c1917]'}`}
+                >
+                  <span className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition ${
+                    isSelected ? 'bg-[#b8864a] border-[#b8864a]' : 'border-stone-300 bg-white'
+                  }`}>
+                    {isSelected && (
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    )}
+                  </span>
+                  {o.label}
+                </button>
+              </li>
+            );
+          })
+        )}
+      </ul>
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div ref={ref} className="relative">
+    <div ref={triggerRef} className="relative">
       {/* Trigger */}
       <button
         type="button"
@@ -124,65 +213,7 @@ export default function MultiSelectDropdown({
           </svg>
         </span>
       </button>
-
-      {/* Panel */}
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-stone-200 rounded-2xl shadow-lg overflow-hidden">
-          {searchable && (
-            <div className="px-3 py-2.5 border-b border-stone-100">
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-                </svg>
-                <input
-                  ref={searchRef}
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  className="w-full h-9 pl-8 pr-3 text-sm border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#b8864a] focus:bg-white transition"
-                />
-              </div>
-              {atMax && maxReachedHint && (
-                <p className="text-[11px] text-amber-600 mt-1.5 text-center">{maxReachedHint}</p>
-              )}
-            </div>
-          )}
-          <ul className="overflow-y-auto max-h-60">
-            {filtered.length === 0 ? (
-              <li className="px-5 py-3 text-sm text-stone-400 text-center">{noResultsText}</li>
-            ) : (
-              filtered.map((o) => {
-                const isSelected = value.includes(o.value);
-                const isDisabled = !isSelected && atMax;
-                return (
-                  <li key={o.value}>
-                    <button
-                      type="button"
-                      disabled={isDisabled}
-                      onClick={() => toggle(o.value)}
-                      className={`w-full flex items-center gap-3 px-5 py-3 text-[14px] text-left transition ${
-                        isDisabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-stone-50 cursor-pointer'
-                      } ${isSelected ? 'text-[#b8864a] bg-[#b8864a]/5' : 'text-[#1c1917]'}`}
-                    >
-                      <span className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition ${
-                        isSelected ? 'bg-[#b8864a] border-[#b8864a]' : 'border-stone-300 bg-white'
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-                          </svg>
-                        )}
-                      </span>
-                      {o.label}
-                    </button>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        </div>
-      )}
+      {panel}
     </div>
   );
 }
