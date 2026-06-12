@@ -4,12 +4,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Check, MapPin, Phone, Ruler, DollarSign, ImagePlus,
-  Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase, Zap,
+  Trash2, Eye, GripVertical, X, ChevronLeft, ChevronRight, FolderOpen, Briefcase,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getDroppedImageFiles } from '@/lib/dropFiles';
 import WelcomeHeader from '@/components/portal/WelcomeHeader';
-import HighlightBanner from '@/components/portal/HighlightBanner';
 import OnboardingStepper, { type PortalStep } from '@/components/portal/OnboardingStepper';
 import {
   convertProjectImagesForUpload, estimateDataUrlBytes, formatFileSize,
@@ -254,7 +253,6 @@ export default function HomeownerDashboardPage() {
 
   const firstName = (user?.full_name || '').split(' ')[0] || 'there';
   const checklist = buildChecklist(isNew ? null : profile, imageUrls.length);
-  const completedSteps = checklist.filter(c => c.done).length;
 
   const goStep = (to: string) => {
     if (to.startsWith('#')) {
@@ -281,19 +279,6 @@ export default function HomeownerDashboardPage() {
         <WelcomeHeader
           title={`Hi ${firstName}, let's renovate!`}
           subtitle="Complete the steps below to get matched with the right company."
-        />
-
-        {/* ── Highlight banner ── */}
-        <HighlightBanner
-          icon={Zap}
-          title="The more we know, the better we match"
-          subtitle={
-            <>
-              <span className="text-[#d4a96a] font-semibold">{completedSteps}</span> of {checklist.length} steps done. Complete your details to connect with verified companies.
-            </>
-          }
-          ctaLabel="Browse Companies"
-          onCta={() => router.push('/companies')}
         />
 
         {/* ── Getting Started stepper ── */}

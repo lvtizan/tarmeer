@@ -13,6 +13,12 @@ export default function ForCompaniesClient() {
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* ── Hero ── */}
       <section className="bg-[#141211] relative overflow-hidden">
+        {/* Business background image — interior design, with dark overlay for legibility */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/images/hero/hero-living-1.webp)' }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(20,18,17,0.96)_0%,rgba(20,18,17,0.88)_45%,rgba(20,18,17,0.62)_100%)]" />
         {/* Language toggle inside hero, top-right */}
         <div className="absolute top-4 right-4 z-10 flex items-center gap-1 rounded-lg border border-white/20 p-0.5">
           <button

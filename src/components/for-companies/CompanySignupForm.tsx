@@ -373,7 +373,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   return (
     <div
       dir={dir}
-      className="bg-white rounded-[20px] shadow-[0_18px_44px_rgba(28,25,23,0.14)] overflow-hidden"
+      className="bg-white rounded-[20px] shadow-[0_18px_44px_rgba(28,25,23,0.14)]"
     >
       <div className="px-7 py-7 space-y-5">
         {phoneExistsMode ? (
@@ -713,7 +713,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   <button
                     type="button"
                     onClick={() => setCompanyTypeDropdownOpen(o => !o)}
-                    className={`flex items-center justify-between w-full h-[50px] px-5 rounded-2xl border bg-stone-50/80 text-left transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white ${
+                    className={`flex items-center justify-between gap-2 w-full min-h-[50px] py-2 px-4 rounded-2xl border bg-stone-50/80 text-left transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white ${
                       (companyTypeError || (tried && companyTypes.length === 0))
                         ? 'border-red-400 ring-2 ring-red-200/30'
                         : 'border-stone-200'
@@ -722,13 +722,13 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                     {companyTypes.length === 0 ? (
                       <span className="text-[15px] text-stone-400 truncate">{t(lang, 'companyTypeSelectPrompt')}</span>
                     ) : (
-                      <span className="flex flex-wrap gap-1 flex-1 min-w-0 overflow-hidden">
+                      <span className="flex flex-wrap gap-1.5 flex-1 min-w-0">
                         {companyTypes.map(v => {
                           const ct = COMPANY_TYPES.find(c => c.value === v);
                           return ct ? (
                             <span
                               key={v}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#b8864a]/10 text-[#b8864a] text-[12px] font-medium leading-none"
+                              className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg bg-[#b8864a]/10 border border-[#b8864a]/20 text-[#b8864a] text-[13px] font-medium leading-none"
                             >
                               {t(lang, ct.labelKey)}
                               <span
@@ -745,16 +745,16 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                                     setCompanyTypes(prev => prev.filter(x => x !== v));
                                   }
                                 }}
-                                className="cursor-pointer text-[#b8864a]/60 hover:text-[#b8864a] leading-none"
+                                className="flex items-center justify-center w-4 h-4 rounded-full cursor-pointer text-[#b8864a]/70 hover:text-white hover:bg-[#b8864a] transition leading-none"
                               >
-                                ×
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                               </span>
                             </span>
                           ) : null;
                         })}
                       </span>
                     )}
-                    <span className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                    <span className="flex items-center gap-1.5 flex-shrink-0 self-center">
                       {companyTypes.length > 0 && (
                         <span className="text-[11px] text-[#b8864a] font-medium whitespace-nowrap">
                           {companyTypes.length}/{MAX_COMPANY_TYPES}
