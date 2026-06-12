@@ -341,7 +341,8 @@ export default function Navbar({
             </div>
           </div>}
 
-          {/* Materials Dropdown */}
+          {/* Materials Dropdown — VN 站隐藏供应商/材料导航 */}
+          {!isVn && (
           <div
             className="relative"
             onMouseEnter={() => setMaterialsDropdownOpen(true)}
@@ -402,6 +403,7 @@ export default function Navbar({
               </div>
             </div>
           </div>
+          )}
 
           {showUserEntry ? (
             <div className="flex items-center gap-3">
@@ -536,7 +538,8 @@ export default function Navbar({
               )}
             </div>}
 
-            {/* Mobile Materials */}
+            {/* Mobile Materials — VN 站隐藏供应商/材料导航 */}
+            {!isVn && (
             <div className="py-2">
               <div className="flex items-center justify-between">
                 <Link href="/materials" onClick={() => handleClick('/materials')} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
@@ -580,6 +583,7 @@ export default function Navbar({
                 </div>
               )}
             </div>
+            )}
 
             {isLoggedIn ? (
               <Link href={accountEntry.to} onClick={() => handleClick(accountEntry.to)} className="py-2 inline-flex items-center gap-2 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
