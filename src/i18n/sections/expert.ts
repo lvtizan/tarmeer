@@ -162,6 +162,14 @@ export const expert = {
     currentCover: 'Current Cover',
     setAsCover: 'Set as Cover',
     removeShort: 'Remove',
+    // project style / type dropdowns
+    selectStyle: 'Select a style',
+    styleModern: 'Modern Contemporary',
+    styleIslamic: 'Modern Islamic',
+    styleNeoClassic: 'Neo-Classic',
+    styleMinimalist: 'Minimalist',
+    styleIndustrial: 'Industrial',
+    selectProjectType: 'Select project type…',
   },
   vi: {
     navProfile: 'Hồ sơ',
@@ -314,5 +322,12 @@ export const expert = {
     currentCover: 'Ảnh bìa hiện tại',
     setAsCover: 'Đặt làm ảnh bìa',
     removeShort: 'Xóa',
+    selectStyle: 'Chọn phong cách',
+    styleModern: 'Hiện đại đương đại',
+    styleIslamic: 'Hồi giáo hiện đại',
+    styleNeoClassic: 'Tân cổ điển',
+    styleMinimalist: 'Tối giản',
+    styleIndustrial: 'Công nghiệp',
+    selectProjectType: 'Chọn loại dự án…',
   },
 } as const;

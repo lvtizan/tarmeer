@@ -21,11 +21,6 @@ import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { countryFromLang } from '@/lib/country';
 
 const PRIMARY = '#b8864a';
-const STYLES = [{ value:'', label:'Select a style' },{ value:'modern', label:'Modern Contemporary' },{ value:'islamic', label:'Modern Islamic' },{ value:'classic', label:'Neo-Classic' },{ value:'minimalist', label:'Minimalist' },{ value:'industrial', label:'Industrial' }];
-const SPACE_L1_OPTIONS = [
-  { value: '', label: 'Select project type…' },
-  ...SPACE_TAXONOMY.map(g => ({ value: g.id, label: g.label })),
-];
 
 const fieldCls = "h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35";
 const textareaCls = "w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/35 resize-none";
@@ -64,6 +59,19 @@ function ExpertProjectsInner() {
   const { lang, tr } = useSiteLocale();
   const CITIES = countryFromLang(lang).cities;
   const t = tr.expert;
+
+  const STYLES = [
+    { value:'', label: t.selectStyle },
+    { value:'modern', label: t.styleModern },
+    { value:'islamic', label: t.styleIslamic },
+    { value:'classic', label: t.styleNeoClassic },
+    { value:'minimalist', label: t.styleMinimalist },
+    { value:'industrial', label: t.styleIndustrial },
+  ];
+  const SPACE_L1_OPTIONS = [
+    { value: '', label: t.selectProjectType },
+    ...SPACE_TAXONOMY.map(g => ({ value: g.id, label: g.label })),
+  ];
 
   const dynamicServiceCategories = useServiceCategories();
   const [mode, setMode] = useState<'list' | 'form'>('list');
