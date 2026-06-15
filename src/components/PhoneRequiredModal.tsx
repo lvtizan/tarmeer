@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { safeRemoveItem } from '@/lib/storage';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 const GCC_PHONE_OPTIONS = [
   { label: 'UAE', code: '+971', maxDigits: 9 },
@@ -22,6 +23,7 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
   const [digits, setDigits] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const tm = useSiteLocale().tr.modals;
 
   useEffect(() => {
     // Always verify with API — localStorage may be stale (e.g. after email verification auto-login)
@@ -61,7 +63,7 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
   if (blocking && checking) {
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
-        <div className="text-white text-lg">Loading...</div>
+        <div className="text-white text-lg">{tm.loading}</div>
       </div>
     );
   }
@@ -73,7 +75,7 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid) {
-      setError(`Phone number must be exactly ${country.maxDigits} digits for ${country.label}.`);
+      setError(tm.phoneDigitError(country.maxDigits, country.label));
       return;
     }
 
@@ -104,7 +106,7 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
 
       setVisible(false);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to update phone number. Please try again.';
+      const message = err instanceof Error ? err.message : tm.phoneUpdateFailed;
       if (/invalid authentication token|not authenticated|unauthorized/i.test(message)) {
         api.clearToken();
         safeRemoveItem('user');
@@ -130,19 +132,19 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl p-8">
         <h2 className="text-xl font-bold text-[#2c2c2c] mb-2">
-          Phone Number Required
+          {tm.phoneRequiredTitle}
         </h2>
         <p className="text-[15px] text-[#6b6b6b] mb-3">
-          Clients need your phone number to contact you about projects.
+          {tm.phoneRequiredDesc1}
         </p>
         <p className="text-[13px] text-stone-400 mb-6">
-          Complete your profile with a phone number and upload your portfolio so clients can easily find and reach you.
+          {tm.phoneRequiredDesc2}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-sm font-medium text-stone-500 block mb-1.5">
-              Phone Number
+              {tm.phoneNumberLabel}
             </label>
             <div className="flex gap-2">
               {/* Country code selector */}
@@ -186,7 +188,7 @@ export default function PhoneRequiredModal({ blocking = false }: { blocking?: bo
             disabled={loading || !isValid}
             className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Saving...' : 'Continue'}
+            {loading ? tm.saving : tm.continue}
           </button>
         </form>
       </div>

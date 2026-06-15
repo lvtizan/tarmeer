@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Send, MessageSquare } from 'lucide-react';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -24,6 +25,7 @@ export default function FeedbackModal({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const tm = useSiteLocale().tr.modals;
 
   if (!open) return null;
 
@@ -40,11 +42,11 @@ export default function FeedbackModal({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(data.error || 'Failed to submit');
+        throw new Error(data.error || tm.submitFailed);
       }
       setSubmitted(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : tm.somethingWrong);
     } finally {
       setSubmitting(false);
     }
@@ -65,8 +67,8 @@ export default function FeedbackModal({
               <MessageSquare className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 className="font-serif text-base text-white font-medium">Share Your Feedback</h3>
-              <p className="text-white/60 text-xs mt-0.5">Your opinion helps us improve</p>
+              <h3 className="font-serif text-base text-white font-medium">{tm.feedbackTitle}</h3>
+              <p className="text-white/60 text-xs mt-0.5">{tm.feedbackSubtitle}</p>
             </div>
           </div>
           <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition text-white/60 hover:text-white">
@@ -79,32 +81,32 @@ export default function FeedbackModal({
             <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
               <Send className="w-6 h-6 text-green-600" />
             </div>
-            <h3 className="font-serif text-lg font-semibold text-[#1c1917] mb-2">Thank You!</h3>
-            <p className="text-sm text-stone-500">Your feedback has been received. We appreciate your input!</p>
+            <h3 className="font-serif text-lg font-semibold text-[#1c1917] mb-2">{tm.feedbackThankYou}</h3>
+            <p className="text-sm text-stone-500">{tm.feedbackReceived}</p>
             <button onClick={handleClose} className="mt-5 px-6 py-2 rounded-xl bg-[#c6a065] text-white text-sm font-semibold hover:bg-[#b8860b] transition">
-              Close
+              {tm.close}
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1.5">Subject</label>
+              <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1.5">{tm.subject}</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                placeholder="What's on your mind?"
+                placeholder={tm.subjectPlaceholder}
                 className="w-full h-11 px-4 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1.5">Message</label>
+              <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1.5">{tm.message}</label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
-                placeholder="Share your thoughts, suggestions, or feedback..."
+                placeholder={tm.messagePlaceholder}
                 rows={5}
                 className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c6a065]/30 focus:border-[#c6a065] transition resize-none"
               />
@@ -118,7 +120,7 @@ export default function FeedbackModal({
               {submitting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <><Send className="w-4 h-4" />Send Feedback</>
+                <><Send className="w-4 h-4" />{tm.sendFeedback}</>
               )}
             </button>
           </form>

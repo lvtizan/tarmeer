@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { api } from '../lib/api';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 interface Notification {
   id: number;
@@ -19,6 +20,7 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const tm = useSiteLocale().tr.modals;
 
   const fetchNotifications = async () => {
     try {
@@ -65,11 +67,11 @@ export default function NotificationBell() {
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) return tm.justNow;
+    if (mins < 60) return tm.minsAgo(mins);
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
+    if (hrs < 24) return tm.hrsAgo(hrs);
+    return tm.daysAgo(Math.floor(hrs / 24));
   };
 
   return (
@@ -90,16 +92,16 @@ export default function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 max-h-96 bg-white rounded-xl shadow-xl border border-stone-200 overflow-hidden z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100">
-            <span className="text-sm font-semibold text-stone-900">Notifications</span>
+            <span className="text-sm font-semibold text-stone-900">{tm.notifications}</span>
             {unreadCount > 0 && (
               <button onClick={markAllRead} className="text-xs text-amber-600 hover:text-amber-700 font-medium">
-                Mark all read
+                {tm.markAllRead}
               </button>
             )}
           </div>
           <div className="overflow-y-auto max-h-[320px]">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-stone-400">No notifications yet</div>
+              <div className="px-4 py-8 text-center text-sm text-stone-400">{tm.noNotifications}</div>
             ) : (
               notifications.map(n => (
                 <button

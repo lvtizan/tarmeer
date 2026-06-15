@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -9,11 +10,12 @@ function SsoConsumeInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [error, setError] = useState('');
+  const to = useSiteLocale().tr.onboarding;
 
   useEffect(() => {
     const token = searchParams.get('token');
     if (!token) {
-      setError('Invalid SSO link — missing token.');
+      setError(to.ssoInvalidLink);
       return;
     }
 
@@ -23,11 +25,11 @@ function SsoConsumeInner() {
       },
     })
       .then(async (res) => {
-        if (!res.ok) throw new Error('SSO login failed.');
+        if (!res.ok) throw new Error(to.ssoFailed);
         return res.json();
       })
       .then((data: { token?: string; redirectUrl?: string }) => {
-        if (!data?.token) throw new Error('No token in response');
+        if (!data?.token) throw new Error(to.ssoNoToken);
         if (typeof window !== 'undefined') {
           localStorage.setItem('auth_token', data.token);
           localStorage.setItem('active_role', 'company');
@@ -36,7 +38,7 @@ function SsoConsumeInner() {
         router.replace(redirect);
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'SSO login failed. Please try again.');
+        setError(err instanceof Error ? err.message : to.ssoFailedRetry);
       });
   }, [searchParams, router]);
 
@@ -49,7 +51,7 @@ function SsoConsumeInner() {
             onClick={() => router.replace('/auth')}
             className="btn-primary px-6 py-2 text-sm"
           >
-            Go to Login
+            {to.goToLogin}
           </button>
         </div>
       </div>

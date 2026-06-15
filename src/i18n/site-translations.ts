@@ -11,6 +11,8 @@ import { banner } from './sections/banner';
 import { home } from './sections/home';
 import { companies } from './sections/companies';
 import { auth } from './sections/auth';
+import { modals } from './sections/modals';
+import { onboarding } from './sections/onboarding';
 
 export const siteTranslations = {
   en: {
@@ -23,6 +25,8 @@ export const siteTranslations = {
     home: home.en,
     companies: companies.en,
     auth: auth.en,
+    modals: modals.en,
+    onboarding: onboarding.en,
   },
   vi: {
     nav: nav.vi,
@@ -34,6 +38,8 @@ export const siteTranslations = {
     home: home.vi,
     companies: companies.vi,
     auth: auth.vi,
+    modals: modals.vi,
+    onboarding: onboarding.vi,
   },
 } as const;
 

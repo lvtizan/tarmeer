@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Home, Building2, Info, ArrowLeft, LogOut } from 'lucide-react';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -22,20 +23,21 @@ export default function OnboardingPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const to = useSiteLocale().tr.onboarding;
 
   const roles: RoleOption[] = [
     {
       id: 'homeowner',
       icon: <Home className="w-10 h-10" />,
-      title: 'I Need Renovation',
-      description: 'Submit your renovation requirements and get matched with professional companies.',
+      title: to.roleHomeownerTitle,
+      description: to.roleHomeownerDesc,
       redirectPath: '/dashboard',
     },
     {
       id: 'company',
       icon: <Building2 className="w-10 h-10" />,
-      title: 'Professional Company',
-      description: 'Showcase your projects, get qualified leads, and grow your business.',
+      title: to.roleCompanyTitle,
+      description: to.roleCompanyDesc,
       redirectPath: '/company',
     },
   ];
@@ -66,13 +68,13 @@ export default function OnboardingPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error || 'An error occurred. Please try again.');
+        throw new Error((data as { error?: string }).error || to.errorOccurred);
       }
       if (typeof window !== 'undefined') localStorage.setItem('active_role', role);
       const opt = roles.find((r) => r.id === role);
       if (opt) router.push(opt.redirectPath);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
+      setError(err instanceof Error ? err.message : to.errorOccurred);
       setSelectedRole(null);
     } finally {
       setIsLoading(false);
@@ -91,10 +93,10 @@ export default function OnboardingPage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#2c2c2c] mb-3">
-              Tell us who you are
+              {to.title}
             </h1>
             <p className="text-stone-500 text-base max-w-lg mx-auto">
-              Choose your role to get started and unlock personalized features designed just for you
+              {to.subtitle}
             </p>
           </motion.div>
 
@@ -113,7 +115,7 @@ export default function OnboardingPage() {
                     className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 font-semibold text-red-700 transition hover:bg-red-100"
                   >
                     <LogOut className="h-4 w-4" />
-                    Re-login
+                    {to.reLogin}
                   </button>
                   <button
                     type="button"
@@ -121,7 +123,7 @@ export default function OnboardingPage() {
                     className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 font-semibold text-stone-700 transition hover:bg-stone-50"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    Home
+                    {to.home}
                   </button>
                 </div>
               )}
@@ -168,9 +170,9 @@ export default function OnboardingPage() {
                     {isSelected && isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Selecting...
+                        {to.selecting}
                       </span>
-                    ) : isSelected ? 'Selected' : 'Select'}
+                    ) : isSelected ? to.selected : to.select}
                   </div>
                 </motion.button>
               );
@@ -185,7 +187,7 @@ export default function OnboardingPage() {
           >
             <Info className="w-5 h-5 text-[#b8864a] flex-shrink-0" />
             <p className="text-[#2c2c2c] text-[15px] font-medium">
-              You can change your role anytime in settings
+              {to.changeRoleNote}
             </p>
           </motion.div>
         </div>
