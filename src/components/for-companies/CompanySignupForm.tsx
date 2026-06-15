@@ -6,6 +6,7 @@ import { t, type Lang } from '@/i18n/forCompanies';
 import AdminSelect from '@/components/ui/AdminSelect';
 import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import { validatePhone, isPhoneComplete } from '@/lib/phoneValidation';
+import { countryFromLang } from '@/lib/country';
 import { api } from '@/lib/api';
 
 const GCC_PHONE_OPTIONS = [
@@ -22,7 +23,6 @@ const VN_PHONE_OPTIONS = [
 // VN 站用 +84，AE/GCC 站用海湾区号
 const PHONE_OPTIONS_BY_LANG = (lang: string) => (lang === 'vi' ? VN_PHONE_OPTIONS : GCC_PHONE_OPTIONS);
 
-const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
 
 const COMPANY_TYPE_GROUPS: Record<string, string> = {
   design_studio: 'Design',
@@ -78,6 +78,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const router = useRouter();
 
   const PHONE_OPTIONS = PHONE_OPTIONS_BY_LANG(lang);
+  const cityOptions = countryFromLang(lang).cities; // 城市按国家取（VN→越南城市，AE→海湾城市）
   const [contactName, setContactName] = useState('');
   const [phoneRegion, setPhoneRegion] = useState(PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');
@@ -691,8 +692,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   value={city}
                   onChange={setCity}
                   options={[
-                    { value: '', label: lang === 'ar' ? 'اختر المدينة' : 'Select city' },
-                    ...UAE_CITIES.map(c => ({ value: c, label: c })),
+                    { value: '', label: lang === 'ar' ? 'اختر المدينة' : lang === 'vi' ? 'Chọn thành phố' : 'Select city' },
+                    ...cityOptions.map(c => ({ value: c, label: c })),
                   ]}
                   className="w-full"
                   error={tried && !city}

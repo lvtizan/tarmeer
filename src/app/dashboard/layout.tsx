@@ -9,18 +9,20 @@ import { api } from '@/lib/api';
 import PhoneRequiredModal from '@/components/PhoneRequiredModal';
 import FeedbackModal from '@/components/FeedbackModal';
 import { PortalDesktopNav, PortalMobileNav, type PortalNavItem } from '@/components/portal/PortalNav';
-
-const HOMEOWNER_NAV: PortalNavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home, end: true },
-  { href: '/dashboard/projects', label: 'Projects', icon: FolderOpen },
-  { href: '/dashboard/profile', label: 'Profile', icon: User },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-];
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const tp = useSiteLocale().tr.portal;
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [ready, setReady] = useState(false);
+
+  const HOMEOWNER_NAV: PortalNavItem[] = [
+    { href: '/dashboard', label: tp.navDashboard, icon: Home, end: true },
+    { href: '/dashboard/projects', label: tp.navProjects, icon: FolderOpen },
+    { href: '/dashboard/profile', label: tp.navProfile, icon: User },
+    { href: '/dashboard/settings', label: tp.navSettings, icon: Settings },
+  ];
 
   useEffect(() => {
     const activeRole = localStorage.getItem('active_role');
@@ -53,7 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!ready) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#faf9f7]">
-        <div className="text-stone-400">Loading...</div>
+        <div className="text-stone-400">{tp.loading}</div>
       </div>
     );
   }
@@ -80,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         aria-label="Send feedback"
       >
         <MessageSquare className="w-5 h-5" />
-        <span className="text-[10px] font-medium leading-none">Feedback</span>
+        <span className="text-[10px] font-medium leading-none">{tp.feedback}</span>
       </button>
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="homeowner_portal" />
 

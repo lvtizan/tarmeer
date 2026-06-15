@@ -6,9 +6,11 @@ import { LogOut, ShieldCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { safeRemoveItem } from '@/lib/storage';
 import { SettingsSection, SettingsRow } from '@/components/portal/SettingsCard';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 export default function DashboardSettingsPage() {
   const router = useRouter();
+  const tp = useSiteLocale().tr.portal;
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -25,24 +27,24 @@ export default function DashboardSettingsPage() {
   return (
     <div className="w-full max-w-[640px] mx-auto space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-[#2c2c2c]">Settings</h1>
-        <p className="mt-0.5 text-sm text-stone-500">Manage your account preferences.</p>
+        <h1 className="text-xl font-bold text-[#2c2c2c]">{tp.settings}</h1>
+        <p className="mt-0.5 text-sm text-stone-500">{tp.manageAccount}</p>
       </div>
 
-      <SettingsSection title="Account">
+      <SettingsSection title={tp.account}>
         <SettingsRow
           icon={<ShieldCheck className="w-4 h-4" />}
-          title="Profile"
-          desc="Update your name, phone & city"
-          actionLabel="Edit Profile →"
+          title={tp.profile}
+          desc={tp.updateNamePhoneCity}
+          actionLabel={tp.editProfileArrow}
           onAction={() => router.push('/dashboard/profile')}
           divider
         />
         <SettingsRow
           icon={<LogOut className="w-4 h-4" />}
-          title="Sign Out"
-          desc="Sign out of your account on this device"
-          actionLabel={loggingOut ? 'Signing out…' : 'Sign Out'}
+          title={tp.signOut}
+          desc={tp.signOutDesc}
+          actionLabel={loggingOut ? tp.signingOut : tp.signOut}
           onAction={handleLogout}
           disabled={loggingOut}
         />
