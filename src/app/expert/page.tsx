@@ -91,8 +91,8 @@ async function uploadExpertFile(file: File): Promise<string> {
 }
 
 export default function ExpertCenterPage() {
-  const { lang } = useSiteLocale();
-  const t = useCallback((en: string, vi: string) => (lang === 'vi' ? vi : en), [lang]);
+  const { lang, tr } = useSiteLocale();
+  const t = tr.expert;
   const defaultCode = lang === 'vi' ? '+84' : '+971';
   const categories = useServiceCategories();
 
@@ -200,7 +200,7 @@ export default function ExpertCenterPage() {
       const url = await uploadExpertFile(file);
       setAvatarUrl(url);
     } catch (err: unknown) {
-      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t('Upload failed', 'Tải lên thất bại') });
+      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t.uploadFailed });
     }
     setUploadingAvatar(false);
   };
@@ -214,7 +214,7 @@ export default function ExpertCenterPage() {
         setCertificates(prev => [...prev, url]);
       }
     } catch (err: unknown) {
-      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t('Upload failed', 'Tải lên thất bại') });
+      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t.uploadFailed });
     }
     setUploadingCert(false);
   };
@@ -226,7 +226,7 @@ export default function ExpertCenterPage() {
       const url = await uploadExpertFile(file);
       setLicenseUrl(url);
     } catch (err: unknown) {
-      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t('Upload failed', 'Tải lên thất bại') });
+      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t.uploadFailed });
     }
     setUploadingLicense(false);
   };
@@ -236,14 +236,14 @@ export default function ExpertCenterPage() {
   const handleSave = async () => {
     setSaveMsg(null);
     if (!fullName.trim()) {
-      setSaveMsg({ type: 'error', text: t('Full name is required.', 'Vui lòng nhập họ tên.') });
+      setSaveMsg({ type: 'error', text: t.fullNameRequired });
       return;
     }
     if (phoneDigits) {
       const err = validatePhone(phoneDigits, phoneCode);
       if (err || !isPhoneComplete(phoneDigits, phoneCode)) {
         setPhoneTouched(true);
-        setSaveMsg({ type: 'error', text: err || t('Phone number is incomplete.', 'Số điện thoại chưa đầy đủ.') });
+        setSaveMsg({ type: 'error', text: err || t.phoneIncomplete });
         return;
       }
     }
@@ -273,11 +273,11 @@ export default function ExpertCenterPage() {
       setSaveMsg({
         type: 'success',
         text: wasFirst
-          ? t('Submitted! Your profile is pending review.', 'Đã gửi! Hồ sơ của bạn đang chờ duyệt.')
-          : t('Saved.', 'Đã lưu.'),
+          ? t.submittedPending
+          : t.saved,
       });
     } catch (err: unknown) {
-      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t('Failed to save.', 'Lưu thất bại.') });
+      setSaveMsg({ type: 'error', text: err instanceof Error ? err.message : t.failedToSave });
     }
     setSaving(false);
   };
@@ -294,17 +294,17 @@ export default function ExpertCenterPage() {
     <div className="space-y-5 pb-12">
       {/* Header + status badge */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Expert Center', 'Trung tâm chuyên gia')}</h1>
+        <h1 className="text-xl font-bold text-[#2c2c2c]">{t.expertCenter}</h1>
         <div className="flex items-center gap-2">
           {status === 'pending' && (
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
-              {t('Pending review', 'Đang chờ duyệt')}
+              {t.pendingReview}
             </span>
           )}
           {status === 'approved' && (
             <>
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
-                {t('Live', 'Đang hiển thị')}
+                {t.live}
               </span>
               {slug && (
                 <a
@@ -313,7 +313,7 @@ export default function ExpertCenterPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs font-medium text-[#b8864a] hover:underline"
                 >
-                  {t('View my page', 'Xem trang của tôi')}
+                  {t.viewMyPage}
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}
@@ -321,7 +321,7 @@ export default function ExpertCenterPage() {
           )}
           {status === 'rejected' && (
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600">
-              {t('Rejected', 'Bị từ chối')}
+              {t.rejected}
             </span>
           )}
         </div>
@@ -329,10 +329,7 @@ export default function ExpertCenterPage() {
 
       {!profileExists && (
         <div className="bg-[#f5f0e8] border border-[#d4c4a8] text-[#8a6534] text-sm rounded-xl px-4 py-3">
-          {t(
-            'Complete your profile below and save — it will be reviewed before going live.',
-            'Hoàn thiện hồ sơ bên dưới và lưu lại — hồ sơ sẽ được duyệt trước khi hiển thị.'
-          )}
+          {t.completeBanner}
         </div>
       )}
 
@@ -340,7 +337,7 @@ export default function ExpertCenterPage() {
       <section className="bg-white rounded-xl border border-stone-200 p-5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-700 mb-4">
           <User className="w-4 h-4 text-[#b8864a]" />
-          {t('My Profile', 'Hồ sơ của tôi')}
+          {t.myProfile}
         </h2>
 
         {/* Avatar + name */}
@@ -350,7 +347,7 @@ export default function ExpertCenterPage() {
               type="button"
               onClick={() => avatarInputRef.current?.click()}
               className="relative w-20 h-20 rounded-full bg-stone-100 border border-stone-200 overflow-hidden flex items-center justify-center text-stone-400 hover:border-[#b8864a] transition"
-              title={t('Upload avatar', 'Tải ảnh đại diện')}
+              title={t.uploadAvatar}
             >
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -371,25 +368,25 @@ export default function ExpertCenterPage() {
               className="hidden"
               onChange={e => { handleAvatarFile(e.target.files?.[0]); e.target.value = ''; }}
             />
-            <p className="text-[11px] text-stone-400 text-center mt-1">{t('Avatar', 'Ảnh đại diện')}</p>
+            <p className="text-[11px] text-stone-400 text-center mt-1">{t.avatar}</p>
           </div>
           <div className="flex-1 min-w-0">
             <label className="block text-xs font-medium text-stone-500 mb-1">
-              {t('Full name', 'Họ và tên')} <span className="text-red-500">*</span>
+              {t.fullName} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               className={INPUT_CLS}
-              placeholder={t('Your full name', 'Họ tên của bạn')}
+              placeholder={t.yourFullName}
             />
           </div>
         </div>
 
         {/* Services multi-select */}
         <div className="mb-4">
-          <label className="block text-xs font-medium text-stone-500 mb-2">{t('Services', 'Dịch vụ cung cấp')}</label>
+          <label className="block text-xs font-medium text-stone-500 mb-2">{t.services}</label>
           <div className="space-y-3">
             {categories.map(cat => (
               <div key={cat.name}>
@@ -421,7 +418,7 @@ export default function ExpertCenterPage() {
         {/* Birth year / experience / city */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Birth year', 'Năm sinh')}</label>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t.birthYear}</label>
             <input
               type="number"
               min={1940}
@@ -433,7 +430,7 @@ export default function ExpertCenterPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Years of experience', 'Số năm kinh nghiệm')}</label>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t.yearsExperience}</label>
             <input
               type="number"
               min={0}
@@ -445,32 +442,32 @@ export default function ExpertCenterPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1">{t('City', 'Thành phố')}</label>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t.city}</label>
             <input
               type="text"
               value={city}
               onChange={e => setCity(e.target.value)}
               className={INPUT_CLS}
-              placeholder={t('e.g. Dubai', 'VD: TP. Hồ Chí Minh')}
+              placeholder={t.cityPlaceholder}
             />
           </div>
         </div>
 
         {/* Bio */}
         <div className="mb-4">
-          <label className="block text-xs font-medium text-stone-500 mb-1">{t('Introduction', 'Giới thiệu')}</label>
+          <label className="block text-xs font-medium text-stone-500 mb-1">{t.introduction}</label>
           <textarea
             value={bio}
             onChange={e => setBio(e.target.value)}
             rows={4}
             className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30 focus:border-[#b8864a] focus:bg-white resize-y"
-            placeholder={t('Tell clients about yourself…', 'Giới thiệu bản thân với khách hàng…')}
+            placeholder={t.bioPlaceholder}
           />
         </div>
 
         {/* Skills */}
         <div className="mb-4">
-          <label className="block text-xs font-medium text-stone-500 mb-1">{t('Skills', 'Kỹ năng')}</label>
+          <label className="block text-xs font-medium text-stone-500 mb-1">{t.skills}</label>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {skills.map(s => (
               <span key={s} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-[#f5f0e8] text-[#8a6534]">
@@ -492,25 +489,25 @@ export default function ExpertCenterPage() {
               }
             }}
             className={INPUT_CLS}
-            placeholder={t('Type a skill and press Enter', 'Nhập kỹ năng rồi nhấn Enter')}
+            placeholder={t.skillPlaceholder}
           />
         </div>
 
         {/* Work history */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-medium text-stone-500">{t('Work history', 'Kinh nghiệm làm việc')}</label>
+            <label className="block text-xs font-medium text-stone-500">{t.workHistory}</label>
             <button
               type="button"
               onClick={() => setWorkHistory(prev => [...prev, { from: '', to: '', org: '', role: '' }])}
               className="inline-flex items-center gap-1 text-xs font-medium text-[#b8864a] hover:underline"
             >
               <Plus className="w-3.5 h-3.5" />
-              {t('Add', 'Thêm')}
+              {t.add}
             </button>
           </div>
           {workHistory.length === 0 ? (
-            <p className="text-xs text-stone-400">{t('No work history yet.', 'Chưa có kinh nghiệm làm việc.')}</p>
+            <p className="text-xs text-stone-400">{t.noWorkHistory}</p>
           ) : (
             <div className="space-y-2">
               {workHistory.map((w, idx) => (
@@ -520,34 +517,34 @@ export default function ExpertCenterPage() {
                     value={w.from}
                     onChange={e => setWorkHistory(prev => prev.map((x, i) => i === idx ? { ...x, from: e.target.value } : x))}
                     className={INPUT_CLS}
-                    placeholder={t('From', 'Từ')}
+                    placeholder={t.from}
                   />
                   <input
                     type="text"
                     value={w.to}
                     onChange={e => setWorkHistory(prev => prev.map((x, i) => i === idx ? { ...x, to: e.target.value } : x))}
                     className={INPUT_CLS}
-                    placeholder={t('To', 'Đến')}
+                    placeholder={t.to}
                   />
                   <input
                     type="text"
                     value={w.org}
                     onChange={e => setWorkHistory(prev => prev.map((x, i) => i === idx ? { ...x, org: e.target.value } : x))}
                     className={INPUT_CLS}
-                    placeholder={t('Company / organization', 'Công ty / tổ chức')}
+                    placeholder={t.companyOrg}
                   />
                   <input
                     type="text"
                     value={w.role}
                     onChange={e => setWorkHistory(prev => prev.map((x, i) => i === idx ? { ...x, role: e.target.value } : x))}
                     className={INPUT_CLS}
-                    placeholder={t('Role', 'Vị trí')}
+                    placeholder={t.role}
                   />
                   <button
                     type="button"
                     onClick={() => setWorkHistory(prev => prev.filter((_, i) => i !== idx))}
                     className="text-stone-400 hover:text-red-500 transition p-1 justify-self-end"
-                    title={t('Remove', 'Xóa')}
+                    title={t.remove}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -559,7 +556,7 @@ export default function ExpertCenterPage() {
 
         {/* Phone */}
         <div>
-          <label className="block text-xs font-medium text-stone-500 mb-1">{t('Contact phone', 'Số điện thoại liên hệ')}</label>
+          <label className="block text-xs font-medium text-stone-500 mb-1">{t.contactPhone}</label>
           <div className="flex gap-2">
             <span className="inline-flex items-center h-10 px-3 rounded-lg border border-stone-200 bg-stone-100 text-sm text-stone-600 shrink-0">
               {phoneCode}
@@ -570,7 +567,7 @@ export default function ExpertCenterPage() {
               value={phoneDigits}
               onChange={e => { setPhoneDigits(e.target.value.replace(/\D/g, '')); setPhoneTouched(true); }}
               className={`${INPUT_CLS} ${phoneError ? 'border-red-400' : ''}`}
-              placeholder={t('Phone number', 'Số điện thoại')}
+              placeholder={t.phoneNumber}
             />
           </div>
           {phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}
@@ -581,12 +578,12 @@ export default function ExpertCenterPage() {
       <section className="bg-white rounded-xl border border-stone-200 p-5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-700 mb-4">
           <Award className="w-4 h-4 text-[#b8864a]" />
-          {t('Documents', 'Giấy tờ')}
+          {t.documents}
         </h2>
 
         {/* Certificates */}
         <div className="mb-5">
-          <label className="block text-xs font-medium text-stone-500 mb-2">{t('Certificates', 'Chứng chỉ nghề')}</label>
+          <label className="block text-xs font-medium text-stone-500 mb-2">{t.certificates}</label>
           <div className="flex flex-wrap gap-2">
             {certificates.map((url, idx) => (
               <div key={`${url}-${idx}`} className="relative w-20 h-20 rounded-lg border border-stone-200 overflow-hidden bg-stone-50 group">
@@ -605,7 +602,7 @@ export default function ExpertCenterPage() {
                   type="button"
                   onClick={() => setCertificates(prev => prev.filter((_, i) => i !== idx))}
                   className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-500 transition"
-                  title={t('Remove', 'Xóa')}
+                  title={t.remove}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -618,7 +615,7 @@ export default function ExpertCenterPage() {
               className="w-20 h-20 rounded-lg border border-dashed border-stone-300 flex flex-col items-center justify-center gap-1 text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-50"
             >
               {uploadingCert ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-              <span className="text-[10px]">{t('Upload', 'Tải lên')}</span>
+              <span className="text-[10px]">{t.upload}</span>
             </button>
             <input
               ref={certInputRef}
@@ -629,12 +626,12 @@ export default function ExpertCenterPage() {
               onChange={e => { handleCertFiles(e.target.files); e.target.value = ''; }}
             />
           </div>
-          <p className="text-[11px] text-stone-400 mt-1.5">{t('Images or PDF, max 10MB each.', 'Hình ảnh hoặc PDF, tối đa 10MB mỗi tệp.')}</p>
+          <p className="text-[11px] text-stone-400 mt-1.5">{t.certHint}</p>
         </div>
 
         {/* Business license */}
         <div>
-          <label className="block text-xs font-medium text-stone-500 mb-2">{t('Business license', 'Giấy phép kinh doanh')}</label>
+          <label className="block text-xs font-medium text-stone-500 mb-2">{t.businessLicense}</label>
           <div className="flex items-center gap-2">
             {licenseUrl ? (
               <div className="relative w-20 h-20 rounded-lg border border-stone-200 overflow-hidden bg-stone-50">
@@ -653,7 +650,7 @@ export default function ExpertCenterPage() {
                   type="button"
                   onClick={() => setLicenseUrl('')}
                   className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-500 transition"
-                  title={t('Remove', 'Xóa')}
+                  title={t.remove}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -666,7 +663,7 @@ export default function ExpertCenterPage() {
                 className="w-20 h-20 rounded-lg border border-dashed border-stone-300 flex flex-col items-center justify-center gap-1 text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-50"
               >
                 {uploadingLicense ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                <span className="text-[10px]">{t('Upload', 'Tải lên')}</span>
+                <span className="text-[10px]">{t.upload}</span>
               </button>
             )}
             <input
@@ -678,7 +675,7 @@ export default function ExpertCenterPage() {
             />
           </div>
           <p className="text-[11px] text-stone-400 mt-1.5">
-            {t('Only the verified status is shown publicly — the file itself stays private.', 'Chỉ trạng thái "đã xác minh" được hiển thị công khai — tệp gốc được giữ riêng tư.')}
+            {t.licenseHint}
           </p>
         </div>
       </section>
@@ -701,10 +698,10 @@ export default function ExpertCenterPage() {
           className="w-full sm:w-auto h-11 px-8 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a67c47] transition-colors disabled:opacity-50"
         >
           {saving
-            ? t('Saving…', 'Đang lưu…')
+            ? t.savingDots
             : profileExists
-              ? t('Save changes', 'Lưu thay đổi')
-              : t('Submit for review', 'Gửi để duyệt')}
+              ? t.saveChanges
+              : t.submitForReview}
         </button>
       </div>
 
@@ -712,11 +709,11 @@ export default function ExpertCenterPage() {
       <section className="bg-white rounded-xl border border-stone-200 p-5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-700 mb-4">
           <Inbox className="w-4 h-4 text-[#b8864a]" />
-          {t('Message Inbox', 'Hộp thư tin nhắn')}
+          {t.messageInbox}
           {inquiries.length > 0 && <span className="text-xs text-stone-400 font-normal">{inquiries.length}</span>}
         </h2>
         {inquiries.length === 0 ? (
-          <p className="text-sm text-stone-400">{t('No messages yet.', 'Chưa có tin nhắn nào.')}</p>
+          <p className="text-sm text-stone-400">{t.noMessages}</p>
         ) : (
           <div className="divide-y divide-stone-100">
             {inquiries.map(q => (
@@ -744,16 +741,16 @@ export default function ExpertCenterPage() {
       <section className="bg-white rounded-xl border border-stone-200 p-5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-700 mb-4">
           <BarChart3 className="w-4 h-4 text-[#b8864a]" />
-          {t('My Stats', 'Số liệu của tôi')}
+          {t.myStats}
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl bg-stone-50 border border-stone-100 p-4 text-center">
             <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums">{stats.phoneReveals}</p>
-            <p className="text-xs text-stone-500 mt-1">{t('Phone reveals', 'Lượt xem số điện thoại')}</p>
+            <p className="text-xs text-stone-500 mt-1">{t.phoneReveals}</p>
           </div>
           <div className="rounded-xl bg-stone-50 border border-stone-100 p-4 text-center">
             <p className="text-2xl font-bold text-[#2c2c2c] tabular-nums">{stats.inquiries}</p>
-            <p className="text-xs text-stone-500 mt-1">{t('Messages received', 'Tin nhắn nhận được')}</p>
+            <p className="text-xs text-stone-500 mt-1">{t.messagesReceived}</p>
           </div>
         </div>
       </section>

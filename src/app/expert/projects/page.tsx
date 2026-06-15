@@ -61,9 +61,9 @@ function parseImageEntries(value: unknown): ImageEntry[] {
 }
 
 function ExpertProjectsInner() {
-  const { lang } = useSiteLocale();
+  const { lang, tr } = useSiteLocale();
   const CITIES = countryFromLang(lang).cities;
-  const t = (en: string, vi: string) => lang === 'vi' ? vi : en;
+  const t = tr.expert;
 
   const dynamicServiceCategories = useServiceCategories();
   const [mode, setMode] = useState<'list' | 'form'>('list');
@@ -108,7 +108,7 @@ function ExpertProjectsInner() {
           return { ...p, images: parseImageEntries(p.images).map(e => e.url), tags: parseMaybeArray(p.tags) };
         }));
       })
-      .catch(() => setProjectsLoadError(t('Failed to load projects. Please refresh.', 'Không thể tải dự án. Vui lòng làm mới trang.')));
+      .catch(() => setProjectsLoadError(t.failedLoadProjects));
   }, []);
 
   useEffect(() => { refreshProjects(); }, [refreshProjects]);
@@ -126,23 +126,23 @@ function ExpertProjectsInner() {
     const raw = Array.from(files).filter(f => f.type.startsWith('image/'));
     const existing = new Set(fps.filter(Boolean));
     const unique = raw.filter(f => !existing.has(`${f.name}:${f.size}:${f.lastModified}`));
-    if (!unique.length) { showNotice(t('No new images.', 'Không có ảnh mới.')); return; }
+    if (!unique.length) { showNotice(t.noNewImages); return; }
     const tb = unique.reduce((s, f) => s + f.size, 0);
     if (tb > MAX_TOTAL_UPLOAD_BYTES) { showNotice(buildUploadSizeMessage(tb)); return; }
     setPrepping(true); setNotice('');
     try {
       const p = await convertProjectImagesForUpload(unique);
       const eb = imgs.reduce((s, u) => s + estimateDataUrlBytes(u), 0);
-      if (eb + p.estimatedPayloadBytes > MAX_ESTIMATED_PAYLOAD_BYTES) { showNotice(`Too large. Keep under ${formatFileSize(MAX_ESTIMATED_PAYLOAD_BYTES)}.`); return; }
+      if (eb + p.estimatedPayloadBytes > MAX_ESTIMATED_PAYLOAD_BYTES) { showNotice(`${t.tooLargeKeepUnder} ${formatFileSize(MAX_ESTIMATED_PAYLOAD_BYTES)}.`); return; }
       const { duplicateIndices } = await findDuplicates(p.dataUrls, imgs);
       const dedupedUrls = p.dataUrls.filter((_, i) => !duplicateIndices.includes(i));
       const dedupedFps = unique.filter((_, i) => !duplicateIndices.includes(i));
-      if (duplicateIndices.length > 0) showNotice(`${duplicateIndices.length} duplicate(s) removed.`);
-      if (dedupedUrls.length === 0) { if (!duplicateIndices.length) showNotice(t('No new images.', 'Không có ảnh mới.')); return; }
+      if (duplicateIndices.length > 0) showNotice(`${duplicateIndices.length} ${t.duplicatesRemoved}`);
+      if (dedupedUrls.length === 0) { if (!duplicateIndices.length) showNotice(t.noNewImages); return; }
       setImgs(prev => [...prev, ...dedupedUrls]);
       setFps(prev => [...prev, ...dedupedFps.map(f => `${f.name}:${f.size}:${f.lastModified}`)]);
       setImgTags(prev => [...prev, ...Array(dedupedUrls.length).fill(undefined)]);
-    } catch (e: unknown) { showNotice((e as { message?: string })?.message || t('Failed', 'Thất bại')); }
+    } catch (e: unknown) { showNotice((e as { message?: string })?.message || t.failed); }
     finally { setPrepping(false); }
   };
 
@@ -170,7 +170,7 @@ function ExpertProjectsInner() {
 
   const submit = async (publish: boolean) => {
     setTried(true);
-    if(!form.title.trim() || !form.location || imgs.length===0) { showNotice(t('Please complete all required fields', 'Vui lòng điền đầy đủ thông tin')); return; }
+    if(!form.title.trim() || !form.location || imgs.length===0) { showNotice(t.completeRequired); return; }
     setSubmitting(true);
     try {
       const orderedIndices = [cover, ...imgs.map((_,i) => i).filter(i => i!==cover)];
@@ -185,17 +185,17 @@ function ExpertProjectsInner() {
       };
       if (editingProjectId) {
         await api.put(`/projects/${editingProjectId}`, payload);
-        showNotice(publish ? t('Project updated!', 'Đã cập nhật dự án!') : t('Draft updated!', 'Đã lưu bản nháp!'));
+        showNotice(publish ? t.projectUpdated : t.draftUpdated);
       } else {
         await api.post('/projects', payload);
-        showNotice(publish ? t('Project submitted for review!', 'Dự án đã gửi để duyệt!') : t('Draft saved!', 'Đã lưu bản nháp!'));
+        showNotice(publish ? t.projectSubmitted : t.draftSaved);
       }
       setEditingProjectId(null);
       setForm({title:'',description:'',style:'',location:'',area:'',video_url:''});
       setSpaceL1(''); setTags([]); setServiceTags([]); setImgs([]); setFps([]);
       setImageEntries([]); setImgTags([]); setCheckedImgs(new Set()); setCover(0);
       setMode('list'); refreshProjects();
-    } catch(e: unknown) { showNotice((e as { message?: string })?.message || t('Failed', 'Thất bại')); }
+    } catch(e: unknown) { showNotice((e as { message?: string })?.message || t.failed); }
     finally { setSubmitting(false); }
   };
 
@@ -225,20 +225,20 @@ function ExpertProjectsInner() {
   };
 
   const removeProject = async (projectId: number) => {
-    if (!window.confirm(t('Delete this project?', 'Xóa dự án này?'))) return;
+    if (!window.confirm(t.deleteConfirm)) return;
     try {
       await api.delete(`/projects/${projectId}`);
       if (editingProjectId === projectId) cancelEdit();
-      refreshProjects(); showNotice(t('Project deleted.', 'Đã xóa dự án.'));
-    } catch (error: unknown) { showNotice((error as { message?: string })?.message || t('Failed to delete.', 'Xóa thất bại.')); }
+      refreshProjects(); showNotice(t.projectDeleted);
+    } catch (error: unknown) { showNotice((error as { message?: string })?.message || t.failedDelete); }
   };
 
   const canPublish = !!(form.title.trim() && form.location && imgs.length > 0);
   const gb = imgs.reduce((s, u) => s + estimateDataUrlBytes(u), 0);
   const missingFields: string[] = [];
-  if(!form.title.trim()) missingFields.push('title');
-  if(!form.location) missingFields.push('city');
-  if(imgs.length===0) missingFields.push('images');
+  if(!form.title.trim()) missingFields.push(t.fieldTitle);
+  if(!form.location) missingFields.push(t.fieldCity);
+  if(imgs.length===0) missingFields.push(t.fieldImages);
 
   if (mode === 'list') {
     return (
@@ -247,20 +247,20 @@ function ExpertProjectsInner() {
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
             <p className="text-sm font-semibold text-amber-900">
-              {t('Some projects need attention — review the reason and resubmit.', 'Một số dự án cần chú ý — xem lý do và gửi lại.')}
+              {t.someNeedAttention}
             </p>
           </div>
         )}
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#2c2c2c]">{t(`My Projects (${projects.length})`, `Dự án của tôi (${projects.length})`)}</h1>
-            <p className="mt-0.5 text-sm text-stone-500">{t('Showcase your work to potential clients.', 'Trưng bày công việc của bạn với khách hàng tiềm năng.')}</p>
+            <h1 className="text-xl font-bold text-[#2c2c2c]">{t.myProjects} ({projects.length})</h1>
+            <p className="mt-0.5 text-sm text-stone-500">{t.showcaseWork}</p>
           </div>
           <button type="button" onClick={() => setMode('form')}
             className="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition hover:opacity-90"
             style={{ backgroundColor: PRIMARY }}>
             <ImagePlus className="h-4 w-4" />
-            {t('New Project', 'Dự án mới')}
+            {t.newProject}
           </button>
         </div>
         {notice && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">{notice}</div>}
@@ -277,21 +277,21 @@ function ExpertProjectsInner() {
                       ? <img src={resolveImageUrl(coverImg)} alt={p.title as string} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                       : <div className="flex h-full w-full items-center justify-center text-stone-300"><Image className="h-10 w-10" /></div>}
                     <span className={`absolute left-3 top-3 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${p.status === 'published' ? 'bg-green-100 text-green-800' : p.status === 'pending' ? 'bg-amber-100 text-amber-800' : p.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-stone-100 text-stone-700'}`}>
-                      {p.status === 'published' ? t('Approved','Đã duyệt') : p.status === 'pending' ? t('Under Review','Đang duyệt') : p.status === 'rejected' ? t('Not Approved','Không được duyệt') : t('Draft','Nháp')}
+                      {p.status === 'published' ? t.statusApproved : p.status === 'pending' ? t.statusUnderReview : p.status === 'rejected' ? t.statusNotApproved : t.statusDraft}
                     </span>
                   </div>
                   <div className="p-4">
-                    <h3 className="truncate font-semibold text-[#2c2c2c]">{(p.title as string) || 'Untitled'}</h3>
-                    <p className="mt-1 text-xs text-stone-500">{[p.style, p.location].filter(Boolean).join(' · ') || 'No details'}</p>
+                    <h3 className="truncate font-semibold text-[#2c2c2c]">{(p.title as string) || t.untitled}</h3>
+                    <p className="mt-1 text-xs text-stone-500">{[p.style, p.location].filter(Boolean).join(' · ') || t.noDetails}</p>
                     {p.status === 'rejected' && typeof p.rejection_reason === 'string' && p.rejection_reason && (
                       <p className="mt-2 text-xs text-red-700 bg-red-50 rounded-lg px-2.5 py-1.5 leading-relaxed">
-                        <span className="font-semibold">{t('Reason: ','Lý do: ')}</span>{p.rejection_reason}
+                        <span className="font-semibold">{t.reasonLabel}</span>{p.rejection_reason}
                       </p>
                     )}
                     <div className="mt-3 flex items-center gap-2">
                       <button type="button" onClick={() => startEdit(p)}
                         className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg h-9 px-3 border border-stone-200 bg-white text-[#2c2c2c] text-sm font-medium hover:bg-stone-50 hover:border-[#b8864a]/30 transition">
-                        <Pencil className="w-3.5 h-3.5" />{t('Edit','Sửa')}
+                        <Pencil className="w-3.5 h-3.5" />{t.edit}
                       </button>
                       <button type="button" onClick={() => void removeProject(Number(p.id))}
                         className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-red-200 text-red-500 hover:bg-red-50 transition">
@@ -308,13 +308,13 @@ function ExpertProjectsInner() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#b8864a]/10">
               <FolderOpen className="h-7 w-7 text-[#b8864a]" />
             </div>
-            <p className="text-sm font-semibold text-stone-700">{t('No projects yet','Chưa có dự án')}</p>
-            <p className="mt-1 text-xs text-stone-500 mb-4">{t('Upload your first project to showcase your work.','Tải lên dự án đầu tiên để trưng bày công việc của bạn.')}</p>
+            <p className="text-sm font-semibold text-stone-700">{t.noProjects}</p>
+            <p className="mt-1 text-xs text-stone-500 mb-4">{t.uploadFirstHint}</p>
             <button type="button" onClick={() => setMode('form')}
               className="inline-flex h-9 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white"
               style={{ backgroundColor: PRIMARY }}>
               <ImagePlus className="h-4 w-4" />
-              {t('Upload First Project','Tải dự án đầu tiên')}
+              {t.uploadFirstProject}
             </button>
           </div>
         )}
@@ -329,26 +329,26 @@ function ExpertProjectsInner() {
         <button type="button" onClick={cancelEdit}
           className="mb-1 inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-700 transition">
           <ChevronLeft className="h-3.5 w-3.5" />
-          {t('Back to Projects','Về danh sách dự án')}
+          {t.backToProjects}
         </button>
-        <h1 className="text-2xl font-bold text-[#2c2c2c]">{editingProjectId ? t('Edit Project','Sửa dự án') : t('Upload New Project','Tải dự án mới')}</h1>
-        <p className="text-sm text-stone-500">{t('Complete your project and submit it for review.','Hoàn thiện dự án và gửi để duyệt.')}</p>
+        <h1 className="text-2xl font-bold text-[#2c2c2c]">{editingProjectId ? t.editProject : t.uploadNewProject}</h1>
+        <p className="text-sm text-stone-500">{t.completeAndSubmit}</p>
       </div>
 
       {/* Fixed bottom action bar */}
       <div className="fixed left-0 right-0 bottom-0 z-30 border-t border-stone-200 bg-white px-6 py-3 shadow-[0_-4px_16px_rgba(28,18,8,0.07)]">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className={`flex-1 text-sm font-medium truncate ${canPublish ? 'text-green-700' : 'text-stone-500'}`}>
-            {canPublish ? t('✓ Ready to submit','✓ Sẵn sàng gửi') : missingFields.length > 0 ? `Missing: ${missingFields.join(', ')}` : t('Complete required fields','Điền đủ thông tin bắt buộc')}
+            {canPublish ? t.readyToSubmit : missingFields.length > 0 ? `${t.missingPrefix}${missingFields.join(', ')}` : t.completeRequiredFields}
           </div>
           <button type="button" onClick={() => submit(false)} disabled={submitting || imgs.length===0}
             className="h-9 shrink-0 rounded-lg border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 disabled:opacity-50">
-            {submitting ? t('Saving...','Đang lưu...') : editingProjectId ? t('Update Draft','Cập nhật nháp') : t('Save Draft','Lưu nháp')}
+            {submitting ? t.savingDotsShort : editingProjectId ? t.updateDraft : t.saveDraft}
           </button>
           <button type="button" onClick={() => submit(true)} disabled={submitting || !canPublish}
             className="h-9 shrink-0 rounded-lg px-5 text-sm font-bold text-white transition disabled:opacity-60"
             style={{ backgroundColor: PRIMARY }}>
-            {submitting ? t('Submitting...','Đang gửi...') : editingProjectId ? t('Update & Submit','Cập nhật & Gửi') : t('Submit for Review','Gửi để duyệt')}
+            {submitting ? t.submitting : editingProjectId ? t.updateAndSubmit : t.submitForReviewBtn}
           </button>
         </div>
       </div>
@@ -365,62 +365,62 @@ function ExpertProjectsInner() {
         {/* LEFT: Project Details */}
         <section className="min-w-0 rounded-[24px] border border-stone-200 bg-white p-5 shadow-[0_20px_60px_rgba(28,18,8,0.05)]">
           <div className="mb-4">
-            <h2 className="text-lg font-bold text-[#2c2c2c]">{t('Project Details','Chi tiết dự án')}</h2>
-            <p className="text-sm text-stone-500">{t('Add key details for review.','Thêm chi tiết dự án để duyệt.')}</p>
+            <h2 className="text-lg font-bold text-[#2c2c2c]">{t.projectDetails}</h2>
+            <p className="text-sm text-stone-500">{t.addKeyDetails}</p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className={labelCls}>{t('Project Title','Tiêu đề dự án')} <span className="text-red-500">*</span></label>
+              <label className={labelCls}>{t.projectTitle} <span className="text-red-500">*</span></label>
               <input type="text" value={form.title} onChange={e => setForm(p => ({...p,title:e.target.value}))}
-                placeholder={t('e.g. Modern Villa - Full Renovation','vd: Villa Hiện Đại - Cải Tạo Toàn Bộ')}
+                placeholder={t.titlePlaceholder}
                 className={`${fieldCls} ${tried&&!form.title.trim()?'!border-red-400':''}`}/>
-              {tried&&!form.title.trim()&&<p className="mt-1 text-xs text-red-500">{t('Title is required','Tiêu đề là bắt buộc')}</p>}
+              {tried&&!form.title.trim()&&<p className="mt-1 text-xs text-red-500">{t.titleRequired}</p>}
             </div>
             <div className="md:col-span-2">
-              <label className={labelCls}>{t('Description','Mô tả')}</label>
+              <label className={labelCls}>{t.description}</label>
               <textarea value={form.description} onChange={e => setForm(p => ({...p,description:e.target.value}))}
-                placeholder={t('Briefly describe the project highlights.','Mô tả ngắn gọn điểm nổi bật của dự án.')}
+                placeholder={t.descPlaceholder}
                 rows={3} className={textareaCls}/>
             </div>
             <div>
-              <label className={labelCls}>{t('Style','Phong cách')} <span className="text-stone-400 font-normal">({t('optional','tùy chọn')})</span></label>
+              <label className={labelCls}>{t.styleLabel} <span className="text-stone-400 font-normal">({t.optional})</span></label>
               <SelectField name="style" value={form.style} onChange={e => setForm(p => ({...p,style:(e.target as HTMLSelectElement).value}))}>
                 {STYLES.map(s=><option key={s.value||'e'} value={s.value}>{s.label}</option>)}
               </SelectField>
             </div>
             <div>
-              <label className={labelCls}>{t('Location (City)','Địa điểm (Thành phố)')} <span className="text-red-500">*</span></label>
+              <label className={labelCls}>{t.locationCity} <span className="text-red-500">*</span></label>
               <SelectField name="location" value={form.location} onChange={e => setForm(p => ({...p,location:(e.target as HTMLSelectElement).value}))} className={tried&&!form.location?'!border-red-400':''}>
-                <option value="">{t('Select city','Chọn thành phố')}</option>
+                <option value="">{t.selectCity}</option>
                 {CITIES.map(c=><option key={c} value={c}>{c}</option>)}
               </SelectField>
-              {tried&&!form.location&&<p className="mt-1 text-xs text-red-500">{t('City is required','Thành phố là bắt buộc')}</p>}
+              {tried&&!form.location&&<p className="mt-1 text-xs text-red-500">{t.cityRequired}</p>}
             </div>
             <div className="md:col-span-2">
-              <label className={labelCls}>{t('Project Area','Diện tích dự án')}</label>
+              <label className={labelCls}>{t.projectArea}</label>
               <div className="flex h-11 items-center rounded-lg border border-stone-200 bg-stone-50 px-4">
                 <input type="text" value={form.area} onChange={e => setForm(p => ({...p,area:e.target.value}))} placeholder="e.g. 450" inputMode="decimal" className="h-full w-full bg-transparent text-[#2c2c2c] outline-none"/>
                 <span className="text-xs text-stone-500">sqm</span>
               </div>
             </div>
             <div>
-              <label className={labelCls}>{t('Space Type','Loại không gian')}</label>
+              <label className={labelCls}>{t.spaceTypeLabel}</label>
               <AdminSelect value={spaceL1} onChange={v => setSpaceL1(v)} options={SPACE_L1_OPTIONS} className="w-full" />
             </div>
             <div>
-              <label className={labelCls}>{t('Service Tags','Nhãn dịch vụ')} <span className="font-normal text-stone-400">({t('optional','tùy chọn')})</span></label>
+              <label className={labelCls}>{t.serviceTagsLabel} <span className="font-normal text-stone-400">({t.optional})</span></label>
               <div className="relative" ref={serviceDropRef}>
                 <button type="button" onClick={() => setServiceDropOpen(p => !p)}
                   className={`flex h-[50px] w-full items-center justify-between rounded-2xl border px-5 text-[15px] transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 ${serviceDropOpen ? 'border-[#b8864a] bg-white' : 'border-stone-200 bg-stone-50/80 hover:bg-white'}`}>
                   <span className={`truncate ${serviceTags.length > 0 ? 'text-[#1c1917]' : 'text-stone-400'}`}>
-                    {serviceTags.length > 0 ? serviceTags.join(', ') : t('Select services…','Chọn dịch vụ…')}
+                    {serviceTags.length > 0 ? serviceTags.join(', ') : t.selectServices}
                   </span>
                   <svg className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${serviceDropOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 7.5l5 5 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </button>
                 {serviceDropOpen && (
                   <div className="absolute left-0 top-full z-20 mt-1 min-w-[480px] w-full flex overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg">
                     <div className="w-48 flex-shrink-0 border-r border-stone-100">
-                      <div className="px-3 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-[#b8864a]">Service Type</div>
+                      <div className="px-3 pt-3 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-[#b8864a]">{t.serviceTypeHeading}</div>
                       {dynamicServiceCategories.map((cat, i) => {
                         const hasSelected = cat.subs.some(s => serviceTags.includes(s));
                         return (
@@ -464,12 +464,12 @@ function ExpertProjectsInner() {
           <section className={`min-w-0 rounded-[24px] border bg-white p-[18px] shadow-[0_18px_50px_rgba(28,18,8,0.06)] ${tried&&imgs.length===0?'border-red-400':'border-stone-200'}`}>
             <div className="mb-2.5 flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-[#2c2c2c]">{t('Image Board','Bảng ảnh')}</h2>
-                <p className="mt-0.5 text-xs text-stone-500">{imgs.length>0?`${imgs.length} images · ${formatFileSize(gb)}`:t('Add images to your project','Thêm ảnh dự án')}</p>
+                <h2 className="text-lg font-bold text-[#2c2c2c]">{t.imageBoard}</h2>
+                <p className="mt-0.5 text-xs text-stone-500">{imgs.length>0?`${imgs.length} ${t.imagesWord} · ${formatFileSize(gb)}`:t.addImagesToProject}</p>
               </div>
-              {imgs[cover]&&<div className="w-[128px] rounded-xl border border-stone-200 bg-stone-50 p-1.5"><div className="text-[10px] font-semibold text-stone-500">{t('Cover','Ảnh bìa')}</div><div className="mt-1 aspect-video w-full rounded-lg bg-cover bg-center" style={{backgroundImage:`url(${imgs[cover]})`}}/></div>}
+              {imgs[cover]&&<div className="w-[128px] rounded-xl border border-stone-200 bg-stone-50 p-1.5"><div className="text-[10px] font-semibold text-stone-500">{t.cover}</div><div className="mt-1 aspect-video w-full rounded-lg bg-cover bg-center" style={{backgroundImage:`url(${imgs[cover]})`}}/></div>}
             </div>
-            {tried&&imgs.length===0&&<p className="mb-2 text-xs text-red-500">{t('At least one image is required','Cần ít nhất một ảnh')}</p>}
+            {tried&&imgs.length===0&&<p className="mb-2 text-xs text-red-500">{t.atLeastOneImage}</p>}
 
             <input id="g-up" type="file" accept="image/*" multiple className="hidden" onChange={hFS} disabled={prepping}/>
             <input id="f-up" type="file" accept="image/*" multiple {...{webkitdirectory:'',directory:''} as React.InputHTMLAttributes<HTMLInputElement>} className="hidden" onChange={hFS} disabled={prepping}/>
@@ -481,12 +481,12 @@ function ExpertProjectsInner() {
                   <ImagePlus className="h-6 w-6 text-[#b8864a]"/>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-[#2c2c2c]">{prepping ? t('Processing images...','Đang xử lý ảnh...') : t('Drop images or folders here','Kéo thả ảnh hoặc thư mục vào đây')}</div>
-                  <div className="text-xs text-stone-500 mt-0.5">{t('JPG, PNG, WEBP. Under','JPG, PNG, WEBP. Dưới')} {formatFileSize(MAX_TOTAL_UPLOAD_BYTES)}.</div>
+                  <div className="font-semibold text-[#2c2c2c]">{prepping ? t.processingImages : t.dropImages}</div>
+                  <div className="text-xs text-stone-500 mt-0.5">{t.underSize} {formatFileSize(MAX_TOTAL_UPLOAD_BYTES)}.</div>
                 </div>
                 <label htmlFor="f-up" onClick={e=>e.stopPropagation()}
                   className="shrink-0 flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 cursor-pointer hover:bg-stone-50">
-                  <FolderOpen className="w-3.5 h-3.5"/>{t('Select Folder','Chọn thư mục')}
+                  <FolderOpen className="w-3.5 h-3.5"/>{t.selectFolder}
                 </label>
               </div>
             </label>
@@ -511,14 +511,14 @@ function ExpertProjectsInner() {
                           <div className="absolute right-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white"><GripVertical className="h-3.5 w-3.5"/></div>
                           {imgTag && (
                             <button type="button" onClick={e=>{e.stopPropagation();setImgTags(prev=>{const next=[...prev];next[i]=undefined;return next;});}}
-                              className="absolute bottom-1.5 left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-[#b8864a]/90 px-1.5 py-0.5 text-[9px] font-semibold text-white hover:bg-[#b8864a] transition group-hover:opacity-0" title="Click to remove tag">
+                              className="absolute bottom-1.5 left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-[#b8864a]/90 px-1.5 py-0.5 text-[9px] font-semibold text-white hover:bg-[#b8864a] transition group-hover:opacity-0" title={t.clickToRemoveTag}>
                               {imgTag.length > 9 ? imgTag.slice(0,9)+'…' : imgTag}
                             </button>
                           )}
                           <div className="absolute inset-0 bg-black/45 opacity-0 transition-opacity group-hover:opacity-100"/>
                           <div className="absolute inset-x-1.5 bottom-1.5 grid h-6 grid-cols-3 gap-1 opacity-0 transition group-hover:opacity-100">
                             <button type="button" onClick={()=>setPrevI(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-stone-700"><Eye className="mx-auto h-3 w-3"/></button>
-                            <button type="button" onClick={()=>setCover(i)} className="rounded-md bg-white px-1 text-[10px] font-semibold text-stone-700">{isCover?t('Cover','Bìa'):t('Set','Đặt')}</button>
+                            <button type="button" onClick={()=>setCover(i)} className="rounded-md bg-white px-1 text-[10px] font-semibold text-stone-700">{isCover?t.coverShort:t.setShort}</button>
                             <button type="button" onClick={()=>rmImg(i)} className="rounded-md bg-white px-2 text-[10px] font-semibold text-red-600"><Trash2 className="mx-auto h-3 w-3"/></button>
                           </div>
                         </div>
@@ -537,8 +537,8 @@ function ExpertProjectsInner() {
                 {checkedImgs.size > 0 && (
                   <div className="mt-2 rounded-xl border border-[#b8864a]/30 bg-[#b8864a]/[0.06] px-3 py-2.5">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-[11px] font-semibold text-[#7a5c2e]">Assign tag to {checkedImgs.size} image{checkedImgs.size > 1 ? 's' : ''}</p>
-                      <button type="button" onClick={()=>setCheckedImgs(new Set())} className="text-[11px] text-stone-400 hover:text-stone-600 transition">Cancel</button>
+                      <p className="text-[11px] font-semibold text-[#7a5c2e]">{t.assignTagTo} {checkedImgs.size} {t.imagesWord}</p>
+                      <button type="button" onClick={()=>setCheckedImgs(new Set())} className="text-[11px] text-stone-400 hover:text-stone-600 transition">{t.cancel}</button>
                     </div>
                     {spaceL1 ? (
                       <div className="flex flex-wrap gap-1.5">
@@ -553,7 +553,7 @@ function ExpertProjectsInner() {
                         })}
                       </div>
                     ) : (
-                      <p className="text-xs text-stone-500 italic">{t('Select a project type above to assign image tags.','Chọn loại không gian trước để gán thẻ ảnh.')}</p>
+                      <p className="text-xs text-stone-500 italic">{t.selectTypeForTags}</p>
                     )}
                   </div>
                 )}
@@ -563,8 +563,8 @@ function ExpertProjectsInner() {
 
           {/* Video URL */}
           <section className="rounded-[24px] border border-stone-200 bg-white p-5 shadow-[0_20px_60px_rgba(28,18,8,0.05)]">
-            <h2 className="text-base font-bold text-[#2c2c2c] mb-3">{t('Video','Video')}</h2>
-            <label className={labelCls}>YouTube URL <span className="text-stone-400 font-normal">({t('optional','tùy chọn')})</span></label>
+            <h2 className="text-base font-bold text-[#2c2c2c] mb-3">{t.video}</h2>
+            <label className={labelCls}>YouTube URL <span className="text-stone-400 font-normal">({t.optional})</span></label>
             <div className="relative mt-1">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.5V8.5l6.5 3.5-6.5 3.5z"/></svg>
               <input type="url" value={form.video_url} onChange={e=>setForm(p=>({...p,video_url:e.target.value}))} placeholder="https://www.youtube.com/watch?v=..." className={`${fieldCls} pl-9`}/>
@@ -578,7 +578,7 @@ function ExpertProjectsInner() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-4xl rounded-2xl bg-white p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-stone-700">{prevI+1}/{imgs.length}{cover===prevI?` · ${t('Cover','Ảnh bìa')}`:''}</span>
+              <span className="text-sm font-semibold text-stone-700">{prevI+1}/{imgs.length}{cover===prevI?` · ${t.cover}`:''}</span>
               <button type="button" onClick={()=>setPrevI(null)} className="rounded-full p-1 text-stone-500 hover:bg-stone-100"><X className="h-4 w-4"/></button>
             </div>
             <div className="relative flex items-center justify-center rounded-xl bg-stone-100">
@@ -589,8 +589,8 @@ function ExpertProjectsInner() {
               </>}
             </div>
             <div className="mt-3 flex items-center justify-end gap-2">
-              <button type="button" onClick={()=>setCover(prevI)} className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700">{cover===prevI?t('Current Cover','Ảnh bìa hiện tại'):t('Set as Cover','Đặt làm ảnh bìa')}</button>
-              <button type="button" onClick={()=>{rmImg(prevI);setPrevI(p=>imgs.length<=1?null:Math.min(p??0,imgs.length-2))}} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{t('Remove','Xóa')}</button>
+              <button type="button" onClick={()=>setCover(prevI)} className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700">{cover===prevI?t.currentCover:t.setAsCover}</button>
+              <button type="button" onClick={()=>{rmImg(prevI);setPrevI(p=>imgs.length<=1?null:Math.min(p??0,imgs.length-2))}} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{t.removeShort}</button>
             </div>
           </div>
         </div>

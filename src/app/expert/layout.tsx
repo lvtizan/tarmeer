@@ -23,8 +23,8 @@ function navCls(href: string, pathname: string): string {
 export default function ExpertLayout({ children }: ExpertLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { lang } = useSiteLocale();
-  const t = (en: string, vi: string) => (lang === 'vi' ? vi : en);
+  const { tr } = useSiteLocale();
+  const t = tr.expert;
   const token = typeof window !== 'undefined' ? api.getToken() : null;
   const [authValid, setAuthValid] = useState<boolean | null>(token ? null : false);
 
@@ -76,23 +76,23 @@ export default function ExpertLayout({ children }: ExpertLayoutProps) {
           <nav className="hidden sm:flex items-center gap-1">
             <Link href="/expert" className={navCls('/expert', pathname === '/expert' ? '/expert' : '__never__')}>
               <User className="w-4 h-4" />
-              {t('Profile', 'Hồ sơ')}
+              {t.navProfile}
             </Link>
             <Link href="/expert/projects" className={navCls('/expert/projects', pathname)}>
               <FolderOpen className="w-4 h-4" />
-              {t('Projects', 'Dự án')}
+              {t.navProjects}
             </Link>
             <Link href="/expert/inquiries" className={navCls('/expert/inquiries', pathname)}>
               <Inbox className="w-4 h-4" />
-              {t('Inquiries', 'Tin nhắn')}
+              {t.navInquiries}
             </Link>
           </nav>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-[#2c2c2c] hidden md:block">
-            {t('Expert Center', 'Trung tâm chuyên gia')}
+            {t.expertCenter}
           </span>
-          <button onClick={handleLogout} className="text-stone-400 hover:text-stone-600 transition p-1" title={t('Log out', 'Đăng xuất')}>
+          <button onClick={handleLogout} className="text-stone-400 hover:text-stone-600 transition p-1" title={t.logOut}>
             <LogOut className="w-4 h-4" />
           </button>
         </div>
@@ -102,15 +102,15 @@ export default function ExpertLayout({ children }: ExpertLayoutProps) {
       <nav className="sm:hidden bg-white border-b border-stone-200 flex items-center gap-1 px-4 py-2 sticky top-14 z-20">
         <Link href="/expert" className={navCls('/expert', pathname === '/expert' ? '/expert' : '__never__')}>
           <User className="w-4 h-4" />
-          {t('Profile', 'Hồ sơ')}
+          {t.navProfile}
         </Link>
         <Link href="/expert/projects" className={navCls('/expert/projects', pathname)}>
           <FolderOpen className="w-4 h-4" />
-          {t('Projects', 'Dự án')}
+          {t.navProjects}
         </Link>
         <Link href="/expert/inquiries" className={navCls('/expert/inquiries', pathname)}>
           <Inbox className="w-4 h-4" />
-          {t('Inquiries', 'Tin nhắn')}
+          {t.navInquiries}
         </Link>
       </nav>
 

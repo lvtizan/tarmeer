@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, Phone, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import type { SiteTranslations } from '@/i18n/site-translations';
 
 interface Inquiry {
   id: number;
@@ -15,17 +16,17 @@ interface Inquiry {
   created_at: string;
 }
 
-function timeAgo(iso: string, lang: string): string {
+function timeAgo(iso: string, t: SiteTranslations['expert']): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return lang === 'vi' ? 'vừa xong' : 'just now';
-  if (diff < 3600) return lang === 'vi' ? `${Math.floor(diff / 60)} phút trước` : `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return lang === 'vi' ? `${Math.floor(diff / 3600)} giờ trước` : `${Math.floor(diff / 3600)}h ago`;
-  return lang === 'vi' ? `${Math.floor(diff / 86400)} ngày trước` : `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return t.relJustNow;
+  if (diff < 3600) return `${Math.floor(diff / 60)}${t.relMin}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}${t.relHour}`;
+  return `${Math.floor(diff / 86400)}${t.relDay}`;
 }
 
 export default function ExpertInquiriesPage() {
-  const { lang } = useSiteLocale();
-  const t = (en: string, vi: string) => (lang === 'vi' ? vi : en);
+  const { tr } = useSiteLocale();
+  const t = tr.expert;
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -51,9 +52,9 @@ export default function ExpertInquiriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-serif text-[#1c1917]">{t('Inquiries', 'Tin nhắn')}</h1>
+          <h1 className="text-xl font-serif text-[#1c1917]">{t.navInquiries}</h1>
           <p className="text-sm text-stone-500 mt-0.5">
-            {t('Visitors who reached out through your profile', 'Khách hàng liên hệ qua trang hồ sơ của bạn')}
+            {t.inquiriesSubtitle}
           </p>
         </div>
         {inquiries.length > 0 && (
@@ -65,7 +66,7 @@ export default function ExpertInquiriesPage() {
         <div className="text-center py-16">
           <MessageSquare className="w-10 h-10 text-stone-300 mx-auto mb-3" />
           <p className="text-stone-500 text-sm">
-            {t('No inquiries yet', 'Chưa có tin nhắn nào')}
+            {t.noInquiries}
           </p>
         </div>
       ) : (
@@ -92,11 +93,11 @@ export default function ExpertInquiriesPage() {
                         <span className="text-xs text-stone-400">{inq.city}</span>
                       )}
                       <span className="text-xs text-stone-400 flex items-center gap-1 ml-auto shrink-0">
-                        <Clock className="w-3 h-3" />{timeAgo(inq.created_at, lang)}
+                        <Clock className="w-3 h-3" />{timeAgo(inq.created_at, t)}
                       </span>
                     </div>
                     <p className="text-sm text-stone-500 mt-0.5 line-clamp-1">
-                      {inq.message || t('(no message)', '(không có tin nhắn)')}
+                      {inq.message || t.noMessagePlaceholder}
                     </p>
                   </div>
                   <div className="shrink-0 text-stone-400 mt-0.5">
@@ -114,7 +115,7 @@ export default function ExpertInquiriesPage() {
                     </a>
                     {inq.area_range && inq.area_range !== 'N/A' && (
                       <p className="text-xs text-stone-500">
-                        {t('Area', 'Diện tích')}: {inq.area_range}
+                        {t.area}: {inq.area_range}
                       </p>
                     )}
                     {inq.message && (
