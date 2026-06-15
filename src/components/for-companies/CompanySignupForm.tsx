@@ -262,7 +262,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const handleEmailContinue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())) {
-      setRegError(lang === 'ar' ? 'يرجى إدخال بريد إلكتروني صالح' : 'Please enter a valid email.');
+      setRegError(t(lang, 'loginInvalidEmail'));
       return;
     }
     setRegSubmitting(true);
@@ -282,11 +282,11 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regPassword) {
-      setRegError(lang === 'ar' ? 'يرجى إدخال كلمة المرور' : 'Please enter your password.');
+      setRegError(t(lang, 'loginPasswordRequired'));
       return;
     }
     if (regIsNewEmail && regPassword.length < 6) {
-      setRegError(lang === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters.');
+      setRegError(t(lang, 'loginPasswordMin6'));
       return;
     }
     setRegSubmitting(true);
@@ -352,7 +352,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
       if (regIsNewEmail && /already registered/i.test(msg)) {
         setRegIsNewEmail(false);
         setRegPassword('');
-        setRegError(lang === 'ar' ? 'هذا البريد مسجّل بالفعل. أدخل كلمة المرور لتسجيل الدخول.' : 'This email already has an account. Enter your password to sign in.');
+        setRegError(t(lang, 'loginEmailHasAccount'));
       } else {
         setRegError(msg || (regIsNewEmail ? 'Registration failed.' : 'Invalid email or password.'));
       }
@@ -373,12 +373,12 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
               <span className="text-amber-500 text-lg leading-none mt-0.5">⚠️</span>
               <div>
                 <p className="text-[15px] font-semibold text-[#1c1917]">
-                  {lang === 'ar' ? 'هذا الرقم مسجّل بالفعل' : 'This phone number is already registered'}
+                  {t(lang, 'phoneRegistered')}
                 </p>
                 <p className="text-sm text-stone-500 mt-0.5">
                   {existingHasProfile
-                    ? (lang === 'ar' ? 'سجّل الدخول للوصول إلى لوحة التحكم' : 'Sign in to access your dashboard')
-                    : (lang === 'ar' ? 'سجّل الدخول لاستكمال ملفك الشركة' : 'Sign in to complete your company profile')}
+                    ? t(lang, 'signInDashboard')
+                    : t(lang, 'signInCompleteProfile')}
                 </p>
               </div>
             </div>
@@ -386,26 +386,26 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
             <form onSubmit={handleLoginSubmit} className="space-y-3" noValidate>
               <div>
                 <label className={labelClass}>
-                  {lang === 'ar' ? 'البريد الإلكتروني' : 'Email'} <span className="text-red-500">*</span>
+                  {t(lang, 'emailLabel2')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder={lang === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
+                  placeholder={t(lang, 'emailPh2')}
                   className={inputClass}
                   autoFocus
                 />
               </div>
               <div>
                 <label className={labelClass}>
-                  {lang === 'ar' ? 'كلمة المرور' : 'Password'} <span className="text-red-500">*</span>
+                  {t(lang, 'passwordLabel2')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder={lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
+                  placeholder={t(lang, 'enterYourPassword')}
                   className={inputClass}
                 />
               </div>
@@ -424,10 +424,10 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 {loginSubmitting ? (
                   <>
                     <span className="mr-2 h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
-                    {lang === 'ar' ? 'جارٍ الدخول...' : 'Signing in...'}
+                    {t(lang, 'signingIn')}
                   </>
                 ) : (
-                  lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'
+                  t(lang, 'signInBtn')
                 )}
               </button>
 
@@ -436,7 +436,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 onClick={() => { setPhoneExistsMode(false); setLoginError(null); }}
                 className="w-full text-center text-sm text-stone-500 hover:text-stone-700 py-1"
               >
-                {lang === 'ar' ? '← العودة' : '← Back'}
+                {t(lang, 'backArrow')}
               </button>
             </form>
           </>
@@ -455,7 +455,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   <svg className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <div>
                     <p className="text-[14px] font-semibold text-emerald-800">
-                      {lang === 'ar' ? 'تم استلام معلوماتك بنجاح!' : 'Your information has been received!'}
+                      {t(lang, 'infoReceived')}
                     </p>
                     <p className="text-[13px] text-emerald-700/80 mt-0.5 leading-relaxed">
                       {lang === 'ar'
@@ -466,7 +466,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                 </div>
 
                 <h2 className="text-[18px] font-bold text-[#1c1917] leading-snug">
-                  {lang === 'ar' ? 'إنشاء حسابك' : 'Create your account'}
+                  {t(lang, 'createYourAccount')}
                 </h2>
 
                 <button
@@ -495,14 +495,14 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  {lang === 'ar' ? 'المتابعة مع Google' : 'Continue with Google'}
+                  {t(lang, 'continueGoogleBtn')}
                 </button>
 
                 <div className="relative my-2">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-stone-200" /></div>
                   <div className="relative flex justify-center">
                     <span className="px-4 bg-white text-[10px] text-stone-400 font-medium tracking-[0.15em]">
-                      {lang === 'ar' ? 'أو بالبريد الإلكتروني' : 'OR CONTINUE WITH EMAIL'}
+                      {t(lang, 'orContinueEmailDiv')}
                     </span>
                   </div>
                 </div>
@@ -519,7 +519,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       type="email"
                       value={regEmail}
                       onChange={(e) => { setRegEmail(e.target.value); setRegError(null); }}
-                      placeholder={lang === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
+                      placeholder={t(lang, 'emailPh2')}
                       className={inputClass}
                       autoFocus
                     />
@@ -531,7 +531,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       {regSubmitting ? (
                         <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
                       ) : (
-                        lang === 'ar' ? 'المتابعة بالبريد الإلكتروني' : 'Continue with email'
+                        t(lang, 'continueEmailBtn')
                       )}
                     </button>
                     <button
@@ -539,10 +539,10 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       onClick={() => { setRegisterMode(false); setRegError(null); }}
                       className="w-full text-center text-sm text-stone-500 hover:text-stone-700 py-1"
                     >
-                      {lang === 'ar' ? '← العودة' : '← Back'}
+                      {t(lang, 'backArrow')}
                     </button>
                     <p className="text-[10px] text-stone-400 text-center">
-                      {lang === 'ar' ? 'بالمتابعة، أنت توافق على' : 'By continuing, you agree to our'}{' '}
+                      {t(lang, 'byContinuingAgree')}{' '}
                       <a href="/privacy" className="text-stone-500 hover:text-[#B8864A]">Terms</a>
                       {' '}•{' '}
                       <a href="/privacy" className="text-stone-500 hover:text-[#B8864A]">Privacy</a>
@@ -552,8 +552,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   <form onSubmit={handlePasswordSubmit} className="space-y-3" noValidate>
                     <p className="text-sm text-stone-500">
                       {regIsNewEmail
-                        ? (lang === 'ar' ? 'أنشئ كلمة مرور لـ' : 'Create a password for')
-                        : (lang === 'ar' ? 'أدخل كلمة المرور لـ' : 'Enter password for')
+                        ? t(lang, 'createPasswordFor')
+                        : t(lang, 'enterPasswordForLogin')
                       }{' '}
                       <span className="font-medium text-[#1c1917]">{regEmail}</span>
                     </p>
@@ -562,8 +562,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       value={regPassword}
                       onChange={(e) => { setRegPassword(e.target.value); setRegError(null); }}
                       placeholder={regIsNewEmail
-                        ? (lang === 'ar' ? '6 أحرف على الأقل' : 'At least 6 characters')
-                        : (lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password')
+                        ? t(lang, 'atLeast6Chars')
+                        : (t(lang, 'enterYourPassword'))
                       }
                       className={inputClass}
                       autoFocus
@@ -576,9 +576,9 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       {regSubmitting ? (
                         <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
                       ) : regIsNewEmail ? (
-                        lang === 'ar' ? 'إنشاء حساب' : 'Create Account'
+                        t(lang, 'createAccountBtn')
                       ) : (
-                        lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'
+                        t(lang, 'signInBtn')
                       )}
                     </button>
                     <button
@@ -586,7 +586,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       onClick={() => { setRegStep('email'); setRegPassword(''); setRegError(null); }}
                       className="w-full text-center text-sm text-stone-500 hover:text-stone-700 py-1"
                     >
-                      {lang === 'ar' ? '← العودة' : '← Back'}
+                      {t(lang, 'backArrow')}
                     </button>
                   </form>
                 )}
@@ -663,8 +663,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                     <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     <p className="text-[13px] text-emerald-800 leading-relaxed">
                       {phoneCheckResult?.hasAccount
-                        ? (lang === 'ar' ? 'هذا الرقم مسجّل بالفعل. سجّل الدخول للوصول إلى لوحة التحكم.' : 'This number is already registered. Sign in to access your dashboard.')
-                        : (lang === 'ar' ? 'معلوماتك موجودة لدينا بالفعل! سجّل حسابك لإدارة صفحة شركتك.' : 'Your info is already in our system! Register an account to manage your company page.')}
+                        ? t(lang, 'numberRegisteredSignIn')
+                        : t(lang, 'infoAlreadyInSystem')}
                     </p>
                   </div>
                 )}
@@ -686,7 +686,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
               <div className={phoneAlreadySubmitted ? 'opacity-40 pointer-events-none' : ''}>
                 <label className={labelClass}>
-                  {lang === 'ar' ? 'المدينة' : 'City'} <span className="text-red-500">*</span>
+                  {t(lang, 'city')} <span className="text-red-500">*</span>
                 </label>
                 <AdminSelect
                   value={city}
@@ -715,7 +715,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   }}
                   maxSelected={MAX_COMPANY_TYPES}
                   placeholder={t(lang, 'companyTypeSelectPrompt')}
-                  searchPlaceholder={lang === 'ar' ? 'بحث…' : 'Search…'}
+                  searchPlaceholder={t(lang, 'searchPlaceholder')}
                   maxReachedHint={t(lang, 'companyTypeMaxReached')}
                   noResultsText={t(lang, 'companyTypeNoResults')}
                   error={companyTypeError || (tried && companyTypes.length === 0)}
@@ -723,7 +723,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
 
                 {(companyTypeError || (tried && companyTypes.length === 0)) && (
                   <p className="mt-1.5 text-[12px] text-red-500">
-                    {lang === 'ar' ? 'يرجى اختيار نوع الشركة' : 'Please select at least one company type'}
+                    {t(lang, 'selectCompanyType')}
                   </p>
                 )}
               </div>
@@ -764,8 +764,8 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   className="flex h-12 w-full items-center justify-center gap-2 rounded-[20px] bg-[#B8864A] text-[15px] font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.22)] transition hover:bg-[#a67c47]"
                 >
                   {phoneCheckResult?.hasAccount
-                    ? (lang === 'ar' ? 'تسجيل الدخول →' : 'Sign In →')
-                    : (lang === 'ar' ? 'إنشاء حساب →' : 'Create Account →')}
+                    ? t(lang, 'signInArrow')
+                    : t(lang, 'createAccountArrow')}
                 </button>
               ) : (
                 <button
