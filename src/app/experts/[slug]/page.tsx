@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ExpertDetailClient from '@/components/experts/ExpertDetailClient';
 import type { ExpertDetail } from '@/components/experts/types';
+import { getCountry } from '@/lib/country';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.trim() ??
@@ -43,6 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
   const isVn = country === 'vn';
+  const baseUrl = getCountry(country).baseUrl; // 按国家切 canonical 域名
 
   const expert = await fetchExpert(slug);
   if (!expert) {
@@ -51,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: isVn
         ? 'Tìm các chuyên gia thiết kế và thi công nội thất đã được xác minh trên Tarmeer.'
         : 'Find verified interior design and fit-out experts on Tarmeer.',
-      alternates: { canonical: `https://www.tarmeer.com/experts/${slug}` },
+      alternates: { canonical: `${baseUrl}/experts/${slug}` },
     };
   }
 
@@ -61,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = isVn
     ? `${expert.full_name} — ${expert.services.slice(0, 3).join(', ') || 'chuyên gia nội thất'}${expert.city ? ` tại ${expert.city}` : ''}.${Number(expert.experience_years) > 0 ? ` ${expert.experience_years} năm kinh nghiệm.` : ''} Xem hồ sơ, chứng chỉ và liên hệ trên Tarmeer.`
     : `${expert.full_name} — ${expert.services.slice(0, 3).join(', ') || 'interior expert'}${expert.city ? ` in ${expert.city}` : ''}.${Number(expert.experience_years) > 0 ? ` ${expert.experience_years} years of experience.` : ''} View profile, certificates and get in touch on Tarmeer.`;
-  const canonical = `https://www.tarmeer.com/experts/${expert.slug || slug}`;
+  const canonical = `${baseUrl}/experts/${expert.slug || slug}`;
 
   return {
     title,
@@ -92,16 +94,20 @@ export default async function ExpertDetailPage({ params }: Props) {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
   const isVn = country === 'vn';
+  const baseUrl = getCountry(country).baseUrl;
 
   const expert = await fetchExpert(slug);
 
   if (!expert) notFound();
 
+  // 国家数据隔离（铁律）：本国站不得渲染他国专家，跨国访问触发真 404
+  if (expert.country && expert.country !== country) notFound();
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: expert.full_name,
-    url: `https://www.tarmeer.com/experts/${expert.slug || slug}`,
+    url: `${baseUrl}/experts/${expert.slug || slug}`,
     ...(expert.bio && { description: expert.bio }),
     ...(expert.services.length > 0 && { jobTitle: expert.services[0], knowsAbout: expert.services }),
     ...(expert.city && {
@@ -117,13 +123,13 @@ export default async function ExpertDetailPage({ params }: Props) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
-      { '@type': 'ListItem', position: 2, name: 'Experts', item: 'https://www.tarmeer.com/experts' },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Experts', item: `${baseUrl}/experts` },
       {
         '@type': 'ListItem',
         position: 3,
         name: expert.full_name,
-        item: `https://www.tarmeer.com/experts/${expert.slug || slug}`,
+        item: `${baseUrl}/experts/${expert.slug || slug}`,
       },
     ],
   };

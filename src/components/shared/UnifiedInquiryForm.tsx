@@ -159,7 +159,7 @@ function CompanyInquiryForm({
   }
 
   const inputCls =
-    'h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors';
+    'h-12 w-full rounded-lg border border-stone-200 bg-white px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors';
 
   const formContent = (
     <form className="space-y-3" onSubmit={handleSubmit}>
@@ -215,13 +215,13 @@ function CompanyInquiryForm({
           rows={3}
           value={form.message}
           onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
-          className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors"
+          className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors"
         />
       )}
       <button
         type="submit"
         disabled={!canSubmit || submitting}
-        className="w-full h-12 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-12 bg-[#b8864a] hover:bg-[#a07640] text-white text-sm font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {submitting ? 'Sending...' : submitLabel}
       </button>

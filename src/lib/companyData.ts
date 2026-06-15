@@ -20,6 +20,7 @@ export interface Company {
   name: string;
   description: string;
   shortDescription: string;
+  country?: string;
   city: string;
   address: string;
   foundedYear: number;

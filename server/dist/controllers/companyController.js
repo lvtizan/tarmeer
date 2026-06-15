@@ -287,7 +287,7 @@ async function getPublicProjectDetail(req, res) {
         let companySource = '';
         // Try uae_companies
         const [uaeRows] = await database_1.default.execute(`SELECT id, name_en as company_name, slug, logo_url, city, address,
-              phone, email, website, instagram, year_established
+              phone, email, website, instagram, year_established, country
          FROM uae_companies WHERE slug = ?`, [companySlug]);
         if (uaeRows.length > 0) {
             company = uaeRows[0];
@@ -297,7 +297,7 @@ async function getPublicProjectDetail(req, res) {
         // NOTE: Do NOT select contact fields (address, phone, website, email) —
         // self-registered company contact info is admin-only by policy.
         if (!company) {
-            const [cpRows] = await database_1.default.execute(`SELECT id, company_name, slug, logo_url, city
+            const [cpRows] = await database_1.default.execute(`SELECT id, company_name, slug, logo_url, city, country
            FROM company_profiles
           WHERE slug = ? AND status = ? AND deleted_at IS NULL`, [companySlug, 'approved']);
             if (cpRows.length > 0) {
@@ -452,7 +452,7 @@ async function getPortfolioImage(req, res) {
         const [rows] = await database_1.default.execute(`SELECT
          p.id, p.title, p.slug as project_slug, p.images, p.style, p.description, p.location,
          cp.id as company_id, cp.company_name, cp.slug as company_slug,
-         cp.logo_url, cp.city
+         cp.logo_url, cp.city, cp.country
        FROM projects p
        JOIN company_profiles cp ON p.company_profile_id = cp.id
        WHERE cp.slug = ? AND p.slug = ?
@@ -491,6 +491,7 @@ async function getPortfolioImage(req, res) {
                 slug: row.company_slug || '',
                 logo: row.logo_url || '',
                 city: row.city || '',
+                country: row.country || '',
             },
             siblings,
         });

@@ -617,16 +617,23 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   {t(lang, 'phone')} <span className="text-red-500">*</span>
                 </label>
                 <div className="flex gap-2">
-                  <AdminSelect
-                    value={phoneRegion.code}
-                    onChange={(code) => {
-                      const next = PHONE_OPTIONS.find((o) => o.code === code) || PHONE_OPTIONS[0];
-                      setPhoneRegion(next);
-                      setPhoneDigits((d) => d.slice(0, next.maxDigits));
-                    }}
-                    options={PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} (${o.code})` }))}
-                    className="shrink-0 w-[150px]"
-                  />
+                  {PHONE_OPTIONS.length > 1 ? (
+                    <AdminSelect
+                      value={phoneRegion.code}
+                      onChange={(code) => {
+                        const next = PHONE_OPTIONS.find((o) => o.code === code) || PHONE_OPTIONS[0];
+                        setPhoneRegion(next);
+                        setPhoneDigits((d) => d.slice(0, next.maxDigits));
+                      }}
+                      options={PHONE_OPTIONS.map((o) => ({ value: o.code, label: `${o.label} (${o.code})` }))}
+                      className="shrink-0 w-[150px]"
+                    />
+                  ) : (
+                    /* 单国家站（如 VN）区号固定，显示静态前缀即可，不再用国家下拉 */
+                    <div className="shrink-0 h-[50px] px-5 flex items-center rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] font-medium">
+                      {phoneRegion.code}
+                    </div>
+                  )}
                   <input
                     type="tel"
                     inputMode="numeric"

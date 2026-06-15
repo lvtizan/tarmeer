@@ -5,6 +5,7 @@ import { permanentRedirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { fetchPublicCompanyDetail } from '@/lib/publicApi';
 import { getCompanyTypeLabel } from '@/lib/companyData';
+import { getCountry } from '@/lib/country';
 import CompanyDetailClient from '@/components/companies/CompanyDetailClient';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const headersList = await headers();
   const metaCountry = headersList.get('x-country') ?? 'ae';
   const metaIsVn = metaCountry === 'vn';
+  const baseUrl = getCountry(metaCountry).baseUrl; // 按国家切 canonical 域名（vn.tarmeer.com / www.tarmeer.com）
   try {
     const company = await fetchPublicCompanyDetail(slug);
     const canonicalSlug = company.slug || slug;
@@ -48,12 +50,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       keywords: `${company.name}, interior design ${company.city}, renovation ${company.city}, ${company.services.slice(0, 5).join(', ')}, ${metaIsVn ? 'Vietnam' : 'UAE'}, Tarmeer`,
       robots: 'index, follow, max-image-preview:large',
       alternates: {
-        canonical: `https://www.tarmeer.com/companies/${canonicalSlug}`,
+        canonical: `${baseUrl}/companies/${canonicalSlug}`,
       },
       openGraph: {
         title: `${company.name} - ${company.city} - Tarmeer`,
         description: company.shortDescription,
-        url: `https://www.tarmeer.com/companies/${canonicalSlug}`,
+        url: `${baseUrl}/companies/${canonicalSlug}`,
         type: 'website',
         images: [{ url: ogImage }],
       },
@@ -69,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: 'Company Profile - Tarmeer',
       description: `Find top interior design and renovation companies in ${metaIsVn ? 'Vietnam' : 'the UAE'} on Tarmeer.`,
       alternates: {
-        canonical: `https://www.tarmeer.com/companies/${slug}`,
+        canonical: `${baseUrl}/companies/${slug}`,
       },
     };
   }
@@ -80,6 +82,7 @@ export default async function CompanyDetailPage({ params }: Props) {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
   const isVn = country === 'vn';
+  const baseUrl = getCountry(country).baseUrl;
 
   let company;
   let fetchError: string | null = null;
@@ -91,6 +94,9 @@ export default async function CompanyDetailPage({ params }: Props) {
   }
 
   if (fetchError || !company) notFound();
+
+  // 国家数据隔离（铁律）：本国站不得渲染他国公司，跨国访问触发真 404
+  if (company.country && company.country !== country) notFound();
 
   // Server-side canonical redirect: if URL uses numeric ID or non-canonical slug,
   // 308 redirect to the real slug. This prevents Google from indexing non-canonical URLs.
@@ -113,7 +119,7 @@ export default async function CompanyDetailPage({ params }: Props) {
       addressCountry: isVn ? 'VN' : 'AE',
     },
     ...(company.phone ? { telephone: company.phone } : {}),
-    url: company.website || `https://www.tarmeer.com/companies/${company.slug || company.id}`,
+    url: company.website || `${baseUrl}/companies/${company.slug || company.id}`,
     ...(heroImages[0] ? { image: `https://www.tarmeer.com${heroImages[0]}` } : {}),
     priceRange: '$$',
     areaServed: isVn
@@ -138,18 +144,18 @@ export default async function CompanyDetailPage({ params }: Props) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Companies',
-        item: 'https://www.tarmeer.com/companies',
+        item: `${baseUrl}/companies`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: company.name,
-        item: `https://www.tarmeer.com/companies/${company.slug || company.id}`,
+        item: `${baseUrl}/companies/${company.slug || company.id}`,
       },
     ],
   };

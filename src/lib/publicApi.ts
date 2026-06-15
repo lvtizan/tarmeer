@@ -312,6 +312,7 @@ function toCompany(company: PublicCompanyRecord): Company {
     name: company.name_en || company.company_name || 'Tarmeer Company',
     description,
     shortDescription: summarizeCompanyDescription(description),
+    country: company.country, // 国家归属（用于详情页隔离）
     city: company.city || (company.country === 'vn' ? 'Việt Nam' : 'UAE'),
     address: company.address || (company.country === 'vn' ? 'Việt Nam' : 'UAE'),
     foundedYear: normalizeFoundedYear(company.year_established ?? company.establishment_year),
@@ -387,6 +388,7 @@ export interface PublicProjectDetailData {
     slug: string;
     logo: string;
     city: string;
+    country?: string;
     address?: string | null;
     phone?: string | null;
     email?: string | null;

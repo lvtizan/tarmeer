@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import ExpertProjectDetailClient from '@/components/experts/ExpertProjectDetailClient';
 import type { ExpertDetail, ExpertProjectItem } from '@/components/experts/types';
+import { getCountry } from '@/lib/country';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.trim() ??
@@ -42,7 +43,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, projectSlug } = await params;
   const headersList = await headers();
-  const isVn = (headersList.get('x-country') ?? 'ae') === 'vn';
+  const baseUrl = getCountry(headersList.get('x-country')).baseUrl;
   const data = await fetchExpertWithProject(slug, projectSlug);
   if (!data) return { title: 'Project - Tarmeer' };
   const { expert, project } = data;
@@ -55,17 +56,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: desc,
     openGraph: { title, description: desc, images: [{ url: ogImage }] },
-    alternates: { canonical: `https://www.tarmeer.com/experts/${slug}/${projectSlug}` },
+    alternates: { canonical: `${baseUrl}/experts/${slug}/${projectSlug}` },
   };
 }
 
 export default async function ExpertProjectDetailPage({ params }: Props) {
   const { slug, projectSlug } = await params;
   const headersList = await headers();
-  const isVn = (headersList.get('x-country') ?? 'ae') === 'vn';
+  const country = headersList.get('x-country') ?? 'ae';
+  const isVn = country === 'vn';
 
   const data = await fetchExpertWithProject(slug, projectSlug);
   if (!data) notFound();
+
+  // 国家数据隔离（铁律）：跨国访问专家项目页触发真 404
+  if (data.expert.country && data.expert.country !== country) notFound();
 
   return <ExpertProjectDetailClient expert={data.expert} project={data.project} isVn={isVn} />;
 }

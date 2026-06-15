@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
     const tagLabel = tagPool.join(' ') || 'Interior Design';
     const locationLabel = project.location || company.city || c.name;
-    const canonicalUrl = `https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`;
+    const canonicalUrl = `${c.baseUrl}/companies/${companySlug}/${projectSlug}`;
 
     const title = `${project.title} - ${tagLabel} Design in ${locationLabel} by ${company.name} | Tarmeer`;
     const desc = [
@@ -114,7 +114,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   if (!initialData) notFound();
 
   const { project, company } = initialData;
-  const canonicalUrl = `https://www.tarmeer.com/companies/${companySlug}/${projectSlug}`;
+  // 国家数据隔离（铁律）：跨国访问项目页触发真 404
+  if (company.country && company.country !== c.code) notFound();
+  const canonicalUrl = `${c.baseUrl}/companies/${companySlug}/${projectSlug}`;
 
   const tagPool: string[] = [];
   if (project.style) tagPool.push(project.style);
@@ -132,7 +134,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     author: {
       '@type': 'Organization',
       name: company.name,
-      url: `https://www.tarmeer.com/companies/${company.slug || company.id}`,
+      url: `${c.baseUrl}/companies/${company.slug || company.id}`,
     },
     locationCreated: {
       '@type': 'Place',
@@ -155,9 +157,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.tarmeer.com/' },
-      { '@type': 'ListItem', position: 2, name: 'Portfolio', item: 'https://www.tarmeer.com/portfolio' },
-      { '@type': 'ListItem', position: 3, name: company.name, item: `https://www.tarmeer.com/companies/${company.slug || company.id}` },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${c.baseUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Portfolio', item: `${c.baseUrl}/portfolio` },
+      { '@type': 'ListItem', position: 3, name: company.name, item: `${c.baseUrl}/companies/${company.slug || company.id}` },
       { '@type': 'ListItem', position: 4, name: project.title, item: canonicalUrl },
     ],
   };
