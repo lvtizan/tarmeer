@@ -331,11 +331,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
           if (typeof sessionStorage !== 'undefined') {
             sessionStorage.setItem('pending_company_profile', JSON.stringify(profileData));
           }
-          setRegSuccess(
-            lang === 'ar'
-              ? `تم إنشاء الحساب! يرجى التحقق من ${regEmail.trim()} ثم تسجيل الدخول.`
-              : `Account created! Please check ${regEmail.trim()} to verify your email, then sign in.`
-          );
+          setRegSuccess(`${t(lang, 'registerSuccessA')}${regEmail.trim()}${t(lang, 'registerSuccessB')}`);
         }
       } else {
         const loginRes = await api.post('/auth/login', { email: regEmail.trim(), password: regPassword });
@@ -458,9 +454,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                       {t(lang, 'infoReceived')}
                     </p>
                     <p className="text-[13px] text-emerald-700/80 mt-0.5 leading-relaxed">
-                      {lang === 'ar'
-                        ? 'سيتواصل معك فريقنا قريبًا. في الأثناء، أنشئ حسابك لإدارة صفحة شركتك.'
-                        : 'Our team will be in touch shortly. Meanwhile, create your account to start managing your company page.'}
+                      {t(lang, 'infoTeamContact')}
                     </p>
                   </div>
                 </div>
@@ -692,7 +686,7 @@ export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
                   value={city}
                   onChange={setCity}
                   options={[
-                    { value: '', label: lang === 'ar' ? 'اختر المدينة' : lang === 'vi' ? 'Chọn thành phố' : 'Select city' },
+                    { value: '', label: t(lang, 'citySelectPlaceholder') },
                     ...cityOptions.map(c => ({ value: c, label: c })),
                   ]}
                   className="w-full"
