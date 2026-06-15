@@ -13,6 +13,7 @@ import { companies } from './sections/companies';
 import { auth } from './sections/auth';
 import { modals } from './sections/modals';
 import { onboarding } from './sections/onboarding';
+import { start } from './sections/start';
 
 export const siteTranslations = {
   en: {
@@ -27,6 +28,7 @@ export const siteTranslations = {
     auth: auth.en,
     modals: modals.en,
     onboarding: onboarding.en,
+    start: start.en,
   },
   vi: {
     nav: nav.vi,
@@ -40,6 +42,7 @@ export const siteTranslations = {
     auth: auth.vi,
     modals: modals.vi,
     onboarding: onboarding.vi,
+    start: start.vi,
   },
 } as const;
 
