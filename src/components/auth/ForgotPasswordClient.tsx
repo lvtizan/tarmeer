@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import LoadingButton from '@/components/ui/LoadingButton';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 export default function ForgotPasswordClient() {
+  const ta = useSiteLocale().tr.auth;
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,7 +23,7 @@ export default function ForgotPasswordClient() {
       await api.post('/auth/forgot-password', { email });
       setSuccess(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset email. Please try again.');
+      setError(err instanceof Error ? err.message : ta.forgotFailed);
     } finally {
       setLoading(false);
     }
@@ -32,10 +34,10 @@ export default function ForgotPasswordClient() {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-8">
           <h1 className="font-serif text-2xl font-bold text-[#2c2c2c] mb-2 text-center">
-            Forgot Password
+            {ta.forgotTitle}
           </h1>
           <p className="text-[#6b6b6b] text-center mb-6">
-            Enter your email and we&apos;ll send you a link to reset your password.
+            {ta.forgotSubtitle}
           </p>
 
           {success ? (
@@ -43,10 +45,10 @@ export default function ForgotPasswordClient() {
               <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-green-700">
-                  If that email is registered, you will receive a password reset link shortly.
+                  {ta.forgotSuccess}
                 </p>
                 <Link href="/auth" className="text-sm font-medium text-[#b8864a] hover:underline mt-2 inline-block">
-                  Back to Login
+                  {ta.backToLogin}
                 </Link>
               </div>
             </div>
@@ -60,7 +62,7 @@ export default function ForgotPasswordClient() {
               )}
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-[#2c2c2c]">Email</label>
+                <label className="block text-sm font-semibold text-[#2c2c2c]">{ta.emailLabel}</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                   <input
@@ -68,7 +70,7 @@ export default function ForgotPasswordClient() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="designer@example.com"
+                    placeholder={ta.emailExample}
                     className="w-full h-11 px-3 py-2.5 pl-10 rounded-lg border border-stone-200 bg-white text-sm text-[#2c2c2c] placeholder:text-[#6b6b6b] focus:outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 transition-all"
                   />
                 </div>
@@ -79,13 +81,13 @@ export default function ForgotPasswordClient() {
                 loading={loading}
                 className="w-full h-11 rounded-lg font-medium btn-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Reset Link
+                {ta.sendResetLink}
               </LoadingButton>
 
               <p className="text-center text-sm text-[#6b6b6b]">
-                Remember your password?{' '}
+                {ta.rememberPassword}{' '}
                 <Link href="/auth" className="font-medium text-[#b8864a] hover:underline">
-                  Sign in
+                  {ta.signIn}
                 </Link>
               </p>
             </form>

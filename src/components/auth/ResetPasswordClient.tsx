@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import LoadingButton from '@/components/ui/LoadingButton';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 export default function ResetPasswordClient() {
+  const ta = useSiteLocale().tr.auth;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
@@ -21,7 +23,7 @@ export default function ResetPasswordClient() {
   useEffect(() => {
     const t = searchParams.get('token');
     if (!t) {
-      setError('Invalid reset link. Please request a new password reset.');
+      setError(ta.invalidResetLink);
     } else {
       setToken(t);
     }
@@ -32,17 +34,17 @@ export default function ResetPasswordClient() {
     setError(null);
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(ta.passwordTooShort(6));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(ta.passwordsNoMatch);
       return;
     }
 
     if (!token) {
-      setError('Invalid reset token.');
+      setError(ta.invalidResetToken);
       return;
     }
 
@@ -57,7 +59,7 @@ export default function ResetPasswordClient() {
         router.push('/dashboard');
       }, 2000);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
+      setError(err instanceof Error ? err.message : ta.resetFailed);
     } finally {
       setLoading(false);
     }
@@ -76,10 +78,10 @@ export default function ResetPasswordClient() {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-8">
           <h1 className="font-serif text-2xl font-bold text-[#2c2c2c] mb-2 text-center">
-            Reset Password
+            {ta.resetPassword}
           </h1>
           <p className="text-[#6b6b6b] text-center mb-6">
-            Enter your new password below.
+            {ta.resetSubtitle}
           </p>
 
           {success ? (
@@ -87,7 +89,7 @@ export default function ResetPasswordClient() {
               <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-green-700">
-                  Password reset successfully! Redirecting to dashboard...
+                  {ta.resetSuccess}
                 </p>
               </div>
             </div>
@@ -100,7 +102,7 @@ export default function ResetPasswordClient() {
                     <p className="text-sm text-red-700">{error}</p>
                     {error.includes('Invalid') && (
                       <Link href="/forgot-password" className="text-sm font-medium text-[#b8864a] hover:underline mt-2 inline-block">
-                        Request a new reset link
+                        {ta.requestNewReset}
                       </Link>
                     )}
                   </div>
@@ -110,7 +112,7 @@ export default function ResetPasswordClient() {
               {token && (
                 <>
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-semibold text-[#2c2c2c]">New Password</label>
+                    <label className="block text-sm font-semibold text-[#2c2c2c]">{ta.newPasswordLabel}</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                       <input
@@ -119,7 +121,7 @@ export default function ResetPasswordClient() {
                         minLength={6}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="6+ characters"
+                        placeholder={ta.password6}
                         className="w-full h-11 px-3 py-2.5 pl-10 pr-10 rounded-lg border border-stone-200 bg-white text-sm text-[#2c2c2c] placeholder:text-[#6b6b6b] focus:outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 transition-all"
                       />
                       <button
@@ -134,7 +136,7 @@ export default function ResetPasswordClient() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-semibold text-[#2c2c2c]">Confirm Password</label>
+                    <label className="block text-sm font-semibold text-[#2c2c2c]">{ta.confirmPasswordLabel}</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                       <input
@@ -143,7 +145,7 @@ export default function ResetPasswordClient() {
                         minLength={6}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm password"
+                        placeholder={ta.confirmPasswordPlaceholder}
                         className="w-full h-11 px-3 py-2.5 pl-10 rounded-lg border border-stone-200 bg-white text-sm text-[#2c2c2c] placeholder:text-[#6b6b6b] focus:outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 transition-all"
                       />
                     </div>
@@ -154,7 +156,7 @@ export default function ResetPasswordClient() {
                     loading={loading}
                     className="w-full h-11 rounded-lg font-medium btn-primary text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Reset Password
+                    {ta.resetPassword}
                   </LoadingButton>
                 </>
               )}

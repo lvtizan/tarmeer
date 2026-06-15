@@ -12,6 +12,7 @@ import { AUTH_INPUT_CLASS, AUTH_SOCIAL_BUTTON_CLASS } from './authCardStyles';
 import { useVerificationPoller } from '@/hooks/useVerificationPoller';
 import TarmeerLogo from '@/components/TarmeerLogo';
 import { getCountry } from '@/lib/country';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
@@ -44,6 +45,7 @@ type AuthStep = 'initial' | 'password' | 'done';
 
 export default function AuthClient({ country }: { country?: string }) {
   const c = getCountry(country);
+  const ta = useSiteLocale().tr.auth;
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +117,7 @@ export default function AuthClient({ country }: { country?: string }) {
 
   const handleEmailContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !EMAIL_REGEX.test(email)) { setError('Please enter a valid email address'); return; }
+    if (!email || !EMAIL_REGEX.test(email)) { setError(ta.invalidEmail); return; }
     setError(null);
     setStep('password');
   };
@@ -148,7 +150,7 @@ export default function AuthClient({ country }: { country?: string }) {
       router.push(response.user?.active_role === 'company' ? '/company' : '/dashboard');
     } catch (err: unknown) {
       setLoading(false);
-      setError(err instanceof Error ? err.message : 'Invalid email or password. Please try again.');
+      setError(err instanceof Error ? err.message : ta.loginFailed);
     }
   };
 
@@ -160,14 +162,14 @@ export default function AuthClient({ country }: { country?: string }) {
         email, password, full_name: '', phone: '', city: c.defaultCity,
         role: authRole, signup_source: 'auth-page',
       }) as { message?: string };
-      setSuccess(res?.message || 'Account created! Please check your email to verify.');
+      setSuccess(res?.message || ta.accountCreated);
       setStep('done');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('already') || msg.includes('registered')) {
-        setError('This email is already registered. Please try logging in instead.');
+        setError(ta.emailExists);
       } else {
-        setError(msg || 'Registration failed. Please try again.');
+        setError(msg || ta.registerFailed);
       }
     } finally {
       setLoading(false);
@@ -177,7 +179,7 @@ export default function AuthClient({ country }: { country?: string }) {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password || password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      setError(ta.passwordTooShort(MIN_PASSWORD_LENGTH));
       return;
     }
     setError(null);
@@ -237,22 +239,22 @@ export default function AuthClient({ country }: { country?: string }) {
           <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#1a1714] to-transparent pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1714] via-[#1a1714]/65 to-transparent pointer-events-none" />
           <div className="relative z-10 p-12 pb-14">
-            <p className="text-[#B8864A] text-[11px] font-medium tracking-[0.2em] uppercase mb-4">{c.name}&apos;s Renovation Platform</p>
+            <p className="text-[#B8864A] text-[11px] font-medium tracking-[0.2em] uppercase mb-4">{ta.platformTag(c.name)}</p>
             <h1 className="font-serif text-[38px] text-white leading-[1.15] mb-4">
-              Your Home<br />Renovation<br />Starts Here
+              {ta.heroTitle}
             </h1>
             <p className="text-stone-400 text-[15px] leading-relaxed max-w-[340px]">
-              Connect with top renovation companies and design studios across {c.name}.
+              {ta.heroSubtitle(c.name)}
             </p>
             <div className="mt-8 flex gap-8">
-              <div><p className="text-white text-2xl font-semibold">500+</p><p className="text-stone-500 text-xs mt-0.5">Verified Companies</p></div>
-              <div><p className="text-white text-2xl font-semibold">12K+</p><p className="text-stone-500 text-xs mt-0.5">Projects Completed</p></div>
-              <div><p className="text-white text-2xl font-semibold">{c.name}</p><p className="text-stone-500 text-xs mt-0.5">Coverage</p></div>
+              <div><p className="text-white text-2xl font-semibold">500+</p><p className="text-stone-500 text-xs mt-0.5">{ta.statVerified}</p></div>
+              <div><p className="text-white text-2xl font-semibold">12K+</p><p className="text-stone-500 text-xs mt-0.5">{ta.statProjects}</p></div>
+              <div><p className="text-white text-2xl font-semibold">{c.name}</p><p className="text-stone-500 text-xs mt-0.5">{ta.statCoverage}</p></div>
             </div>
             <div className="mt-6 pt-4 border-t border-white/10">
               <span className="text-stone-600 text-[11px]">&copy; {new Date().getFullYear()} Tarmeer</span>
               <span className="text-stone-700 mx-2">·</span>
-              <Link href="/privacy" className="text-stone-600 text-[11px] hover:text-stone-400 transition">Privacy</Link>
+              <Link href="/privacy" className="text-stone-600 text-[11px] hover:text-stone-400 transition">{ta.privacy}</Link>
             </div>
           </div>
         </div>
@@ -263,8 +265,8 @@ export default function AuthClient({ country }: { country?: string }) {
             <div className="flex justify-center w-full">
               <AuthCardShell>
                 <div className="mb-6">
-                  <p className="text-xs font-medium text-[#B8864A] tracking-[0.15em] uppercase mb-1.5">Welcome</p>
-                  <h2 className="font-serif text-[24px] text-[#1c1917] leading-snug">Sign in or create<br />your account</h2>
+                  <p className="text-xs font-medium text-[#B8864A] tracking-[0.15em] uppercase mb-1.5">{ta.welcome}</p>
+                  <h2 className="font-serif text-[24px] text-[#1c1917] leading-snug">{ta.signInOrCreate}</h2>
                 </div>
 
                 {error && (
@@ -280,14 +282,14 @@ export default function AuthClient({ country }: { country?: string }) {
                           try {
                             await api.post('/auth/resend-verification', { email });
                             setError(null);
-                            setSuccess('Verification email resent! Please check your inbox.');
+                            setSuccess(ta.verificationResent);
                           } catch (err: unknown) {
-                            setError(err instanceof Error ? err.message : 'Failed to resend.');
+                            setError(err instanceof Error ? err.message : ta.resendFailed);
                           }
                         }}
                         className="mt-2 ml-8 text-sm font-medium text-[#b8864a] hover:text-[#a67c47] underline underline-offset-2 transition"
                       >
-                        Resend verification email
+                        {ta.resendVerification}
                       </button>
                     )}
                   </div>
@@ -313,7 +315,7 @@ export default function AuthClient({ country }: { country?: string }) {
                             if (resp.type === 'opaqueredirect' || resp.status === 302 || resp.status === 303 || resp.status === 301 || resp.ok) {
                               window.location.href = googleUrl;
                             } else {
-                              setError('Google sign-in is temporarily unavailable. Please use email instead.');
+                              setError(ta.googleUnavailable);
                             }
                           } catch {
                             window.location.href = googleUrl;
@@ -327,7 +329,7 @@ export default function AuthClient({ country }: { country?: string }) {
                           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
-                        Continue with Google
+                        {ta.continueGoogle}
                       </button>
                     )}
 
@@ -340,7 +342,7 @@ export default function AuthClient({ country }: { country?: string }) {
                         <svg className="h-[18px] w-[18px]" fill="#1877F2" viewBox="0 0 24 24">
                           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 17.062 24 12.073z"/>
                         </svg>
-                        Continue with Facebook
+                        {ta.continueFacebook}
                       </button>
                     )}
 
@@ -350,7 +352,7 @@ export default function AuthClient({ country }: { country?: string }) {
                           <div className="w-full border-t border-stone-100" />
                         </div>
                         <div className="relative flex justify-center">
-                          <span className="px-4 bg-white text-[10px] text-stone-400 font-medium tracking-[0.15em]">OR CONTINUE WITH EMAIL</span>
+                          <span className="px-4 bg-white text-[10px] text-stone-400 font-medium tracking-[0.15em]">{ta.orContinueEmail}</span>
                         </div>
                       </div>
                     )}
@@ -363,14 +365,14 @@ export default function AuthClient({ country }: { country?: string }) {
                           type="email"
                           value={email}
                           onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                          placeholder="Enter your email"
+                          placeholder={ta.emailPlaceholder}
                           className={`${AUTH_INPUT_CLASS} pl-[52px] pr-[52px]`}
                         />
                         {isNewEmail === true && (
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-emerald-600">New account</span>
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-emerald-600">{ta.newAccount}</span>
                         )}
                         {isNewEmail === false && (
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-stone-400">Existing</span>
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-stone-400">{ta.existing}</span>
                         )}
                       </div>
                       <button
@@ -378,15 +380,15 @@ export default function AuthClient({ country }: { country?: string }) {
                         className="w-full h-[54px] rounded-2xl bg-[#B8864A] text-white font-semibold text-[15px] hover:bg-[#a3780a] transition-all duration-200 disabled:opacity-35 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(184,134,74,0.25)]"
                         disabled={!email || !EMAIL_REGEX.test(email)}
                       >
-                        Continue with email
+                        {ta.continueEmail}
                       </button>
                     </form>
 
                     <p className="text-[10px] text-stone-400 text-center mt-5">
-                      By continuing, you agree to our{' '}
-                      <Link href="/privacy" className="text-stone-500 hover:text-[#B8864A] transition-colors">Terms</Link>
+                      {ta.byContinuing}{' '}
+                      <Link href="/privacy" className="text-stone-500 hover:text-[#B8864A] transition-colors">{ta.terms}</Link>
                       {' '}•{' '}
-                      <Link href="/privacy" className="text-stone-500 hover:text-[#B8864A] transition-colors">Privacy</Link>
+                      <Link href="/privacy" className="text-stone-500 hover:text-[#B8864A] transition-colors">{ta.privacy}</Link>
                     </p>
                   </div>
                 )}
@@ -395,11 +397,11 @@ export default function AuthClient({ country }: { country?: string }) {
                   <div className="space-y-5">
                     <button type="button" onClick={handleBack} className="text-sm text-stone-400 hover:text-[#1c1917] transition flex items-center gap-1">
                       <ChevronRight className="w-4 h-4 rotate-180" />
-                      Back
+                      {ta.back}
                     </button>
                     <form onSubmit={handlePasswordSubmit} className="space-y-4">
                       <p className="text-sm text-stone-500">
-                        Enter password for <span className="font-medium text-[#1c1917]">{email}</span>
+                        {ta.enterPasswordFor} <span className="font-medium text-[#1c1917]">{email}</span>
                       </p>
                       <div className="relative">
                         <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" />
@@ -408,7 +410,7 @@ export default function AuthClient({ country }: { country?: string }) {
                           type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => { setPassword(e.target.value); setError(null); }}
-                          placeholder="Enter your password"
+                          placeholder={ta.passwordPlaceholder}
                           className={`${AUTH_INPUT_CLASS} pl-[52px] pr-12`}
                         />
                         <button
@@ -423,14 +425,14 @@ export default function AuthClient({ country }: { country?: string }) {
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox" className="h-4 w-4 rounded border-stone-300 text-[#B8864A] focus:ring-[#B8864A]" />
-                          <span className="text-sm text-stone-500">Remember me</span>
+                          <span className="text-sm text-stone-500">{ta.rememberMe}</span>
                         </label>
                         <button
                           type="button"
                           onClick={() => router.push('/forgot-password')}
                           className="text-sm font-medium text-[#B8864A] hover:opacity-70 transition"
                         >
-                          Forgot password?
+                          {ta.forgotPassword}
                         </button>
                       </div>
 
@@ -439,7 +441,7 @@ export default function AuthClient({ country }: { country?: string }) {
                         loading={loading}
                         className="w-full h-[54px] rounded-2xl font-semibold bg-[#B8864A] text-white hover:bg-[#a3780a] transition-all duration-200 shadow-[0_4px_20px_rgba(184,134,74,0.25)]"
                       >
-                        Continue
+                        {ta.continue}
                       </LoadingButton>
                     </form>
                   </div>
@@ -450,30 +452,30 @@ export default function AuthClient({ country }: { country?: string }) {
                     <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                       <CheckCircle className="w-8 h-8 text-white" />
                     </div>
-                    <h2 className="font-serif text-xl text-[#1c1917] mb-2">Check Your Email</h2>
+                    <h2 className="font-serif text-xl text-[#1c1917] mb-2">{ta.checkEmail}</h2>
                     <p className="text-stone-500 text-sm mb-6 max-w-xs mx-auto">
-                      We&apos;ve sent a verification link to <strong className="text-stone-700">{email}</strong>
+                      {ta.sentVerificationTo} <strong className="text-stone-700">{email}</strong>
                     </p>
                     <div className="flex flex-col items-center gap-3">
                       <button
                         onClick={async () => {
                           try {
                             await api.post('/auth/resend-verification', { email });
-                            setSuccess('Verification email resent! Please check your inbox.');
+                            setSuccess(ta.verificationResent);
                           } catch (err: unknown) {
-                            setError(err instanceof Error ? err.message : 'Failed to resend verification email.');
+                            setError(err instanceof Error ? err.message : ta.resendFailed);
                           }
                         }}
                         className="text-sm font-medium text-[#b8864a] hover:text-[#a67c47] transition underline underline-offset-2"
                       >
-                        Didn&apos;t receive it? Resend verification email
+                        {ta.didntReceive}
                       </button>
                       <button
                         onClick={() => { setStep('initial'); setSuccess(null); setEmail(''); setPassword(''); }}
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 transition"
                       >
                         <ChevronRight className="w-4 h-4 rotate-180" />
-                        Back to Sign In
+                        {ta.backToSignIn}
                       </button>
                     </div>
                   </div>

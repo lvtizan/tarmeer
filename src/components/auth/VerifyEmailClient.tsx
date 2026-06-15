@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 export default function VerifyEmailClient() {
+  const ta = useSiteLocale().tr.auth;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -17,7 +19,7 @@ export default function VerifyEmailClient() {
 
     if (!token) {
       setStatus('error');
-      setError('Invalid verification link');
+      setError(ta.invalidVerifyLink);
       return;
     }
 
@@ -62,7 +64,7 @@ export default function VerifyEmailClient() {
           await trySupplier();
         } catch (err: unknown) {
           setStatus('error');
-          setError(err instanceof Error ? err.message : 'Verification failed, please try again later');
+          setError(err instanceof Error ? err.message : ta.verifyFailedRetry);
         }
       }
     };
@@ -87,10 +89,10 @@ export default function VerifyEmailClient() {
             <>
               <Loader className="w-16 h-16 text-[#b8864a] mx-auto mb-4 animate-spin" />
               <h1 className="font-serif text-2xl font-bold text-[#2c2c2c] mb-2">
-                Verifying your email...
+                {ta.verifyingEmail}
               </h1>
               <p className="text-[#6b6b6b]">
-                Please wait while we verify your email address
+                {ta.verifyingWait}
               </p>
             </>
           )}
@@ -99,18 +101,18 @@ export default function VerifyEmailClient() {
             <>
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h1 className="font-serif text-2xl font-bold text-[#2c2c2c] mb-2">
-                Email verified successfully!
+                {ta.emailVerified}
               </h1>
               <p className="text-[#6b6b6b] mb-4">
-                Your email has been verified. Redirecting to dashboard...
+                {ta.emailVerifiedRedirect}
               </p>
               <div className="text-sm text-[#6b6b6b]">
-                If redirect doesn&apos;t happen,{' '}
+                {ta.ifNoRedirect}{' '}
                 <button
                   onClick={handleManualRedirect}
                   className="text-[#b8864a] font-semibold hover:underline"
                 >
-                  click here
+                  {ta.clickHere}
                 </button>
               </div>
             </>
@@ -120,7 +122,7 @@ export default function VerifyEmailClient() {
             <>
               <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
               <h1 className="font-serif text-2xl font-bold text-[#2c2c2c] mb-2">
-                Verification Failed
+                {ta.verificationFailedTitle}
               </h1>
               <p className="text-[#6b6b6b] mb-4">
                 {error}
@@ -130,10 +132,10 @@ export default function VerifyEmailClient() {
                   onClick={() => router.push('/auth')}
                   className="w-full py-3 px-4 rounded-lg bg-[#b8864a] text-white font-semibold hover:bg-[#a67c47] transition"
                 >
-                  Back to Login
+                  {ta.backToLogin}
                 </button>
                 <p className="text-sm text-[#6b6b6b]">
-                  If the problem persists, please contact support
+                  {ta.contactSupport}
                 </p>
               </div>
             </>
