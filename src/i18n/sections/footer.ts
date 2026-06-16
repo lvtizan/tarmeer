@@ -16,6 +16,7 @@ export const footer = {
       Materials: 'Materials',
       'Join as Company': 'Join as Company',
       FAQ: 'FAQ',
+      'About Us': 'About Us',
     },
     spaceLinks: {
       Villa: 'Villa',
@@ -52,6 +53,7 @@ export const footer = {
       Materials: 'Vật Liệu',
       'Join as Company': 'Đăng Ký Công Ty',
       FAQ: 'Câu Hỏi Thường Gặp',
+      'About Us': 'Về Chúng Tôi',
     },
     spaceLinks: {
       Villa: 'Biệt Thự',

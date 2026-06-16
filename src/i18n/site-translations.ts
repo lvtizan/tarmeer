@@ -16,6 +16,7 @@ import { onboarding } from './sections/onboarding';
 import { start } from './sections/start';
 import { portal } from './sections/portal';
 import { expert } from './sections/expert';
+import { about } from './sections/about';
 
 export const siteTranslations = {
   en: {
@@ -33,6 +34,7 @@ export const siteTranslations = {
     start: start.en,
     portal: portal.en,
     expert: expert.en,
+    about: about.en,
   },
   vi: {
     nav: nav.vi,
@@ -49,6 +51,7 @@ export const siteTranslations = {
     start: start.vi,
     portal: portal.vi,
     expert: expert.vi,
+    about: about.vi,
   },
 } as const;
 
