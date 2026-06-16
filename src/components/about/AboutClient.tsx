@@ -7,6 +7,7 @@ import { COUNTRY } from '@/lib/country';
 import { ADDRESS, VN_ADDRESS } from '@/lib/constants';
 import { resolveImageUrl, resolveVariantUrl } from '@/lib/imageUrl';
 import type { Supplier } from '@/components/materials/MaterialsClient';
+import ProgressiveImage from '@/components/ui/ProgressiveImage';
 import { MapPin, ArrowRight, Building2, Home, Layers } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
@@ -16,6 +17,19 @@ export default function AboutClient() {
   const { lang, tr } = useSiteLocale();
   const t = tr.about;
   const isVn = lang === 'vi';
+
+  // Section imagery is country-aware: AE uses on-brand UAE villa scenes,
+  // VN keeps culture-neutral interiors (no Gulf-specific imagery for VN users).
+  // Canonical variant scheme (matches the site-wide image pipeline):
+  // -blur (40px, instant placeholder) → -thumb (600) → -medium (1200) → full (1672).
+  const aboutImg = (base: string) => ({
+    src: `/images/about/${base}-medium.webp`,
+    srcSet: `/images/about/${base}-thumb.webp 600w, /images/about/${base}-medium.webp 1200w, /images/about/${base}.webp 1672w`,
+    blur: `/images/about/${base}-blur.webp`,
+  });
+  const heroImg = aboutImg(isVn ? 'hero-living-vn' : 'hero-villa-ae');
+  const whoImg = aboutImg(isVn ? 'who-consultation' : 'who-villa-ae');
+  const servicesImg = aboutImg(isVn ? 'services-consultation' : 'services-villa-ae');
 
   // Materials/suppliers section is AE-only (VN hides materials).
   const sections = [
@@ -69,12 +83,18 @@ export default function AboutClient() {
     <div className="min-h-screen bg-[#faf9f7]">
       {/* Hero */}
       <header className="relative overflow-hidden">
-        <img
-          src="/images/hero/hero-living-1.webp"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          aria-hidden
-        />
+        <div className="absolute inset-0">
+          <ProgressiveImage
+            src={heroImg.src}
+            srcSet={heroImg.srcSet}
+            sizes="100vw"
+            blur={heroImg.blur}
+            alt=""
+            loading="eager"
+            fetchPriority="high"
+            className="h-full w-full"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-r from-[#1c1917]/85 via-[#1c1917]/65 to-[#1c1917]/30" />
         <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065]">Tarmeer</p>
@@ -114,38 +134,30 @@ export default function AboutClient() {
               <p>{t.whoBody1}</p>
               <p>{t.whoBody2}</p>
             </div>
-            <div className="mt-6 overflow-hidden rounded-2xl">
-              <img
-                src="/images/about/who-consultation-1280.webp"
-                srcSet="/images/about/who-consultation-768.webp 768w, /images/about/who-consultation-1280.webp 1280w, /images/about/who-consultation.webp 1672w"
-                sizes="(min-width: 1024px) 900px, 100vw"
-                width={1672}
-                height={941}
-                loading="lazy"
-                decoding="async"
-                alt="Designers reviewing floor plans and material samples with a client"
-                className="aspect-video w-full object-cover"
-              />
-            </div>
+            <ProgressiveImage
+              src={whoImg.src}
+              srcSet={whoImg.srcSet}
+              sizes="(min-width: 1024px) 900px, 100vw"
+              blur={whoImg.blur}
+              loading="lazy"
+              alt="Reviewing floor plans and material samples with a client"
+              className="mt-6 aspect-video w-full rounded-2xl"
+            />
           </section>
 
           {/* Services */}
           <section id="services" className="scroll-mt-24">
             <h2 className="text-2xl font-bold text-[#2c2c2c]">{t.servicesTitle}</h2>
             <p className="mt-3 text-[15px] text-stone-600">{t.servicesIntro}</p>
-            <div className="mt-6 overflow-hidden rounded-2xl">
-              <img
-                src="/images/about/services-consultation-1280.webp"
-                srcSet="/images/about/services-consultation-768.webp 768w, /images/about/services-consultation-1280.webp 1280w, /images/about/services-consultation.webp 1672w"
-                sizes="(min-width: 1024px) 900px, 100vw"
-                width={1672}
-                height={941}
-                loading="lazy"
-                decoding="async"
-                alt="A Tarmeer advisor showing project options to homeowners on a tablet"
-                className="aspect-video w-full object-cover"
-              />
-            </div>
+            <ProgressiveImage
+              src={servicesImg.src}
+              srcSet={servicesImg.srcSet}
+              sizes="(min-width: 1024px) 900px, 100vw"
+              blur={servicesImg.blur}
+              loading="lazy"
+              alt="A Tarmeer advisor discussing project options with homeowners"
+              className="mt-6 aspect-video w-full rounded-2xl"
+            />
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-stone-200 bg-white p-6">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#b8864a]/10">
