@@ -34,7 +34,8 @@ export default function AboutClient() {
     srcSet: `/images/about/${base}-thumb.webp 600w, /images/about/${base}-medium.webp 1200w, /images/about/${base}.webp 1672w`,
     blur: `/images/about/${base}-blur.webp`,
   });
-  const heroImg = aboutImg(isVn ? 'hero-living-vn' : 'hero-villa-ae');
+  const heroBase = isVn ? 'hero-living-vn' : 'hero-villa-ae';
+  const heroImg = aboutImg(heroBase);
   const whoImg = aboutImg(isVn ? 'who-consultation' : 'who-villa-ae');
   const servicesImg = aboutImg(isVn ? 'services-consultation' : 'services-villa-ae');
 
@@ -92,25 +93,31 @@ export default function AboutClient() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       {/* Hero */}
-      <header className="relative overflow-hidden bg-[#1c1917]">
-        {/* 16:9 container matches the image ratio → full photo shows, zero crop */}
-        <ProgressiveImage
+      <header className="relative h-[44vh] min-h-[320px] max-h-[480px] w-full overflow-hidden bg-[#1c1917]">
+        {/* Ambient blurred backdrop fills the full width (self-extends the sides, no AI needed) */}
+        <img
+          src={`/images/about/${heroBase}-thumb.webp`}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl"
+        />
+        {/* Sharp full photo, contained → every person fully visible, zero crop */}
+        <img
           src={heroImg.src}
           srcSet={heroImg.srcSet}
           sizes="100vw"
-          blur={heroImg.blur}
-          alt=""
-          loading="eager"
           fetchPriority="high"
-          className="aspect-[16/9] max-h-[82vh] w-full"
+          decoding="async"
+          alt="Tarmeer advisor with homeowners in front of a luxury villa"
+          className="absolute inset-0 h-full w-full object-contain"
         />
         {/* bottom-up gradient keeps the title legible without covering faces */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#1c1917] via-[#1c1917]/65 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#1c1917] via-[#1c1917]/45 to-transparent" />
         <div className="absolute inset-x-0 bottom-0">
-          <div className="mx-auto max-w-6xl px-5 pb-10 sm:pb-14">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065]">Tarmeer</p>
+          <div className="mx-auto max-w-6xl px-5 pb-6 sm:pb-8">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065]">Tarmeer</p>
             <h1 className="text-3xl font-bold leading-tight text-white sm:text-4xl">{t.pageTitle}</h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">{t.heroTagline}</p>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">{t.heroTagline}</p>
           </div>
         </div>
       </header>
