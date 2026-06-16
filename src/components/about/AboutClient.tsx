@@ -93,10 +93,11 @@ export default function AboutClient() {
             loading="eager"
             fetchPriority="high"
             className="h-full w-full"
+            imgClassName="object-top"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1c1917]/85 via-[#1c1917]/65 to-[#1c1917]/30" />
-        <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#1c1917]/85 via-[#1c1917]/60 to-[#1c1917]/20" />
+        <div className="relative mx-auto flex min-h-[440px] max-w-6xl flex-col justify-center px-5 py-16 sm:min-h-[560px]">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065]">Tarmeer</p>
           <h1 className="max-w-2xl text-3xl font-bold leading-tight text-white sm:text-4xl">{t.pageTitle}</h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-white/85">{t.heroTagline}</p>

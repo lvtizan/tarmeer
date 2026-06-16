@@ -9,6 +9,7 @@ interface ProgressiveImageProps {
   blur?: string;        // inline base64 blur placeholder
   alt: string;
   className?: string;
+  imgClassName?: string; // extra classes on the <img> itself, e.g. object-position
   loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
 }
@@ -17,7 +18,7 @@ interface ProgressiveImageProps {
  * Progressive image with instant blur placeholder → HD fade-in.
  */
 export default function ProgressiveImage({
-  src, srcSet, sizes, blur, alt, className = '', loading = 'eager', fetchPriority = 'auto',
+  src, srcSet, sizes, blur, alt, className = '', imgClassName = '', loading = 'eager', fetchPriority = 'auto',
 }: ProgressiveImageProps) {
   const [loaded, setLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -37,7 +38,7 @@ export default function ProgressiveImage({
           src={blur}
           alt=""
           aria-hidden
-          className={`absolute inset-0 w-full h-full object-cover scale-110 transition-opacity duration-500 ${loaded ? 'opacity-0' : 'opacity-100'}`}
+          className={`absolute inset-0 w-full h-full object-cover scale-110 transition-opacity duration-500 ${imgClassName} ${loaded ? 'opacity-0' : 'opacity-100'}`}
           style={{ filter: 'blur(20px)' }}
         />
       )}
@@ -52,7 +53,7 @@ export default function ProgressiveImage({
         loading={loading}
         fetchPriority={fetchPriority}
         onLoad={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${imgClassName} ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
     </div>
   );
