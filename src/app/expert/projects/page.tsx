@@ -15,7 +15,7 @@ import {
   MAX_ESTIMATED_PAYLOAD_BYTES, MAX_TOTAL_UPLOAD_BYTES, buildUploadSizeMessage,
 } from '@/lib/projectImageUpload';
 import { findDuplicates } from '@/lib/imageDedup';
-import { SPACE_TAXONOMY } from '@/lib/tagTaxonomy';
+import { SPACE_TAXONOMY, localizeSpaceTag } from '@/lib/tagTaxonomy';
 import { useServiceCategories } from '@/hooks/useServiceCategories';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { countryFromLang } from '@/lib/country';
@@ -70,7 +70,7 @@ function ExpertProjectsInner() {
   ];
   const SPACE_L1_OPTIONS = [
     { value: '', label: t.selectProjectType },
-    ...SPACE_TAXONOMY.map(g => ({ value: g.id, label: g.label })),
+    ...SPACE_TAXONOMY.map(g => ({ value: g.id, label: localizeSpaceTag(g.label, lang) })),
   ];
 
   const dynamicServiceCategories = useServiceCategories();
@@ -520,7 +520,7 @@ function ExpertProjectsInner() {
                           {imgTag && (
                             <button type="button" onClick={e=>{e.stopPropagation();setImgTags(prev=>{const next=[...prev];next[i]=undefined;return next;});}}
                               className="absolute bottom-1.5 left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-[#b8864a]/90 px-1.5 py-0.5 text-[9px] font-semibold text-white hover:bg-[#b8864a] transition group-hover:opacity-0" title={t.clickToRemoveTag}>
-                              {imgTag.length > 9 ? imgTag.slice(0,9)+'…' : imgTag}
+                              {(v => v.length > 9 ? v.slice(0,9)+'…' : v)(localizeSpaceTag(imgTag, lang))}
                             </button>
                           )}
                           <div className="absolute inset-0 bg-black/45 opacity-0 transition-opacity group-hover:opacity-100"/>
@@ -555,7 +555,7 @@ function ExpertProjectsInner() {
                           return (
                             <button key={tag} type="button"
                               onClick={()=>{ setImgTags(prev=>{const next=[...prev];checkedImgs.forEach(idx=>{next[idx]=allHaveTag?undefined:tag;});return next;}); if(!allHaveTag) setCheckedImgs(new Set()); }}
-                              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${allHaveTag?tagOn:tagOff}`}>{tag}
+                              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${allHaveTag?tagOn:tagOff}`}>{localizeSpaceTag(tag, lang)}
                             </button>
                           );
                         })}

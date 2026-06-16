@@ -66,3 +66,45 @@ export function getL1ForTag(tag: string): string | null {
   const group = SPACE_TAXONOMY.find(g => (g.tags as readonly string[]).includes(tag));
   return group ? group.id : null;
 }
+
+/**
+ * Vietnamese DISPLAY labels for space taxonomy (group labels + L2 tags).
+ * Stored values stay English — this map is display-only. Loanwords commonly
+ * used as-is in Vietnamese (Penthouse, Studio, Showroom, ADU) are intentionally
+ * omitted so they fall back to the English term.
+ */
+const SPACE_TAXONOMY_VI: Record<string, string> = {
+  // group labels
+  Villa: 'Biệt thự',
+  Apartment: 'Căn hộ',
+  Commercial: 'Thương mại',
+  'Public / Institutional': 'Công cộng',
+  'Outdoor / Landscape': 'Sân vườn',
+  // L2 tags
+  'Luxury Villa': 'Biệt thự cao cấp',
+  Townhouse: 'Nhà phố',
+  Retail: 'Bán lẻ',
+  Office: 'Văn phòng',
+  Restaurant: 'Nhà hàng',
+  Hotel: 'Khách sạn',
+  Hospitality: 'Nghỉ dưỡng',
+  Mall: 'Trung tâm thương mại',
+  School: 'Trường học',
+  Education: 'Giáo dục',
+  Healthcare: 'Y tế',
+  Hospital: 'Bệnh viện',
+  Club: 'Câu lạc bộ',
+  Factory: 'Nhà máy',
+  'Mixed-Use': 'Phức hợp',
+  Garden: 'Vườn',
+  Terrace: 'Sân thượng',
+  Pool: 'Hồ bơi',
+  Fence: 'Hàng rào',
+  Driveway: 'Lối xe',
+  Landscape: 'Cảnh quan',
+};
+
+/** Localize a space taxonomy label/tag for display. Stored value is unchanged. */
+export function localizeSpaceTag(value: string, lang: string): string {
+  return lang === 'vi' ? (SPACE_TAXONOMY_VI[value] ?? value) : value;
+}
