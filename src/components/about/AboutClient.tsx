@@ -115,7 +115,17 @@ export default function AboutClient() {
               <p>{t.whoBody2}</p>
             </div>
             <div className="mt-6 overflow-hidden rounded-2xl">
-              <img src="/images/hero/hero-kitchen-1.webp" alt="" className="aspect-video w-full object-cover" />
+              <img
+                src="/images/about/who-consultation-1280.webp"
+                srcSet="/images/about/who-consultation-768.webp 768w, /images/about/who-consultation-1280.webp 1280w, /images/about/who-consultation.webp 1672w"
+                sizes="(min-width: 1024px) 900px, 100vw"
+                width={1672}
+                height={941}
+                loading="lazy"
+                decoding="async"
+                alt="Designers reviewing floor plans and material samples with a client"
+                className="aspect-video w-full object-cover"
+              />
             </div>
           </section>
 
@@ -123,6 +133,19 @@ export default function AboutClient() {
           <section id="services" className="scroll-mt-24">
             <h2 className="text-2xl font-bold text-[#2c2c2c]">{t.servicesTitle}</h2>
             <p className="mt-3 text-[15px] text-stone-600">{t.servicesIntro}</p>
+            <div className="mt-6 overflow-hidden rounded-2xl">
+              <img
+                src="/images/about/services-consultation-1280.webp"
+                srcSet="/images/about/services-consultation-768.webp 768w, /images/about/services-consultation-1280.webp 1280w, /images/about/services-consultation.webp 1672w"
+                sizes="(min-width: 1024px) 900px, 100vw"
+                width={1672}
+                height={941}
+                loading="lazy"
+                decoding="async"
+                alt="A Tarmeer advisor showing project options to homeowners on a tablet"
+                className="aspect-video w-full object-cover"
+              />
+            </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-stone-200 bg-white p-6">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#b8864a]/10">
