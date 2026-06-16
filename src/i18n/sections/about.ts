@@ -36,10 +36,12 @@ export const about = {
     coverageUaeTitle: 'United Arab Emirates',
     coverageVnTitle: 'Vietnam',
     officeLabel: 'Office',
+    viewOnMap: 'View on map',
 
     contactTitle: 'Get in Touch',
     contactBody: 'Questions, partnerships, or support — we would love to hear from you.',
     contactBtn: 'Contact Us',
+    whatsappCta: 'Message us on WhatsApp',
   },
   vi: {
     pageTitle: 'Về Chúng Tôi',
@@ -74,9 +76,11 @@ export const about = {
     coverageUaeTitle: 'Các Tiểu Vương Quốc Ả Rập Thống Nhất',
     coverageVnTitle: 'Việt Nam',
     officeLabel: 'Văn phòng',
+    viewOnMap: 'Xem trên bản đồ',
 
     contactTitle: 'Liên Hệ',
     contactBody: 'Câu hỏi, hợp tác hay hỗ trợ — chúng tôi luôn sẵn lòng lắng nghe.',
     contactBtn: 'Liên Hệ Với Chúng Tôi',
+    whatsappCta: 'Nhắn tin qua WhatsApp',
   },
 } as const;
