@@ -11,7 +11,6 @@ import ProgressiveImage from '@/components/ui/ProgressiveImage';
 import { MapPin, ArrowRight, Building2, Home, Layers } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
-const PRIMARY = '#b8864a';
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -294,16 +293,8 @@ export default function AboutClient() {
           <section id="contact" className="scroll-mt-24">
             <div className="rounded-2xl bg-[#1c1917] px-6 py-10 text-center">
               <h2 className="text-2xl font-bold text-white">{t.contactTitle}</h2>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/75">{t.contactBody}</p>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ backgroundColor: PRIMARY }}
-                >
-                  {t.contactBtn}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/75">{t.contactBody}</p>
+              <div className="mt-6 flex items-center justify-center">
                 <a
                   href={wa.link}
                   target="_blank"
