@@ -43,9 +43,6 @@ export default function AboutClient() {
   // WhatsApp is country-aware (matches the footer): AE → +971, VN → local number.
   const wa = isVn ? VN_WHATSAPP_NUMBERS[0] : { label: '+971 58 838 8922', link: WHATSAPP_LINK };
 
-  // Atmospheric backdrop for the Get-in-Touch panel (country-aware, reuses existing assets).
-  const ctaBg = aboutImg(isVn ? 'hero-living-vn' : 'who-villa-ae');
-
   // Coverage shows only the current country (AE never shows VN info and vice-versa).
   const op = isVn
     ? { title: t.coverageVnTitle, cities: COUNTRY.vn.cities, address: VN_ADDRESS, map: VN_GOOGLE_MAPS_URL }
@@ -288,17 +285,20 @@ export default function AboutClient() {
           {/* Contact */}
           <section id="contact" className="scroll-mt-24">
             <div className="relative overflow-hidden rounded-2xl bg-[#1c1917] px-6 py-14 text-center">
-              {/* atmospheric backdrop */}
-              <img
-                src={ctaBg.src}
-                srcSet={ctaBg.srcSet}
-                sizes="(min-width: 1024px) 900px, 100vw"
-                alt=""
+              {/* abstract brand glows */}
+              <div
                 aria-hidden
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="pointer-events-none absolute inset-0"
+                style={{ background: 'radial-gradient(55% 85% at 12% -15%, rgba(184,134,74,0.32), transparent 60%), radial-gradient(50% 85% at 92% 115%, rgba(198,160,101,0.24), transparent 60%)' }}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-[#1c1917]/82 via-[#1c1917]/78 to-[#1c1917]/92" />
+              {/* subtle dot-grid texture */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 opacity-[0.05]"
+                style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.85) 1px, transparent 1px)', backgroundSize: '22px 22px' }}
+              />
+              {/* hairline gold ring accent */}
+              <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full border border-[#b8864a]/20" />
               <div className="relative">
               <h2 className="text-2xl font-bold text-white sm:text-3xl">{t.contactTitle}</h2>
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/80">{t.contactBody}</p>
