@@ -32,7 +32,7 @@ export const about = {
     materialsCtaBtn: 'View Suppliers',
 
     coverageTitle: 'Where We Operate',
-    coverageBody: 'Tarmeer operates across two markets, with local teams and offices in each.',
+    coverageBody: 'Local teams and an office on the ground, close to every project.',
     coverageUaeTitle: 'United Arab Emirates',
     coverageVnTitle: 'Vietnam',
     officeLabel: 'Office',
@@ -72,7 +72,7 @@ export const about = {
     materialsCtaBtn: 'Xem Nhà Cung Cấp',
 
     coverageTitle: 'Phạm Vi Hoạt Động',
-    coverageBody: 'Tarmeer hoạt động tại hai thị trường, với đội ngũ và văn phòng địa phương ở mỗi nơi.',
+    coverageBody: 'Đội ngũ địa phương và văn phòng ngay tại chỗ, sát từng dự án.',
     coverageUaeTitle: 'Các Tiểu Vương Quốc Ả Rập Thống Nhất',
     coverageVnTitle: 'Việt Nam',
     officeLabel: 'Văn phòng',

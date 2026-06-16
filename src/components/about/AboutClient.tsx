@@ -43,6 +43,11 @@ export default function AboutClient() {
   // WhatsApp is country-aware (matches the footer): AE → +971, VN → local number.
   const wa = isVn ? VN_WHATSAPP_NUMBERS[0] : { label: '+971 58 838 8922', link: WHATSAPP_LINK };
 
+  // Coverage shows only the current country (AE never shows VN info and vice-versa).
+  const op = isVn
+    ? { title: t.coverageVnTitle, cities: COUNTRY.vn.cities, address: VN_ADDRESS, map: VN_GOOGLE_MAPS_URL }
+    : { title: t.coverageUaeTitle, cities: COUNTRY.ae.cities, address: ADDRESS, map: GOOGLE_MAPS_URL };
+
   // Materials/suppliers section is AE-only (VN hides materials).
   const sections = [
     { id: 'who', label: t.tocWhoWeAre },
@@ -110,7 +115,7 @@ export default function AboutClient() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#1c1917] via-[#1c1917]/45 to-transparent" />
         <div className="absolute inset-x-0 bottom-0">
           <div className="mx-auto max-w-6xl px-5 pb-6 sm:pb-9">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065]">Tarmeer</p>
+            <p className="mb-2 hidden text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065] sm:block">Tarmeer</p>
             <h1 className="text-3xl font-bold leading-tight text-white sm:text-4xl">{t.pageTitle}</h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">{t.heroTagline}</p>
           </div>
@@ -215,6 +220,13 @@ export default function AboutClient() {
                         <img
                           src={s.cover_image_url ? resolveVariantUrl(s.cover_image_url, 'thumb') : resolveImageUrl(s.logo_url)}
                           alt={s.company_name}
+                          loading="lazy"
+                          onError={e => {
+                            const img = e.currentTarget;
+                            const orig = resolveImageUrl(s.cover_image_url || s.logo_url);
+                            if (!img.dataset.fb && img.src !== orig) { img.dataset.fb = '1'; img.src = orig; }
+                            else { img.style.display = 'none'; }
+                          }}
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       </div>
@@ -248,47 +260,25 @@ export default function AboutClient() {
           <section id="coverage" className="scroll-mt-24">
             <h2 className="text-2xl font-bold text-[#2c2c2c]">{t.coverageTitle}</h2>
             <p className="mt-3 text-[15px] text-stone-600">{t.coverageBody}</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-stone-200 bg-white p-6">
-                <h3 className="text-lg font-semibold text-[#2c2c2c]">{t.coverageUaeTitle}</h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {COUNTRY.ae.cities.map(c => (
-                    <span key={c} className="rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600">{c}</span>
-                  ))}
-                </div>
-                <a
-                  href={GOOGLE_MAPS_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group mt-4 flex items-start gap-2 text-xs leading-relaxed text-stone-500 transition hover:text-[#b8864a]"
-                >
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#b8864a]" />
-                  <span>
-                    <strong className="font-semibold text-stone-600 group-hover:text-[#b8864a]">{t.officeLabel}:</strong> {ADDRESS}
-                    <span className="mt-1 block font-medium text-[#b8864a] underline-offset-2 group-hover:underline">{t.viewOnMap} →</span>
-                  </span>
-                </a>
+            <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-6">
+              <h3 className="text-lg font-semibold text-[#2c2c2c]">{op.title}</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {op.cities.map(c => (
+                  <span key={c} className="rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600">{c}</span>
+                ))}
               </div>
-              <div className="rounded-2xl border border-stone-200 bg-white p-6">
-                <h3 className="text-lg font-semibold text-[#2c2c2c]">{t.coverageVnTitle}</h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {COUNTRY.vn.cities.map(c => (
-                    <span key={c} className="rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600">{c}</span>
-                  ))}
-                </div>
-                <a
-                  href={VN_GOOGLE_MAPS_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group mt-4 flex items-start gap-2 text-xs leading-relaxed text-stone-500 transition hover:text-[#b8864a]"
-                >
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#b8864a]" />
-                  <span>
-                    <strong className="font-semibold text-stone-600 group-hover:text-[#b8864a]">{t.officeLabel}:</strong> {VN_ADDRESS}
-                    <span className="mt-1 block font-medium text-[#b8864a] underline-offset-2 group-hover:underline">{t.viewOnMap} →</span>
-                  </span>
-                </a>
-              </div>
+              <a
+                href={op.map}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mt-4 flex items-start gap-2 text-xs leading-relaxed text-stone-500 transition hover:text-[#b8864a]"
+              >
+                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#b8864a]" />
+                <span>
+                  <strong className="font-semibold text-stone-600 group-hover:text-[#b8864a]">{t.officeLabel}:</strong> {op.address}
+                  <span className="mt-1 block font-medium text-[#b8864a] underline-offset-2 group-hover:underline">{t.viewOnMap} →</span>
+                </span>
+              </a>
             </div>
           </section>
 
