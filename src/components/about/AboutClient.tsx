@@ -43,6 +43,9 @@ export default function AboutClient() {
   // WhatsApp is country-aware (matches the footer): AE → +971, VN → local number.
   const wa = isVn ? VN_WHATSAPP_NUMBERS[0] : { label: '+971 58 838 8922', link: WHATSAPP_LINK };
 
+  // Atmospheric backdrop for the Get-in-Touch panel (country-aware, reuses existing assets).
+  const ctaBg = aboutImg(isVn ? 'hero-living-vn' : 'who-villa-ae');
+
   // Coverage shows only the current country (AE never shows VN info and vice-versa).
   const op = isVn
     ? { title: t.coverageVnTitle, cities: COUNTRY.vn.cities, address: VN_ADDRESS, map: VN_GOOGLE_MAPS_URL }
@@ -284,10 +287,22 @@ export default function AboutClient() {
 
           {/* Contact */}
           <section id="contact" className="scroll-mt-24">
-            <div className="rounded-2xl bg-[#1c1917] px-6 py-10 text-center">
-              <h2 className="text-2xl font-bold text-white">{t.contactTitle}</h2>
-              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/75">{t.contactBody}</p>
-              <div className="mt-6 flex items-center justify-center">
+            <div className="relative overflow-hidden rounded-2xl bg-[#1c1917] px-6 py-14 text-center">
+              {/* atmospheric backdrop */}
+              <img
+                src={ctaBg.src}
+                srcSet={ctaBg.srcSet}
+                sizes="(min-width: 1024px) 900px, 100vw"
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#1c1917]/82 via-[#1c1917]/78 to-[#1c1917]/92" />
+              <div className="relative">
+              <h2 className="text-2xl font-bold text-white sm:text-3xl">{t.contactTitle}</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/80">{t.contactBody}</p>
+              <div className="mt-7 flex items-center justify-center">
                 <a
                   href={wa.link}
                   target="_blank"
@@ -298,6 +313,7 @@ export default function AboutClient() {
                   <WhatsAppIcon className="h-5 w-5" />
                   {wa.label}
                 </a>
+              </div>
               </div>
             </div>
           </section>
