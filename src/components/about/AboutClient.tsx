@@ -92,25 +92,26 @@ export default function AboutClient() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       {/* Hero */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <ProgressiveImage
-            src={heroImg.src}
-            srcSet={heroImg.srcSet}
-            sizes="100vw"
-            blur={heroImg.blur}
-            alt=""
-            loading="eager"
-            fetchPriority="high"
-            className="h-full w-full"
-            imgClassName="object-top"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1c1917]/85 via-[#1c1917]/60 to-[#1c1917]/20" />
-        <div className="relative mx-auto flex min-h-[440px] max-w-6xl flex-col justify-center px-5 py-16 sm:min-h-[560px]">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065]">Tarmeer</p>
-          <h1 className="max-w-2xl text-3xl font-bold leading-tight text-white sm:text-4xl">{t.pageTitle}</h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-white/85">{t.heroTagline}</p>
+      <header className="relative overflow-hidden bg-[#1c1917]">
+        {/* 16:9 container matches the image ratio → full photo shows, zero crop */}
+        <ProgressiveImage
+          src={heroImg.src}
+          srcSet={heroImg.srcSet}
+          sizes="100vw"
+          blur={heroImg.blur}
+          alt=""
+          loading="eager"
+          fetchPriority="high"
+          className="aspect-[16/9] max-h-[82vh] w-full"
+        />
+        {/* bottom-up gradient keeps the title legible without covering faces */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#1c1917] via-[#1c1917]/65 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-6xl px-5 pb-10 sm:pb-14">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#c6a065]">Tarmeer</p>
+            <h1 className="text-3xl font-bold leading-tight text-white sm:text-4xl">{t.pageTitle}</h1>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">{t.heroTagline}</p>
+          </div>
         </div>
       </header>
 
