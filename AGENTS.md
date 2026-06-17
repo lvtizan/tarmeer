@@ -212,7 +212,16 @@ node scripts/gen-image-variants.mjs \
 # 产出 foo{-blur,-thumb,-medium,}.webp（-blur 64px / -thumb 600 / -medium 1200 / full ≤2000）+ chmod 644
 ```
 
+**⚠️ 部署关键（2026-06-17 踩坑）：nginx 把 `/images/` 指向 `/tarmeer/tarmeer_web_portal/images/`，不是 Next 的 public/。所以 `public/images/` 下的图 git push 后线上仍 404，必须 rsync 到 portal 目录才能在线显示：**
+```bash
+rsync -avz public/images/about/ -e "ssh -i ~/.ssh/tarmeer_ecs" \
+  root@47.91.108.104:/tarmeer/tarmeer_web_portal/images/about/
+# 验证：curl -sI https://www.tarmeer.com/images/about/foo.webp 应 200
+```
+
 前端必须用 `ProgressiveImage`（模糊→清晰）或 `<img srcSet sizes>`（`-thumb 600w/-medium 1200w/full 2000w`）+ `loading=lazy`（hero/LCP 用 `eager`+`fetchPriority=high`）+ 显式宽高/aspect 防 CLS。详见 `memory/images.md`「静态图片加图标准流程」。
+
+**完整加图部署流程**：① 跑脚本生成变体 ② git commit + 前端部署（代码）③ **rsync `public/images/<dir>/` → portal 同名目录**（图片）④ curl 验证图片 200。漏第③步 = 线上图 404。
 
 ---
 
