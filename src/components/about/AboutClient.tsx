@@ -34,7 +34,10 @@ export default function AboutClient() {
     srcSet: `/images/about/${base}-thumb.webp 600w, /images/about/${base}-medium.webp 1200w, /images/about/${base}.webp 1672w`,
     blur: `/images/about/${base}-blur.webp`,
   });
-  const heroImg = aboutImg(isVn ? 'hero-living-vn' : 'hero-villa-ae');
+  // AE hero is an auto-cycling slideshow; VN keeps a single image.
+  const heroSlides = isVn
+    ? [aboutImg('hero-living-vn')]
+    : [aboutImg('hero-villa-ae'), aboutImg('hero-villa-ae-2'), aboutImg('hero-villa-ae-3')];
   const whoImg = aboutImg(isVn ? 'who-consultation' : 'who-villa-ae');
   const servicesImg = aboutImg(isVn ? 'services-consultation' : 'services-villa-ae');
   // AE photos are 3:1 cinematic; VN photos are 16:9.
@@ -59,6 +62,14 @@ export default function AboutClient() {
 
   const [activeId, setActiveId] = useState('who');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [slide, setSlide] = useState(0);
+
+  // Auto-cycle the AE hero slideshow.
+  useEffect(() => {
+    if (heroSlides.length < 2) return;
+    const id = setInterval(() => setSlide(s => (s + 1) % heroSlides.length), 5000);
+    return () => clearInterval(id);
+  }, [heroSlides.length]);
 
   // Scroll-spy: highlight the ToC entry whose section is in view.
   useEffect(() => {
@@ -101,16 +112,22 @@ export default function AboutClient() {
       {/* Hero */}
       <header className="relative w-full overflow-hidden bg-[#1c1917]">
         {/* 3:1 cinematic band — image is 3:1 too → full-bleed, full people, zero crop */}
-        <ProgressiveImage
-          src={heroImg.src}
-          srcSet={heroImg.srcSet}
-          sizes="100vw"
-          blur={heroImg.blur}
-          alt="Tarmeer advisor with homeowners at a luxury villa"
-          loading="eager"
-          fetchPriority="high"
-          className="aspect-[3/1] max-h-[72vh] w-full"
-        />
+        <div className="relative aspect-[3/1] max-h-[72vh] w-full">
+          {heroSlides.map((img, i) => (
+            <img
+              key={i}
+              src={img.src}
+              srcSet={img.srcSet}
+              sizes="100vw"
+              alt={i === 0 ? 'Tarmeer advisor with homeowners at a luxury villa' : ''}
+              aria-hidden={i !== 0 || undefined}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              fetchPriority={i === 0 ? 'high' : 'auto'}
+              decoding="async"
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${i === slide ? 'opacity-100' : 'opacity-0'}`}
+            />
+          ))}
+        </div>
         {/* bottom-up gradient keeps the title legible without covering faces */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#1c1917] via-[#1c1917]/45 to-transparent" />
         <div className="absolute inset-x-0 bottom-0">
@@ -120,6 +137,19 @@ export default function AboutClient() {
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">{t.heroTagline}</p>
           </div>
         </div>
+        {heroSlides.length > 1 && (
+          <div className="absolute bottom-4 right-5 z-10 flex gap-1.5">
+            {heroSlides.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setSlide(i)}
+                aria-label={`Slide ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all ${i === slide ? 'w-5 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'}`}
+              />
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-12 lg:grid-cols-[220px_minmax(0,1fr)] lg:py-16">

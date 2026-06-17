@@ -6,6 +6,23 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## 开发工作流 — 每次动手前必查
 
+### 第零步：查阅踩坑记录（每次动手前必做）
+
+在任何改动之前，先查 `memory/pitfalls.md`，重点看以下高频坑：
+
+| 场景 | 必查规则 |
+|------|---------|
+| 新增/修改动态路由页面 | params 键名必须与目录名 `[xxx]` 完全一致，不得在 interface 里另起名字 |
+| 提交引用了新类型/新字段的文件 | 类型文件（`types.ts`）必须**同一个 commit** 一起提交，否则生产 build 失败但本地绿 |
+| 新建 pre-commit hook 或 harness 脚本 | hook 引用的脚本必须存在，否则所有 commit 被阻断 |
+| 动态详情页 fetch 失败分支 | 必须调用 `notFound()`，禁止渲染 fallback UI（HTTP 200 软 404 不被 Google 收录） |
+| 生产 build 后站点看起来正常 | 对比 `.next/BUILD_ID` 确认新代码真正上线；build 失败时 pm2 静默跑旧版本 |
+| 跨表字符串比较（列 vs 列）| 上线前在生产查 `INFORMATION_SCHEMA.COLUMNS` 比对 COLLATION_NAME，collation 不一致直接 500 |
+
+> 完整踩坑详情见 [`memory/pitfalls.md`](memory/pitfalls.md)
+
+---
+
 ### 第一步：确认数据库环境
 
 运行任何操作数据库的脚本前，先看 `server/.env` 的 `DB_HOST`：
@@ -182,6 +199,57 @@ AE / VN / SA 三个国家的数据**严禁串联**（数据混桶）和**文字�
 5. **外勤/问卷场景按操作人所属国家（`admin_users.country`）过滤公司搜索**，从源头禁止跨国家关联。
 6. **任何 AE 视图出现越南文（或反之）= P0 bug**，第一时间排查引用解析链（ref_source → JOIN → country 条件）。
 7. **新增/修改写入口或国家相关查询后，必须跑 `node scripts/harness/country-walkthrough.mjs` 且全绿**（12 个国家归属用例）。
+
+---
+
+## 新增图片必须走多档缓存流程（铁律，违反 = 不许部署）
+
+**任何新增到站点的图片（hero/about/营销等静态图），部署前必须用 `scripts/gen-image-variants.mjs` 生成 4 档 WebP 缓存，否则禁止上线。**
+
+```bash
+node scripts/gen-image-variants.mjs \
+  '/abs/src/foo.png::public/images/about/foo'
+# 产出 foo{-blur,-thumb,-medium,}.webp（-blur 64px / -thumb 600 / -medium 1200 / full ≤2000）+ chmod 644
+```
+
+前端必须用 `ProgressiveImage`（模糊→清晰）或 `<img srcSet sizes>`（`-thumb 600w/-medium 1200w/full 2000w`）+ `loading=lazy`（hero/LCP 用 `eager`+`fetchPriority=high`）+ 显式宽高/aspect 防 CLS。详见 `memory/images.md`「静态图片加图标准流程」。
+
+---
+
+## 图片比例规范（铁律，违反 = 必须返工）
+
+**所有项目封面图（project cover）必须使用 `aspect-video`（16:9），禁止使用固定像素高度（`h-32`、`h-52` 等）。**
+
+适用范围：
+- 专家详情页项目卡片（`ExpertDetailClient`）
+- 专家项目详情页相关项目缩略图（`ExpertProjectDetailClient`）
+- 公司详情页项目卡片（`CompanyProjectsSection`、`CompanyDetailClient`）
+- 任何新增的项目展示网格
+
+**表单配色规范（铁律）：**
+- 输入框背景必须用 `bg-white`，禁止 `bg-stone-50`（灰底）
+- 主按钮用品牌金色 `bg-[#b8864a]`，hover 用深色 `hover:bg-[#a07640]`，禁止用 `bg-[#1c1917]` 作为主按钮色（深色 + `disabled:opacity-50` = 灰色，违反设计语言）
+- disabled 状态允许 `disabled:opacity-40`，但颜色底色必须是有意义的颜色（金色等），不能是中性色
+
+---
+
+## Expert Pages — Contact Form Rules（铁律）
+
+专家相关页面的联系表单规则，违反 = 必须返工：
+
+1. **`ExpertInquiryForm` 必须在以下两个位置都显示，无论 AE 还是 VN**：
+   - 专家详情页（`ExpertDetailClient`）右侧 sticky 栏
+   - 专家项目详情页（`ExpertProjectDetailClient`）右侧 sticky 栏
+   - 桌面端隐藏时对应移动端也必须在内容底部补充显示
+
+2. **电话号码（`RevealExpertPhone`）仅 VN 站显示**（`isVn === true`），AE 站不显示。
+
+3. **联系表单组件统一从 `ExpertContactSidebar.tsx` 导入**，禁止在页面文件里单独重新实现。
+
+4. **侧边栏顺序（从上到下）**：
+   - 询价表单（所有国家）
+   - 电话查看（VN only）
+   - 快速信息（经验年限、城市）
 
 ---
 
