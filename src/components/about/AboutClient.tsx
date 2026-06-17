@@ -51,7 +51,7 @@ export default function AboutClient() {
   const contentAspect = 'aspect-[3/1]';
 
   // WhatsApp is country-aware (matches the footer): AE → +971, VN → local number.
-  const wa = isVn ? VN_WHATSAPP_NUMBERS[0] : { label: '+971 58 838 8922', link: WHATSAPP_LINK };
+  const waList = isVn ? VN_WHATSAPP_NUMBERS : [{ label: '+971 58 838 8922', link: WHATSAPP_LINK }];
 
   // Coverage shows only the current country (AE never shows VN info and vice-versa).
   const op = isVn
@@ -339,17 +339,20 @@ export default function AboutClient() {
               <div className="relative">
               <h2 className="text-2xl font-bold text-white sm:text-3xl">{t.contactTitle}</h2>
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/80">{t.contactBody}</p>
-              <div className="mt-7 flex items-center justify-center">
-                <a
-                  href={wa.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${t.whatsappCta}: ${wa.label}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5b]"
-                >
-                  <WhatsAppIcon className="h-5 w-5" />
-                  {wa.label}
-                </a>
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                {waList.map((wa) => (
+                  <a
+                    key={wa.link}
+                    href={wa.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${t.whatsappCta}: ${wa.label}`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1ebe5b]"
+                  >
+                    <WhatsAppIcon className="h-5 w-5" />
+                    {wa.label}
+                  </a>
+                ))}
               </div>
               </div>
             </div>
