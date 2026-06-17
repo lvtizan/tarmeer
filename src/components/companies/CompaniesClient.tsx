@@ -219,6 +219,16 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
   const [showAllServices, setShowAllServices] = useState(false);
   const [serviceSearch, setServiceSearch] = useState('');
   const [foundedRange, setFoundedRange] = useState<string>('');
+
+  // 同步 URL 的 service/style 参数 → 筛选状态。
+  // 否则在 /companies 页内点 Find Experts 切换到别的服务时，URL 变了但筛选不更新（看着"无反应"）。
+  useEffect(() => {
+    const svc = searchParams.get('service');
+    setSelectedServices(svc ? [svc] : []);
+    const sty = searchParams.get('style');
+    setSelectedStyles(sty ? [sty] : []);
+  }, [searchParams]);
+
   const cityOptions = useMemo(
     () => [...new Set(companies.map((c) => c.city).filter(Boolean))].sort(),
     [companies]
