@@ -44,10 +44,11 @@ export default function AboutClient() {
   const heroSlides = isVn
     ? [vnHeroImg('hero-1'), vnHeroImg('hero-2'), vnHeroImg('hero-3')]
     : [aboutImg('hero-villa-ae'), aboutImg('hero-villa-ae-2'), aboutImg('hero-villa-ae-3')];
-  const whoImg = aboutImg(isVn ? 'who-consultation' : 'who-villa-ae');
-  const servicesImg = aboutImg(isVn ? 'services-consultation' : 'services-villa-ae');
-  // AE photos are 3:1 cinematic; VN photos are 16:9.
-  const contentAspect = isVn ? 'aspect-video' : 'aspect-[3/1]';
+  // VN 用越南人实景（复用 VN hero 的越南人图，避免西方人观感）；AE 用 villa 实景。
+  const whoImg = isVn ? vnHeroImg('hero-2') : aboutImg('who-villa-ae');
+  const servicesImg = isVn ? vnHeroImg('hero-3') : aboutImg('services-villa-ae');
+  // 两站内容图均 3:1 cinematic（VN 复用的 hero 图也是 3:1）。
+  const contentAspect = 'aspect-[3/1]';
 
   // WhatsApp is country-aware (matches the footer): AE → +971, VN → local number.
   const wa = isVn ? VN_WHATSAPP_NUMBERS[0] : { label: '+971 58 838 8922', link: WHATSAPP_LINK };
