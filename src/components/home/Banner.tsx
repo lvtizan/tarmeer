@@ -111,7 +111,7 @@ export default function Banner() {
   };
 
   return (
-    <section className="relative min-h-[420px] overflow-hidden py-8 sm:min-h-[500px] sm:py-10">
+    <section className="relative isolate min-h-[420px] overflow-hidden py-8 sm:min-h-[500px] sm:py-10">
       {heroImages.map((src, i) => (
         <div
           key={src}

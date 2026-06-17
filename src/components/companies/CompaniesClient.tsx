@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { X, MapPin, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck } from 'lucide-react';
+import { X, MapPin, Phone, Globe, ClipboardList, Users, Handshake, Mail, BadgeCheck, Search } from 'lucide-react';
 import FilterOption from '@/components/shared/FilterOption';
 import ActiveFilterChip from '@/components/shared/ActiveFilterChip';
 import FilterSidebar from '@/components/shared/FilterSidebar';
@@ -217,6 +217,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
   const [selectedType, setSelectedType] = useState<string>('');
   const [showAllStyles, setShowAllStyles] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState('');
   const [foundedRange, setFoundedRange] = useState<string>('');
   const cityOptions = useMemo(
     () => [...new Set(companies.map((c) => c.city).filter(Boolean))].sort(),
@@ -361,31 +362,51 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
       <hr className="border-stone-100" />
 
       {/* Services */}
-      <div>
-        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.services}</h4>
-        <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
-          {(showAllServices ? serviceOptions : serviceOptions.slice(0, compact ? serviceOptions.length : SHOW_LIMIT)).map((service) => (
-            <FilterOption
-              compact={compact}
-              key={service}
-              selected={selectedServices.includes(service)}
-              onClick={() => setSelectedServices((prev) =>
-                prev.includes(service) ? prev.filter((v) => v !== service) : [...prev, service]
+      {(() => {
+        const q = serviceSearch.trim().toLowerCase();
+        const matched = q ? serviceOptions.filter((s) => s.toLowerCase().includes(q)) : serviceOptions;
+        const shown = q ? matched : (showAllServices ? serviceOptions : serviceOptions.slice(0, compact ? serviceOptions.length : SHOW_LIMIT));
+        return (
+          <div>
+            <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.services}</h4>
+            <div className="relative mb-3">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                value={serviceSearch}
+                onChange={(e) => setServiceSearch(e.target.value)}
+                placeholder={tr.companies.searchServices}
+                className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-sm text-[#1c1917] outline-none placeholder:text-stone-400 focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/25"
+              />
+            </div>
+            <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+              {shown.map((service) => (
+                <FilterOption
+                  compact={compact}
+                  key={service}
+                  selected={selectedServices.includes(service)}
+                  onClick={() => setSelectedServices((prev) =>
+                    prev.includes(service) ? prev.filter((v) => v !== service) : [...prev, service]
+                  )}
+                >
+                  {service}
+                </FilterOption>
+              ))}
+              {q && shown.length === 0 && (
+                <p className="py-2 text-xs text-stone-400">{tr.companies.noCompanies}</p>
               )}
-            >
-              {service}
-            </FilterOption>
-          ))}
-        </div>
-        {!compact && serviceOptions.length > SHOW_LIMIT && (
-          <button
-            onClick={() => setShowAllServices((v) => !v)}
-            className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
-          >
-            {showAllServices ? tr.companies.showLess : tr.companies.showMore(serviceOptions.length - SHOW_LIMIT)}
-          </button>
-        )}
-      </div>
+            </div>
+            {!compact && !q && serviceOptions.length > SHOW_LIMIT && (
+              <button
+                onClick={() => setShowAllServices((v) => !v)}
+                className="mt-2 text-xs text-[#b8864a] hover:text-[#a07540] font-medium transition"
+              >
+                {showAllServices ? tr.companies.showLess : tr.companies.showMore(serviceOptions.length - SHOW_LIMIT)}
+              </button>
+            )}
+          </div>
+        );
+      })()}
     </>
   );
 
