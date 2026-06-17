@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Camera, X, MapPin, Trash2, Paperclip, FileText } from 'lucide-react';
 import { fieldApi } from '@/lib/adminApi';
 import ChipSelect from '@/components/field/ChipSelect';
@@ -68,6 +69,7 @@ interface DraftData {
 }
 
 export default function FieldSurveyPage() {
+  const router = useRouter();
   const [draftId, setDraftId] = useState<number | null>(null);
   const [filledBy, setFilledBy] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -104,6 +106,29 @@ export default function FieldSurveyPage() {
           setSchema(remoteSchema);
         }
       } catch { /* schema unavailable */ }
+
+      // 编辑模式：?edit=<id> —— 修改已提交问卷，必须是外勤人员（field_staff/super_admin）登录方可。
+      const editId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('edit') : null;
+      if (editId) {
+        const ret = encodeURIComponent(`/field/survey?edit=${editId}`);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('field_token') : null;
+        if (!token) { router.replace(`/field/login?return=${ret}`); return; }
+        try {
+          const { interview } = await fieldApi.loadInterview(Number(editId)) as { interview: DraftData | null };
+          if (interview) {
+            hydrateDraft(interview);
+            setEditingInterviewId(Number(editId));
+            setDraftId(null); // 编辑已提交记录，不走草稿自动保存（提交时走 reSubmit）
+          }
+        } catch {
+          // 401/403/过期/非外勤 → 回登录页验证身份
+          if (typeof window !== 'undefined') localStorage.removeItem('field_token');
+          router.replace(`/field/login?return=${ret}`);
+          return;
+        }
+        setInitializing(false);
+        return;
+      }
 
       try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem('field_draft_id') : null;

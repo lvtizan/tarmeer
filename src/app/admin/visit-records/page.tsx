@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import AdminSelect from '@/components/ui/AdminSelect';
-import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download } from 'lucide-react';
+import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download, Pencil } from 'lucide-react';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface VisitRecord {
@@ -437,11 +437,25 @@ function AdminVisitRecordsContent() {
                     </div>
                   )}
                 </div>
-                <span className={`flex-shrink-0 mt-0.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  detail.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                }`}>
-                  {detail.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
-                </span>
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  {detail.status === 'submitted' && (
+                    <a
+                      href={`/field/survey?edit=${detail.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t('Edit (field staff login required)', '编辑（需外勤人员登录）')}
+                      className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07640] transition"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      {t('Edit', '编辑')}
+                    </a>
+                  )}
+                  <span className={`mt-0.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    detail.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {detail.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
+                  </span>
+                </div>
               </div>
 
               {/* Meta — compact inline on mobile, grid on desktop */}

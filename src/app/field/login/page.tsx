@@ -32,7 +32,9 @@ export default function FieldLoginPage() {
       }
       localStorage.setItem('field_token', data.token);
       localStorage.setItem('field_user', JSON.stringify(data.admin));
-      router.replace('/field/survey');
+      // 登录后跳回来源页（如编辑某条已提交问卷 /field/survey?edit=<id>）；默认新建问卷页
+      const ret = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('return') : null;
+      router.replace(ret && ret.startsWith('/field/') ? ret : '/field/survey');
     } catch {
       setError('Network error — please try again.');
     } finally {
