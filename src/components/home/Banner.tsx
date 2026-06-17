@@ -14,11 +14,9 @@ const AE_HERO_IMAGES = [
 ];
 
 const VN_HERO_IMAGES = [
-  '/images/vn-companies/portfolio/vn-atz-luxury/03.jpg',
-  '/images/vn-companies/portfolio/vn-atz-luxury/06.jpg',
-  '/images/vn-companies/portfolio/vn-25-nm-thiet-ke-noi-that-chung-cu-biet-thu-nha-pho-vn-phong/05.jpg',
-  '/images/vn-companies/portfolio/vn-cong-ty-cp-s/01.jpg',
-  '/images/vn-companies/portfolio/vn-floorii/12.jpg',
+  '/images/hero/vn/hero-1.webp',
+  '/images/hero/vn/hero-2.webp',
+  '/images/hero/vn/hero-3.webp',
 ];
 
 const GCC_PHONE_OPTIONS = [

@@ -34,9 +34,15 @@ export default function AboutClient() {
     srcSet: `/images/about/${base}-thumb.webp 600w, /images/about/${base}-medium.webp 1200w, /images/about/${base}.webp 1672w`,
     blur: `/images/about/${base}-blur.webp`,
   });
-  // AE hero is an auto-cycling slideshow; VN keeps a single image.
+  // Both heroes are auto-cycling 3:1 slideshows.
+  // VN uses its own dedicated advisor/client banners (3:1, same scheme as `about`).
+  const vnHeroImg = (base: string) => ({
+    src: `/images/hero/vn/${base}-medium.webp`,
+    srcSet: `/images/hero/vn/${base}-thumb.webp 600w, /images/hero/vn/${base}-medium.webp 1200w, /images/hero/vn/${base}.webp 2000w`,
+    blur: `/images/hero/vn/${base}-blur.webp`,
+  });
   const heroSlides = isVn
-    ? [aboutImg('hero-living-vn')]
+    ? [vnHeroImg('hero-1'), vnHeroImg('hero-2'), vnHeroImg('hero-3')]
     : [aboutImg('hero-villa-ae'), aboutImg('hero-villa-ae-2'), aboutImg('hero-villa-ae-3')];
   const whoImg = aboutImg(isVn ? 'who-consultation' : 'who-villa-ae');
   const servicesImg = aboutImg(isVn ? 'services-consultation' : 'services-villa-ae');
