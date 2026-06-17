@@ -34,6 +34,8 @@ export default function Navbar({
   // 找专家 — 双语文案（组件内处理，不改翻译文件）
   const findExpertsLabel = isVn ? 'Tìm Chuyên Gia' : 'Find Experts';
   const allExpertsLabel = isVn ? 'Tất cả chuyên gia' : 'All Experts';
+  // AE 没有独立专家数据，服务商=公司：找专家按九大服务指向公司目录；VN 指向专家
+  const expertsBase = isVn ? '/experts' : '/companies';
 
   // 空间类型 label：已有翻译则用翻译，后台新配置项直接显示 key
   const spaceLabel = (key: string) => (tr.spaces as Record<string, string>)[key] ?? key;
@@ -257,15 +259,15 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Find Experts Dropdown — VN only */}
-          {isVn && <div
+          {/* Find Experts Dropdown — AE: 服务商=公司 / VN: 专家 */}
+          <div
             className="relative"
             onMouseEnter={() => setExpertsDropdownOpen(true)}
             onMouseLeave={() => { setExpertsDropdownOpen(false); setHoveredCategory(null); }}
           >
             <Link
-              href="/experts"
-              onClick={() => { setExpertsDropdownOpen(false); handleClick('/experts'); }}
+              href={expertsBase}
+              onClick={() => { setExpertsDropdownOpen(false); handleClick(expertsBase); }}
               className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
             >
               {findExpertsLabel}
@@ -277,7 +279,7 @@ export default function Navbar({
             >
               <div ref={dropdownPanelRef} className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
                 <div className="border-b border-stone-200 px-6 py-3 bg-stone-50">
-                  <Link href="/experts" onClick={() => handleClick('/experts')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
+                  <Link href={expertsBase} onClick={() => handleClick(expertsBase)} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
                     {allExpertsLabel} {'>'}
                   </Link>
                 </div>
@@ -322,8 +324,8 @@ export default function Navbar({
                               {cat.subs.map((svc) => (
                                 <li key={svc}>
                                   <Link
-                                    href={`/experts?service=${encodeURIComponent(svc)}`}
-                                    onClick={() => handleClick(`/experts?service=${encodeURIComponent(svc)}`)}
+                                    href={`${expertsBase}?service=${encodeURIComponent(svc)}`}
+                                    onClick={() => handleClick(`${expertsBase}?service=${encodeURIComponent(svc)}`)}
                                     className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
                                   >
                                     {svc}
@@ -339,7 +341,7 @@ export default function Navbar({
                 </div>
               </div>
             </div>
-          </div>}
+          </div>
 
           {/* Materials Dropdown — VN 站隐藏供应商/材料导航 */}
           {!isVn && (
@@ -504,10 +506,10 @@ export default function Navbar({
               )}
             </div>
 
-            {/* Mobile Find Experts — VN only */}
-            {isVn && <div className="py-2">
+            {/* Mobile Find Experts — AE: 公司 / VN: 专家 */}
+            <div className="py-2">
               <div className="flex items-center justify-between">
-                <Link href="/experts" onClick={() => handleClick('/experts')} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
+                <Link href={expertsBase} onClick={() => handleClick(expertsBase)} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
                   {findExpertsLabel}
                 </Link>
                 <button onClick={() => setExpertsDropdownOpen(!expertsDropdownOpen)} className="p-1 text-[#2c2c2c]/60 hover:text-[#2c2c2c] transition">
@@ -517,7 +519,7 @@ export default function Navbar({
               {expertsDropdownOpen && (
                 <div className="mt-3 pl-4 space-y-4">
                   <div>
-                    <Link href="/experts" onClick={() => handleClick('/experts')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
+                    <Link href={expertsBase} onClick={() => handleClick(expertsBase)} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
                       {allExpertsLabel} {'>'}
                     </Link>
                   </div>
@@ -527,7 +529,7 @@ export default function Navbar({
                       <div key={cat.name} className="py-1">
                         <p className="text-xs font-semibold text-stone-500 mb-1">{cat.name}</p>
                         {cat.subs.map((svc: string) => (
-                          <Link key={svc} href={`/experts?service=${encodeURIComponent(svc)}`} onClick={() => handleClick(`/experts?service=${encodeURIComponent(svc)}`)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
+                          <Link key={svc} href={`${expertsBase}?service=${encodeURIComponent(svc)}`} onClick={() => handleClick(`${expertsBase}?service=${encodeURIComponent(svc)}`)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
                             {svc}
                           </Link>
                         ))}
@@ -536,7 +538,7 @@ export default function Navbar({
                   </div>
                 </div>
               )}
-            </div>}
+            </div>
 
             {/* Mobile Materials — VN 站隐藏供应商/材料导航 */}
             {!isVn && (
