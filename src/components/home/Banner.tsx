@@ -14,9 +14,8 @@ const AE_HERO_IMAGES = [
 ];
 
 const VN_HERO_IMAGES = [
-  '/images/hero/vn/hero-1.webp',
-  '/images/hero/vn/hero-2.webp',
-  '/images/hero/vn/hero-3.webp',
+  '/images/hero/vn/home-1.webp',
+  '/images/hero/vn/home-2.webp',
 ];
 
 const GCC_PHONE_OPTIONS = [
