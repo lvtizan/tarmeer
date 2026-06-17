@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import AdminSelect from '@/components/ui/AdminSelect';
-import { MapPin, ExternalLink, X, ClipboardList, Trash2 } from 'lucide-react';
+import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download } from 'lucide-react';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface VisitRecord {
@@ -29,6 +29,15 @@ interface PhotoEntry {
   lat?: number;
   lng?: number;
   timestamp?: string;
+}
+
+interface AttachmentEntry {
+  url: string;
+  name?: string;
+  type?: string;
+  size?: number;
+  field_key?: string;
+  uploaded_at?: string;
 }
 
 interface BindCandidate {
@@ -53,8 +62,7 @@ interface VisitRecordDetail extends VisitRecord {
   filled_by?: string | null;  // 公开问卷填写人（非必填）
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   location_pin?: any;  // { lat, lng, address }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  attachments?: any;
+  attachments?: string | AttachmentEntry[] | null;
   photos?: string | PhotoEntry[] | null;
 }
 
@@ -87,6 +95,24 @@ function svcAreaToLine(a: SvcArea): string {
   }).filter(Boolean);
   const tail = parts.join('; ');
   return tail ? `${a.emirate} — ${tail}` : a.emirate;
+}
+
+// 解析附件 JSON（兼容字符串 / 已解析数组），过滤无 url 的脏数据
+function parseAttachments(raw: unknown): AttachmentEntry[] {
+  if (!raw) return [];
+  let obj: unknown = raw;
+  if (typeof raw === 'string') { try { obj = JSON.parse(raw); } catch { return []; } }
+  if (!Array.isArray(obj)) return [];
+  return (obj as AttachmentEntry[]).filter(a => a && typeof a.url === 'string' && a.url.length > 0);
+}
+
+function formatBytes(bytes?: number): string {
+  if (!bytes || bytes <= 0) return '';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 interface EditLog {
@@ -527,13 +553,67 @@ function AdminVisitRecordsContent() {
               );
             })()}
 
+            {/* Attachments — 问卷上传的文件（图片/PDF/文档）。后端存于 company_interviews.attachments */}
+            {(() => {
+              const attachments = parseAttachments(detail.attachments);
+              if (attachments.length === 0) return null;
+              return (
+                <div className="bg-white rounded-xl border border-stone-200 p-5">
+                  <h2 className="text-xs font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-3">
+                    {t('Attachments', '附件')} ({attachments.length})
+                  </h2>
+                  <div className="space-y-2">
+                    {attachments.map((att, i) => {
+                      const isImage = (att.type || '').startsWith('image/');
+                      const name = att.name || att.url.split('/').pop() || `file-${i + 1}`;
+                      return (
+                        <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50/60">
+                          {isImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={att.url}
+                              alt={name}
+                              onClick={() => setLightboxUrl(att.url)}
+                              className="w-10 h-10 rounded-md object-cover shrink-0 border border-stone-200 cursor-pointer hover:opacity-80 transition"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-md bg-amber-50 shrink-0 flex items-center justify-center border border-amber-100">
+                              <FileText className="w-5 h-5 text-[#b8864a]" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#2c2c2c] truncate">{name}</p>
+                            <p className="text-xs text-stone-400">
+                              {formatBytes(att.size)}
+                              {att.field_key ? `${att.size ? ' · ' : ''}${att.field_key}` : ''}
+                            </p>
+                          </div>
+                          <a
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-[#b8864a] hover:underline"
+                            title={t('Open / Download', '打开 / 下载')}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">{t('Open', '打开')}</span>
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             {!schemaLoaded ? (
               <div className="flex justify-center py-4"><Spinner /></div>
             ) : activeSchema.map(section => {
               const sectionData = parseSection(detail[section.key as keyof VisitRecordDetail]);
               const hasAnyData = section.fields.some(f => {
                 const v = sectionData[f.key];
-                return v && (Array.isArray(v) ? v.length > 0 : v !== '');
+                const o = String(sectionData[`${f.key}__other`] ?? '').trim();
+                return !!o || (v && (Array.isArray(v) ? v.length > 0 : v !== ''));
               });
               if (!hasAnyData) return null;
               return (
@@ -544,12 +624,20 @@ function AdminVisitRecordsContent() {
                   <div className="divide-y divide-stone-50">
                     {section.fields.map(field => {
                       const val = sectionData[field.key];
-                      const isEmpty = !val || (Array.isArray(val) ? val.length === 0 : val === '');
-                      if (isEmpty) return null;
+                      const otherVal = String(sectionData[`${field.key}__other`] ?? '').trim();
+                      const valEmpty = !val || (Array.isArray(val) ? val.length === 0 : val === '');
+                      if (valEmpty && !otherVal) return null;
                       return (
                         <div key={field.key} className="flex items-start gap-4 px-5 py-3.5">
                           <div className="w-28 sm:w-28 sm:w-52 flex-shrink-0 text-sm text-stone-600 pt-0.5 leading-snug">{field.label}</div>
-                          <div className="flex-1 min-w-0"><FieldValue value={val} /></div>
+                          <div className="flex-1 min-w-0">
+                            {!valEmpty && <FieldValue value={val} />}
+                            {otherVal && (
+                              <p className="mt-1 text-sm text-stone-700 break-words">
+                                <span className="text-stone-400">{t('Other', '其他')}: </span>{otherVal}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

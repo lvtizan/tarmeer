@@ -220,13 +220,14 @@ function ProfileCompanyDetailContent() {
       const sd = parseSection(linkedInterview[section.key]);
       for (const field of section.fields) {
         const v = sd[field.key];
-        if (v && !(Array.isArray(v) && v.length === 0)) {
-          idx[field.key] = Array.isArray(v) ? v.join('、') : String(v);
-        }
+        const other = String(sd[`${field.key}__other`] ?? '').trim();
+        let display = (v && !(Array.isArray(v) && v.length === 0)) ? (Array.isArray(v) ? v.join('、') : String(v)) : '';
+        if (other) display = display ? `${display} — ${t('Other', '其他')}: ${other}` : `${t('Other', '其他')}: ${other}`;
+        if (display) idx[field.key] = display;
       }
     }
     return idx;
-  }, [linkedInterview, surveySchema]);
+  }, [linkedInterview, surveySchema, t]);
 
   // Interview fields that have no direct profile counterpart — shown as extra rows
   const interviewOnlyRows = useMemo(() => {
