@@ -8,6 +8,7 @@ import FilterSidebar from '@/components/shared/FilterSidebar';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useServices } from '@/hooks/useServices';
+import { companyHasService } from '@/lib/serviceCategories';
 import type { Company } from '@/lib/companyData';
 import { getCompanyTypeLabel } from '@/lib/companyData';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '@/lib/imageCleanup';
@@ -249,7 +250,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
       if (selectedCity && company.city !== selectedCity) return false;
       if (selectedType && company.companyType !== selectedType) return false;
       if (selectedStyles.length > 0 && !selectedStyles.some((s) => company.styles.includes(s))) return false;
-      if (selectedServices.length > 0 && !selectedServices.some((s) => company.services.includes(s))) return false;
+      if (selectedServices.length > 0 && !selectedServices.some((s) => companyHasService(company.services, s))) return false;
       if (foundedRange) {
         const [min, max] = foundedRange.split('-').map(Number);
         if (max) {
