@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, MapPin, BadgeCheck } from 'lucide-react';
 import type { Company } from '../../lib/companyData';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '../../lib/imageCleanup';
@@ -62,8 +62,17 @@ function FeaturedCompanyGrid({ companies }: { companies: Company[] }) {
           className="group flex flex-col overflow-hidden rounded-[20px] border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_18px_40px_rgba(28,25,23,0.08)]">
           <StudioImage company={company} className="aspect-video w-full" />
           <div className="flex flex-col p-4">
-            <h4 className="font-serif font-semibold text-[18px] leading-tight text-[#1c1917] transition group-hover:text-[#b8864a] line-clamp-1">
-              {toDisplayName(company.name)}
+            <h4 className="flex items-center gap-1.5 font-serif font-semibold text-[18px] leading-tight text-[#1c1917] transition group-hover:text-[#b8864a]">
+              {company.isSigned && (
+                <span className="shrink-0 inline-flex items-center px-1.5 py-[2px] rounded bg-gradient-to-b from-[#d4a853] to-[#b8864a] text-white text-[10px] font-bold tracking-wider leading-none">Gold</span>
+              )}
+              {company.isCertified && (
+                <span className="shrink-0 inline-flex items-center px-1.5 py-[2px] rounded bg-blue-500 text-white text-[10px] font-bold tracking-wider leading-none">✓</span>
+              )}
+              {!company.isSigned && company.isClaimed && (
+                <BadgeCheck className="h-[18px] w-[18px] shrink-0 text-[#b8864a]/70" />
+              )}
+              <span className="line-clamp-1">{toDisplayName(company.name)}</span>
             </h4>
             <div className="mt-2 flex flex-nowrap gap-1.5 overflow-hidden">
               {(company.services ?? []).slice(0, 3).map((svc) => (
