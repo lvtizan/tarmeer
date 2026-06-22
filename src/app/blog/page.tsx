@@ -55,10 +55,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-async function fetchFirstPage(): Promise<{ articles: Article[]; pagination: Pagination | null }> {
+async function fetchFirstPage(country: string): Promise<{ articles: Article[]; pagination: Pagination | null }> {
   try {
-    const res = await fetch(`${API_BASE}/articles/public?page=1&limit=12`, {
+    const res = await fetch(`${API_BASE}/articles/public?page=1&limit=12&country=${country}`, {
       next: { revalidate: 3600 },
+      headers: { 'x-country': country },
     });
     if (!res.ok) return { articles: [], pagination: null };
     const data = (await res.json()) as ArticlesResponse;
@@ -73,7 +74,7 @@ async function fetchFirstPage(): Promise<{ articles: Article[]; pagination: Pagi
 
 export default async function BlogPage() {
   const c = getCountry((await headers()).get('x-country'));
-  const { articles, pagination } = await fetchFirstPage();
+  const { articles, pagination } = await fetchFirstPage(c.code);
 
   const collectionPageJsonLd = {
     '@context': 'https://schema.org',

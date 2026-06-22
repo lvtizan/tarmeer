@@ -42,7 +42,9 @@ export default function BlogClient({ initialArticles, initialPagination }: BlogC
   useEffect(() => {
     if (page === 1) return;
     setLoading(true);
-    fetch(`${API_BASE}/articles/public?page=${page}&limit=12`)
+    fetch(`${API_BASE}/articles/public?page=${page}&limit=12&country=${c.code}`, {
+      headers: { 'x-country': c.code },
+    })
       .then((res) => res.json())
       .then((data: { articles?: Article[]; pagination?: Pagination }) => {
         setArticles(data.articles ?? []);
@@ -50,7 +52,7 @@ export default function BlogClient({ initialArticles, initialPagination }: BlogC
       })
       .catch(() => setArticles([]))
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, c.code]);
 
   return (
     <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">

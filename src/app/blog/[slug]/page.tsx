@@ -37,11 +37,12 @@ export interface PublicArticle {
   reading_time?: number;
 }
 
-async function fetchArticle(slug: string): Promise<PublicArticle | null> {
+async function fetchArticle(slug: string, country: string): Promise<PublicArticle | null> {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
   try {
-    const res = await fetch(`${API_BASE}/articles/public/${slug}`, {
+    const res = await fetch(`${API_BASE}/articles/public/${slug}?country=${country}`, {
       next: { revalidate: 3600 },
+      headers: { 'x-country': country },
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { article?: PublicArticle };
@@ -69,7 +70,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const c = getCountry((await headers()).get('x-country'));
-  const article = await fetchArticle(slug);
+  const article = await fetchArticle(slug, c.code);
 
   if (!article) {
     return {
@@ -122,7 +123,7 @@ export default async function BlogDetailPage({
 }) {
   const { slug } = await params;
   const c = getCountry((await headers()).get('x-country'));
-  const article = await fetchArticle(slug);
+  const article = await fetchArticle(slug, c.code);
 
   if (!article) {
     notFound();

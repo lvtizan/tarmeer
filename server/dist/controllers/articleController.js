@@ -209,11 +209,12 @@ async function getPublicArticles(req, res) {
 async function getPublicArticleBySlug(req, res) {
     try {
         const { slug } = req.params;
+        const country = req.country || 'ae';
         const [rows] = await database_1.default.execute(`SELECT a.*, cp.company_name, cp.slug AS company_slug, cp.logo_url
        FROM articles a
        LEFT JOIN company_profiles cp ON a.company_profile_id = cp.id
-       WHERE a.slug = ? AND a.status = 'published'
-       LIMIT 1`, [slug]);
+       WHERE a.slug = ? AND a.status = 'published' AND a.country = ?
+       LIMIT 1`, [slug, country]);
         const article = rows[0];
         if (!article) {
             return res.status(404).json({ error: 'Article not found.' });

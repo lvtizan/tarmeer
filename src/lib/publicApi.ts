@@ -400,11 +400,11 @@ export interface PublicProjectDetailData {
   siblings: Array<{ id: number; title: string; slug: string }>;
 }
 
-export async function fetchPublicProjectDetail(companySlug: string, projectSlug: string): Promise<PublicProjectDetailData> {
-  return request(`/companies/${companySlug}/projects/${projectSlug}`);
+export async function fetchPublicProjectDetail(companySlug: string, projectSlug: string, country?: string): Promise<PublicProjectDetailData> {
+  return request(`/companies/${companySlug}/projects/${projectSlug}`, country);
 }
 
-export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, tag?: string): Promise<{
+export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, tag?: string, country?: string): Promise<{
   projects: PortfolioProject[];
   pagination: { page: number; limit: number; total: number };
 }> {
@@ -413,7 +413,7 @@ export async function fetchPortfolioFeed(page = 1, limit = 30, seed?: number, ta
   const result = await request<{
     projects: PortfolioProject[];
     pagination: { page: number; limit: number; total: number };
-  }>(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}${tagParam}`);
+  }>(`/companies/portfolio?page=${page}&limit=${limit}${seedParam}${tagParam}`, country);
   // Normalize AI-tagged image objects to strings: [{url, ai_tags}] -> ["url"]
   result.projects = (result.projects || []).map((p) => ({
     ...p,

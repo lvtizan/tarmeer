@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug: companySlug, projectSlug } = await params;
   const c = getCountry((await headers()).get('x-country'));
   try {
-    const data = await fetchPublicProjectDetail(companySlug, projectSlug);
+    const data = await fetchPublicProjectDetail(companySlug, projectSlug, c.code);
     const { project, company } = data;
 
     const tagPool: string[] = [];
@@ -106,7 +106,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
   let initialData: Awaited<ReturnType<typeof fetchPublicProjectDetail>> | null = null;
   try {
-    initialData = await fetchPublicProjectDetail(companySlug, projectSlug);
+    initialData = await fetchPublicProjectDetail(companySlug, projectSlug, c.code);
   } catch {
     notFound();
   }

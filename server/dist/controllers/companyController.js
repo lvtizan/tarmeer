@@ -129,6 +129,9 @@ async function getPortfolioFeed(req, res) {
         const offset = (page - 1) * limit;
         const seed = parseInt(req.query.seed, 10) || Math.floor(Math.random() * 1000000);
         const tagFilter = typeof req.query.tag === 'string' ? req.query.tag.trim() : '';
+        // 国家隔离：项目按所属公司国家过滤（query 优先，回退 x-country header，再回退 ae）
+        const countryQP = typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null;
+        const country = countryQP || req.country || 'ae';
         // Build project-level tag pre-filter clause (used as coarse filter; image-level match done below)
         const safeTag = tagFilter.replace(/['"\\]/g, '');
         const tagClause = tagFilter ? `AND JSON_CONTAINS(p.tags, '"${safeTag}"')` : '';
@@ -143,12 +146,13 @@ async function getPortfolioFeed(req, res) {
       FROM projects p
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
+        AND cp.country = ?
         AND p.is_portfolio_hidden = 0
         AND p.images IS NOT NULL AND p.images != '[]'
         ${tagClause}
       ORDER BY RAND(${Number(seed)})
       LIMIT ${Number(limit)} OFFSET ${Number(offset)}
-    `);
+    `, [country]);
         const registeredProjects = rows.flatMap(row => {
             const allEntries = extractImageEntries(row.images);
             let tags = [];
@@ -193,17 +197,30 @@ async function getPortfolioFeed(req, res) {
         uc.logo_url, uc.city, uc.portfolio_images
       FROM uae_companies uc
       WHERE uc.is_active = 1
+        AND uc.country = ?
         AND uc.portfolio_images IS NOT NULL
         AND uc.portfolio_images != '[]'
         AND uc.portfolio_images != ''
       ORDER BY uc.weight_score DESC
       LIMIT 30
-    `);
+    `, [country]);
         const directoryProjects = dirRows.flatMap(row => {
             let categories = {};
             try {
                 const parsed = typeof row.portfolio_images === 'string' ? JSON.parse(row.portfolio_images) : row.portfolio_images;
-                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                if (Array.isArray(parsed)) {
+                    // VN 扁平数组格式：[{url, category}, ...] → 按 category 分组成 {catName: [{url}]}
+                    for (const item of parsed) {
+                        if (!item || typeof item !== 'object' || !item.url)
+                            continue;
+                        const catName = typeof item.category === 'string' && item.category.trim() ? item.category.trim() : 'Portfolio';
+                        if (!categories[catName])
+                            categories[catName] = [];
+                        categories[catName].push(item);
+                    }
+                }
+                else if (parsed && typeof parsed === 'object') {
+                    // AE 对象格式：{catName: [{url,title}] | {items,...}}
                     categories = parsed;
                 }
             }
@@ -256,9 +273,10 @@ async function getPortfolioFeed(req, res) {
       SELECT COUNT(*) as total FROM projects p
       JOIN company_profiles cp ON p.company_profile_id = cp.id
       WHERE cp.status = 'approved' AND cp.deleted_at IS NULL AND p.deleted_at IS NULL
+        AND cp.country = ?
         AND p.images IS NOT NULL AND p.images != '[]'
         ${tagClause}
-    `);
+    `, [country]);
         const registeredTotal = countResult[0]?.total || 0;
         res.json({
             projects: paginatedProjects,
@@ -308,6 +326,11 @@ async function getPublicProjectDetail(req, res) {
         if (!company) {
             return res.status(404).json({ error: 'Company not found' });
         }
+        // 国家隔离：跨国家访问项目详情按 404 处理（VN 不得看 AE 项目，反之亦然）
+        const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
+        if (company.country && company.country !== reqCountry) {
+            return res.status(404).json({ error: 'Company not found' });
+        }
         // Find project by slug
         let project = null;
         if (companySource === 'registered') {
@@ -344,7 +367,18 @@ async function getPublicProjectDetail(req, res) {
                     const parsed = typeof ucRow.portfolio_images === 'string'
                         ? JSON.parse(ucRow.portfolio_images)
                         : ucRow.portfolio_images;
-                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    if (Array.isArray(parsed)) {
+                        // VN 扁平数组格式：[{url, category}, ...] → 按 category 分组
+                        for (const item of parsed) {
+                            if (!item || typeof item !== 'object' || !item.url)
+                                continue;
+                            const catName = typeof item.category === 'string' && item.category.trim() ? item.category.trim() : 'Portfolio';
+                            if (!categories[catName])
+                                categories[catName] = [];
+                            categories[catName].push(item);
+                        }
+                    }
+                    else if (parsed && typeof parsed === 'object') {
                         categories = parsed;
                     }
                 }

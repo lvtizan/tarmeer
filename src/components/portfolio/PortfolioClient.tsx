@@ -471,7 +471,7 @@ export default function PortfolioClient() {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      const result = await fetchPortfolioFeed(page, 12, seedRef.current, activeTag || undefined);
+      const result = await fetchPortfolioFeed(page, 12, seedRef.current, activeTag || undefined, c.code);
       setProjects(prev => [...prev, ...result.projects]);
       setHasMore(result.projects.length === 12);
       setPage(prev => prev + 1);
@@ -481,7 +481,7 @@ export default function PortfolioClient() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [page, loading, hasMore, activeTag]);
+  }, [page, loading, hasMore, activeTag, c.code]);
 
   useEffect(() => { if (!loadedRef.current) { loadedRef.current = true; loadMore(); } }, [activeTag]);
 

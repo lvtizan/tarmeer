@@ -57,14 +57,14 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
   useEffect(() => {
     if (!companySlug || !projectSlug) return;
     window.scrollTo(0, 0);
-    fetchPublicProjectDetail(companySlug, projectSlug)
+    fetchPublicProjectDetail(companySlug, projectSlug, country.code)
       .then((result) => {
         setData(result);
         const len = result.project.images.length;
         setCurrentIndex((i) => (len > 0 ? Math.min(Math.max(0, i), len - 1) : 0));
       })
       .catch(() => {});
-  }, [companySlug, projectSlug]);
+  }, [companySlug, projectSlug, country.code]);
 
   useEffect(() => { setCurrentIndex(0); }, [projectSlug]);
 

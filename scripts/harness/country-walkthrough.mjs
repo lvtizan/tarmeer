@@ -502,6 +502,60 @@ console.log('[UC20] VN 专家：注册→资料→审核→认证→电话 revea
   }
 }
 
+// ─── UC21: 读侧国家隔离（portfolio / blog / 项目详情）────────────────────────
+// 回归保护：sitemap + 公共内容页按国家取数，AE 视图不得出现 VN 内容（反之亦然）。
+{
+  console.log('\n[UC21] 读侧国家隔离：portfolio feed / articles / 项目详情跨国家 404');
+  // 带 x-country header + ?country query 的公共读请求
+  async function readC(path, country) {
+    const sep = path.includes('?') ? '&' : '?';
+    const res = await fetch(`${API}${path}${sep}country=${country}`, { headers: { 'x-country': country } });
+    let json = null; try { json = await res.json(); } catch { /* empty */ }
+    return { status: res.status, body: json };
+  }
+  const companyCountry = (slug) => sql(`SELECT country FROM (SELECT slug, country FROM uae_companies UNION ALL SELECT slug, country FROM company_profiles) t WHERE slug=${JSON.stringify(slug)} LIMIT 1`);
+
+  // 1) portfolio feed 按国家隔离：VN 取数全为 VN 公司，AE 取数无 VN 公司
+  const pfVn = await readC('/companies/portfolio?page=1&limit=12', 'vn');
+  const pfAe = await readC('/companies/portfolio?page=1&limit=12', 'ae');
+  const vnProjects = pfVn.body?.projects || [];
+  const aeProjects = pfAe.body?.projects || [];
+  const vnLeak = vnProjects.map(p => p.companySlug).filter(s => s && companyCountry(s) === 'ae');
+  const aeLeak = aeProjects.map(p => p.companySlug).filter(s => s && companyCountry(s) === 'vn');
+  if (vnLeak.length === 0 && aeLeak.length === 0 && aeProjects.length > 0) {
+    ok(`portfolio 国家隔离（VN ${vnProjects.length} 项 / AE ${aeProjects.length} 项，无跨国家泄漏）`);
+  } else {
+    ng('portfolio 跨国家泄漏', `vnLeak=${vnLeak.slice(0,3)} aeLeak=${aeLeak.slice(0,3)} aeN=${aeProjects.length}`);
+  }
+
+  // 2) articles 按国家隔离：AE 文章全部 country=ae，VN 仅 VN 文章
+  const artAe = await readC('/articles/public?page=1&limit=50', 'ae');
+  const artVn = await readC('/articles/public?page=1&limit=50', 'vn');
+  const aeArts = artAe.body?.articles || [];
+  const vnArts = artVn.body?.articles || [];
+  const aeArtBad = aeArts.map(a => a.slug).filter(s => sql(`SELECT country FROM articles WHERE slug=${JSON.stringify(s)} LIMIT 1`) === 'vn');
+  const vnArtBad = vnArts.map(a => a.slug).filter(s => sql(`SELECT country FROM articles WHERE slug=${JSON.stringify(s)} LIMIT 1`) === 'ae');
+  if (aeArtBad.length === 0 && vnArtBad.length === 0) {
+    ok(`articles 国家隔离（AE ${aeArts.length} 篇 / VN ${vnArts.length} 篇，无跨国家泄漏）`);
+  } else {
+    ng('articles 跨国家泄漏', `aeBad=${aeArtBad.slice(0,3)} vnBad=${vnArtBad.slice(0,3)}`);
+  }
+
+  // 3) 项目详情跨国家访问 → 404（VN 公司项目用 AE 视图打开应 404）
+  if (vnProjects.length > 0) {
+    const vp = vnProjects[0];
+    const okView = await readC(`/companies/${vp.companySlug}/projects/${vp.slug}`, 'vn');
+    const crossView = await readC(`/companies/${vp.companySlug}/projects/${vp.slug}`, 'ae');
+    if (okView.status === 200 && crossView.status === 404) {
+      ok('项目详情跨国家 404（VN 项目用 AE 视图 → 404，VN 视图 → 200）');
+    } else {
+      ng('项目详情跨国家隔离', `vnView=${okView.status} aeView=${crossView.status}`);
+    }
+  } else {
+    knownBug('项目详情跨国家用例跳过', '本地无 VN portfolio 数据');
+  }
+}
+
 // ─── 清理测试数据 ────────────────────────────────────────────────────────────
 console.log('\n清理测试数据…');
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);

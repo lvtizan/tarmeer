@@ -99,7 +99,9 @@ export default function BlogDetailClient({ article }: BlogDetailClientProps) {
     if (!slug) return;
 
     const fetchRelated = () => {
-      fetch(`${API_BASE}/articles/public/${slug}/related`)
+      fetch(`${API_BASE}/articles/public/${slug}/related?country=${country.code}`, {
+        headers: { 'x-country': country.code },
+      })
         .then((res) => (res.ok ? res.json() : null))
         .then((data: { relatedCases?: RelatedCase[]; relatedArticles?: RelatedArticle[] } | null) => {
           if (!data) return;
@@ -121,7 +123,7 @@ export default function BlogDetailClient({ article }: BlogDetailClientProps) {
 
     const timeoutId = globalThis.setTimeout(fetchRelated, 600);
     return () => globalThis.clearTimeout(timeoutId);
-  }, [article.slug]);
+  }, [article.slug, country.code]);
 
   const tags = parseTags(article.tags);
   const formattedDate = new Date(article.created_at).toLocaleDateString('en-US', {

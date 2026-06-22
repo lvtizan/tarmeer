@@ -28,9 +28,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-async function fetchInitialProjects(): Promise<PortfolioProject[]> {
+async function fetchInitialProjects(country: string): Promise<PortfolioProject[]> {
   try {
-    const result = await fetchPortfolioFeed(1, 24, undefined, undefined);
+    const result = await fetchPortfolioFeed(1, 24, undefined, undefined, country);
     return result.projects;
   } catch {
     return [];
@@ -39,7 +39,7 @@ async function fetchInitialProjects(): Promise<PortfolioProject[]> {
 
 export default async function PortfolioPage() {
   const c = getCountry((await headers()).get('x-country'));
-  const projects = await fetchInitialProjects();
+  const projects = await fetchInitialProjects(c.code);
 
   const itemListJsonLd = projects.length > 0
     ? {
