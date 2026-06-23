@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Save } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { PageSpinner } from '@/components/ui/Spinner';
 import SmartImage from '@/components/ui/SmartImage';
@@ -170,141 +170,156 @@ export default function UAECompanyProjectDetailPage() {
   if (loading) return <PageSpinner />;
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
-      {/* Back button */}
-      <button
-        onClick={() => router.push(`/admin/companies/${companyId}`)}
-        className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        {t('Back to Company', '返回公司')}
-      </button>
-
-      {/* Prev / Title / Next navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => prevProject && router.push(`/admin/companies/${companyId}/projects/${prevProject.id}`)}
-          disabled={!prevProject}
-          className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-          {t('Prev', '上一个')}
-        </button>
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-stone-800">{title || t('Untitled', '未命名')}</h1>
-          <div className="flex items-center justify-center gap-2 mt-1 text-xs text-stone-400">
-            {style && <span>{style}</span>}
-            {location && <span>· {location}</span>}
+    <div className="relative">
+      {/* Sticky toolbar — spans full content width, stays on scroll */}
+      <div className="sticky top-0 z-20 -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-5 px-4 md:px-6 py-3 bg-[#faf9f7]/90 backdrop-blur border-b border-stone-200 flex items-center gap-3">
+        <div className="flex flex-1 items-center gap-3 min-w-0">
+          <button
+            onClick={() => router.push(`/admin/companies/${companyId}`)}
+            className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 shrink-0"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            {t('Back', '返回')}
+          </button>
+          <button
+            onClick={() => prevProject && router.push(`/admin/companies/${companyId}/projects/${prevProject.id}`)}
+            disabled={!prevProject}
+            className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-700 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            {t('Prev', '上一个')}
+          </button>
+        </div>
+        <div className="min-w-0 text-center px-2">
+          <h1 className="text-base md:text-lg font-bold text-stone-800 truncate">{title || t('Untitled', '未命名')}</h1>
+          <div className="flex items-center justify-center gap-2 mt-0.5 text-xs text-stone-400">
+            {style && <span className="truncate max-w-[120px]">{style}</span>}
+            {location && <span className="truncate max-w-[120px]">· {location}</span>}
             {year && <span>· {year}</span>}
             <span className={`ml-1 px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[status] || 'bg-stone-100 text-stone-600'}`}>
               {status}
             </span>
           </div>
         </div>
-        <button
-          onClick={() => nextProject && router.push(`/admin/companies/${companyId}/projects/${nextProject.id}`)}
-          disabled={!nextProject}
-          className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          {t('Next', '下一个')}
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-        </button>
+        <div className="flex flex-1 items-center justify-end gap-3 min-w-0">
+          <button
+            onClick={() => nextProject && router.push(`/admin/companies/${companyId}/projects/${nextProject.id}`)}
+            disabled={!nextProject}
+            className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-700 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+          >
+            {t('Next', '下一个')}
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-sm text-red-700">{error}</div>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-sm text-red-700 mb-5">{error}</div>
       )}
 
-      {/* Image Gallery */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-stone-500">{t('Images', '图片')} ({images.length})</h2>
-          {images.length > 1 && (
-            <span className="text-xs text-stone-400">{t('Drag to reorder · First image is the cover', '拖拽排序 · 第一张为封面')}</span>
-          )}
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {images.map((img, idx) => (
-            <div
-              key={idx}
-              draggable
-              onDragStart={() => { didDragRef.current = true; setDraggingIdx(idx); }}
-              onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (draggingIdx !== null && draggingIdx !== idx) {
-                  setImages((prev) => reorder(prev, draggingIdx, idx));
-                }
-                setDraggingIdx(null);
-                setDragOverIdx(null);
-              }}
-              onDragEnd={() => { setDraggingIdx(null); setDragOverIdx(null); setTimeout(() => { didDragRef.current = false; }, 0); }}
-              onClick={() => { if (!didDragRef.current) setLightboxIdx(idx); }}
-              className={`relative group aspect-video bg-stone-100 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-opacity ${draggingIdx === idx ? 'opacity-40' : dragOverIdx === idx ? 'ring-2 ring-[#b8864a]' : ''}`}
-            >
-              <SmartImage src={img} alt={`Image ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
-              {idx === 0 && (
-                <span className="absolute left-2 top-2 rounded-md bg-[#b8864a] px-1.5 py-0.5 text-[10px] font-semibold text-white">{t('Cover', '封面')}</span>
-              )}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="bg-black/40 rounded-full p-2">
-                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>
-                </div>
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }}
-                className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm font-bold"
-                title="Remove image"
+      {/* Two-column body: images (left) · details (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-5 items-start pb-24">
+        {/* Left: Image Gallery */}
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-stone-500">{t('Images', '图片')} ({images.length})</h2>
+            {images.length > 1 && (
+              <span className="text-xs text-stone-400">{t('Drag to reorder · First image is the cover', '拖拽排序 · 第一张为封面')}</span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 gap-3">
+            {images.map((img, idx) => (
+              <div
+                key={idx}
+                draggable
+                onDragStart={() => { didDragRef.current = true; setDraggingIdx(idx); }}
+                onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggingIdx !== null && draggingIdx !== idx) {
+                    setImages((prev) => reorder(prev, draggingIdx, idx));
+                  }
+                  setDraggingIdx(null);
+                  setDragOverIdx(null);
+                }}
+                onDragEnd={() => { setDraggingIdx(null); setDragOverIdx(null); setTimeout(() => { didDragRef.current = false; }, 0); }}
+                onClick={() => { if (!didDragRef.current) setLightboxIdx(idx); }}
+                className={`relative group aspect-video bg-stone-100 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-opacity ${draggingIdx === idx ? 'opacity-40' : dragOverIdx === idx ? 'ring-2 ring-[#b8864a]' : ''}`}
               >
-                ×
-              </button>
+                <SmartImage src={img} alt={`Image ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                {idx === 0 && (
+                  <span className="absolute left-2 top-2 rounded-md bg-[#b8864a] px-1.5 py-0.5 text-[10px] font-semibold text-white">{t('Cover', '封面')}</span>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="bg-black/40 rounded-full p-2">
+                    <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }}
+                  className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm font-bold"
+                  title="Remove image"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="aspect-video bg-stone-50 border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center text-stone-400 hover:text-stone-600 hover:border-stone-300 transition-colors"
+            >
+              <svg className="w-8 h-8 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+              <span className="text-xs">{t('Add Image', '添加图片')}</span>
+            </button>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleAddImages} className="hidden" />
+        </div>
+
+        {/* Right: Project Details (sticky on large screens) */}
+        <div className="lg:sticky lg:top-[84px] space-y-4">
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-4">
+            <h2 className="text-sm font-medium text-stone-500">{t('Project Details', '项目详情')}</h2>
+            <div>
+              <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Title', '标题')}</label>
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Project title', '项目标题')} className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]" />
             </div>
-          ))}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="aspect-video bg-stone-50 border-2 border-dashed border-stone-200 rounded-xl flex flex-col items-center justify-center text-stone-400 hover:text-stone-600 hover:border-stone-300 transition-colors"
-          >
-            <svg className="w-8 h-8 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            <span className="text-xs">{t('Add Image', '添加图片')}</span>
+            <div>
+              <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Description', '描述')}</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('Project description', '项目描述')} rows={5} className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] resize-y" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Style', '风格')}</label>
+                <input type="text" value={style} onChange={(e) => setStyle(e.target.value)} placeholder="e.g. Modern" className="w-full h-[50px] px-4 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Location', '位置')}</label>
+                <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Dubai" className="w-full h-[50px] px-4 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Year', '年份')}</label>
+                <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 2024" className="w-full h-[50px] px-4 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Delete button */}
+          <button onClick={() => setShowDeleteConfirm(true)} className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm text-stone-400 hover:text-red-500 transition-colors">
+            <Trash2 className="w-4 h-4" />
+            {t('Delete', '删除')}
           </button>
         </div>
-        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleAddImages} className="hidden" />
       </div>
 
-      {/* Form fields */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-4">
-        <h2 className="text-sm font-medium text-stone-500">{t('Project Details', '项目详情')}</h2>
-        <div>
-          <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Title', '标题')}</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Project title', '项目标题')} className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white" />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Description', '描述')}</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('Project description', '项目描述')} rows={4} className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white resize-y" />
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Style', '风格')}</label>
-            <input type="text" value={style} onChange={(e) => setStyle(e.target.value)} placeholder="e.g. Modern" className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white" />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Location', '位置')}</label>
-            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Dubai" className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white" />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Year', '年份')}</label>
-            <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 2024" className="w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white" />
-          </div>
-        </div>
-      </div>
-
-      {/* Delete button */}
-      <div>
-        <button onClick={() => setShowDeleteConfirm(true)} className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm text-stone-400 hover:text-stone-600 transition-colors">
-          <Trash2 className="w-4 h-4" />
-          {t('Delete', '删除')}
-        </button>
-      </div>
+      {/* Floating save button — bottom-right */}
+      <button
+        onClick={handleSave}
+        disabled={saving || !title.trim()}
+        className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2 rounded-full bg-[#b8864a] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-black/20 hover:bg-[#a07640] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        <Save className="w-4 h-4" />
+        {saving ? t('Saving...', '保存中...') : t('Save Changes', '保存更改')}
+      </button>
 
       {/* Lightbox */}
       {lightboxIdx !== null && (
@@ -342,13 +357,6 @@ export default function UAECompanyProjectDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Sticky save bar */}
-      <div className="sticky bottom-0 -mx-6 md:-mx-10 px-6 md:px-10 py-4 bg-white/90 backdrop-blur border-t border-stone-200 flex items-center justify-end">
-        <button onClick={handleSave} disabled={saving || !title.trim()} className="btn-primary px-8 disabled:opacity-50">
-          {saving ? t('Saving...', '保存中...') : t('Save Changes', '保存更改')}
-        </button>
-      </div>
     </div>
   );
 }
