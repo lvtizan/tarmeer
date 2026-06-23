@@ -38,7 +38,7 @@ export default function AboutClient() {
   // VN uses its own dedicated advisor/client banners (3:1, same scheme as `about`).
   const vnHeroImg = (base: string) => ({
     src: `/images/hero/vn/${base}-medium.webp`,
-    srcSet: `/images/hero/vn/${base}-thumb.webp 600w, /images/hero/vn/${base}-medium.webp 1200w, /images/hero/vn/${base}.webp 2000w`,
+    srcSet: `/images/hero/vn/${base}-thumb.webp 600w, /images/hero/vn/${base}-medium.webp 1200w, /images/hero/vn/${base}.webp 3000w`,
     blur: `/images/hero/vn/${base}-blur.webp`,
   });
   const heroSlides = isVn
