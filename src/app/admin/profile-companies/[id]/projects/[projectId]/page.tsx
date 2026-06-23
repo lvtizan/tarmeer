@@ -68,6 +68,16 @@ export default function AdminProjectDetailPage() {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const didDragRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const descRef = useRef<HTMLTextAreaElement>(null);
+
+  // 描述框随内容自适应高度（上限由 CSS max-h 封顶，超出则内部滚动）
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    // +2 抵消 border-box 下 1px 上下边框，避免常驻细滚动条
+    el.style.height = `${el.scrollHeight + 2}px`;
+  }, [description]);
 
   const closeLightbox = useCallback(() => setLightboxIdx(null), []);
   const lightboxPrev = useCallback(() => setLightboxIdx((i) => (i !== null && i > 0 ? i - 1 : i)), []);
@@ -319,7 +329,7 @@ export default function AdminProjectDetailPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-stone-500 block mb-1.5">{t('Description', '描述')}</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('Project description', '项目描述')} rows={5} className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] resize-y" />
+              <textarea ref={descRef} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('Project description', '项目描述')} rows={4} className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-white text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] resize-none overflow-y-auto min-h-[120px] max-h-[45vh]" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
