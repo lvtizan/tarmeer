@@ -34,6 +34,8 @@ async function authenticate(req, res, next) {
   }
 }
 
+// request_id 去重为「尽力而为的幂等」，非严格 exactly-once：并发重试可能都通过缓存检查、
+// 各自跑一遍幂等 upsert（数据不会损坏，结果一致）。如需 exactly-once 再改为先占位 request_id。
 async function cachedResponse(requestId) {
   const [rows] = await pool.execute(
     "SELECT response_json FROM partner_sync_requests WHERE request_id = ?", [requestId]);
@@ -79,7 +81,11 @@ async function handleProducts(req, res) {
     const results = [];
     for (const item of items) results.push(await upsertProduct(req.partner, item));
     const response = { results };
-    await recordRequest(req.partner.id, request_id, "products", response);
+    // 仅当全部条目成功时才缓存：若有条目校验失败，不记 request_id，
+    // 这样对方修正后用同一 request_id 重推会被重新处理，而不是拿到旧的失败结果。
+    if (results.every((r) => r.ok)) {
+      await recordRequest(req.partner.id, request_id, "products", response);
+    }
     res.json(response);
   } catch (e) {
     console.error("[partner-sync] products error", e);
