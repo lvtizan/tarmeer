@@ -108,11 +108,19 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 | Endpoint | 方法 | 用途 | 幂等键 |
 |---|---|---|---|
 | `/api/partner-sync/company` | POST | 同步企业信息 | partner 凭证（一对一） |
-| `/api/partner-sync/products` | POST | 批量 upsert 商品 + 状态同步（≤100/批，含 `status` 上/下架） | `external_id` |
+| `/api/partner-sync/products/create` | POST | 创建商品（对方"商品创建"事件调用） | `external_id` |
+| `/api/partner-sync/products/update` | POST | 更新商品 + 状态同步（对方"编辑/上架/下架"事件调用，含 `status`） | `external_id` |
 | `/api/partner-sync/products/reconcile` | POST | **（可选）** 硬删除对账（全量 ID 清单，对方能做才用） | 全量 ID 列表 |
 | `/api/partner-sync/status` | GET | 查同步/审核状态 | — |
 
-### 商品标准 schema（对方映射目标）
+### 创建 vs 更新接口（对方要求拆开，底层都是容错 upsert）
+对方系统里"商品创建"和"编辑/上下架"是不同事件，故接口形式拆成 `create` / `update` 两个，请求体 schema 完全相同。**两个接口底层走同一套按 `external_id` 的 upsert 逻辑，容错兜底**（对方 2026-06-24 要求拆开 + 容错策略已确认）：
+- `create` 遇到 `external_id` 已存在 → 当更新处理，响应 `{ "action": "updated" }`。
+- `update` 遇到 `external_id` 不存在 → 当创建处理，响应 `{ "action": "created" }`。
+- 正常情况响应 `{ "action": "created" }` / `{ "action": "updated" }` 如实告知实际动作。
+- 好处：重试、事件漏发、乱序到达都不丢数据、不报硬错，结果幂等一致。
+
+### 商品标准 schema（对方映射目标，create/update 共用）
 ```jsonc
 {
   "version": "1",
@@ -136,7 +144,8 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 ```
 响应：逐条结果，部分失败不整批回滚。
 ```jsonc
-{ "results": [ { "external_id": "...", "ok": true, "status": "pending" },
+{ "results": [ { "external_id": "...", "ok": true, "action": "created", "review_status": "pending" },
+               { "external_id": "...", "ok": true, "action": "updated", "review_status": "pending" },
                { "external_id": "...", "ok": false, "error": "title required" } ] }
 ```
 
@@ -200,6 +209,7 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 新建 `scripts/harness/partner-sync-walkthrough.mjs`，用例：
 1. 签名校验：错误签名 → 401。
 2. 商品 upsert 幂等：同 `external_id` 推两次 → 库里一条、内容为最后一次。
+2b. 容错拆分：`create` 遇已存在 id → action=updated 不报错；`update` 遇不存在 id → action=created 不报错、不丢数据。
 3. `request_id` 去重：同 request_id 重发 → 不重复入库。
 4. 状态同步（下架）：推 `status=inactive` → 上线商品隐藏、记录保留；再推 `status=active` → 恢复可见。
 4b. 对账硬删除（可选）：发不含某 ID 的清单 → 该商品 `is_deleted=1`，人工录入商品不受影响。
