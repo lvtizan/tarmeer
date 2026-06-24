@@ -29,8 +29,10 @@
 
 1. **平台定 schema，合作方做映射**：我们公布固定标准字段，对方负责把自己的数据翻译成我们的格式。我们永远只认自己的 schema，不消费对方内部结构。
 2. **按 `external_id` 幂等 upsert**：对方自己的稳定商品 ID 作为匹配键（同支付宝 `out_trade_no`）。我们只要求该 ID 在某合作方范围内唯一 + 稳定。
-3. **未知字段进 JSON 口袋**：标准字段覆盖不到的，对方塞进 `attributes{}`，我们原样存 JSON 列。
-4. **签名 + 版本 + request_id**：HMAC 签名；`version` 保证加字段不破坏老对接方；`request_id` 网络重试去重。
+   - 对方商品是 **SPU + SKU 两层**结构。**我们同步到 SPU 层**：`external_id = SPU id`，一个 SPU = 我们的一个商品。SKU 列表塞进 `attributes.skus[]` 原样存，当前目录展示不结构化（将来要展示规格/报价再扩，见 §11）。
+3. **状态同步优先于存在性对账**（对方 2026-06-24 提出，已采纳）：商品"下架"时 id 依然存在，只是状态变了。因此每个商品带 `status` 字段（`active`=上架 / `inactive`=下架），下架走正常推送通道推一条 `status=inactive`，我们**实时**隐藏上线商品但保留记录与映射。这取代了"靠每日全量 ID 清单判断下架"的笨办法（下架商品的 id 仍在清单里，对账判断不出）。全量对账（§6）降级为**可选**，仅兜底"硬删除（id 彻底消失）"，对方能做则做。
+4. **未知字段进 JSON 口袋**：标准字段覆盖不到的，对方塞进 `attributes{}`，我们原样存 JSON 列。
+5. **签名 + 版本 + request_id**：HMAC 签名；`version` 保证加字段不破坏老对接方；`request_id` 网络重试去重。
 
 ## 3. 数据流
 
@@ -48,7 +50,7 @@
 ```
 
 - 数据流方向：**Push**（合作方主动推），不做 Pull。
-- 商品粒度：**增量 upsert + 独立对账接口**（平时只推变化商品；下架走每日全量 ID 对账）。
+- 商品粒度：**增量 upsert + 状态字段同步**（平时只推变化商品；上架/下架走商品 `status` 字段实时同步；硬删除靠可选的全量对账兜底）。
 - 上线方式：**先进待审池**（首次同步需审核，后续可配置自动过/再审，详见 §7）。
 
 ## 4. 鉴权
@@ -76,10 +78,14 @@ synced_at, reviewed_at, reviewer_id
 ```
 id, partner_id, country, external_id, payload_json,
 mapped_product_id (NULL=未上线),
-status (pending|approved|rejected),
-is_deleted (对账下架标记),
+review_status (pending|approved|rejected),   ← 我方审核态
+listing_status (active|inactive),            ← 对方上架/下架态(来自推送 status 字段)
+is_deleted (硬删除对账标记),
 synced_at, reviewed_at
 UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
+
+注意：上线商品是否对外可见 = review_status=approved AND listing_status=active AND is_deleted=0。
+两个 status 维度正交：我方审核态(信不信任)与对方上下架态(他们想不想卖)互不干扰。
 ```
 
 ### 复用上线表（加来源标记，隔离人工数据）
@@ -102,8 +108,8 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 | Endpoint | 方法 | 用途 | 幂等键 |
 |---|---|---|---|
 | `/api/partner-sync/company` | POST | 同步企业信息 | partner 凭证（一对一） |
-| `/api/partner-sync/products` | POST | 批量 upsert 商品（≤100/批） | `external_id` |
-| `/api/partner-sync/products/reconcile` | POST | 对账下架（每日全量 ID 清单） | 全量 ID 列表 |
+| `/api/partner-sync/products` | POST | 批量 upsert 商品 + 状态同步（≤100/批，含 `status` 上/下架） | `external_id` |
+| `/api/partner-sync/products/reconcile` | POST | **（可选）** 硬删除对账（全量 ID 清单，对方能做才用） | 全量 ID 列表 |
 | `/api/partner-sync/status` | GET | 查同步/审核状态 | — |
 
 ### 商品标准 schema（对方映射目标）
@@ -113,13 +119,17 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
   "request_id": "uuid",
   "items": [
     {
-      "external_id": "对方商品ID(必填,稳定唯一)",
+      "external_id": "对方 SPU id(必填,稳定唯一)",
+      "status": "active",                       // active=上架 / inactive=下架,下架推此值即实时隐藏
       "title": "string",
       "description": "string",
       "category": "string",
-      "images": ["https://对方域名/a.jpg"],   // URL 数组,我方异步下载落地
+      "images": ["https://对方域名/a.jpg"],   // URL 数组,我方异步下载落地(对方加我方域名白名单)
       "sort_order": 0,
-      "attributes": { "任意对方私有字段": "原样存 JSON" }
+      "attributes": {
+        "skus": [ { "sku_id": "...", "spec": "红色/10米" } ],  // SKU 列表原样存,当前不结构化
+        "任意对方私有字段": "原样存 JSON"
+      }
     }
   ]
 }
@@ -130,11 +140,15 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
                { "external_id": "...", "ok": false, "error": "title required" } ] }
 ```
 
-### 对账 schema
+### 上架/下架（走正常 products 接口，不需独立端点）
+对方下架某商品时，在常规 `POST /products` 推送里带 `status: "inactive"`，我们实时把上线商品隐藏（`listing_status=inactive`），保留记录与映射；重新上架推 `status: "active"` 即恢复。这是处理"下架"的**主路径**。
+
+### 对账 schema（可选，仅兜底硬删除）
 ```jsonc
 { "version": "1", "request_id": "uuid", "external_ids": ["id1","id2", "..."] }
 ```
 处理：把该 partner 下 `source='partner'` 且不在 `external_ids` 里的商品标记 `is_deleted=1`（连带下线对应上线行）。
+仅用于对方系统里**彻底删除**（id 消失）的商品；日常上下架不依赖此接口。对方若评估后做不了全量清单，可不实现，硬删除商品将保持最后已知状态。
 
 ### 企业 standard schema
 ```jsonc
@@ -165,7 +179,7 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 
 ## 8. 图片处理
 
-- 对方只发 URL。落库时先存原始 URL 于 `payload_json`。
+- 对方只发 URL，并把我方服务器域名加入其图片防盗链白名单（对方 2026-06-24 确认可做）。落库时先存原始 URL 于 `payload_json`。
 - **审核通过上线时**触发：异步下载 → `scripts/gen-image-variants.mjs` 生成 4 档 WebP → `fs.chmod(0o644)` → rsync 到 portal 同名目录。
 - 数据库只存最终路径（如 `/images/partner/<partner>/<external_id>/cover.webp`），**不存二进制 BLOB**。
 - 下载失败该图跳过并记日志，不阻断其余字段上线。
@@ -187,7 +201,8 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 1. 签名校验：错误签名 → 401。
 2. 商品 upsert 幂等：同 `external_id` 推两次 → 库里一条、内容为最后一次。
 3. `request_id` 去重：同 request_id 重发 → 不重复入库。
-4. 对账下架：发不含某 ID 的清单 → 该商品 `is_deleted=1`，人工录入商品不受影响。
+4. 状态同步（下架）：推 `status=inactive` → 上线商品隐藏、记录保留；再推 `status=active` → 恢复可见。
+4b. 对账硬删除（可选）：发不含某 ID 的清单 → 该商品 `is_deleted=1`，人工录入商品不受影响。
 5. 国家桶绑定：AE 凭证推送 → 数据 country=ae，不进 VN 视图。
 6. 待审池：pending 数据公开接口查不到。
 7. 部分失败：一条缺 title → 该条 ok:false，其余成功。
