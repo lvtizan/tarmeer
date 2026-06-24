@@ -152,10 +152,11 @@ app.use((req, res, next) => {
     }
     next();
 });
-// Country context middleware — reads x-country header set by Next.js middleware
+// Country context middleware — 统一解析国家（header X-Country 优先 → ?country= → 默认 ae）。
+// 单一来源见 lib/country.js；App 无子域名走 header，admin 走 query，全部归一到 req.country。
+const country_1 = require("./lib/country");
 app.use((req, _res, next) => {
-    const h = req.headers['x-country'];
-    req.country = (typeof h === 'string' && ['ae', 'vn'].includes(h)) ? h : 'ae';
+    req.country = (0, country_1.resolveCountry)(req);
     next();
 });
 app.use(express_1.default.json({

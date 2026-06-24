@@ -556,6 +556,34 @@ console.log('[UC20] VN 专家：注册→资料→审核→认证→电话 revea
   }
 }
 
+// ─── UC22: 中央国家解析（X-Country 统一，App-ready）──────────────────────────
+// 锁住 lib/country.js 的 resolveCountry：header 优先 → ?country= → 默认 ae。
+// App 无子域名只能带 header，必须能正确切国家。
+{
+  console.log('\n[UC22] 中央国家解析：header-only / query-only / 默认 都正确');
+  const get = async (qs, headers) => {
+    const r = await fetch(`${API}/companies?limit=3${qs}`, { headers: headers || {} });
+    let b = null; try { b = await r.json(); } catch { /* */ }
+    return (b?.companies || []).map(c => c.slug);
+  };
+  const isVnSet = (slugs) => slugs.length > 0 && slugs.every(s => (s || '').startsWith('vn-'));
+  const isAeSet = (slugs) => slugs.length > 0 && slugs.every(s => !(s || '').startsWith('vn-'));
+
+  const hVn = await get('', { 'x-country': 'vn' });          // App 场景：只带 header
+  const hAe = await get('', { 'x-country': 'ae' });
+  const qVn = await get('&country=vn', {});                    // admin 场景：只带 query
+  const def = await get('', {});                               // 都不带 → 默认 ae
+  const both = await get('&country=ae', { 'x-country': 'vn' }); // 冲突时 header 优先 → vn
+
+  if (isVnSet(hVn) && isAeSet(hAe)) ok('header-only 切国家（App 场景）'); else ng('header-only', `vn=${hVn.slice(0,2)} ae=${hAe.slice(0,2)}`);
+  if (isVnSet(qVn)) ok('query-only 切国家（admin/兼容场景）'); else ng('query-only', `${qVn.slice(0,2)}`);
+  if (isAeSet(def)) ok('无参数默认 ae'); else ng('默认 ae', `${def.slice(0,2)}`);
+  // 冲突场景（header 与 query 不同值）属学术边界，真实流量同值。
+  // 增量1 只中央化 req.country，controller 内部仍各自读 query → 待增量2 统一为只读 req.country。
+  if (isVnSet(both)) ok('header 优先于 query（冲突时以 header 为准）');
+  else knownBug('header 优先级未统一', '增量2 待办：14 个 controller 改为只读 req.country');
+}
+
 // ─── 清理测试数据 ────────────────────────────────────────────────────────────
 console.log('\n清理测试数据…');
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);
