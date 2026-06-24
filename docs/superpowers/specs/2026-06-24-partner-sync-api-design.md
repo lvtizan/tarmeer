@@ -214,6 +214,27 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 }
 ```
 
+## 6.5 Plan 2 发布/扇出设计要点（2026-06-24 定，基于现网真实约束）
+
+已查实的现网约束：
+- 供应商**公开可见 = `status='approved'` AND `is_published=1`**；公开详情查询 `WHERE slug=? AND status='approved'`，**不 JOIN 用户**（NULL user 安全）。
+- `supplier_profiles` 必填：`company_name`、`slug`(UNIQUE)、`supplier_user_id`(改可空)；`origin`('china'/'dubai',默认 china)、`country`(默认 ae)、`sort_order/home_display_order/list_display_order/is_published` 有默认值。
+- `supplier_products.image_url` **NOT NULL 无默认** → 无图商品须给占位图。
+- `gen-image-variants.mjs` 读**本地文件**（sharp），远程图须先下载再跑变体。
+
+设计决策：
+
+1. **每个 (partner, country) 一行 supplier_profiles**：扇出时按 country 确保存在；slug = `slugify(company_name[该国语言]) + '-' + country + '-p' + partner_id`，撞唯一则追加短随机后缀。该行 `supplier_user_id=NULL`、`source='partner'`、`partner_id=<>`、`origin='china'`。
+2. **商品扇出 upsert 键 = (supplier_profile_id, partner_external_id)**（靠 `source='partner'` + `partner_external_id` 列定位，不依赖单值 `mapped_product_id`，因为一个 external_id 对应多国多行）。
+3. **状态映射**：
+   - `review_status=approved` → supplier_profiles `status='approved'`, `is_published=1`。
+   - `review_status=pending/rejected` → 不发布（rejected 撤下已发布的）。
+   - 商品 `listing_status=inactive` 或 `is_deleted=1` → **删除对应 live `supplier_products` 行**（supplier 仍在；supplier_products 无独立状态列）。重新上架再插回。
+4. **图片**（分两步）：
+   - **Plan 2 核心**：先用本地占位图常量填 `image_url`（满足 NOT NULL，符合"不热链"铁律）。
+   - **Plan 2b 图片管线**：审核通过时异步 下载远程 URL → 临时文件 → `gen-image-variants.mjs` → `public/images/partner/<partner_id>/<external_id>/<i>` → rsync 到 portal；DB 存路径替换占位图；下载失败保留占位、记日志。
+5. **审核触发**：Plan 2 提供最小 admin 接口 `POST /api/admin/partner-sync/products/:id/approve|reject`（+ company）翻转 `review_status` 并触发扇出/撤下；完整 admin 审核 UI = Plan 3。harness 直接打这个接口或调 service 验证。
+
 ## 7. 审核流
 
 - 首次同步（`mapped_*_id IS NULL`）：进 `pending`，admin 后台审核通过后映射上线。
