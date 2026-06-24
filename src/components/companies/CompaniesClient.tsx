@@ -279,6 +279,13 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
     });
   }, [companies, searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, selectedSpaceTypes, foundedRange]);
 
+  // 有能力筛选(space/style/service)激活时，金牌(is_signed)置顶；组内保持服务端 weight_score 原序(JS sort 稳定)
+  const sortedCompanies = useMemo(() => {
+    const hasCapabilityFilter = selectedSpaceTypes.length > 0 || selectedStyles.length > 0 || selectedServices.length > 0;
+    if (!hasCapabilityFilter) return filteredCompanies;
+    return [...filteredCompanies].sort((a, b) => Number(b.isSigned) - Number(a.isSigned));
+  }, [filteredCompanies, selectedSpaceTypes, selectedStyles, selectedServices]);
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setSelectedCity('');
@@ -544,9 +551,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
           {/* Main - Company List */}
           <div className="flex-1 min-w-0">
-            {filteredCompanies.length > 0 ? (
+            {sortedCompanies.length > 0 ? (
               <div>
-                {filteredCompanies.map((company) => (
+                {sortedCompanies.map((company) => (
                   <div key={company.id} className="relative">
                     <CompanyCard
                       company={company}
