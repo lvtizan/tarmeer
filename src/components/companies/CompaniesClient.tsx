@@ -283,7 +283,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
   const sortedCompanies = useMemo(() => {
     const hasCapabilityFilter = selectedSpaceTypes.length > 0 || selectedStyles.length > 0 || selectedServices.length > 0;
     if (!hasCapabilityFilter) return filteredCompanies;
-    return [...filteredCompanies].sort((a, b) => Number(b.isSigned) - Number(a.isSigned));
+    return [...filteredCompanies].sort((a, b) => Number(b.isSigned ?? false) - Number(a.isSigned ?? false));
   }, [filteredCompanies, selectedSpaceTypes, selectedStyles, selectedServices]);
 
   const clearAllFilters = () => {
@@ -328,13 +328,13 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
       {/* Space Type */}
       <div>
-        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.nav.spaceType}</h4>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.spaceType}</h4>
         <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
           {SPACE_TYPE_KEYS.map((key) => (
             <FilterOption
               compact={compact}
               key={key}
-              selected={selectedSpaceTypes.includes(key as string)}
+              selected={selectedSpaceTypes.includes(key)}
               onClick={() => setSelectedSpaceTypes((prev) =>
                 prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]
               )}
