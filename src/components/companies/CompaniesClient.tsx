@@ -8,7 +8,7 @@ import FilterSidebar from '@/components/shared/FilterSidebar';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useServices } from '@/hooks/useServices';
-import { companyHasService } from '@/lib/serviceCategories';
+import { companyHasService, companyHasSpaceType, SPACE_TYPE_KEYS, SPACE_TYPE_LABELS } from '@/lib/serviceCategories';
 import type { Company } from '@/lib/companyData';
 import { getCompanyTypeLabel } from '@/lib/companyData';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '@/lib/imageCleanup';
@@ -214,6 +214,10 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
     const s = searchParams.get('service');
     return s ? [s] : [];
   });
+  const [selectedSpaceTypes, setSelectedSpaceTypes] = useState<string[]>(() => {
+    const s = searchParams.get('space');
+    return s ? [s] : [];
+  });
   const [selectedType, setSelectedType] = useState<string>('');
   const [showAllStyles, setShowAllStyles] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
@@ -227,6 +231,8 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
     setSelectedServices(svc ? [svc] : []);
     const sty = searchParams.get('style');
     setSelectedStyles(sty ? [sty] : []);
+    const spc = searchParams.get('space');
+    setSelectedSpaceTypes(spc ? [spc] : []);
   }, [searchParams]);
 
   const cityOptions = useMemo(
@@ -261,6 +267,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
       if (selectedCity && company.city !== selectedCity) return false;
       if (selectedType && company.companyType !== selectedType) return false;
       if (selectedStyles.length > 0 && !selectedStyles.some((s) => company.styles.includes(s))) return false;
+      if (selectedSpaceTypes.length > 0 && !selectedSpaceTypes.some((st) => companyHasSpaceType(company.styles, st))) return false;
       if (selectedServices.length > 0 && !selectedServices.some((s) => companyHasService(company.services, s))) return false;
       if (foundedRange) {
         const [min, max] = foundedRange.split('-').map(Number);
@@ -270,7 +277,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
       }
       return true;
     });
-  }, [companies, searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, foundedRange]);
+  }, [companies, searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, selectedSpaceTypes, foundedRange]);
 
   const clearAllFilters = () => {
     setSearchQuery('');
@@ -278,12 +285,13 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
     setSelectedType('');
     setSelectedStyles([]);
     setSelectedServices([]);
+    setSelectedSpaceTypes([]);
     setFoundedRange('');
   };
 
   const hasActiveFilters = useMemo(() => {
-    return Boolean(searchQuery || selectedCity || selectedType || selectedStyles.length > 0 || selectedServices.length > 0 || foundedRange);
-  }, [searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, foundedRange]);
+    return Boolean(searchQuery || selectedCity || selectedType || selectedStyles.length > 0 || selectedServices.length > 0 || selectedSpaceTypes.length > 0 || foundedRange);
+  }, [searchQuery, selectedCity, selectedType, selectedStyles, selectedServices, selectedSpaceTypes, foundedRange]);
 
   const getFoundedLabel = (range: string) => {
     const labels: Record<string, string> = {
