@@ -14,7 +14,7 @@
 ### 验收标准（可检验）
 1. 同一商品用相同 `external_id` 推送两次，库里只有一条记录、内容为最后一次（幂等）。
 2. 对账接口收到全量 `external_id` 清单后，不在清单里的商品被标记下架，不误删人工录入的商品。
-3. AE 凭证推送的数据只落 AE 桶，绝不出现在 VN/SA 视图（国家隔离铁律）。
+3. 凭证 `countries=["ae","vn"]` 的合作方推送，扇出后 AE 视图只见英文、VN 视图只见越南语，**绝不串语言**（某语言缺失回退 `default_lang`，不回退到另一国语言）。
 4. 合作方推送的数据默认进 `pending` 待审池，未审核通过前站上不可见。
 5. 签名校验失败返回 401；批量请求部分失败时逐条返回结果，不整批回滚。
 6. `partner-sync-walkthrough.mjs` 全绿。
@@ -60,40 +60,59 @@
   - `X-Partner-Key`：公开标识。
   - `X-Timestamp`：Unix 秒，服务端校验 ±5 分钟防重放。
   - `X-Signature`：`HMAC-SHA256(secret, timestamp + rawBody)`，复用 `crmIntegrationService` 同款校验逻辑。
-- **国家桶由 `partner_accounts.country` 决定**。请求体即使带 country 也忽略，一律用凭证绑定的国家。
+- **展示国家由 `partner_accounts.countries[]` 决定**（一个合作方可发布到多个国家站，如 `["ae","vn"]`）。请求体即使带 country/国家也忽略，一律用凭证绑定的国家列表。
+- `partner_accounts.default_lang`：兜底语言（如 `en`）。某国语言译文缺失时回退到它，**绝不回退到另一个国家的语言**（国家隔离 P0 防线）。
 
 ## 5. 数据模型
 
-### 新增暂存表（保留原始推送，支持审核与回溯）
+### 凭证表
+
+**`partner_accounts`**
+```
+id, partner_key, secret_hash, company_profile_id,
+countries_json (JSON, 如 ["ae","vn"]),   ← 发布到哪些国家站
+default_lang (兜底语言, 如 'en'),
+auto_approve_updates (bool),
+status, created_at
+```
+
+### 新增暂存表（存多语言"母本"，country-agnostic；保留原始推送，支持审核与回溯）
 
 **`partner_sync_companies`**
 ```
-id, partner_id, country, payload_json,
-mapped_company_id (NULL=未上线),
+id, partner_id, payload_json (多语言母本),
 status (pending|approved|rejected),
 synced_at, reviewed_at, reviewer_id
 ```
 
 **`partner_sync_products`**
 ```
-id, partner_id, country, external_id, payload_json,
-mapped_product_id (NULL=未上线),
+id, partner_id, external_id, payload_json (多语言母本),
 review_status (pending|approved|rejected),   ← 我方审核态
 listing_status (active|inactive),            ← 对方上架/下架态(来自推送 status 字段)
 is_deleted (硬删除对账标记),
 synced_at, reviewed_at
 UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 
-注意：上线商品是否对外可见 = review_status=approved AND listing_status=active AND is_deleted=0。
-两个 status 维度正交：我方审核态(信不信任)与对方上下架态(他们想不想卖)互不干扰。
+注意：母本不带 country，审核通过上线时按 partner.countries[] 扇出（见下）。
 ```
+
+### 上线时按国家"扇出"（兼容现有 per-country 单语言架构 + 隔离铁律）
+
+审核通过后，对 `partner.countries[]` 里**每个国家**各落一行 `supplier_products`：
+- 该行 `country` = 目标国家，文本取该国语言（AE 行存 `en`、VN 行存 `vi`）；缺该语言则回退 `default_lang`。
+- `source='partner'`、`partner_external_id=external_id`、`partner_country='<该国>'`。
+- 展示层不变：AE 视图查 AE 行（永远英文）、VN 视图查 VN 行（永远越南语），**不串语言**。
+- 更新/上下架/删除传播到该商品的**所有国家副本**。
+
+可见 = `review_status=approved AND listing_status=active AND is_deleted=0`。两个 status 维度正交（我方信任态 vs 对方上下架态）。
 
 ### 复用上线表（加来源标记，隔离人工数据）
 
 - `supplier_profiles` / `supplier_products` 各加：
   - `source` ENUM('manual','partner') DEFAULT 'manual'
   - `partner_external_id` VARCHAR NULL（仅 partner 来源填）
-- upsert/对账只作用于 `source='partner'` 的行，**绝不触碰人工录入的数据**。
+- upsert/对账/扇出只作用于 `source='partner'` 的行，**绝不触碰人工录入的数据**。
 
 ### 幂等去重表
 
@@ -121,17 +140,24 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 - 好处：重试、事件漏发、乱序到达都不丢数据、不报硬错，结果幂等一致。
 
 ### 商品标准 schema（对方映射目标，create/update 共用）
+**多语言约定**：文本字段用「语言码→文本」对象。需提供凭证 `countries[]` 对应语言（AE→`en`、VN→`vi`、SA→`ar`）。某字段缺某语言 → 回退 `default_lang`。语言中立字段（phone/website/whatsapp/image URL）保持普通字符串。
+
 ```jsonc
 {
   "version": "1",
   "request_id": "uuid",
+  "default_lang": "en",                       // 本批兜底语言
   "items": [
     {
       "external_id": "对方 SPU id(必填,稳定唯一)",
       "status": "active",                       // active=上架 / inactive=下架,下架推此值即实时隐藏
-      "title": "string",
-      "description": "string",
-      "category": "string",
+      "title":       { "en": "...", "vi": "..." },
+      "description": { "en": "...", "vi": "..." },
+      "category_id": "对方叶子分类稳定ID(可选,防改名)",
+      "category_path": {                        // 3 级分类全路径,按语言分组
+        "en": ["Consumer Electronics", "Computers & Office", "Projectors"],
+        "vi": ["Điện tử tiêu dùng", "Máy tính & Văn phòng", "Máy chiếu"]
+      },
       "images": ["https://对方域名/a.jpg"],   // URL 数组,我方异步下载落地(对方加我方域名白名单)
       "sort_order": 0,
       "attributes": {
@@ -163,16 +189,17 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 ```jsonc
 {
   "version": "1", "request_id": "uuid",
+  "default_lang": "en",
   "company": {
-    "company_name": "string",
-    "description": "string",
-    "contact_phone": "string",
+    "company_name": { "en": "...", "vi": "..." },
+    "description":   { "en": "...", "vi": "..." },
+    "store_address": { "en": "...", "vi": "..." },
+    "categories":    { "en": ["..."], "vi": ["..."] },
+    "contact_phone": "string",      // 语言中立,普通字符串
     "website": "string",
     "whatsapp": "string",
-    "store_address": "string",
     "logo_url": "https://...",
     "cover_image_url": "https://...",
-    "categories": ["..."],
     "attributes": { "...": "..." }
   }
 }
@@ -213,7 +240,7 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 3. `request_id` 去重：同 request_id 重发 → 不重复入库。
 4. 状态同步（下架）：推 `status=inactive` → 上线商品隐藏、记录保留；再推 `status=active` → 恢复可见。
 4b. 对账硬删除（可选）：发不含某 ID 的清单 → 该商品 `is_deleted=1`，人工录入商品不受影响。
-5. 国家桶绑定：AE 凭证推送 → 数据 country=ae，不进 VN 视图。
+5. 多国扇出 + 不串语言：凭证 countries=["ae","vn"] 推一条多语言商品 → 生成 AE(en) 和 VN(vi) 两行；AE 视图取英文、VN 视图取越南语；缺某语言回退 default_lang 而非另一国语言。
 6. 待审池：pending 数据公开接口查不到。
 7. 部分失败：一条缺 title → 该条 ok:false，其余成功。
 
