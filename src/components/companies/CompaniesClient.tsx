@@ -319,6 +319,27 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
       <hr className="border-stone-100" />
 
+      {/* Space Type */}
+      <div>
+        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.nav.spaceType}</h4>
+        <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+          {SPACE_TYPE_KEYS.map((key) => (
+            <FilterOption
+              compact={compact}
+              key={key}
+              selected={selectedSpaceTypes.includes(key as string)}
+              onClick={() => setSelectedSpaceTypes((prev) =>
+                prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]
+              )}
+            >
+              {SPACE_TYPE_LABELS[key]}
+            </FilterOption>
+          ))}
+        </div>
+      </div>
+
+      <hr className="border-stone-100" />
+
       {/* Company Type */}
       {typeOptions.length > 0 && (
         <>
@@ -496,6 +517,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
               {selectedCity && <ActiveFilterChip label={selectedCity} onRemove={() => setSelectedCity('')} />}
               {selectedType && <ActiveFilterChip label={getCompanyTypeLabel(selectedType)} onRemove={() => setSelectedType('')} />}
               {foundedRange && <ActiveFilterChip label={getFoundedLabel(foundedRange)} onRemove={() => setFoundedRange('')} />}
+              {selectedSpaceTypes.map((st) => (
+                <ActiveFilterChip key={st} label={SPACE_TYPE_LABELS[st] || st} onRemove={() => setSelectedSpaceTypes((prev) => prev.filter((v) => v !== st))} />
+              ))}
               {selectedStyles.map((s) => (
                 <ActiveFilterChip key={s} label={s} onRemove={() => setSelectedStyles((prev) => prev.filter((v) => v !== s))} />
               ))}
