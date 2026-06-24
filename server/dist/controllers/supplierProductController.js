@@ -16,6 +16,17 @@ const path_1 = __importDefault(require("path"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
+function validatePrice(body) {
+    const price = Number(body.price);
+    if (!Number.isFinite(price) || price <= 0) {
+        return 'A valid price greater than 0 is required.';
+    }
+    const unit = typeof body.price_unit === 'string' ? body.price_unit.trim() : '';
+    if (unit.length === 0) {
+        return 'Price unit is required.';
+    }
+    return null; // ok
+}
 async function uploadProductImage(req, res) {
     try {
         const userId = req.supplierUser.id;
@@ -81,16 +92,19 @@ async function addProduct(req, res) {
         const profileId = await getProfileId(req.supplierUser.id);
         if (!profileId)
             return res.status(400).json({ error: 'Create your profile first.' });
-        const { title, description, category, image_url, image_urls, sort_order } = req.body;
+        const { title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from } = req.body;
         // Support multi-image: image_urls takes precedence; image_url is kept for backward compat
         const urls = Array.isArray(image_urls) && image_urls.length > 0
             ? image_urls
             : image_url ? [image_url] : [];
         if (urls.length === 0)
             return res.status(400).json({ error: 'At least one image is required.' });
+        const priceErr = validatePrice(req.body);
+        if (priceErr)
+            return res.status(400).json({ error: priceErr });
         const primaryUrl = urls[0];
         const urlsJson = JSON.stringify(urls);
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0]);
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, Number(price), String(price_unit).trim(), price_from ? 1 : 0]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         const product = created[0];
@@ -110,14 +124,17 @@ async function updateProduct(req, res) {
         if (!profileId)
             return res.status(403).json({ error: 'Forbidden.' });
         const { id } = req.params;
-        const { title, description, category, image_url, image_urls, sort_order } = req.body;
+        const { title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from } = req.body;
         const [existing] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [id, profileId]);
         if (existing.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
+        const priceErr = validatePrice(req.body);
+        if (priceErr)
+            return res.status(400).json({ error: priceErr });
         const urls = Array.isArray(image_urls) && image_urls.length > 0 ? image_urls : null;
         const primaryUrl = urls ? urls[0] : (image_url || null);
         const urlsJson = urls ? JSON.stringify(urls) : null;
-        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=? WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, id]);
+        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_unit=?, price_from=? WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, Number(price), String(price_unit).trim(), price_from ? 1 : 0, id]);
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         res.json({ product: updated[0] });
     }
