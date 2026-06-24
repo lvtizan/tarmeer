@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const c = require("../controllers/partnerSyncController");
+const router = (0, express_1.Router)();
+router.use(c.authenticate);
+router.post("/products/create", c.handleProducts);
+router.post("/products/update", c.handleProducts);
+router.post("/company", c.handleCompany);
+router.post("/products/reconcile", c.handleReconcile);
+router.get("/products/status", c.handleStatus);
+exports.default = router;
