@@ -6,6 +6,8 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { ScreenSpinner } from '@/components/ui/Spinner';
+import { PRODUCT_UNITS, formatProductPrice } from '@/lib/supplierProductUnits';
+import { getCountry } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -25,6 +27,9 @@ interface Product {
   category?: string;
   image_url: string;
   image_urls?: string[];
+  price?: number | null;
+  price_unit?: string | null;
+  price_from?: 0 | 1 | boolean;
 }
 
 export default function SupplierProductsPage() {
@@ -55,6 +60,11 @@ export default function SupplierProductsPage() {
   const [newImageUrls, setNewImageUrls] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+  const [newUnit, setNewUnit] = useState('');          // '' = 未选；'__custom__' = 自定义
+  const [newUnitCustom, setNewUnitCustom] = useState('');
+  const [newPriceFrom, setNewPriceFrom] = useState(false);
+  const [currency, setCurrency] = useState('AED');
 
   useEffect(() => {
     fetch(`${API_BASE}/suppliers/me/products`, { headers: authHeaders() as HeadersInit })
@@ -64,8 +74,25 @@ export default function SupplierProductsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as HeadersInit })
+      .then(r => r.json())
+      .then(data => { if (data?.profile?.country) setCurrency(getCountry(data.profile.country).currency); })
+      .catch(() => {});
+  }, []);
+
+  const UNIT_OPTIONS = [
+    { value: '', label: t('Select unit', '选择单位') },
+    ...PRODUCT_UNITS.map(u => ({ value: u.value, label: u.zh === u.en ? u.zh : `${u.zh} / ${u.en}` })),
+    { value: '__custom__', label: t('Custom…', '自定义…') },
+  ];
+
   const handleAdd = async () => {
-    if (newImageUrls.length === 0) { setMsg('Please upload at least one image.'); return; }
+    if (newImageUrls.length === 0) { setMsg(t('Please upload at least one image.', '请至少上传一张图片。')); return; }
+    const priceNum = Number(newPrice);
+    if (!Number.isFinite(priceNum) || priceNum <= 0) { setMsg(t('Please enter a valid price.', '请输入有效价格。')); return; }
+    const unitVal = newUnit === '__custom__' ? newUnitCustom.trim() : newUnit;
+    if (!unitVal) { setMsg(t('Please select or enter a unit.', '请选择或填写单位。')); return; }
     setSaving(true);
     setMsg('');
     try {
@@ -77,15 +104,19 @@ export default function SupplierProductsPage() {
           description: newDesc || null,
           category: newCat || null,
           image_urls: newImageUrls,
+          price: priceNum,
+          price_unit: unitVal,
+          price_from: newPriceFrom,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setProducts(prev => [...prev, data.product]);
       setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
+      setNewPrice(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
       setAdding(false);
     } catch (err: unknown) {
-      setMsg(err instanceof Error ? err.message : 'Failed.');
+      setMsg(err instanceof Error ? err.message : t('Failed.', '失败。'));
     } finally {
       setSaving(false);
     }
@@ -145,6 +176,27 @@ export default function SupplierProductsPage() {
               <label className={labelCls}>{t('Category', '品类')}</label>
               <AdminSelect options={CATEGORY_OPTIONS} value={newCat} onChange={setNewCat} />
             </div>
+            <div>
+              <label className={labelCls}>{t('Price *', '价格 *')}</label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-stone-400 shrink-0">{currency}</span>
+                <input type="number" min="0" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)}
+                  placeholder="0.00" className={inputCls} />
+              </div>
+              <label className="mt-2 flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
+                <input type="checkbox" checked={newPriceFrom} onChange={e => setNewPriceFrom(e.target.checked)}
+                  className="rounded border-stone-300 text-[#b8864a] focus:ring-[#B8864A]/30" />
+                {t('Price is "from" (starting price)', '此为起价（from）')}
+              </label>
+            </div>
+            <div>
+              <label className={labelCls}>{t('Unit *', '单位 *')}</label>
+              <AdminSelect options={UNIT_OPTIONS} value={newUnit} onChange={setNewUnit} />
+              {newUnit === '__custom__' && (
+                <input type="text" value={newUnitCustom} onChange={e => setNewUnitCustom(e.target.value)}
+                  placeholder={t('e.g. per pallet', '如：每托盘')} className={`${inputCls} mt-2`} />
+              )}
+            </div>
             <div className="sm:col-span-2">
               <label className={labelCls}>{t('Description', '产品描述')}</label>
               <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={3}
@@ -160,7 +212,7 @@ export default function SupplierProductsPage() {
               className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
               {t('Cancel', '取消')}
             </button>
-            <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handleAdd} disabled={saving || newImageUrls.length === 0 || !(Number(newPrice) > 0) || !(newUnit === '__custom__' ? newUnitCustom.trim() : newUnit)} className="btn-primary flex items-center gap-2 disabled:opacity-50">
               <Plus className="w-4 h-4" />
               {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
             </button>
@@ -190,6 +242,7 @@ export default function SupplierProductsPage() {
                 {p.description && (
                   <p className="text-xs text-stone-500 line-clamp-2 mt-0.5">{p.description}</p>
                 )}
+                {(() => { const txt = formatProductPrice(p.price, p.price_unit ?? null, !!p.price_from, currency); return txt ? <p className="text-sm font-semibold text-[#b8864a] mt-1">{txt}</p> : null; })()}
               </div>
               <button onClick={() => handleDelete(p.id)}
                 className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
