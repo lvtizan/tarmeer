@@ -584,6 +584,24 @@ console.log('[UC20] VN 专家：注册→资料→审核→认证→电话 revea
   else knownBug('header 优先级未统一', '增量2 待办：14 个 controller 改为只读 req.country');
 }
 
+// ─── UC23: experts 公共接口 App header-only 国家解析 ─────────────────────────
+// 增量2：listPublicExperts 此前只读 ?country=、忽略 header → App 只带 header 会返回 ae。
+// 修复后无 query 时兜底 req.country（header）。
+{
+  console.log('\n[UC23] experts 列表 header-only 切国家（App 场景）');
+  const expCountries = async (headers) => {
+    const r = await fetch(`${API}/experts?limit=5`, { headers });
+    let b = null; try { b = await r.json(); } catch { /* */ }
+    return [...new Set((b?.experts || []).map(e => e.country))];
+  };
+  const vn = await expCountries({ 'x-country': 'vn' });
+  const ae = await expCountries({ 'x-country': 'ae' });
+  const vnOk = vn.length === 0 || (vn.length === 1 && vn[0] === 'vn');
+  const aeOk = ae.length === 0 || (ae.length === 1 && ae[0] === 'ae');
+  if (vnOk && aeOk && (vn.length > 0 || ae.length > 0)) ok(`experts header-only 隔离（vn=${JSON.stringify(vn)} ae=${JSON.stringify(ae)}）`);
+  else ng('experts header-only', `vn=${JSON.stringify(vn)} ae=${JSON.stringify(ae)}`);
+}
+
 // ─── 清理测试数据 ────────────────────────────────────────────────────────────
 console.log('\n清理测试数据…');
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);

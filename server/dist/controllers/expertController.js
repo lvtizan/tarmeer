@@ -117,7 +117,7 @@ function publicExpertShape(r, full) {
 // GET /api/experts/cities?country=
 async function listExpertCities(req, res) {
     try {
-        const country = VALID_COUNTRIES.has(req.query.country) ? req.query.country : 'ae';
+        const country = VALID_COUNTRIES.has(req.query.country) ? req.query.country : (VALID_COUNTRIES.has(req.country) ? req.country : 'ae');
         const [rows] = await database_1.default.execute(
             `SELECT DISTINCT city FROM expert_profiles WHERE status = 'approved' AND country = ? AND city IS NOT NULL ORDER BY city`,
             [country]
@@ -135,7 +135,7 @@ async function listPublicExperts(req, res) {
         const page = Math.max(1, parseInt(req.query.page, 10) || 1);
         const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
         const offset = (page - 1) * limit;
-        const country = VALID_COUNTRIES.has(req.query.country) ? req.query.country : 'ae';
+        const country = VALID_COUNTRIES.has(req.query.country) ? req.query.country : (VALID_COUNTRIES.has(req.country) ? req.country : 'ae');
         let where = "WHERE status = 'approved' AND country = ?";
         const params = [country];
         if (req.query.service) {
@@ -312,7 +312,7 @@ async function getMyExpertStats(req, res) {
 // GET /api/admin/experts?country=&status=&search=
 async function adminListExperts(req, res) {
     try {
-        const country = VALID_COUNTRIES.has(req.query.country) ? req.query.country : 'ae';
+        const country = VALID_COUNTRIES.has(req.query.country) ? req.query.country : (VALID_COUNTRIES.has(req.country) ? req.country : 'ae');
         let where = 'WHERE ep.country = ?';
         const params = [country];
         if (req.query.status) {
