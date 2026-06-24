@@ -62,6 +62,8 @@ const supplierAuth_1 = __importDefault(require("./routes/supplierAuth"));
 const suppliers_1 = __importDefault(require("./routes/suppliers"));
 const field_1 = __importDefault(require("./routes/field"));
 const site_1 = __importDefault(require("./routes/site"));
+const v1_1 = __importDefault(require("./routes/v1"));
+const appAuthController_1 = require("./controllers/appAuthController");
 const integration_1 = __importDefault(require("./routes/integration"));
 const integrationController_1 = require("./controllers/integrationController");
 const activityLogController_1 = require("./controllers/activityLogController");
@@ -427,6 +429,7 @@ app.use('/api/supplier/auth', supplierAuth_1.default);
 app.use('/api/suppliers', suppliers_1.default);
 app.use('/api/field', field_1.default);
 app.use('/api/site', site_1.default);
+app.use('/api/v1', v1_1.default);
 app.use('/api/integration', integration_1.default);
 app.get('/api/sso/consume', integrationController_1.ssoConsume);
 app.get('/api/public/service-categories', enumAdminController_1.getPublicServiceCategories);
@@ -560,6 +563,13 @@ app.listen(PORT, async () => {
     catch { /* non-fatal */ }
     // 启动后自动检查并补齐数据库结构
     await (0, autoMigrate_1.runAutoMigrate)();
+    // App refresh token 表（启动时建好，避免运行期并发首调建表竞态）
+    try {
+        await (0, appAuthController_1.ensureRefreshTokenTable)();
+    }
+    catch (e) {
+        console.error('[appAuth] ensureRefreshTokenTable at boot failed:', e.message);
+    }
     // Weight calculation scheduler
     scheduleWeightCalculation();
 });
