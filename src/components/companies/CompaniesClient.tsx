@@ -473,7 +473,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
           </h1>
 
           {/* 3-Step Flow */}
-          <div className="grid grid-cols-3 mb-10 max-w-xs sm:max-w-sm mx-auto">
+          <div className="grid grid-cols-3 mb-10 max-w-md sm:max-w-2xl mx-auto">
             {[
               { icon: ClipboardList, label: tr.companies.step1 },
               { icon: Users, label: tr.companies.step2 },
