@@ -92,6 +92,7 @@ async function listApprovedCompanies(req, res) {
         cp.home_display_order,
         cp.list_display_order,
         cp.is_signed,
+        cp.specialties,
         cp.cover_image_url,
         cp.establishment_year,
         (SELECT COUNT(*) FROM projects p WHERE p.company_profile_id = cp.id) as project_count
@@ -127,6 +128,11 @@ async function listApprovedCompanies(req, res) {
             const services = typeof company.services === 'string'
                 ? JSON.parse(company.services)
                 : company.services;
+            // specialties 同 services：注册装企的空间标签（Villa/Apartment…），公开列表按空间类型筛选必须返回，
+            // 否则前端 styles 为空 → 点别墅等筛选时注册金牌装企全被漏掉。
+            const specialties = company.specialties == null
+                ? []
+                : (typeof company.specialties === 'string' ? JSON.parse(company.specialties) : company.specialties);
             // Admin-pinned cover overrides natural ordering — bring it to images[0] so
             // any consumer that just takes the first image gets the chosen cover.
             const rawImages = imageMap[company.id] || [];
@@ -141,6 +147,7 @@ async function listApprovedCompanies(req, res) {
                 description: company.description,
                 city: company.city,
                 services: services,
+                specialties: specialties,
                 logo_url: company.logo_url,
                 display_order: company.display_order,
                 home_display_order: company.home_display_order || 0,
