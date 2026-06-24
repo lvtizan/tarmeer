@@ -534,4 +534,10 @@ router.post('/survey-questions', adminAuth_1.authenticateAdmin, adminAuth_1.requ
 router.patch('/survey-questions/:id', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.updateQuestion);
 router.delete('/survey-questions/:id', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.deleteQuestion);
 router.post('/survey-questions/reorder', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.reorderQuestions);
+// Partner sync admin (approve/reject products & companies)
+const partnerAdminController_1 = require("../controllers/partnerAdminController");
+router.get('/partner-sync/products', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.listPendingProducts);
+router.post('/partner-sync/products/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveProduct);
+router.post('/partner-sync/products/:id/reject', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.rejectProduct);
+router.post('/partner-sync/companies/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveCompany);
 exports.default = router;

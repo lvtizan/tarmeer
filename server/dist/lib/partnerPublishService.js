@@ -25,7 +25,10 @@ function pickArray(map, lang, defLang) {
   return map[lang] || map[defLang] || [];
 }
 function countriesOf(partner) {
-  try { const c = JSON.parse(partner.countries_json || "[]"); return Array.isArray(c) ? c : []; }
+  const raw = partner.countries_json;
+  // mysql2 may return JSON columns already parsed as native arrays
+  if (Array.isArray(raw)) return raw;
+  try { const c = JSON.parse(raw || "[]"); return Array.isArray(c) ? c : []; }
   catch { return []; }
 }
 
