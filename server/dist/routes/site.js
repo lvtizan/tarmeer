@@ -35,11 +35,11 @@ router.get('/showcase-images', async (req, res) => {
 // 首次读取时把默认值种进 system_config，超管可在后台直接编辑，前端零硬编码
 const DEFAULT_SPACE_TYPES = {
     ae: [
-        { key: 'Villa', to: '/companies?style=Villa' },
-        { key: 'Apartment', to: '/companies?style=Apartment' },
-        { key: 'Commercial', to: '/companies?style=Commercial' },
-        { key: 'Public / Institutional', to: '/companies?style=Office' },
-        { key: 'Outdoor / Landscape', to: '/companies?service=Landscape' },
+        { key: 'Villa', to: '/companies?space=villa' },
+        { key: 'Apartment', to: '/companies?space=apartment' },
+        { key: 'Commercial', to: '/companies?space=commercial' },
+        { key: 'Public / Institutional', to: '/companies?space=public' },
+        { key: 'Outdoor / Landscape', to: '/companies?space=outdoor' },
     ],
     vn: [
         { key: 'Villa', to: '/companies?service=Interior+Design' },
