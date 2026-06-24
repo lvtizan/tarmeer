@@ -6,12 +6,29 @@ const path = require("path");
 const https = require("https");
 const http = require("http");
 const { execFile } = require("child_process");
+const dns = require("dns").promises;
+const net = require("net");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..", ".."); // server/dist/lib → 项目根
-const PUBLIC_DIR = path.join(PROJECT_ROOT, "public");
 
-function download(url, dest) {
-  return new Promise((resolve, reject) => {
+function isPrivateIp(ip) {
+  if (net.isIP(ip) === 4) {
+    const p = ip.split(".").map(Number);
+    return p[0] === 10 || p[0] === 127 || p[0] === 0 || p[0] === 169 && p[1] === 254 || p[0] === 172 && p[1] >= 16 && p[1] <= 31 || p[0] === 192 && p[1] === 168;
+  }
+  const low = String(ip).toLowerCase();
+  return low === "::1" || low === "::" || low.startsWith("fc") || low.startsWith("fd") || low.startsWith("fe80");
+}
+async function assertPublicHost(url) {
+  let u; try { u = new URL(url); } catch { throw new Error("bad url"); }
+  if (!/^https?:$/.test(u.protocol)) throw new Error("scheme not allowed");
+  const { address } = await dns.lookup(u.hostname);
+  if (isPrivateIp(address)) throw new Error("private host blocked");
+}
+
+async function download(url, dest) {
+  await assertPublicHost(url);
+  return await new Promise((resolve, reject) => {
     const lib = url.startsWith("https") ? https : http;
     const file = fs.createWriteStream(dest);
     const req = lib.get(url, (res) => {
