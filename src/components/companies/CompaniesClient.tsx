@@ -326,26 +326,30 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
       <hr className="border-stone-100" />
 
-      {/* Space Type */}
-      <div>
-        <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.spaceType}</h4>
-        <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
-          {SPACE_TYPE_KEYS.map((key) => (
-            <FilterOption
-              compact={compact}
-              key={key}
-              selected={selectedSpaceTypes.includes(key)}
-              onClick={() => setSelectedSpaceTypes((prev) =>
-                prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]
-              )}
-            >
-              {SPACE_TYPE_LABELS[key]}
-            </FilterOption>
-          ))}
-        </div>
-      </div>
+      {/* Space Type — VN 公司无 specialties，隐藏避免点了永远空结果 */}
+      {!isVn && (
+        <>
+          <div>
+            <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.spaceType}</h4>
+            <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
+              {SPACE_TYPE_KEYS.map((key) => (
+                <FilterOption
+                  compact={compact}
+                  key={key}
+                  selected={selectedSpaceTypes.includes(key)}
+                  onClick={() => setSelectedSpaceTypes((prev) =>
+                    prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]
+                  )}
+                >
+                  {SPACE_TYPE_LABELS[key]}
+                </FilterOption>
+              ))}
+            </div>
+          </div>
 
-      <hr className="border-stone-100" />
+          <hr className="border-stone-100" />
+        </>
+      )}
 
       {/* Company Type */}
       {typeOptions.length > 0 && (
