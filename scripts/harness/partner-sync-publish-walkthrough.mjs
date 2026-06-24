@@ -79,6 +79,14 @@ try {
   const vis = sql(`SELECT COUNT(*) FROM supplier_profiles WHERE source='partner' AND partner_id=${PID} AND status='approved' AND is_published=1`);
   vis === "2" ? ok("UC7 供应商 approved+published 可见") : ng("UC7 可见性错", `got ${vis}`);
 
+  // UC7b 公开列表端点真的能查到该合作方供应商（不只是 DB 标志位）
+  const slug = sql(`SELECT slug FROM supplier_profiles WHERE source='partner' AND partner_id=${PID} AND country='ae' LIMIT 1`);
+  const listRes = await fetch(`${API}/suppliers/?limit=200`);
+  let listJson = null; try { listJson = await listRes.json(); } catch {}
+  const arr = listJson?.suppliers || listJson?.items || listJson?.data || [];
+  const inList = Array.isArray(arr) && arr.some((s) => s.slug === slug);
+  inList ? ok("UC7b 合作方供应商出现在公开列表端点") : ng("UC7b 公开列表查不到", `slug=${slug} count=${Array.isArray(arr) ? arr.length : "n/a"}`);
+
   await sync("POST", "/products/update", { version: "1", request_id: `${MARK}-off`, default_lang: "en",
     items: [{ external_id: `${MARK}-sku1`, status: "inactive", title: { en: "Blue Rope" } }] });
   await admin("POST", `/partner-sync/products/${stagingId}/approve`, token);

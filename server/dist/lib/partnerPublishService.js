@@ -16,8 +16,7 @@ function pickText(map, lang, defLang) {
   if (typeof map !== "object") return null;
   if (map[lang]) return map[lang];
   if (map[defLang]) return map[defLang];
-  const any = Object.values(map).find((v) => typeof v === "string" && v.trim());
-  return any || null;
+  return null; // 隔离铁律：缺目标语言/默认语言时留空，绝不回退到其它国家的语言
 }
 function pickArray(map, lang, defLang) {
   if (!map) return [];

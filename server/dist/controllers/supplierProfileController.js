@@ -60,7 +60,7 @@ async function listPublicSuppliers(req, res) {
         const category = req.query.category;
         const orderMode = req.query.order === 'home' ? 'home' : 'list';
         const displayOrderCol = orderMode === 'home' ? 'home_display_order' : 'list_display_order';
-        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND (SELECT COUNT(*) FROM supplier_projects spj WHERE spj.supplier_profile_id = sp.id AND spj.is_published = 1) > 0";
+        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND (\n  (SELECT COUNT(*) FROM supplier_projects spj WHERE spj.supplier_profile_id = sp.id AND spj.is_published = 1) > 0\n  OR (sp.source = 'partner' AND (SELECT COUNT(*) FROM supplier_products sprd WHERE sprd.supplier_profile_id = sp.id) > 0)\n)";
         const params = [];
         if (origin && (origin === 'china' || origin === 'dubai')) {
             where += ' AND sp.origin = ?';
