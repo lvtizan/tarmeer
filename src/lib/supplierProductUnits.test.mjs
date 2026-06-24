@@ -27,4 +27,12 @@ test('formatProductPrice：千分位 + 币种 + 起价 + 单位', () => {
 test('formatProductPrice：无价格返回空串（旧产品不显示价格块）', () => {
   assert.equal(formatProductPrice(null, 'SQM', false, 'AED'), '');
   assert.equal(formatProductPrice(undefined, null, false, 'AED'), '');
+  assert.equal(formatProductPrice(0, 'SQM', false, 'AED'), '');
+  assert.equal(formatProductPrice(-1, 'SQM', false, 'AED'), '');
+  assert.equal(formatProductPrice(Infinity, 'SQM', false, 'AED'), '');
+});
+
+test('formatProductPrice：en 语言用英文单位', () => {
+  assert.equal(formatProductPrice(80, 'PCS', false, 'AED', 'en'), 'AED 80 / pcs');
+  assert.equal(formatProductPrice(1200, 'SQM', true, 'AED', 'en'), 'AED 1,200 (from) / ㎡');
 });

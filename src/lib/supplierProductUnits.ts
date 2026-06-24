@@ -54,7 +54,7 @@ export function formatProductPrice(
   currency: string,
   lang: 'zh' | 'en' = 'zh',
 ): string {
-  if (price == null || Number.isNaN(Number(price))) return '';
+  if (price == null || !Number.isFinite(Number(price)) || Number(price) <= 0) return '';
   const num = Number(price);
   const amount = num.toLocaleString('en-US', { maximumFractionDigits: 2 });
   const fromTxt = from ? (lang === 'en' ? ' (from)' : ' 起') : '';
