@@ -104,7 +104,7 @@ async function addProduct(req, res) {
             return res.status(400).json({ error: priceErr });
         const primaryUrl = urls[0];
         const urlsJson = JSON.stringify(urls);
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, Number(price), String(price_unit).trim(), price_from ? 1 : 0]);
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, Number(price), price_unit.trim(), price_from ? 1 : 0]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         const product = created[0];
@@ -134,7 +134,7 @@ async function updateProduct(req, res) {
         const urls = Array.isArray(image_urls) && image_urls.length > 0 ? image_urls : null;
         const primaryUrl = urls ? urls[0] : (image_url || null);
         const urlsJson = urls ? JSON.stringify(urls) : null;
-        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_unit=?, price_from=? WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, Number(price), String(price_unit).trim(), price_from ? 1 : 0, id]);
+        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_unit=?, price_from=? WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, Number(price), price_unit.trim(), price_from ? 1 : 0, id]);
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         res.json({ product: updated[0] });
     }
