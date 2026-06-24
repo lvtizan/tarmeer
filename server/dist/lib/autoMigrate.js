@@ -420,6 +420,10 @@ const REQUIRED_COLUMNS = [
     // Supplier product multi-image + category
     { table: 'supplier_products', column: 'image_urls', type: 'JSON NULL' },
     { table: 'supplier_products', column: 'category', type: 'VARCHAR(100) NULL' },
+    // Supplier product pricing (price required at API/form layer; column nullable for legacy rows)
+    { table: 'supplier_products', column: 'price', type: 'DECIMAL(12,2) NULL' },
+    { table: 'supplier_products', column: 'price_unit', type: 'VARCHAR(32) NULL' },
+    { table: 'supplier_products', column: 'price_from', type: 'TINYINT(1) NOT NULL DEFAULT 0' },
     // Company multi-type + service area
     { table: 'company_profiles', column: 'company_types', type: 'JSON NULL' },
     { table: 'company_profiles', column: 'emirates_served', type: 'JSON NULL' },
