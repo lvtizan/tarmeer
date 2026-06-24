@@ -380,6 +380,58 @@ async function runAdminDataChecks() {
   return failures;
 }
 
+// ── 页面图片 404 巡检 ─────────────────────────────────────────────────────────
+// page_200 只证明页面 HTML 返回 200，不代表页内图片都在（作品集图缺文件 → 控制台 404，
+// 但页面靠前端兜底仍正常渲染，巡检看不见）。这里抓页面 HTML → 提取 /images、/uploads 引用
+// → 直接在服务器磁盘上验在否（路径映射同 nginx，比 HTTP HEAD 快且准）。
+const IMAGE_PAGES = ['/', '/companies', '/portfolio'];
+const IMAGE_DISK_MAP = [
+  { prefix: '/images/',  dir: '/tarmeer/tarmeer_web_portal/images/' },
+  { prefix: '/uploads/', dir: '/tarmeer/tarmeer_api/public/uploads/' },
+];
+const MAX_IMAGE_CHECK = 200;
+
+function extractImageRefs(html) {
+  const refs = new Set();
+  const re = /\/(?:images|uploads)\/[A-Za-z0-9._/-]+\.(?:png|jpe?g|webp|gif)/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) refs.add(m[0]);
+  return [...refs];
+}
+
+function imageToDiskPath(ref) {
+  for (const { prefix, dir } of IMAGE_DISK_MAP) {
+    if (ref.startsWith(prefix)) return dir + ref.slice(prefix.length);
+  }
+  return null;
+}
+
+async function runImageAssetChecks() {
+  const seen = new Set();
+  const missingRefs = [];
+  let checked = 0, capped = false;
+  for (const page of IMAGE_PAGES) {
+    const res = await fetchWithBody(`${SITE_BASE}${page}`, 12000);
+    if (res.status !== 200 || !res.body) continue;
+    for (const ref of extractImageRefs(res.body)) {
+      if (seen.has(ref)) continue;
+      seen.add(ref);
+      if (checked >= MAX_IMAGE_CHECK) { capped = true; break; }
+      const disk = imageToDiskPath(ref);
+      if (!disk) continue;
+      checked++;
+      if (!existsSync(disk)) missingRefs.push(ref);
+    }
+    if (capped) break;
+  }
+  const missing = missingRefs.length;
+  console.log(`[health-check] ${missing ? 'FAIL' : 'OK  '} [image]     检查 ${checked} 张页面图片${capped ? `(已达上限 ${MAX_IMAGE_CHECK})` : ''} — 缺失 ${missing}`);
+  if (missing === 0) return [];
+  // 单条汇总告警，避免一堆死图刷爆邮件
+  const examples = missingRefs.slice(0, 6).join('  ');
+  return [{ name: `页面图片 404 (${missing} 张)`, status: '404', error: `磁盘缺失，示例: ${examples}`, action: '' }];
+}
+
 // ── PM2 check ────────────────────────────────────────────────────────────────
 // cron 环境 PATH 极简：pm2 的 shebang (#!/usr/bin/env node) 也找不到 node。
 // 解法：用当前 node 进程自身 (process.execPath) 直接执行 pm2 的 JS 入口，完全不依赖 PATH。
@@ -476,6 +528,10 @@ async function main() {
   // 2.5 Admin 登录态数据巡检（所有 admin 页面接口 × AE/VN）
   const adminFailures = await runAdminDataChecks();
   failures.push(...adminFailures);
+
+  // 2.6 页面图片 404 巡检（page_200 抓不到的图片缺失）
+  const imageFailures = await runImageAssetChecks();
+  failures.push(...imageFailures);
 
   // 3. PM2 process checks
   // Use pm2_online entries from checklist if present, otherwise fall back to PM2_PROCESSES
