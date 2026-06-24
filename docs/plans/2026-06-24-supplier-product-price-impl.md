@@ -464,7 +464,12 @@ git commit -m "feat(supplier): 上传产品表单加价格/单位/起价(必填)
 
 ---
 
-## Task 5: 公共详情页展示价格
+## Task 5: 公共详情页展示价格 —— ❌ 已取消（2026-06-24 范围变更）
+
+> 用户补充："价格在官网供应商后台看就行，不需在前端展示。"
+> 因此**不在公共详情页（`SupplierDetailClient.tsx`）展示价格**。价格仅在供应商个人中心（Task 4，供应商自己的后台）填写与查看。本任务整体跳过，`SupplierDetailClient.tsx` 不改动。
+
+<details><summary>原 Task 5 内容（保留备查，不执行）</summary>
 
 **Files:**
 - Modify: `src/components/materials/SupplierDetailClient.tsx`
@@ -521,6 +526,8 @@ Expected: exit 0，无 TS 报错。
 git add src/components/materials/SupplierDetailClient.tsx
 git commit -m "feat(supplier): 公共详情页产品卡展示价格(按国家币种)"
 ```
+
+</details>
 
 ---
 
