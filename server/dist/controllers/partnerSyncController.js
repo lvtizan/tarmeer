@@ -22,7 +22,7 @@ async function authenticate(req, res, next) {
       "SELECT * FROM partner_accounts WHERE partner_key = ? AND status = 'active'", [key]);
     const partner = rows[0];
     if (!partner) return res.status(401).json({ error: "unknown partner" });
-    const rawBody = req.rawBody || JSON.stringify(req.body || {});
+    const rawBody = req.rawBody || "";
     if (!verify(partner.secret, ts, rawBody, sig)) {
       return res.status(401).json({ error: "invalid signature" });
     }
