@@ -97,11 +97,21 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 注意：母本不带 country，审核通过上线时按 partner.countries[] 扇出（见下）。
 ```
 
+### 实体划分（Plan 2 地基，2026-06-24 定）：合作方 = 无账号的"供应商"
+
+合作方传来的「供应商信息 + 商品」**复用现网 `supplier_profiles` + `supplier_products`**，但**不需要登录账号**——"同步过来就是供应商了"。
+
+- **关键约束改动**：`supplier_profiles.supplier_user_id` 由 `NOT NULL` 改为**可空**。合作方供应商 `supplier_user_id=NULL`。
+  - MySQL 的 UNIQUE 索引允许多个 NULL，所以大量无账号合作方供应商可共存，**无需造占位用户**。
+- **概念**：合作方（如批发市场）核心是商品目录，对应 supplier 实体，不是 company_profiles 目录条目。
+- **Plan 2 必验证**：现网供应商登录/后台查询都按 `supplier_user_id` 过滤，`NULL` 行天然不进登录流；但公开的供应商列表/详情页查询需确认不因 user_id 为空报错（顺带兜底）。
+
 ### 上线时按国家"扇出"（兼容现有 per-country 单语言架构 + 隔离铁律）
 
-审核通过后，对 `partner.countries[]` 里**每个国家**各落一行 `supplier_products`：
+审核通过后，对 `partner.countries[]` 里**每个国家**各落一组 `supplier_profiles`(该国)+ 其下 `supplier_products`：
 - 该行 `country` = 目标国家，文本取该国语言（AE 行存 `en`、VN 行存 `vi`）；缺该语言则回退 `default_lang`。
-- `source='partner'`、`partner_external_id=external_id`、`partner_country='<该国>'`。
+- supplier_profiles：`supplier_user_id=NULL`、`source='partner'`、`partner_id`、`status` 镜像审核态。
+- supplier_products：`source='partner'`、`partner_external_id=external_id`，挂对应国家的 supplier_profile。
 - 展示层不变：AE 视图查 AE 行（永远英文）、VN 视图查 VN 行（永远越南语），**不串语言**。
 - 更新/上下架/删除传播到该商品的**所有国家副本**。
 
@@ -109,9 +119,8 @@ UNIQUE KEY (partner_id, external_id)   ← 幂等 upsert 锚点
 
 ### 复用上线表（加来源标记，隔离人工数据）
 
-- `supplier_profiles` / `supplier_products` 各加：
-  - `source` ENUM('manual','partner') DEFAULT 'manual'
-  - `partner_external_id` VARCHAR NULL（仅 partner 来源填）
+- `supplier_profiles` 加：`supplier_user_id` 改可空、`source` ENUM('manual','partner') DEFAULT 'manual'、`partner_id` INT NULL、`partner_external_id` 不需要（profile 级用 partner_id）。
+- `supplier_products` 加：`source` ENUM('manual','partner') DEFAULT 'manual'、`partner_external_id` VARCHAR NULL（仅 partner 来源填）。
 - upsert/对账/扇出只作用于 `source='partner'` 的行，**绝不触碰人工录入的数据**。
 
 ### 幂等去重表
