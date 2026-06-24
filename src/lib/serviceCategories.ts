@@ -65,7 +65,7 @@ export function companyHasService(companyServices: string[], selected: string): 
 export const SPACE_TYPE_MAP: Record<string, string[]> = {
   villa: ['Villa', 'Luxury Villa', 'Townhouse'],
   apartment: ['Apartment', 'Penthouse', 'Studio'],
-  commercial: ['Retail', 'Office', 'Restaurant', 'Hotel', 'Hospitality', 'Showroom', 'Mall', 'Commercial'],
+  commercial: ['Retail', 'Office', 'Restaurant', 'Hotel', 'Hospitality', 'Showroom', 'Mall'],
   public: ['School', 'Education', 'Healthcare', 'Hospital', 'Club', 'Factory', 'ADU', 'Mixed-Use'],
   outdoor: ['Garden', 'Terrace', 'Pool', 'Fence', 'Driveway', 'Landscape'],
 };
@@ -80,7 +80,11 @@ export const SPACE_TYPE_LABELS: Record<string, string> = {
   outdoor: 'Outdoor / Landscape',
 };
 
-/** 公司 specialties 是否覆盖某空间类型（大小写不敏感 + 别名 + 关键词子串）。 */
+/**
+ * 公司 specialties 是否覆盖某空间类型（大小写不敏感 + 别名 + 关键词子串）。
+ * 注意：子串匹配依赖 specialties 为受控词表（后端导入的固定标签）。若将来 specialties
+ * 改为自由文本，需重新评估子串误命中（如 "Republic" 命中 public、"Car Pool" 命中 outdoor）。
+ */
 export function companyHasSpaceType(specialties: string[], spaceKey: string): boolean {
   const key = spaceKey.toLowerCase();
   const tags = SPACE_TYPE_MAP[key];
