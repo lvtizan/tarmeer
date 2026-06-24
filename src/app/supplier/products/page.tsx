@@ -87,6 +87,12 @@ export default function SupplierProductsPage() {
     { value: '__custom__', label: t('Custom…', '自定义…') },
   ];
 
+  const resetForm = () => {
+    setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
+    setNewPrice(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
+    setMsg('');
+  };
+
   const handleAdd = async () => {
     if (newImageUrls.length === 0) { setMsg(t('Please upload at least one image.', '请至少上传一张图片。')); return; }
     const priceNum = Number(newPrice);
@@ -112,8 +118,7 @@ export default function SupplierProductsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setProducts(prev => [...prev, data.product]);
-      setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
-      setNewPrice(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
+      resetForm();
       setAdding(false);
     } catch (err: unknown) {
       setMsg(err instanceof Error ? err.message : t('Failed.', '失败。'));
@@ -148,7 +153,7 @@ export default function SupplierProductsPage() {
         <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-[15px] font-semibold text-[#2c2c2c]">{t('New Product', '新增产品')}</h2>
-            <button onClick={() => { setAdding(false); setMsg(''); }} className="text-stone-400 hover:text-stone-600 transition p-1">
+            <button onClick={() => { setAdding(false); resetForm(); }} className="text-stone-400 hover:text-stone-600 transition p-1">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -208,7 +213,7 @@ export default function SupplierProductsPage() {
           {msg && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-2xl">{msg}</p>}
 
           <div className="flex justify-end gap-3">
-            <button onClick={() => { setAdding(false); setMsg(''); }}
+            <button onClick={() => { setAdding(false); resetForm(); }}
               className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
               {t('Cancel', '取消')}
             </button>
