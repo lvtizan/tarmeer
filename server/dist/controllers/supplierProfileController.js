@@ -79,7 +79,7 @@ async function listPublicSuppliers(req, res) {
             : `COALESCE(sp.weight_score, 0) DESC, CASE WHEN COALESCE(sp.${displayOrderCol}, 0) > 0 THEN 0 ELSE 1 END, sp.${displayOrderCol} ASC, sp.created_at DESC`;
         const [rows] = await database_1.default.query(`SELECT sp.*, su.email as user_email
        FROM supplier_profiles sp
-       JOIN supplier_users su ON su.id = sp.supplier_user_id
+       LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
        ${where}
        ORDER BY ${orderBy}
        LIMIT ${limit} OFFSET ${offset}`, params);
@@ -95,7 +95,7 @@ async function getPublicProfile(req, res) {
         const { slug } = req.params;
         const [rows] = await database_1.default.execute(`SELECT sp.*, su.email as user_email, su.full_name as user_name
        FROM supplier_profiles sp
-       JOIN supplier_users su ON su.id = sp.supplier_user_id
+       LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
        WHERE sp.slug = ? AND sp.status = 'approved' AND sp.is_published = 1`, [slug]);
         const supplier = rows[0];
         if (!supplier)
