@@ -72,6 +72,7 @@ router.post('/me/upload-license', supplierAuth_1.authenticateSupplier, profile.u
 router.post('/me/upload-image', supplierAuth_1.authenticateSupplier, upload.single('file'), products.uploadProductImage);
 router.get('/me/products', supplierAuth_1.authenticateSupplier, products.listMyProducts);
 router.post('/me/products', supplierAuth_1.authenticateSupplier, products.addProduct);
+router.post('/me/translate', supplierAuth_1.authenticateSupplier, products.translateText);
 router.put('/me/products/:id', supplierAuth_1.authenticateSupplier, products.updateProduct);
 router.delete('/me/products/:id', supplierAuth_1.authenticateSupplier, products.deleteProduct);
 router.put('/me/products-reorder', supplierAuth_1.authenticateSupplier, products.reorderProducts);

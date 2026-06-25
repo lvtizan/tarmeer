@@ -10,12 +10,14 @@ exports.addProduct = addProduct;
 exports.updateProduct = updateProduct;
 exports.deleteProduct = deleteProduct;
 exports.reorderProducts = reorderProducts;
+exports.translateText = translateText;
 const database_1 = __importDefault(require("../config/database"));
 const promises_1 = __importDefault(require("fs/promises"));
 const path_1 = __importDefault(require("path"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
+const translate_1 = require("../lib/translate");
 function validatePrice(body) {
     const price = Number(body.price);
     if (!Number.isFinite(price) || price <= 0) {
@@ -59,6 +61,24 @@ async function getProfileId(supplierUserId) {
     const [rows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE supplier_user_id = ? LIMIT 1', [supplierUserId]);
     return rows[0]?.id || null;
 }
+async function getProfileCountry(supplierUserId) {
+    const [rows] = await database_1.default.execute('SELECT country FROM supplier_profiles WHERE supplier_user_id = ? LIMIT 1', [supplierUserId]);
+    return rows[0]?.country || 'ae';
+}
+async function translateText(req, res) {
+    try {
+        const { text } = req.body;
+        if (!text || !String(text).trim()) return res.json({ translated: '' });
+        const country = await getProfileCountry(req.supplierUser.id);
+        const target = country === 'vn' ? 'vi' : 'en';
+        const translated = await translate_1.translate(String(text), target);
+        res.json({ translated });
+    }
+    catch (error) {
+        console.error('Translate error:', error);
+        res.json({ translated: req.body?.text || '' });
+    }
+}
 async function listProducts(req, res) {
     try {
         const { slug } = req.params;
@@ -92,7 +112,7 @@ async function addProduct(req, res) {
         const profileId = await getProfileId(req.supplierUser.id);
         if (!profileId)
             return res.status(400).json({ error: 'Create your profile first.' });
-        const { title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from } = req.body;
+        const { title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from, title_translated, description_translated } = req.body;
         // Support multi-image: image_urls takes precedence; image_url is kept for backward compat
         const urls = Array.isArray(image_urls) && image_urls.length > 0
             ? image_urls
@@ -104,7 +124,7 @@ async function addProduct(req, res) {
             return res.status(400).json({ error: priceErr });
         const primaryUrl = urls[0];
         const urlsJson = JSON.stringify(urls);
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, Number(price), price_unit.trim(), price_from ? 1 : 0]);
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from, title_translated, description_translated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, Number(price), price_unit.trim(), price_from ? 1 : 0, title_translated || null, description_translated || null]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         const product = created[0];
@@ -124,7 +144,7 @@ async function updateProduct(req, res) {
         if (!profileId)
             return res.status(403).json({ error: 'Forbidden.' });
         const { id } = req.params;
-        const { title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from } = req.body;
+        const { title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from, title_translated, description_translated } = req.body;
         const [existing] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [id, profileId]);
         if (existing.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
@@ -134,7 +154,7 @@ async function updateProduct(req, res) {
         const urls = Array.isArray(image_urls) && image_urls.length > 0 ? image_urls : null;
         const primaryUrl = urls ? urls[0] : (image_url || null);
         const urlsJson = urls ? JSON.stringify(urls) : null;
-        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_unit=?, price_from=? WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, Number(price), price_unit.trim(), price_from ? 1 : 0, id]);
+        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_unit=?, price_from=?, title_translated=?, description_translated=? WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, Number(price), price_unit.trim(), price_from ? 1 : 0, title_translated || null, description_translated || null, id]);
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         res.json({ product: updated[0] });
     }
