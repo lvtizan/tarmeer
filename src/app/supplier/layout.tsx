@@ -66,11 +66,13 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
   const [status, setStatus] = useState('');
   const [linkedPortals, setLinkedPortals] = useState<LinkedPortal[]>([]);
   const [switchingPortal, setSwitchingPortal] = useState('');
-  const [lang, setLang] = useState<AdminLang>(() => {
-    if (typeof window === 'undefined') return 'en';
+  // 首渲必须与 SSR 一致(服务端无 localStorage → 'en')，否则 hydration 文本不匹配(React #418)。
+  // 挂载后再用 useEffect 应用持久化语言(无保存值默认 'zh')。
+  const [lang, setLang] = useState<AdminLang>('en');
+  useEffect(() => {
     const saved = window.localStorage.getItem(SUPPLIER_LANG_KEY);
-    return saved === 'en' ? 'en' : 'zh';
-  });
+    setLang(saved === 'en' ? 'en' : 'zh');
+  }, []);
 
   const t = (en: string, zh: string) => (lang === 'zh' ? zh : en);
   const toggleLang = () => {
