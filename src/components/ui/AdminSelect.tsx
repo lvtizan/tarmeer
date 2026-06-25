@@ -18,10 +18,12 @@ interface AdminSelectProps {
   error?: boolean;
   size?: 'sm' | 'lg';
   searchable?: boolean;
+  /** 下拉项列数，默认 1。设 2 时列表用双列网格（适合选项多但文字短，如单位）。分组模式下忽略。 */
+  columns?: 1 | 2;
 }
 
 const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
-  ({ value, onChange, options, className = '', disabled, error, size = 'lg', searchable = false }, ref) => {
+  ({ value, onChange, options, className = '', disabled, error, size = 'lg', searchable = false, columns = 1 }, ref) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [mounted, setMounted] = useState(false);
@@ -73,7 +75,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
       if (!hasGroups) {
         return opts.map((opt) => (
           <button key={opt.value} type="button" onClick={() => { onChange(opt.value); setOpen(false); }}
-            className={`w-full text-left transition hover:bg-stone-50 ${itemClass} ${opt.value === value ? 'text-[#b8864a] font-medium bg-[#b8864a]/5' : opt.value === '' ? 'text-stone-400' : 'text-[#1c1917]'}`}>
+            className={`w-full text-left transition hover:bg-stone-50 ${itemClass} ${columns === 2 && (opt.value === '' || opt.value === '__custom__') ? 'col-span-2' : ''} ${opt.value === value ? 'text-[#b8864a] font-medium bg-[#b8864a]/5' : opt.value === '' ? 'text-stone-400' : 'text-[#1c1917]'}`}>
             {opt.label}
           </button>
         ));
@@ -131,7 +133,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
                 {q && filtered.length === 0 && <p className="text-xs text-stone-400 text-center py-2">No results</p>}
               </div>
             )}
-            <ul className="overflow-y-auto flex-1">
+            <ul className={`overflow-y-auto flex-1 ${columns === 2 && !hasGroups ? 'grid grid-cols-2 gap-x-1' : ''}`}>
               {renderOptions(filtered, `${size === 'sm' ? 'px-3 py-2 text-sm' : 'px-5 py-3 text-[15px]'}`)}
             </ul>
           </div>,

@@ -196,7 +196,7 @@ export default function SupplierProductsPage() {
             </div>
             <div>
               <label className={labelCls}>{t('Unit *', '单位 *')}</label>
-              <AdminSelect options={UNIT_OPTIONS} value={newUnit} onChange={setNewUnit} />
+              <AdminSelect options={UNIT_OPTIONS} value={newUnit} onChange={setNewUnit} columns={2} />
               {newUnit === '__custom__' && (
                 <input type="text" value={newUnitCustom} onChange={e => setNewUnitCustom(e.target.value)}
                   placeholder={t('e.g. per pallet', '如：每托盘')} className={`${inputCls} mt-2`} />
