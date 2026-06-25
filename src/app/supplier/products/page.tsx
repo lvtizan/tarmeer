@@ -24,6 +24,8 @@ interface Product {
   id: number;
   title?: string;
   description?: string;
+  title_translated?: string | null;
+  description_translated?: string | null;
   category?: string;
   image_url: string;
   image_urls?: string[];
@@ -65,6 +67,9 @@ export default function SupplierProductsPage() {
   const [newUnitCustom, setNewUnitCustom] = useState('');
   const [newPriceFrom, setNewPriceFrom] = useState(false);
   const [currency, setCurrency] = useState('AED');
+  const [newTitleEn, setNewTitleEn] = useState('');
+  const [newDescEn, setNewDescEn] = useState('');
+  const [translating, setTranslating] = useState<'title' | 'desc' | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/suppliers/me/products`, { headers: authHeaders() as HeadersInit })
@@ -90,7 +95,27 @@ export default function SupplierProductsPage() {
   const resetForm = () => {
     setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
     setNewPrice(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
+    setNewTitleEn(''); setNewDescEn('');
     setMsg('');
+  };
+
+  const translateField = async (text: string): Promise<string> => {
+    if (!text.trim()) return '';
+    const res = await fetch(`${API_BASE}/suppliers/me/translate`, {
+      method: 'POST', headers: authHeaders() as HeadersInit, body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    return data?.translated || '';
+  };
+  const autoTranslateTitle = async (force = false) => {
+    if (!newTitle.trim() || (newTitleEn.trim() && !force)) return;
+    setTranslating('title');
+    try { setNewTitleEn(await translateField(newTitle)); } finally { setTranslating(null); }
+  };
+  const autoTranslateDesc = async (force = false) => {
+    if (!newDesc.trim() || (newDescEn.trim() && !force)) return;
+    setTranslating('desc');
+    try { setNewDescEn(await translateField(newDesc)); } finally { setTranslating(null); }
   };
 
   const handleAdd = async () => {
@@ -108,6 +133,8 @@ export default function SupplierProductsPage() {
         body: JSON.stringify({
           title: newTitle || null,
           description: newDesc || null,
+          title_translated: newTitleEn || null,
+          description_translated: newDescEn || null,
           category: newCat || null,
           image_urls: newImageUrls,
           price: priceNum,
@@ -175,7 +202,19 @@ export default function SupplierProductsPage() {
             <div>
               <label className={labelCls}>{t('Title', '产品名称')}</label>
               <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+                onBlur={() => autoTranslateTitle()}
                 placeholder={t('Product name', '请输入产品名称')} className={inputCls} />
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-stone-400">{t('English name (auto, editable)', '英文名称（自动翻译，可改）')}</span>
+                  <button type="button" onClick={() => autoTranslateTitle(true)} disabled={!newTitle.trim() || translating === 'title'}
+                    className="text-xs text-[#b8864a] hover:underline disabled:opacity-40">
+                    {translating === 'title' ? t('Translating…', '翻译中…') : t('Re-translate', '重新翻译')}
+                  </button>
+                </div>
+                <input type="text" value={newTitleEn} onChange={e => setNewTitleEn(e.target.value)}
+                  placeholder={t('Auto-filled after you type the name', '填完名称后自动翻译')} className={inputCls} />
+              </div>
             </div>
             <div>
               <label className={labelCls}>{t('Category', '品类')}</label>
@@ -205,8 +244,21 @@ export default function SupplierProductsPage() {
             <div className="sm:col-span-2">
               <label className={labelCls}>{t('Description', '产品描述')}</label>
               <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={3}
+                onBlur={() => autoTranslateDesc()}
                 placeholder={t('Brief description', '简短描述')}
                 className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none" />
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-stone-400">{t('English description (auto, editable)', '英文描述（自动翻译，可改）')}</span>
+                  <button type="button" onClick={() => autoTranslateDesc(true)} disabled={!newDesc.trim() || translating === 'desc'}
+                    className="text-xs text-[#b8864a] hover:underline disabled:opacity-40">
+                    {translating === 'desc' ? t('Translating…', '翻译中…') : t('Re-translate', '重新翻译')}
+                  </button>
+                </div>
+                <textarea value={newDescEn} onChange={e => setNewDescEn(e.target.value)} rows={2}
+                  placeholder={t('Auto-filled after you type the description', '填完描述后自动翻译')}
+                  className="w-full px-5 py-3 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none" />
+              </div>
             </div>
           </div>
 
