@@ -269,7 +269,7 @@ export default function SupplierProductsPage() {
               className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
               {t('Cancel', '取消')}
             </button>
-            <button onClick={handleAdd} disabled={saving || newImageUrls.length === 0 || !(Number(newPrice) > 0) || !(newUnit === '__custom__' ? newUnitCustom.trim() : newUnit)} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handleAdd} disabled={saving || translating !== null || newImageUrls.length === 0 || !(Number(newPrice) > 0) || !(newUnit === '__custom__' ? newUnitCustom.trim() : newUnit)} className="btn-primary flex items-center gap-2 disabled:opacity-50">
               <Plus className="w-4 h-4" />
               {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
             </button>

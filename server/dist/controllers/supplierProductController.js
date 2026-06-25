@@ -69,9 +69,11 @@ async function translateText(req, res) {
     try {
         const { text } = req.body;
         if (!text || !String(text).trim()) return res.json({ translated: '' });
+        // 产品名称/描述足够短；超长直接截断，防止超大 body 被代理到外部
+        const src = String(text).slice(0, 2000);
         const country = await getProfileCountry(req.supplierUser.id);
         const target = country === 'vn' ? 'vi' : 'en';
-        const translated = await translate_1.translate(String(text), target);
+        const translated = await translate_1.translate(src, target);
         res.json({ translated });
     }
     catch (error) {

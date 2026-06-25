@@ -54,6 +54,12 @@ const leadLimiter = (0, express_rate_limit_1.default)({
     max: 5,
     message: 'Too many submissions. Please try again later.',
 });
+// 翻译端点代理外部调用，按 IP 限流防滥用（每分钟 30 次，足够正常逐字段翻译）
+const translateLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 1000,
+    max: 30,
+    message: 'Too many translation requests. Please slow down.',
+});
 // ── Public ──
 router.get('/categories', enumAdminController_1.getPublicSupplierCategories);
 router.get('/', profile.listPublicSuppliers);
@@ -72,7 +78,7 @@ router.post('/me/upload-license', supplierAuth_1.authenticateSupplier, profile.u
 router.post('/me/upload-image', supplierAuth_1.authenticateSupplier, upload.single('file'), products.uploadProductImage);
 router.get('/me/products', supplierAuth_1.authenticateSupplier, products.listMyProducts);
 router.post('/me/products', supplierAuth_1.authenticateSupplier, products.addProduct);
-router.post('/me/translate', supplierAuth_1.authenticateSupplier, products.translateText);
+router.post('/me/translate', translateLimiter, supplierAuth_1.authenticateSupplier, products.translateText);
 router.put('/me/products/:id', supplierAuth_1.authenticateSupplier, products.updateProduct);
 router.delete('/me/products/:id', supplierAuth_1.authenticateSupplier, products.deleteProduct);
 router.put('/me/products-reorder', supplierAuth_1.authenticateSupplier, products.reorderProducts);
