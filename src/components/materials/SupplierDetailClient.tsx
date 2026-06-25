@@ -36,6 +36,8 @@ interface Product {
   image_url: string;
   category: string | null;
   sort_order: number;
+  title_translated: string | null;
+  description_translated: string | null;
 }
 
 interface Project {
@@ -365,8 +367,8 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                           />
                         </div>
                         {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
-                        {p.title && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title}</p>}
-                        {p.description && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description}</p>}
+                        {(p.title_translated || p.title) && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title_translated || p.title}</p>}
+                        {(p.description_translated || p.description) && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description_translated || p.description}</p>}
                       </div>
                     ))}
                   </div>
