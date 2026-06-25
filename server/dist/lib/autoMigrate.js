@@ -426,6 +426,9 @@ const REQUIRED_COLUMNS = [
     { table: 'supplier_products', column: 'price', type: 'DECIMAL(12,2) NULL' },
     { table: 'supplier_products', column: 'price_unit', type: 'VARCHAR(32) NULL' },
     { table: 'supplier_products', column: 'price_from', type: 'TINYINT(1) NOT NULL DEFAULT 0' },
+    // Supplier product auto-translation (site-language; original kept in title/description)
+    { table: 'supplier_products', column: 'title_translated', type: 'VARCHAR(255) NULL' },
+    { table: 'supplier_products', column: 'description_translated', type: 'TEXT NULL' },
     // Company multi-type + service area
     { table: 'company_profiles', column: 'company_types', type: 'JSON NULL' },
     { table: 'company_profiles', column: 'emirates_served', type: 'JSON NULL' },
