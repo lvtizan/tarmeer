@@ -474,8 +474,13 @@ export default function PortfolioClient() {
     setLoading(true);
     try {
       const result = await fetchPortfolioFeed(page, 12, seedRef.current, activeTag || undefined, c.code);
-      setProjects(prev => [...prev, ...result.projects]);
-      setHasMore(result.projects.length === 12);
+      // 按 project id 去重：目录分页/注册分页边界可能重叠，且历史上目录无 offset 会整页重复 →
+      // 不去重就会瀑布流里同一张图反复出现。用已加载的 id 集合过滤本页新增。
+      const existingIds = new Set(stateRef.current.projects.map(p => p.id));
+      const fresh = result.projects.filter(p => !existingIds.has(p.id));
+      setProjects(prev => [...prev, ...fresh]);
+      // 满 12 且确有新内容才继续；本页全是重复(fresh=0)则停止，避免无限重复加载
+      setHasMore(result.projects.length === 12 && fresh.length > 0);
       setPage(prev => prev + 1);
     } catch (err) {
       console.error('Portfolio load error:', err);

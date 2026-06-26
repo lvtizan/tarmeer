@@ -201,8 +201,8 @@ async function getPortfolioFeed(req, res) {
         AND uc.portfolio_images IS NOT NULL
         AND uc.portfolio_images != '[]'
         AND uc.portfolio_images != ''
-      ORDER BY uc.weight_score DESC
-      LIMIT 30
+      ORDER BY uc.weight_score DESC, uc.id ASC
+      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
     `, [country]);
         const directoryProjects = dirRows.flatMap(row => {
             let categories = {};
