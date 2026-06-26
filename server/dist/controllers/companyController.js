@@ -239,8 +239,25 @@ async function getPortfolioFeed(req, res) {
                     year = typeof entry.year === 'number' ? entry.year : null;
                     location = typeof entry.location === 'string' ? entry.location : '';
                 }
-                // Filter out portfolio-hidden images
-                const imageUrls = items.map((item) => item?.url || '').filter(u => u && !hiddenUrls.has(u));
+                // 图片级标签匹配：目录图经 scripts/backfill-directory-tags.mjs 写入 ai_category。
+                // tag 筛选激活时只保留 ai_category 命中的图（与注册库 registeredProjects 一致），不再整段排除目录。
+                const imgEntries = items
+                    .map((item) => ({
+                        url: item?.url || '',
+                        tags: Array.isArray(item?.ai_category) ? item.ai_category
+                            : (Array.isArray(item?.ai_tags) ? item.ai_tags : []),
+                    }))
+                    .filter(e => e.url && !hiddenUrls.has(e.url));
+                let imageUrls;
+                if (tagFilter) {
+                    const matched = imgEntries.filter(e => e.tags.includes(tagFilter));
+                    if (matched.length === 0)
+                        return null;
+                    imageUrls = matched.map(e => e.url);
+                }
+                else {
+                    imageUrls = imgEntries.map(e => e.url);
+                }
                 if (imageUrls.length === 0)
                     return null;
                 return {
@@ -264,10 +281,9 @@ async function getPortfolioFeed(req, res) {
         // Merge: registered first, then directory (deduplicate by company name)
         const seenCompanyNames = new Set(registeredProjects.map(p => p.companyName.toLowerCase()));
         const dedupedDirectory = directoryProjects.filter((p) => p !== null && !seenCompanyNames.has(p.companyName.toLowerCase()));
-        // When tag filter is active, exclude directory projects (they have no image-level tags)
-        const allProjects = tagFilter
-            ? registeredProjects
-            : [...registeredProjects, ...dedupedDirectory];
+        // 目录图已在上面按图片级 ai_category 做了 tag 过滤(backfill-directory-tags 写入)，直接合并。
+        // VN 作品集全是目录图，旧逻辑 tag 激活就排除目录 → VN 点筛选必空(P0)。
+        const allProjects = [...registeredProjects, ...dedupedDirectory];
         const paginatedProjects = allProjects.slice(0, limit);
         const [countResult] = await database_1.default.execute(`
       SELECT COUNT(*) as total FROM projects p
@@ -284,7 +300,7 @@ async function getPortfolioFeed(req, res) {
             pagination: {
                 page,
                 limit,
-                total: tagFilter ? registeredTotal : registeredTotal + dedupedDirectory.length,
+                total: registeredTotal + dedupedDirectory.length,
             },
         });
     }
