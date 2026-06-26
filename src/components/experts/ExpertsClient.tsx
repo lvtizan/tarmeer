@@ -14,6 +14,7 @@ import FilterOption from '@/components/shared/FilterOption';
 import SearchableFilterList from '@/components/shared/SearchableFilterList';
 import ActiveFilterChip from '@/components/shared/ActiveFilterChip';
 import type { ExpertListItem, ExpertsPagination } from './types';
+import { translateServiceLabel } from '@/i18n/sections/services';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -99,7 +100,7 @@ function ExpertListCard({ expert, isVn }: { expert: ExpertListItem; isVn: boolea
                   key={svc}
                   className="px-2.5 py-0.5 text-xs text-stone-600 border border-stone-200 rounded bg-white"
                 >
-                  {svc}
+                  {translateServiceLabel(svc, isVn ? 'vi' : 'en')}
                 </span>
               ))}
               {expert.services.length > 5 && (
@@ -206,7 +207,7 @@ export default function ExpertsClient({
             <div className="flex flex-wrap gap-2">
               {serviceOptions.map((svc) => (
                 <FilterOption key={svc} selected={service === svc} onClick={() => goTo(service === svc ? '' : svc, city, certified, 1)} compact>
-                  {svc}
+                  {translateServiceLabel(svc, isVn ? 'vi' : 'en')}
                 </FilterOption>
               ))}
             </div>
@@ -219,6 +220,7 @@ export default function ExpertsClient({
             onToggle={(svc) => goTo(service === svc ? '' : svc, city, certified, 1)}
             searchPlaceholder={isVn ? 'Tìm dịch vụ…' : 'Search service…'}
             noResultsText={isVn ? 'Không tìm thấy' : 'No results'}
+            labelFor={(svc) => translateServiceLabel(svc, isVn ? 'vi' : 'en')}
           />
         )
       )}
@@ -350,7 +352,7 @@ export default function ExpertsClient({
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {service && <ActiveFilterChip label={service} onRemove={() => goTo('', city, certified, 1)} />}
+              {service && <ActiveFilterChip label={translateServiceLabel(service, isVn ? 'vi' : 'en')} onRemove={() => goTo('', city, certified, 1)} />}
               {city && <ActiveFilterChip label={city} onRemove={() => goTo(service, '', certified, 1)} />}
               {certified && (
                 <ActiveFilterChip

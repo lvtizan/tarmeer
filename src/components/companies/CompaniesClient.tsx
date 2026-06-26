@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useServices } from '@/hooks/useServices';
 import { companyHasService, companyHasSpaceType, SPACE_TYPE_KEYS, SPACE_TYPE_LABELS } from '@/lib/serviceCategories';
+import { translateServiceLabel } from '@/i18n/sections/services';
 import type { Company } from '@/lib/companyData';
 import { getCompanyTypeLabel } from '@/lib/companyData';
 import { getImageFallbackCandidates, getNextRenderableImageIndex } from '@/lib/imageCleanup';
@@ -18,7 +19,7 @@ import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 
 // List Card - Project First
 function CompanyCard({ company, onClick, isVn }: { company: Company; onClick: () => void; isVn: boolean }) {
-  const { tr } = useSiteLocale();
+  const { tr, lang } = useSiteLocale();
   const [imgIndex, setImgIndex] = useState(0);
   const [imgRetryIndex, setImgRetryIndex] = useState(0);
   const [failedIndices, setFailedIndices] = useState<number[]>([]);
@@ -130,7 +131,7 @@ function CompanyCard({ company, onClick, isVn }: { company: Company; onClick: ()
           <div className="flex flex-wrap gap-1.5">
             {company.services.slice(0, 4).map((svc) => (
               <span key={svc} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded">
-                {svc}
+                {translateServiceLabel(svc, lang)}
               </span>
             ))}
           </div>
@@ -439,7 +440,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
                     prev.includes(service) ? prev.filter((v) => v !== service) : [...prev, service]
                   )}
                 >
-                  {service}
+                  {translateServiceLabel(service, lang)}
                 </FilterOption>
               ))}
               {q && shown.length === 0 && (
@@ -535,7 +536,7 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
                 <ActiveFilterChip key={s} label={s} onRemove={() => setSelectedStyles((prev) => prev.filter((v) => v !== s))} />
               ))}
               {selectedServices.map((s) => (
-                <ActiveFilterChip key={s} label={s} onRemove={() => setSelectedServices((prev) => prev.filter((v) => v !== s))} />
+                <ActiveFilterChip key={s} label={translateServiceLabel(s, lang)} onRemove={() => setSelectedServices((prev) => prev.filter((v) => v !== s))} />
               ))}
             </div>
           </div>

@@ -12,6 +12,7 @@ import NotificationBell from './NotificationBell';
 import { useNavigationHandler } from '../hooks/useNavigationHandler';
 import TarmeerLogo from './TarmeerLogo';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { translateServiceLabel } from '@/i18n/sections/services';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -295,7 +296,7 @@ export default function Navbar({
                               hoveredCategory === cat.name ? 'bg-stone-50 text-[#b8864a]' : 'text-stone-600 hover:bg-stone-50 hover:text-[#b8864a]'
                             }`}
                           >
-                            {cat.name}
+                            {translateServiceLabel(cat.name, lang)}
                             {cat.subs.length > 0 && <span className="text-stone-300 text-xs ml-2">›</span>}
                           </button>
                         </li>
@@ -310,7 +311,7 @@ export default function Navbar({
                           <h3 className="text-xs font-bold uppercase tracking-wider mb-3">x</h3>
                           <ul className="space-y-2">
                             {tallest.subs.map((svc) => (
-                              <li key={svc}><span className="text-sm block">{svc}</span></li>
+                              <li key={svc}><span className="text-sm block">{translateServiceLabel(svc, lang)}</span></li>
                             ))}
                           </ul>
                         </div>
@@ -319,7 +320,7 @@ export default function Navbar({
                             key={cat.name}
                             className={`absolute inset-0 p-6 transition-opacity duration-150 ${hoveredCategory === cat.name ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                           >
-                            <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{cat.name}</h3>
+                            <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{translateServiceLabel(cat.name, lang)}</h3>
                             <ul className="space-y-2">
                               {cat.subs.map((svc) => (
                                 <li key={svc}>
@@ -328,7 +329,7 @@ export default function Navbar({
                                     onClick={() => handleClick(`${expertsBase}?service=${encodeURIComponent(svc)}`)}
                                     className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
                                   >
-                                    {svc}
+                                    {translateServiceLabel(svc, lang)}
                                   </Link>
                                 </li>
                               ))}
@@ -527,10 +528,10 @@ export default function Navbar({
                     <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{tr.nav.serviceType}</h4>
                     {navCategories.map((cat) => (
                       <div key={cat.name} className="py-1">
-                        <p className="text-xs font-semibold text-stone-500 mb-1">{cat.name}</p>
+                        <p className="text-xs font-semibold text-stone-500 mb-1">{translateServiceLabel(cat.name, lang)}</p>
                         {cat.subs.map((svc: string) => (
                           <Link key={svc} href={`${expertsBase}?service=${encodeURIComponent(svc)}`} onClick={() => handleClick(`${expertsBase}?service=${encodeURIComponent(svc)}`)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
-                            {svc}
+                            {translateServiceLabel(svc, lang)}
                           </Link>
                         ))}
                       </div>

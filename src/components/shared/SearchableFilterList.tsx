@@ -20,6 +20,8 @@ interface SearchableFilterListProps {
   /** 有搜索框时清单滚动区高度 */
   maxHeightClass?: string;
   noResultsText?: string;
+  /** 显示标签映射（值=筛选 key 不变，仅改展示，如 VN 翻译）。默认恒等。搜索同时匹配值和译文。 */
+  labelFor?: (value: string) => string;
 }
 
 export default function SearchableFilterList({
@@ -31,6 +33,7 @@ export default function SearchableFilterList({
   searchThreshold = 6,
   maxHeightClass = 'max-h-72',
   noResultsText = 'No results',
+  labelFor = (v) => v,
 }: SearchableFilterListProps) {
   const [q, setQ] = useState('');
   if (options.length === 0) return null;
@@ -38,8 +41,8 @@ export default function SearchableFilterList({
   const showSearch = options.length > searchThreshold;
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return s ? options.filter((o) => o.toLowerCase().includes(s)) : options;
-  }, [q, options]);
+    return s ? options.filter((o) => o.toLowerCase().includes(s) || labelFor(o).toLowerCase().includes(s)) : options;
+  }, [q, options, labelFor]);
 
   return (
     <div>
@@ -62,7 +65,7 @@ export default function SearchableFilterList({
         ) : (
           filtered.map((opt) => (
             <FilterOption key={opt} selected={selected === opt} onClick={() => onToggle(opt)}>
-              {opt}
+              {labelFor(opt)}
             </FilterOption>
           ))
         )}
