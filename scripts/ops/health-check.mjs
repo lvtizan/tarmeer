@@ -106,7 +106,9 @@ function resolveUrl(check) {
 }
 
 // ── HTTP fetch (returns body text for api_data checks) ───────────────────────
-function fetchWithBody(url, timeoutMs) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function fetchOnce(url, timeoutMs) {
   return new Promise((resolve) => {
     const mod = url.startsWith('https') ? httpsGet : httpGet;
     const timer = setTimeout(() => resolve({ ok: false, status: 0, error: 'Timeout', body: '' }), timeoutMs);
@@ -124,6 +126,34 @@ function fetchWithBody(url, timeoutMs) {
       resolve({ ok: false, status: 0, error: err.message, body: '' });
     });
   });
+}
+
+// status 0 = 连不上(超时/拒绝)，常因后端正逢重启窗口 → 隔 3s 重试一次再判失败，消除瞬时误报
+async function fetchWithBody(url, timeoutMs) {
+  let res = await fetchOnce(url, timeoutMs);
+  if (res.status === 0) {
+    await sleep(3000);
+    res = await fetchOnce(url, timeoutMs);
+  }
+  return res;
+}
+
+// 启动宽限：巡检开跑前先等后端就绪(轮询 /api/health 最多 maxWaitMs)，
+// 后端正逢重启(部署/偶发)时不至于一上来打一堆 HTTP 0 发批量误报。
+async function waitForApi(maxWaitMs = 30000) {
+  const start = Date.now();
+  let last = 0;
+  while (Date.now() - start < maxWaitMs) {
+    const r = await fetchOnce(`${API_BASE}/health`, 4000);
+    last = r.status;
+    if (r.status === 200) {
+      if (Date.now() - start > 1000) console.log(`[health-check] API 就绪(等待 ${Math.round((Date.now() - start) / 1000)}s)`);
+      return true;
+    }
+    await sleep(3000);
+  }
+  console.log(`[health-check] ⚠️ API 启动宽限 ${maxWaitMs}ms 超时(最后状态 ${last}) — 按真实故障继续巡检`);
+  return false;
 }
 
 // ── Safely get a nested value via dot-notation path ──────────────────────────
@@ -513,6 +543,9 @@ async function main() {
 
   const checklist = loadChecklist();
   const failures = [];
+
+  // 0. 启动宽限：后端正逢重启窗口时先等就绪，避免一上来打一堆 HTTP 0 批量误报
+  await waitForApi();
 
   // 1. Run checklist-driven checks (skip pm2_online — handled below)
   for (const item of checklist) {
