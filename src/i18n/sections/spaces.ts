@@ -24,7 +24,10 @@ export const rooms = {
     Bathroom: 'Bathroom',
     'Dining Room': 'Dining Room',
     Office: 'Office',
+    'Home Office': 'Home Office',
+    Majlis: 'Majlis',
     Hallway: 'Hallway',
+    Nursery: 'Nursery',
     Outdoor: 'Outdoor',
   },
   vi: {
@@ -34,7 +37,10 @@ export const rooms = {
     Bathroom: 'Phòng Tắm',
     'Dining Room': 'Phòng Ăn',
     Office: 'Văn Phòng',
+    'Home Office': 'Phòng Làm Việc',
+    Majlis: 'Majlis',
     Hallway: 'Hành Lang',
+    Nursery: 'Phòng Trẻ Em',
     Outdoor: 'Ngoài Trời',
   },
 } as const;
@@ -48,7 +54,9 @@ export const styles = {
     Arabic: 'Arabic',
     Industrial: 'Industrial',
     Scandinavian: 'Scandinavian',
+    Coastal: 'Coastal',
     'Art Deco': 'Art Deco',
+    Bohemian: 'Bohemian',
   },
   vi: {
     Modern: 'Hiện Đại',
@@ -58,6 +66,8 @@ export const styles = {
     Arabic: 'Phong Cách Ả Rập',
     Industrial: 'Công Nghiệp',
     Scandinavian: 'Bắc Âu',
+    Coastal: 'Ven Biển',
     'Art Deco': 'Art Deco',
+    Bohemian: 'Bohemian',
   },
 } as const;

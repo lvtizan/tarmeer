@@ -326,8 +326,10 @@ function clearCache() {
 }
 
 export default function PortfolioClient() {
-  const { lang } = useSiteLocale();
+  const { lang, tr } = useSiteLocale();
   const c = countryFromLang(lang);
+  const roomLabels = tr.rooms as Record<string, string>;
+  const styleLabels = tr.styles as Record<string, string>;
   const searchParams = useSearchParams();
   const urlTag = searchParams.get('tag') || '';
 
@@ -557,8 +559,8 @@ export default function PortfolioClient() {
   return (
     <div className="min-h-screen bg-white">
       <div ref={headingRef} className="max-w-[1400px] mx-auto px-4 pt-8 pb-5">
-        <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-1">Portfolio</h1>
-        <p className="text-[var(--color-tarmeer-muted)]">Explore interior design projects from {c.name}&apos;s top professionals</p>
+        <h1 className="font-serif text-3xl font-semibold text-[var(--color-tarmeer-text)] mb-1">{tr.portfolio.title}</h1>
+        <p className="text-[var(--color-tarmeer-muted)]">{tr.portfolio.subtitle(c.name)}</p>
       </div>
 
       {isFilterSticky && <div style={{ height: filterBarHeight }} />}
@@ -569,25 +571,25 @@ export default function PortfolioClient() {
       >
         <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Room</span>
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">{tr.portfolio.byRoom}</span>
             {ROOM_FILTERS.map(tag => (
               <button key={tag} onClick={() => selectTag(tag)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                {tag}
+                {roomLabels[tag] ?? tag}
               </button>
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">By Style</span>
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">{tr.portfolio.byStyle}</span>
             {STYLE_FILTERS.map(tag => (
               <button key={tag} onClick={() => selectTag(tag)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
-                {tag}
+                {styleLabels[tag] ?? tag}
               </button>
             ))}
             {activeTag && (
               <button onClick={() => selectTag(activeTag)} className="ml-auto text-xs text-stone-400 hover:text-stone-600 inline-flex items-center gap-1">
-                <X className="w-3.5 h-3.5" /> Clear
+                <X className="w-3.5 h-3.5" /> {tr.portfolio.clear}
               </button>
             )}
           </div>
@@ -604,7 +606,7 @@ export default function PortfolioClient() {
 
         {!initialLoading && projects.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-[var(--color-tarmeer-muted)]">No portfolio projects available yet.</p>
+            <p className="text-[var(--color-tarmeer-muted)]">{tr.portfolio.empty}</p>
           </div>
         )}
 
@@ -623,7 +625,7 @@ export default function PortfolioClient() {
           <section className="mb-10" style={{ marginTop: grouped.length > 0 ? 32 : 0 }}>
             {grouped.length > 0 && (
               <div className="flex items-baseline gap-3 mb-3">
-                <h3 className="text-[15px] font-medium text-stone-400">More projects</h3>
+                <h3 className="text-[15px] font-medium text-stone-400">{tr.portfolio.moreProjects}</h3>
               </div>
             )}
             <JustifiedGallery
@@ -655,7 +657,7 @@ export default function PortfolioClient() {
             </>
           )}
           {!hasMore && projects.length > 0 && (
-            <p className="text-sm text-stone-400 py-4">All projects loaded</p>
+            <p className="text-sm text-stone-400 py-4">{tr.portfolio.allLoaded}</p>
           )}
         </div>
       </div>

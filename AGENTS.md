@@ -199,6 +199,11 @@ AE / VN / SA 三个国家的数据**严禁串联**（数据混桶）和**文字�
 5. **外勤/问卷场景按操作人所属国家（`admin_users.country`）过滤公司搜索**，从源头禁止跨国家关联。
 6. **任何 AE 视图出现越南文（或反之）= P0 bug**，第一时间排查引用解析链（ref_source → JOIN → country 条件）。
 7. **新增/修改写入口或国家相关查询后，必须跑 `node scripts/harness/country-walkthrough.mjs` 且全绿**（12 个国家归属用例）。
+8. **跨国展示（首页/作品集瀑布流/公司/专家/供应商等任何"列内容"的页面）必须用各自国家的独立数据源**：每个国家站只展示本国装企/专家/项目/图像，绝不混展。
+   - 实现口径：所有内容列表/feed 接口必须接 `country` 参数并落到 `WHERE ... country = ?`；前端读这些接口必须带国家（`?country=` + `x-country` header，走 `publicApi`），SSR 从 `x-country` 取、客户端从 `useSiteLocale().lang`/域名取。
+   - 例（2026-06-26）：VN 作品集瀑布流要用 VN 装企图像；后端 `getPortfolioFeed` 已按 `cp.country=?` 隔离，VN 返回的就是 AKISA/ZITO/Vking 等越南项目。
+   - **客户端跨域读 www API 必须放行 `x-country` 头**：`corsOrigins.js` 的 `allowedHeaders` 要含 `x-country`，否则 VN 站客户端 fetch（带国家头）被 CORS 预检拦掉 → 整页空（portfolio 踩过）。
+   - 内容列表页空白时，先分清是「数据真没有」还是「拉取失败（CORS/跨域/缺 country）」——curl 带 `x-country` 直连后端验证有无数据，再判方向。
 
 ---
 
