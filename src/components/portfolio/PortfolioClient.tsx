@@ -571,7 +571,7 @@ export default function PortfolioClient() {
       >
         <div className="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">{tr.portfolio.byRoom}</span>
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-32 shrink-0 whitespace-nowrap">{tr.portfolio.byRoom}</span>
             {ROOM_FILTERS.map(tag => (
               <button key={tag} onClick={() => selectTag(tag)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
@@ -580,7 +580,7 @@ export default function PortfolioClient() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-16 shrink-0">{tr.portfolio.byStyle}</span>
+            <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider w-32 shrink-0 whitespace-nowrap">{tr.portfolio.byStyle}</span>
             {STYLE_FILTERS.map(tag => (
               <button key={tag} onClick={() => selectTag(tag)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition ${activeTag === tag ? 'bg-[var(--color-tarmeer-primary)] text-white border-[var(--color-tarmeer-primary)]' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}>
