@@ -88,7 +88,21 @@ async function getFeedback(req, res) {
         // 对话回复 + 标记用户发来的消息为 admin 已读
         const [replies] = await database_1.default.execute(`SELECT id, feedback_id, sender, content, created_at FROM feedback_replies WHERE feedback_id = ? ORDER BY created_at ASC`, [id]);
         await database_1.default.execute(`UPDATE feedback_replies SET read_by_admin = 1 WHERE feedback_id = ? AND sender = 'user' AND read_by_admin = 0`, [id]);
-        res.json({ feedback: item, replies });
+        // 解析反馈来源公司 → 让 admin 详情页可穿透点击进公司详情。优先 user_id,回退 company_name。
+        let company_profile_id = null, company_directory_id = null, company_slug = null;
+        if (item.user_id) {
+            const [cp] = await database_1.default.execute('SELECT id, slug FROM company_profiles WHERE user_id = ? AND deleted_at IS NULL LIMIT 1', [item.user_id]);
+            if (cp.length) { company_profile_id = cp[0].id; company_slug = cp[0].slug; }
+        }
+        if (!company_profile_id && item.company_name) {
+            const [cp] = await database_1.default.execute('SELECT id, slug FROM company_profiles WHERE company_name = ? AND deleted_at IS NULL LIMIT 1', [item.company_name]);
+            if (cp.length) { company_profile_id = cp[0].id; company_slug = cp[0].slug; }
+            if (!company_profile_id) {
+                const [uc] = await database_1.default.execute('SELECT id, slug FROM uae_companies WHERE name_en = ? LIMIT 1', [item.company_name]);
+                if (uc.length) { company_directory_id = uc[0].id; company_slug = uc[0].slug; }
+            }
+        }
+        res.json({ feedback: item, replies, company_profile_id, company_directory_id, company_slug });
     }
     catch (error) {
         console.error('Get feedback error:', error);

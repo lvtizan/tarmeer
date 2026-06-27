@@ -39,6 +39,7 @@ export default function AdminFeedbackDetailPage() {
   const router = useRouter();
   const { t } = useAdminT();
   const [item, setItem] = useState<FeedbackDetail | null>(null);
+  const [companyHref, setCompanyHref] = useState<string | null>(null);
   const [replies, setReplies] = useState<FeedbackReply[]>([]);
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
@@ -49,7 +50,13 @@ export default function AdminFeedbackDetailPage() {
     if (!id) return;
     setLoading(true);
     adminApi.request(`/feedback/${id}`)
-      .then((res) => { setItem(res.feedback); setReplies(res.replies || []); })
+      .then((res) => {
+        setItem(res.feedback);
+        setReplies(res.replies || []);
+        if (res.company_profile_id) setCompanyHref(`/admin/profile-companies/${res.company_profile_id}`);
+        else if (res.company_directory_id) setCompanyHref(`/admin/companies/${res.company_directory_id}`);
+        else setCompanyHref(null);
+      })
       .catch(() => { setError('Failed to load feedback.'); })
       .finally(() => { setLoading(false); });
   }, [id]);
@@ -137,7 +144,13 @@ export default function AdminFeedbackDetailPage() {
               <div className="min-w-0">
                 {item.company_name && (
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-semibold text-[#2c2c2c]">{item.company_name}</p>
+                    {companyHref ? (
+                      <button onClick={() => router.push(companyHref)} className="text-sm font-semibold text-[#b8864a] hover:underline text-left transition" title={t('Open company detail', '打开公司详情')}>
+                        {item.company_name}
+                      </button>
+                    ) : (
+                      <p className="text-sm font-semibold text-[#2c2c2c]">{item.company_name}</p>
+                    )}
                     {item.company_type && (
                       <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 shrink-0">
                         {item.company_type}
