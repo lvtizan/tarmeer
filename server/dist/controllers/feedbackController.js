@@ -14,6 +14,8 @@ exports.getMyConversation = getMyConversation;
 exports.userReplyFeedback = userReplyFeedback;
 exports.getMyUnreadReplyCount = getMyUnreadReplyCount;
 const database_1 = __importDefault(require("../config/database"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const config_1 = __importDefault(require("../config"));
 // Submit feedback (public, no auth required)
 async function submitFeedback(req, res) {
     try {
@@ -21,12 +23,23 @@ async function submitFeedback(req, res) {
         if (!title?.trim() || !content?.trim()) {
             return res.status(400).json({ error: 'Title and content are required.' });
         }
+        // 登录用户提交 → 从 Bearer token 解出 user_id,使其能在个人中心看到对话历史/未读角标。
+        // 匿名(网站底部等无 token)仍可空。token 优先于 body。
+        let resolvedUserId = user_id || null;
+        try {
+            const tok = req.headers.authorization?.split(' ')[1];
+            if (tok) {
+                const dec = jsonwebtoken_1.default.verify(tok, config_1.default.jwt.secret);
+                if (dec?.userId) resolvedUserId = dec.userId;
+            }
+        }
+        catch { /* invalid/expired token → 保留 body/null,不报错 */ }
         await database_1.default.execute(`INSERT INTO feedback (title, content, source, user_id, user_name, user_email, company_name, company_type)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [
             title.trim().slice(0, 200),
             content.trim().slice(0, 2000),
             source || 'website',
-            user_id || null,
+            resolvedUserId,
             user_name?.trim().slice(0, 100) || null,
             user_email?.trim().slice(0, 255) || null,
             company_name?.trim().slice(0, 255) || null,

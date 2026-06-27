@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { fetchPublicProjectDetail, type PublicProjectDetailData } from '@/lib/publicApi';
 import SmartImage from '@/components/ui/SmartImage';
+import AspectImage from '@/components/shared/AspectImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { countryFromLang } from '@/lib/country';
@@ -166,13 +167,12 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
         <div className="px-4 sm:px-6 py-5">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 min-w-0">
-              <div className="relative rounded-xl overflow-hidden bg-stone-100 flex items-center justify-center" style={{ minHeight: '60vh' }}>
-                <SmartImage
-                  src={activeImage}
-                  alt={`${project.title} — photo ${currentIndex + 1}`}
-                  className="w-full h-auto object-contain"
-                  style={{ maxHeight: 'calc(100vh - 120px)' }}
-                />
+              <AspectImage
+                src={activeImage}
+                alt={`${project.title} — photo ${currentIndex + 1}`}
+                ratioClass="aspect-video"
+                className="rounded-xl"
+              >
                 {project.images.length > 1 && (
                   <>
                     <button onClick={goPrev} aria-label="Previous photo" className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/85 hover:bg-white shadow-md flex items-center justify-center transition">
@@ -186,7 +186,7 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
                     </div>
                   </>
                 )}
-              </div>
+              </AspectImage>
 
               {project.images.length > 1 && (
                 <div className="mt-5">

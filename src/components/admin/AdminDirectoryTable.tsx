@@ -20,6 +20,8 @@ interface CompanyRecord {
   project_count: number;
   is_signed?: boolean;
   is_certified?: boolean;
+  is_published?: number;
+  is_active?: number;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -159,6 +161,9 @@ export default function AdminDirectoryTable({
                     </div>
                   )}
                   <span className="font-medium text-stone-800">{c.name_en}</span>
+                  {(c.is_published === 0 || c.is_active === 0) && (
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-stone-200 text-stone-500 font-medium shrink-0">已下架</span>
+                  )}
                 </div>
               </td>
               <td className="px-4 py-3 text-stone-600">{c.city || '—'}</td>
