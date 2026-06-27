@@ -195,8 +195,11 @@ async function getCompanyDetail(req, res) {
         const services = typeof company.services === 'string'
             ? JSON.parse(company.services)
             : company.services;
-        // NOTE: contact fields (contact_person, phone, website, email, address) are
-        // intentionally omitted — self-registered company contact info is admin-only.
+        // NOTE: contact fields (contact_person, phone, email, address) are
+        // intentionally omitted — self-registered company contact info is admin-only。
+        // 例外白名单：个别公司(投诉/特批)允许公开展示官网。slug 命中则返回 website。
+        // Algedra Interior Design(slug=cihan)2026-06-27 投诉网址被屏蔽，特批放行。
+        const WEBSITE_ALLOWLIST = new Set(['cihan']);
         const formattedCompany = {
             id: company.id,
             slug: company.slug || '',
@@ -213,6 +216,7 @@ async function getCompanyDetail(req, res) {
             is_claimed: true,
             is_registered: true,
             is_signed: !!(company.is_signed),
+            website: WEBSITE_ALLOWLIST.has(company.slug) ? (company.website || '') : '',
             company_profile_id: company.id,
         };
         res.json({ company: formattedCompany });
