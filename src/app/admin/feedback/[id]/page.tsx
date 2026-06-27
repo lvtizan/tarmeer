@@ -165,42 +165,41 @@ export default function AdminFeedbackDetailPage() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* 对话线程 */}
-      {replies.length > 0 && (
-        <div className="mt-5 space-y-3">
-          {replies.map((r) => (
-            <div key={r.id} className={`flex ${r.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap ${r.sender === 'admin' ? 'bg-[#b8864a] text-white rounded-br-sm' : 'bg-white border border-stone-200 text-[#2c2c2c] rounded-bl-sm'}`}>
-                <div className="text-[11px] opacity-70 mb-0.5">
-                  {r.sender === 'admin' ? t('Us', '我们') : (item.user_name || item.company_name || t('User', '用户'))} · {formatAdminDateTime(r.created_at)}
+        {/* 对话线程 — 卡片内,顶部分隔线区分原文 */}
+        {replies.length > 0 && (
+          <div className="px-6 py-5 space-y-3 border-t border-stone-100">
+            {replies.map((r) => (
+              <div key={r.id} className={`flex ${r.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap ${r.sender === 'admin' ? 'bg-[#b8864a] text-white rounded-br-sm' : 'bg-stone-100 text-[#2c2c2c] rounded-bl-sm'}`}>
+                  <div className="text-[11px] opacity-70 mb-0.5">
+                    {r.sender === 'admin' ? t('Us', '我们') : (item.user_name || item.company_name || t('User', '用户'))} · {formatAdminDateTime(r.created_at)}
+                  </div>
+                  {r.content}
                 </div>
-                {r.content}
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* 回复框：默认展开 input + 发送按钮，空内容时发送灰色 */}
-      <div className="mt-5 bg-white rounded-2xl border border-stone-100 p-4">
-        <textarea
-          value={replyText}
-          onChange={(e) => setReplyText(e.target.value)}
-          rows={3}
-          placeholder={t('Type a reply to the user…', '回复用户…')}
-          className="w-full resize-none rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/20 placeholder:text-stone-400"
-        />
-        <div className="flex justify-end mt-2.5">
-          <button
-            onClick={sendReply}
-            disabled={!replyText.trim() || sending}
-            className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-semibold transition ${replyText.trim() && !sending ? 'bg-[#b8864a] text-white hover:bg-[#a07640]' : 'bg-stone-200 text-stone-400 cursor-not-allowed'}`}
-          >
-            <Send className="w-4 h-4" />
-            {sending ? t('Sending…', '发送中…') : t('Send Reply', '发送回复')}
-          </button>
+        {/* 回复框 — 卡片内,顶部分隔线;空内容时发送灰色 */}
+        <div className="border-t border-stone-100 p-6">
+          <textarea
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            rows={3}
+            placeholder={t('Type a reply to the user…', '回复用户…')}
+            className="w-full resize-none rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-[#2c2c2c] outline-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/20 placeholder:text-stone-400"
+          />
+          <div className="flex justify-end mt-2.5">
+            <button
+              onClick={sendReply}
+              disabled={!replyText.trim() || sending}
+              className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-semibold transition ${replyText.trim() && !sending ? 'bg-[#b8864a] text-white hover:bg-[#a07640]' : 'bg-stone-200 text-stone-400 cursor-not-allowed'}`}
+            >
+              <Send className="w-4 h-4" />
+              {sending ? t('Sending…', '发送中…') : t('Send Reply', '发送回复')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
