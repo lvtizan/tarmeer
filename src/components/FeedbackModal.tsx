@@ -113,7 +113,7 @@ export default function FeedbackModal({
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="bg-[#1c1917] px-6 py-5 flex items-center justify-between shrink-0">
+        <div className="bg-[#5c4a38] px-6 py-5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {view === 'thread' && (
               <button onClick={() => { setView('list'); loadThreads(); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition text-white/70 hover:text-white shrink-0">

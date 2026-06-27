@@ -110,7 +110,7 @@ export default function AdminFeedbackDetailPage() {
       {/* Card */}
       <div className="bg-white rounded-2xl border border-stone-100 overflow-hidden">
         {/* Header */}
-        <div className="bg-[#1c1917] px-6 py-5 flex items-start gap-3">
+        <div className="bg-[#5c4a38] px-6 py-5 flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
             <MessageSquare className="w-4 h-4 text-white" />
           </div>
@@ -167,7 +167,7 @@ export default function AdminFeedbackDetailPage() {
         )}
         {/* 对话线程 — 卡片内,顶部分隔线区分原文 */}
         {replies.length > 0 && (
-          <div className="px-6 py-5 space-y-3 border-t border-stone-100">
+          <div className="px-6 py-5 space-y-3">
             {replies.map((r) => (
               <div key={r.id} className={`flex ${r.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap ${r.sender === 'admin' ? 'bg-[#b8864a] text-white rounded-br-sm' : 'bg-stone-100 text-[#2c2c2c] rounded-bl-sm'}`}>
@@ -182,7 +182,7 @@ export default function AdminFeedbackDetailPage() {
         )}
 
         {/* 回复框 — 卡片内,顶部分隔线;空内容时发送灰色 */}
-        <div className="border-t border-stone-100 p-6">
+        <div className="p-6 pt-2">
           <textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
