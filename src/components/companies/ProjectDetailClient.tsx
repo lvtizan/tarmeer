@@ -428,7 +428,7 @@ export default function ProjectDetailClient({ companySlug, projectSlug, initialD
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {project.images.map((url, i) => (
-                    <button key={i} onClick={() => openGalleryImage(i)} className="group relative rounded-xl overflow-hidden bg-stone-100 aspect-[4/3] text-left">
+                    <button key={i} onClick={() => openGalleryImage(i)} className="group relative rounded-xl overflow-hidden bg-stone-100 aspect-video text-left">
                       <SmartImage src={url} alt={`${project.title} ${i + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
