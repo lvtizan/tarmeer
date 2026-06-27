@@ -165,6 +165,7 @@ router.put('/complaints/:id/status', complaintController_1.updateComplaintStatus
 // Feedback management (admin)
 router.get('/feedback', feedbackController_1.listFeedback);
 router.get('/feedback/:id', feedbackController_1.getFeedback);
+router.post('/feedback/:id/reply', feedbackController_1.adminReplyFeedback);
 router.put('/feedback/mark-all-read', feedbackController_1.markAllFeedbackRead);
 // Notification counts (admin)
 router.get('/notifications/counts', complaintController_1.getNewCounts);

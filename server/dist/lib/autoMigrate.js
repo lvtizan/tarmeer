@@ -340,6 +340,20 @@ const REQUIRED_TABLES = [
       INDEX idx_created_at (created_at)
     )`,
     },
+    {
+        name: 'feedback_replies',
+        sql: `CREATE TABLE IF NOT EXISTS feedback_replies (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      feedback_id INT NOT NULL,
+      sender VARCHAR(10) NOT NULL,
+      content TEXT NOT NULL,
+      read_by_user TINYINT(1) NOT NULL DEFAULT 0,
+      read_by_admin TINYINT(1) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_feedback (feedback_id),
+      INDEX idx_created_at (created_at)
+    )`,
+    },
 ];
 // 需要确保存在的字段
 const REQUIRED_COLUMNS = [

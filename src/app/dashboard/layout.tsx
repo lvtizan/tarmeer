@@ -16,6 +16,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const tp = useSiteLocale().tr.portal;
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [feedbackUnread, setFeedbackUnread] = useState(0);
+
+  // 反馈未读 admin 回复角标:挂载时拉一次，关闭反馈弹窗后刷新(用户看了对话会清零)
+  useEffect(() => {
+    if (!api.getToken()) return;
+    api.request('/feedback/my/unread-count')
+      .then((r) => setFeedbackUnread(Number(r?.count || 0)))
+      .catch(() => {});
+  }, [feedbackOpen]);
 
   const HOMEOWNER_NAV: PortalNavItem[] = [
     { href: '/dashboard', label: tp.navDashboard, icon: Home, end: true },
@@ -81,6 +90,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-20 w-14 rounded-2xl bg-[#1c1917] text-white shadow-lg hover:bg-[#2c2c2c] transition flex flex-col items-center justify-center gap-1 py-2.5"
         aria-label="Send feedback"
       >
+        {feedbackUnread > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center shadow">
+            {feedbackUnread > 99 ? '99+' : feedbackUnread}
+          </span>
+        )}
         <MessageSquare className="w-5 h-5" />
         <span className="text-[10px] font-medium leading-none">{tp.feedback}</span>
       </button>

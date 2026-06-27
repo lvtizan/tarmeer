@@ -431,6 +431,13 @@ app.get('/api/sso/consume', integrationController_1.ssoConsume);
 app.get('/api/public/service-categories', enumAdminController_1.getPublicServiceCategories);
 app.get('/api/public/supplier-categories', enumAdminController_1.getPublicSupplierCategories);
 app.post('/api/feedback', feedbackController_1.submitFeedback);
+// 用户端反馈对话(登录态)：列表 / 未读角标 / 单条对话 / 继续回复
+// 注意 /my/unread-count 必须注册在 /my/:id 之前，否则被 :id 捕获
+const { authenticate: feedbackUserAuth } = require("./middleware/auth");
+app.get('/api/feedback/my', feedbackUserAuth, feedbackController_1.listMyFeedback);
+app.get('/api/feedback/my/unread-count', feedbackUserAuth, feedbackController_1.getMyUnreadReplyCount);
+app.get('/api/feedback/my/:id', feedbackUserAuth, feedbackController_1.getMyConversation);
+app.post('/api/feedback/my/:id/reply', feedbackUserAuth, feedbackController_1.userReplyFeedback);
 app.post('/api/track', activityLogController_1.trackEvent);
 // SEO: serve index.html with injected meta for search engine bots
 const seoMetaInjector_1 = require("./lib/seoMetaInjector");

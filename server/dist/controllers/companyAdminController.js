@@ -292,7 +292,7 @@ async function listCompanies(req, res) {
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM uae_companies c ${where}`, params);
         const total = countRows[0].total;
         const [rows] = await database_1.default.execute(`SELECT c.id, c.name_en, c.slug, c.city, c.logo_url, c.owner_user_id,
-              c.is_signed, c.is_certified,
+              c.is_signed, c.is_certified, c.is_published, c.is_active,
               COALESCE(c.display_order, 0) as display_order,
               COALESCE(c.home_display_order, 0) as home_display_order,
               COALESCE(c.list_display_order, 0) as list_display_order,
