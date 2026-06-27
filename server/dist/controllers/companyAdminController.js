@@ -144,7 +144,14 @@ function normalizeUploadsPath(url) {
     try {
         if (value.startsWith('http://') || value.startsWith('https://')) {
             const parsed = new URL(value);
-            value = parsed.pathname;
+            // 只把自家 /uploads 绝对链接削成相对路径(做磁盘存在性校验);
+            // 外部 CDN(如 Cloudinary res.cloudinary.com)原样返回,否则削掉域名→404 全白。
+            if (parsed.pathname.includes('/uploads/')) {
+                value = parsed.pathname;
+            }
+            else {
+                return value;
+            }
         }
     }
     catch {
