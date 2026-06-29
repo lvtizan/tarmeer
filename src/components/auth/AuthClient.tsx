@@ -150,7 +150,15 @@ export default function AuthClient({ country }: { country?: string }) {
       router.push(response.user?.active_role === 'company' ? '/company' : '/dashboard');
     } catch (err: unknown) {
       setLoading(false);
-      setError(err instanceof Error ? err.message : ta.loginFailed);
+      const e = err as Error & { status?: number; body?: { locked?: boolean; remainingMinutes?: number } };
+      if (e?.status === 423 || e?.body?.locked) {
+        const mins = e.body?.remainingMinutes ?? 15;
+        setError(country === 'vn'
+          ? `Tài khoản tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${mins} phút.`
+          : `Account temporarily locked due to too many failed attempts. Please try again in ${mins} minute${mins > 1 ? 's' : ''}.`);
+      } else {
+        setError(e instanceof Error ? e.message : ta.loginFailed);
+      }
     }
   };
 

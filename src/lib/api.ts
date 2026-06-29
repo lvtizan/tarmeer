@@ -127,13 +127,18 @@ class ApiClient {
         errorMessage = 'Too many requests. Please wait a moment and try again.';
       }
 
+      let body: Record<string, unknown> | null = null;
       try {
-        const body = await response.json();
-        errorMessage = body.error || errorMessage;
+        body = await response.json();
+        errorMessage = (body?.error as string) || errorMessage;
       } catch {
         errorMessage = response.statusText || errorMessage;
       }
-      throw new Error(errorMessage);
+      // 把状态码 + 响应体附到错误上,供调用方读取(如账号锁定的 remainingMinutes)
+      const err = new Error(errorMessage) as Error & { status?: number; body?: Record<string, unknown> | null };
+      err.status = response.status;
+      err.body = body;
+      throw err;
     }
 
     return response.json();
