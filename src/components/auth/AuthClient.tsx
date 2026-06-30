@@ -249,7 +249,7 @@ export default function AuthClient({ country }: { country?: string }) {
             <div className="mt-8 flex gap-8">
               <div><p className="text-white text-2xl font-semibold">500+</p><p className="text-stone-500 text-xs mt-0.5">{ta.statVerified}</p></div>
               <div><p className="text-white text-2xl font-semibold">12K+</p><p className="text-stone-500 text-xs mt-0.5">{ta.statProjects}</p></div>
-              <div><p className="text-white text-2xl font-semibold">{c.name}</p><p className="text-stone-500 text-xs mt-0.5">{ta.statCoverage}</p></div>
+              <div><p className="text-white text-2xl font-semibold">{country === 'vn' ? '63' : c.name}</p><p className="text-stone-500 text-xs mt-0.5">{ta.statCoverage}</p></div>
             </div>
             <div className="mt-6 pt-4 border-t border-white/10">
               <span className="text-stone-600 text-[11px]">&copy; {new Date().getFullYear()} Tarmeer</span>

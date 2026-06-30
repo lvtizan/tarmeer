@@ -28,7 +28,7 @@ export const home = {
   },
   vi: {
     curatedTag: 'Gợi Ý Cho Gia Đình Việt',
-    topCompanies: 'Công Ty Thiết Kế & Thi Công Hàng Đầu',
+    topCompanies: 'Các Công Ty Thiết Kế & Thi Công Hàng Đầu',
     viewAll: 'Xem tất cả',
     spaceTag: 'Bạn Đang Tìm Gì?',
     browseBySpace: 'Tìm Theo Loại Không Gian',

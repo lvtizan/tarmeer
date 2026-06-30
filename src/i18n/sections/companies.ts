@@ -29,8 +29,8 @@ export const companies = {
     showMore: (n: number) => `Show ${n} more`,
   },
   vi: {
-    heroHeading: 'Tìm Chuyên Gia Thiết Kế & Thi Công tại Việt Nam',
-    step1: 'Cho chúng tôi biết về dự án của bạn',
+    heroHeading: 'Tìm kiếm chuyên gia phù hợp với nhu cầu của bạn',
+    step1: 'Cho chúng tôi biết về thông tin dự án của bạn',
     step2: 'Kết nối với chuyên gia địa phương',
     step3: 'Thuê chuyên gia phù hợp với sự tự tin',
     searchPlaceholder: 'Tìm theo thành phố hoặc tên công ty',

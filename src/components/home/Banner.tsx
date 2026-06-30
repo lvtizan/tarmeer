@@ -154,7 +154,7 @@ export default function Banner() {
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, phoneRegion.maxDigits))}
                   maxLength={phoneRegion.maxDigits}
                   className="min-w-0 w-full bg-transparent text-base font-medium text-[#1c1917] outline-none placeholder:text-stone-300"
-                  placeholder={`Enter ${phoneRegion.maxDigits}-digit number`} />
+                  placeholder={tr.banner.phonePlaceholder(phoneRegion.maxDigits)} />
               </div>
               {phoneError && <p className="text-[12px] text-red-600 mt-1.5">{phoneError}</p>}
             </div>

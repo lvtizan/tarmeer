@@ -55,7 +55,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
     ? 'Back to Admin'
     : previewMode || from === 'company-dashboard'
     ? 'Back to Company Dashboard'
-    : 'Back';
+    : isVn ? 'Quay lại' : 'Back';
 
   const handleBack = () => {
     if (isSpecialContext) {
@@ -319,22 +319,22 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                   {company.foundedYear > 0 && (
                     <>
                       <span className="text-stone-300">&middot;</span>
-                      <span className="text-stone-500">Since {company.foundedYear}</span>
+                      <span className="text-stone-500">{isVn ? 'kể từ năm' : 'Since'} {company.foundedYear}</span>
                     </>
                   )}
                 </div>
                 {/* Stats row */}
                 <div className="flex items-center gap-4 mt-2 text-xs text-stone-500">
                   <span className="flex items-center gap-1">
-                    <FolderOpen className="w-3.5 h-3.5 text-[#c6a065]" />{company.projectCount}+ Projects
+                    <FolderOpen className="w-3.5 h-3.5 text-[#c6a065]" />{company.projectCount}+ {isVn ? 'Dự án' : 'Projects'}
                   </span>
                   {company.foundedYear > 0 && (
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-[#c6a065]" />{yearsExp} Years
+                      <Calendar className="w-3.5 h-3.5 text-[#c6a065]" />{yearsExp} {isVn ? 'năm' : 'Years'}
                     </span>
                   )}
                   <span className="flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-[#c6a065]" />{company.services.length} Services
+                    <Briefcase className="w-3.5 h-3.5 text-[#c6a065]" />{company.services.length} {isVn ? 'dịch vụ' : 'Services'}
                   </span>
                 </div>
               </div>
@@ -557,7 +557,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
             {/* Services Section */}
             {company.services.length > 0 && (
               <section className="py-6 border-b border-stone-100">
-                <h2 className="text-lg font-semibold text-[#1c1917] mb-3">Services</h2>
+                <h2 className="text-lg font-semibold text-[#1c1917] mb-3">{isVn ? 'Dịch vụ' : 'Services'}</h2>
                 <div className="flex flex-wrap gap-2">
                   {company.services.map(svc => (
                     <span
@@ -575,7 +575,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
             {!company.isClaimed &&
               (company.hasPhone || company.phone || company.email || company.website || company.instagram || company.address) && (
                 <section className="py-6 border-b border-stone-100 lg:hidden">
-                  <h2 className="text-lg font-semibold text-[#1c1917] mb-3">Contact</h2>
+                  <h2 className="text-lg font-semibold text-[#1c1917] mb-3">{isVn ? 'Liên hệ' : 'Contact'}</h2>
                   <div className="space-y-2.5 text-sm">
                     {company.hasPhone && <PhoneRevealButton targetType="uae" targetId={company.numericId} isVn={isVn} />}
                     {company.email && (
@@ -593,7 +593,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                         rel="noopener noreferrer"
                         className="flex items-center gap-2.5 text-[#b8864a] hover:underline"
                       >
-                        <Globe className="w-4 h-4" /> Visit website{' '}
+                        <Globe className="w-4 h-4" /> {isVn ? 'Truy cập website' : 'Visit website'}{' '}
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
@@ -625,9 +625,9 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
               ) : isVn && company.projectImages.length > 0 ? (
                 <section className="py-10 lg:py-14">
                   <div className="flex items-end justify-between mb-8">
-                    <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Portfolio</h2>
+                    <h2 className="font-serif text-3xl sm:text-4xl text-[#1c1917]">Dự án tiêu biểu</h2>
                     <span className="text-sm text-[#6b6b6b] tabular-nums">
-                      {company.projectImages.length} {company.projectImages.length === 1 ? 'image' : 'images'}
+                      {company.projectImages.length} {isVn ? 'ảnh' : (company.projectImages.length === 1 ? 'image' : 'images')}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -664,7 +664,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                             : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
                         }`}
                       >
-                        By Project ({Object.keys(normalizedProjectCategories).length})
+                        {isVn ? 'Theo dự án' : 'By Project'} ({Object.keys(normalizedProjectCategories).length})
                       </button>
                       <button
                         onClick={() => setPortfolioMode('style')}
@@ -674,7 +674,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                             : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
                         }`}
                       >
-                        By Style ({Object.keys(normalizedStyleCategories).length})
+                        {isVn ? 'Theo phong cách' : 'By Style'} ({Object.keys(normalizedStyleCategories).length})
                       </button>
                     </div>
                   )}
@@ -695,7 +695,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
             <div className="sticky top-20 space-y-4">
               <UnifiedInquiryForm
                 variant="company"
-                title={`Get in touch with ${company.name}`}
+                title={isVn ? `Liên hệ với ${company.name}` : `Get in touch with ${company.name}`}
                 companyName={company.name}
                 companySlug={company.id}
                 isVn={isVn}
@@ -705,7 +705,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
               {!company.isClaimed &&
                 (company.hasPhone || company.phone || company.email || company.website || company.instagram || company.address) && (
                   <div className="border border-stone-200 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Contact Info</h3>
+                    <h3 className="text-sm font-semibold text-[#1c1917] mb-3">{isVn ? 'Thông tin liên hệ' : 'Contact Info'}</h3>
                     <div className="space-y-2.5 text-sm">
                       {company.hasPhone && <PhoneRevealButton targetType="uae" targetId={company.numericId} isVn={isVn} />}
                       {company.email && (
@@ -750,26 +750,26 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
 
               {/* Business Details */}
               <div className="border border-stone-200 rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Business Details</h3>
+                <h3 className="text-sm font-semibold text-[#1c1917] mb-3">{isVn ? 'Thông tin doanh nghiệp' : 'Business Details'}</h3>
                 <dl className="space-y-2 text-sm">
                   {company.companyType && getCompanyTypeLabel(company.companyType) && (
                     <div className="flex justify-between">
-                      <dt className="text-stone-500">Type</dt>
+                      <dt className="text-stone-500">{isVn ? 'Loại hình' : 'Type'}</dt>
                       <dd className="text-[#1c1917]">{getCompanyTypeLabel(company.companyType)}</dd>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <dt className="text-stone-500">Location</dt>
+                    <dt className="text-stone-500">{isVn ? 'Địa điểm' : 'Location'}</dt>
                     <dd className="text-[#1c1917]">{company.city}{isVn ? '' : ', UAE'}</dd>
                   </div>
                   {company.foundedYear > 0 && (
                     <div className="flex justify-between">
-                      <dt className="text-stone-500">Established</dt>
+                      <dt className="text-stone-500">{isVn ? 'Năm thành lập' : 'Established'}</dt>
                       <dd className="text-[#1c1917]">{company.foundedYear}</dd>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <dt className="text-stone-500">Projects</dt>
+                    <dt className="text-stone-500">{isVn ? 'Dự án' : 'Projects'}</dt>
                     <dd className="text-[#1c1917]">{company.projectCount}+</dd>
                   </div>
                 </dl>
@@ -784,7 +784,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
         <section className="border-t border-stone-200 bg-stone-50 py-10 mt-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <h2 className="font-serif text-xl font-semibold text-[#1c1917] mb-5">
-              Similar Companies in {company.city}
+              {isVn ? 'Công ty tương tự tại' : 'Similar Companies in'} {company.city}
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {similar.map(c => (
@@ -810,7 +810,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
                     <h3 className="font-medium text-sm text-[#1c1917] group-hover:text-[#b8864a] transition truncate">
                       {c.name}
                     </h3>
-                    <p className="text-xs text-stone-500 mt-0.5">{c.projectCount}+ projects</p>
+                    <p className="text-xs text-stone-500 mt-0.5">{c.projectCount}+ {isVn ? 'dự án' : 'projects'}</p>
                   </div>
                 </div>
               ))}
@@ -833,7 +833,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-sm text-[#1c1917]">{company.name}</p>
-                  <p className="text-xs text-[#b8864a]">{company.projectCount}+ projects</p>
+                  <p className="text-xs text-[#b8864a]">{company.projectCount}+ {isVn ? 'dự án' : 'projects'}</p>
                 </div>
                 <button
                   onClick={() => setFloatingFormDismissed(true)}
@@ -844,7 +844,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
               </div>
               <UnifiedInquiryForm
                 variant="company"
-                title={`Get in touch with ${company.name}`}
+                title={isVn ? `Liên hệ với ${company.name}` : `Get in touch with ${company.name}`}
                 companyName={company.name}
                 companySlug={company.id}
                 inline
@@ -861,7 +861,7 @@ export default function CompanyDetailClient({ company, slug, isVn = false }: Com
         open={lightboxOpen}
         images={allLightboxImages}
         currentIndex={lightboxIndex}
-        categoryName="Portfolio"
+        categoryName={isVn ? 'Dự án tiêu biểu' : 'Portfolio'}
         onClose={() => setLightboxOpen(false)}
         onNavigate={(i) => setLightboxIndex(i)}
       />
