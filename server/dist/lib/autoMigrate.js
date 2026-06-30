@@ -214,6 +214,56 @@ const REQUIRED_TABLES = [
     )`,
     },
     {
+        name: 'guide_series',
+        sql: `CREATE TABLE IF NOT EXISTS guide_series (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      slug VARCHAR(200) NOT NULL,
+      country VARCHAR(5) NOT NULL DEFAULT 'ae',
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_series_slug_country (slug, country)
+    )`,
+    },
+    {
+        name: 'guides',
+        sql: `CREATE TABLE IF NOT EXISTS guides (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      slug VARCHAR(200) NOT NULL,
+      country VARCHAR(5) NOT NULL DEFAULT 'ae',
+      series_id INT NULL,
+      category VARCHAR(100) NOT NULL DEFAULT 'guide',
+      title VARCHAR(255) NOT NULL,
+      summary TEXT,
+      body_blocks JSON NOT NULL,
+      cover_image VARCHAR(500),
+      status ENUM('draft','published') NOT NULL DEFAULT 'draft',
+      author_name VARCHAR(120),
+      seo_title VARCHAR(255),
+      seo_description VARCHAR(500),
+      view_count INT NOT NULL DEFAULT 0,
+      published_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_guide_slug_country (slug, country),
+      INDEX idx_guide_pub (country, status, published_at)
+    )`,
+    },
+    {
+        name: 'guide_expert_quotes',
+        sql: `CREATE TABLE IF NOT EXISTS guide_expert_quotes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      guide_id INT NOT NULL,
+      expert_ref_id INT NOT NULL,
+      expert_ref_source VARCHAR(32) NOT NULL DEFAULT 'experts',
+      quote TEXT NOT NULL,
+      role_label VARCHAR(160),
+      sort_order INT NOT NULL DEFAULT 0,
+      INDEX idx_geq_guide (guide_id)
+    )`,
+    },
+    {
         name: 'supplier_leads',
         sql: `CREATE TABLE IF NOT EXISTS supplier_leads (
       id INT AUTO_INCREMENT PRIMARY KEY,
