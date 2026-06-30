@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import SmartImage from '@/components/ui/SmartImage';
 import type { PublicGuide, BodyBlock, GuideExpert } from '@/lib/publicApi';
@@ -326,6 +326,52 @@ function renderBlock(block: BodyBlock, experts: GuideExpert[], index: number): R
   }
 }
 
+// ─── Floating quick-nav sidebar (scroll-spy) ─────────────────────────────────────
+
+function FloatingToc({ items }: { items: { id: string; text: string }[] }) {
+  const [active, setActive] = useState('');
+  useEffect(() => {
+    const els = items.map((t) => document.getElementById(t.id)).filter(Boolean) as HTMLElement[];
+    if (!els.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-80px 0px -68% 0px' }
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, [items]);
+
+  return (
+    <aside
+      className="hidden xl:block fixed top-28 right-8 w-56 max-h-[72vh] overflow-y-auto z-30 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-2xl p-4 shadow-sm"
+      aria-label="On this page"
+    >
+      <p className="text-[11px] font-bold uppercase tracking-widest text-[#b8864a] mb-3">On this page</p>
+      <ul className="space-y-1.5 border-l border-stone-200">
+        {items.map((t) => (
+          <li key={t.id}>
+            <a
+              href={`#${t.id}`}
+              className={`block pl-3 -ml-px border-l-2 leading-snug text-[13px] transition ${
+                active === t.id
+                  ? 'border-[#b8864a] text-[#b8864a] font-medium'
+                  : 'border-transparent text-[#6b6b6b] hover:text-[#2c2c2c]'
+              }`}
+            >
+              {t.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────────────
 
 export default function GuideDetailClient({ guide }: { guide: PublicGuide }) {
@@ -382,9 +428,12 @@ export default function GuideDetailClient({ guide }: { guide: PublicGuide }) {
       {/* Answer-first summary lead */}
       <p className="text-[16px] text-[#2c2c2c] leading-relaxed mb-7 border-l-4 border-[#b8864a] pl-4">{guide.summary}</p>
 
-      {/* TOC */}
+      {/* Floating quick-nav (desktop) */}
+      {toc.length >= 3 && <FloatingToc items={toc} />}
+
+      {/* Inline TOC (mobile / narrow — floating sidebar takes over on xl) */}
       {toc.length >= 3 && (
-        <nav className="mb-8 bg-stone-50 border border-stone-200 rounded-2xl p-5">
+        <nav className="xl:hidden mb-8 bg-stone-50 border border-stone-200 rounded-2xl p-5">
           <p className="text-[11px] font-bold uppercase tracking-widest text-[#b8864a] mb-3">In this guide</p>
           <ol className="space-y-1.5">
             {toc.map((t, i) => (
