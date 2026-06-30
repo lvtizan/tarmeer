@@ -63,3 +63,14 @@
 - `/insights` 分板 + 详情页 + 专家引用卡 + 5 段 JSON-LD + sitemap + llms.txt：已建（见 docs/plans/2026-06-30-insights-guides-*）。
 - 首篇《Dubai Renovation Cost Guide 2026》已 seed（191 真实项目 + 专家 Ahmed）。
 - 待办：footer 入口、公司引述块、人物场景图（中转生图修复后补）、建材采购篇 + 成交故事篇、榜单页、评分系统。
+
+## 深度标准（铁律 · 每篇必达，避免"速读卡片")
+一篇合格指南 = 读 5–8 分钟的权威长文，不是一张表+几条要点。每篇至少包含：
+1. 顶部「关键结论」callout + 3 个大数字 stat_highlight + 目录锚点 + 阅读时长/更新日期。
+2. **多维真数据切片**（同一主题至少 3 张表/角度）：如成本=按风格 + 按面积档(经济规模) + 按年份趋势 + 真实案例表(带真实公司名)。
+3. **交互件**（如造价估算器 estimator，用真实中位数算）。
+4. **成本/数据构成拆解**（市场参考须标 source）。
+5. **3 位真实专家**分主题出现（不是 1 位）。
+6. 时间线 + 含/不含清单 + 能省/不能省 + 如何挑选(内链) + CTA。
+7. 方法论 callout（数据来源/口径/样本量/时间范围）+ 8–10 条 FAQ + source。
+> 块类型已支持：heading/paragraph/image/stat_table/list/faq/expert_quote/source/**callout/stat_highlight/estimator/timeline/cta**（渲染器 GuideDetailClient + 类型 BodyBlock）。

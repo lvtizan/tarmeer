@@ -608,7 +608,12 @@ export interface BodyBlock {
     | 'faq'
     | 'list'
     | 'expert_quote'
-    | 'source';
+    | 'source'
+    | 'callout'
+    | 'stat_highlight'
+    | 'estimator'
+    | 'timeline'
+    | 'cta';
   // heading
   level?: 2 | 3;
   text?: string;
@@ -627,6 +632,15 @@ export interface BodyBlock {
   title?: string;
   // expert_quote
   expertIndex?: number;
+  // callout: variant 重点/方法/提示; 用 text 或 items
+  variant?: 'key' | 'method' | 'tip' | 'warn';
+  // estimator: 各风格中位 AED/㎡ + 默认面积 + 单位/币种
+  styleMedians?: { style: string; median: number }[];
+  defaultArea?: number;
+  currency?: string;
+  // cta
+  href?: string;
+  ctaLabel?: string;
 }
 
 export interface PublicGuide {
@@ -637,6 +651,7 @@ export interface PublicGuide {
   category: string;
   series: string | null;
   cover_image: string | null;
+  author_name: string | null;
   seo_title: string | null;
   seo_description: string | null;
   published_at: string;
