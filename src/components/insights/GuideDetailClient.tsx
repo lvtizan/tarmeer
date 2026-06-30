@@ -337,6 +337,19 @@ export default function GuideDetailClient({ guide }: { guide: PublicGuide }) {
   const mins = readingMinutes(blocks, guide.summary);
   const updated = fmtDate(guide.updated_at || guide.published_at);
 
+  // 按 H2 分段：lead(首个H2前) + 各段。标记 collapsed 的段折叠（内容仍在 HTML，AI 可抓）。
+  const lead: { block: BodyBlock; i: number }[] = [];
+  const sections: { heading: BodyBlock; hi: number; collapsed: boolean; body: { block: BodyBlock; i: number }[] }[] = [];
+  blocks.forEach((block, i) => {
+    if (block.type === 'heading' && block.level !== 3) {
+      sections.push({ heading: block, hi: i, collapsed: !!block.collapsed, body: [] });
+    } else if (sections.length === 0) {
+      lead.push({ block, i });
+    } else {
+      sections[sections.length - 1].body.push({ block, i });
+    }
+  });
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       {/* Breadcrumb */}
@@ -386,7 +399,42 @@ export default function GuideDetailClient({ guide }: { guide: PublicGuide }) {
       )}
 
       {/* Body */}
-      <div>{blocks.map((block, i) => renderBlock(block, experts, i))}</div>
+      <div>
+        {lead.map(({ block, i }) => renderBlock(block, experts, i))}
+        {sections.map((s) =>
+          s.collapsed ? (
+            <details key={s.hi} className="group border-t border-stone-200 mt-2">
+              <summary
+                id={slugifyHeading(s.heading.text || '')}
+                className="cursor-pointer list-none flex items-center justify-between gap-3 text-xl font-bold text-[#2c2c2c] py-5 scroll-mt-24 hover:text-[#b8864a] transition"
+              >
+                <span>{s.heading.text}</span>
+                <span className="shrink-0 flex items-center gap-1.5 text-[12px] font-medium text-[#b8864a]">
+                  <span className="group-open:hidden">Show</span>
+                  <span className="hidden group-open:inline">Hide</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-180" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+                </span>
+              </summary>
+              <div className="pb-2">{s.body.map(({ block, i }) => renderBlock(block, experts, i))}</div>
+            </details>
+          ) : (
+            <section key={s.hi}>
+              {renderBlock(s.heading, experts, s.hi)}
+              {s.body.map(({ block, i }) => renderBlock(block, experts, i))}
+            </section>
+          )
+        )}
+      </div>
+
+      {/* Back to top */}
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-[#1c1917] text-white shadow-lg flex items-center justify-center hover:bg-[#b8864a] transition"
+        aria-label="Back to top"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15" /></svg>
+      </button>
     </div>
   );
 }

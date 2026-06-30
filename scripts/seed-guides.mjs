@@ -106,7 +106,7 @@ const costGuide = {
       'Timeline — compressed schedules and phased works raise labour cost.',
     ] },
 
-    { type: 'heading', level: 2, text: 'Typical renovation timeline' },
+    { type: 'heading', level: 2, text: 'Typical renovation timeline', collapsed: true },
     { type: 'timeline', title: 'From first call to handover', items: [
       { phase: 'Design & concept', duration: '2–4 weeks', desc: 'Brief, site survey, mood boards, layout and material selection.' },
       { phase: 'Quotation & contract', duration: '1–2 weeks', desc: 'Detailed BOQ, fixed quote, approvals and permits where needed.' },
@@ -114,7 +114,7 @@ const costGuide = {
       { phase: 'Snagging & handover', duration: '1–2 weeks', desc: 'Defect list, final finishes, cleaning and handover.' },
     ] },
 
-    { type: 'heading', level: 2, text: 'What’s included — and what’s not' },
+    { type: 'heading', level: 2, text: 'What’s included — and what’s not', collapsed: true },
     { type: 'list', ordered: false, title: 'Usually included in the per-m² figure', items: [
       'Design and project management', 'Demolition and MEP works', 'Built-in joinery and wardrobes', 'Flooring, wall finishes and paint', 'Kitchen and bathroom fit-out', 'Ceilings and lighting',
     ] },
@@ -122,7 +122,7 @@ const costGuide = {
       'Loose furniture and décor', 'Appliances and smart-home systems', 'Landscaping and outdoor works', 'Authority / community NOC fees',
     ] },
 
-    { type: 'heading', level: 2, text: 'Where to save — and where not to' },
+    { type: 'heading', level: 2, text: 'Where to save — and where not to', collapsed: true },
     { type: 'list', ordered: false, title: 'Safe places to save', items: [
       'Keep the existing layout — avoid moving wet areas (kitchen / bathrooms).',
       'Choose porcelain that mimics marble instead of natural stone.',

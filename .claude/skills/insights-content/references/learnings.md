@@ -33,3 +33,12 @@
 - **现象**：`/insights` 详情正常，列表却"No guides"。
 - **根因**：`fetchGuides` 在 qs 里加了 country，`request()` 又追加一次 → `?country=ae&country=ae` → Express `req.query.country` 变数组 → `WHERE country=?` 绑定数组 → 查空（详情无 `?` 所以只加一次，正常）。
 - **做法**：取数 helper 别重复加 country，统一交给 `request()` 加一次。凡"详情可、列表空"先查参数是否重复/类型。
+
+## 2026-06-30 长文体验：折叠次要段(不丢AI收录)
+- 深度长文"太长"的解法不是删，是**导航+折叠**：H2 heading 加 `collapsed:true` → 渲染成 `<details>`，**内容仍在 HTML/DOM，AI 与 Google 照抓**，仅视觉收起。配粘性/锚点目录 + 回顶浮钮。
+- GuideDetailClient 按 H2 分段(lead + sections)，collapsed 段渲染 details/summary(id 在 summary 上, 锚点可跳)。次要段(时间线/含不含/能省不能省)默认折叠，核心数据/表/估算器/FAQ 保持展开。
+
+## 2026-06-30 坑：加路由后未重启后端 → 通用404
+- **现象**：guides 接口突然返回通用 `{"error":"Not found"}`(非 controller 的 'Guide not found.')，列表详情全 404。
+- **根因**：3002 跑的是**加 guides 路由之前的旧实例**(seed/数据脚本不重启后端)。
+- **做法**：凡改了 `server/dist/routes` 或 `app.js`，必须 kill+重启 3002；区分"通用404=路由没注册/旧实例" vs "controller 404=数据不存在"。

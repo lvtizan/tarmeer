@@ -641,6 +641,8 @@ export interface BodyBlock {
   // cta
   href?: string;
   ctaLabel?: string;
+  // heading: 该 H2 区段默认折叠(内容仍在 HTML, AI 可抓; 仅视觉收起)
+  collapsed?: boolean;
 }
 
 export interface PublicGuide {
