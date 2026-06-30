@@ -650,14 +650,13 @@ export async function fetchGuides(
   country: string,
   params?: { category?: string; series?: string }
 ): Promise<PublicGuide[]> {
-  const qs = new URLSearchParams({ country });
+  // country 交给 request() 统一追加一次，这里别重复加(否则 ?country=ae&country=ae → Express 解析成数组 → 查空)
+  const qs = new URLSearchParams();
   if (params?.category) qs.set('category', params.category);
   if (params?.series) qs.set('series', params.series);
+  const endpoint = qs.toString() ? `/guides/public?${qs.toString()}` : '/guides/public';
   try {
-    const result = await request<{ guides: PublicGuide[] }>(
-      `/guides/public?${qs.toString()}`,
-      country
-    );
+    const result = await request<{ guides: PublicGuide[] }>(endpoint, country);
     return result.guides || [];
   } catch {
     return [];

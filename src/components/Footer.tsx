@@ -21,6 +21,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
     { to: '/portfolio', label: tr.footer.navLinks.Portfolio },
     { to: '/companies', label: tr.footer.navLinks['Find Company'] },
     { to: '/materials', label: tr.footer.navLinks.Materials },
+    { to: '/insights', label: lang === 'vi' ? 'Cẩm nang' : 'Insights' },
     { to: '/for-companies', label: tr.footer.navLinks['Join as Company'] },
     { to: '/about', label: tr.footer.navLinks['About Us'] },
     { to: '/faq', label: tr.footer.navLinks.FAQ },

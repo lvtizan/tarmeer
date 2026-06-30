@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS guide_expert_quotes (
 - [ ] **Step 2: src/lib/schema/guide.ts** 导出 `buildGuideJsonLd({guide, experts, url, c})` 返回数组：Article、FAQPage（从 faq 块）、BreadcrumbList、ItemList（从 list 块，可选）、专家 Person（`@type:Person, name, jobTitle, sameAs: <baseUrl>/experts/<slug>`）。
 - [ ] **Step 3: /insights/page.tsx**（SSR，force-dynamic，x-country；VN 可先同样渲染或预留）：generateMetadata（canonical 国家化）+ 列出系列/分类/最新指南卡 + ItemList JSON-LD。仅 AE 有内容时 VN 列表为空也不报错。
 - [ ] **Step 4: /insights/[slug]/page.tsx**：SSR fetch guide；**不存在/跨国 → notFound()**（禁软 404）；generateMetadata 用 seo_title/seo_description + canonical；注入 `buildGuideJsonLd`；渲染 `<GuideDetailClient guide=.. experts=.. />`。
-- [ ] **Step 5: GuideDetailClient.tsx**：按 `body_blocks` 类型渲染：heading/paragraph/stat_table(数据表)/faq/list/source；**expert_quote 块 → 专家引用卡**（头像占位+`full_name`+`experience_years 年·city`+认证徽章+引文+「查看专家」链 `/experts/<expert_slug>`）。答案前置摘要置顶。配色遵循品牌（金 `#b8864a`），表单/卡片规范见 AGENTS.md。
+- [ ] **Step 5: GuideDetailClient.tsx**：按 `body_blocks` 类型渲染：heading/paragraph/**image(图+caption+alt，图文穿插)**/stat_table(数据表)/faq/list/source；**expert_quote 块 → 专家引用卡**（**专家真实头像 `avatar_url`**+`full_name`+`experience_years 年·city`+认证徽章+引文+「查看专家」链 `/experts/<expert_slug>`）。封面图 `cover_image` 置顶。答案前置摘要置顶。图片用 `SmartImage`/`<img srcSet>` + lazy + 显式宽高防 CLS。配色品牌金 `#b8864a`，规范见 AGENTS.md。
 - [ ] **Step 6: 构建** `next build --webpack` Compiled successfully。
 - [ ] **Step 7:** commit `feat(insights): /insights 分板落地+详情页(结构化块+专家引用卡+JSON-LD)`
 
