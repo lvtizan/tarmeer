@@ -50,6 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/portfolio`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/experts`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/blog`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${BASE}/insights`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/for-homeowners`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
@@ -109,6 +110,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: a.updated_at ? new Date(a.updated_at) : now,
       changeFrequency: 'monthly' as const,
       priority: 0.6,
+    }));
+
+  // ── 指南详情页（按国家）─ /insights/[slug] ──────────────────
+  const guidesData = await fetchJson<{ guides: Array<{ slug: string; published_at?: string }> }>(
+    '/guides/public?page=1&limit=200',
+    country,
+  );
+  const insightRoutes: MetadataRoute.Sitemap = (guidesData?.guides ?? [])
+    .filter((g) => g.slug)
+    .map((g) => ({
+      url: `${BASE}/insights/${g.slug}`,
+      lastModified: g.published_at ? new Date(g.published_at) : now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
     }));
 
   // ── 项目详情页（按国家）──────────────────────────────────────
@@ -183,6 +198,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...expertRoutes,
     ...projectRoutes,
     ...blogRoutes,
+    ...insightRoutes,
     ...supplierRoutes,
   ];
 }

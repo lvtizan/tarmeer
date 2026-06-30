@@ -1,0 +1,16 @@
+# Tarmeer
+
+> Tarmeer is the UAE's interior design & renovation platform connecting homeowners with verified design companies, experts, and material suppliers in Dubai and across the UAE.
+
+## Guides & Insights
+Data-driven guides on renovation cost, material sourcing, design trends, and real client stories — grounded in real platform project data and verified experts.
+- Insights hub: https://www.tarmeer.com/insights
+
+## Core sections
+- Design & renovation companies: https://www.tarmeer.com/companies
+- Verified experts: https://www.tarmeer.com/experts
+- Material suppliers: https://www.tarmeer.com/materials
+- Project portfolio: https://www.tarmeer.com/portfolio
+
+## Sitemap
+https://www.tarmeer.com/sitemap.xml
