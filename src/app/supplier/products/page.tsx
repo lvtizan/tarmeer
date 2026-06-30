@@ -37,19 +37,23 @@ interface Product {
 export default function SupplierProductsPage() {
   const { t } = useAdminT();
 
-  const CATEGORY_OPTIONS = [
+  // 品类选项从管理后台权威分类拉取(/api/public/supplier-categories,与导航/后台同源),
+  // 禁止硬编码——否则供应商后台品类与管理后台设置不一致。
+  const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([
     { value: '', label: t('No category', '无品类') },
-    { value: 'furniture', label: t('Furniture', '家具') },
-    { value: 'stone', label: t('Stone', '石材') },
-    { value: 'lighting', label: t('Lighting', '灯具') },
-    { value: 'plants', label: t('Plants', '植物景观') },
-    { value: 'flooring', label: t('Flooring', '地板') },
-    { value: 'kitchen', label: t('Kitchen', '厨卫') },
-    { value: 'curtains', label: t('Curtains', '窗帘纺织') },
-    { value: 'paint', label: t('Paint', '涂料') },
-    { value: 'hardware', label: t('Hardware', '五金配件') },
-    { value: 'other', label: t('Other', '其他') },
-  ];
+  ]);
+  useEffect(() => {
+    fetch(`${API_BASE}/public/supplier-categories`)
+      .then((r) => r.json())
+      .then((d: { groups?: { categories?: { value: string; label: string }[] }[]; ungrouped?: { value: string; label: string }[] }) => {
+        const cats: { value: string; label: string }[] = [];
+        (d.groups || []).forEach((g) => (g.categories || []).forEach((c) => cats.push({ value: c.value, label: c.label })));
+        (d.ungrouped || []).forEach((c) => cats.push({ value: c.value, label: c.label }));
+        setCategoryOptions([{ value: '', label: t('No category', '无品类') }, ...cats]);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,7 +222,7 @@ export default function SupplierProductsPage() {
             </div>
             <div>
               <label className={labelCls}>{t('Category', '品类')}</label>
-              <AdminSelect options={CATEGORY_OPTIONS} value={newCat} onChange={setNewCat} />
+              <AdminSelect options={categoryOptions} value={newCat} onChange={setNewCat} />
             </div>
             <div>
               <label className={labelCls}>{t('Price *', '价格 *')}</label>
