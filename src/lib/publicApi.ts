@@ -585,6 +585,99 @@ export async function fetchCompanyPreviewDetail(profileId: string): Promise<Comp
   };
 }
 
+// ─── Guides public API ───────────────────────────────────────────────────────
+
+export interface GuideExpert {
+  quote: string;
+  role_label: string;
+  full_name: string;
+  expert_slug: string;
+  experience_years: number;
+  city: string;
+  is_certified: boolean;
+  avatar_url: string | null;
+}
+
+export interface BodyBlock {
+  type:
+    | 'heading'
+    | 'paragraph'
+    | 'image'
+    | 'stat_table'
+    | 'faq'
+    | 'list'
+    | 'expert_quote'
+    | 'source';
+  // heading
+  level?: 2 | 3;
+  text?: string;
+  // image
+  url?: string;
+  alt?: string;
+  caption?: string;
+  // stat_table
+  columns?: string[];
+  rows?: string[][];
+  // faq items (type:'faq') or list items (type:'list') — shape depends on block type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  items?: any[];
+  // list
+  ordered?: boolean;
+  title?: string;
+  // expert_quote
+  expertIndex?: number;
+}
+
+export interface PublicGuide {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string;
+  category: string;
+  series: string | null;
+  cover_image: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  published_at: string;
+  updated_at: string;
+  country: string;
+  body_blocks: BodyBlock[];
+  experts: GuideExpert[];
+}
+
+export async function fetchGuides(
+  country: string,
+  params?: { category?: string; series?: string }
+): Promise<PublicGuide[]> {
+  const qs = new URLSearchParams({ country });
+  if (params?.category) qs.set('category', params.category);
+  if (params?.series) qs.set('series', params.series);
+  try {
+    const result = await request<{ guides: PublicGuide[] }>(
+      `/guides/public?${qs.toString()}`,
+      country
+    );
+    return result.guides || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchGuide(
+  slug: string,
+  country: string
+): Promise<{ guide: PublicGuide } | null> {
+  try {
+    const result = await request<{ guide: PublicGuide }>(
+      `/guides/public/${encodeURIComponent(slug)}`,
+      country
+    );
+    return result;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchAdminCompanyPreview(profileId: string): Promise<Company> {
   const adminToken = localStorage.getItem('admin_token');
   if (!adminToken) {
