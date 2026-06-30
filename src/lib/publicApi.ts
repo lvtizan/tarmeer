@@ -3,7 +3,8 @@ import { normalizeFoundedYear, summarizeCompanyDescription, type Company, type P
 import { companies as localCompanies } from '../data/companies';
 import { api } from './api';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+// SSR(服务端) 用 API_INTERNAL_URL 直连后端(相对 /api 在服务端无法解析)；客户端读不到 API_INTERNAL_URL 自动回退 /api。对齐 blog/[slug]、sitemap 等的解析方式。
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || '/api';
 const ALLOW_LOCAL_FALLBACK = process.env.NODE_ENV === 'development';
 
 export interface PublicDesignerCardData {
