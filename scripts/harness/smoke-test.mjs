@@ -78,6 +78,32 @@ if (fStatus === null) {
   ok(`GET localhost:5180 → ${fStatus}`);
 }
 
+// ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
+// 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
+// 不得硬编码,否则会与管理后台不一致(供应商品类踩坑 2026-06-30)。
+// 这里静态扫描:相关页面若出现硬编码品类字面量数组 → 失败;并要求引用权威接口。
+console.log('\n[4/4] 静态守卫: 禁止硬编码权威枚举');
+import('fs').then(({ readFileSync, existsSync }) => {
+  const guards = [
+    {
+      file: 'src/app/supplier/products/page.tsx',
+      mustInclude: '/public/supplier-categories',
+      forbid: /value:\s*['"](furniture|lighting|stone|curtains|hardware|flooring)['"]/,
+      label: '供应商产品品类',
+    },
+  ];
+  for (const g of guards) {
+    const fp = path.join(ROOT, g.file);
+    if (!existsSync(fp)) { ng(`${g.label}: 文件缺失`, g.file); continue; }
+    const src = readFileSync(fp, 'utf8');
+    if (g.forbid.test(src)) ng(`${g.label}: 检测到硬编码枚举`, '必须从权威接口拉取,禁止硬编码');
+    else if (!src.includes(g.mustInclude)) ng(`${g.label}: 未引用权威接口`, g.mustInclude);
+    else ok(`${g.label}: 从权威接口拉取,无硬编码`);
+  }
+  finish();
+}).catch(() => finish());
+
+function finish() {
 // ─── Summary ─────────────────────────────────────────────────────────────────
 const total = pass + fail;
 console.log(`\n${'─'.repeat(40)}`);
@@ -86,4 +112,5 @@ if (fail === 0) {
 } else {
   console.log(`\x1b[31m ${fail}/${total} checks FAILED\x1b[0m`);
   process.exit(1);
+}
 }
