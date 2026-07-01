@@ -168,6 +168,120 @@ const costGuide = {
   ],
 };
 
+// ── 指南 B：建材采购（真实品类/产地/供应商 + 采购单位/流程）──
+const sourcingGuide = {
+  slug: 'dubai-building-materials-sourcing-guide',
+  country: 'ae',
+  category: 'sourcing',
+  title: 'Sourcing Building Materials in Dubai — Categories, Suppliers & Buying Process',
+  summary:
+    'Sourcing building materials in Dubai means choosing between imported and locally-stocked suppliers, comparing itemised quotes by unit (per m², per piece, per set), and managing lead times. Tarmeer lists 32 verified material suppliers across 9 categories — most (about 27) import from China, with a handful holding local Dubai stock. This guide covers the material categories, how materials are priced, the step-by-step buying process, what to check before ordering, and how to shortlist reliable suppliers.',
+  cover_image: '/images/insights/cost-scene.webp',
+  author_name: 'Tarmeer Editorial',
+  seo_title: 'Sourcing Building Materials in Dubai: Suppliers & Process | Tarmeer',
+  seo_description:
+    'How to source building materials in Dubai: material categories, imported vs local suppliers, pricing by unit, the buying process, and a pre-order checklist — from Tarmeer’s verified supplier network.',
+  status: 'published',
+  body_blocks: [
+    { type: 'callout', variant: 'key', title: 'Key takeaways', items: [
+      'Tarmeer lists 32 verified material suppliers across 9 categories (furniture, stone, lighting, flooring, kitchen, hardware, paint, plants and more).',
+      'Most suppliers (~27) import from China; ~5 hold local Dubai stock for faster delivery.',
+      'Materials are priced by unit — per m² (tiles, stone, flooring), per piece (furniture, lighting), per set (kitchen) — always compare unit price + MOQ + lead time.',
+      'Imported orders typically add 4–8 weeks for production and shipping; local stock ships in days.',
+    ] },
+    { type: 'stat_highlight', items: [
+      { value: '32', label: 'Verified material suppliers' },
+      { value: '9', label: 'Material categories' },
+      { value: '27 + 5', label: 'Import (China) + local (Dubai)' },
+    ] },
+
+    { type: 'heading', level: 2, text: 'How to source building materials in Dubai' },
+    { type: 'paragraph', text: 'Sourcing well comes down to three decisions: which category and specification you need, whether to buy imported (wider range, lower unit cost, longer lead time) or local stock (faster, easier returns), and how to compare quotes fairly — always by unit, with minimum order quantity (MOQ) and lead time on the table. Start from a verified supplier list so quality and delivery are accountable.' },
+    { type: 'stat_table', caption: 'Material categories & how they’re typically priced', columns: ['Category', 'Covers', 'Typical unit'], rows: [
+      ['Furniture', 'Sofas, tables, wardrobes, beds', 'per piece / set'],
+      ['Stone & tiles', 'Marble, porcelain, cladding', 'per m²'],
+      ['Flooring', 'Wood, vinyl, tiles', 'per m²'],
+      ['Lighting', 'Fixtures, LED, decorative', 'per piece'],
+      ['Kitchen', 'Cabinets, worktops', 'per set / linear m'],
+      ['Hardware', 'Handles, hinges, fittings', 'per piece / set'],
+      ['Paint & finishes', 'Paint, coatings, plaster', 'per bucket / m²'],
+      ['Plants & landscaping', 'Indoor & outdoor greenery', 'per piece'],
+    ] },
+
+    { type: 'heading', level: 2, text: 'Imported vs local: where materials come from' },
+    { type: 'paragraph', text: 'Across Tarmeer’s verified suppliers, most manufacture or import from China, while a smaller group carries ready stock in Dubai. Your choice trades cost and range against speed and convenience.' },
+    { type: 'stat_table', caption: 'Verified suppliers by source', columns: ['Source', 'Suppliers', 'Best for'], rows: [
+      ['China (import / made-to-order)', '27', 'Range, lower unit cost, custom sizes'],
+      ['UAE / Dubai (local stock)', '5', 'Speed, showroom visits, easy returns'],
+    ] },
+    { type: 'callout', variant: 'tip', title: 'Tip', text: 'For time-critical projects, split the order: local stock for anything on the critical path, imported for bulk or bespoke items where the 4–8 week lead time is acceptable.' },
+
+    { type: 'heading', level: 2, text: 'How materials are priced' },
+    { type: 'paragraph', text: 'Unlike a finished renovation, materials are quoted per unit. Compare like for like — a low price per piece can hide a high MOQ or excluded shipping. Ask every supplier for: unit price, minimum order quantity, lead time, and whether the price is ex-works, FOB or delivered (Incoterms).' },
+    { type: 'list', ordered: false, title: 'Common pricing units', items: [
+      'Per square meter (m²) — tiles, stone, flooring, cladding.',
+      'Per piece (pcs) — furniture, lighting, sanitaryware, doors.',
+      'Per set — kitchens, wardrobes, bathroom suites.',
+      'Per linear meter (lm) — worktops, skirting, profiles.',
+      'Per m³ / ton / roll / carton — bulk materials and finishes.',
+    ] },
+    { type: 'source', text: 'Tarmeer does not publish supplier transaction prices; request itemised quotes directly from verified suppliers. Units above reflect standard building-materials trade practice.' },
+
+    { type: 'heading', level: 2, text: 'The buying process, step by step' },
+    { type: 'timeline', title: 'From shortlist to delivery', collapsed: false, items: [
+      { phase: 'Shortlist & request catalogs', duration: '~1 week', desc: 'Pick verified suppliers by category, origin and portfolio.' },
+      { phase: 'Request samples', duration: '1–2 weeks', desc: 'Approve material, colour and finish in hand before committing.' },
+      { phase: 'Get itemised quotes', duration: 'A few days', desc: 'Unit price + MOQ + lead time + Incoterms from each supplier.' },
+      { phase: 'Order & deposit', duration: '—', desc: 'Confirm spec, sign a clear PO, pay the agreed deposit.' },
+      { phase: 'Production & shipping / customs', duration: '4–8 weeks (imports)', desc: 'Track production; local stock ships in days.' },
+      { phase: 'Delivery, inspection & QC', duration: 'On arrival', desc: 'Check quantity, spec and damage against the PO before final payment.' },
+    ] },
+
+    { type: 'expert_quote', expertIndex: 0 },
+
+    { type: 'heading', level: 2, text: 'What to check before you order', collapsed: true },
+    { type: 'list', ordered: false, title: 'Pre-order checklist', items: [
+      'Verified supplier with a real portfolio and references.',
+      'Physical sample approved (only ~5 of 32 suppliers have a Dubai showroom — request samples otherwise).',
+      'Itemised quote: unit price, MOQ, lead time, Incoterms (ex-works / FOB / delivered).',
+      'Who handles shipping, customs clearance and UAE delivery.',
+      'Warranty, replacement policy and who covers transit damage.',
+    ] },
+
+    { type: 'heading', level: 2, text: 'Imported vs local — pros and cons', collapsed: true },
+    { type: 'list', ordered: false, title: 'Buying imported (China)', items: [
+      'Pros: widest range, custom sizes, lower unit cost at volume.',
+      'Cons: 4–8 week lead time, shipping + customs, harder returns.',
+    ] },
+    { type: 'list', ordered: false, title: 'Buying local (Dubai stock)', items: [
+      'Pros: days not weeks, showroom visits, easy replacement.',
+      'Cons: narrower range, higher unit price, limited custom sizes.',
+    ] },
+    { type: 'expert_quote', expertIndex: 1 },
+
+    { type: 'cta', title: 'Browse verified material suppliers in Dubai', text: 'Compare categories, origins and portfolios — and request itemised quotes from verified suppliers.', href: '/materials', ctaLabel: 'Browse suppliers' },
+
+    { type: 'callout', variant: 'method', title: 'About this data', text: 'Category counts, supplier totals and origin split are drawn from Tarmeer’s verified supplier network (32 approved suppliers, 78 catalogued products) at time of writing. Pricing units reflect standard trade practice; Tarmeer does not publish transaction prices.' },
+
+    { type: 'faq', items: [
+      { q: 'Where do most Dubai building materials come from?', a: 'Across Tarmeer’s verified suppliers, most (about 27 of 32) manufacture or import from China; a smaller group (~5) holds local Dubai stock for faster delivery.' },
+      { q: 'How are building materials priced?', a: 'By unit — per m² for tiles/stone/flooring, per piece for furniture/lighting, per set for kitchens. Always compare unit price alongside minimum order quantity (MOQ) and lead time.' },
+      { q: 'How long does it take to receive imported materials?', a: 'Typically 4–8 weeks for production and shipping from China, plus customs clearance. Locally-stocked items can arrive within days.' },
+      { q: 'Should I buy imported or local?', a: 'Imported gives range and lower unit cost but longer lead times; local stock is faster and easier to return. For tight timelines, split the order.' },
+      { q: 'Can I see materials before buying?', a: 'Only about 5 of 32 verified suppliers have a Dubai showroom, so request physical samples before committing for the rest.' },
+      { q: 'What is MOQ?', a: 'Minimum order quantity — the smallest amount a supplier will produce or sell. Imported/made-to-order suppliers often have higher MOQs than local stockists.' },
+      { q: 'Who handles shipping and customs?', a: 'Confirm this in the quote via Incoterms — ex-works, FOB or delivered. Delivered pricing includes shipping, customs and UAE delivery; ex-works does not.' },
+      { q: 'How do I compare supplier quotes fairly?', a: 'Normalise everything to the same unit and quantity, then add MOQ, lead time and Incoterms. The lowest headline price is often not the lowest delivered cost.' },
+    ] },
+
+    { type: 'source', text: 'Based on Tarmeer’s verified UAE supplier network (32 approved suppliers across 9 categories). Request itemised quotes from suppliers for current pricing.' },
+  ],
+  experts: [
+    { expert_ref_id: 5, expert_ref_source: 'experts', role_label: 'Certified Interior Designer · Dubai', quote: 'Verified Tarmeer expert with 12 years of high-end residential interior design experience in Dubai.', sort_order: 0 },
+    { expert_ref_id: 6, expert_ref_source: 'experts', role_label: 'Certified Interior Designer · Abu Dhabi', quote: 'Verified Tarmeer expert with 7 years specialising in residential fit-out across Abu Dhabi.', sort_order: 1 },
+  ],
+};
+
 async function seedGuide(g) {
   const [old] = await db.execute('SELECT id FROM guides WHERE slug=? AND country=?', [g.slug, g.country]);
   if (old.length) {
@@ -191,6 +305,7 @@ async function seedGuide(g) {
 
 (async () => {
   await seedGuide(costGuide);
+  await seedGuide(sourcingGuide);
   console.log('done');
   process.exit(0);
 })().catch((e) => { console.error(e.message); process.exit(1); });
