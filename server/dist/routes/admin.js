@@ -540,5 +540,7 @@ const partnerAdminController_1 = require("../controllers/partnerAdminController"
 router.get('/partner-sync/products', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.listPendingProducts);
 router.post('/partner-sync/products/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveProduct);
 router.post('/partner-sync/products/:id/reject', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.rejectProduct);
+router.get('/partner-sync/companies', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.listPendingCompanies);
 router.post('/partner-sync/companies/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveCompany);
+router.post('/partner-sync/companies/:id/reject', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.rejectCompany);
 exports.default = router;

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail,
-  CircleHelp, Info, ClipboardList, Package, Tags, Menu, X, MapPin,
+  CircleHelp, Info, ClipboardList, Package, PackagePlus, Tags, Menu, X, MapPin,
   UserCheck, HandCoins, Images, MessageSquare, Hammer,
 } from 'lucide-react';
 import { AdminProvider, useAdmin } from '@/contexts/AdminContext';
@@ -43,6 +43,11 @@ const navItems = [
     to: '/admin/suppliers', labelEn: 'Suppliers', labelZh: '供应商', icon: Package,
     infoEn: 'Manage building material suppliers, review applications, and track supplier leads.',
     infoZh: '管理建材供应商、审核入驻申请、跟踪供应商线索。',
+  },
+  {
+    to: '/admin/partner-sync', labelEn: 'Partner Sync', labelZh: '合作方同步', icon: PackagePlus,
+    infoEn: 'Review partner-pushed companies and products — approve or reject pending items.',
+    infoZh: '审核合作方推送的企业和商品，通过或拒绝待审条目。',
   },
   {
     to: '/admin/inquiries', labelEn: 'Leads', labelZh: '线索', icon: HandCoins,

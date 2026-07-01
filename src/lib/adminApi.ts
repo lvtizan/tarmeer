@@ -1031,6 +1031,30 @@ class AdminApiClient {
     return this.request(`/stats/registration-sources${qs ? `?${qs}` : ''}`);
   }
 
+  // Partner sync review
+  async getPartnerSyncProducts(country?: string) {
+    const qs = new URLSearchParams({ status: 'pending' });
+    if (country) qs.set('country', country);
+    return this.request(`/partner-sync/products?${qs}`);
+  }
+  async getPartnerSyncCompanies(country?: string) {
+    const qs = new URLSearchParams({ status: 'pending' });
+    if (country) qs.set('country', country);
+    return this.request(`/partner-sync/companies?${qs}`);
+  }
+  async approvePartnerProduct(id: number) {
+    return this.request(`/partner-sync/products/${id}/approve`, { method: 'POST' });
+  }
+  async rejectPartnerProduct(id: number) {
+    return this.request(`/partner-sync/products/${id}/reject`, { method: 'POST' });
+  }
+  async approvePartnerCompany(id: number) {
+    return this.request(`/partner-sync/companies/${id}/approve`, { method: 'POST' });
+  }
+  async rejectPartnerCompany(id: number) {
+    return this.request(`/partner-sync/companies/${id}/reject`, { method: 'POST' });
+  }
+
   // Field interviews (admin view)
   async getInterviews(country?: string) {
     const qs = country ? `?country=${country}` : '';
