@@ -174,7 +174,7 @@ const sourcingGuide = {
   title: 'Sourcing Building Materials in Dubai — Categories, Suppliers & Buying Process',
   summary:
     'Sourcing building materials in Dubai means choosing between imported and locally-stocked suppliers, comparing itemised quotes by unit (per m², per piece, per set), and managing lead times. Tarmeer lists 32 verified material suppliers across 9 categories — most (about 27) import from China, with a handful holding local Dubai stock. This guide covers the material categories, how materials are priced, the step-by-step buying process, what to check before ordering, and how to shortlist reliable suppliers.',
-  cover_image: '/images/insights/cost-scene.webp',
+  cover_image: '/images/insights/sourcing-cover.webp',
   author_name: 'Tarmeer Editorial',
   seo_title: 'Sourcing Building Materials in Dubai: Suppliers & Process | Tarmeer',
   seo_description:
