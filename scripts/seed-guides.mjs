@@ -2,7 +2,9 @@
 // 用法：source server/.env 后 node scripts/seed-guides.mjs
 import { createRequire } from 'node:module';
 const require = createRequire(process.cwd() + '/x.js');
-const db = require(process.cwd() + '/server/dist/config/database').default;
+// 本地: server/dist/config/database；生产: 传 GUIDE_DB_PATH=/tarmeer/tarmeer_api/dist/config/database
+const DB_PATH = process.env.GUIDE_DB_PATH || process.cwd() + '/server/dist/config/database';
+const db = require(DB_PATH).default;
 
 // 各风格中位 AED/㎡（来自真实项目聚合，估算器用）
 const STYLE_MEDIANS = [
@@ -161,11 +163,7 @@ const costGuide = {
 
     { type: 'source', text: 'Cost figures aggregated from 191 real completed projects published on Tarmeer (UAE), 2022–2025. Individual quotes vary — request a tailored quote from a verified company on Tarmeer.' },
   ],
-  experts: [
-    { expert_ref_id: 5, expert_ref_source: 'experts', role_label: 'Certified Interior Designer · Dubai', quote: 'Verified Tarmeer expert with 12 years of high-end residential interior design experience in Dubai.', sort_order: 0 },
-    { expert_ref_id: 6, expert_ref_source: 'experts', role_label: 'Certified Interior Designer · Abu Dhabi', quote: 'Verified Tarmeer expert with 7 years specialising in residential fit-out across Abu Dhabi.', sort_order: 1 },
-    { expert_ref_id: 7, expert_ref_source: 'experts', role_label: 'Interior Designer · Sharjah', quote: 'Verified Tarmeer expert with 18 years across Sharjah and the Northern Emirates.', sort_order: 2 },
-  ],
+  expertCount: 3,
 };
 
 // ── 指南 B：建材采购（真实品类/产地/供应商 + 采购单位/流程）──
@@ -276,11 +274,23 @@ const sourcingGuide = {
 
     { type: 'source', text: 'Based on Tarmeer’s verified UAE supplier network (32 approved suppliers across 9 categories). Request itemised quotes from suppliers for current pricing.' },
   ],
-  experts: [
-    { expert_ref_id: 5, expert_ref_source: 'experts', role_label: 'Certified Interior Designer · Dubai', quote: 'Verified Tarmeer expert with 12 years of high-end residential interior design experience in Dubai.', sort_order: 0 },
-    { expert_ref_id: 6, expert_ref_source: 'experts', role_label: 'Certified Interior Designer · Abu Dhabi', quote: 'Verified Tarmeer expert with 7 years specialising in residential fit-out across Abu Dhabi.', sort_order: 1 },
-  ],
+  expertCount: 2,
 };
+
+// 从库动态取真实审核专家(按认证/经验排序)，引用文字用其真实字段生成 → 本地/生产都准，不写死ID
+async function resolveExperts(count) {
+  const lim = Math.max(1, Math.min(10, parseInt(count, 10) || 1)); // 内联整数(LIMIT 不能用占位符)
+  const [rows] = await db.execute(
+    `SELECT id, full_name, experience_years, city, is_certified FROM expert_profiles WHERE status='approved' AND country='ae' ORDER BY is_certified DESC, experience_years DESC, id ASC LIMIT ${lim}`
+  );
+  return rows.map((e, i) => ({
+    expert_ref_id: e.id,
+    expert_ref_source: 'experts',
+    role_label: `${e.is_certified ? 'Certified ' : ''}Interior Designer${e.city ? ' · ' + e.city : ''}`,
+    quote: `Verified Tarmeer expert with ${e.experience_years ? e.experience_years + ' years of ' : ''}interior design experience${e.city ? ' in ' + e.city : ' in the UAE'}.`,
+    sort_order: i,
+  }));
+}
 
 async function seedGuide(g) {
   const [old] = await db.execute('SELECT id FROM guides WHERE slug=? AND country=?', [g.slug, g.country]);
@@ -294,13 +304,14 @@ async function seedGuide(g) {
     [g.slug, g.country, g.category, g.title, g.summary, JSON.stringify(g.body_blocks), g.cover_image, g.status, g.author_name, g.seo_title, g.seo_description]
   );
   const guideId = res.insertId;
-  for (const e of g.experts || []) {
+  const experts = g.expertCount ? await resolveExperts(g.expertCount) : (g.experts || []);
+  for (const e of experts) {
     await db.execute(
       'INSERT INTO guide_expert_quotes (guide_id, expert_ref_id, expert_ref_source, quote, role_label, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
       [guideId, e.expert_ref_id, e.expert_ref_source, e.quote, e.role_label, e.sort_order]
     );
   }
-  console.log(`✓ seeded guide #${guideId} ${g.slug} — ${g.body_blocks.length} blocks, ${(g.experts || []).length} experts`);
+  console.log(`✓ seeded guide #${guideId} ${g.slug} — ${g.body_blocks.length} blocks, ${experts.length} experts`);
 }
 
 (async () => {
