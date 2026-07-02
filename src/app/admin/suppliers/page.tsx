@@ -41,6 +41,7 @@ export default function AdminSuppliersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>(null);
+  const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
@@ -188,12 +189,17 @@ export default function AdminSuppliersPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">列表排序</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">权重</th>
                 <th
-                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
-                  onClick={() => setJoinedSort(s => s === 'desc' ? 'asc' : 'desc')}
+                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
+                  onClick={() => { setEditedSort(null); setJoinedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Joined', '加入时间')} {joinedSort === 'asc' ? '↑' : joinedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">{t('Last Edited', '最后编辑')}</th>
+                <th
+                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
+                  onClick={() => { setJoinedSort(null); setEditedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
+                >
+                  {t('Last Edited', '最后编辑')} {editedSort === 'asc' ? '↑' : editedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
+                </th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -204,6 +210,10 @@ export default function AdminSuppliersPage() {
                 if (joinedSort) list.sort((a, b) => {
                   const d = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
                   return joinedSort === 'asc' ? d : -d;
+                });
+                if (editedSort) list.sort((a, b) => {
+                  const d = new Date(a.updated_at || a.created_at).getTime() - new Date(b.updated_at || b.created_at).getTime();
+                  return editedSort === 'asc' ? d : -d;
                 });
                 return list;
               })()).map(s => (
