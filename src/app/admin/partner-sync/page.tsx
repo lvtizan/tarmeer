@@ -451,7 +451,7 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
 
             {companyPayload && (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
                   <LangBlock label="企业名称" map={companyPayload.company_name !== undefined ? companyPayload.company_name : companyPayload.name} />
                   <LangBlock label="店铺地址" map={companyPayload.store_address} />
                   <LangBlock label="描述" map={companyPayload.description} />
