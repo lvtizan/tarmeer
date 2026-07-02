@@ -55,11 +55,12 @@ async function resolveFirstImage(urls, externalId) {
   const safeExt = String(externalId).replace(/[^\w-]/g, "_");
   const tmp = path.join(os.tmpdir(), `partner-${safeExt}-${Date.now()}.img`);
   await download(url, tmp);
-  const outRel = `public/images/partner/items/${safeExt}/cover`;
-  fs.mkdirSync(path.join(PROJECT_ROOT, "public", "images", "partner", "items", safeExt), { recursive: true });
+  // 输出到 public/uploads/(nginx /uploads/ 已服务此目录,同现网供应商商品图),而非 /images/(portal 目录)
+  const outRel = `public/uploads/partner/items/${safeExt}/cover`;
+  fs.mkdirSync(path.join(PROJECT_ROOT, "public", "uploads", "partner", "items", safeExt), { recursive: true, mode: 0o755 });
   await genVariants(tmp, outRel);
   fs.unlink(tmp, () => {});
-  return `/images/partner/items/${safeExt}/cover-medium.webp`;
+  return `/uploads/partner/items/${safeExt}/cover-medium.webp`;
 }
 
 module.exports = { download, genVariants, resolveFirstImage };
