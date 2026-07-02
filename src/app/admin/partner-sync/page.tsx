@@ -185,14 +185,14 @@ function ActionButtons({
       <button
         onClick={onApprove}
         disabled={busy}
-        className="h-7 px-3 text-xs font-medium rounded-lg bg-[#b8864a] text-white hover:bg-[#a07640] disabled:opacity-40"
+        className="h-9 px-4 text-sm font-medium rounded-lg bg-[#b8864a] text-white hover:bg-[#a07640] disabled:opacity-40"
       >
         {busy ? '…' : '通过'}
       </button>
       <button
         onClick={onReject}
         disabled={busy}
-        className="h-7 px-3 text-xs font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-40"
+        className="h-9 px-4 text-sm font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-40"
       >
         {busy ? '…' : '拒绝'}
       </button>
