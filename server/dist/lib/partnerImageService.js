@@ -9,7 +9,10 @@ const { execFile } = require("child_process");
 const dns = require("dns").promises;
 const net = require("net");
 
-const PROJECT_ROOT = path.resolve(__dirname, "..", "..", ".."); // server/dist/lib → 项目根
+// 用 process.cwd()（后端进程工作目录）作根：本地=仓库根、生产=/tarmeer/tarmeer_api，
+// 两处都有 scripts/ 和 public/uploads/（与现网供应商上传代码一致）。
+// 不能用 __dirname 相对推导——本地是 server/dist/lib、生产是 dist/lib，层级不同会算错。
+const PROJECT_ROOT = process.cwd();
 
 function isPrivateIp(ip) {
   if (net.isIP(ip) === 4) {
