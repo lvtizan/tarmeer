@@ -77,7 +77,8 @@ async function listPublicSuppliers(req, res) {
         const orderBy = orderMode === 'home'
             ? `CASE WHEN COALESCE(sp.${displayOrderCol}, 0) > 0 THEN sp.${displayOrderCol} ELSE 9999 END ASC, COALESCE(sp.weight_score, 0) DESC, sp.created_at DESC`
             : `COALESCE(sp.weight_score, 0) DESC, CASE WHEN COALESCE(sp.${displayOrderCol}, 0) > 0 THEN 0 ELSE 1 END, sp.${displayOrderCol} ASC, sp.created_at DESC`;
-        const [rows] = await database_1.default.query(`SELECT sp.*, su.email as user_email
+        const [rows] = await database_1.default.query(`SELECT sp.*, su.email as user_email,
+       (SELECT image_url FROM supplier_products WHERE supplier_profile_id = sp.id ORDER BY sort_order, id LIMIT 1) AS first_product_image
        FROM supplier_profiles sp
        LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
        ${where}

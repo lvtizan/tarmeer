@@ -753,30 +753,47 @@ export default function AdminSupplierDetailPage() {
             ) : (
               <div className="bg-white rounded-xl border border-stone-200 p-4">
                 <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
-                  {products.map((p) => (
-                    <div key={p.id} className="group">
-                      <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
-                        <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
-                        <button onClick={() => handleDeleteProduct(p.id)} className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600" title={t('Delete', '删除')}>
-                          <X className="w-3 h-3" />
-                        </button>
-                        <button onClick={() => setEditingProduct(p)} className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/95 text-stone-700 text-[10px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#b8864a] hover:text-white" title={t('Edit', '编辑')}>
-                          <Pencil className="w-3 h-3" />{t('Edit', '编辑')}
-                        </button>
-                        <button
-                          onClick={() => { replaceTargetRef.current = p.id; fileInputRef.current?.click(); }}
-                          disabled={replacingId === p.id}
-                          className="absolute bottom-0 inset-x-0 py-1 bg-black/60 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
-                          title={t('Replace image', '更换图片')}
-                        >
-                          {replacingId === p.id ? <span className="text-[10px]">…</span> : <Upload className="w-3 h-3" />}
-                          {t('Replace Image', '更换图片')}
-                        </button>
+                  {products.map((p) => {
+                    const isCover = !!supplier.cover_image_url && supplier.cover_image_url === p.image_url;
+                    return (
+                      <div key={p.id} className="group">
+                        <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
+                          <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                          <button onClick={() => handleDeleteProduct(p.id)} className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600" title={t('Delete', '删除')}>
+                            <X className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => setEditingProduct(p)} className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/95 text-stone-700 text-[10px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#b8864a] hover:text-white" title={t('Edit', '编辑')}>
+                            <Pencil className="w-3 h-3" />{t('Edit', '编辑')}
+                          </button>
+                          {/* 设为封面 / 当前封面 */}
+                          {isCover ? (
+                            <span className="absolute bottom-7 inset-x-0 py-1 bg-[#b8864a] text-white text-[10px] font-medium flex items-center justify-center gap-1">
+                              <Check className="w-3 h-3" />{t('Current Cover', '当前封面')}
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setCover(p.image_url)}
+                              className="absolute bottom-7 inset-x-0 py-1 bg-[#b8864a]/90 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 hover:bg-[#b8864a]"
+                              title={t('Set as Cover', '设为封面')}
+                            >
+                              <ImageIcon className="w-3 h-3" />{t('Set as Cover', '设为封面')}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => { replaceTargetRef.current = p.id; fileInputRef.current?.click(); }}
+                            disabled={replacingId === p.id}
+                            className="absolute bottom-0 inset-x-0 py-1 bg-black/60 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
+                            title={t('Replace image', '更换图片')}
+                          >
+                            {replacingId === p.id ? <span className="text-[10px]">…</span> : <Upload className="w-3 h-3" />}
+                            {t('Replace Image', '更换图片')}
+                          </button>
+                        </div>
+                        {p.category && <p className="text-[10px] text-[#b8864a] uppercase tracking-wide mt-1">{p.category}</p>}
+                        {p.title && <p className="text-[11px] text-stone-500 truncate">{p.title}</p>}
                       </div>
-                      {p.category && <p className="text-[10px] text-[#b8864a] uppercase tracking-wide mt-1">{p.category}</p>}
-                      {p.title && <p className="text-[11px] text-stone-500 truncate">{p.title}</p>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

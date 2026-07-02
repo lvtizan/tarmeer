@@ -33,6 +33,7 @@ export interface Supplier {
   description: string;
   logo_url: string | null;
   cover_image_url: string | null;
+  first_product_image?: string | null;
   origin: 'china' | 'dubai';
   categories: string[] | string | null;
   has_physical_store: number;
@@ -57,9 +58,16 @@ function SupplierCard({ s }: { s: Supplier }) {
       {/* Cover image */}
       <div className="w-full sm:w-[220px] md:w-[280px] h-[180px] flex-shrink-0 overflow-hidden bg-stone-100">
         <img
-          src={s.cover_image_url ? resolveVariantUrl(s.cover_image_url, 'thumb') : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'}
+          src={
+            s.cover_image_url
+              ? resolveVariantUrl(s.cover_image_url, 'thumb')
+              : s.first_product_image
+                ? resolveVariantUrl(s.first_product_image, 'thumb')
+                : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'
+          }
           onError={(e) => {
-            const fallback = resolveImageUrl(s.cover_image_url);
+            const primary = s.cover_image_url || s.first_product_image || null;
+            const fallback = resolveImageUrl(primary);
             if (fallback && e.currentTarget.src !== fallback) {
               e.currentTarget.src = fallback;
             } else {
