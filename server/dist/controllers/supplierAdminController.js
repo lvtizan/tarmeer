@@ -139,13 +139,13 @@ async function listSuppliers(req, res) {
             where += ' AND (sp.company_name LIKE ? OR su.email LIKE ?)';
             params.push(`%${search}%`, `%${search}%`);
         }
-        const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM supplier_profiles sp JOIN supplier_users su ON su.id = sp.supplier_user_id ${where}`, params);
+        const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM supplier_profiles sp LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id ${where}`, params);
         const total = countRows[0].total;
         const [rows] = await database_1.default.query(`SELECT sp.*, su.email as user_email, su.full_name as user_name,
               (SELECT COUNT(*) FROM supplier_products WHERE supplier_profile_id = sp.id) as product_count,
               (SELECT COUNT(*) FROM supplier_catalogs WHERE supplier_profile_id = sp.id) as catalog_count
        FROM supplier_profiles sp
-       JOIN supplier_users su ON su.id = sp.supplier_user_id
+       LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
        ${where}
        ORDER BY CASE WHEN GREATEST(COALESCE(sp.home_display_order,0), COALESCE(sp.list_display_order,0)) > 0 THEN 0 ELSE 1 END,
                 LEAST(CASE WHEN sp.home_display_order > 0 THEN sp.home_display_order ELSE 999999 END,
@@ -164,7 +164,7 @@ async function getSupplierDetail(req, res) {
         const { id } = req.params;
         const [rows] = await database_1.default.execute(`SELECT sp.*, su.email as user_email, su.full_name as user_name, su.phone as user_phone, su.created_at as user_created_at
        FROM supplier_profiles sp
-       JOIN supplier_users su ON su.id = sp.supplier_user_id
+       LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
        WHERE sp.id = ?`, [id]);
         const supplier = rows[0];
         if (!supplier)
