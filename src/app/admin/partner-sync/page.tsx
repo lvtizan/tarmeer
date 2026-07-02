@@ -292,48 +292,6 @@ function Lightbox({ images, initialIndex, onClose }: LightboxProps) {
   );
 }
 
-// ── Product Thumbnail ──────────────────────────────────────────────────────────
-
-interface ProductThumbnailProps {
-  images: string[];
-  onOpen: (index: number) => void;
-}
-
-function ProductThumbnail({ images, onOpen }: ProductThumbnailProps) {
-  const [failed, setFailed] = useState(false);
-
-  if (images.length === 0 || failed) {
-    return (
-      <div className="w-14 h-14 shrink-0 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400 text-[10px] text-center leading-tight px-1">
-        无图
-      </div>
-    );
-  }
-
-  const extra = images.length - 1;
-
-  return (
-    <button
-      onClick={() => onOpen(0)}
-      className="relative w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-stone-200 hover:ring-2 hover:ring-[#b8864a] transition-all focus:outline-none"
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={images[0]}
-        alt="商品图"
-        referrerPolicy="no-referrer"
-        className="w-full h-full object-cover"
-        onError={() => setFailed(true)}
-      />
-      {extra > 0 && (
-        <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[9px] font-medium px-1 py-0.5 rounded-tl-md leading-none">
-          +{extra}
-        </div>
-      )}
-    </button>
-  );
-}
-
 // ── Level 1: Partner List ──────────────────────────────────────────────────────
 
 interface PartnerListProps {
@@ -526,15 +484,9 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
 
               return (
                 <div key={p.id} className="bg-white rounded-xl border border-stone-200 p-4">
-                  <div className="flex gap-4">
-                    {/* Thumbnail */}
-                    <ProductThumbnail
-                      images={images}
-                      onOpen={(index) => setLightbox({ images, index })}
-                    />
-
+                  <div className="flex gap-4 items-center">
                     {/* Content */}
-                    <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="min-w-0 space-y-1.5 shrink-0 w-[340px]">
                       <div className="font-medium text-stone-800 text-sm leading-snug">
                         {truncate(title, 80)}
                       </div>
@@ -545,7 +497,7 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
 
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-400">
                         {p.external_id && (
-                          <span>外部ID：<span className="font-mono text-stone-500">{truncate(p.external_id, 24)}</span></span>
+                          <span>外部ID：<span className="font-mono text-stone-500">{truncate(p.external_id, 20)}</span></span>
                         )}
                         <span>
                           上架：
@@ -555,6 +507,30 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
                         </span>
                         <span className={ADMIN_TIME_CLS}>{formatAdminDateTime(p.synced_at)}</span>
                       </div>
+                    </div>
+
+                    {/* Images spread out (after meta/date, filling the space) */}
+                    <div className="flex-1 min-w-0 flex flex-wrap gap-2 content-center">
+                      {images.length === 0 ? (
+                        <span className="text-xs text-stone-300">无图</span>
+                      ) : (
+                        images.map((src, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setLightbox({ images, index: i })}
+                            className="w-12 h-12 rounded-md overflow-hidden border border-stone-200 hover:ring-2 hover:ring-[#b8864a] transition-all focus:outline-none"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={src}
+                              alt={`图 ${i + 1}`}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
+                            />
+                          </button>
+                        ))
+                      )}
                     </div>
 
                     {/* Actions */}
