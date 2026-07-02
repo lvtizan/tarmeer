@@ -265,6 +265,7 @@ function Lightbox({ images, initialIndex, onClose }: LightboxProps) {
         <img
           src={images[idx]}
           alt={`图片 ${idx + 1}`}
+          referrerPolicy="no-referrer"
           className="max-h-[75vh] max-w-full rounded-xl object-contain bg-black/30"
           onError={(e) => { (e.currentTarget as HTMLImageElement).alt = '图片加载失败'; }}
         />
@@ -320,6 +321,7 @@ function ProductThumbnail({ images, onOpen }: ProductThumbnailProps) {
       <img
         src={images[0]}
         alt="商品图"
+        referrerPolicy="no-referrer"
         className="w-full h-full object-cover"
         onError={() => setFailed(true)}
       />
@@ -449,32 +451,33 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
 
             {companyPayload && (
               <div className="space-y-4">
-                <LangBlock label="企业名称" map={companyPayload.company_name !== undefined ? companyPayload.company_name : companyPayload.name} />
-                <LangBlock label="描述" map={companyPayload.description} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+                  <LangBlock label="企业名称" map={companyPayload.company_name !== undefined ? companyPayload.company_name : companyPayload.name} />
+                  <LangBlock label="店铺地址" map={companyPayload.store_address} />
+                  <LangBlock label="描述" map={companyPayload.description} />
+                  <LangBlock label="分类" map={companyPayload.categories} />
 
-                {!!(companyPayload.contact_phone || companyPayload.website || companyPayload.whatsapp) && (
-                  <div>
-                    <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">联系方式</div>
-                    <div className="space-y-1 text-sm text-stone-700">
-                      {!!companyPayload.contact_phone && <div>电话：{String(companyPayload.contact_phone)}</div>}
-                      {!!companyPayload.website && (
-                        <div>网站：<a href={String(companyPayload.website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{String(companyPayload.website)}</a></div>
-                      )}
-                      {!!companyPayload.whatsapp && <div>WhatsApp：{String(companyPayload.whatsapp)}</div>}
+                  {!!(companyPayload.contact_phone || companyPayload.website || companyPayload.whatsapp) && (
+                    <div>
+                      <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">联系方式</div>
+                      <div className="space-y-1 text-sm text-stone-700">
+                        {!!companyPayload.contact_phone && <div>电话：{String(companyPayload.contact_phone)}</div>}
+                        {!!companyPayload.website && (
+                          <div>网站：<a href={String(companyPayload.website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{String(companyPayload.website)}</a></div>
+                        )}
+                        {!!companyPayload.whatsapp && <div>WhatsApp：{String(companyPayload.whatsapp)}</div>}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                <LangBlock label="店铺地址" map={companyPayload.store_address} />
-                <LangBlock label="分类" map={companyPayload.categories} />
+                  )}
+                </div>
 
                 {!!companyPayload.attributes && (
-                  <div>
-                    <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">属性 (JSON)</div>
-                    <pre className="text-xs bg-stone-50 border border-stone-200 rounded-lg p-3 overflow-x-auto text-stone-600 whitespace-pre-wrap break-all">
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-stone-500 hover:text-stone-700 select-none">属性 (JSON)</summary>
+                    <pre className="mt-1 bg-stone-50 border border-stone-200 rounded-lg p-3 overflow-x-auto text-stone-600 whitespace-pre-wrap break-all">
                       {JSON.stringify(companyPayload.attributes, null, 2)}
                     </pre>
-                  </div>
+                  </details>
                 )}
               </div>
             )}
