@@ -12,6 +12,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   sourcing: 'Sourcing & Materials',
   trend: 'Design Trends',
   story: 'Project Stories',
+  find: 'Finding a Company',
 };
 function categoryLabel(cat: string): string {
   return CATEGORY_LABELS[cat] ?? cat.charAt(0).toUpperCase() + cat.slice(1);

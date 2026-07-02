@@ -277,6 +277,247 @@ const sourcingGuide = {
   expertCount: 2,
 };
 
+// ── 指南 C：风格趋势(trend) ──
+const trendGuide = {
+  slug: 'dubai-interior-design-trends-2026',
+  country: 'ae', category: 'trend',
+  title: '2026 Dubai Interior Design Trends — What’s Popular, by Style',
+  summary: 'Modern and Modern Arabic dominate real Dubai interiors, while premium styles like Resort Coastal and Elegant Contemporary cost the most per m² and soft-minimal is the budget-friendly trend. Based on 292 real completed projects across 48 design styles on Tarmeer, here are the styles that are actually being built — and what each costs.',
+  cover_image: '/images/insights/trend-cover.webp',
+  author_name: 'Tarmeer Editorial',
+  seo_title: '2026 Dubai Interior Design Trends by Style | Tarmeer',
+  seo_description: 'Which interior design styles are trending in Dubai in 2026? Real popularity and cost per m² by style, from 292 completed Tarmeer projects.',
+  status: 'published',
+  body_blocks: [
+    { type: 'callout', variant: 'key', title: 'Key takeaways', items: [
+      'Modern and Modern Arabic are the most-built looks across real Dubai projects.',
+      'Premium styles cost more per m²: Resort Coastal (~1,948) and Elegant Contemporary (~1,882) top the list.',
+      'Soft Minimal is the most budget-friendly trend (~1,601 AED/m²).',
+      'Based on 292 real completed projects across 48 tracked styles.',
+    ] },
+    { type: 'stat_highlight', items: [
+      { value: '292', label: 'Real completed projects' },
+      { value: '48', label: 'Design styles tracked' },
+      { value: 'Modern Arabic', label: 'Top premium named style' },
+    ] },
+    { type: 'heading', level: 2, text: 'Which interior styles are trending in Dubai?' },
+    { type: 'paragraph', text: 'Beyond broad “modern”, these named styles appear most across real Tarmeer projects — with their real median cost per square meter, so you can match taste to budget.' },
+    { type: 'stat_table', caption: 'Popular design styles — projects & median cost (real Tarmeer data)', columns: ['Style', 'Projects', 'Median AED/m²'], rows: [
+      ['Modern Arabic', '12', '1,833'],
+      ['Minimalist', '10', '1,712'],
+      ['Soft Minimal', '8', '1,601'],
+      ['Boutique Luxury', '8', '1,680'],
+      ['Luxury Modern', '8', '1,787'],
+      ['Modern Renovation', '8', '1,842'],
+      ['Elegant Contemporary', '8', '1,882'],
+      ['Resort Coastal', '8', '1,948'],
+    ] },
+    { type: 'heading', level: 2, text: 'Modern Arabic: the signature premium look' },
+    { type: 'paragraph', text: 'Modern Arabic is the most-built named premium style on Tarmeer — blending contemporary layouts with regional detailing (mashrabiya-inspired screens, warm stone, brass). It sits around AED 1,833/m², mid-to-upper in the range.' },
+    { type: 'heading', level: 2, text: 'Budget-friendly vs premium styles' },
+    { type: 'list', ordered: false, title: 'By cost per m²', items: [
+      'Most economical: Soft Minimal (~1,601) and Boutique Luxury (~1,680).',
+      'Mid-range: Minimalist (~1,712), Luxury Modern (~1,787), Modern Arabic (~1,833).',
+      'Premium: Modern Renovation (~1,842), Elegant Contemporary (~1,882), Resort Coastal (~1,948).',
+    ] },
+    { type: 'expert_quote', expertIndex: 0 },
+    { type: 'heading', level: 2, text: 'How to choose a style for your home', collapsed: true },
+    { type: 'list', ordered: false, items: [
+      'Match the style to your space and light — resort/coastal suits open, bright homes.',
+      'Balance taste with budget using the per-m² ranges above.',
+      'Look for a company with a real portfolio in your chosen style.',
+    ] },
+    { type: 'cta', title: 'Find designers who work in your style', text: 'Browse verified Dubai companies and portfolios by style.', href: '/companies', ctaLabel: 'Browse companies' },
+    { type: 'callout', variant: 'method', title: 'About this data', text: 'Style popularity and cost per m² are aggregated from 292 real completed projects published on Tarmeer (UAE) across 48 styles. “Modern” is excluded from the named table as a broad catch-all.' },
+    { type: 'faq', items: [
+      { q: 'What is the most popular interior style in Dubai?', a: 'Broad “modern” leads overall; among named premium styles, Modern Arabic is the most-built on Tarmeer (12 projects), followed by Minimalist.' },
+      { q: 'Which style is most expensive?', a: 'Resort Coastal (~AED 1,948/m²) and Elegant Contemporary (~1,882) carry the highest medians.' },
+      { q: 'What is the cheapest style to build?', a: 'Soft Minimal (~AED 1,601/m²) is the most budget-friendly trending style.' },
+      { q: 'What is Modern Arabic style?', a: 'A contemporary base with regional detailing — geometric screens, warm natural stone, brass accents — popular for its balance of luxury and identity.' },
+      { q: 'Does style really change the cost much?', a: 'Yes — roughly AED 350/m² between the cheapest and priciest styles, driven by finishes and detailing.' },
+      { q: 'How many styles does Tarmeer track?', a: '48 distinct styles across 292 completed projects.' },
+    ] },
+    { type: 'source', text: 'Aggregated from 292 real completed projects on Tarmeer (UAE), 48 styles. Individual results vary.' },
+  ],
+  expertCount: 2,
+};
+
+// ── 指南 D：成交故事(story) ──
+const storyGuide = {
+  slug: 'dubai-modern-luxury-renovation-story',
+  country: 'ae', category: 'story',
+  title: 'Real Project: A AED 296,000 Modern Luxury Renovation in Arabian Ranches',
+  summary: 'A real completed 202 m² Modern Luxury home in Arabian Ranches, delivered by Amira Al Mansoori Design Studio for AED 296,000 — about AED 1,465/m², below the Dubai median thanks to its size. Here are the real numbers and how a renovation like this typically comes together on Tarmeer.',
+  cover_image: '/images/insights/story-cover.webp',
+  author_name: 'Tarmeer Editorial',
+  seo_title: 'Real Dubai Renovation Story: AED 296,000 Modern Luxury Home | Tarmeer',
+  seo_description: 'A real 202 m² Modern Luxury renovation in Arabian Ranches, AED 296,000 (~1,465/m²) by a verified Tarmeer company — the numbers and the typical journey.',
+  status: 'published',
+  body_blocks: [
+    { type: 'callout', variant: 'key', title: 'At a glance', items: [
+      'Real completed project: 202 m² Modern Luxury home, Arabian Ranches, delivered 2022.',
+      'Total cost AED 296,000 — about AED 1,465/m².',
+      'Delivered by Amira Al Mansoori Design Studio, a verified Tarmeer company.',
+      'Came in below the ~AED 1,800/m² Dubai median — economies of scale on a larger home.',
+    ] },
+    { type: 'stat_highlight', items: [
+      { value: '202 m²', label: 'Home size' },
+      { value: 'AED 296,000', label: 'Total delivered cost' },
+      { value: '~1,465', label: 'AED per m²' },
+    ] },
+    { type: 'heading', level: 2, text: 'The project at a glance' },
+    { type: 'stat_table', caption: 'Real completed project on Tarmeer', columns: ['Detail', 'Value'], rows: [
+      ['Home size', '202 m²'],
+      ['Total cost', 'AED 296,000'],
+      ['Cost per m²', '~AED 1,465'],
+      ['Style', 'Modern Luxury'],
+      ['Location', 'Arabian Ranches, Dubai'],
+      ['Completed', '2022'],
+      ['Company', 'Amira Al Mansoori Design Studio (verified)'],
+    ] },
+    { type: 'heading', level: 2, text: 'Why it came in below the Dubai median' },
+    { type: 'paragraph', text: 'At AED 1,465/m², this home sits well under the ~AED 1,800/m² Dubai median. The reason is size: fixed costs (design, management, kitchens, bathrooms) spread across 202 m², so the per-m² figure drops — the economies-of-scale effect seen across Tarmeer projects.' },
+    { type: 'heading', level: 2, text: 'How a renovation like this comes together' },
+    { type: 'timeline', title: 'The typical journey on Tarmeer', items: [
+      { phase: 'Match & shortlist', duration: '~1 week', desc: 'Homeowner browses verified companies and portfolios by style and budget.' },
+      { phase: 'Design & material selection', duration: '2–4 weeks', desc: 'Concept, layout and finishes agreed with the studio.' },
+      { phase: 'Itemised quote & contract', duration: '1–2 weeks', desc: 'Fixed-scope BOQ and schedule signed.' },
+      { phase: 'Construction & fit-out', duration: '6–12 weeks', desc: 'Demolition, MEP, joinery and finishes.' },
+      { phase: 'Handover', duration: '1–2 weeks', desc: 'Snagging, final finishes and handover.' },
+    ] },
+    { type: 'expert_quote', expertIndex: 0 },
+    { type: 'cta', title: 'Start your own project', text: 'Browse verified Dubai design-and-build companies and request quotes.', href: '/companies', ctaLabel: 'Browse companies' },
+    { type: 'source', text: 'Based on a real completed project published on Tarmeer (UAE): area, cost, style, location and company are the project’s actual details. The step-by-step timeline is a typical illustration of the process, not a client testimonial.' },
+    { type: 'faq', items: [
+      { q: 'How much did this renovation cost?', a: 'AED 296,000 for a 202 m² Modern Luxury home — about AED 1,465/m².' },
+      { q: 'Why is the per-m² lower than average?', a: 'Larger homes cost less per m² because fixed costs spread across more area (economies of scale). The Dubai median is ~AED 1,800/m².' },
+      { q: 'How long does a project like this take?', a: 'Typically 10–20 weeks end to end: design, quotation, construction and handover.' },
+      { q: 'Who delivered this project?', a: 'Amira Al Mansoori Design Studio, a verified company on Tarmeer.' },
+    ] },
+  ],
+  expertCount: 1,
+};
+
+// ── 指南 E：找谁(find) ──
+const findGuide = {
+  slug: 'how-to-choose-renovation-company-dubai',
+  country: 'ae', category: 'find',
+  title: 'How to Choose a Renovation & Design Company in Dubai (2026)',
+  summary: 'Shortlist from verified companies, check portfolio, itemised BOQ, trade licence, insurance and references — then get at least three comparable, itemised quotes. Tarmeer lists 25 verified design-and-build companies plus a wider UAE directory of 185. Here’s exactly what to check before you sign.',
+  cover_image: '/images/insights/find-cover.webp',
+  author_name: 'Tarmeer Editorial',
+  seo_title: 'How to Choose a Renovation Company in Dubai (2026) | Tarmeer',
+  seo_description: 'A practical checklist for choosing a verified Dubai renovation & design company: portfolio, itemised BOQ, licence, references, red flags and the right questions to ask.',
+  status: 'published',
+  body_blocks: [
+    { type: 'callout', variant: 'key', title: 'Key takeaways', items: [
+      'Shortlist only verified companies with a real, recent portfolio in your style.',
+      'Insist on an itemised BOQ (bill of quantities), not a single lump-sum price.',
+      'Check trade licence, insurance and a written warranty period.',
+      'Get at least three comparable quotes and compare scope line by line.',
+    ] },
+    { type: 'stat_highlight', items: [
+      { value: '25', label: 'Verified companies on Tarmeer' },
+      { value: '185', label: 'In the wider UAE directory' },
+      { value: '3+', label: 'Quotes to compare' },
+    ] },
+    { type: 'heading', level: 2, text: 'How to choose the right company' },
+    { type: 'paragraph', text: 'The best outcome comes from shortlisting verified companies whose real portfolio matches your style and budget, then comparing itemised quotes on the same scope. Start from a verified list so quality and delivery are accountable.' },
+    { type: 'heading', level: 2, text: 'What to check before you sign' },
+    { type: 'list', ordered: false, title: 'Vetting checklist', items: [
+      'Verified profile with a real, recent portfolio in your style.',
+      'Itemised BOQ with a fixed scope — not a lump sum.',
+      'Valid trade licence, insurance and a written warranty period.',
+      'References from projects of similar size and budget.',
+      'A clear payment schedule tied to milestones.',
+    ] },
+    { type: 'heading', level: 2, text: 'Red flags to avoid', collapsed: true },
+    { type: 'list', ordered: false, items: [
+      'A single lump-sum price with no itemised breakdown.',
+      'Large upfront payment before any work or design.',
+      'No verifiable portfolio, licence or references.',
+      'Quotes that are far below the market — corners get cut later.',
+    ] },
+    { type: 'heading', level: 2, text: 'Questions to ask each company', collapsed: true },
+    { type: 'list', ordered: false, items: [
+      'Can I see completed projects of similar size and style?',
+      'What exactly is included — and excluded — in the quote?',
+      'Who manages the project day to day, and what is the schedule?',
+      'What is the warranty, and how are variations priced?',
+    ] },
+    { type: 'expert_quote', expertIndex: 0 },
+    { type: 'expert_quote', expertIndex: 1 },
+    { type: 'cta', title: 'Browse verified Dubai companies', text: 'Compare portfolios and request itemised quotes from verified design-and-build companies.', href: '/companies', ctaLabel: 'Browse companies' },
+    { type: 'callout', variant: 'method', text: 'Company counts reflect Tarmeer’s verified network (25 approved company profiles) and wider UAE directory (185) at time of writing.' },
+    { type: 'faq', items: [
+      { q: 'How many quotes should I get?', a: 'At least three comparable, itemised quotes so you can compare scope line by line — not just headline totals.' },
+      { q: 'What is a BOQ?', a: 'A bill of quantities — an itemised breakdown of materials, labour and scope. Insist on one instead of a single lump sum.' },
+      { q: 'How do I verify a company?', a: 'Check for a verified profile, real recent portfolio, trade licence, insurance and references from similar projects.' },
+      { q: 'What are the biggest red flags?', a: 'Lump-sum-only pricing, large upfront payments, no verifiable portfolio/licence, and suspiciously low quotes.' },
+      { q: 'How many verified companies are on Tarmeer?', a: '25 verified design-and-build companies, plus a wider UAE directory of 185.' },
+    ] },
+    { type: 'source', text: 'Based on Tarmeer’s verified UAE company network. Always verify licence and references directly before signing.' },
+  ],
+  expertCount: 2,
+};
+
+// ── 指南 F：建材买家指南(sourcing,按品类) ──
+const buyerGuide = {
+  slug: 'dubai-materials-buyer-guide-by-category',
+  country: 'ae', category: 'sourcing',
+  title: 'Buying Furniture, Marble & Lighting in Dubai — A Category Buyer’s Guide',
+  summary: 'A category-by-category buyer’s guide to Dubai building materials: what to check and how each is priced — furniture (per piece/set), stone & tiles (per m²), lighting (per piece), kitchen (per set), flooring (per m²) and more. Tarmeer lists verified suppliers across 9 categories.',
+  cover_image: '/images/insights/buyer-cover.webp',
+  author_name: 'Tarmeer Editorial',
+  seo_title: 'Dubai Materials Buyer’s Guide: Furniture, Marble, Lighting | Tarmeer',
+  seo_description: 'What to buy and check per material category in Dubai — furniture, stone, lighting, kitchen, flooring — with pricing units and sourcing tips from verified suppliers.',
+  status: 'published',
+  body_blocks: [
+    { type: 'callout', variant: 'key', title: 'Key takeaways', items: [
+      'Every category is priced by unit — per m² (tiles, stone, flooring), per piece (furniture, lighting), per set (kitchen).',
+      'Always approve a physical sample before ordering — most suppliers ship samples.',
+      'Confirm MOQ, lead time and Incoterms (ex-works / FOB / delivered) in every quote.',
+      'Tarmeer lists verified suppliers across 9 categories.',
+    ] },
+    { type: 'stat_highlight', items: [
+      { value: '9', label: 'Material categories' },
+      { value: '32', label: 'Verified suppliers' },
+      { value: 'By unit', label: 'How materials are priced' },
+    ] },
+    { type: 'heading', level: 2, text: 'Category-by-category: what to check' },
+    { type: 'stat_table', caption: 'Material categories — pricing unit & what to check', columns: ['Category', 'Typical unit', 'What to check'], rows: [
+      ['Furniture', 'per piece / set', 'Dimensions, material, upholstery, lead time'],
+      ['Stone & tiles', 'per m²', 'Batch/dye lot, thickness, finish, wastage %'],
+      ['Lighting', 'per piece', 'Voltage/UAE spec, color temperature, dimmable'],
+      ['Kitchen', 'per set / linear m', 'Carcass material, worktop, hardware brand'],
+      ['Flooring', 'per m²', 'Wear rating, moisture suitability, underlay'],
+      ['Hardware', 'per piece / set', 'Finish durability, load rating, warranty'],
+      ['Paint & finishes', 'per bucket / m²', 'Coverage, VOC, sheen, coats needed'],
+      ['Plants & landscaping', 'per piece', 'Indoor/outdoor suitability, maintenance'],
+    ] },
+    { type: 'heading', level: 2, text: 'How materials are priced' },
+    { type: 'paragraph', text: 'Compare like for like: a low price per piece can hide a high minimum order quantity (MOQ) or excluded shipping. Ask every supplier for unit price, MOQ, lead time and Incoterms.' },
+    { type: 'expert_quote', expertIndex: 0 },
+    { type: 'heading', level: 2, text: 'Before you order — per material', collapsed: true },
+    { type: 'list', ordered: false, items: [
+      'Stone/tiles: order 10% extra for cuts and breakage; confirm the same dye lot.',
+      'Furniture/kitchen: confirm exact dimensions against your floor plan.',
+      'Lighting/electrical: check UAE voltage and certification.',
+      'Everything: approve a physical sample and get the warranty in writing.',
+    ] },
+    { type: 'cta', title: 'Browse verified material suppliers', text: 'Compare suppliers by category and request itemised quotes.', href: '/materials', ctaLabel: 'Browse suppliers' },
+    { type: 'faq', items: [
+      { q: 'How is furniture priced in Dubai?', a: 'Per piece or per set. Always confirm dimensions, material and lead time — imported/made-to-order items have longer lead times.' },
+      { q: 'How much extra tile should I order?', a: 'Add about 10% for cuts and breakage, and confirm all boxes are the same batch/dye lot for consistent colour.' },
+      { q: 'What should I check when buying lighting?', a: 'UAE voltage/spec, color temperature, and whether fixtures are dimmable and certified.' },
+      { q: 'Can I see materials before buying?', a: 'Request physical samples — only a few suppliers have a Dubai showroom, so samples are the norm for the rest.' },
+      { q: 'What is MOQ?', a: 'Minimum order quantity — the smallest amount a supplier will sell or produce; imported suppliers often have higher MOQs.' },
+    ] },
+    { type: 'source', text: 'Based on Tarmeer’s verified UAE supplier network (9 categories). Request itemised quotes for current pricing.' },
+  ],
+  expertCount: 1,
+};
+
 // 从库动态取真实审核专家(按认证/经验排序)，引用文字用其真实字段生成 → 本地/生产都准，不写死ID
 async function resolveExperts(count) {
   const lim = Math.max(1, Math.min(10, parseInt(count, 10) || 1)); // 内联整数(LIMIT 不能用占位符)
@@ -315,8 +556,9 @@ async function seedGuide(g) {
 }
 
 (async () => {
-  await seedGuide(costGuide);
-  await seedGuide(sourcingGuide);
+  for (const g of [costGuide, sourcingGuide, trendGuide, storyGuide, findGuide, buyerGuide]) {
+    await seedGuide(g);
+  }
   console.log('done');
   process.exit(0);
 })().catch((e) => { console.error(e.message); process.exit(1); });
