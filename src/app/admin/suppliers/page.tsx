@@ -25,6 +25,7 @@ interface Supplier {
   product_count: number;
   catalog_count: number;
   created_at: string;
+  updated_at: string;
   home_display_order: number;
   list_display_order: number;
   weight_score: number | null;
@@ -192,6 +193,7 @@ export default function AdminSuppliersPage() {
                 >
                   {t('Joined', '加入时间')} {joinedSort === 'asc' ? '↑' : joinedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">{t('Last Edited', '最后编辑')}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -269,6 +271,7 @@ export default function AdminSuppliersPage() {
                   </td>
                   <td className="px-4 py-3 text-stone-600 text-[15px] tabular-nums font-mono">{s.weight_score ?? '—'}</td>
                   <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.created_at)}</td>
+                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{s.updated_at ? formatAdminDateTime(s.updated_at) : '—'}</td>
                   <td className="px-4 py-3">
                     <AdminRowActions actions={[
                       {

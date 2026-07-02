@@ -308,8 +308,8 @@ function PartnerList({ groups, onSelect }: PartnerListProps) {
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 font-medium text-stone-600">企业名称</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">合作方 Key</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600 text-center">待审商品</th>
-              <th className="text-left px-4 py-3 font-medium text-stone-600 text-center">企业信息</th>
+              <th className="text-center px-4 py-3 font-medium text-stone-600">待审商品</th>
+              <th className="text-center px-4 py-3 font-medium text-stone-600">企业信息</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">最近同步</th>
             </tr>
           </thead>
