@@ -7,7 +7,7 @@ import { useAdminT } from '@/hooks/useAdminLang';
 import { showToast } from '@/components/ui/Toast';
 import SmartImage from '@/components/ui/SmartImage';
 import {
-  ArrowLeft, Trash2, ExternalLink, Pencil, Check,
+  ArrowLeft, Trash2, ExternalLink, Pencil, Check, Star,
   Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon,
   Plus, X, Upload, Eye, EyeOff,
 } from 'lucide-react';
@@ -759,26 +759,21 @@ export default function AdminSupplierDetailPage() {
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
                           <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
-                          <button onClick={() => handleDeleteProduct(p.id)} className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600" title={t('Delete', '删除')}>
-                            <X className="w-3 h-3" />
-                          </button>
-                          <button onClick={() => setEditingProduct(p)} className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/95 text-stone-700 text-[10px] font-medium shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#b8864a] hover:text-white" title={t('Edit', '编辑')}>
-                            <Pencil className="w-3 h-3" />{t('Edit', '编辑')}
-                          </button>
-                          {/* 设为封面 / 当前封面 */}
-                          {isCover ? (
-                            <span className="absolute bottom-7 inset-x-0 py-1 bg-[#b8864a] text-white text-[10px] font-medium flex items-center justify-center gap-1">
-                              <Check className="w-3 h-3" />{t('Current Cover', '当前封面')}
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => setCover(p.image_url)}
-                              className="absolute bottom-7 inset-x-0 py-1 bg-[#b8864a]/90 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 hover:bg-[#b8864a]"
-                              title={t('Set as Cover', '设为封面')}
-                            >
-                              <ImageIcon className="w-3 h-3" />{t('Set as Cover', '设为封面')}
+                          {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显 */}
+                          <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            <button onClick={() => setEditingProduct(p)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white transition-colors" title={t('Edit', '编辑')}>
+                              <Pencil className="w-3 h-3" />
+                              <span className="text-[9px] leading-none">{t('Edit', '编辑')}</span>
                             </button>
-                          )}
+                            <button onClick={() => setCover(p.image_url)} className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm transition-colors ${isCover ? 'bg-[#b8864a] text-white' : 'bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white'}`} title={isCover ? t('Currently cover', '当前封面') : t('Set as cover', '设为封面')}>
+                              {isCover ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                              <span className="text-[9px] leading-none">{t('Cover', '封面')}</span>
+                            </button>
+                            <button onClick={() => handleDeleteProduct(p.id)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-red-600 hover:text-white transition-colors" title={t('Delete', '删除')}>
+                              <X className="w-3 h-3" />
+                              <span className="text-[9px] leading-none">{t('Delete', '删除')}</span>
+                            </button>
+                          </div>
                           <button
                             onClick={() => { replaceTargetRef.current = p.id; fileInputRef.current?.click(); }}
                             disabled={replacingId === p.id}
