@@ -453,7 +453,7 @@ export default function GuideDetailClient({ guide }: { guide: PublicGuide }) {
         {lead.map(({ block, i }) => renderBlock(block, experts, i))}
         {sections.map((s) =>
           s.collapsed ? (
-            <details key={s.hi} className="group border-t border-stone-200 mt-2">
+            <details key={s.hi} open className="group border-t border-stone-200 mt-2">
               <summary
                 id={slugifyHeading(s.heading.text || '')}
                 className="cursor-pointer list-none flex items-center justify-between gap-3 text-xl font-bold text-[#2c2c2c] py-5 scroll-mt-24 hover:text-[#b8864a] transition"
