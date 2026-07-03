@@ -68,10 +68,11 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **根因**：前端硬编码 survey schema。
 - **预防**：`tarmeer-dynamic-data`——schema 一律来自 `GET /api/field/survey-schema`。
 
-### FA-12 SSR 静默空页：生产公开页 HTML 无正文，Google 抓不到内容（2026-07-03 发现）
-- **现象**：线上 `/companies` 等公开页的原始 HTML 只有导航和页脚，公司卡片全靠浏览器 JS 渲染；SEO 严重受损。
+### FA-12 SSR 取数兜底缺陷 + 一次错误诊断（2026-07-03）
+- **现象**：代码层面确认：生产不设 `NEXT_PUBLIC_API_URL` 时，多数页面 SSR 取数兜底到相对路径 `/api`（Node fetch 必然失败）且被静默吞掉。⚠️ 但最初"线上 /companies 正文全空"的诊断是**错的**——验证者只读了抓取结果的前 99 行就下结论；读完全文后确认线上 HTML 有完整公司内容（服务器侧另有配置/并行修复）。
 - **根因**：生产 `.env.production` 不设 `NEXT_PUBLIC_API_URL`，`API_BASE` 兜底为相对路径 `/api`；Node 的 fetch 不支持相对 URL，SSR 取数必然抛错，又被 `.catch(() => [])` 静默吞掉，服务端输出空列表。仓库里已有正确方案（`serverFetch.ts` 的 `API_INTERNAL_URL`）但大部分页面没用。
 - **修复**：15 个文件统一修正——服务端取数兜底改为 `http://localhost:3002/api`（Next 与 Express 同机内网直连），浏览器端维持 `/api`；`publicApi.ts` 按 `typeof window` 区分同构场景。
+- **额外教训**：验证线上抓取结果必须读完整个响应再下结论，只看开头 = 会把正常页面误诊成空页。
 - **预防**：① 服务端组件取数一律走 `serverFetch.ts` 或带 `API_INTERNAL_URL` 兜底链，禁止裸 `|| '/api'`；② **禁止 `.catch(() => 空数组)` 静默吞错**，至少 `console.error`，否则 SSR 失败无人知晓；③ 上线后用 `curl <页面> | grep <真实数据关键词>` 验证 SSR 正文存在（不是只看浏览器）。
 
 ## 归档模板（新事故追加到本文件末尾）
