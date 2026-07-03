@@ -214,6 +214,8 @@ const sourcingGuide = {
     ] },
     { type: 'callout', variant: 'tip', title: 'Tip', text: 'For time-critical projects, split the order: local stock for anything on the critical path, imported for bulk or bespoke items where the 4–8 week lead time is acceptable.' },
 
+    { type: 'image', url: '/images/insights/sourcing-scene.webp', alt: 'Building material samples — tiles, stone and brass fittings', caption: 'Approve samples in hand before committing to an order.' },
+
     { type: 'heading', level: 2, text: 'How materials are priced' },
     { type: 'paragraph', text: 'Unlike a finished renovation, materials are quoted per unit. Compare like for like — a low price per piece can hide a high MOQ or excluded shipping. Ask every supplier for: unit price, minimum order quantity, lead time, and whether the price is ex-works, FOB or delivered (Incoterms).' },
     { type: 'list', ordered: false, title: 'Common pricing units', items: [
@@ -314,6 +316,7 @@ const trendGuide = {
     ] },
     { type: 'heading', level: 2, text: 'Modern Arabic: the signature premium look' },
     { type: 'paragraph', text: 'Modern Arabic is the most-built named premium style on Tarmeer — blending contemporary layouts with regional detailing (mashrabiya-inspired screens, warm stone, brass). It sits around AED 1,833/m², mid-to-upper in the range.' },
+    { type: 'image', url: '/images/insights/trend-scene.webp', alt: 'A contemporary Dubai living room in Modern Arabic style', caption: 'Style shapes both the look and the per-m² cost.' },
     { type: 'heading', level: 2, text: 'Budget-friendly vs premium styles' },
     { type: 'list', ordered: false, title: 'By cost per m²', items: [
       'Most economical: Soft Minimal (~1,601) and Boutique Luxury (~1,680).',
@@ -377,6 +380,17 @@ const storyGuide = {
     ] },
     { type: 'heading', level: 2, text: 'Why it came in below the Dubai median' },
     { type: 'paragraph', text: 'At AED 1,465/m², this home sits well under the ~AED 1,800/m² Dubai median. The reason is size: fixed costs (design, management, kitchens, bathrooms) spread across 202 m², so the per-m² figure drops — the economies-of-scale effect seen across Tarmeer projects.' },
+    { type: 'image', url: '/images/insights/story-scene.webp', alt: 'Interior of the completed Modern Luxury home', caption: 'The finished 202 m² Modern Luxury home in Arabian Ranches.' },
+    { type: 'heading', level: 2, text: 'What the budget typically covers' },
+    { type: 'paragraph', text: 'For a full-home Modern Luxury renovation at this level, the AED 296,000 typically covers design and project management, demolition and MEP works, built-in joinery and wardrobes, flooring and wall finishes, kitchen and bathroom fit-out, and ceilings and lighting. Loose furniture, appliances and landscaping are usually separate.' },
+    { type: 'list', ordered: false, title: 'Included in a project like this', items: [
+      'Design, drawings and project management',
+      'Demolition, MEP (electrical / plumbing / AC)',
+      'Built-in joinery, wardrobes and TV units',
+      'Flooring, wall finishes and paint',
+      'Kitchen and bathroom fit-out',
+      'Ceilings, gypsum and lighting',
+    ] },
     { type: 'heading', level: 2, text: 'How a renovation like this comes together' },
     { type: 'timeline', title: 'The typical journey on Tarmeer', items: [
       { phase: 'Match & shortlist', duration: '~1 week', desc: 'Homeowner browses verified companies and portfolios by style and budget.' },
@@ -431,6 +445,7 @@ const findGuide = {
       'References from projects of similar size and budget.',
       'A clear payment schedule tied to milestones.',
     ] },
+    { type: 'image', url: '/images/insights/find-scene.webp', alt: 'A homeowner reviewing a portfolio with a design company', caption: 'Shortlist verified companies with a real portfolio in your style.' },
     { type: 'heading', level: 2, text: 'Red flags to avoid', collapsed: true },
     { type: 'list', ordered: false, items: [
       'A single lump-sum price with no itemised breakdown.',
@@ -497,6 +512,9 @@ const buyerGuide = {
     ] },
     { type: 'heading', level: 2, text: 'How materials are priced' },
     { type: 'paragraph', text: 'Compare like for like: a low price per piece can hide a high minimum order quantity (MOQ) or excluded shipping. Ask every supplier for unit price, MOQ, lead time and Incoterms.' },
+    { type: 'image', url: '/images/insights/buyer-scene.webp', alt: 'A customer comparing stone and tile samples in a Dubai showroom', caption: 'Approve a physical sample before ordering — colours and finishes vary by batch.' },
+    { type: 'heading', level: 2, text: 'Where to buy each category' },
+    { type: 'paragraph', text: 'Most suppliers on Tarmeer import or manufacture from China, with a handful holding local Dubai stock. For furniture and kitchens, made-to-order from an import supplier gives the widest range; for tiles, stone and lighting, check whether a local stockist can deliver faster. Whichever you choose, buy from a verified supplier so quality and delivery are accountable.' },
     { type: 'expert_quote', expertIndex: 0 },
     { type: 'heading', level: 2, text: 'Before you order — per material', collapsed: true },
     { type: 'list', ordered: false, items: [
