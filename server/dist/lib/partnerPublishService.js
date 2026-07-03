@@ -5,6 +5,13 @@ const pool = require("../config/database").default;
 const PLACEHOLDER = "/images/partner/placeholder.webp";
 const LANG_BY_COUNTRY = { ae: "en", vn: "vi", sa: "ar" };
 
+// 从 payload 或其 attributes 对象提取 supplier_id，标准化为字符串；缺失→空串
+function supplierRefOf(obj) {
+  const a = obj && obj.attributes;
+  const v = (a && a.supplier_id) != null ? a.supplier_id : (obj && obj.supplier_id);
+  return v != null ? String(v) : "";
+}
+
 function slugify(name) {
   return String(name || "").toLowerCase().trim()
     .replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
@@ -31,8 +38,10 @@ function countriesOf(partner) {
   catch { return []; }
 }
 
-// 确保 (partner, country) 有一行 supplier_profiles；company 为可选的最新企业 payload
-async function ensurePartnerSupplier(partner, country, company) {
+// 确保 (partner, supplierRef, country) 有一行 supplier_profiles；company 为可选的最新企业 payload
+// supplierRef = '' 时走单企业兼容路径（旧行为保持不变）
+async function ensurePartnerSupplier(partner, country, company, supplierRef) {
+  if (supplierRef == null) supplierRef = "";
   const lang = LANG_BY_COUNTRY[country] || partner.default_lang || "en";
   const defLang = partner.default_lang || "en";
   const name = (company && pickText(company.company_name, lang, defLang)) || `Partner ${partner.id}`;
@@ -41,15 +50,16 @@ async function ensurePartnerSupplier(partner, country, company) {
   const phone = company?.contact_phone || null;
   const website = company?.website || null;
   const whatsapp = company?.whatsapp || null;
+  // 按 (partner_id, partner_supplier_ref, country) 定位唯一 supplier_profiles 行
   const [existing] = await pool.execute(
-    "SELECT id FROM supplier_profiles WHERE source='partner' AND partner_id=? AND country=? LIMIT 1",
-    [partner.id, country]);
+    "SELECT id FROM supplier_profiles WHERE source='partner' AND partner_id=? AND COALESCE(partner_supplier_ref,'')=? AND country=? LIMIT 1",
+    [partner.id, supplierRef, country]);
   if (existing[0]) {
     if (company) {
       // company payload provided: update all fields including company_name
       await pool.execute(
-        "UPDATE supplier_profiles SET company_name=?, description=COALESCE(?,description), store_address=COALESCE(?,store_address), contact_phone=COALESCE(?,contact_phone), website=COALESCE(?,website), whatsapp=COALESCE(?,whatsapp), status='approved', is_published=1 WHERE id=?",
-        [name, desc, addr, phone, website, whatsapp, existing[0].id]);
+        "UPDATE supplier_profiles SET company_name=?, description=COALESCE(?,description), store_address=COALESCE(?,store_address), contact_phone=COALESCE(?,contact_phone), website=COALESCE(?,website), whatsapp=COALESCE(?,whatsapp), partner_supplier_ref=?, status='approved', is_published=1 WHERE id=?",
+        [name, desc, addr, phone, website, whatsapp, supplierRef || null, existing[0].id]);
     } else {
       // no company payload: only ensure approved+published, don't overwrite company_name
       await pool.execute(
@@ -58,20 +68,25 @@ async function ensurePartnerSupplier(partner, country, company) {
     }
     return existing[0].id;
   }
-  let slug = `${slugify(name) || "partner-" + partner.id}-${country}-p${partner.id}`;
+  // slug 包含 supplierRef 保证多供应商间不碰撞
+  const slugSuffix = supplierRef ? `-s${slugify(supplierRef).slice(0, 8)}` : "";
+  let slug = `${slugify(name) || "partner-" + partner.id}-${country}-p${partner.id}${slugSuffix}`;
   const [clash] = await pool.execute("SELECT id FROM supplier_profiles WHERE slug=? LIMIT 1", [slug]);
   if (clash[0]) slug = `${slug}-${Date.now() % 100000}`;
   const [r] = await pool.execute(
-    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, status, is_published) VALUES (NULL,?,?,?,?,?,?,?,?, 'china', 'partner', ?, 'approved', 1)",
-    [name, slug, desc, addr, phone, website, whatsapp, country, partner.id]);
+    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, partner_supplier_ref, status, is_published) VALUES (NULL,?,?,?,?,?,?,?,?, 'china', 'partner', ?, ?, 'approved', 1)",
+    [name, slug, desc, addr, phone, website, whatsapp, country, partner.id, supplierRef || null]);
   return r.insertId;
 }
 
 // 发布一条商品暂存行到所有国家（扇出）。imageResolver(urls, externalId)→Promise<string|null> 可选，失败用占位图。
+// 商品的 supplier_ref 决定它归属哪家供应商（每个国家各一行）。
 async function publishProduct(partner, stagingRow, imageResolver) {
   const item = typeof stagingRow.payload_json === "string" ? JSON.parse(stagingRow.payload_json) : stagingRow.payload_json;
   const defLang = partner.default_lang || "en";
   const removed = stagingRow.listing_status === "inactive" || stagingRow.is_deleted === 1 || stagingRow.is_deleted === true;
+  // 优先从暂存行的 supplier_ref 列读；fallback 从 payload attributes
+  const supplierRef = stagingRow.supplier_ref != null ? stagingRow.supplier_ref : supplierRefOf(item);
   let imageUrl = PLACEHOLDER;
   if (!removed && imageResolver && Array.isArray(item.images) && item.images.length) {
     try { const u = await imageResolver(item.images, stagingRow.external_id); if (u) imageUrl = u; }
@@ -79,7 +94,8 @@ async function publishProduct(partner, stagingRow, imageResolver) {
   }
   for (const country of countriesOf(partner)) {
     const lang = LANG_BY_COUNTRY[country] || defLang;
-    const supplierId = await ensurePartnerSupplier(partner, country, null);
+    // 用商品自身的 supplierRef 找到对应供应商（而非全局的单一供应商）
+    const supplierId = await ensurePartnerSupplier(partner, country, null, supplierRef);
     const [exist] = await pool.execute(
       "SELECT id FROM supplier_products WHERE supplier_profile_id=? AND source='partner' AND partner_external_id=? LIMIT 1",
       [supplierId, stagingRow.external_id]);
@@ -115,10 +131,11 @@ async function unpublishProduct(partner, externalId) {
   }
 }
 
-// 发布企业：更新该 partner 所有国家 supplier_profiles 的企业字段
-async function publishCompany(partner, companyPayload) {
+// 发布企业：更新该 partner + supplierRef 在所有国家的 supplier_profiles 企业字段
+async function publishCompany(partner, companyPayload, supplierRef) {
+  if (supplierRef == null) supplierRef = supplierRefOf(companyPayload);
   for (const country of countriesOf(partner)) {
-    await ensurePartnerSupplier(partner, country, companyPayload);
+    await ensurePartnerSupplier(partner, country, companyPayload, supplierRef);
   }
 }
 

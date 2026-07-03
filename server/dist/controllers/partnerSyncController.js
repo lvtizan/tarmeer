@@ -5,6 +5,13 @@ const { verify } = require("../lib/partnerSyncSignature");
 
 const MAX_ITEMS = 100;
 
+// 从 payload 或其 attributes 对象提取 supplier_id，标准化为字符串；缺失→空串（单企业兼容路径）
+function supplierRefOf(obj) {
+  const a = obj && obj.attributes;
+  const v = (a && a.supplier_id) != null ? a.supplier_id : (obj && obj.supplier_id);
+  return v != null ? String(v) : "";
+}
+
 // 文本字段必须是「语言码→文本」对象，且至少一种语言有值
 function langMapHasValue(v) {
   return v && typeof v === "object" && !Array.isArray(v) &&
@@ -56,17 +63,18 @@ async function upsertProduct(partner, item) {
   if (!langMapHasValue(item.title)) return { external_id: ext, ok: false, error: "title required (lang map)" };
   const listing = item.status === "inactive" ? "inactive" : "active";
   const payload = JSON.stringify(item);
+  const supplierRef = supplierRefOf(item);
   const [exist] = await pool.execute(
     "SELECT id FROM partner_sync_products WHERE partner_id = ? AND external_id = ?", [partner.id, ext]);
   if (exist[0]) {
     await pool.execute(
-      "UPDATE partner_sync_products SET payload_json=?, listing_status=?, is_deleted=0, review_status=IF(review_status='rejected','pending',review_status), synced_at=NOW() WHERE id=?",
-      [payload, listing, exist[0].id]);
+      "UPDATE partner_sync_products SET payload_json=?, listing_status=?, supplier_ref=?, is_deleted=0, review_status=IF(review_status='rejected','pending',review_status), synced_at=NOW() WHERE id=?",
+      [payload, listing, supplierRef, exist[0].id]);
     return { external_id: ext, ok: true, action: "updated", review_status: "pending" };
   }
   await pool.execute(
-    "INSERT INTO partner_sync_products (partner_id, external_id, payload_json, listing_status, review_status) VALUES (?,?,?,?, 'pending')",
-    [partner.id, ext, payload, listing]);
+    "INSERT INTO partner_sync_products (partner_id, external_id, supplier_ref, payload_json, listing_status, review_status) VALUES (?,?,?,?,?, 'pending')",
+    [partner.id, ext, supplierRef, payload, listing]);
   return { external_id: ext, ok: true, action: "created", review_status: "pending" };
 }
 
@@ -102,8 +110,10 @@ async function handleCompany(req, res) {
     const cached = await cachedResponse(request_id);
     if (cached) return res.json(cached);
     const payload = JSON.stringify(company);
+    const supplierRef = supplierRefOf(company);
+    // 多供应商：唯一键为 (partner_id, supplier_ref)，同一 supplier_ref 更新，新 supplier_ref 创建新行
     const [exist] = await pool.execute(
-      "SELECT id FROM partner_sync_companies WHERE partner_id = ?", [req.partner.id]);
+      "SELECT id FROM partner_sync_companies WHERE partner_id = ? AND supplier_ref = ?", [req.partner.id, supplierRef]);
     let action;
     if (exist[0]) {
       await pool.execute(
@@ -112,11 +122,11 @@ async function handleCompany(req, res) {
       action = "updated";
     } else {
       await pool.execute(
-        "INSERT INTO partner_sync_companies (partner_id, payload_json, review_status) VALUES (?,?, 'pending')",
-        [req.partner.id, payload]);
+        "INSERT INTO partner_sync_companies (partner_id, supplier_ref, payload_json, review_status) VALUES (?,?,?, 'pending')",
+        [req.partner.id, supplierRef, payload]);
       action = "created";
     }
-    const response = { ok: true, action, review_status: "pending" };
+    const response = { ok: true, action, review_status: "pending", supplier_ref: supplierRef };
     await recordRequest(req.partner.id, request_id, "company", response);
     res.json(response);
   } catch (e) {

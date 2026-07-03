@@ -14,7 +14,7 @@ async function listPendingProducts(req, res) {
   try {
     const status = req.query.status || "pending";
     const country = req.query.country;
-    let sql = "SELECT p.id, p.partner_id, a.partner_key, p.external_id, p.payload_json, p.review_status, p.listing_status, p.is_deleted, p.synced_at FROM partner_sync_products p JOIN partner_accounts a ON a.id=p.partner_id WHERE p.review_status=?";
+    let sql = "SELECT p.id, p.partner_id, a.partner_key, p.external_id, p.supplier_ref, p.payload_json, p.review_status, p.listing_status, p.is_deleted, p.synced_at FROM partner_sync_products p JOIN partner_accounts a ON a.id=p.partner_id WHERE p.review_status=?";
     const args = [status];
     if (country) { sql += " AND JSON_CONTAINS(a.countries_json, JSON_QUOTE(?))"; args.push(country); }
     sql += " ORDER BY p.synced_at DESC LIMIT 200";
@@ -28,7 +28,7 @@ async function listPendingCompanies(req, res) {
   try {
     const status = req.query.status || "pending";
     const country = req.query.country;
-    let sql = "SELECT c.id, c.partner_id, a.partner_key, c.payload_json, c.review_status, c.synced_at FROM partner_sync_companies c JOIN partner_accounts a ON a.id=c.partner_id WHERE c.review_status=?";
+    let sql = "SELECT c.id, c.partner_id, a.partner_key, c.supplier_ref, c.payload_json, c.review_status, c.synced_at FROM partner_sync_companies c JOIN partner_accounts a ON a.id=c.partner_id WHERE c.review_status=?";
     const args = [status];
     if (country) { sql += " AND JSON_CONTAINS(a.countries_json, JSON_QUOTE(?))"; args.push(country); }
     sql += " ORDER BY c.synced_at DESC LIMIT 200";
@@ -73,7 +73,8 @@ async function approveCompany(req, res) {
     const partner = await loadPartner(row.partner_id);
     if (!partner) return res.status(400).json({ error: "partner missing" });
     const company = typeof row.payload_json === "string" ? JSON.parse(row.payload_json) : row.payload_json;
-    await publish.publishCompany(partner, company);
+    // 传入 staging 行的 supplier_ref，确保企业发布到正确的供应商槽
+    await publish.publishCompany(partner, company, row.supplier_ref || "");
     await pool.execute("UPDATE partner_sync_companies SET review_status='approved', reviewed_at=NOW() WHERE id=?", [row.id]);
     res.json({ ok: true, review_status: "approved" });
   } catch (e) { console.error("[partner-admin] approve company error", e); res.status(500).json({ error: "internal error" }); }
