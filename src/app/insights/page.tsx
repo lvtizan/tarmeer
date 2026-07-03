@@ -24,15 +24,9 @@ function categoryLabel(cat: string): string {
 
 const CATEGORY_ORDER = ['cost', 'sourcing', 'trend', 'story', 'find'];
 
-function sortCategories(cats: string[]): string[] {
-  return [...cats].sort((a, b) => {
-    const ai = CATEGORY_ORDER.indexOf(a);
-    const bi = CATEGORY_ORDER.indexOf(b);
-    if (ai === -1 && bi === -1) return a.localeCompare(b);
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
+function catRank(cat: string): number {
+  const i = CATEGORY_ORDER.indexOf(cat);
+  return i === -1 ? 99 : i;
 }
 
 // ─── Metadata ────────────────────────────────────────────────────────────────
@@ -102,14 +96,11 @@ export default async function InsightsPage() {
   const c = getCountry((await headers()).get('x-country'));
   const guides = await fetchGuides(c.code);
 
-  // Group by category
-  const byCategory = new Map<string, PublicGuide[]>();
-  for (const guide of guides) {
-    const cat = guide.category || 'other';
-    if (!byCategory.has(cat)) byCategory.set(cat, []);
-    byCategory.get(cat)!.push(guide);
-  }
-  const categories = sortCategories([...byCategory.keys()]);
+  // 单网格：按栏目排序聚拢(同栏目相邻)，再按发布时间倒序 → 一行 3–4 篇不稀拉
+  const ordered = [...guides].sort((a, b) => {
+    const d = catRank(a.category) - catRank(b.category);
+    return d !== 0 ? d : (b.published_at || '').localeCompare(a.published_at || '');
+  });
 
   // ItemList JSON-LD
   const itemListJsonLd = {
@@ -132,7 +123,7 @@ export default async function InsightsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
 
-      <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-[#2c2c2c] mb-3 leading-tight">
@@ -152,24 +143,12 @@ export default async function InsightsPage() {
           </div>
         )}
 
-        {/* Sections by category */}
-        {categories.map((cat) => {
-          const catGuides = byCategory.get(cat) ?? [];
-          if (!catGuides.length) return null;
-          return (
-            <section key={cat} className="mb-14">
-              <h2 className="text-xl font-bold text-[#2c2c2c] mb-6 flex items-center gap-3">
-                <span className="w-1 h-6 bg-[#b8864a] rounded-full inline-block" />
-                {categoryLabel(cat)}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {catGuides.map((guide) => (
-                  <GuideCard key={guide.id} guide={guide} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        {/* 单网格 — 一行 3–4 篇；卡片上有栏目徽章保留分类感 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {ordered.map((guide) => (
+            <GuideCard key={guide.id} guide={guide} />
+          ))}
+        </div>
       </div>
     </>
   );
