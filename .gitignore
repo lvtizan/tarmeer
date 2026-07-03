@@ -40,3 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .gstack/
+/dist/
+dist 2/
+node_modules 3/
+outputs/
+playwright-report/
+test-results/
+.playwright-mcp/
+.context/
+tmp/

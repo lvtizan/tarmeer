@@ -8,7 +8,7 @@ import { getCompanyTypeLabel } from '@/lib/companyData';
 import { getCountry } from '@/lib/country';
 import CompanyDetailClient from '@/components/companies/CompanyDetailClient';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   try {

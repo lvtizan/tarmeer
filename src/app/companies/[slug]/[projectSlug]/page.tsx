@@ -8,7 +8,7 @@ import ProjectDetailClient from '@/components/companies/ProjectDetailClient';
 import { fetchPublicProjectDetail } from '@/lib/publicApi';
 import { getCountry } from '@/lib/country';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 interface PageProps {
   params: Promise<{ slug: string; projectSlug: string }>;

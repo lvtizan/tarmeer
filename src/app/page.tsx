@@ -39,7 +39,7 @@ interface Supplier {
 }
 
 async function fetchSuppliers(): Promise<Supplier[]> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
   try {
     const res = await fetch(`${API_BASE}/suppliers?limit=4&order=home`, {
       next: { revalidate: 3600 },
@@ -47,7 +47,8 @@ async function fetchSuppliers(): Promise<Supplier[]> {
     if (!res.ok) return [];
     const data = (await res.json()) as { suppliers?: Supplier[] } | Supplier[];
     return (Array.isArray(data) ? data : ((data as { suppliers?: Supplier[] }).suppliers ?? [])).slice(0, 4);
-  } catch {
+  } catch (e) {
+    console.error('[home] fetchSuppliers failed:', e);
     return [];
   }
 }

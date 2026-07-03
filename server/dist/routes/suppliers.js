@@ -47,6 +47,7 @@ const catalogs = __importStar(require("../controllers/supplierCatalogController"
 const leads = __importStar(require("../controllers/supplierLeadController"));
 const enumAdminController_1 = require("../controllers/enumAdminController");
 const projects = __importStar(require("../controllers/supplierProjectController"));
+const memoryCache_1 = require("../lib/memoryCache");
 const router = (0, express_1.Router)();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 const leadLimiter = (0, express_rate_limit_1.default)({
@@ -61,8 +62,8 @@ const translateLimiter = (0, express_rate_limit_1.default)({
     message: 'Too many translation requests. Please slow down.',
 });
 // ── Public ──
-router.get('/categories', enumAdminController_1.getPublicSupplierCategories);
-router.get('/', profile.listPublicSuppliers);
+router.get('/categories', (0, memoryCache_1.cacheMiddleware)(60), enumAdminController_1.getPublicSupplierCategories);
+router.get('/', (0, memoryCache_1.cacheMiddleware)(60), profile.listPublicSuppliers);
 router.get('/detail/:slug', profile.getPublicProfile);
 router.get('/detail/:slug/products', products.listProducts);
 router.get('/detail/:slug/catalogs', catalogs.listCatalogs);

@@ -40,6 +40,7 @@ export default async function CompaniesPage() {
   const isVn = country === 'vn';
 
   const result = await Promise.allSettled([fetchPublicCompanies(300, 'list', country)]);
+  if (result[0].status === 'rejected') console.error('[companies] SSR fetch failed:', result[0].reason);
   const companies = result[0].status === 'fulfilled' ? result[0].value : [];
 
   const jsonLd = {

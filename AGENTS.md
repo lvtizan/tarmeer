@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 第零步：查阅踩坑记录（每次动手前必做）
 
-在任何改动之前，先查 `memory/pitfalls.md`，重点看以下高频坑：
+在任何改动之前，先查项目技能库 `.claude/skills/`（索引见 [`.claude/skills/README.md`](.claude/skills/README.md)），重点看以下高频坑：
 
 | 场景 | 必查规则 |
 |------|---------|
@@ -19,7 +19,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | 生产 build 后站点看起来正常 | 对比 `.next/BUILD_ID` 确认新代码真正上线；build 失败时 pm2 静默跑旧版本 |
 | 跨表字符串比较（列 vs 列）| 上线前在生产查 `INFORMATION_SCHEMA.COLUMNS` 比对 COLLATION_NAME，collation 不一致直接 500 |
 
-> 完整踩坑详情见 [`memory/pitfalls.md`](memory/pitfalls.md)
+> 完整事故档案见 [`.claude/skills/tarmeer-failure-archaeology/SKILL.md`](.claude/skills/tarmeer-failure-archaeology/SKILL.md)
 
 ---
 
@@ -134,7 +134,7 @@ node /tmp/purge-vn-missing.js   # 删除文件不存在的图片引用
 | 改动类型 | 必跑 |
 |---------|------|
 | 任何代码改动 | `node scripts/harness/smoke-test.mjs`（tsc + 路由 + 前端可达） |
-| 国家相关 / 用户侧写入口 / admin 过滤 | `node scripts/harness/country-walkthrough.mjs`（14 用例） |
+| 国家相关 / 用户侧写入口 / admin 过滤 | `node scripts/harness/country-walkthrough.mjs`（UC1–UC23，共 23 用例） |
 | 新功能 / 新行为 | **必须为新行为追加用例**（walkthrough 加 UC，或 smoke-test 加路由，或新建脚本），不允许只靠手测 |
 | 要部署的前端改动 | 本地 `node_modules/.bin/next build` 验证 exit=0（防止线上 build 失败） |
 
@@ -155,11 +155,12 @@ node /tmp/purge-vn-missing.js   # 删除文件不存在的图片引用
 
 | 问题类型 | 归档位置 |
 |---------|---------|
-| 部署/发布流程疏漏 | 更新本文件（AGENTS.md）对应步骤 |
-| 代码 bug、组件误用 | `memory/pitfalls.md` |
-| 后端 API / DB 问题 | `memory/backend-patterns.md` |
-| UI / 样式问题 | `memory/ui-patterns.md` |
-| 部署/服务器操作 | `memory/deployment.md` |
+| 任何事故（现象/根因/修复/预防） | `.claude/skills/tarmeer-failure-archaeology/SKILL.md`（按模板追加 FA-N 条目） |
+| 部署/发布流程疏漏 | 更新本文件（AGENTS.md）+ `.claude/skills/tarmeer-deploy-frontend|backend/SKILL.md` |
+| 代码 bug、组件误用 | `.claude/skills/tarmeer-change-control/SKILL.md` 或 `tarmeer-protected-features` |
+| 后端 API / DB 问题 | `.claude/skills/tarmeer-database-ops/SKILL.md` |
+| UI / 样式问题 | `.claude/skills/tarmeer-ui-conventions/SKILL.md` |
+| 图片/静态资源问题 | `.claude/skills/tarmeer-image-pipeline/SKILL.md` |
 
 归档格式（追加到对应文件末尾）：
 
@@ -198,7 +199,7 @@ AE / VN / SA 三个国家的数据**严禁串联**（数据混桶）和**文字�
 4. **所有用户侧写入口落库时必须确定国家归属**，机制总表见 `docs/testing/country-bucketing.md`（phone 前缀 / country 字段 / slug / page_path）。
 5. **外勤/问卷场景按操作人所属国家（`admin_users.country`）过滤公司搜索**，从源头禁止跨国家关联。
 6. **任何 AE 视图出现越南文（或反之）= P0 bug**，第一时间排查引用解析链（ref_source → JOIN → country 条件）。
-7. **新增/修改写入口或国家相关查询后，必须跑 `node scripts/harness/country-walkthrough.mjs` 且全绿**（12 个国家归属用例）。
+7. **新增/修改写入口或国家相关查询后，必须跑 `node scripts/harness/country-walkthrough.mjs` 且全绿**（UC1–UC23，共 23 个国家归属用例；`docs/testing/country-bucketing.md` 只列到 UC12，为旧版文档）。
 8. **跨国展示（首页/作品集瀑布流/公司/专家/供应商等任何"列内容"的页面）必须用各自国家的独立数据源**：每个国家站只展示本国装企/专家/项目/图像，绝不混展。
    - 实现口径：所有内容列表/feed 接口必须接 `country` 参数并落到 `WHERE ... country = ?`；前端读这些接口必须带国家（`?country=` + `x-country` header，走 `publicApi`），SSR 从 `x-country` 取、客户端从 `useSiteLocale().lang`/域名取。
    - 例（2026-06-26）：VN 作品集瀑布流要用 VN 装企图像；后端 `getPortfolioFeed` 已按 `cp.country=?` 隔离，VN 返回的就是 AKISA/ZITO/Vking 等越南项目。
@@ -224,7 +225,7 @@ rsync -avz public/images/about/ -e "ssh -i ~/.ssh/tarmeer_ecs" \
 # 验证：curl -sI https://www.tarmeer.com/images/about/foo.webp 应 200
 ```
 
-前端必须用 `ProgressiveImage`（模糊→清晰）或 `<img srcSet sizes>`（`-thumb 600w/-medium 1200w/full 2000w`）+ `loading=lazy`（hero/LCP 用 `eager`+`fetchPriority=high`）+ 显式宽高/aspect 防 CLS。详见 `memory/images.md`「静态图片加图标准流程」。
+前端必须用 `ProgressiveImage`（模糊→清晰）或 `<img srcSet sizes>`（`-thumb 600w/-medium 1200w/full 2000w`）+ `loading=lazy`（hero/LCP 用 `eager`+`fetchPriority=high`）+ 显式宽高/aspect 防 CLS。详见 `.claude/skills/tarmeer-image-pipeline/SKILL.md`。
 
 **完整加图部署流程**：① 跑脚本生成变体 ② git commit + 前端部署（代码）③ **rsync `public/images/<dir>/` → portal 同名目录**（图片）④ curl 验证图片 200。漏第③步 = 线上图 404。
 

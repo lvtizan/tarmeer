@@ -5,7 +5,7 @@
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.trim() ??
   process.env.API_INTERNAL_URL?.trim() ?? // internal URL for SSR (faster, no round-trip)
-  "/api";
+  "http://localhost:3002/api"; // SSR 兜底：Node fetch 不支持相对 URL，生产与 Express 同机
 
 export async function serverFetch<T>(
   path: string,

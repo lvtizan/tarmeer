@@ -8,8 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.trim() ??
-  process.env.API_INTERNAL_URL?.trim() ??
-  '/api';
+  process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
