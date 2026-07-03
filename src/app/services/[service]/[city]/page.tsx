@@ -8,7 +8,7 @@ import { MapPin, ChevronRight, Building2 } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { getCountry, type CountryConfig } from '@/lib/country';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 

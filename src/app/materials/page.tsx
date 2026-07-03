@@ -42,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchInitialSuppliers(): Promise<Supplier[]> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || '/api';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
   try {
     const res = await fetch(`${API_BASE}/suppliers?limit=24`, {
       next: { revalidate: 3600 },

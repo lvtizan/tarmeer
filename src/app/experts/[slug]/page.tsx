@@ -9,8 +9,7 @@ import { getCountry } from '@/lib/country';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.trim() ??
-  process.env.API_INTERNAL_URL?.trim() ??
-  '/api';
+  process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 async function fetchExpert(slug: string): Promise<ExpertDetail | null> {
   try {

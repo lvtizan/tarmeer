@@ -4,7 +4,8 @@ import Banner from '@/components/home/Banner';
 import HomeDesignSection from '@/components/home/HomeDesignSection';
 import HomeSpaceSection from '@/components/home/HomeSpaceSection';
 import HomeSupplierSection from '@/components/home/HomeSupplierSection';
-import { fetchPublicCompanies } from '@/lib/publicApi';
+import HomeInsightsSection from '@/components/home/HomeInsightsSection';
+import { fetchPublicCompanies, fetchGuides } from '@/lib/publicApi';
 import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
@@ -39,7 +40,7 @@ interface Supplier {
 }
 
 async function fetchSuppliers(): Promise<Supplier[]> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
   try {
     const res = await fetch(`${API_BASE}/suppliers?limit=4&order=home`, {
       next: { revalidate: 3600 },
@@ -47,7 +48,8 @@ async function fetchSuppliers(): Promise<Supplier[]> {
     if (!res.ok) return [];
     const data = (await res.json()) as { suppliers?: Supplier[] } | Supplier[];
     return (Array.isArray(data) ? data : ((data as { suppliers?: Supplier[] }).suppliers ?? [])).slice(0, 4);
-  } catch {
+  } catch (e) {
+    console.error('[home] fetchSuppliers failed:', e);
     return [];
   }
 }
@@ -96,13 +98,15 @@ export default async function HomePage() {
   };
 
   const isAe = !country || country === 'ae';
-  const [companiesResult, suppliersResult] = await Promise.allSettled([
+  const [companiesResult, suppliersResult, guidesResult] = await Promise.allSettled([
     fetchPublicCompanies(30, 'home', country),
     isAe ? fetchSuppliers() : Promise.resolve([]),
+    fetchGuides(country),
   ]);
 
   const companies = companiesResult.status === 'fulfilled' ? companiesResult.value : [];
   const suppliers = suppliersResult.status === 'fulfilled' ? suppliersResult.value : [];
+  const guides = guidesResult.status === 'fulfilled' ? guidesResult.value : [];
 
   return (
     <>
@@ -112,6 +116,7 @@ export default async function HomePage() {
       <HomeDesignSection initialCompanies={companies} />
       <HomeSpaceSection />
       <HomeSupplierSection suppliers={suppliers} />
+      <HomeInsightsSection guides={guides} />
     </>
   );
 }

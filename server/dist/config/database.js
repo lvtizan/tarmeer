@@ -12,7 +12,7 @@ const pool = promise_1.default.createPool({
     password: index_1.default.database.password,
     database: index_1.default.database.name,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 30, // 2026-07-03 P1：10 在高并发下排队，扩到 30
     queueLimit: 0,
     charset: 'utf8mb4',
     // 避免连接池缓存旧的schema信息

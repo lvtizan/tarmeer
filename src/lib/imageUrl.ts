@@ -112,5 +112,10 @@ export function resolveVariantUrl(
   const dotIndex = resolved.lastIndexOf('.');
   const slashIndex = resolved.lastIndexOf('/');
   if (dotIndex === -1 || dotIndex < slashIndex) return resolved;
-  return `${resolved.slice(0, dotIndex)}-${variant}.webp`;
+  // Strip any existing variant suffix so we SWAP variants instead of STACKING them.
+  // A value already stored as ".../cover-medium.webp" must not become
+  // ".../cover-medium-thumb.webp" (that file doesn't exist → 404). We reduce it back
+  // to the base ".../cover" then append the requested variant → ".../cover-thumb.webp".
+  const base = resolved.slice(0, dotIndex).replace(/-(?:blur|thumb|medium)$/, '');
+  return `${base}-${variant}.webp`;
 }

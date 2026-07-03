@@ -5,9 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const database_1 = __importDefault(require("../config/database"));
+const memoryCache_1 = require("../lib/memoryCache");
 const router = (0, express_1.Router)();
 // Public: showcase images for auth page
-router.get('/showcase-images', async (req, res) => {
+router.get('/showcase-images', (0, memoryCache_1.cacheMiddleware)(60), async (req, res) => {
     try {
         const country = typeof req.query.country === 'string' ? req.query.country.trim() : '';
         const configKey = country === 'vn' ? 'showcase_images_vn' : 'showcase_images';
@@ -49,7 +50,7 @@ const DEFAULT_SPACE_TYPES = {
         { key: 'Outdoor / Landscape', to: '/companies?service=Renovation' },
     ],
 };
-router.get('/space-types', async (req, res) => {
+router.get('/space-types', (0, memoryCache_1.cacheMiddleware)(60), async (req, res) => {
     try {
         const country = req.query.country === 'vn' ? 'vn' : 'ae';
         const configKey = `space_types_${country}`;

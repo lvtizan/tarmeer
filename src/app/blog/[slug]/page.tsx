@@ -6,7 +6,7 @@ import { headers } from 'next/headers';
 import BlogDetailClient from '@/components/blog/BlogDetailClient';
 import { getCountry } from '@/lib/country';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   try {
@@ -38,7 +38,7 @@ export interface PublicArticle {
 }
 
 async function fetchArticle(slug: string, country: string): Promise<PublicArticle | null> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
   try {
     const res = await fetch(`${API_BASE}/articles/public/${slug}?country=${country}`, {
       next: { revalidate: 3600 },

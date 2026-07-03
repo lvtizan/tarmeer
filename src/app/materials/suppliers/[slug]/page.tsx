@@ -6,7 +6,7 @@ import { headers } from 'next/headers';
 import SupplierDetailClient from '@/components/materials/SupplierDetailClient';
 import { getCountry } from '@/lib/country';
 
-const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
+const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   try {
@@ -24,7 +24,7 @@ interface PageProps {
 }
 
 async function fetchSupplierBasic(slug: string): Promise<{ company_name: string; description: string } | null> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || '/api';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
   try {
     const res = await fetch(`${API_BASE}/suppliers/detail/${slug}`, {
       next: { revalidate: 3600 },

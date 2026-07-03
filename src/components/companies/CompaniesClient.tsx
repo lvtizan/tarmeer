@@ -120,7 +120,7 @@ function CompanyCard({ company, onClick, isVn }: { company: Company; onClick: ()
             <span className="text-stone-300">&middot;</span>
             <span className="text-stone-400">{company.city}{isVn ? '' : ', UAE'}</span>
             <span className="text-stone-300">&middot;</span>
-            <span className="text-stone-400">Since {company.foundedYear}</span>
+            <span className="text-stone-400">{isVn ? 'kể từ năm' : 'Since'} {company.foundedYear}</span>
           </div>
 
           <p className="text-stone-500 text-[13px] leading-relaxed line-clamp-2 mb-2.5">
@@ -303,9 +303,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
 
   const getFoundedLabel = (range: string) => {
     const labels: Record<string, string> = {
-      '2015-2026': '10+ years',
-      '2010-2014': '15+ years',
-      '2000-2009': '25+ years',
+      '2015-2026': isVn ? 'hơn 10 năm' : '10+ years',
+      '2010-2014': isVn ? 'hơn 15 năm' : '15+ years',
+      '2000-2009': isVn ? 'hơn 25 năm' : '25+ years',
     };
     return labels[range] || range;
   };
@@ -375,9 +375,9 @@ export default function CompaniesClient({ initialCompanies }: { initialCompanies
         <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider mb-3">{tr.companies.founded}</h4>
         <div className={compact ? 'flex flex-wrap gap-2' : 'space-y-1'}>
           <FilterOption compact={compact} selected={!foundedRange} onClick={() => setFoundedRange('')}>{tr.companies.any}</FilterOption>
-          <FilterOption compact={compact} selected={foundedRange === '2015-2026'} onClick={() => setFoundedRange('2015-2026')}>10+ years</FilterOption>
-          <FilterOption compact={compact} selected={foundedRange === '2010-2014'} onClick={() => setFoundedRange('2010-2014')}>15+ years</FilterOption>
-          <FilterOption compact={compact} selected={foundedRange === '2000-2009'} onClick={() => setFoundedRange('2000-2009')}>25+ years</FilterOption>
+          <FilterOption compact={compact} selected={foundedRange === '2015-2026'} onClick={() => setFoundedRange('2015-2026')}>{getFoundedLabel('2015-2026')}</FilterOption>
+          <FilterOption compact={compact} selected={foundedRange === '2010-2014'} onClick={() => setFoundedRange('2010-2014')}>{getFoundedLabel('2010-2014')}</FilterOption>
+          <FilterOption compact={compact} selected={foundedRange === '2000-2009'} onClick={() => setFoundedRange('2000-2009')}>{getFoundedLabel('2000-2009')}</FilterOption>
         </div>
       </div>
 
