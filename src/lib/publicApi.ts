@@ -3,7 +3,11 @@ import { normalizeFoundedYear, summarizeCompanyDescription, type Company, type P
 import { companies as localCompanies } from '../data/companies';
 import { api } from './api';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+// SSR 时 Node fetch 不支持相对 URL：服务端走内网绝对地址，浏览器端维持 /api（nginx 转发）
+const API_BASE =
+  typeof window === 'undefined'
+    ? (process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api')
+    : (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api');
 const ALLOW_LOCAL_FALLBACK = process.env.NODE_ENV === 'development';
 
 export interface PublicDesignerCardData {
@@ -446,9 +450,9 @@ export async function fetchPublicCompanies(limit = 50, orderMode: 'home' | 'list
     // /public/companies (registered company_profiles) are UAE-only; skip for non-AE locales
     const isAe = !country || country === 'ae';
     const [directoryResult, approvedResult] = await Promise.all([
-      request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}&order=${orderMode}`, country).catch(() => ({ companies: [] as PublicCompanyRecord[] })),
+      request<{ companies: PublicCompanyRecord[] }>(`/companies?limit=${limit}&order=${orderMode}`, country).catch((e) => { console.error('[publicApi] /companies fetch failed:', e); return { companies: [] as PublicCompanyRecord[] }; }),
       isAe
-        ? request<{ companies: PublicCompanyRecord[] }>(`/public/companies?limit=${limit}`).catch(() => ({ companies: [] as PublicCompanyRecord[] }))
+        ? request<{ companies: PublicCompanyRecord[] }>(`/public/companies?limit=${limit}`).catch((e) => { console.error('[publicApi] /public/companies fetch failed:', e); return { companies: [] as PublicCompanyRecord[] }; })
         : Promise.resolve({ companies: [] as PublicCompanyRecord[] }),
     ]);
 

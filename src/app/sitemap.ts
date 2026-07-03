@@ -4,7 +4,7 @@ import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 // ── AE-only SEO landing content (VN 站对应路由走 notFound，故仅 AE 收录) ──
 const GUIDE_SLUGS = [

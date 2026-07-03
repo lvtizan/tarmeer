@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, Maximize2, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
 
 interface Supplier {
   id: number;
