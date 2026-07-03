@@ -114,19 +114,24 @@ async function handleCompany(req, res) {
     // 多供应商：唯一键为 (partner_id, supplier_ref)，同一 supplier_ref 更新，新 supplier_ref 创建新行
     const [exist] = await pool.execute(
       "SELECT id FROM partner_sync_companies WHERE partner_id = ? AND supplier_ref = ?", [req.partner.id, supplierRef]);
-    let action;
+    // 企业更新的状态：auto_approve_updates=0 时，任何更新都退回 pending 供管理员复审
+    // （否则更新停留在旧的 approved 状态，既不复审也不重新发布，审核页看不到 → "点进去没企业信息"）
+    const updateStatus = req.partner.auto_approve_updates ? "approved" : "pending";
+    let action, reviewStatus;
     if (exist[0]) {
       await pool.execute(
-        "UPDATE partner_sync_companies SET payload_json=?, review_status=IF(review_status='rejected','pending',review_status), synced_at=NOW() WHERE id=?",
-        [payload, exist[0].id]);
+        "UPDATE partner_sync_companies SET payload_json=?, review_status=?, synced_at=NOW() WHERE id=?",
+        [payload, updateStatus, exist[0].id]);
       action = "updated";
+      reviewStatus = updateStatus;
     } else {
       await pool.execute(
         "INSERT INTO partner_sync_companies (partner_id, supplier_ref, payload_json, review_status) VALUES (?,?,?, 'pending')",
         [req.partner.id, supplierRef, payload]);
       action = "created";
+      reviewStatus = "pending";
     }
-    const response = { ok: true, action, review_status: "pending", supplier_ref: supplierRef };
+    const response = { ok: true, action, review_status: reviewStatus, supplier_ref: supplierRef };
     await recordRequest(req.partner.id, request_id, "company", response);
     res.json(response);
   } catch (e) {

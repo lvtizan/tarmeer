@@ -472,23 +472,31 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
               </div>
             )}
 
-            {/* Company action buttons */}
-            <div className="pt-2 flex gap-2">
-              <button
-                onClick={() => onCompanyAction(group.company!.id, 'reject')}
-                disabled={!!busy[`c-${group.company!.id}`]}
-                className="h-9 px-4 text-sm font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-40"
-              >
-                {busy[`c-${group.company!.id}`] ? '…' : '拒绝企业信息'}
-              </button>
-              <button
-                onClick={() => onCompanyAction(group.company!.id, 'approve')}
-                disabled={!!busy[`c-${group.company!.id}`]}
-                className="h-9 px-4 text-sm font-medium rounded-lg bg-[#b8864a] text-white hover:bg-[#a07640] disabled:opacity-40"
-              >
-                {busy[`c-${group.company!.id}`] ? '…' : '通过企业信息'}
-              </button>
-            </div>
+            {/* Company action buttons — 仅 pending 时可审核；已通过则显示状态（作为待审商品的上下文） */}
+            {group.company.review_status === 'pending' ? (
+              <div className="pt-2 flex gap-2">
+                <button
+                  onClick={() => onCompanyAction(group.company!.id, 'reject')}
+                  disabled={!!busy[`c-${group.company!.id}`]}
+                  className="h-9 px-4 text-sm font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-40"
+                >
+                  {busy[`c-${group.company!.id}`] ? '…' : '拒绝企业信息'}
+                </button>
+                <button
+                  onClick={() => onCompanyAction(group.company!.id, 'approve')}
+                  disabled={!!busy[`c-${group.company!.id}`]}
+                  className="h-9 px-4 text-sm font-medium rounded-lg bg-[#b8864a] text-white hover:bg-[#a07640] disabled:opacity-40"
+                >
+                  {busy[`c-${group.company!.id}`] ? '…' : '通过企业信息'}
+                </button>
+              </div>
+            ) : (
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium">
+                  企业信息已通过（以下为待审商品）
+                </span>
+              </div>
+            )}
           </div>
         )}
       </section>

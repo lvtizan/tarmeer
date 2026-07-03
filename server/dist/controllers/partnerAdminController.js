@@ -28,7 +28,9 @@ async function listPendingCompanies(req, res) {
   try {
     const status = req.query.status || "pending";
     const country = req.query.country;
-    let sql = "SELECT c.id, c.partner_id, a.partner_key, c.supplier_ref, c.payload_json, c.review_status, c.synced_at FROM partner_sync_companies c JOIN partner_accounts a ON a.id=c.partner_id WHERE c.review_status=?";
+    // 除了 pending 企业，还带出「已通过但其分组下有待审商品」的企业，作为审核商品时的企业上下文
+    // （否则企业审过一次后仍 approved，新商品待审时组里企业为空 → "点进去没企业信息"）
+    let sql = "SELECT c.id, c.partner_id, a.partner_key, c.supplier_ref, c.payload_json, c.review_status, c.synced_at FROM partner_sync_companies c JOIN partner_accounts a ON a.id=c.partner_id WHERE (c.review_status=? OR EXISTS (SELECT 1 FROM partner_sync_products p WHERE p.partner_id=c.partner_id AND p.supplier_ref=c.supplier_ref AND p.review_status='pending'))";
     const args = [status];
     if (country) { sql += " AND JSON_CONTAINS(a.countries_json, JSON_QUOTE(?))"; args.push(country); }
     sql += " ORDER BY c.synced_at DESC LIMIT 200";

@@ -164,6 +164,24 @@ try {
   const nameAUpdated = sql(`SELECT JSON_UNQUOTE(JSON_EXTRACT(payload_json,'$.company_name.en')) FROM partner_sync_companies WHERE partner_id=${PID} AND supplier_ref='SUP-A'`);
   companyCntAfterUpdate === "2" && nameAUpdated === "Seller Alpha v2" ? ok("UC13 同 supplier_ref 重推→更新，行数不增") : ng("UC13 幂等失败", `cnt=${companyCntAfterUpdate} name=${nameAUpdated}`);
 
+  // UC14（Fix A）：企业审核通过后再推更新 → 退回 pending 供复审（auto_approve_updates=0）。
+  // A 在 UC7 已通过、UC13 又重推，此刻应回到 pending。
+  const statusAAfterRepush = sql(`SELECT review_status FROM partner_sync_companies WHERE partner_id=${PID} AND supplier_ref='SUP-A'`);
+  statusAAfterRepush === "pending" ? ok("UC14 已通过企业被更新后退回 pending 复审") : ng("UC14 更新未退回 pending", `status=${statusAAfterRepush}`);
+
+  // UC15（Fix B）：企业已通过、但其分组下有待审商品时，审核接口仍带出该企业作上下文。
+  // 企业 B 保持 approved（不再推），仅给它推一件新的待审商品。
+  await sync("POST", "/products/create", {
+    version: "1", request_id: `${MARK}-pB2`,
+    items: [{ external_id: `${MARK}-sku-B2`, status: "active", title: { en: "Product Beta 2" }, attributes: { supplier_id: "SUP-B" }, images: [] }],
+  });
+  const statusB = sql(`SELECT review_status FROM partner_sync_companies WHERE partner_id=${PID} AND supplier_ref='SUP-B'`);
+  const listResp = await admin("GET", `/partner-sync/companies?country=ae`, token);
+  const hasBInList = Array.isArray(listResp.body?.items) && listResp.body.items.some((c) => c.supplier_ref === "SUP-B");
+  statusB === "approved" && hasBInList
+    ? ok("UC15 已通过企业+待审商品→审核接口带出企业作上下文")
+    : ng("UC15 未带出上下文企业", `B状态=${statusB} 在列表=${hasBInList}`);
+
   console.log(`\n${pass} passed, ${fail} failed`);
 } finally {
   cleanup();

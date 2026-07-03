@@ -209,8 +209,10 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         adminApi.getPartnerSyncProducts(country).catch(() => null),
         adminApi.getPartnerSyncCompanies(country).catch(() => null),
       ]);
-      // 合作方同步待审数 = 待审企业 + 待审商品
-      const partnerPending = (psProdRes?.items?.length ?? 0) + (psCompRes?.items?.length ?? 0);
+      // 合作方同步待审数 = 待审企业 + 待审商品（企业接口会带回"已通过但有待审商品"的企业作上下文，只计 pending）
+      const pendingComp = (psCompRes?.items ?? []).filter((c: { review_status?: string }) => c.review_status === 'pending').length;
+      const pendingProd = (psProdRes?.items ?? []).filter((p: { review_status?: string }) => p.review_status === 'pending').length;
+      const partnerPending = pendingComp + pendingProd;
       setMenuCounts({
         '/admin/users': usersRes?.pagination?.total ?? 0,
         '/admin/companies': companiesRes?.total ?? companiesRes?.pagination?.total ?? 0,
