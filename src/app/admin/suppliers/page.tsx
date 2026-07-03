@@ -29,6 +29,7 @@ interface Supplier {
   home_display_order: number;
   list_display_order: number;
   weight_score: number | null;
+  source?: string;
 }
 
 export default function AdminSuppliersPage() {
@@ -36,6 +37,7 @@ export default function AdminSuppliersPage() {
   const { country } = useAdminCountry();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [partnerCount, setPartnerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -56,6 +58,7 @@ export default function AdminSuppliersPage() {
       const qs = new URLSearchParams(params).toString();
       const data = await adminApi.request(`/suppliers?${qs}`);
       setSuppliers(data.suppliers || []);
+      setPartnerCount(data.partnerCount || 0);
     } catch {}
     setLoading(false);
   }, [originFilter, statusFilter, country]);
@@ -129,7 +132,14 @@ export default function AdminSuppliersPage() {
       )}
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Suppliers', '供应商')}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Suppliers', '供应商')}</h1>
+          {partnerCount > 0 && (
+            <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[#f5ecdf] text-[#a07640] text-xs font-medium">
+              {t('Partner-synced', '合作方同步')} {partnerCount}
+            </span>
+          )}
+        </div>
         <a
           href="/start-suppliers"
           target="_blank"
@@ -223,7 +233,14 @@ export default function AdminSuppliersPage() {
                   onClick={() => router.push(`/admin/suppliers/${s.id}`)}
                 >
                   <td className="px-4 py-3">
-                    <div className="text-[16px] font-semibold text-[#2c2c2c] leading-tight">{s.company_name}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[16px] font-semibold text-[#2c2c2c] leading-tight">{s.company_name}</span>
+                      {s.source === 'partner' && (
+                        <span className="inline-flex items-center h-5 px-2 rounded-full bg-[#f5ecdf] text-[#a07640] text-[12px] font-medium shrink-0">
+                          {t('Partner', '合作方同步')}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[14px] text-stone-400 mt-0.5">{s.user_email}</div>
                   </td>
                   <td className="px-4 py-3">
