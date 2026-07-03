@@ -4,7 +4,8 @@ import Banner from '@/components/home/Banner';
 import HomeDesignSection from '@/components/home/HomeDesignSection';
 import HomeSpaceSection from '@/components/home/HomeSpaceSection';
 import HomeSupplierSection from '@/components/home/HomeSupplierSection';
-import { fetchPublicCompanies } from '@/lib/publicApi';
+import HomeInsightsSection from '@/components/home/HomeInsightsSection';
+import { fetchPublicCompanies, fetchGuides } from '@/lib/publicApi';
 import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
@@ -97,13 +98,15 @@ export default async function HomePage() {
   };
 
   const isAe = !country || country === 'ae';
-  const [companiesResult, suppliersResult] = await Promise.allSettled([
+  const [companiesResult, suppliersResult, guidesResult] = await Promise.allSettled([
     fetchPublicCompanies(30, 'home', country),
     isAe ? fetchSuppliers() : Promise.resolve([]),
+    fetchGuides(country),
   ]);
 
   const companies = companiesResult.status === 'fulfilled' ? companiesResult.value : [];
   const suppliers = suppliersResult.status === 'fulfilled' ? suppliersResult.value : [];
+  const guides = guidesResult.status === 'fulfilled' ? guidesResult.value : [];
 
   return (
     <>
@@ -113,6 +116,7 @@ export default async function HomePage() {
       <HomeDesignSection initialCompanies={companies} />
       <HomeSpaceSection />
       <HomeSupplierSection suppliers={suppliers} />
+      <HomeInsightsSection guides={guides} />
     </>
   );
 }
