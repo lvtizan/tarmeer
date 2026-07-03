@@ -123,6 +123,7 @@ async function listSuppliers(req, res) {
         const offset = (page - 1) * limit;
         const status = req.query.status;
         const origin = req.query.origin;
+        const source = req.query.source;
         const search = req.query.search;
         const country = req.query.country || req.country || 'ae';
         let where = 'WHERE sp.country = ?';
@@ -134,6 +135,10 @@ async function listSuppliers(req, res) {
         if (origin) {
             where += ' AND sp.origin = ?';
             params.push(origin);
+        }
+        if (source) {
+            where += ' AND sp.source = ?';
+            params.push(source);
         }
         if (search) {
             where += ' AND (sp.company_name LIKE ? OR su.email LIKE ?)';

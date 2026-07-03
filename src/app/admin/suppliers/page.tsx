@@ -41,6 +41,7 @@ export default function AdminSuppliersPage() {
   const [loading, setLoading] = useState(true);
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
   const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>(null);
   const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>(null);
@@ -55,13 +56,14 @@ export default function AdminSuppliersPage() {
       const params: Record<string, string> = { limit: '50', country };
       if (originFilter) params.origin = originFilter;
       if (statusFilter) params.status = statusFilter;
+      if (sourceFilter) params.source = sourceFilter;
       const qs = new URLSearchParams(params).toString();
       const data = await adminApi.request(`/suppliers?${qs}`);
       setSuppliers(data.suppliers || []);
       setPartnerCount(data.partnerCount || 0);
     } catch {}
     setLoading(false);
-  }, [originFilter, statusFilter, country]);
+  }, [originFilter, statusFilter, sourceFilter, country]);
 
   useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
 
@@ -151,7 +153,28 @@ export default function AdminSuppliersPage() {
         </a>
       </div>
 
-      <div className="flex items-center justify-end gap-2 mb-4">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        {/* 来源 tab：全部 / 合作方同步 */}
+        <div className="inline-flex items-center gap-1 p-1 bg-stone-100 rounded-lg">
+          <button
+            onClick={() => setSourceFilter('')}
+            className={`h-7 px-3 rounded-md text-sm font-medium transition ${
+              sourceFilter === '' ? 'bg-white text-[#2c2c2c] shadow-sm' : 'text-stone-500 hover:text-stone-700'
+            }`}
+          >
+            {t('All', '全部')}
+          </button>
+          <button
+            onClick={() => setSourceFilter('partner')}
+            className={`h-7 px-3 rounded-md text-sm font-medium transition inline-flex items-center gap-1 ${
+              sourceFilter === 'partner' ? 'bg-white text-[#a07640] shadow-sm' : 'text-stone-500 hover:text-stone-700'
+            }`}
+          >
+            {t('Partner-synced', '合作方同步')}
+            {partnerCount > 0 && <span className="text-xs opacity-70">{partnerCount}</span>}
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
         <AdminSelect
           size="sm"
           value={originFilter}
@@ -173,6 +196,7 @@ export default function AdminSuppliersPage() {
             { value: 'rejected', label: t('Rejected', '已拒绝') },
           ]}
         />
+        </div>
       </div>
 
       {loading ? <Spinner /> : suppliers.length === 0 ? (
