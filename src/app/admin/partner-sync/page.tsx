@@ -13,6 +13,7 @@ interface CompanyRow {
   id: number;
   partner_id: number;
   partner_key: string;
+  supplier_ref: string;
   payload_json: string | Record<string, unknown>;
   review_status: string;
   synced_at: string;
@@ -22,6 +23,7 @@ interface ProductRow {
   id: number;
   partner_id: number;
   partner_key: string;
+  supplier_ref: string;
   external_id: string;
   payload_json: string | Record<string, unknown>;
   review_status: string;
@@ -30,13 +32,15 @@ interface ProductRow {
   synced_at: string;
 }
 
-/** One entry in Level 1 — one row per unique partner */
+/** One entry in Level 1 — one row per unique (partner_id + supplier_ref) */
 interface PartnerGroup {
+  groupKey: string;             // composite `${partner_id}::${supplier_ref}`
   partner_id: number;
   partner_key: string;
-  company: CompanyRow | null;      // pending company record, if any
-  products: ProductRow[];          // pending products for this partner
-  latestSyncedAt: string;          // max(company.synced_at, max products.synced_at)
+  supplier_ref: string;
+  company: CompanyRow | null;   // pending company record, if any
+  products: ProductRow[];       // pending products for this seller
+  latestSyncedAt: string;       // max(company.synced_at, max products.synced_at)
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -128,19 +132,27 @@ function extractImages(payload: Record<string, unknown>): string[] {
   }, []);
 }
 
-/** Group companies and products by partner_id */
-function groupByPartner(companies: CompanyRow[], products: ProductRow[]): PartnerGroup[] {
-  const map = new Map<number, PartnerGroup>();
+/** Build composite group key from partner_id and supplier_ref */
+function makeGroupKey(partner_id: number, supplier_ref: string): string {
+  return `${partner_id}::${supplier_ref}`;
+}
+
+/** Group companies and products by (partner_id + supplier_ref) */
+function groupBySeller(companies: CompanyRow[], products: ProductRow[]): PartnerGroup[] {
+  const map = new Map<string, PartnerGroup>();
 
   for (const c of companies) {
-    const existing = map.get(c.partner_id);
+    const key = makeGroupKey(c.partner_id, c.supplier_ref || '');
+    const existing = map.get(key);
     if (existing) {
       existing.company = c;
       if (c.synced_at > existing.latestSyncedAt) existing.latestSyncedAt = c.synced_at;
     } else {
-      map.set(c.partner_id, {
+      map.set(key, {
+        groupKey: key,
         partner_id: c.partner_id,
         partner_key: c.partner_key,
+        supplier_ref: c.supplier_ref || '',
         company: c,
         products: [],
         latestSyncedAt: c.synced_at,
@@ -149,22 +161,30 @@ function groupByPartner(companies: CompanyRow[], products: ProductRow[]): Partne
   }
 
   for (const p of products) {
-    let group = map.get(p.partner_id);
+    const key = makeGroupKey(p.partner_id, p.supplier_ref || '');
+    let group = map.get(key);
     if (!group) {
       group = {
+        groupKey: key,
         partner_id: p.partner_id,
         partner_key: p.partner_key,
+        supplier_ref: p.supplier_ref || '',
         company: null,
         products: [],
         latestSyncedAt: p.synced_at,
       };
-      map.set(p.partner_id, group);
+      map.set(key, group);
     }
     group.products.push(p);
     if (p.synced_at > group.latestSyncedAt) group.latestSyncedAt = p.synced_at;
   }
 
   return Array.from(map.values()).sort((a, b) => b.latestSyncedAt.localeCompare(a.latestSyncedAt));
+}
+
+/** Display label for supplier_ref: empty string = 默认/单一 */
+function displaySupplierRef(supplier_ref: string): string {
+  return supplier_ref || '默认/单一';
 }
 
 // ── Status Badge ───────────────────────────────────────────────────────────────
@@ -292,14 +312,14 @@ function Lightbox({ images, initialIndex, onClose }: LightboxProps) {
   );
 }
 
-// ── Level 1: Partner List ──────────────────────────────────────────────────────
+// ── Level 1: Seller List ───────────────────────────────────────────────────────
 
-interface PartnerListProps {
+interface SellerListProps {
   groups: PartnerGroup[];
-  onSelect: (partnerId: number) => void;
+  onSelect: (groupKey: string) => void;
 }
 
-function PartnerList({ groups, onSelect }: PartnerListProps) {
+function SellerList({ groups, onSelect }: SellerListProps) {
   return (
     <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
       <div className="overflow-x-auto">
@@ -308,6 +328,7 @@ function PartnerList({ groups, onSelect }: PartnerListProps) {
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 font-medium text-stone-600">企业名称</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">合作方 Key</th>
+              <th className="text-left px-4 py-3 font-medium text-stone-600">供应商ID</th>
               <th className="text-center px-4 py-3 font-medium text-stone-600">待审商品</th>
               <th className="text-center px-4 py-3 font-medium text-stone-600">企业信息</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">最近同步</th>
@@ -322,14 +343,21 @@ function PartnerList({ groups, onSelect }: PartnerListProps) {
 
               return (
                 <tr
-                  key={g.partner_id}
+                  key={g.groupKey}
                   className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
-                  onClick={() => onSelect(g.partner_id)}
+                  onClick={() => onSelect(g.groupKey)}
                 >
                   <td className="px-4 py-3 font-medium text-stone-800 hover:text-[#b8864a] max-w-[220px]">
                     {truncate(displayName, 45)}
                   </td>
                   <td className="px-4 py-3 text-stone-500 text-xs font-mono">{g.partner_key}</td>
+                  <td className="px-4 py-3 text-xs">
+                    {g.supplier_ref ? (
+                      <span className="font-mono text-stone-700">{g.supplier_ref}</span>
+                    ) : (
+                      <span className="text-stone-400 italic">默认/单一</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     {g.products.length > 0 ? (
                       <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
@@ -388,6 +416,9 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
         <span className="text-stone-300">|</span>
         <h2 className="text-base font-semibold text-stone-800">{truncate(companyName, 50)}</h2>
         <span className="text-xs font-mono text-stone-400">{group.partner_key}</span>
+        <span className="text-xs text-stone-400">
+          供应商ID：<span className="font-mono text-stone-600">{displaySupplierRef(group.supplier_ref)}</span>
+        </span>
       </div>
 
       {/* ── 企业信息区 ── */}
@@ -403,6 +434,7 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
             <div className="flex flex-wrap gap-4 text-xs text-stone-500">
               <span>ID：<span className="font-mono text-stone-700">#{group.company.id}</span></span>
               <span>合作方：<span className="font-mono text-stone-700">{group.company.partner_key}</span></span>
+              <span>供应商ID：<span className="font-mono text-stone-700">{displaySupplierRef(group.company.supplier_ref)}</span></span>
               <span>审核状态：<span className="font-medium text-stone-700">{group.company.review_status}</span></span>
               <span>同步时间：<span className="text-stone-700">{formatAdminDateTime(group.company.synced_at)}</span></span>
             </div>
@@ -575,8 +607,8 @@ export default function PartnerSyncPage() {
   // Per-row busy state: key = `c-{id}` or `p-{id}`
   const [busy, setBusy] = useState<Record<string, boolean>>({});
 
-  // Level 2 navigation: selected partner_id (null = Level 1)
-  const [selectedPartnerId, setSelectedPartnerId] = useState<number | null>(null);
+  // Level 2 navigation: composite key `${partner_id}::${supplier_ref}` (null = Level 1)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -598,7 +630,7 @@ export default function PartnerSyncPage() {
   useEffect(() => { load(); }, [load]);
 
   // Reset to Level 1 when country changes
-  useEffect(() => { setSelectedPartnerId(null); }, [country]);
+  useEffect(() => { setSelectedKey(null); }, [country]);
 
   // ── Company actions ──
 
@@ -636,24 +668,24 @@ export default function PartnerSyncPage() {
 
   // ── Derived data ──
 
-  const groups = groupByPartner(companies, products);
+  const groups = groupBySeller(companies, products);
   const isEmpty = groups.length === 0;
 
-  // After optimistic removal a partner may become empty — navigate back if so
-  const selectedGroup = selectedPartnerId !== null
-    ? groups.find(g => g.partner_id === selectedPartnerId) ?? null
+  // After optimistic removal a seller group may become empty — navigate back if so
+  const selectedGroup = selectedKey !== null
+    ? groups.find(g => g.groupKey === selectedKey) ?? null
     : null;
 
-  // If the selected partner no longer has any pending items, go back to level 1
+  // If the selected seller no longer has any pending items, go back to level 1
   useEffect(() => {
     if (
-      selectedPartnerId !== null &&
+      selectedKey !== null &&
       !loading &&
-      !groups.find(g => g.partner_id === selectedPartnerId)
+      !groups.find(g => g.groupKey === selectedKey)
     ) {
-      setSelectedPartnerId(null);
+      setSelectedKey(null);
     }
-  }, [groups, selectedPartnerId, loading]);
+  }, [groups, selectedKey, loading]);
 
   // ── Render ──
 
@@ -667,7 +699,7 @@ export default function PartnerSyncPage() {
 
       {loading ? (
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-          <table className="w-full text-sm"><tbody><TableSpinner colSpan={5} /></tbody></table>
+          <table className="w-full text-sm"><tbody><TableSpinner colSpan={6} /></tbody></table>
         </div>
       ) : isEmpty ? (
         <div className="bg-white rounded-xl border border-stone-200 px-6 py-16 text-center text-stone-400 text-sm">
@@ -678,17 +710,17 @@ export default function PartnerSyncPage() {
         <PartnerDetail
           group={selectedGroup}
           busy={busy}
-          onBack={() => setSelectedPartnerId(null)}
+          onBack={() => setSelectedKey(null)}
           onCompanyAction={handleCompanyAction}
           onProductAction={handleProductAction}
         />
       ) : (
-        /* ── Level 1: Partner List ── */
+        /* ── Level 1: Seller List ── */
         <>
           <p className="text-sm text-stone-500">
-            共 <span className="font-medium text-stone-700">{groups.length}</span> 个合作方有待审数据，点击行进入详情。
+            共 <span className="font-medium text-stone-700">{groups.length}</span> 个卖家/供应商有待审数据，点击行进入详情。
           </p>
-          <PartnerList groups={groups} onSelect={setSelectedPartnerId} />
+          <SellerList groups={groups} onSelect={setSelectedKey} />
         </>
       )}
     </div>
