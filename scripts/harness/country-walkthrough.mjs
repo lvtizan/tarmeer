@@ -153,6 +153,31 @@ console.log('[UC4] AE 公司注册（+971 手机号）→ country=ae');
   }
 }
 
+// ─── UC4b 手机号查重：同号不能重复注册 ────────────────────────────────────────
+console.log('[UC4b] 同手机号重复注册/提交 → 应被拦截');
+{
+  const dupPhone = `+97152${String(TS).slice(-7)}`; // UC4 已用此号注册（users.phone + company_profiles.phone）
+  // (a) 顶层 phone 重复注册
+  const r1 = await req('POST', '/auth/register', {
+    email: `uc4b1_${MARK}@walk.local`, password: TEST_PASSWORD, full_name: 'WALK Dup1', phone: dupPhone, role: 'company',
+  });
+  if (r1.status === 400 && /phone/i.test(JSON.stringify(r1.body))) ok('顶层 phone 重复注册被拦截 400');
+  else ng('顶层 phone 重复未拦截', `${r1.status} ${JSON.stringify(r1.body)}`);
+  // (b) phone 藏在 pending_profile 里（原漏洞路径：注册时不落顶层 phone）
+  const r2 = await req('POST', '/auth/register', {
+    email: `uc4b2_${MARK}@walk.local`, password: TEST_PASSWORD, full_name: 'WALK Dup2', role: 'company',
+    pending_profile: { company_name: 'WALK Dup2 Co', phone: dupPhone },
+  });
+  if (r2.status === 400 && /phone/i.test(JSON.stringify(r2.body))) ok('pending_profile 内 phone 重复注册被拦截 400');
+  else ng('pending_profile phone 重复未拦截', `${r2.status} ${JSON.stringify(r2.body)}`);
+  // (c) 已注册号提交装企线索 → 409 引导登录
+  const r3 = await req('POST', '/company-leads', {
+    contactName: 'WALK DupLead', phone: dupPhone, companyName: 'WALK DupLead Co', city: 'Dubai',
+  });
+  if (r3.status === 409 && r3.body?.phoneExists) ok('已注册号提交线索 → 409 引导登录');
+  else ng('已注册号线索未拦截', `${r3.status} ${JSON.stringify(r3.body)}`);
+}
+
 // ─── UC5 VN 首页 Banner 询盘（已知前端发 city='Hồ Chí Minh'）────────────────
 console.log("[UC5] VN 首页 Banner 询盘（city='Hồ Chí Minh'）→ 应 201 且落 VN 桶");
 {

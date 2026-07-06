@@ -15,16 +15,19 @@ async function submitCompanyLead(req, res) {
         const contactName = _contactName?.slice(0, 100) || _contactName;
         const companyName = _companyName?.slice(0, 200) || _companyName;
         const sourcePage = (req.headers.referer || null)?.slice(0, 500) || null;
-        // Check if phone number already registered
+        // Check if phone number already registered.
+        // 同时查 users.phone 与 company_profiles.phone —— 注册电话可能只落在 profile 未同步到 users，
+        // 只查 users 会漏（正是重复注册的成因之一）。仅拦「已注册」的号引导登录，不拦未注册号的重复线索。
         if (phone) {
             const [userRows] = await database_1.default.execute(`SELECT u.id,
                 (SELECT COUNT(*) FROM company_profiles cp WHERE cp.user_id = u.id LIMIT 1) AS has_company
          FROM users u WHERE u.phone = ? AND u.deleted_at IS NULL LIMIT 1`, [phone]);
             const existingUser = userRows[0];
-            if (existingUser) {
+            const [profileRows] = await database_1.default.execute('SELECT id FROM company_profiles WHERE phone = ? AND deleted_at IS NULL LIMIT 1', [phone]);
+            if (existingUser || profileRows.length > 0) {
                 return res.status(409).json({
                     phoneExists: true,
-                    hasCompanyProfile: existingUser.has_company > 0,
+                    hasCompanyProfile: (existingUser?.has_company > 0) || profileRows.length > 0,
                 });
             }
         }

@@ -145,10 +145,17 @@ async function register(req, res) {
         if (existing.length > 0) {
             return res.status(400).json({ error: 'This email is already registered.' });
         }
-        // Check if phone already exists (only when provided)
-        if (phone) {
-            const [phoneExisting] = await database_1.default.execute('SELECT id FROM users WHERE phone = ? LIMIT 1', [phone]);
-            if (phoneExisting.length > 0) {
+        // Check if phone already exists (only when provided).
+        // 装企注册时电话常在 pending_profile 里、未落顶层 phone → 两处都取，避免查重被跳过；
+        // 且同时查 users.phone 与 company_profiles.phone（注册电话可能只落 profile 未同步到 users）。
+        const pendingProfileForPhone = req.body.pending_profile;
+        const effectivePhone = String(phone
+            || (pendingProfileForPhone && typeof pendingProfileForPhone === 'object' ? pendingProfileForPhone.phone : '')
+            || '').trim();
+        if (effectivePhone) {
+            const [phoneInUsers] = await database_1.default.execute('SELECT id FROM users WHERE phone = ? AND deleted_at IS NULL LIMIT 1', [effectivePhone]);
+            const [phoneInProfiles] = await database_1.default.execute('SELECT id FROM company_profiles WHERE phone = ? AND deleted_at IS NULL LIMIT 1', [effectivePhone]);
+            if (phoneInUsers.length > 0 || phoneInProfiles.length > 0) {
                 return res.status(400).json({ error: 'This phone number is already linked to an existing account. Please log in or use a different number.' });
             }
         }
