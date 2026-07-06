@@ -17,6 +17,11 @@ const GUIDE_SLUGS = [
 
 const SERVICE_SLUGS = ['interior-design', 'renovation', 'kitchen-renovation', 'bathroom-renovation', 'villa-renovation', 'apartment-design', 'office-design', 'fit-out'];
 const CITY_SLUGS = ['dubai', 'abu-dhabi', 'sharjah', 'ajman', 'ras-al-khaimah', 'fujairah'];
+// slug → 后端 by-service-city 需要的城市 label
+const CITY_LABELS: Record<string, string> = {
+  'dubai': 'Dubai', 'abu-dhabi': 'Abu Dhabi', 'sharjah': 'Sharjah',
+  'ajman': 'Ajman', 'ras-al-khaimah': 'Ras Al Khaimah', 'fujairah': 'Fujairah',
+};
 
 // country-aware fetch：把国家同时作为 query 与 x-country header 传给后端
 // （后端各接口读法不一：companies/portfolio 读 query，articles 读 header）
@@ -179,15 +184,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    // 服务 × 城市落地页（仅 AE 城市有内容，VN 城市走 notFound）
-    serviceCityRoutes = SERVICE_SLUGS.flatMap((service) =>
-      CITY_SLUGS.map((city) => ({
+    // 服务 × 城市落地页：只收录「有公司」的组合。空组合页走 noindex（见页面 generateMetadata），
+    // 不进 sitemap，避免 GSC 报「提交了 noindex URL」。有公司后自动进 sitemap。
+    const combos = SERVICE_SLUGS.flatMap((service) => CITY_SLUGS.map((city) => ({ service, city })));
+    const coverage = await Promise.all(
+      combos.map(async ({ service, city }) => {
+        const data = await fetchJson<{ companies?: unknown[] }>(
+          `/companies/by-service-city?service=${service}&city=${encodeURIComponent(CITY_LABELS[city] ?? city)}`,
+          country,
+        );
+        return { service, city, has: (data?.companies?.length ?? 0) > 0 };
+      }),
+    );
+    serviceCityRoutes = coverage
+      .filter((x) => x.has)
+      .map(({ service, city }) => ({
         url: `${BASE}/services/${service}/${city}`,
         lastModified: now,
         changeFrequency: 'weekly' as const,
         priority: 0.7,
-      }))
-    );
+      }));
   }
 
   return [

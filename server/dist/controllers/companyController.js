@@ -767,34 +767,47 @@ async function getCompaniesByServiceCity(req, res) {
         if (service.length > 100 || city.length > 100) {
             return res.status(400).json({ error: 'service and city parameters are too long' });
         }
+        // SEO slug → 公司真实 service 标签的匹配词（小写子串，供 LIKE 用）。
+        // 原因：URL slug 用连字符(interior-design)，公司存空格(Interior Design)，直接 LIKE '%interior-design%' 永远查空；
+        // 且 kitchen/bathroom/villa/office/apartment 等 SEO 长尾词并非公司标签，需兜底到最近的真实标签。
+        // 词表实测自 uae_companies(简单标签) + company_profiles(富标签) 两张表。
+        const SERVICE_ALIASES = {
+            'interior-design': ['interior design'],
+            'renovation': ['renovation'],
+            'kitchen-renovation': ['kitchen remodeling', 'kitchen', 'renovation'],
+            'bathroom-renovation': ['bathroom remodeling', 'bathroom', 'renovation'],
+            'villa-renovation': ['villa extension', 'villa', 'renovation'],
+            'apartment-design': ['apartment', 'interior design'],
+            'office-design': ['office', 'commercial fit-out', 'fit-out'],
+            'fit-out': ['fit-out'],
+        };
+        const slug = service.toLowerCase();
+        // 别名词 + 去连字符后的 slug 兜底（如未来新增 slug 也能退化匹配）
+        const rawTerms = [...(SERVICE_ALIASES[slug] ?? []), slug.replace(/-/g, ' ')];
         // Escape SQL wildcard chars to prevent injection via LIKE patterns
-        const safeService = service.toLowerCase().replace(/%/g, '\\%').replace(/_/g, '\\_');
-        // Match directory companies (uae_companies) — services is a JSON array, use JSON_CONTAINS
+        const terms = [...new Set(rawTerms)].map((t) => t.replace(/%/g, '\\%').replace(/_/g, '\\_'));
+        const likeParams = terms.map((t) => `%${t}%`);
+        const buildLike = (col) => terms.map(() => `LOWER(${col}) LIKE ? ESCAPE '\\\\'`).join(' OR ');
+        // Match directory companies (uae_companies) — services is a JSON array, match by aliased LIKE terms
         const [dirRows] = await database_1.default.query(`SELECT uc.slug, uc.name_en AS name, uc.city, uc.description,
               uc.weight_score, uc.portfolio_images, uc.logo_url,
               uc.owner_user_id, uc.is_signed, uc.is_certified
        FROM uae_companies uc
        WHERE uc.is_active = 1
          AND LOWER(uc.city) = LOWER(?)
-         AND (
-           JSON_CONTAINS(LOWER(uc.services), LOWER(JSON_QUOTE(?)), '$')
-           OR LOWER(uc.services) LIKE ? ESCAPE '\\\\'
-         )
+         AND ( ${buildLike('uc.services')} )
        ORDER BY uc.weight_score DESC
-       LIMIT 30`, [city, service, `%${safeService}%`]);
-        // Match registered companies (company_profiles) — services is a JSON array, use JSON_CONTAINS
+       LIMIT 30`, [city, ...likeParams]);
+        // Match registered companies (company_profiles) — services is a JSON array, match by aliased LIKE terms
         const [regRows] = await database_1.default.query(`SELECT cp.slug, cp.company_name AS name, cp.city, cp.description, cp.company_type,
               cp.weight_score, cp.is_signed, cp.is_certified
        FROM company_profiles cp
        WHERE cp.status = 'approved'
          AND cp.deleted_at IS NULL
          AND LOWER(cp.city) = LOWER(?)
-         AND (
-           JSON_CONTAINS(LOWER(cp.services), LOWER(JSON_QUOTE(?)), '$')
-           OR LOWER(cp.services) LIKE ? ESCAPE '\\\\'
-         )
+         AND ( ${buildLike('cp.services')} )
        ORDER BY cp.weight_score DESC
-       LIMIT 30`, [city, service, `%${safeService}%`]);
+       LIMIT 30`, [city, ...likeParams]);
         const dirMapped = (Array.isArray(dirRows) ? dirRows : []).map((r) => ({
             slug: r.slug,
             name: r.name,
