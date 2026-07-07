@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import PageViewTracker from "@/components/PageViewTracker";
+import TrackingScripts from "@/components/TrackingScripts";
 import { SiteLocaleProvider } from "@/contexts/SiteLocaleContext";
 import type { SiteLang } from "@/i18n/site-translations";
 import { WHATSAPP_LINK } from "@/lib/constants";
@@ -65,6 +66,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="text-[#2c2c2c] antialiased min-h-full flex flex-col">
+        <TrackingScripts country={c.code} />
         <SiteLocaleProvider lang={lang}>
           <Providers>
             <PageViewTracker />
