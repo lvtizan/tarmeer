@@ -531,7 +531,7 @@ import { scorePage, aggregate } from '../lib/score.mjs';
 
 // 构造两页结果(dimId → {score})
 const pageA = { pageType: 'guide', url: 'u1', checks: {
-  structuredData: { score: 1 }, crawlerAccess: { score: 1 }, answerExtractability: { score: 0.5 },
+  structuredData: { score: 1 }, crawlerAccess: { score: 1 }, answerExtractability: { score: 1 },
   structuredContent: { score: 1 }, entityAuthority: { score: 1 }, freshness: { score: 1 }, renderability: { score: 1 } } };
 const pageB = { pageType: 'guide', url: 'u2', checks: {
   structuredData: { score: 0 }, crawlerAccess: { score: 1 }, answerExtractability: { score: 0.5 },
