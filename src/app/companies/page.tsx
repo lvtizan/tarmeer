@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { fetchPublicCompanies } from '@/lib/publicApi';
+import { getCountry } from '@/lib/country';
+import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import CompaniesClient from '@/components/companies/CompaniesClient';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +40,7 @@ export default async function CompaniesPage() {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
   const isVn = country === 'vn';
+  const c = getCountry(country);
 
   const result = await Promise.allSettled([fetchPublicCompanies(300, 'list', country)]);
   if (result[0].status === 'rejected') console.error('[companies] SSR fetch failed:', result[0].reason);
@@ -46,6 +49,7 @@ export default async function CompaniesPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
+    '@id': `${c.baseUrl}/companies#itemlist`,
     name: isVn ? 'Công Ty Thiết Kế Nội Thất tại Việt Nam' : 'Interior Design Companies in UAE',
     description: isVn
       ? 'Các công ty thiết kế nội thất và thi công hàng đầu tại Việt Nam.'
@@ -73,7 +77,7 @@ export default async function CompaniesPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <Suspense>
         <CompaniesClient initialCompanies={companies} />

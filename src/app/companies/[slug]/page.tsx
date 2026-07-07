@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import { fetchPublicCompanyDetail } from '@/lib/publicApi';
 import { getCompanyTypeLabel } from '@/lib/companyData';
 import { getCountry } from '@/lib/country';
+import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import CompanyDetailClient from '@/components/companies/CompanyDetailClient';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
@@ -111,6 +112,7 @@ export default async function CompanyDetailPage({ params }: Props) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
+    '@id': `${baseUrl}/companies/${company.slug || company.id}#business`,
     name: company.name,
     description: description || company.shortDescription,
     address: {
@@ -204,15 +206,15 @@ export default async function CompanyDetailPage({ params }: Props) {
       {/* Structured data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqJsonLd) }}
       />
 
       {/* SEO-visible server HTML for crawlers */}

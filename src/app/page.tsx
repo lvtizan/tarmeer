@@ -59,7 +59,6 @@ export default async function HomePage() {
   const country = headersList.get('x-country') ?? 'ae';
   const c = getCountry(country);
 
-  const cityList = c.cities.slice(0, 3).join(', ');
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -73,30 +72,8 @@ export default async function HomePage() {
     },
   };
 
-  const orgJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'Tarmeer',
-    url: c.baseUrl,
-    logo: `${c.baseUrl}/logo.png`,
-    description:
-      `${c.name} interior design platform connecting homeowners with verified design companies. Serving 50+ companies across ${cityList}, and other cities.`,
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: 'Industrial Area 2',
-      addressLocality: c.addressLocality,
-      addressCountry: c.isoCode,
-    },
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: c.telephone,
-      contactType: 'customer service',
-      availableLanguage: c.code === 'vn' ? ['Vietnamese', 'English'] : ['English', 'Arabic'],
-    },
-    sameAs: ['https://www.instagram.com/tarmeer.ae/'],
-    areaServed: { '@type': 'Country', name: c.fullName },
-  };
-
+  // Organization 实体由根 layout 全站统一发出(src/lib/schema/organization.ts),
+  // 首页不再单独发,避免同 @id 双节点属性冲突 + AE 社媒硬编码泄进 VN。
   const isAe = !country || country === 'ae';
   const [companiesResult, suppliersResult, guidesResult] = await Promise.allSettled([
     fetchPublicCompanies(30, 'home', country),
@@ -111,7 +88,6 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
       <Banner />
       <HomeDesignSection initialCompanies={companies} />
       <HomeSpaceSection />

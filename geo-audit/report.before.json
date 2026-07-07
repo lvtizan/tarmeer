@@ -1,0 +1,828 @@
+{
+  "baseUrl": "https://www.tarmeer.com",
+  "generatedAt": "2026-07-07",
+  "overall": 70.7,
+  "byPageType": {
+    "home": 92,
+    "list": 52,
+    "companyDetail": 78.4,
+    "supplierDetail": 47.7,
+    "serviceCity": 69.9,
+    "guide": 84.1
+  },
+  "priorities": [
+    {
+      "dimension": "entityAuthority",
+      "label": "实体与权威信号",
+      "impact": 96,
+      "cost": 3,
+      "priority": 32,
+      "affectedUrls": [
+        "https://www.tarmeer.com/companies",
+        "https://www.tarmeer.com/materials",
+        "https://www.tarmeer.com/companies/alec-fitout",
+        "https://www.tarmeer.com/companies/appello-interiors",
+        "https://www.tarmeer.com/materials/suppliers/wanli02",
+        "https://www.tarmeer.com/materials/suppliers/yifa-windows-doors",
+        "https://www.tarmeer.com/services/interior-design/dubai",
+        "https://www.tarmeer.com/services/interior-design/abu-dhabi",
+        "https://www.tarmeer.com/guide/renovation-cost-dubai",
+        "https://www.tarmeer.com/guide/best-interior-designers-dubai"
+      ]
+    },
+    {
+      "dimension": "structuredData",
+      "label": "结构化数据/JSON-LD",
+      "impact": 67,
+      "cost": 3,
+      "priority": 22.3,
+      "affectedUrls": [
+        "https://www.tarmeer.com/",
+        "https://www.tarmeer.com/companies",
+        "https://www.tarmeer.com/materials",
+        "https://www.tarmeer.com/companies/alec-fitout",
+        "https://www.tarmeer.com/companies/appello-interiors",
+        "https://www.tarmeer.com/materials/suppliers/wanli02",
+        "https://www.tarmeer.com/materials/suppliers/yifa-windows-doors",
+        "https://www.tarmeer.com/services/interior-design/dubai",
+        "https://www.tarmeer.com/services/interior-design/abu-dhabi"
+      ]
+    },
+    {
+      "dimension": "answerExtractability",
+      "label": "答案可摘取性",
+      "impact": 51,
+      "cost": 3,
+      "priority": 17,
+      "affectedUrls": [
+        "https://www.tarmeer.com/companies/alec-fitout",
+        "https://www.tarmeer.com/companies/appello-interiors",
+        "https://www.tarmeer.com/materials/suppliers/wanli02",
+        "https://www.tarmeer.com/materials/suppliers/yifa-windows-doors",
+        "https://www.tarmeer.com/services/interior-design/dubai",
+        "https://www.tarmeer.com/services/interior-design/abu-dhabi",
+        "https://www.tarmeer.com/guide/renovation-cost-dubai",
+        "https://www.tarmeer.com/guide/best-interior-designers-dubai"
+      ]
+    },
+    {
+      "dimension": "structuredContent",
+      "label": "结构化内容块",
+      "impact": 32,
+      "cost": 3,
+      "priority": 10.7,
+      "affectedUrls": [
+        "https://www.tarmeer.com/companies/alec-fitout",
+        "https://www.tarmeer.com/companies/appello-interiors",
+        "https://www.tarmeer.com/materials/suppliers/wanli02",
+        "https://www.tarmeer.com/materials/suppliers/yifa-windows-doors",
+        "https://www.tarmeer.com/services/interior-design/dubai",
+        "https://www.tarmeer.com/services/interior-design/abu-dhabi"
+      ]
+    },
+    {
+      "dimension": "freshness",
+      "label": "新鲜度信号",
+      "impact": 17.5,
+      "cost": 2,
+      "priority": 8.8,
+      "affectedUrls": [
+        "https://www.tarmeer.com/",
+        "https://www.tarmeer.com/companies/alec-fitout",
+        "https://www.tarmeer.com/companies/appello-interiors",
+        "https://www.tarmeer.com/materials/suppliers/wanli02",
+        "https://www.tarmeer.com/materials/suppliers/yifa-windows-doors",
+        "https://www.tarmeer.com/services/interior-design/dubai",
+        "https://www.tarmeer.com/services/interior-design/abu-dhabi"
+      ]
+    },
+    {
+      "dimension": "renderability",
+      "label": "可渲染性",
+      "impact": 1,
+      "cost": 2,
+      "priority": 0.5,
+      "affectedUrls": [
+        "https://www.tarmeer.com/companies/alec-fitout",
+        "https://www.tarmeer.com/companies/appello-interiors"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "url": "https://www.tarmeer.com/",
+      "pageType": "home",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.8999999999999999,
+          "evidence": {
+            "want": [
+              "Organization"
+            ],
+            "missing": [],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "entityAuthority": {
+          "score": 1,
+          "evidence": {
+            "hasName": true,
+            "hasNAP": true,
+            "hasSameAs": true
+          }
+        },
+        "freshness": {
+          "score": 0.5,
+          "evidence": {
+            "hasYearInTitle": false,
+            "hasDateModified": false
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Tarmeer - Find Interior Design &amp; Renovation Companies in UAE",
+            "h1Count": 1,
+            "visibleTextWords": 997
+          }
+        }
+      },
+      "score": 92
+    },
+    {
+      "url": "https://www.tarmeer.com/companies",
+      "pageType": "list",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.5499999999999999,
+          "evidence": {
+            "want": [
+              "ItemList",
+              "BreadcrumbList"
+            ],
+            "missing": [
+              "BreadcrumbList"
+            ],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Interior Design Companies in UAE - Tarmeer | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 6412
+          }
+        }
+      },
+      "score": 58.8
+    },
+    {
+      "url": "https://www.tarmeer.com/materials",
+      "pageType": "list",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.19999999999999998,
+          "evidence": {
+            "want": [
+              "ItemList",
+              "BreadcrumbList"
+            ],
+            "missing": [
+              "ItemList",
+              "BreadcrumbList"
+            ],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Materials &amp; Suppliers — Interior Design Showrooms | Tarmeer UAE | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 3854
+          }
+        }
+      },
+      "score": 45.1
+    },
+    {
+      "url": "https://www.tarmeer.com/companies/alec-fitout",
+      "pageType": "companyDetail",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.8999999999999999,
+          "evidence": {
+            "want": [
+              "LocalBusiness"
+            ],
+            "missing": [],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.7,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 138,
+            "questionHeadings": 0,
+            "visibleTextWords": 377
+          }
+        },
+        "structuredContent": {
+          "score": 0.6666666666666666,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": false,
+            "hasList": true,
+            "hasFaqSchema": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0.6666666666666666,
+          "evidence": {
+            "hasName": true,
+            "hasNAP": true,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 0.5,
+          "evidence": {
+            "hasYearInTitle": false,
+            "hasDateModified": false
+          }
+        },
+        "renderability": {
+          "score": 0.875,
+          "evidence": {
+            "title": "ALEC Fitout - Interior Design in Dubai - Tarmeer | Tarmeer",
+            "h1Count": 2,
+            "visibleTextWords": 377
+          }
+        }
+      },
+      "score": 78.4
+    },
+    {
+      "url": "https://www.tarmeer.com/companies/appello-interiors",
+      "pageType": "companyDetail",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.8999999999999999,
+          "evidence": {
+            "want": [
+              "LocalBusiness"
+            ],
+            "missing": [],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.7,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 81,
+            "questionHeadings": 0,
+            "visibleTextWords": 443
+          }
+        },
+        "structuredContent": {
+          "score": 0.6666666666666666,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": false,
+            "hasList": true,
+            "hasFaqSchema": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0.6666666666666666,
+          "evidence": {
+            "hasName": true,
+            "hasNAP": true,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 0.5,
+          "evidence": {
+            "hasYearInTitle": false,
+            "hasDateModified": false
+          }
+        },
+        "renderability": {
+          "score": 0.875,
+          "evidence": {
+            "title": "Appello Interiors - Interior Design in Dubai - Tarmeer | Tarmeer",
+            "h1Count": 2,
+            "visibleTextWords": 443
+          }
+        }
+      },
+      "score": 78.4
+    },
+    {
+      "url": "https://www.tarmeer.com/materials/suppliers/wanli02",
+      "pageType": "supplierDetail",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.19999999999999998,
+          "evidence": {
+            "want": [
+              "LocalBusiness"
+            ],
+            "missing": [
+              "LocalBusiness"
+            ],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.7,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 219,
+            "questionHeadings": 0,
+            "visibleTextWords": 301
+          }
+        },
+        "structuredContent": {
+          "score": 0.3333333333333333,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": false,
+            "hasList": true,
+            "hasFaqSchema": false
+          }
+        },
+        "entityAuthority": {
+          "score": 0,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 0.5,
+          "evidence": {
+            "hasYearInTitle": false,
+            "hasDateModified": false
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Heyuan Wanli Technology Co., Ltd.  — Materials &amp; Suppliers | Tarmeer UAE | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 301
+          }
+        }
+      },
+      "score": 49.4
+    },
+    {
+      "url": "https://www.tarmeer.com/materials/suppliers/yifa-windows-doors",
+      "pageType": "supplierDetail",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.19999999999999998,
+          "evidence": {
+            "want": [
+              "LocalBusiness"
+            ],
+            "missing": [
+              "LocalBusiness"
+            ],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.55,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 106,
+            "questionHeadings": 0,
+            "visibleTextWords": 188
+          }
+        },
+        "structuredContent": {
+          "score": 0.3333333333333333,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": false,
+            "hasList": true,
+            "hasFaqSchema": false
+          }
+        },
+        "entityAuthority": {
+          "score": 0,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 0.5,
+          "evidence": {
+            "hasYearInTitle": false,
+            "hasDateModified": false
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "EAFA Windows &amp; Doors — Materials &amp; Suppliers | Tarmeer UAE | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 188
+          }
+        }
+      },
+      "score": 46
+    },
+    {
+      "url": "https://www.tarmeer.com/services/interior-design/dubai",
+      "pageType": "serviceCity",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.8999999999999999,
+          "evidence": {
+            "want": [
+              "ItemList"
+            ],
+            "missing": [],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.7,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 146,
+            "questionHeadings": 0,
+            "visibleTextWords": 537
+          }
+        },
+        "structuredContent": {
+          "score": 0.6666666666666666,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": false,
+            "hasList": true,
+            "hasFaqSchema": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 0.5,
+          "evidence": {
+            "hasYearInTitle": false,
+            "hasDateModified": false
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Interior Design Companies in Dubai, UAE | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 537
+          }
+        }
+      },
+      "score": 69.9
+    },
+    {
+      "url": "https://www.tarmeer.com/services/interior-design/abu-dhabi",
+      "pageType": "serviceCity",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 0.8999999999999999,
+          "evidence": {
+            "want": [
+              "ItemList"
+            ],
+            "missing": [],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": false
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.7,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 150,
+            "questionHeadings": 0,
+            "visibleTextWords": 542
+          }
+        },
+        "structuredContent": {
+          "score": 0.6666666666666666,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": false,
+            "hasList": true,
+            "hasFaqSchema": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 0.5,
+          "evidence": {
+            "hasYearInTitle": false,
+            "hasDateModified": false
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Interior Design Companies in Abu Dhabi, UAE | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 542
+          }
+        }
+      },
+      "score": 69.9
+    },
+    {
+      "url": "https://www.tarmeer.com/guide/renovation-cost-dubai",
+      "pageType": "guide",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 1,
+          "evidence": {
+            "want": [
+              "Article",
+              "FAQPage"
+            ],
+            "missing": [],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": true
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.7,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 136,
+            "questionHeadings": 0,
+            "visibleTextWords": 1140
+          }
+        },
+        "structuredContent": {
+          "score": 1,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": true,
+            "hasList": true,
+            "hasFaqSchema": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0.3333333333333333,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 1,
+          "evidence": {
+            "hasYearInTitle": true,
+            "hasDateModified": true
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Renovation Cost in Dubai 2026: Complete Guide | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 1140
+          }
+        }
+      },
+      "score": 84.1
+    },
+    {
+      "url": "https://www.tarmeer.com/guide/best-interior-designers-dubai",
+      "pageType": "guide",
+      "httpStatus": 200,
+      "checks": {
+        "structuredData": {
+          "score": 1,
+          "evidence": {
+            "want": [
+              "Article",
+              "FAQPage"
+            ],
+            "missing": [],
+            "parseErrors": 0,
+            "canonical": true,
+            "hasId": true
+          }
+        },
+        "crawlerAccess": {
+          "score": 1,
+          "evidence": {
+            "blocked": [],
+            "hasLlmsTxt": true,
+            "inSitemap": true
+          }
+        },
+        "answerExtractability": {
+          "score": 0.7,
+          "reviewNeeded": true,
+          "evidence": {
+            "firstParagraphWords": 158,
+            "questionHeadings": 0,
+            "visibleTextWords": 1107
+          }
+        },
+        "structuredContent": {
+          "score": 1,
+          "reviewNeeded": true,
+          "evidence": {
+            "hasTable": true,
+            "hasList": true,
+            "hasFaqSchema": true
+          }
+        },
+        "entityAuthority": {
+          "score": 0.3333333333333333,
+          "evidence": {
+            "hasName": false,
+            "hasNAP": false,
+            "hasSameAs": false
+          }
+        },
+        "freshness": {
+          "score": 1,
+          "evidence": {
+            "hasYearInTitle": true,
+            "hasDateModified": true
+          }
+        },
+        "renderability": {
+          "score": 1,
+          "evidence": {
+            "title": "Best Interior Designers in Dubai (2026): How to Find and Hire the Right One | Tarmeer",
+            "h1Count": 1,
+            "visibleTextWords": 1107
+          }
+        }
+      },
+      "score": 84.1
+    }
+  ],
+  "siteFacts": {
+    "robotsAllowsMap": {
+      "GPTBot": true,
+      "PerplexityBot": true,
+      "ClaudeBot": true,
+      "Google-Extended": true
+    },
+    "hasLlmsTxt": true,
+    "robotsStatus": 200,
+    "sitemapCount": 391
+  }
+}

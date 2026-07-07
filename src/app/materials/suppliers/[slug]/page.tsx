@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import SupplierDetailClient from '@/components/materials/SupplierDetailClient';
 import { getCountry } from '@/lib/country';
+import { resolveImageUrl } from '@/lib/imageUrl';
+import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 
 const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
@@ -23,7 +25,20 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function fetchSupplierBasic(slug: string): Promise<{ company_name: string; description: string } | null> {
+interface SupplierBasic {
+  company_name: string;
+  description: string;
+  logo_url?: string | null;
+  contact_phone?: string | null;
+  whatsapp?: string | null;
+  website?: string | null;
+  google_maps_url?: string | null;
+  store_address?: string | null;
+  has_physical_store?: boolean | number | null;
+  country?: string | null;
+}
+
+async function fetchSupplierBasic(slug: string): Promise<SupplierBasic | null> {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
   try {
     const res = await fetch(`${API_BASE}/suppliers/detail/${slug}`, {
@@ -90,21 +105,63 @@ export default async function SupplierDetailPage({ params }: PageProps) {
   const supplier = await fetchSupplierBasic(slug);
   if (!supplier) notFound();
 
+  const supplierUrl = `${c.baseUrl}/materials/suppliers/${slug}`;
+
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: supplier?.company_name ?? slug, item: `${c.baseUrl}/materials/suppliers/${slug}` },
+      { '@type': 'ListItem', position: 3, name: supplier?.company_name ?? slug, item: supplierUrl },
     ],
+  };
+
+  // website: 裸域名补协议;whatsapp: 电话号 → wa.me 链接(禁止直接拼 https://+号码);
+  // logo: 相对路径经 resolveImageUrl 规范后补 baseUrl(禁止 https:///uploads 三斜杠)
+  const toWebUrl = (v?: string | null): string | undefined => {
+    if (!v) return undefined;
+    return v.startsWith('http://') || v.startsWith('https://') ? v : `https://${v}`;
+  };
+  const toWaLink = (v?: string | null): string | undefined => {
+    if (!v) return undefined;
+    const digits = v.replace(/\D/g, '');
+    return digits ? `https://wa.me/${digits}` : undefined;
+  };
+  const toImage = (v?: string | null): string | undefined => {
+    const resolved = resolveImageUrl(v);
+    if (!resolved) return undefined;
+    if (resolved.startsWith('http')) return resolved;
+    return `${c.baseUrl}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
+  };
+  const sameAs = [toWebUrl(supplier.website), toWaLink(supplier.whatsapp), supplier.google_maps_url ?? undefined]
+    .filter((x): x is string => Boolean(x));
+  const image = toImage(supplier.logo_url);
+  const hasStore = Boolean(supplier.has_physical_store) && Boolean(supplier.store_address);
+  const supplierJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${supplierUrl}#business`,
+    name: supplier.company_name,
+    url: supplierUrl,
+    ...(supplier.description ? { description: supplier.description.slice(0, 300) } : {}),
+    ...(image ? { image } : {}),
+    ...(supplier.contact_phone ? { telephone: supplier.contact_phone } : {}),
+    ...(hasStore
+      ? { address: { '@type': 'PostalAddress', streetAddress: supplier.store_address, addressCountry: (supplier.country ?? c.isoCode).toUpperCase() } }
+      : { areaServed: { '@type': 'Country', name: c.fullName } }),
+    ...(sameAs.length ? { sameAs } : {}),
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(supplierJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
       {supplier && (
         <div className="sr-only">
