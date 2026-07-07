@@ -9,28 +9,21 @@ import { extractFacts } from './lib/extract.mjs';
 import { runChecks } from './lib/checks.mjs';
 import { scorePage, aggregate } from './lib/score.mjs';
 import { renderReport } from './lib/report.mjs';
+import { robotsAllows } from './lib/robots.mjs';
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..');
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) =>
   v.startsWith('--') ? [...a, [v.slice(2), arr[i + 1]]] : a, []));
 if (!args.config) { console.error('用法: --config <path> [--base-url <url>]'); process.exit(1); }
 const cfg = JSON.parse(readFileSync(args.config, 'utf8'));
-const baseUrl = (args['base-url'] || cfg.baseUrl).replace(/\/$/, '');
+const baseUrl = (args['base-url'] || cfg.baseUrl || '').replace(/\/$/, '');
+if (!baseUrl) { console.error('缺少 base URL:请传 --base-url <url> 或在 config 里设 baseUrl'); process.exit(1); }
 
 async function fetchText(url, opts = {}) {
   try {
     const res = await fetch(url, { redirect: 'follow', headers: { 'user-agent': 'GEO-Audit/1.0' }, ...opts });
     return { status: res.status, body: await res.text() };
   } catch (e) { return { status: 0, body: '', error: String(e) }; }
-}
-
-// robots.txt:逐 bot 判是否被 `Disallow: /`(全站封禁)。粗判,首轮够用。
-function robotsAllows(robotsTxt, bot) {
-  const blocks = robotsTxt.split(/(?=User-agent:)/i);
-  const forBot = blocks.find(b => new RegExp(`User-agent:\\s*${bot}\\b`, 'i').test(b));
-  const star = blocks.find(b => /User-agent:\s*\*/i.test(b));
-  const block = forBot || star || '';
-  return !/Disallow:\s*\/\s*$/im.test(block);
 }
 
 async function main() {

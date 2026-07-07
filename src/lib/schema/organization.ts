@@ -1,5 +1,5 @@
 import type { CountryConfig } from '../country';
-import { INSTAGRAM_URL, WHATSAPP_LINK } from '../constants';
+import { INSTAGRAM_URL } from '../constants';
 
 // 全站 Organization 实体块——注入根 layout,让每个页面都携带一致的实体身份信号
 // (name / url / logo / telephone / sameAs),供 AI 引擎做实体链接。
@@ -17,6 +17,6 @@ export function buildOrganizationJsonLd(c: CountryConfig): object {
     },
     telephone: c.telephone,
     areaServed: { '@type': 'Country', name: c.fullName },
-    sameAs: [INSTAGRAM_URL, WHATSAPP_LINK],
+    sameAs: [INSTAGRAM_URL, c.whatsappLink],
   };
 }

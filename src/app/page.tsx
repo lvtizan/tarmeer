@@ -76,6 +76,7 @@ export default async function HomePage() {
   const orgJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': `${c.baseUrl}/#organization`,
     name: 'Tarmeer',
     url: c.baseUrl,
     logo: `${c.baseUrl}/logo.png`,

@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import SupplierDetailClient from '@/components/materials/SupplierDetailClient';
 import { getCountry } from '@/lib/country';
+import { resolveImageUrl } from '@/lib/imageUrl';
+import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 
 const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
@@ -115,12 +117,25 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     ],
   };
 
-  const toUrl = (v?: string | null): string | undefined => {
+  // website: 裸域名补协议;whatsapp: 电话号 → wa.me 链接(禁止直接拼 https://+号码);
+  // logo: 相对路径经 resolveImageUrl 规范后补 baseUrl(禁止 https:///uploads 三斜杠)
+  const toWebUrl = (v?: string | null): string | undefined => {
     if (!v) return undefined;
     return v.startsWith('http://') || v.startsWith('https://') ? v : `https://${v}`;
   };
-  const sameAs = [toUrl(supplier.website), supplier.whatsapp ? toUrl(supplier.whatsapp) : undefined, supplier.google_maps_url ?? undefined]
+  const toWaLink = (v?: string | null): string | undefined => {
+    if (!v) return undefined;
+    const digits = v.replace(/\D/g, '');
+    return digits ? `https://wa.me/${digits}` : undefined;
+  };
+  const toImage = (v?: string | null): string | undefined => {
+    const resolved = resolveImageUrl(v);
+    if (!resolved) return undefined;
+    return resolved.startsWith('http') ? resolved : `${c.baseUrl}${resolved}`;
+  };
+  const sameAs = [toWebUrl(supplier.website), toWaLink(supplier.whatsapp), supplier.google_maps_url ?? undefined]
     .filter((x): x is string => Boolean(x));
+  const image = toImage(supplier.logo_url);
   const hasStore = Boolean(supplier.has_physical_store) && Boolean(supplier.store_address);
   const supplierJsonLd = {
     '@context': 'https://schema.org',
@@ -129,7 +144,7 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     name: supplier.company_name,
     url: supplierUrl,
     ...(supplier.description ? { description: supplier.description.slice(0, 300) } : {}),
-    ...(supplier.logo_url ? { image: toUrl(supplier.logo_url) } : {}),
+    ...(image ? { image } : {}),
     ...(supplier.contact_phone ? { telephone: supplier.contact_phone } : {}),
     ...(hasStore
       ? { address: { '@type': 'PostalAddress', streetAddress: supplier.store_address, addressCountry: (supplier.country ?? 'ae').toUpperCase() } }
@@ -141,11 +156,11 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(supplierJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(supplierJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
       {supplier && (
         <div className="sr-only">
