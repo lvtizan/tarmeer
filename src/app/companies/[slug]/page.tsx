@@ -111,6 +111,7 @@ export default async function CompanyDetailPage({ params }: Props) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
+    '@id': `${baseUrl}/companies/${company.slug || company.id}#business`,
     name: company.name,
     description: description || company.shortDescription,
     address: {

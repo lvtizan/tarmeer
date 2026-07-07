@@ -8,6 +8,7 @@ import { SiteLocaleProvider } from "@/contexts/SiteLocaleContext";
 import type { SiteLang } from "@/i18n/site-translations";
 import { WHATSAPP_LINK } from "@/lib/constants";
 import { getCountry } from "@/lib/country";
+import { buildOrganizationJsonLd } from "@/lib/schema/organization";
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = getCountry((await headers()).get('x-country'));
@@ -43,7 +44,9 @@ export default async function RootLayout({
 }) {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
-  const lang: SiteLang = getCountry(country).lang;
+  const c = getCountry(country);
+  const lang: SiteLang = c.lang;
+  const orgJsonLd = buildOrganizationJsonLd(c);
 
   return (
     <html lang={lang} className="scroll-smooth">
@@ -55,6 +58,10 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap"
         />
         <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
       </head>
       <body className="text-[#2c2c2c] antialiased min-h-full flex flex-col">
         <SiteLocaleProvider lang={lang}>

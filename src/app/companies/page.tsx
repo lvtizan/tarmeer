@@ -46,6 +46,7 @@ export default async function CompaniesPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
+    '@id': 'https://www.tarmeer.com/companies#itemlist',
     name: isVn ? 'Công Ty Thiết Kế Nội Thất tại Việt Nam' : 'Interior Design Companies in UAE',
     description: isVn
       ? 'Các công ty thiết kế nội thất và thi công hàng đầu tại Việt Nam.'

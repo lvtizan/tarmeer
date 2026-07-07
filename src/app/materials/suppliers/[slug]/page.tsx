@@ -23,7 +23,20 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function fetchSupplierBasic(slug: string): Promise<{ company_name: string; description: string } | null> {
+interface SupplierBasic {
+  company_name: string;
+  description: string;
+  logo_url?: string | null;
+  contact_phone?: string | null;
+  whatsapp?: string | null;
+  website?: string | null;
+  google_maps_url?: string | null;
+  store_address?: string | null;
+  has_physical_store?: boolean | number | null;
+  country?: string | null;
+}
+
+async function fetchSupplierBasic(slug: string): Promise<SupplierBasic | null> {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
   try {
     const res = await fetch(`${API_BASE}/suppliers/detail/${slug}`, {
@@ -90,18 +103,46 @@ export default async function SupplierDetailPage({ params }: PageProps) {
   const supplier = await fetchSupplierBasic(slug);
   if (!supplier) notFound();
 
+  const supplierUrl = `${c.baseUrl}/materials/suppliers/${slug}`;
+
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: supplier?.company_name ?? slug, item: `${c.baseUrl}/materials/suppliers/${slug}` },
+      { '@type': 'ListItem', position: 3, name: supplier?.company_name ?? slug, item: supplierUrl },
     ],
+  };
+
+  const toUrl = (v?: string | null): string | undefined => {
+    if (!v) return undefined;
+    return v.startsWith('http://') || v.startsWith('https://') ? v : `https://${v}`;
+  };
+  const sameAs = [toUrl(supplier.website), supplier.whatsapp ? toUrl(supplier.whatsapp) : undefined, supplier.google_maps_url ?? undefined]
+    .filter((x): x is string => Boolean(x));
+  const hasStore = Boolean(supplier.has_physical_store) && Boolean(supplier.store_address);
+  const supplierJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${supplierUrl}#business`,
+    name: supplier.company_name,
+    url: supplierUrl,
+    ...(supplier.description ? { description: supplier.description.slice(0, 300) } : {}),
+    ...(supplier.logo_url ? { image: toUrl(supplier.logo_url) } : {}),
+    ...(supplier.contact_phone ? { telephone: supplier.contact_phone } : {}),
+    ...(hasStore
+      ? { address: { '@type': 'PostalAddress', streetAddress: supplier.store_address, addressCountry: (supplier.country ?? 'ae').toUpperCase() } }
+      : { areaServed: { '@type': 'Country', name: c.fullName } }),
+    ...(sameAs.length ? { sameAs } : {}),
   };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(supplierJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

@@ -250,6 +250,7 @@ export default async function ServiceCityPage({ params }: Props) {
   };
   const itemListSchema = {
     '@context': 'https://schema.org', '@type': 'ItemList',
+    '@id': `${canonical}#itemlist`,
     name: `${serviceLabel} Companies in ${cityLabel}, ${c.name}`,
     numberOfItems: companies.length,
     itemListElement: companies.map((co, idx) => ({ '@type': 'ListItem', position: idx + 1, url: `${c.baseUrl}/@${co.slug}` })),
