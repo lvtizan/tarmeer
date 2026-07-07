@@ -44,7 +44,22 @@
 - **supplierDetail 的 LocalBusiness**(Fix②)本地无后端渲染不出,投影 47.7→79.5 需部署后重跑审计坐实。
 - 部署后执行:`node scripts/geo-audit/geo-audit.mjs --config scripts/geo-audit/config.tarmeer.json`,与 `report.before.json` 对比总分。
 
-## 4. 下一轮候选(本轮未做)
+## 4. 三轮代码审查结论(AGENTS.md 第六步之二)
+
+| 轮 | 视角 | 发现 | 处理 |
+|---|------|------|------|
+| 1 | 规格+安全对抗 | 6 缺陷:whatsapp→`https://+971`垃圾URL、@id硬编码AE泄VN、logo→`https:///uploads`、`</script>`注入、Organization双节点、sameAs AE硬编码 | 全修(ec32b136) |
+| 2 | 复审+质量 | 2 Important:M4未尽(同@id属性冲突+home sameAs泄VN)、其他DB schema块未转义 | 补全站Organization+删home重复+全站jsonLd转义(8bee7586) |
+| 3 | 整体+遗漏 | 1 must-fix:supplier addressCountry `?? 'ae'` 泄VN | 改 `?? c.isoCode`(7049d2e1) |
+
+三轮后:tsc EXIT=0、引擎 28/28、smoke 10/10、eslint 0 error、首页 Organization=1 无 AE 泄漏。**CLEAN,可部署。**
+
+## 5. 跟进项(非阻塞,第3轮标记)
+
+- **实体图链接(高价值)**:全站 `#organization` 节点已发,但各处 `publisher`/`author`/`provider` 仍是匿名子对象,未 `{'@id':'…/#organization'}` 引用它 → AI 引擎不会归并为同一实体,削弱链接收益。
+- **guide 预存泄漏(超本次范围)**:`guide/[slug]` Article 的 author/publisher 硬编码 `www.tarmeer.com` → VN guide emit AE org URL。预存于本分支之前,同主题应记账。
+
+## 6. 下一轮候选(本轮未做)
 
 - answerExtractability:guide/serviceCity H2 改问句式 + guide 补 dateModified/标题年份(freshness)
 - list `/materials` 补 ItemList + `/companies` 补 BreadcrumbList
