@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
+import PageViewTracker from "@/components/PageViewTracker";
 import { SiteLocaleProvider } from "@/contexts/SiteLocaleContext";
 import type { SiteLang } from "@/i18n/site-translations";
 import { WHATSAPP_LINK } from "@/lib/constants";
@@ -66,6 +67,7 @@ export default async function RootLayout({
       <body className="text-[#2c2c2c] antialiased min-h-full flex flex-col">
         <SiteLocaleProvider lang={lang}>
           <Providers>
+            <PageViewTracker />
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer whatsAppLink={WHATSAPP_LINK} />

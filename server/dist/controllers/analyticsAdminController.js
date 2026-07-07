@@ -12,6 +12,7 @@ exports.getTodayNew = getTodayNew;
 const database_1 = __importDefault(require("../config/database"));
 const detectCountry_1 = require("../lib/detectCountry");
 const analyticsEventStore_1 = require("../lib/analyticsEventStore");
+const visitorLogStore_1 = require("../lib/visitorLogStore");
 function toDateString(input) {
     if (typeof input !== 'string')
         return '';
@@ -292,8 +293,20 @@ async function getDailyRegistrations(req, res) {
 async function getDailyVisits(req, res) {
     const end = toDateString(req.query.endDate) || new Date().toISOString().slice(0, 10);
     const start = toDateString(req.query.startDate) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    // 与总访问量 KPI 同源：visitor_logs（服务端访问日志，更全不漏埋点），而非 analytics_events 客户端埋点（基本为空）
+    const country = typeof req.query.country === 'string' ? req.query.country.trim() : '';
+    const VALID_COUNTRIES = new Set(['ae', 'vn', 'sa']);
+    let countryWhere = '';
+    if (country && VALID_COUNTRIES.has(country)) {
+        if (country === 'vn') {
+            countryWhere = " AND page_path LIKE '/companies/vn-%'";
+        }
+        else if (country === 'ae') {
+            countryWhere = " AND (page_path IS NULL OR page_path NOT LIKE '/companies/vn-%')";
+        }
+    }
     try {
-        await (0, analyticsEventStore_1.ensureAnalyticsEventsTable)();
+        await (0, visitorLogStore_1.ensureVisitorLogsTable)();
         const [rows] = await database_1.default.execute(`SELECT DATE(created_at) AS stat_date,
               COUNT(*) AS page_views,
               COUNT(DISTINCT CASE
@@ -305,9 +318,8 @@ async function getDailyVisits(req, res) {
                  AND viewer_ip <> '::ffff:127.0.0.1'
                 THEN viewer_ip
               END) AS unique_visitors
-         FROM analytics_events
-        WHERE event_name = 'page_view'
-          AND DATE(created_at) BETWEEN ? AND ?
+         FROM visitor_logs
+        WHERE DATE(created_at) BETWEEN ? AND ?${countryWhere}
         GROUP BY DATE(created_at)
         ORDER BY stat_date ASC`, [start, end]);
         res.json({ dailyVisits: rows, dateRange: { start, end } });

@@ -471,13 +471,14 @@ class AdminApiClient {
     return this.request(`/analytics/overview?${query.toString()}`);
   }
 
-  async getDailyVisits(params: { startDate?: string; endDate?: string } = {}): Promise<{
+  async getDailyVisits(params: { startDate?: string; endDate?: string; country?: string } = {}): Promise<{
     dailyVisits: Array<{ stat_date: string; page_views: number; unique_visitors: number }>;
     dateRange: { start: string; end: string };
   }> {
     const query = new URLSearchParams();
     if (params.startDate) query.set('startDate', params.startDate);
     if (params.endDate) query.set('endDate', params.endDate);
+    if (params.country) query.set('country', params.country);
     return this.request(`/analytics/daily-visits?${query.toString()}`);
   }
 

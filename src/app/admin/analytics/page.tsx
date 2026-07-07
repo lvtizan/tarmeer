@@ -229,7 +229,7 @@ export default function AdminAnalyticsNextPage() {
       adminApi.getCompanyVisitors({ country }) as Promise<any>,
       adminApi.getVisitorOverview(country) as Promise<any>,
       adminApi.getSignedCompanies(country) as Promise<any>,
-      adminApi.getDailyVisits() as Promise<any>,
+      adminApi.getDailyVisits({ country }) as Promise<any>,
     ]).then((results) => {
       if (cancelled) return;
       const labels = ['getDailyStats', 'getRegistrationSources', 'getCompanyVisitors', 'getVisitorOverview', 'getSignedCompanies', 'getDailyVisits'];
@@ -397,7 +397,7 @@ export default function AdminAnalyticsNextPage() {
             <p className="text-xs text-stone-500 mt-0.5">
               {trendTab === 'reg'
                 ? '合计（蓝色面积）+ 业主 / 装企 / 询盘 分线 · 蓝底为周末'
-                : '浏览量 PV（蓝色面积）+ 独立访客 UV 分线 · 全站口径（不分国家）· 蓝底为周末'}
+                : '浏览量 PV（蓝色面积）+ 独立访客 UV 分线 · 来自服务端访问日志 · 蓝底为周末'}
             </p>
           </div>
           <div className="inline-flex items-center gap-1 p-1 bg-stone-100 rounded-lg shrink-0">
