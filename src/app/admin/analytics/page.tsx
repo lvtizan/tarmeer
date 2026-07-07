@@ -65,6 +65,27 @@ function withTotalsAndMA(rows: DayRow[]): (DayRow & { total: number; ma_total: n
   });
 }
 
+// 把流量数据按 30 天日期轴补齐（缺失日补 0），并标注周末，供图表复用同一套样式
+function buildTrafficSeries(rows: { date: string; page_views: number; unique_visitors: number }[]) {
+  const map = Object.fromEntries(rows.map(r => [r.date, r]));
+  const out: { date: string; page_views: number; unique_visitors: number; is_weekend: boolean }[] = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0, 10);
+    const dow = d.getDay();
+    const r = map[ds];
+    out.push({
+      date: ds,
+      page_views: r ? Number(r.page_views) || 0 : 0,
+      unique_visitors: r ? Number(r.unique_visitors) || 0 : 0,
+      is_weekend: dow === 5 || dow === 6,
+    });
+  }
+  return out;
+}
+
 function KpiCard({ icon, label, value, ma7, sub, accent, valueOverride, href, week7Count }: {
   icon: React.ReactNode;
   label: string;
@@ -196,6 +217,8 @@ export default function AdminAnalyticsNextPage() {
   const [homeownerCities, setHomeownerCities] = useState<CityRow[]>([]);
   const [companyTypeCities, setCompanyTypeCities] = useState<TypeCityRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trendTab, setTrendTab] = useState<'reg' | 'traffic'>('reg');
+  const [dailyVisits, setDailyVisits] = useState<{ date: string; page_views: number; unique_visitors: number }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,9 +229,10 @@ export default function AdminAnalyticsNextPage() {
       adminApi.getCompanyVisitors({ country }) as Promise<any>,
       adminApi.getVisitorOverview(country) as Promise<any>,
       adminApi.getSignedCompanies(country) as Promise<any>,
+      adminApi.getDailyVisits() as Promise<any>,
     ]).then((results) => {
       if (cancelled) return;
-      const labels = ['getDailyStats', 'getRegistrationSources', 'getCompanyVisitors', 'getVisitorOverview', 'getSignedCompanies'];
+      const labels = ['getDailyStats', 'getRegistrationSources', 'getCompanyVisitors', 'getVisitorOverview', 'getSignedCompanies', 'getDailyVisits'];
       const ok = (i: number): any => {
         const r = results[i];
         if (r.status === 'fulfilled') return r.value;
@@ -244,6 +268,12 @@ export default function AdminAnalyticsNextPage() {
       setPageViews30d(num(vov?.visitsLast30d));
       setUniqueIps(num(vov?.uniqueIpCount));
       setSignedCount(num(signed?.total));
+      const visitsRes = ok(5) || {};
+      setDailyVisits((visitsRes.dailyVisits || []).map((v: any) => ({
+        date: v.stat_date || v.date,
+        page_views: num(v.page_views),
+        unique_visitors: num(v.unique_visitors),
+      })));
     }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [country]);
@@ -268,6 +298,7 @@ export default function AdminAnalyticsNextPage() {
   };
 
   const chartData = withTotalsAndMA(daily);
+  const trafficData = buildTrafficSeries(dailyVisits);
 
   const companyItems: LBItem[] = topCompanies.map(c => {
     const displayName = c.company_name.includes('-')
@@ -360,13 +391,30 @@ export default function AdminAnalyticsNextPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 mb-6">
-        <div className="mb-4">
-          <h2 className="text-sm font-bold text-[#2c2c2c]">每日注册趋势</h2>
-          <p className="text-xs text-stone-500 mt-0.5">合计（蓝色面积）+ 业主 / 装企 / 询盘 分线 · 蓝底为周末</p>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{trendTab === 'reg' ? '每日注册趋势' : '每日流量趋势'}</h2>
+            <p className="text-xs text-stone-500 mt-0.5">
+              {trendTab === 'reg'
+                ? '合计（蓝色面积）+ 业主 / 装企 / 询盘 分线 · 蓝底为周末'
+                : '浏览量 PV（蓝色面积）+ 独立访客 UV 分线 · 全站口径（不分国家）· 蓝底为周末'}
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-1 p-1 bg-stone-100 rounded-lg shrink-0">
+            <button
+              onClick={() => setTrendTab('reg')}
+              className={`h-7 px-3 rounded-md text-sm font-medium transition ${trendTab === 'reg' ? 'bg-white text-[#2c2c2c] shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+            >注册趋势</button>
+            <button
+              onClick={() => setTrendTab('traffic')}
+              className={`h-7 px-3 rounded-md text-sm font-medium transition ${trendTab === 'traffic' ? 'bg-white text-[#3b6ec0] shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+            >流量趋势</button>
+          </div>
         </div>
         {loading ? <div className="h-[320px] flex items-center justify-center text-stone-400 text-sm">加载中…</div>
-        : chartData.length === 0 ? <div className="h-[320px] flex items-center justify-center text-stone-400 text-sm">暂无数据</div>
-        : (
+        : trendTab === 'reg' ? (
+          chartData.length === 0 ? <div className="h-[320px] flex items-center justify-center text-stone-400 text-sm">暂无数据</div>
+          : (
           <ResponsiveContainer width="100%" height={340}>
             <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 5 }}>
               <defs>
@@ -389,6 +437,32 @@ export default function AdminAnalyticsNextPage() {
               <Line type="linear" dataKey="new_inquiries"  stroke={COLOR_INQUIRY}   strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
+          )
+        ) : (
+          trafficData.every(d => d.page_views === 0 && d.unique_visitors === 0)
+            ? <div className="h-[320px] flex items-center justify-center text-stone-400 text-sm">暂无流量数据</div>
+            : (
+          <ResponsiveContainer width="100%" height={340}>
+            <ComposedChart data={trafficData} margin={{ top: 8, right: 16, left: 0, bottom: 5 }}>
+              <defs>
+                <linearGradient id="pvArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#5b7fcb" stopOpacity={0.22} />
+                  <stop offset="100%" stopColor="#5b7fcb" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0eeec" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a8a29e' }} tickFormatter={(v: string) => v.slice(5, 10)} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#a8a29e' }} allowDecimals={false} axisLine={false} tickLine={false} width={36} />
+              <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e7e5e4', fontSize: 12 }} formatter={(v: any, n: any) => [v, ({ page_views: '浏览量 PV', unique_visitors: '独立访客 UV' } as Record<string, string>)[n] || n]} />
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="circle" formatter={(v: string) => ({ page_views: '浏览量 PV', unique_visitors: '独立访客 UV' } as Record<string, string>)[v] || v} />
+              {trafficData.map((row, i) => row.is_weekend ? (
+                <ReferenceArea key={`twe-${i}`} x1={row.date} x2={row.date} strokeOpacity={0} fill="#5b7fcb" fillOpacity={0.05} />
+              ) : null)}
+              <Area type="linear" dataKey="page_views" stroke="#3b6ec0" strokeWidth={2} fill="url(#pvArea)" dot={false} activeDot={{ r: 4, stroke: '#3b6ec0', strokeWidth: 2, fill: '#fff' }} />
+              <Line type="linear" dataKey="unique_visitors" stroke="#2f9e6e" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+            )
         )}
       </div>
 
