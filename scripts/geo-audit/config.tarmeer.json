@@ -1,0 +1,13 @@
+{
+  "baseUrl": "https://www.tarmeer.com",
+  "robotsBots": ["GPTBot", "PerplexityBot", "ClaudeBot", "Google-Extended"],
+  "notes": "expertDetail 本轮省略:生产 /api/experts 返回 0 条,无公开专家数据可抽样(记为 GEO 缺口)。样本 URL 均取自生产 sitemap.xml 并核验 200。",
+  "pages": [
+    { "pageType": "home",           "urls": ["https://www.tarmeer.com/"] },
+    { "pageType": "list",           "urls": ["https://www.tarmeer.com/companies", "https://www.tarmeer.com/materials"] },
+    { "pageType": "companyDetail",  "urls": ["https://www.tarmeer.com/companies/alec-fitout", "https://www.tarmeer.com/companies/appello-interiors"] },
+    { "pageType": "supplierDetail", "urls": ["https://www.tarmeer.com/materials/suppliers/wanli02", "https://www.tarmeer.com/materials/suppliers/yifa-windows-doors"] },
+    { "pageType": "serviceCity",    "urls": ["https://www.tarmeer.com/services/interior-design/dubai", "https://www.tarmeer.com/services/interior-design/abu-dhabi"] },
+    { "pageType": "guide",          "urls": ["https://www.tarmeer.com/guide/renovation-cost-dubai", "https://www.tarmeer.com/guide/best-interior-designers-dubai"] }
+  ]
+}
