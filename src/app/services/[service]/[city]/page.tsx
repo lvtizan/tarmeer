@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { MapPin, ChevronRight, Building2 } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { getCountry, type CountryConfig } from '@/lib/country';
+import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
@@ -262,9 +263,9 @@ export default async function ServiceCityPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[var(--color-tarmeer-bg)]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
-      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(itemListSchema) }} />
+      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqSchema) }} />}
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Breadcrumb */}

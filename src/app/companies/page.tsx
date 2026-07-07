@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { fetchPublicCompanies } from '@/lib/publicApi';
 import { getCountry } from '@/lib/country';
+import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import CompaniesClient from '@/components/companies/CompaniesClient';
 
 export const dynamic = 'force-dynamic';
@@ -76,7 +77,7 @@ export default async function CompaniesPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <Suspense>
         <CompaniesClient initialCompanies={companies} />

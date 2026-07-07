@@ -131,7 +131,8 @@ export default async function SupplierDetailPage({ params }: PageProps) {
   const toImage = (v?: string | null): string | undefined => {
     const resolved = resolveImageUrl(v);
     if (!resolved) return undefined;
-    return resolved.startsWith('http') ? resolved : `${c.baseUrl}${resolved}`;
+    if (resolved.startsWith('http')) return resolved;
+    return `${c.baseUrl}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
   };
   const sameAs = [toWebUrl(supplier.website), toWaLink(supplier.whatsapp), supplier.google_maps_url ?? undefined]
     .filter((x): x is string => Boolean(x));
