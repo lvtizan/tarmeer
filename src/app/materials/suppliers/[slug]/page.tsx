@@ -148,7 +148,7 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     ...(image ? { image } : {}),
     ...(supplier.contact_phone ? { telephone: supplier.contact_phone } : {}),
     ...(hasStore
-      ? { address: { '@type': 'PostalAddress', streetAddress: supplier.store_address, addressCountry: (supplier.country ?? 'ae').toUpperCase() } }
+      ? { address: { '@type': 'PostalAddress', streetAddress: supplier.store_address, addressCountry: (supplier.country ?? c.isoCode).toUpperCase() } }
       : { areaServed: { '@type': 'Country', name: c.fullName } }),
     ...(sameAs.length ? { sameAs } : {}),
   };
