@@ -181,6 +181,21 @@ function FaqAccordion({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
   );
 }
 
+// ─── Data fetch (shared by metadata + page) ────────────────────────────────────
+
+/** 拉某 service×city 的公司列表（generateMetadata 与页面共用；同 URL+revalidate 会被 Next 去重，只发一次） */
+async function getServiceCityCompanies(service: string, cityLabel: string): Promise<ServiceCityCompany[]> {
+  try {
+    const qs = new URLSearchParams({ service, city: cityLabel });
+    const res = await fetch(`${API_BASE}/companies/by-service-city?${qs}`, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { companies?: ServiceCityCompany[] };
+    return Array.isArray(data.companies) ? data.companies : [];
+  } catch {
+    return [];
+  }
+}
+
 // ─── Next.js exports ──────────────────────────────────────────────────────────
 
 interface Props {
@@ -195,11 +210,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pageTitle = `${serviceLabel} Companies in ${cityLabel}, ${c.name}`;
   const pageDescription = `Find the best ${serviceLabel.toLowerCase()} companies in ${cityLabel}, ${c.name}. Browse verified profiles, portfolios & reviews on Tarmeer.`;
   const canonical = `${c.baseUrl}/services/${service}/${city}`;
+  // 该 service×city 暂无公司 → noindex（仍 follow 传权重），避免薄/近重复页污染索引；有公司后自动恢复收录
+  const isValid = service in SERVICE_LABELS && city in CITY_LABELS;
+  const hasCompanies = isValid && (await getServiceCityCompanies(service, cityLabel)).length > 0;
   return {
     title: pageTitle,
     description: pageDescription,
     keywords: `${serviceLabel} ${cityLabel}, ${serviceLabel} companies ${c.name}, ${serviceLabel.toLowerCase()} ${cityLabel.toLowerCase()}, interior design ${c.name}, renovation ${c.name}`,
     alternates: { canonical },
+    robots: hasCompanies ? undefined : { index: false, follow: true },
     openGraph: {
       type: 'website',
       title: `${pageTitle} | Tarmeer`,
@@ -221,18 +240,8 @@ export default async function ServiceCityPage({ params }: Props) {
   const cityLabel = CITY_LABELS[city];
   const canonical = `${c.baseUrl}/services/${service}/${city}`;
 
-  // Fetch companies server-side
-  let companies: ServiceCityCompany[] = [];
-  try {
-    const qs = new URLSearchParams({ service, city: cityLabel });
-    const res = await fetch(`${API_BASE}/companies/by-service-city?${qs}`, { next: { revalidate: 3600 } });
-    if (res.ok) {
-      const data = (await res.json()) as { companies?: ServiceCityCompany[] };
-      companies = Array.isArray(data.companies) ? data.companies : [];
-    }
-  } catch {
-    // fail silently — show empty state
-  }
+  // Fetch companies server-side（与 generateMetadata 共用同一请求，Next 去重）
+  const companies = await getServiceCityCompanies(service, cityLabel);
 
   const faqs = (SERVICE_FAQS[service] ?? []).map((f) => ({
     q: localizeText(f.q, c),

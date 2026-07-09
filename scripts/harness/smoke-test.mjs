@@ -67,6 +67,31 @@ for (const [method, route] of ADMIN_ROUTES) {
   }
 }
 
+// ─── 2b. service×city 服务匹配(防 hyphen slug 查空回归 2026-07-06) ───────────
+// interior-design 等连字符 slug 曾因与公司存量 "Interior Design"(空格)不匹配而永远查空,
+// 导致 6/8 服务落地页空转→被 Google 判"已抓取未索引"。
+// 不变量:若 renovation 在 Dubai 有公司,则连字符 slug interior-design 也必须有(否则匹配层坏了)。
+console.log('\n[2b] service×city 服务匹配');
+{
+  const countBySvc = async (service) => {
+    try {
+      const res = await fetch(`${BACKEND}/api/companies/by-service-city?service=${service}&city=Dubai`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return Array.isArray(data.companies) ? data.companies.length : null;
+    } catch { return null; }
+  };
+  const reno = await countBySvc('renovation');
+  const inter = await countBySvc('interior-design');
+  if (reno === null || inter === null) {
+    ng('service×city 匹配', 'by-service-city 不可达或返回异常');
+  } else if (reno > 0 && inter === 0) {
+    ng('service×city 匹配', `hyphen slug 查空回归: renovation=${reno} 但 interior-design=0`);
+  } else {
+    ok(`service×city 匹配: renovation=${reno}, interior-design=${inter}`);
+  }
+}
+
 // ─── 3. Frontend reachability ────────────────────────────────────────────────
 console.log('\n[3/3] Frontend reachability');
 const fStatus = await req('GET', FRONTEND);
