@@ -233,7 +233,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchNotificationCounts();
     fetchMenuCounts();
-    const interval = setInterval(fetchNotificationCounts, 60000);
+    // 两个计数都定时刷新：菜单计数含合作方同步待审数，只在挂载跑一次会导致新推送的待审角标不更新
+    const interval = setInterval(() => {
+      fetchNotificationCounts();
+      fetchMenuCounts();
+    }, 60000);
     return () => clearInterval(interval);
   }, [fetchNotificationCounts, fetchMenuCounts]);
 
