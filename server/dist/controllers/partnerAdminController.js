@@ -93,4 +93,28 @@ async function rejectCompany(req, res) {
   } catch (e) { console.error("[partner-admin] reject company error", e); res.status(500).json({ error: "internal error" }); }
 }
 
-module.exports = { listPendingProducts, listPendingCompanies, approveProduct, rejectProduct, approveCompany, rejectCompany };
+// POST /api/admin/partner-sync/bulk-delete
+// body: { groups: [{ partner_id, supplier_ref }] }
+// 硬删除所选卖家组的「待审」staging 行（企业+商品），从待审池彻底移除。
+// 只删 review_status='pending'，不碰已审核上站的 supplier_profiles/products。
+async function bulkDeleteSellers(req, res) {
+  try {
+    const groups = Array.isArray(req.body?.groups) ? req.body.groups : [];
+    if (groups.length === 0) return res.status(400).json({ error: "groups required" });
+    let deletedProducts = 0, deletedCompanies = 0;
+    for (const g of groups) {
+      const pid = Number(g?.partner_id);
+      if (!pid) continue;
+      const ref = g?.supplier_ref != null ? String(g.supplier_ref) : "";
+      const [rp] = await pool.execute(
+        "DELETE FROM partner_sync_products WHERE partner_id=? AND supplier_ref=? AND review_status='pending'", [pid, ref]);
+      const [rc] = await pool.execute(
+        "DELETE FROM partner_sync_companies WHERE partner_id=? AND supplier_ref=? AND review_status='pending'", [pid, ref]);
+      deletedProducts += rp.affectedRows || 0;
+      deletedCompanies += rc.affectedRows || 0;
+    }
+    res.json({ ok: true, deletedProducts, deletedCompanies });
+  } catch (e) { console.error("[partner-admin] bulk delete error", e); res.status(500).json({ error: "internal error" }); }
+}
+
+module.exports = { listPendingProducts, listPendingCompanies, approveProduct, rejectProduct, approveCompany, rejectCompany, bulkDeleteSellers };

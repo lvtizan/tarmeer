@@ -543,4 +543,5 @@ router.post('/partner-sync/products/:id/reject', (0, adminAuth_1.requirePermissi
 router.get('/partner-sync/companies', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.listPendingCompanies);
 router.post('/partner-sync/companies/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveCompany);
 router.post('/partner-sync/companies/:id/reject', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.rejectCompany);
+router.post('/partner-sync/bulk-delete', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.bulkDeleteSellers);
 exports.default = router;

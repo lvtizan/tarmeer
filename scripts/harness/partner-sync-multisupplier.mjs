@@ -182,6 +182,32 @@ try {
     ? ok("UC15 已通过企业+待审商品→审核接口带出企业作上下文")
     : ng("UC15 未带出上下文企业", `B状态=${statusB} 在列表=${hasBInList}`);
 
+  // UC16（bulk-delete）：多选删除卖家组 → 硬删该组「待审」staging（企业+商品），不碰已通过。
+  await sync("POST", "/company", {
+    version: "1", request_id: `${MARK}-coC`,
+    company: { company_name: { en: "Seller Gamma" }, attributes: { supplier_id: "SUP-C" } },
+  });
+  await sync("POST", "/products/create", {
+    version: "1", request_id: `${MARK}-pC`,
+    items: [{ external_id: `${MARK}-sku-C`, status: "active", title: { en: "Product Gamma" }, attributes: { supplier_id: "SUP-C" }, images: [] }],
+  });
+  const beforeC = sql(`SELECT COUNT(*) FROM partner_sync_products WHERE partner_id=${PID} AND supplier_ref='SUP-C'`)
+    + "/" + sql(`SELECT COUNT(*) FROM partner_sync_companies WHERE partner_id=${PID} AND supplier_ref='SUP-C'`);
+  const delRes = await fetch(`${API}/admin/partner-sync/bulk-delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ groups: [{ partner_id: Number(PID), supplier_ref: "SUP-C" }] }),
+  });
+  const delBody = await delRes.json().catch(() => ({}));
+  const afterCp = sql(`SELECT COUNT(*) FROM partner_sync_products WHERE partner_id=${PID} AND supplier_ref='SUP-C'`);
+  const afterCc = sql(`SELECT COUNT(*) FROM partner_sync_companies WHERE partner_id=${PID} AND supplier_ref='SUP-C'`);
+  beforeC === "1/1" && delRes.status === 200 && afterCp === "0" && afterCc === "0"
+    ? ok("UC16 多选删除→硬删该卖家待审企业+商品(before 1/1 → after 0/0)")
+    : ng("UC16 批量删除失败", `before=${beforeC} status=${delRes.status} body=${JSON.stringify(delBody)} afterP=${afterCp} afterC=${afterCc}`);
+  // 验证不误删其它卖家(SUP-B 的上下文企业仍在)
+  const bStill = sql(`SELECT COUNT(*) FROM partner_sync_companies WHERE partner_id=${PID} AND supplier_ref='SUP-B'`);
+  bStill === "1" ? ok("UC17 批量删除只删目标组,不误伤其它卖家") : ng("UC17 误删其它卖家", `SUP-B 企业数=${bStill}`);
+
   console.log(`\n${pass} passed, ${fail} failed`);
 } finally {
   cleanup();

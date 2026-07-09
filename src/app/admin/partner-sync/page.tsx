@@ -6,6 +6,7 @@ import { TableSpinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
+import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -317,15 +318,26 @@ function Lightbox({ images, initialIndex, onClose }: LightboxProps) {
 interface SellerListProps {
   groups: PartnerGroup[];
   onSelect: (groupKey: string) => void;
+  selected: Set<string>;
+  onToggleOne: (groupKey: string) => void;
+  onToggleAll: (checked: boolean) => void;
 }
 
-function SellerList({ groups, onSelect }: SellerListProps) {
+function SellerList({ groups, onSelect, selected, onToggleOne, onToggleAll }: SellerListProps) {
   return (
     <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
+              <th className="px-4 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={groups.length > 0 && selected.size === groups.length}
+                  onChange={(e) => onToggleAll(e.target.checked)}
+                  className="rounded cursor-pointer"
+                />
+              </th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">企业名称</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">合作方 Key</th>
               <th className="text-left px-4 py-3 font-medium text-stone-600">供应商ID</th>
@@ -344,9 +356,17 @@ function SellerList({ groups, onSelect }: SellerListProps) {
               return (
                 <tr
                   key={g.groupKey}
-                  className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
+                  className={`border-b border-stone-100 hover:bg-stone-50 cursor-pointer ${selected.has(g.groupKey) ? 'bg-amber-50/40' : ''}`}
                   onClick={() => onSelect(g.groupKey)}
                 >
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(g.groupKey)}
+                      onChange={() => onToggleOne(g.groupKey)}
+                      className="rounded cursor-pointer"
+                    />
+                  </td>
                   <td className="px-4 py-3 font-medium text-stone-800 hover:text-[#b8864a] max-w-[220px]">
                     {truncate(displayName, 45)}
                   </td>
@@ -618,6 +638,11 @@ export default function PartnerSyncPage() {
   // Level 2 navigation: composite key `${partner_id}::${supplier_ref}` (null = Level 1)
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
+  // 多选删除（Level 1）：selected 存 groupKey
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -637,8 +662,8 @@ export default function PartnerSyncPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Reset to Level 1 when country changes
-  useEffect(() => { setSelectedKey(null); }, [country]);
+  // Reset to Level 1 + 清空多选 when country changes
+  useEffect(() => { setSelectedKey(null); setSelected(new Set()); }, [country]);
 
   // ── Company actions ──
 
@@ -679,6 +704,42 @@ export default function PartnerSyncPage() {
   const groups = groupBySeller(companies, products);
   const isEmpty = groups.length === 0;
 
+  // ── 多选删除 ──
+  const toggleOne = (groupKey: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey);
+      return next;
+    });
+  };
+  const toggleAll = (checked: boolean) => {
+    setSelected(checked ? new Set(groups.map(g => g.groupKey)) : new Set());
+  };
+  const handleBulkDelete = async () => {
+    const targets = groups.filter(g => selected.has(g.groupKey));
+    if (targets.length === 0) return;
+    setDeleteLoading(true);
+    try {
+      await adminApi.bulkDeletePartnerSync(
+        targets.map(g => ({ partner_id: g.partner_id, supplier_ref: g.supplier_ref }))
+      );
+      setSelected(new Set());
+      setDeleteModalOpen(false);
+      await load();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : t('Delete failed', '删除失败'));
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+  // 选中项的显示名（供删除确认弹窗）
+  const selectedNames = groups
+    .filter(g => selected.has(g.groupKey))
+    .map(g => {
+      const cp = g.company ? parsePayload(g.company.payload_json) : null;
+      return cp ? (pickLang(cp.company_name) || pickLang(cp.name) || g.partner_key) : g.partner_key;
+    });
+
   // After optimistic removal a seller group may become empty — navigate back if so
   const selectedGroup = selectedKey !== null
     ? groups.find(g => g.groupKey === selectedKey) ?? null
@@ -699,6 +760,14 @@ export default function PartnerSyncPage() {
 
   return (
     <div className="space-y-6">
+      {deleteModalOpen && (
+        <DeleteReasonModal
+          names={selectedNames}
+          onConfirm={() => handleBulkDelete()}
+          onCancel={() => setDeleteModalOpen(false)}
+          loading={deleteLoading}
+        />
+      )}
       <h1 className="text-2xl font-bold text-stone-800">{t('Partner Sync Review', '合作方同步审核')}</h1>
 
       {error && (
@@ -707,7 +776,7 @@ export default function PartnerSyncPage() {
 
       {loading ? (
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-          <table className="w-full text-sm"><tbody><TableSpinner colSpan={6} /></tbody></table>
+          <table className="w-full text-sm"><tbody><TableSpinner colSpan={7} /></tbody></table>
         </div>
       ) : isEmpty ? (
         <div className="bg-white rounded-xl border border-stone-200 px-6 py-16 text-center text-stone-400 text-sm">
@@ -725,10 +794,26 @@ export default function PartnerSyncPage() {
       ) : (
         /* ── Level 1: Seller List ── */
         <>
-          <p className="text-sm text-stone-500">
-            共 <span className="font-medium text-stone-700">{groups.length}</span> 个卖家/供应商有待审数据，点击行进入详情。
-          </p>
-          <SellerList groups={groups} onSelect={setSelectedKey} />
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-stone-500">
+              共 <span className="font-medium text-stone-700">{groups.length}</span> 个卖家/供应商有待审数据，点击行进入详情。
+            </p>
+            {selected.size > 0 && (
+              <button
+                onClick={() => setDeleteModalOpen(true)}
+                className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 shrink-0"
+              >
+                删除所选 {selected.size} 家
+              </button>
+            )}
+          </div>
+          <SellerList
+            groups={groups}
+            onSelect={setSelectedKey}
+            selected={selected}
+            onToggleOne={toggleOne}
+            onToggleAll={toggleAll}
+          />
         </>
       )}
     </div>
