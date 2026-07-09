@@ -1055,8 +1055,8 @@ class AdminApiClient {
   async rejectPartnerCompany(id: number) {
     return this.request(`/partner-sync/companies/${id}/reject`, { method: 'POST' });
   }
-  async bulkDeletePartnerSync(groups: Array<{ partner_id: number; supplier_ref: string }>): Promise<{ ok: boolean; deletedProducts: number; deletedCompanies: number }> {
-    return this.request(`/partner-sync/bulk-delete`, { method: 'POST', body: JSON.stringify({ groups }) });
+  async bulkDeletePartnerSync(groups: Array<{ partner_id: number; supplier_ref: string }>, reason = ''): Promise<{ ok: boolean; deletedProducts: number; deletedCompanies: number }> {
+    return this.request(`/partner-sync/bulk-delete`, { method: 'POST', body: JSON.stringify({ groups, reason }) });
   }
 
   // Field interviews (admin view)

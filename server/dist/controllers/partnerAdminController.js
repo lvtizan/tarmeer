@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const pool = require("../config/database").default;
 const publish = require("../lib/partnerPublishService");
 const images = require("../lib/partnerImageService");
+const activityLogger = require("../lib/activityLogger");
 
 async function loadPartner(partnerId) {
   const [rows] = await pool.execute("SELECT * FROM partner_accounts WHERE id=?", [partnerId]);
@@ -98,23 +99,48 @@ async function rejectCompany(req, res) {
 // 硬删除所选卖家组的「待审」staging 行（企业+商品），从待审池彻底移除。
 // 只删 review_status='pending'，不碰已审核上站的 supplier_profiles/products。
 async function bulkDeleteSellers(req, res) {
+  const groups = Array.isArray(req.body?.groups) ? req.body.groups : [];
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.slice(0, 500) : "";
+  if (groups.length === 0) return res.status(400).json({ error: "groups required" });
+  if (groups.length > 200) return res.status(400).json({ error: "too many groups (max 200)" });
+  const conn = await pool.getConnection();
   try {
-    const groups = Array.isArray(req.body?.groups) ? req.body.groups : [];
-    if (groups.length === 0) return res.status(400).json({ error: "groups required" });
+    await conn.beginTransaction();
     let deletedProducts = 0, deletedCompanies = 0;
     for (const g of groups) {
       const pid = Number(g?.partner_id);
       if (!pid) continue;
       const ref = g?.supplier_ref != null ? String(g.supplier_ref) : "";
-      const [rp] = await pool.execute(
+      const [rp] = await conn.execute(
         "DELETE FROM partner_sync_products WHERE partner_id=? AND supplier_ref=? AND review_status='pending'", [pid, ref]);
-      const [rc] = await pool.execute(
+      const [rc] = await conn.execute(
         "DELETE FROM partner_sync_companies WHERE partner_id=? AND supplier_ref=? AND review_status='pending'", [pid, ref]);
       deletedProducts += rp.affectedRows || 0;
       deletedCompanies += rc.affectedRows || 0;
     }
+    await conn.commit();
+    // 审计日志：记录管理员填写的删除原因 + 删除量（DeleteReasonModal 强制填的原因不再被丢弃）
+    try {
+      await activityLogger.logActivity({
+        userId: req.admin?.id,
+        userName: req.admin?.full_name || req.admin?.email || "admin",
+        userRole: "admin",
+        action: "partner_sync_bulk_delete",
+        targetType: "partner_sync",
+        targetName: `${groups.length} 个卖家组`,
+        description: `批量删除合作方待审：${deletedCompanies} 企业 + ${deletedProducts} 商品${reason ? " · 原因：" + reason : ""}`,
+        ip: activityLogger.getClientIp ? activityLogger.getClientIp(req) : undefined,
+        country: req.admin?.country,
+      });
+    } catch { /* 审计失败不影响删除结果 */ }
     res.json({ ok: true, deletedProducts, deletedCompanies });
-  } catch (e) { console.error("[partner-admin] bulk delete error", e); res.status(500).json({ error: "internal error" }); }
+  } catch (e) {
+    try { await conn.rollback(); } catch { /* ignore */ }
+    console.error("[partner-admin] bulk delete error", e);
+    res.status(500).json({ error: "internal error" });
+  } finally {
+    conn.release();
+  }
 }
 
 module.exports = { listPendingProducts, listPendingCompanies, approveProduct, rejectProduct, approveCompany, rejectCompany, bulkDeleteSellers };

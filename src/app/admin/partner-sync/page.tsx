@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { adminApi } from '@/lib/adminApi';
 import { TableSpinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
@@ -324,6 +324,12 @@ interface SellerListProps {
 }
 
 function SellerList({ groups, onSelect, selected, onToggleOne, onToggleAll }: SellerListProps) {
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = selected.size > 0 && selected.size < groups.length;
+    }
+  }, [selected, groups.length]);
   return (
     <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
       <div className="overflow-x-auto">
@@ -332,6 +338,7 @@ function SellerList({ groups, onSelect, selected, onToggleOne, onToggleAll }: Se
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="px-4 py-3 w-10">
                 <input
+                  ref={selectAllRef}
                   type="checkbox"
                   checked={groups.length > 0 && selected.size === groups.length}
                   onChange={(e) => onToggleAll(e.target.checked)}
@@ -715,13 +722,14 @@ export default function PartnerSyncPage() {
   const toggleAll = (checked: boolean) => {
     setSelected(checked ? new Set(groups.map(g => g.groupKey)) : new Set());
   };
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = async (reason: string) => {
     const targets = groups.filter(g => selected.has(g.groupKey));
     if (targets.length === 0) return;
     setDeleteLoading(true);
     try {
       await adminApi.bulkDeletePartnerSync(
-        targets.map(g => ({ partner_id: g.partner_id, supplier_ref: g.supplier_ref }))
+        targets.map(g => ({ partner_id: g.partner_id, supplier_ref: g.supplier_ref })),
+        reason
       );
       setSelected(new Set());
       setDeleteModalOpen(false);
@@ -763,7 +771,7 @@ export default function PartnerSyncPage() {
       {deleteModalOpen && (
         <DeleteReasonModal
           names={selectedNames}
-          onConfirm={() => handleBulkDelete()}
+          onConfirm={(reason) => handleBulkDelete(reason)}
           onCancel={() => setDeleteModalOpen(false)}
           loading={deleteLoading}
         />
