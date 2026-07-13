@@ -115,15 +115,57 @@ function localizeText(text: string, country: CountryConfig): string {
     .replace(/\bAED\b/g, country.currency);
 }
 
+/** 解析 portfolio_images JSON → resolve 后的非空图 URL 数组（单一可信解析入口） */
+function parsePortfolioImages(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw) as unknown[];
+    if (!Array.isArray(arr)) return [];
+    return arr.map((x) => (x ? resolveImageUrl(String(x)) : '')).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 function getCompanyThumb(c: ServiceCityCompany): string | null {
   if (c.logo_url) return resolveImageUrl(c.logo_url);
-  if (!c.portfolio_images) return null;
-  try {
-    const parsed = JSON.parse(c.portfolio_images) as unknown[];
-    return Array.isArray(parsed) && parsed.length > 0 ? resolveImageUrl(String(parsed[0])) : null;
-  } catch {
-    return null;
+  return parsePortfolioImages(c.portfolio_images)[0] ?? null;
+}
+
+// ─── Cover image（Hero + og:image + schema 共用）─────────────────────────────────
+
+/** 按服务的封面兜底图（缺真实项目图时用；均在 public/images/hero/，与首页 hero 共用资产） */
+const SERVICE_COVER_FALLBACK: Record<string, string> = {
+  'interior-design': '/images/hero/hero-living-1.webp',
+  'renovation': '/images/hero/hero-villa-1.webp',
+  'kitchen-renovation': '/images/hero/hero-kitchen-1.webp',
+  'bathroom-renovation': '/images/hero/hero-living-2.webp',
+  'villa-renovation': '/images/hero/hero-villa-1.webp',
+  'apartment-design': '/images/hero/hero-living-2.webp',
+  'office-design': '/images/hero/hero-living-1.webp',
+  'fit-out': '/images/hero/hero-renovation-lg.webp',
+};
+// SERVICE_COVER_FALLBACK 未来漏配某 service 时的最终兜底（当前 service 恒在 SERVICE_LABELS 内，属防御）
+const DEFAULT_COVER = '/images/hero/hero-living-1.webp';
+
+/** 首家有项目图的公司的第一张真实项目图（Hero 封面优先用项目图，而非 logo） */
+function firstProjectImage(companies: ServiceCityCompany[]): string | null {
+  for (const co of companies) {
+    const first = parsePortfolioImages(co.portfolio_images)[0];
+    if (first) return first;
   }
+  return null;
+}
+
+/** 该 service×city 的封面（站内路径）：真实项目图优先，回退按服务兜底图。 */
+function resolveCoverPath(companies: ServiceCityCompany[], service: string): string {
+  return firstProjectImage(companies) ?? SERVICE_COVER_FALLBACK[service] ?? DEFAULT_COVER;
+}
+
+/** 转成绝对 URL（og:image / schema 需要）；已是 http(s) 则原样返回。 */
+function toAbsolute(url: string, baseUrl: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -205,6 +247,9 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { service, city } = await params;
   const c = getCountry((await headers()).get('x-country'));
+  // AE 专属路由：非 AE 站页面会 notFound，metadata 也早退为 noindex，
+  // 避免非 AE 侧多打一次后端并把 UAE 封面/文案注入 404 页 head（与页面单一口径）。
+  if (c.code !== 'ae') return { robots: { index: false, follow: false } };
   const serviceLabel = SERVICE_LABELS[service] ?? service;
   const cityLabel = CITY_LABELS[city] ?? city;
   const pageTitle = `${serviceLabel} Companies in ${cityLabel}, ${c.name}`;
@@ -212,7 +257,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonical = `${c.baseUrl}/services/${service}/${city}`;
   // 该 service×city 暂无公司 → noindex（仍 follow 传权重），避免薄/近重复页污染索引；有公司后自动恢复收录
   const isValid = service in SERVICE_LABELS && city in CITY_LABELS;
-  const hasCompanies = isValid && (await getServiceCityCompanies(service, cityLabel)).length > 0;
+  // 与页面共用同一请求（同 URL+revalidate，Next 去重只发一次）：既判 noindex，又取封面
+  const companies = isValid ? await getServiceCityCompanies(service, cityLabel) : [];
+  const hasCompanies = companies.length > 0;
+  const cover = toAbsolute(resolveCoverPath(companies, service), c.baseUrl);
   return {
     title: pageTitle,
     description: pageDescription,
@@ -224,9 +272,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${pageTitle} | Tarmeer`,
       description: pageDescription,
       url: canonical,
-      images: [{ url: `${c.baseUrl}/og-default.jpg` }],
+      images: [{ url: cover, width: 1200, height: 630, alt: pageTitle }],
     },
-    twitter: { card: 'summary_large_image' },
+    twitter: { card: 'summary_large_image', images: [cover] },
   };
 }
 
@@ -235,6 +283,9 @@ export default async function ServiceCityPage({ params }: Props) {
   const c = getCountry((await headers()).get('x-country'));
 
   if (!(service in SERVICE_LABELS) || !(city in CITY_LABELS)) notFound();
+  // service×city 落地页为 AE 专属（sitemap 仅收录 AE，CITY_LABELS 均为 UAE 城市）。
+  // 非 AE 站命中此路由一律 notFound，杜绝 VN 页拿 UAE 公司图当 Hero/og:image（国家隔离铁律）。
+  if (c.code !== 'ae') notFound();
 
   const serviceLabel = SERVICE_LABELS[service];
   const cityLabel = CITY_LABELS[city];
@@ -242,6 +293,10 @@ export default async function ServiceCityPage({ params }: Props) {
 
   // Fetch companies server-side（与 generateMetadata 共用同一请求，Next 去重）
   const companies = await getServiceCityCompanies(service, cityLabel);
+
+  // 封面：真实项目图优先，回退按服务兜底图（Hero + schema 共用）
+  const coverPath = resolveCoverPath(companies, service);
+  const coverAbs = toAbsolute(coverPath, c.baseUrl);
 
   const faqs = (SERVICE_FAQS[service] ?? []).map((f) => ({
     q: localizeText(f.q, c),
@@ -262,6 +317,7 @@ export default async function ServiceCityPage({ params }: Props) {
     '@context': 'https://schema.org', '@type': 'ItemList',
     '@id': `${canonical}#itemlist`,
     name: `${serviceLabel} Companies in ${cityLabel}, ${c.name}`,
+    image: coverAbs,
     numberOfItems: companies.length,
     itemListElement: companies.map((co, idx) => ({ '@type': 'ListItem', position: idx + 1, url: `${c.baseUrl}/@${co.slug}` })),
   };
@@ -286,11 +342,31 @@ export default async function ServiceCityPage({ params }: Props) {
           <span className="text-[#2c2c2c] font-medium">{serviceLabel} in {cityLabel}</span>
         </nav>
 
-        {/* Hero */}
+        {/* Hero cover banner */}
+        <div className="relative mb-6 rounded-2xl overflow-hidden bg-stone-200 isolate" style={{ aspectRatio: '16 / 7' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverPath}
+            alt={`${serviceLabel} companies in ${cityLabel}, ${c.name}`}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            fetchPriority="high"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1.5 drop-shadow-sm">
+              {serviceLabel} Companies in {cityLabel}, {c.name}
+            </h1>
+            <p className="text-sm sm:text-[15px] text-white/90 max-w-2xl drop-shadow-sm">
+              {companies.length > 0
+                ? `${companies.length} verified ${serviceLabel.toLowerCase()} ${companies.length === 1 ? 'company' : 'companies'} in ${cityLabel} — browse portfolios & get free quotes.`
+                : `Verified ${serviceLabel.toLowerCase()} companies across ${c.name} — browse portfolios & get free quotes.`}
+            </p>
+          </div>
+        </div>
+
+        {/* Intro */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#2c2c2c] mb-3">
-            {serviceLabel} Companies in {cityLabel}, {c.name}
-          </h1>
           <p className="text-[15px] text-[#6b6b6b] leading-relaxed max-w-3xl">
             Looking for trusted {serviceLabel.toLowerCase()} professionals in {cityLabel}?
             Tarmeer connects homeowners and businesses across {c.name} with verified{' '}
