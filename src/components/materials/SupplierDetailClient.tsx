@@ -64,18 +64,6 @@ interface SupplierDetailClientProps {
   slug: string;
 }
 
-function EmptyState({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mb-4">
-        {icon}
-      </div>
-      <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{title}</h3>
-      <p className="text-sm text-[#6b6b6b] max-w-sm">{description}</p>
-    </div>
-  );
-}
-
 export default function SupplierDetailClient({ slug }: SupplierDetailClientProps) {
   const router = useRouter();
   const [supplier, setSupplier] = useState<SupplierProfile | null>(null);
@@ -189,6 +177,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
 
   const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
 
+  // 没上传内容的模块整块隐藏，对应 tab 也不显示（下方 map 里按 count 跳过，避免点了滚动到空白）
   const tabItems = [
     { key: 'products' as const, label: 'Products', icon: Package, count: products.length, ref: productsRef },
     { key: 'projects' as const, label: 'Projects', icon: Layers, count: projects.length, ref: projectsRef },
@@ -300,7 +289,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
       <div className="sticky top-14 sm:top-16 z-40 bg-[#faf9f7]/95 backdrop-blur-sm">
         <div className="overflow-x-auto scrollbar-none">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-1">
-            {tabItems.map(({ key, label, icon: Icon, count, ref }) => (
+            {tabItems.map(({ key, label, icon: Icon, count, ref }) => count === 0 ? null : (
               <button
                 key={key}
                 onClick={() => scrollTo(ref)}
@@ -335,14 +324,14 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="min-[1700px]:flex">
           <div className="min-w-0 min-[1700px]:flex-1 space-y-10">
-            {/* Products section */}
+            {/* Products section — 无产品则整块隐藏，不显示空状态 */}
+            {products.length > 0 && (
             <div ref={productsRef} id="section-products" className="scroll-mt-28">
               <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
                 Products
-                {products.length > 0 && <span className="text-sm font-normal text-stone-400">({products.length})</span>}
+                <span className="text-sm font-normal text-stone-400">({products.length})</span>
               </h2>
-              {products.length > 0 ? (
                 <>
                   {productCategories.length > 1 && (
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -373,19 +362,17 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                     ))}
                   </div>
                 </>
-              ) : (
-                <EmptyState icon={<Package className="w-8 h-8 text-stone-300" />} title="No products yet" description="This supplier hasn't uploaded any products." />
-              )}
             </div>
+            )}
 
-            {/* Projects section */}
+            {/* Projects section — 无项目则整块隐藏，不显示空状态 */}
+            {projects.length > 0 && (
             <div ref={projectsRef} id="section-projects" className="scroll-mt-28">
               <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
                 <Layers className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
                 Projects
-                {projects.length > 0 && <span className="text-sm font-normal text-stone-400">({projects.length})</span>}
+                <span className="text-sm font-normal text-stone-400">({projects.length})</span>
               </h2>
-              {projects.length > 0 ? (
                 <div className="space-y-6">
                   {projects.map(proj => {
                     const imgs = Array.isArray(proj.images) ? proj.images : [];
@@ -453,19 +440,17 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                     );
                   })}
                 </div>
-              ) : (
-                <EmptyState icon={<Layers className="w-8 h-8 text-stone-300" />} title="No projects yet" description="This supplier hasn't uploaded any project photos yet." />
-              )}
             </div>
+            )}
 
-            {/* Catalogs section */}
+            {/* Catalogs section — 无画册则整块隐藏，不显示空状态 */}
+            {catalogs.length > 0 && (
             <div ref={catalogsRef} id="section-catalogs" className="scroll-mt-28">
               <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
                 <FolderOpen className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
                 Catalogs
-                {catalogs.length > 0 && <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>}
+                <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>
               </h2>
-              {catalogs.length > 0 ? (
                 <div className="space-y-3">
                   {catalogs.map(c => (
                     <a key={c.id} href={c.file_url} target="_blank" rel="noopener noreferrer"
@@ -487,10 +472,8 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                     </a>
                   ))}
                 </div>
-              ) : (
-                <EmptyState icon={<FolderOpen className="w-8 h-8 text-stone-300" />} title="No catalogs uploaded yet" description="This supplier hasn't uploaded any catalogs." />
-              )}
             </div>
+            )}
 
             {/* Inline inquiry form — shown on screens < 1700px */}
             <div ref={mobileFormRef} className="min-[1700px]:hidden">
