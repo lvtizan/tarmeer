@@ -62,6 +62,11 @@ async function listPublicSuppliers(req, res) {
         const displayOrderCol = orderMode === 'home' ? 'home_display_order' : 'list_display_order';
         let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND (\n  (SELECT COUNT(*) FROM supplier_projects spj WHERE spj.supplier_profile_id = sp.id AND spj.is_published = 1) > 0\n  OR (sp.source = 'partner' AND (SELECT COUNT(*) FROM supplier_products sprd WHERE sprd.supplier_profile_id = sp.id) > 0)\n)";
         const params = [];
+        // 国家隔离铁律：列表必须按站点国家过滤（query 优先，回退 x-country header，再回退 ae）。
+        // 否则合作方扇出到 vn 的供应商(越南文公司名/简介)会泄漏进 AE 列表——反之 AE 供应商也会漏到 VN。
+        const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
+        where += ' AND sp.country = ?';
+        params.push(reqCountry);
         if (origin && (origin === 'china' || origin === 'dubai')) {
             where += ' AND sp.origin = ?';
             params.push(origin);
@@ -94,10 +99,12 @@ async function listPublicSuppliers(req, res) {
 async function getPublicProfile(req, res) {
     try {
         const { slug } = req.params;
+        // 国家隔离纵深防御：详情也按站点国家过滤，防 AE 站直接用 VN 供应商 slug 打开越南文页面。
+        const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
         const [rows] = await database_1.default.execute(`SELECT sp.*, su.email as user_email, su.full_name as user_name
        FROM supplier_profiles sp
        LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
-       WHERE sp.slug = ? AND sp.status = 'approved' AND sp.is_published = 1`, [slug]);
+       WHERE sp.slug = ? AND sp.status = 'approved' AND sp.is_published = 1 AND sp.country = ?`, [slug, reqCountry]);
         const supplier = rows[0];
         if (!supplier)
             return res.status(404).json({ error: 'Supplier not found.' });
