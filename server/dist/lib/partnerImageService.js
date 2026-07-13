@@ -29,6 +29,10 @@ async function assertPublicHost(url) {
   if (isPrivateIp(address)) throw new Error("private host blocked");
 }
 
+// 跨区源站(阿里云北京 OSS ↔ 迪拜服务器)网络慢且不稳，实测 6~60s+ 波动。
+// 超时放宽到 35s，配合 downloadWithRetry 3 次退避，覆盖慢下载与瞬时中断(SSL/空响应)。
+const DOWNLOAD_TIMEOUT_MS = 35000;
+
 async function download(url, dest) {
   await assertPublicHost(url);
   return await new Promise((resolve, reject) => {
@@ -37,11 +41,26 @@ async function download(url, dest) {
     const req = lib.get(url, (res) => {
       if (res.statusCode !== 200) { file.close(); fs.unlink(dest, () => {}); return reject(new Error(`HTTP ${res.statusCode}`)); }
       res.pipe(file);
+      res.on("error", (e) => { file.close(); fs.unlink(dest, () => {}); reject(e); });
+      file.on("error", (e) => { file.close(); fs.unlink(dest, () => {}); reject(e); });
       file.on("finish", () => file.close(() => resolve(dest)));
     });
     req.on("error", (e) => { file.close(); fs.unlink(dest, () => {}); reject(e); });
-    req.setTimeout(15000, () => req.destroy(new Error("timeout")));
+    req.setTimeout(DOWNLOAD_TIMEOUT_MS, () => req.destroy(new Error("timeout")));
   });
+}
+
+// 跨区网络会随机失败——重试 3 次(退避 2s/5s)，任一次成功即返回。
+// downloader 可注入仅用于测试重试循环；生产默认走带 SSRF 防护的 download。
+async function downloadWithRetry(url, dest, attempts = 3, downloader = download) {
+  const backoff = [0, 2000, 5000];
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    if (backoff[i]) await new Promise((r) => setTimeout(r, backoff[i]));
+    try { return await downloader(url, dest); }
+    catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("download failed");
 }
 
 function genVariants(srcAbs, outRel) {
@@ -57,7 +76,7 @@ async function resolveFirstImage(urls, externalId) {
   if (!url) throw new Error("no http(s) image url");
   const safeExt = String(externalId).replace(/[^\w-]/g, "_");
   const tmp = path.join(os.tmpdir(), `partner-${safeExt}-${Date.now()}.img`);
-  await download(url, tmp);
+  await downloadWithRetry(url, tmp);
   // 输出到 public/uploads/(nginx /uploads/ 已服务此目录,同现网供应商商品图),而非 /images/(portal 目录)
   const outRel = `public/uploads/partner/items/${safeExt}/cover`;
   fs.mkdirSync(path.join(PROJECT_ROOT, "public", "uploads", "partner", "items", safeExt), { recursive: true, mode: 0o755 });
@@ -66,4 +85,4 @@ async function resolveFirstImage(urls, externalId) {
   return `/uploads/partner/items/${safeExt}/cover-medium.webp`;
 }
 
-module.exports = { download, genVariants, resolveFirstImage };
+module.exports = { download, downloadWithRetry, genVariants, resolveFirstImage };
