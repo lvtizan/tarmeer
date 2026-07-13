@@ -767,6 +767,10 @@ async function getCompaniesByServiceCity(req, res) {
         if (service.length > 100 || city.length > 100) {
             return res.status(400).json({ error: 'service and city parameters are too long' });
         }
+        // 国家隔离铁律：service×city 落地页必须按站点国家过滤（query 优先，回退 x-country header，再回退 ae），
+        // 否则 AE 视图会冒出 company_profiles 里的 VN 装企（P0 数据串桶）。
+        const countryQP = typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null;
+        const country = countryQP || req.country || 'ae';
         // SEO slug → 公司真实 service 标签的匹配词（小写子串，供 LIKE 用）。
         // 原因：URL slug 用连字符(interior-design)，公司存空格(Interior Design)，直接 LIKE '%interior-design%' 永远查空；
         // 且 kitchen/bathroom/villa/office/apartment 等 SEO 长尾词并非公司标签，需兜底到最近的真实标签。
@@ -794,20 +798,22 @@ async function getCompaniesByServiceCity(req, res) {
               uc.owner_user_id, uc.is_signed, uc.is_certified
        FROM uae_companies uc
        WHERE uc.is_active = 1
+         AND uc.country = ?
          AND LOWER(uc.city) = LOWER(?)
          AND ( ${buildLike('uc.services')} )
        ORDER BY uc.weight_score DESC
-       LIMIT 30`, [city, ...likeParams]);
+       LIMIT 30`, [country, city, ...likeParams]);
         // Match registered companies (company_profiles) — services is a JSON array, match by aliased LIKE terms
         const [regRows] = await database_1.default.query(`SELECT cp.slug, cp.company_name AS name, cp.city, cp.description, cp.company_type,
               cp.weight_score, cp.is_signed, cp.is_certified
        FROM company_profiles cp
        WHERE cp.status = 'approved'
          AND cp.deleted_at IS NULL
+         AND cp.country = ?
          AND LOWER(cp.city) = LOWER(?)
          AND ( ${buildLike('cp.services')} )
        ORDER BY cp.weight_score DESC
-       LIMIT 30`, [city, ...likeParams]);
+       LIMIT 30`, [country, city, ...likeParams]);
         const dirMapped = (Array.isArray(dirRows) ? dirRows : []).map((r) => ({
             slug: r.slug,
             name: r.name,
