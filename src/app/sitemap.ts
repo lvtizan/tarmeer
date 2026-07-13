@@ -158,6 +158,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // ── AE-only 动态/SEO 内容 ────────────────────────────────────
   let supplierRoutes: MetadataRoute.Sitemap = [];
+  let supplierProjectRoutes: MetadataRoute.Sitemap = [];
   let guideRoutes: MetadataRoute.Sitemap = [];
   let serviceCityRoutes: MetadataRoute.Sitemap = [];
 
@@ -167,14 +168,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       '/suppliers?limit=200',
       country,
     );
-    supplierRoutes = (suppliersData?.suppliers ?? [])
-      .filter((s) => s.slug)
-      .map((s) => ({
-        url: `${BASE}/materials/suppliers/${s.slug}`,
-        lastModified: s.updated_at ? new Date(s.updated_at) : now,
-        changeFrequency: 'monthly' as const,
-        priority: 0.5,
-      }));
+    const supplierSlugs = (suppliersData?.suppliers ?? []).filter((s) => s.slug);
+    supplierRoutes = supplierSlugs.map((s) => ({
+      url: `${BASE}/materials/suppliers/${s.slug}`,
+      lastModified: s.updated_at ? new Date(s.updated_at) : now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    }));
+
+    // supplier 项目详情页（迁 SSR 后可收录）：逐 supplier 并行拉 published 项目
+    supplierProjectRoutes = (
+      await Promise.all(
+        supplierSlugs.map(async (s) => {
+          const pj = await fetchJson<{ projects: Array<{ id: number; updated_at?: string }> }>(
+            `/suppliers/detail/${s.slug}/projects`,
+            country,
+          );
+          return (pj?.projects ?? [])
+            .filter((p) => p.id)
+            .map((p) => ({
+              url: `${BASE}/materials/suppliers/${s.slug}/projects/${p.id}`,
+              lastModified: p.updated_at ? new Date(p.updated_at) : now,
+              changeFrequency: 'monthly' as const,
+              priority: 0.4,
+            }));
+        }),
+      )
+    ).flat();
 
     // 迪拜专属装修指南
     guideRoutes = GUIDE_SLUGS.map((slug) => ({
@@ -216,5 +236,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...blogRoutes,
     ...insightRoutes,
     ...supplierRoutes,
+    ...supplierProjectRoutes,
   ];
 }
