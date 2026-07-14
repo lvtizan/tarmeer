@@ -162,7 +162,7 @@ export default function SupplierProjectDetailClient() {
               <div className="flex gap-2 mt-2 overflow-x-auto pb-1 lg:hidden">
                 {images.map((img, i) => (
                   <button key={i} onClick={() => goToPhoto(i)} className={`shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition ${i === photoIdx ? 'border-[#b8864a]' : 'border-transparent opacity-60 hover:opacity-90'}`}>
-                    <SmartImage src={img} alt="" className="w-full h-full object-cover" />
+                    <SmartImage src={img} alt={`${project.title} — photo ${i + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -238,7 +238,7 @@ export default function SupplierProjectDetailClient() {
                 <div className="grid grid-cols-3 gap-1.5">
                   {images.map((img, i) => (
                     <button key={i} onClick={() => goToPhoto(i)} className={`aspect-square rounded-lg overflow-hidden border-2 transition ${i === photoIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70 hover:opacity-100'}`}>
-                      <SmartImage src={img} alt="" className="w-full h-full object-cover" />
+                      <SmartImage src={img} alt={`${project.title} — photo ${i + 1}`} className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
