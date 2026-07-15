@@ -6,7 +6,7 @@ export const footer = {
     serviceType: 'Service Type',
     address: 'Address',
     contactFollow: 'Contact & Follow',
-    allRights: 'All rights reserved.',
+    allRights: '— Operated by Epaifa General Trading L.L.C, Dubai',
     privacyPolicy: 'Privacy Policy',
     feedback: 'Feedback',
     navLinks: {
@@ -43,7 +43,7 @@ export const footer = {
     serviceType: 'Loại Dịch Vụ',
     address: 'Địa Chỉ',
     contactFollow: 'Liên Hệ & Theo Dõi',
-    allRights: 'Bảo lưu mọi quyền.',
+    allRights: '— Bảo lưu mọi quyền.',
     privacyPolicy: 'Chính Sách Bảo Mật',
     feedback: 'Phản Hồi',
     navLinks: {

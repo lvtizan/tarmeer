@@ -143,7 +143,7 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-white/20 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-white/60">© {new Date().getFullYear()} Tarmeer. {tr.footer.allRights}</p>
+          <p className="text-xs text-white/60">© {new Date().getFullYear()} Tarmeer {tr.footer.allRights}</p>
           <div className="flex gap-6 text-xs text-white/60">
             <a href="/privacy" className="hover:text-white/80">{tr.footer.privacyPolicy}</a>
             <a href="/dmca" className="hover:text-white/80">DMCA / Copyright</a>
