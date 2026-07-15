@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { MapPin, Clock, Package } from 'lucide-react';
+import { MapPin, Clock, Package, Search, X } from 'lucide-react';
 import { resolveVariantUrl, resolveImageUrl } from '@/lib/imageUrl';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import AdminSelect from '@/components/ui/AdminSelect';
@@ -152,6 +152,9 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
 
   const originFilter = searchParams.get('origin') || '';
   const categoryFilter = searchParams.get('category') || '';
+  const searchFilter = searchParams.get('search') || '';
+  // 客户端搜索：受控输入即时过滤，防抖后镜像到 URL（?search=）以便分享/深链
+  const [searchInput, setSearchInput] = useState(searchFilter);
 
   function setOriginFilter(val: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -189,7 +192,8 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
     const params = new URLSearchParams();
     if (originFilter) params.set('origin', originFilter);
     if (categoryFilter) params.set('category', categoryFilter);
-    params.set('limit', '50');
+    // 一次加载全部符合条件的供应商（当前 ~55 家），前端本地按名字过滤——不再被旧的 limit=50 静默截断
+    params.set('limit', '200');
     params.set('order', 'list');
 
     fetch(`${API_BASE}/suppliers?${params}`)
@@ -199,16 +203,47 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
       .finally(() => setLoading(false));
   }, [originFilter, categoryFilter]);
 
+  // 输入防抖后镜像到 URL（仅为可分享/可后退；实际过滤走本地即时计算，见下方 visibleSuppliers）
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const cur = searchParams.get('search') || '';
+      const next = searchInput.trim();
+      if (next === cur) return;
+      const params = new URLSearchParams(searchParams.toString());
+      if (next) params.set('search', next); else params.delete('search');
+      router.replace(`/materials?${params.toString()}`, { scroll: false });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  // 反向同步：URL 的 ?search= 变化（浏览器后退/前进、深链）回填输入框，避免输入框与 URL/列表不一致
+  useEffect(() => {
+    setSearchInput(prev => (prev.trim() === searchFilter ? prev : searchFilter));
+  }, [searchFilter]);
+
+  // 本地即时过滤：按公司名（英文/拼音，库里存的就是这个）不区分大小写子串匹配
+  const q = searchInput.trim().toLowerCase();
+  const visibleSuppliers = q
+    ? suppliers.filter(s => (s.company_name || '').toLowerCase().includes(q))
+    : suppliers;
+
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      {/* Header */}
-      <section className="relative bg-[#2c2620] overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.04] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.8)_1px,transparent_0)] [background-size:32px_32px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(184,134,74,0.12),transparent_70%)]" />
+      {/* Hero（与 /for-suppliers 同款：背景图 + 深色渐变遮罩 + 金色 eyebrow + 衬线标题 + 顶部搜索条） */}
+      <section className="relative overflow-hidden bg-[#1c1917]">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url(/images/supplier-hero.jpg)' }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.90)_0%,rgba(28,25,23,0.78)_50%,rgba(28,25,23,0.65)_100%)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-            <div>
-              <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+            <div className="max-w-xl">
+              <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
+                Verified Material Suppliers
+              </p>
+              <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mt-3 mb-2">
                 Find Premium Material Suppliers in UAE
               </h1>
               <p className="text-white/60 text-[15px]">
@@ -221,6 +256,29 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
             >
               Apply to Join
             </Link>
+          </div>
+
+          {/* 搜索条 */}
+          <div className="relative mt-6 max-w-xl">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search suppliers by name…"
+              aria-label="Search suppliers by name"
+              className="w-full h-12 pl-12 pr-11 rounded-xl bg-white text-[#1c1917] placeholder:text-stone-400 text-[15px] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput('')}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -328,9 +386,10 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
           </div>
 
           {/* Result count */}
-          {!loading && suppliers.length > 0 && (
+          {!loading && visibleSuppliers.length > 0 && (
             <p className="text-sm text-stone-500 mb-4">
-              {suppliers.length} verified supplier{suppliers.length !== 1 ? 's' : ''}
+              {visibleSuppliers.length} verified supplier{visibleSuppliers.length !== 1 ? 's' : ''}
+              {q && ` · matching “${searchInput.trim()}”`}
               {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}`}
               {categoryFilter && ` · ${categoryOptions.find(o => o.value === categoryFilter)?.label}`}
             </p>
@@ -339,14 +398,16 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
           {/* List */}
           {loading ? (
             <div className="py-20 text-center text-stone-400">Loading suppliers...</div>
-          ) : suppliers.length === 0 ? (
+          ) : visibleSuppliers.length === 0 ? (
             <div className="py-16 text-center">
               <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-              <p className="text-stone-500 text-[15px]">No suppliers found.</p>
+              <p className="text-stone-500 text-[15px]">
+                {q ? `No suppliers match “${searchInput.trim()}”.` : 'No suppliers found.'}
+              </p>
             </div>
           ) : (
             <div>
-              {suppliers.map(s => (
+              {visibleSuppliers.map(s => (
                 <SupplierCard key={s.id} s={s} />
               ))}
             </div>

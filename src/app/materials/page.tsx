@@ -41,11 +41,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-async function fetchInitialSuppliers(): Promise<Supplier[]> {
+async function fetchInitialSuppliers(country: string): Promise<Supplier[]> {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
   try {
-    const res = await fetch(`${API_BASE}/suppliers?limit=24`, {
+    // 国家隔离：SSR 出站 fetch 不会自动继承入站 x-country，必须显式带上（?country= 穿透 dev proxy + x-country 头直连 server），否则 VN 站首屏 SSR 会渲染 AE 供应商
+    const res = await fetch(`${API_BASE}/suppliers?limit=200&country=${country}`, {
       next: { revalidate: 3600 },
+      headers: { 'x-country': country },
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -57,7 +59,7 @@ async function fetchInitialSuppliers(): Promise<Supplier[]> {
 
 export default async function MaterialsPage() {
   const c = getCountry((await headers()).get('x-country'));
-  const initialSuppliers = await fetchInitialSuppliers();
+  const initialSuppliers = await fetchInitialSuppliers(c.code);
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
