@@ -75,6 +75,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **额外教训**：验证线上抓取结果必须读完整个响应再下结论，只看开头 = 会把正常页面误诊成空页。
 - **预防**：① 服务端组件取数一律走 `serverFetch.ts` 或带 `API_INTERNAL_URL` 兜底链，禁止裸 `|| '/api'`；② **禁止 `.catch(() => 空数组)` 静默吞错**，至少 `console.error`，否则 SSR 失败无人知晓；③ 上线后用 `curl <页面> | grep <真实数据关键词>` 验证 SSR 正文存在（不是只看浏览器）。
 
+### FA-13 rsync 后端覆盖队友未拉取的提交（多人协作，2026-07-15）
+- **现象**：给后台加「查看供应商」权限、部署时 `git push` 被拒（non-fast-forward）——origin/main 已被队友推了 10+ 提交（供应商后台中文名/tab/导出、materials hero 改版、版本号 0.1.22），且这些提交动的正是我改的同一批权限文件。更险：push 失败**之前**我已把 4 个后端 dist 文件 rsync 到生产，覆盖了队友已部署的版本。
+- **根因**：部署前没先 `git fetch` 看远端是否领先；在本地落后 origin 10 个提交的状态下直接 rsync 后端到生产，覆盖了队友基于更新代码的 dist。幸而 `pm2 restart` 因 shell 变量展开报错没执行 → 生产进程仍跑队友内存中的代码，磁盘被污染但未加载 = 未爆。
+- **修复**：① 立即 `git show origin/main:<file>` 提取队友版本 rsync 回生产，恢复被覆盖的 4 文件；② `git rebase origin/main`（**零冲突**，我的权限增量与队友改动在文件不同区域，git 3-way 自动合并）把功能叠到队友之上；③ 核实生产前端 HEAD 已是队友最新 `118d028c`（team 已部署）→ 我的部署只加 1 提交，安全；④ 合并后重跑 tsc/build/smoke 11/11 + 后端端到端（超管 200/无权限 403）全绿再部署。
+- **预防**：① **部署前必先 `git fetch origin main` 并看 `git log --oneline HEAD..origin/main`**，远端领先就先 rebase 再动手，禁止在落后状态下 rsync 后端；② rsync 后端前用 `git merge-base --is-ancestor origin/main HEAD` 确认本地已含远端最新；③ 多人同仓库：**先 `git push`（分叉会被 non-fast-forward 拒绝）暴露远端领先，rebase 解决后再 rsync/部署——push 成功 = 安全门通过**，绝不在 push 之前 rsync 后端。已写进 `tarmeer-deploy-backend`。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```

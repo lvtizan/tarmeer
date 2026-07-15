@@ -16,6 +16,20 @@ description: Tarmeer 后端（Express，server/dist/）部署流程——rsync �
 - `server/dist/` 的 JS 就是后端唯一源码（无 TS 源码），生产在 `/tarmeer/tarmeer_api/dist/`。
 - `deploy-backend-ecs.sh` 需要完整 `server/package.json`，本地不满足条件，**不要用**；用 rsync 增量同步。
 
+## ⚠️ 第 0 步：rsync 前必先同步远端（多人协作防覆盖，FA-13）
+
+**在 rsync 任何后端文件到生产之前，必须先确认本地已含 origin/main 最新提交。** 否则会用落后的 dist 覆盖队友已部署的后端（多人同仓库时血的教训）：
+
+```bash
+git fetch origin main
+git log --oneline HEAD..origin/main   # 有输出 = 远端领先,先 rebase 再说
+git rebase origin/main                # 落后就先 rebase(通常零冲突,增量在不同区域自动合并)
+git merge-base --is-ancestor origin/main HEAD && echo OK  # 确认本地已含远端最新
+```
+
+**安全门：先 `git push origin HEAD:main`。** push 被 non-fast-forward 拒绝 = 远端领先，立刻停手 rebase；**push 成功才允许 rsync 后端 + pm2 restart**。绝不在 push 之前 rsync。
+（若已误覆盖：`git show origin/main:server/dist/<file>` 提取队友版本 rsync 回生产恢复，再 rebase 重来。）
+
 ## 单文件/少量文件同步（⚠️ 最容易踩的坑）
 
 **多文件 rsync 必须分开写，目标路径必须指定到文件名。** rsync 一次传多个文件会把它们展平到目标目录根部，路径全错：
@@ -55,6 +69,7 @@ curl -s https://www.tarmeer.com/api/health
 
 ## 部署前置
 
+- **先同步远端**（第 0 步）：`git fetch` + `git push` 成功（分叉已解决）才允许 rsync 后端 — FA-13
 - 本地已跑 `node scripts/harness/smoke-test.mjs`（后端路由存在性检查）全绿 → 见 `tarmeer-verification`
 - 涉及国家/写入口 → country-walkthrough 全绿
 - 用户明确批准发布
