@@ -242,47 +242,47 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
         {/* 金色光晕（左上，衬托标题） */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_75%_at_15%_-5%,rgba(184,134,74,0.22),transparent_60%)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
-                Verified Material Suppliers
-              </p>
-              <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mt-3 mb-2">
-                Find Premium Material Suppliers in UAE
-              </h1>
-              <p className="text-white/60 text-[15px]">
-                Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
-              </p>
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
+              Verified Material Suppliers
+            </p>
+            <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mt-3 mb-2">
+              Find Premium Material Suppliers in UAE
+            </h1>
+            <p className="text-white/60 text-[15px]">
+              Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
+            </p>
+          </div>
+
+          {/* 搜索条 + 供应商登录：同一行、垂直居中对齐（不再让按钮悬空右侧） */}
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="relative w-full max-w-xl">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search suppliers by name…"
+                aria-label="Search suppliers by name"
+                className="w-full h-12 pl-12 pr-11 rounded-xl bg-white text-[#1c1917] placeholder:text-stone-400 text-[15px] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]"
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={() => setSearchInput('')}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </div>
             <Link
               href="/supplier/auth"
-              className="btn-primary self-start sm:self-auto sm:shrink-0 inline-flex items-center justify-center gap-2 whitespace-nowrap"
+              className="btn-primary self-start sm:self-auto sm:shrink-0 inline-flex items-center justify-center gap-2 whitespace-nowrap h-12"
             >
               Supplier Login
             </Link>
-          </div>
-
-          {/* 搜索条 */}
-          <div className="relative mt-6 max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search suppliers by name…"
-              aria-label="Search suppliers by name"
-              className="w-full h-12 pl-12 pr-11 rounded-xl bg-white text-[#1c1917] placeholder:text-stone-400 text-[15px] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]"
-            />
-            {searchInput && (
-              <button
-                type="button"
-                onClick={() => setSearchInput('')}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            )}
           </div>
         </div>
       </section>
