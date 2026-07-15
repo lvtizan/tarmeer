@@ -241,22 +241,20 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,20,16,0.92)_0%,rgba(24,20,16,0.74)_40%,rgba(24,20,16,0.30)_100%)]" />
         {/* 金色光晕（左上，衬托标题） */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_75%_at_15%_-5%,rgba(184,134,74,0.22),transparent_60%)]" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
-              Verified Material Suppliers
-            </p>
-            <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mt-3 mb-2">
-              Find Premium Material Suppliers in UAE
-            </h1>
-            <p className="text-white/60 text-[15px]">
-              Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
-            </p>
-          </div>
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
+          <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
+            Verified Material Suppliers
+          </p>
+          <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mt-3 mb-2">
+            Find Premium Material Suppliers in UAE
+          </h1>
+          <p className="text-white/60 text-[15px]">
+            Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
+          </p>
 
-          {/* 搜索条 + 供应商登录：同一行、垂直居中对齐（不再让按钮悬空右侧） */}
-          <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="relative w-full max-w-xl">
+          {/* 搜索条 + 供应商登录：整体居中同排（对齐公司列表页风格） */}
+          <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="relative w-full sm:w-[30rem]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
               <input
                 type="text"
@@ -264,7 +262,7 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search suppliers by name…"
                 aria-label="Search suppliers by name"
-                className="w-full h-12 pl-12 pr-11 rounded-xl bg-white text-[#1c1917] placeholder:text-stone-400 text-[15px] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]"
+                className="w-full h-12 pl-12 pr-11 rounded-xl bg-white text-left text-[#1c1917] placeholder:text-stone-400 text-[15px] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]"
               />
               {searchInput && (
                 <button
