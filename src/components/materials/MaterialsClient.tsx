@@ -256,10 +256,9 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
             </div>
             <Link
               href="/supplier/auth"
-              className="group self-start sm:self-auto sm:shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white/85 backdrop-blur-sm transition hover:border-[#c6a065] hover:text-white"
+              className="btn-primary self-start sm:self-auto sm:shrink-0 inline-flex items-center justify-center gap-2 whitespace-nowrap"
             >
               Supplier Login
-              <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
           </div>
 
