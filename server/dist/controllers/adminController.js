@@ -221,7 +221,7 @@ async function createSubAdmin(req, res) {
         return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
     // Validate permissions
-    const validPerms = ['can_approve', 'can_sort', 'can_view_stats', 'can_view_interviews', 'can_manage_field_staff'];
+    const validPerms = ['can_approve', 'can_sort', 'can_view_stats', 'can_view_interviews', 'can_manage_field_staff', 'can_view_suppliers'];
     const permsObj = {};
     if (permissions) {
         for (const key of Object.keys(permissions)) {

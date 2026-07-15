@@ -17,6 +17,7 @@ export interface AdminUser {
     can_view_stats?: boolean;
     can_view_interviews?: boolean;
     can_manage_field_staff?: boolean;
+    can_view_suppliers?: boolean;
   } | null;
 }
 

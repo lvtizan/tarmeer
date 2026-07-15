@@ -431,8 +431,8 @@ router.get('/portfolio-images', adminAuth_1.requireAdmin, async (req, res) => {
     }
 });
 // Supplier management
-router.get('/suppliers', supplierAdminController_1.listSuppliers);
-router.get('/suppliers/:id', supplierAdminController_1.getSupplierDetail);
+router.get('/suppliers', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.listSuppliers);
+router.get('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierDetail);
 router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.updateSupplierStatus);
 router.put('/suppliers/:id', supplierAdminController_1.updateSupplier);
 router.delete('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.deleteSupplier);

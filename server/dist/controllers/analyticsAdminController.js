@@ -349,10 +349,12 @@ async function getTodayNew(req, res) {
             database_1.default.execute(companySql, companyParams),
             database_1.default.execute('SELECT COUNT(*) AS n FROM supplier_profiles WHERE DATE(created_at) = CURDATE()'),
         ]);
+        // 供应商当日计数也按 can_view_suppliers 门控(无权限子管理员不暴露供应商任何信息,与列表/搜索一致)
+        const canSuppliers = req.admin?.role === 'super_admin' || req.admin?.permissions?.can_view_suppliers === true;
         res.json({
             homeowners: Number(homeowners[0]?.n ?? 0),
             companies: Number(companies[0]?.n ?? 0),
-            suppliers: Number(suppliers[0]?.n ?? 0),
+            suppliers: canSuppliers ? Number(suppliers[0]?.n ?? 0) : 0,
         });
     }
     catch (error) {

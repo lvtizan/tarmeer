@@ -124,13 +124,17 @@ async function globalSearch(req, res) {
             city: r.city,
             type: 'directory',
         }));
-        const suppliers = spRows[0].map((r) => ({
-            id: r.id,
-            name: r.name,
-            email: r.email,
-            origin: r.origin,
-            status: r.status,
-        }));
+        // 供应商需 can_view_suppliers 权限：无权限的子管理员搜不到供应商（与 GET /suppliers 门控一致，防搜索绕过）
+        const canSuppliers = req.admin?.role === 'super_admin' || req.admin?.permissions?.can_view_suppliers === true;
+        const suppliers = canSuppliers
+            ? spRows[0].map((r) => ({
+                id: r.id,
+                name: r.name,
+                email: r.email,
+                origin: r.origin,
+                status: r.status,
+            }))
+            : [];
         res.json({ homeownerLeads, companyLeads, users, registeredCompanies, directoryCompanies, suppliers });
     }
     catch (err) {

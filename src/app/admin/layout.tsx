@@ -40,7 +40,7 @@ const navItems = [
     infoZh: '管理装企 / 目录 / 申请，包含审批、排序与资料维护。',
   },
   {
-    to: '/admin/suppliers', labelEn: 'Suppliers', labelZh: '供应商', icon: Package,
+    to: '/admin/suppliers', labelEn: 'Suppliers', labelZh: '供应商', icon: Package, permission: 'can_view_suppliers' as const,
     infoEn: 'Manage building material suppliers, review applications, and track supplier leads.',
     infoZh: '管理建材供应商、审核入驻申请、跟踪供应商线索。',
   },
@@ -295,7 +295,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   // field_staff should not see the core business nav (Homeowners, Companies, etc.)
   const filteredNavItems = isFieldStaff ? [] : navItems.filter(item =>
-    (!('permission' in item) || !(item as { permission?: string }).permission || hasPermission((item as { permission: 'can_approve' | 'can_sort' | 'can_view_stats' }).permission))
+    (!('permission' in item) || !(item as { permission?: string }).permission || hasPermission((item as { permission: 'can_approve' | 'can_sort' | 'can_view_stats' | 'can_view_interviews' | 'can_manage_field_staff' | 'can_view_suppliers' }).permission))
   );
 
   const filteredAdminItems = adminItems.filter(item =>
