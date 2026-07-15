@@ -141,9 +141,14 @@ function FilterOption({
 
 interface MaterialsClientProps {
   initialSuppliers: Supplier[];
+  /**
+   * AE 新材料策展区（场景瓦片 + 产品流 + 选材中心预约），由 server page 组装注入，
+   * 插在 hero 与供应商列表之间；VN 站不传 → 页面渲染与改版前完全一致（国家隔离）。
+   */
+  catalogSection?: React.ReactNode;
 }
 
-export default function MaterialsClient({ initialSuppliers }: MaterialsClientProps) {
+export default function MaterialsClient({ initialSuppliers, catalogSection }: MaterialsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
@@ -284,6 +289,24 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
           </div>
         </div>
       </section>
+
+      {/* 新材料策展区（AE only，server page 注入；hero 与供应商列表之间） */}
+      {catalogSection}
+
+      {/* 小节标题过渡：策展区在场时给下方供应商列表一个章节头 */}
+      {catalogSection && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-14 text-center">
+          <p className="text-sm font-semibold text-[#b8864a] uppercase tracking-wider">
+            Our Suppliers
+          </p>
+          <h2 className="font-serif text-[24px] sm:text-[30px] text-[#1c1917] font-medium leading-tight mt-2">
+            The Partners Behind the Materials
+          </h2>
+          <p className="text-stone-500 text-[15px] mt-2 max-w-2xl mx-auto">
+            Every material we curate comes from a verified supplier — browse their full showrooms below.
+          </p>
+        </div>
+      )}
 
       {/* Breadcrumb */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-0">

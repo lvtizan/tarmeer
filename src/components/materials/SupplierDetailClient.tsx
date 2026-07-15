@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
+import { sanitizeDescription } from '@/lib/materialsApi';
 import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS } from '@/lib/supplierConstants';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
@@ -357,7 +358,11 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                         </div>
                         {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
                         {(p.title_translated || p.title) && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title_translated || p.title}</p>}
-                        {(p.description_translated || p.description) && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description_translated || p.description}</p>}
+                        {(() => {
+                          // 与产品详情页同源清洗：合作方同步残留的出厂价/MOQ 不外显（spec §6）
+                          const desc = sanitizeDescription(p.description_translated || p.description);
+                          return desc ? <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{desc}</p> : null;
+                        })()}
                       </div>
                     ))}
                   </div>

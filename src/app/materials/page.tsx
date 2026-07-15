@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import MaterialsClient, { type Supplier } from '@/components/materials/MaterialsClient';
+import MaterialsCatalogClient from '@/components/materials/MaterialsCatalogClient';
+import ShowroomVisitSection from '@/components/materials/ShowroomVisitSection';
 import { getCountry } from '@/lib/country';
+import { fetchMaterialProducts } from '@/lib/materialsApi';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,7 +62,12 @@ async function fetchInitialSuppliers(country: string): Promise<Supplier[]> {
 
 export default async function MaterialsPage() {
   const c = getCountry((await headers()).get('x-country'));
-  const initialSuppliers = await fetchInitialSuppliers(c.code);
+  // 新材料策展区为 AE 专属（spec §1 约束）：VN 站不预取产品、不渲染策展区，页面保持改版前原样
+  const isAe = c.code === 'ae';
+  const [initialSuppliers, initialProductsPage] = await Promise.all([
+    fetchInitialSuppliers(c.code),
+    isAe ? fetchMaterialProducts({ limit: 24 }, c.code) : Promise.resolve(null),
+  ]);
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
@@ -82,7 +90,17 @@ export default async function MaterialsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
       <Suspense fallback={<div className="py-20 text-center text-stone-400">Loading suppliers...</div>}>
-        <MaterialsClient initialSuppliers={initialSuppliers} />
+        <MaterialsClient
+          initialSuppliers={initialSuppliers}
+          catalogSection={
+            isAe ? (
+              <>
+                <MaterialsCatalogClient initialProducts={initialProductsPage?.products ?? []} />
+                <ShowroomVisitSection />
+              </>
+            ) : undefined
+          }
+        />
       </Suspense>
     </>
   );
