@@ -151,9 +151,13 @@ async function listSuppliers(req, res) {
         }
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM supplier_profiles sp LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id ${where}`, params);
         const total = countRows[0].total;
-        // 合作方同步统计（按国家全量，不受分页/状态筛选影响）
+        // tab 统计（均按国家全量，不受分页/当前 tab 筛选影响，与合作方同步计数口径一致）
         const [partnerRows] = await database_1.default.execute(`SELECT COUNT(*) as pc FROM supplier_profiles WHERE country = ? AND source = 'partner'`, [country]);
         const partnerCount = partnerRows[0].pc;
+        const [allRows] = await database_1.default.execute(`SELECT COUNT(*) as ac FROM supplier_profiles WHERE country = ?`, [country]);
+        const allCount = allRows[0].ac;
+        const [teamRows] = await database_1.default.execute(`SELECT COUNT(*) as tc FROM supplier_profiles sp LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id WHERE sp.country = ? AND su.email LIKE '%@tarmeer-team.com'`, [country]);
+        const teamCount = teamRows[0].tc;
         const [rows] = await database_1.default.query(`SELECT sp.*, su.email as user_email, su.full_name as user_name,
               (SELECT COUNT(*) FROM supplier_products WHERE supplier_profile_id = sp.id) as product_count,
               (SELECT COUNT(*) FROM supplier_catalogs WHERE supplier_profile_id = sp.id) as catalog_count
@@ -165,7 +169,7 @@ async function listSuppliers(req, res) {
                       CASE WHEN sp.list_display_order > 0 THEN sp.list_display_order ELSE 999999 END) ASC,
                 sp.created_at DESC
        LIMIT ${limit} OFFSET ${offset}`, params);
-        res.json({ suppliers: rows, partnerCount, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+        res.json({ suppliers: rows, partnerCount, allCount, teamCount, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }
     catch (error) {
         console.error('Admin list suppliers error:', error);

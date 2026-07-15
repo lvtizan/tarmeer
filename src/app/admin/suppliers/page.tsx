@@ -39,6 +39,8 @@ export default function AdminSuppliersPage() {
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [partnerCount, setPartnerCount] = useState(0);
+  const [allCount, setAllCount] = useState(0);
+  const [teamCount, setTeamCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -66,6 +68,8 @@ export default function AdminSuppliersPage() {
       const data = await adminApi.request(`/suppliers?${qs}`);
       setSuppliers(data.suppliers || []);
       setPartnerCount(data.partnerCount || 0);
+      setAllCount(data.allCount || 0);
+      setTeamCount(data.teamCount || 0);
     } catch {}
     setLoading(false);
   }, [originFilter, statusFilter, sourceFilter, groupFilter, country]);
@@ -231,11 +235,12 @@ export default function AdminSuppliersPage() {
         <div className="inline-flex items-center gap-1 p-1 bg-stone-100 rounded-lg">
           <button
             onClick={() => selectTab('all')}
-            className={`h-7 px-3 rounded-md text-sm font-medium transition ${
+            className={`h-7 px-3 rounded-md text-sm font-medium transition inline-flex items-center gap-1 ${
               sourceFilter === '' && groupFilter === '' ? 'bg-white text-[#2c2c2c] shadow-sm' : 'text-stone-500 hover:text-stone-700'
             }`}
           >
             {t('All', '全部')}
+            {allCount > 0 && <span className="text-xs opacity-70">{allCount}</span>}
           </button>
           <button
             onClick={() => selectTab('partner')}
@@ -248,11 +253,12 @@ export default function AdminSuppliersPage() {
           </button>
           <button
             onClick={() => selectTab('team')}
-            className={`h-7 px-3 rounded-md text-sm font-medium transition ${
+            className={`h-7 px-3 rounded-md text-sm font-medium transition inline-flex items-center gap-1 ${
               groupFilter === 'team' ? 'bg-white text-[#2c2c2c] shadow-sm' : 'text-stone-500 hover:text-stone-700'
             }`}
           >
             {t('Company Accounts', '公司创建的号')}
+            {teamCount > 0 && <span className="text-xs opacity-70">{teamCount}</span>}
           </button>
         </div>
         <div className="flex items-center gap-2">
