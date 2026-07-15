@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail,
-  CircleHelp, Info, ClipboardList, Package, PackagePlus, Tags, Menu, X, MapPin,
+  CircleHelp, Info, ClipboardList, Package, PackagePlus, PackageSearch, Tags, Menu, X, MapPin,
   UserCheck, HandCoins, Images, MessageSquare, Hammer,
 } from 'lucide-react';
 import { AdminProvider, useAdmin } from '@/contexts/AdminContext';
@@ -53,6 +53,11 @@ const navItems = [
     to: '/admin/inquiries', labelEn: 'Leads', labelZh: '线索', icon: HandCoins,
     infoEn: 'Review customer leads, update follow-up status, and keep conversion notes synchronized.',
     infoZh: '查看客户线索、更新跟进状态，并同步转化备注。',
+  },
+  {
+    to: '/admin/sourcing-requests', labelEn: 'Sourcing Leads', labelZh: '采购线索', icon: PackageSearch,
+    infoEn: 'Manage sample requests, showroom visit bookings, sourcing consultations and designer partner applications.',
+    infoZh: '管理样品申请、到店预约、采购咨询和设计师合作申请等采购线索。',
   },
 ];
 

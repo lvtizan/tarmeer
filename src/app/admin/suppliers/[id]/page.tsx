@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
+import { APPLICATION_SCENES } from '@/lib/materialsApi';
 import SupplierEditModal from '@/components/admin/SupplierEditModal';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { showToast } from '@/components/ui/Toast';
@@ -32,7 +33,191 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const inputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
+// 表单配色铁律：输入框背景必须 bg-white（新代码遵守，存量 inputCls 不动）
+const whiteInputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
 const PRODUCT_CATEGORIES = ['wardrobe', 'kitchen', 'furniture', 'stone', 'lighting', 'plants', 'flooring', 'curtains', 'paint', 'hardware', 'other'];
+
+/* ── 产品补充字段（specs / certifications / application_scenes）── */
+
+// 场景中文标注（slug 单一来源：materialsApi.APPLICATION_SCENES）
+const SCENE_ZH: Record<string, string> = {
+  'feature-wall': '特色墙',
+  'flooring': '地面',
+  'countertop': '台面',
+  'kitchen-bath': '厨卫',
+  'lighting': '灯光',
+  'furniture': '家具',
+  'outdoor-garden': '户外',
+  'decor': '软装',
+};
+
+interface ProductSpecRow { label: string; value: string }
+
+interface ProductExtraFields {
+  specs: ProductSpecRow[];
+  certifications: string[];
+  application_scenes: string[];
+}
+
+function emptyExtraFields(): ProductExtraFields {
+  return { specs: [], certifications: [], application_scenes: [] };
+}
+
+/** 后端可能返回 JSON 字符串或已 parse 的数组，两种都兼容 */
+function parseJsonArray<T>(raw: unknown): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as T[]) : [];
+    } catch { return []; }
+  }
+  return [];
+}
+
+function productToExtraFields(p: { specs?: unknown; certifications?: unknown; application_scenes?: unknown }): ProductExtraFields {
+  return {
+    specs: parseJsonArray<ProductSpecRow>(p.specs).map(s => ({ label: String(s?.label ?? ''), value: String(s?.value ?? '') })),
+    certifications: parseJsonArray<string>(p.certifications).map(String),
+    application_scenes: parseJsonArray<string>(p.application_scenes).map(String),
+  };
+}
+
+/** 提交前清洗：specs 去掉空行、certifications 去空白 */
+function cleanExtraFields(e: ProductExtraFields): ProductExtraFields {
+  return {
+    specs: e.specs.map(s => ({ label: s.label.trim(), value: s.value.trim() })).filter(s => s.label && s.value),
+    certifications: e.certifications.map(c => c.trim()).filter(Boolean),
+    application_scenes: e.application_scenes,
+  };
+}
+
+function ProductExtraFieldsEditor({ value, onChange, t }: {
+  value: ProductExtraFields;
+  onChange: (v: ProductExtraFields) => void;
+  t: (en: string, zh: string) => string;
+}) {
+  const [certInput, setCertInput] = useState('');
+
+  const setSpec = (idx: number, key: keyof ProductSpecRow, v: string) => {
+    onChange({ ...value, specs: value.specs.map((s, i) => i === idx ? { ...s, [key]: v } : s) });
+  };
+  const addSpecRow = () => onChange({ ...value, specs: [...value.specs, { label: '', value: '' }] });
+  const removeSpecRow = (idx: number) => onChange({ ...value, specs: value.specs.filter((_, i) => i !== idx) });
+
+  const addCert = () => {
+    const c = certInput.trim();
+    if (!c) return;
+    if (!value.certifications.includes(c)) {
+      onChange({ ...value, certifications: [...value.certifications, c] });
+    }
+    setCertInput('');
+  };
+  const removeCert = (c: string) => onChange({ ...value, certifications: value.certifications.filter(x => x !== c) });
+
+  const toggleScene = (slug: string) => {
+    onChange({
+      ...value,
+      application_scenes: value.application_scenes.includes(slug)
+        ? value.application_scenes.filter(s => s !== slug)
+        : [...value.application_scenes, slug],
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 规格（键值对行编辑器） */}
+      <div>
+        <label className="block text-xs font-medium text-stone-500 mb-1.5">{t('Specs', '规格')}</label>
+        <div className="space-y-2">
+          {value.specs.map((s, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={s.label}
+                onChange={e => setSpec(i, 'label', e.target.value)}
+                placeholder={t('Label (e.g. Thickness)', '名称（如 厚度）')}
+                className={whiteInputCls + ' flex-1'}
+              />
+              <input
+                type="text"
+                value={s.value}
+                onChange={e => setSpec(i, 'value', e.target.value)}
+                placeholder={t('Value (e.g. 12mm)', '值（如 12mm）')}
+                className={whiteInputCls + ' flex-1'}
+              />
+              <button
+                type="button"
+                onClick={() => removeSpecRow(i)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition shrink-0"
+                title={t('Remove row', '删除该行')}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addSpecRow}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-stone-300 text-xs text-stone-500 hover:border-[#b8864a] hover:text-[#b8864a] transition"
+          >
+            <Plus className="w-3.5 h-3.5" />{t('Add Spec', '添加规格')}
+          </button>
+        </div>
+      </div>
+
+      {/* 认证（标签输入：回车添加，点 x 删除） */}
+      <div>
+        <label className="block text-xs font-medium text-stone-500 mb-1.5">{t('Certifications', '认证')}</label>
+        {value.certifications.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {value.certifications.map(c => (
+              <span key={c} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-xs">
+                {c}
+                <button
+                  type="button"
+                  onClick={() => removeCert(c)}
+                  className="text-stone-400 hover:text-red-500 transition"
+                  title={t('Remove', '删除')}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <input
+          type="text"
+          value={certInput}
+          onChange={e => setCertInput(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); addCert(); }
+          }}
+          placeholder={t('Type and press Enter (e.g. CE / ISO 9001)', '输入后回车添加（如 CE / ISO 9001）')}
+          className={whiteInputCls}
+        />
+      </div>
+
+      {/* 应用场景（多选） */}
+      <div>
+        <label className="block text-xs font-medium text-stone-500 mb-1.5">{t('Application Scenes', '应用场景')}</label>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+          {APPLICATION_SCENES.map(scene => (
+            <label key={scene.slug} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={value.application_scenes.includes(scene.slug)}
+                onChange={() => toggleScene(scene.slug)}
+                className="accent-[#b8864a]"
+              />
+              {t(scene.label, SCENE_ZH[scene.slug] ?? scene.label)}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface ProjectFormState {
   title: string;
@@ -219,23 +404,31 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
 
 interface ProductEditModalProps {
   supplierId: number;
-  product: { id: number; image_url?: string; title?: string; category?: string };
+  product: { id: number; image_url?: string; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
   onClose: () => void;
-  onSaved: (product: { id: number; title?: string; category?: string }) => void;
+  onSaved: (product: { id: number; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }) => void;
   t: (en: string, zh: string) => string;
 }
 
 function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductEditModalProps) {
   const [title, setTitle] = useState(product.title || '');
   const [category, setCategory] = useState(product.category || '');
+  const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      const cleaned = cleanExtraFields(extras);
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title: title.trim() || null, category: category || null }),
+        body: JSON.stringify({
+          title: title.trim() || null,
+          category: category || null,
+          specs: cleaned.specs,
+          certifications: cleaned.certifications,
+          application_scenes: cleaned.application_scenes,
+        }),
       });
       onSaved(data.product);
       showToast(t('Product updated', '产品已更新'), 'success');
@@ -248,7 +441,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-stone-100">
           <h2 className="text-base font-bold text-[#2c2c2c]">{t('Edit Product', '编辑产品')}</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
@@ -266,6 +459,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
               {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
             </select>
           </div>
+          <ProductExtraFieldsEditor value={extras} onChange={setExtras} t={t} />
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
@@ -291,7 +485,7 @@ export default function AdminSupplierDetailPage() {
     has_physical_store?: boolean; store_address?: string; categories?: string[] | string;
     created_at: string;
   } | null>(null);
-  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string }>>([]);
+  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number }>>([]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -299,6 +493,7 @@ export default function AdminSupplierDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ image_url: '', title: '', category: '' });
+  const [newProductExtras, setNewProductExtras] = useState<ProductExtraFields>(emptyExtraFields());
   const [addingProduct, setAddingProduct] = useState(false);
   const [replacingId, setReplacingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -306,7 +501,7 @@ export default function AdminSupplierDetailPage() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<{ id?: number; title?: string; location?: string; year?: number; area_sqm?: number; budget?: string; description?: string; images?: string[] | string } | null>(null);
   const [togglingPublished, setTogglingPublished] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
@@ -427,6 +622,7 @@ export default function AdminSupplierDetailPage() {
     if (!newProduct.image_url.trim()) { showToast(t('Image URL is required', '请填写图片地址'), 'error'); return; }
     setAddingProduct(true);
     try {
+      const cleanedExtras = cleanExtraFields(newProductExtras);
       const data = await adminApi.request(`/suppliers/${id}/products`, {
         method: 'POST',
         body: JSON.stringify({
@@ -434,10 +630,14 @@ export default function AdminSupplierDetailPage() {
           title: newProduct.title.trim() || null,
           category: newProduct.category || null,
           sort_order: products.length,
+          specs: cleanedExtras.specs,
+          certifications: cleanedExtras.certifications,
+          application_scenes: cleanedExtras.application_scenes,
         }),
       });
       setProducts(prev => [...prev, data.product]);
       setNewProduct({ image_url: '', title: '', category: '' });
+      setNewProductExtras(emptyExtraFields());
       setShowAddProduct(false);
       showToast(t('Product added', '产品图已添加'), 'success');
     } catch {
@@ -742,9 +942,10 @@ export default function AdminSupplierDetailPage() {
                     {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                   </select>
                 </div>
+                <ProductExtraFieldsEditor value={newProductExtras} onChange={setNewProductExtras} t={t} />
                 <div className="flex gap-2">
                   <button onClick={handleAddProduct} disabled={addingProduct} className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition">{addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}</button>
-                  <button onClick={() => { setShowAddProduct(false); setNewProduct({ image_url: '', title: '', category: '' }); }} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
+                  <button onClick={() => { setShowAddProduct(false); setNewProduct({ image_url: '', title: '', category: '' }); setNewProductExtras(emptyExtraFields()); }} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
                 </div>
               </div>
             )}
