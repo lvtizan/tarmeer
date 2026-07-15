@@ -398,9 +398,19 @@ export default function Navbar({
                     ));
                   })()}
                 </div>
-                <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
+                <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg flex flex-wrap items-center gap-x-6 gap-y-2">
                   <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
                     {tr.nav.allSuppliers} {'>'}
+                  </Link>
+                  {/* 中国新材料采购入口（AE 专属，业务转型新增） */}
+                  <Link href="/services/china-sourcing" onClick={() => handleClick('/services/china-sourcing')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    China Sourcing
+                  </Link>
+                  <Link href="/guarantee" onClick={() => handleClick('/guarantee')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    Local Guarantee
+                  </Link>
+                  <Link href="/for-designers" onClick={() => handleClick('/for-designers')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    For Designers
                   </Link>
                 </div>
               </div>
@@ -581,6 +591,16 @@ export default function Navbar({
                   <div className="border-t border-stone-200 pt-2">
                     <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
                       {tr.nav.allSuppliers} {'>'}
+                    </Link>
+                    {/* 中国新材料采购入口（AE 专属，业务转型新增） */}
+                    <Link href="/services/china-sourcing" onClick={() => handleClick('/services/china-sourcing')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      China Sourcing
+                    </Link>
+                    <Link href="/guarantee" onClick={() => handleClick('/guarantee')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      Local Guarantee
+                    </Link>
+                    <Link href="/for-designers" onClick={() => handleClick('/for-designers')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      For Designers
                     </Link>
                   </div>
                 </div>

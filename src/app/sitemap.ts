@@ -72,6 +72,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${BASE}/services/soft-decoration`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
       { url: `${BASE}/services/new-home-design`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
       { url: `${BASE}/services/house-exterior`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+      // 中国新材料采购业务页（2026-07 业务转型新增，AE 专属）
+      { url: `${BASE}/services/china-sourcing`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+      { url: `${BASE}/guarantee`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+      { url: `${BASE}/for-designers`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     );
   }
 
@@ -159,10 +163,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ── AE-only 动态/SEO 内容 ────────────────────────────────────
   let supplierRoutes: MetadataRoute.Sitemap = [];
   let supplierProjectRoutes: MetadataRoute.Sitemap = [];
+  const materialProductRoutes: MetadataRoute.Sitemap = [];
   let guideRoutes: MetadataRoute.Sitemap = [];
   let serviceCityRoutes: MetadataRoute.Sitemap = [];
 
   if (isAe) {
+    // 新材料产品详情页（AE 专属，跨供应商产品 feed）
+    // 后端单页上限 100，必须翻页取全量——一次 limit=500 会被静默截到 100（第1轮审查发现）
+    try {
+      let page = 1;
+      while (page <= 50) { // 5000 条上限保险丝
+        const batch = await fetchJson<{
+          products: Array<{ id: number }>;
+          pagination: { totalPages?: number };
+        }>(`/suppliers/products/public?page=${page}&limit=100`, country);
+        const items = batch?.products ?? [];
+        if (!items.length) break;
+        for (const p of items) {
+          if (p.id) {
+            materialProductRoutes.push({
+              url: `${BASE}/materials/products/${p.id}`,
+              lastModified: now,
+              changeFrequency: 'weekly' as const,
+              priority: 0.6,
+            });
+          }
+        }
+        if (page >= (batch?.pagination?.totalPages ?? 1)) break;
+        page++;
+      }
+    } catch { /* skip */ }
+
     // 建材供应商详情页（AE 专属功能）
     const suppliersData = await fetchJson<{ suppliers: Array<{ slug: string; updated_at?: string }> }>(
       '/suppliers?limit=200',
@@ -237,5 +268,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...insightRoutes,
     ...supplierRoutes,
     ...supplierProjectRoutes,
+    ...materialProductRoutes,
   ];
 }
