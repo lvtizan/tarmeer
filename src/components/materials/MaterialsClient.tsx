@@ -230,22 +230,19 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      {/* Hero：暖色渐变底 + 金色光晕 + 点纹理（不依赖背景图也好看）+ 照片叠加（线上有则融入）+ 金色 eyebrow + 衬线标题 + 顶部搜索条 */}
+      {/* Hero：真实供应商室内图（Suofeiya 定制家居，走多档 webp）+ 左深右浅遮罩保证白字可读 + 金色光晕 + 金色 eyebrow + 衬线标题 + 顶部搜索条 */}
       <section className="relative overflow-hidden bg-[#201b17]">
-        {/* 背景照片（线上 nginx 提供；缺图时下面几层仍撑得起观感），低透明度融入 */}
+        {/* 背景照片：本地(public/images)与线上(rsync 到 portal)同路径均可显 */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-35"
-          style={{ backgroundImage: 'url(/images/supplier-hero.jpg)' }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-70"
+          style={{ backgroundImage: 'url(/images/materials/suppliers-hero.webp)' }}
         />
-        {/* 文字对比遮罩：左深右浅 */}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(26,22,18,0.88)_0%,rgba(26,22,18,0.58)_55%,rgba(26,22,18,0.38)_100%)]" />
-        {/* 金色光晕（左上，衬托标题）+ 右下暖光加深层次 */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_18%_-10%,rgba(184,134,74,0.28),transparent_58%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_70%_at_105%_115%,rgba(140,102,58,0.22),transparent_60%)]" />
-        {/* 细点纹理 */}
-        <div className="absolute inset-0 opacity-[0.05] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.85)_1px,transparent_0)] [background-size:26px_26px]" />
+        {/* 文字对比遮罩：左深右浅（左侧压暗托住白字，右侧透出室内实景） */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,20,16,0.92)_0%,rgba(24,20,16,0.74)_40%,rgba(24,20,16,0.30)_100%)]" />
+        {/* 金色光晕（左上，衬托标题） */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_75%_at_15%_-5%,rgba(184,134,74,0.22),transparent_60%)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
                 Verified Material Suppliers
@@ -258,10 +255,11 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
               </p>
             </div>
             <Link
-              href="/for-suppliers"
-              className="btn-primary w-full sm:w-auto sm:shrink-0 inline-flex items-center justify-center gap-2"
+              href="/supplier/auth"
+              className="group self-start sm:self-auto sm:shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-medium text-white/85 backdrop-blur-sm transition hover:border-[#c6a065] hover:text-white"
             >
-              Apply to Join
+              Supplier Login
+              <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
           </div>
 
