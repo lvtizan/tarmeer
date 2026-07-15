@@ -805,7 +805,7 @@ async function getCompaniesByServiceCity(req, res) {
        LIMIT 30`, [country, city, ...likeParams]);
         // Match registered companies (company_profiles) — services is a JSON array, match by aliased LIKE terms
         const [regRows] = await database_1.default.query(`SELECT cp.slug, cp.company_name AS name, cp.city, cp.description, cp.company_type,
-              cp.weight_score, cp.is_signed, cp.is_certified
+              cp.weight_score, cp.is_signed, cp.is_certified, cp.cover_image_url
        FROM company_profiles cp
        WHERE cp.status = 'approved'
          AND cp.deleted_at IS NULL
@@ -831,7 +831,8 @@ async function getCompaniesByServiceCity(req, res) {
             name: r.name,
             city: r.city,
             description: r.description,
-            portfolio_images: null,
+            // 注册装企无 portfolio_images 列,用 cover_image_url 作封面(供 service×city Hero/卡片取真实图)
+            portfolio_images: r.cover_image_url ? JSON.stringify([r.cover_image_url]) : null,
             logo_url: null,
             is_claimed: true,
             is_signed: !!(r.is_signed),
