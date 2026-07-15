@@ -139,7 +139,7 @@ node /tmp/purge-vn-missing.js   # 删除文件不存在的图片引用
 | 要部署的前端改动 | 本地 `node_modules/.bin/next build` 验证 exit=0（防止线上 build 失败） |
 
 注意事项：
-- walkthrough 含注册接口，**同一后端进程连跑两次会被限流 429** → 跑之前先重启本地后端
+- walkthrough 含注册接口，注册限流 5/h，**单次全量跑就会触顶 429**（2026-07-15 实测 UC18+ 挂）→ 本地后端必须带 `DISABLE_AUTH_RATE_LIMIT=true` 启动再跑（该环境变量为官方 harness 逃生门，见 server/dist/routes/auth.js，生产不得设置）
 - 本地跑过 `next build` 后会覆盖 `.next`，**必须重启 5180 dev server**
 - 用例自检 = 模拟真实用户路径（写入 → 按预期视图查询断言），不是只 curl 一下 200
 
