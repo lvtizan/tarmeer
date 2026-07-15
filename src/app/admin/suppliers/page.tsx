@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink, Download } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import AdminSelect from '@/components/ui/AdminSelect';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
@@ -15,6 +15,7 @@ import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 interface Supplier {
   id: number;
   company_name: string;
+  name_zh?: string | null;
   slug: string;
   origin: 'china' | 'dubai';
   categories: string[] | string | null;
@@ -42,6 +43,7 @@ export default function AdminSuppliersPage() {
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
+  const [groupFilter, setGroupFilter] = useState('');
   const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>(null);
   const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>(null);
@@ -49,21 +51,24 @@ export default function AdminSuppliersPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
   const [orderToast, setOrderToast] = useState<{ msg: string; key: string } | null>(null);
+  const [editingNameZh, setEditingNameZh] = useState<Record<number, string>>({});
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { limit: '50', country };
+      // limit 提到 500：admin 需一次加载完当前筛选全部（"公司创建的号"130 个 + 导出 Excel 要全量），避免旧的 50 静默截断
+      const params: Record<string, string> = { limit: '500', country };
       if (originFilter) params.origin = originFilter;
       if (statusFilter) params.status = statusFilter;
       if (sourceFilter) params.source = sourceFilter;
+      if (groupFilter) params.group = groupFilter;
       const qs = new URLSearchParams(params).toString();
       const data = await adminApi.request(`/suppliers?${qs}`);
       setSuppliers(data.suppliers || []);
       setPartnerCount(data.partnerCount || 0);
     } catch {}
     setLoading(false);
-  }, [originFilter, statusFilter, sourceFilter, country]);
+  }, [originFilter, statusFilter, sourceFilter, groupFilter, country]);
 
   useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
 
@@ -122,6 +127,64 @@ export default function AdminSuppliersPage() {
     }
   };
 
+  const handleNameZhBlur = async (s: Supplier) => {
+    const draft = editingNameZh[s.id];
+    if (draft === undefined) return;
+    const value = draft.trim();
+    setEditingNameZh(prev => { const next = { ...prev }; delete next[s.id]; return next; });
+    if (value === (s.name_zh ?? '')) return;
+    try {
+      await adminApi.request(`/suppliers/${s.id}`, { method: 'PUT', body: JSON.stringify({ name_zh: value }) });
+      setSuppliers(list => list.map(x => x.id === s.id ? { ...x, name_zh: value } : x));
+      showToast(t('Chinese name updated', '中文名已更新'), 'success');
+    } catch {
+      showToast(t('Failed to update Chinese name', '更新中文名失败'), 'error');
+    }
+  };
+
+  const selectTab = (tab: 'all' | 'partner' | 'team') => {
+    if (tab === 'all') { setSourceFilter(''); setGroupFilter(''); }
+    else if (tab === 'partner') { setSourceFilter('partner'); setGroupFilter(''); }
+    else { setSourceFilter(''); setGroupFilter('team'); }
+  };
+
+  const exportCsv = () => {
+    const esc = (v: unknown): string => {
+      let str = v === null || v === undefined ? '' : String(v);
+      // 防 CSV 公式注入：以 = + - @ TAB CR 开头的值(如供应商自填公司名/中文名) Excel/WPS 会当公式执行，前缀单引号中和
+      if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`;
+      return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+    const headers = [
+      t('Chinese Name', '中文名'),
+      t('English Name', '英文名'),
+      t('Origin', '产地'),
+      t('Status', '状态'),
+      t('Products', '商品数'),
+      t('Email', '邮箱'),
+      t('Joined', '加入时间'),
+    ];
+    const rows = suppliers.map(s => [
+      esc(s.name_zh ?? ''),
+      esc(s.company_name),
+      esc(s.origin),
+      esc(s.status),
+      esc(s.product_count),
+      esc(s.user_email),
+      esc(s.created_at),
+    ].join(','));
+    const csv = [headers.map(esc).join(','), ...rows].join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `suppliers-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       {deleteModal && (
@@ -142,36 +205,54 @@ export default function AdminSuppliersPage() {
             </span>
           )}
         </div>
-        <a
-          href="/start-suppliers"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          {t('Supplier Guide', '供应商教程页')}
-        </a>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportCsv}
+            disabled={suppliers.length === 0}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#b8864a] hover:bg-[#a07640] text-xs font-medium text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {t('Export Excel', '导出 Excel')}
+          </button>
+          <a
+            href="/start-suppliers"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            {t('Supplier Guide', '供应商教程页')}
+          </a>
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-2 mb-4">
-        {/* 来源 tab：全部 / 合作方同步 */}
+        {/* 来源 tab：全部 / 合作方同步 / 公司创建的号 */}
         <div className="inline-flex items-center gap-1 p-1 bg-stone-100 rounded-lg">
           <button
-            onClick={() => setSourceFilter('')}
+            onClick={() => selectTab('all')}
             className={`h-7 px-3 rounded-md text-sm font-medium transition ${
-              sourceFilter === '' ? 'bg-white text-[#2c2c2c] shadow-sm' : 'text-stone-500 hover:text-stone-700'
+              sourceFilter === '' && groupFilter === '' ? 'bg-white text-[#2c2c2c] shadow-sm' : 'text-stone-500 hover:text-stone-700'
             }`}
           >
             {t('All', '全部')}
           </button>
           <button
-            onClick={() => setSourceFilter('partner')}
+            onClick={() => selectTab('partner')}
             className={`h-7 px-3 rounded-md text-sm font-medium transition inline-flex items-center gap-1 ${
               sourceFilter === 'partner' ? 'bg-white text-[#a07640] shadow-sm' : 'text-stone-500 hover:text-stone-700'
             }`}
           >
             {t('Partner-synced', '合作方同步')}
             {partnerCount > 0 && <span className="text-xs opacity-70">{partnerCount}</span>}
+          </button>
+          <button
+            onClick={() => selectTab('team')}
+            className={`h-7 px-3 rounded-md text-sm font-medium transition ${
+              groupFilter === 'team' ? 'bg-white text-[#2c2c2c] shadow-sm' : 'text-stone-500 hover:text-stone-700'
+            }`}
+          >
+            {t('Company Accounts', '公司创建的号')}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -210,6 +291,7 @@ export default function AdminSuppliersPage() {
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200 text-sm">
                 <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Company', '公司')}</th>
+                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">{t('Chinese Name', '中文名')}</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Origin', '产地')}</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Categories', '品类')}</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Status', '状态')}</th>
@@ -266,6 +348,17 @@ export default function AdminSuppliersPage() {
                       )}
                     </div>
                     <div className="text-[14px] text-stone-400 mt-0.5">{s.user_email}</div>
+                  </td>
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="text"
+                      value={editingNameZh[s.id] ?? (s.name_zh ?? '')}
+                      placeholder={t('+ Add', '+ 添加')}
+                      onChange={e => setEditingNameZh(prev => ({ ...prev, [s.id]: e.target.value }))}
+                      onBlur={() => handleNameZhBlur(s)}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      className="w-32 px-2 py-1 text-[14px] bg-white border border-stone-200 rounded focus:outline-none focus:border-[#b8864a]"
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-[15px] font-medium px-2.5 py-0.5 rounded-full ${

@@ -125,6 +125,7 @@ async function listSuppliers(req, res) {
         const origin = req.query.origin;
         const source = req.query.source;
         const search = req.query.search;
+        const group = req.query.group;
         const country = req.query.country || req.country || 'ae';
         let where = 'WHERE sp.country = ?';
         const params = [country];
@@ -143,6 +144,10 @@ async function listSuppliers(req, res) {
         if (search) {
             where += ' AND (sp.company_name LIKE ? OR su.email LIKE ?)';
             params.push(`%${search}%`, `%${search}%`);
+        }
+        if (group === 'team') {
+            where += ' AND su.email LIKE ?';
+            params.push('%@tarmeer-team.com');
         }
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM supplier_profiles sp LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id ${where}`, params);
         const total = countRows[0].total;
@@ -207,7 +212,7 @@ async function updateSupplier(req, res) {
         const { id } = req.params;
         const fields = req.body;
         const allowed = [
-            'company_name', 'description', 'origin', 'categories', 'has_physical_store',
+            'company_name', 'name_zh', 'description', 'origin', 'categories', 'has_physical_store',
             'store_address', 'store_lat', 'store_lng', 'google_maps_url',
             'contact_phone', 'whatsapp', 'website', 'status', 'logo_url', 'cover_image_url',
         ];
