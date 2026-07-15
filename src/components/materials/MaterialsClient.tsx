@@ -230,16 +230,23 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      {/* Hero（与 /for-suppliers 同款：背景图 + 深色渐变遮罩 + 金色 eyebrow + 衬线标题 + 顶部搜索条） */}
-      <section className="relative overflow-hidden bg-[#1c1917]">
+      {/* Hero：暖色渐变底 + 金色光晕 + 点纹理（不依赖背景图也好看）+ 照片叠加（线上有则融入）+ 金色 eyebrow + 衬线标题 + 顶部搜索条 */}
+      <section className="relative overflow-hidden bg-[#201b17]">
+        {/* 背景照片（线上 nginx 提供；缺图时下面几层仍撑得起观感），低透明度融入 */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-35"
           style={{ backgroundImage: 'url(/images/supplier-hero.jpg)' }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(28,25,23,0.90)_0%,rgba(28,25,23,0.78)_50%,rgba(28,25,23,0.65)_100%)]" />
+        {/* 文字对比遮罩：左深右浅 */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(26,22,18,0.88)_0%,rgba(26,22,18,0.58)_55%,rgba(26,22,18,0.38)_100%)]" />
+        {/* 金色光晕（左上，衬托标题）+ 右下暖光加深层次 */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_18%_-10%,rgba(184,134,74,0.28),transparent_58%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_70%_at_105%_115%,rgba(140,102,58,0.22),transparent_60%)]" />
+        {/* 细点纹理 */}
+        <div className="absolute inset-0 opacity-[0.05] [background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.85)_1px,transparent_0)] [background-size:26px_26px]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
-            <div className="max-w-xl">
+            <div className="max-w-3xl">
               <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
                 Verified Material Suppliers
               </p>
