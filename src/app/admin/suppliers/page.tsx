@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink, Download } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import AdminSelect from '@/components/ui/AdminSelect';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
@@ -46,7 +46,7 @@ export default function AdminSuppliersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
-  const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
+  const [productSort, setProductSort] = useState<'asc' | 'desc' | null>('desc'); // 默认按产品数从多到少倒序
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>(null);
   const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
@@ -54,6 +54,7 @@ export default function AdminSuppliersPage() {
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
   const [orderToast, setOrderToast] = useState<{ msg: string; key: string } | null>(null);
   const [editingNameZh, setEditingNameZh] = useState<Record<number, string>>({});
+  const [editingName, setEditingName] = useState<Record<number, string>>({});
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -143,6 +144,32 @@ export default function AdminSuppliersPage() {
       showToast(t('Chinese name updated', '中文名已更新'), 'success');
     } catch {
       showToast(t('Failed to update Chinese name', '更新中文名失败'), 'error');
+    }
+  };
+
+  const startEditName = (s: Supplier) => setEditingName(prev => ({ ...prev, [s.id]: s.company_name }));
+
+  const handleNameBlur = async (s: Supplier) => {
+    const draft = editingName[s.id];
+    if (draft === undefined) return;
+    const value = draft.trim();
+    setEditingName(prev => { const next = { ...prev }; delete next[s.id]; return next; });
+    if (!value || value === s.company_name) return; // 公司名必填：空则不保存、还原
+    try {
+      await adminApi.request(`/suppliers/${s.id}`, { method: 'PUT', body: JSON.stringify({ company_name: value }) });
+      setSuppliers(list => list.map(x => x.id === s.id ? { ...x, company_name: value } : x));
+      showToast(t('Company name updated', '公司名已更新'), 'success');
+    } catch {
+      showToast(t('Failed to update company name', '更新公司名失败'), 'error');
+    }
+  };
+
+  const copyName = async (s: Supplier) => {
+    try {
+      await navigator.clipboard.writeText(s.company_name);
+      showToast(t('Company name copied', '公司名已复制'), 'success');
+    } catch {
+      showToast(t('Copy failed', '复制失败'), 'error');
     }
   };
 
@@ -345,14 +372,49 @@ export default function AdminSuppliersPage() {
                   onClick={() => router.push(`/admin/suppliers/${s.id}`)}
                 >
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[16px] font-semibold text-[#2c2c2c] leading-tight">{s.company_name}</span>
-                      {s.source === 'partner' && (
-                        <span className="inline-flex items-center h-5 px-2 rounded-full bg-[#f5ecdf] text-[#a07640] text-[12px] font-medium shrink-0">
-                          {t('Partner', '合作方同步')}
-                        </span>
-                      )}
-                    </div>
+                    {editingName[s.id] !== undefined ? (
+                      <div onClick={e => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          value={editingName[s.id]}
+                          onChange={e => setEditingName(prev => ({ ...prev, [s.id]: e.target.value }))}
+                          onBlur={() => handleNameBlur(s)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                            if (e.key === 'Escape') setEditingName(prev => { const n = { ...prev }; delete n[s.id]; return n; });
+                          }}
+                          autoFocus
+                          className="w-60 px-2 py-1 text-[15px] font-semibold bg-white border border-stone-200 rounded focus:outline-none focus:border-[#b8864a]"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[16px] font-semibold text-[#2c2c2c] leading-tight">{s.company_name}</span>
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); startEditName(s); }}
+                          title={t('Edit company name', '编辑公司名')}
+                          aria-label={t('Edit company name', '编辑公司名')}
+                          className="text-stone-400 hover:text-[#b8864a] transition shrink-0"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); copyName(s); }}
+                          title={t('Copy company name', '复制公司名')}
+                          aria-label={t('Copy company name', '复制公司名')}
+                          className="text-stone-400 hover:text-[#b8864a] transition shrink-0"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                        {s.source === 'partner' && (
+                          <span className="inline-flex items-center h-5 px-2 rounded-full bg-[#f5ecdf] text-[#a07640] text-[12px] font-medium shrink-0">
+                            {t('Partner', '合作方同步')}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="text-[14px] text-stone-400 mt-0.5">{s.user_email}</div>
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
