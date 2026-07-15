@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const pool = require("../config/database").default;
+const { jsonArrayOrNull } = require("./productJsonFields");
 
 const PLACEHOLDER = "/images/partner/placeholder.webp";
 const LANG_BY_COUNTRY = { ae: "en", vn: "vi", sa: "ar" };
@@ -108,14 +109,18 @@ async function publishProduct(partner, stagingRow, imageResolver) {
     const catPath = pickArray(item.category_path, lang, defLang);
     const category = catPath.length ? catPath[catPath.length - 1] : (item.category || null);
     const imageUrls = JSON.stringify([imageUrl]);
+    // 可选规格/认证/应用场景（spec §3.4）：payload 里是数组才写，否则 null → COALESCE 忽略（不清空既有值）
+    const specs = jsonArrayOrNull(item.specs);
+    const certifications = jsonArrayOrNull(item.certifications);
+    const applicationScenes = jsonArrayOrNull(item.application_scenes);
     if (exist[0]) {
       await pool.execute(
-        "UPDATE supplier_products SET title=?, description=?, category=?, image_url=?, image_urls=?, sort_order=? WHERE id=?",
-        [title, desc, category, imageUrl, imageUrls, item.sort_order || 0, exist[0].id]);
+        "UPDATE supplier_products SET title=?, description=?, category=?, image_url=?, image_urls=?, sort_order=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?",
+        [title, desc, category, imageUrl, imageUrls, item.sort_order || 0, specs, certifications, applicationScenes, exist[0].id]);
     } else {
       await pool.execute(
-        "INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, source, partner_external_id) VALUES (?,?,?,?,?,?,?, 'partner', ?)",
-        [supplierId, title, desc, category, imageUrl, imageUrls, item.sort_order || 0, stagingRow.external_id]);
+        "INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, source, partner_external_id, specs, certifications, application_scenes) VALUES (?,?,?,?,?,?,?, 'partner', ?,?,?,?)",
+        [supplierId, title, desc, category, imageUrl, imageUrls, item.sort_order || 0, stagingRow.external_id, specs, certifications, applicationScenes]);
     }
   }
 }

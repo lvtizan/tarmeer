@@ -27,6 +27,7 @@ const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
+const productJsonFields_1 = require("../lib/productJsonFields");
 /**
  * PATCH /admin/suppliers/catalogs/:id/title — 修改目录名称
  */
@@ -268,10 +269,10 @@ async function adminAddProduct(req, res) {
         const [profileRows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE id = ?', [id]);
         if (profileRows.length === 0)
             return res.status(404).json({ error: 'Supplier not found.' });
-        const { title, description, category, image_url, sort_order } = req.body;
+        const { title, description, category, image_url, sort_order, specs, certifications, application_scenes } = req.body;
         if (!image_url)
             return res.status(400).json({ error: 'image_url is required.' });
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order) VALUES (?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0]);
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes)]);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [result.insertId]);
         res.status(201).json({ product: created[0] });
     }
@@ -300,8 +301,9 @@ async function adminUpdateProduct(req, res) {
         const [rows] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [productId, id]);
         if (rows.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
-        const { title, category } = req.body;
-        await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ? WHERE id = ?', [title?.trim() || null, category || null, productId]);
+        const { title, category, specs, certifications, application_scenes } = req.body;
+        // specs/certifications/application_scenes：只在传了数组时覆盖（COALESCE 忽略缺省，防误清空）
+        await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ?, specs = COALESCE(?, specs), certifications = COALESCE(?, certifications), application_scenes = COALESCE(?, application_scenes) WHERE id = ?', [title?.trim() || null, category || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), productId]);
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
         res.json({ product: updated[0] });
     }

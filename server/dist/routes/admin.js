@@ -450,6 +450,10 @@ router.put('/suppliers/:id/home-order', supplierAdminController_1.setSupplierHom
 router.put('/suppliers/:id/list-order', supplierAdminController_1.setSupplierListOrder);
 router.put('/suppliers/:id/toggle-published', supplierAdminController_1.toggleSupplierPublished);
 router.put('/suppliers/:id/projects/:projectId/toggle-published', supplierAdminController_1.toggleSupplierProjectPublished);
+// Sourcing requests（中国新材料采购线索：sample/visit/sourcing/designer_partner，spec §3.3，对齐 inquiries 鉴权模式）
+const sourcingRequestController_1 = require("../controllers/sourcingRequestController");
+router.get('/sourcing-requests', sourcingRequestController_1.adminListSourcingRequests);
+router.put('/sourcing-requests/:id/status', sourcingRequestController_1.adminUpdateSourcingRequestStatus);
 // Admin management (super admin only)
 router.get('/admins', adminAuth_1.requireSuperAdmin, adminController_1.listAdmins);
 router.post('/admins', adminAuth_1.requireSuperAdmin, adminController_1.createSubAdmin);

@@ -63,6 +63,9 @@ const translateLimiter = (0, express_rate_limit_1.default)({
 });
 // ── Public ──
 router.get('/categories', (0, memoryCache_1.cacheMiddleware)(60), enumAdminController_1.getPublicSupplierCategories);
+// 中国新材料改版：跨供应商产品 feed + 产品详情（spec §3.1）。注意：必须先于 /detail/:slug 等通配路由注册。
+router.get('/products/public', (0, memoryCache_1.cacheMiddleware)(60), products.listPublicProductsFeed);
+router.get('/products/public/:id', products.getPublicProductDetail);
 router.get('/', (0, memoryCache_1.cacheMiddleware)(60), profile.listPublicSuppliers);
 router.get('/detail/:slug', profile.getPublicProfile);
 router.get('/detail/:slug/products', products.listProducts);
