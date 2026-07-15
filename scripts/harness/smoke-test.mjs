@@ -52,6 +52,7 @@ const ADMIN_ROUTES = [
   ['GET',    '/api/admin/profile-companies'],
   ['GET',    '/api/admin/visit-records'],          // alias check
   ['DELETE', '/api/admin/interviews'],
+  ['GET',    '/api/admin/sourcing-requests'],      // 中国新材料采购线索（2026-07 转型新增）
 ];
 
 for (const [method, route] of ADMIN_ROUTES) {
@@ -92,6 +93,27 @@ console.log('\n[2b] service×city 服务匹配');
   }
 }
 
+// ─── 2c. 中国新材料采购公开接口（2026-07 转型新增）────────────────────────────
+console.log('\n[2c] 新材料采购公开接口');
+{
+  // 跨供应商产品 feed：应 200 且返回 products 数组
+  try {
+    const res = await fetch(`${BACKEND}/api/suppliers/products/public?limit=3`, { headers: { 'x-country': 'ae' } });
+    if (!res.ok) ng('GET /api/suppliers/products/public', `${res.status}`);
+    else {
+      const data = await res.json();
+      if (Array.isArray(data.products)) ok(`GET /api/suppliers/products/public → 200 (${data.products.length} 条)`);
+      else ng('GET /api/suppliers/products/public', 'products 非数组');
+    }
+  } catch { ng('GET /api/suppliers/products/public', 'unreachable'); }
+  // 采购线索提交：空 body 应 400（校验生效），不接受 404/500
+  const srStatus = await req('POST', `${BACKEND}/api/sourcing-requests`);
+  if (srStatus === 400) ok('POST /api/sourcing-requests 空body → 400 (校验生效)');
+  else if (srStatus === 404) ng('POST /api/sourcing-requests', '404 — 路由未注册');
+  else if (srStatus === null || srStatus >= 500) ng('POST /api/sourcing-requests', `${srStatus ?? 'unreachable'}`);
+  else ok(`POST /api/sourcing-requests → ${srStatus}`);
+}
+
 // ─── 3. Frontend reachability ────────────────────────────────────────────────
 console.log('\n[3/3] Frontend reachability');
 const fStatus = await req('GET', FRONTEND);
@@ -101,6 +123,13 @@ if (fStatus === null) {
   ng('GET localhost:5180', `${fStatus}`);
 } else {
   ok(`GET localhost:5180 → ${fStatus}`);
+}
+
+// 转型新增页面可达性（本地默认 AE 站；500/404 都算失败——页面必须存在）
+for (const p of ['/materials', '/services/china-sourcing', '/guarantee', '/for-designers']) {
+  const st = await req('GET', `${FRONTEND}${p}`);
+  if (st === 200) ok(`GET ${p} → 200`);
+  else ng(`GET ${p}`, `${st ?? 'unreachable'}`);
 }
 
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────

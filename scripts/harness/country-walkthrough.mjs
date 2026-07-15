@@ -581,8 +581,40 @@ console.log('[UC20] VN 专家：注册→资料→审核→认证→电话 revea
   }
 }
 
+// ─── UC22: 采购线索（sourcing_requests）国家归属（2026-07 转型新增写入口）──────
+// 铁律第4条：用户侧写入口落库必须确定国家归属——phone +84/084 → vn，否则 req.country 兜底 ae。
+{
+  console.log('\n[UC22] 采购线索国家归属：+84 → vn / +971 → ae / 缺 name → 400');
+  const vnPhone = `+84889${String(TS).slice(-6)}`;
+  const aePhone = `+97155${String(TS).slice(-7)}`;
+  const srVn = await req('POST', '/sourcing-requests', {
+    request_type: 'visit', name: `WALK SR VN ${MARK}`, phone: vnPhone,
+  });
+  const srAe = await req('POST', '/sourcing-requests', {
+    request_type: 'sourcing', name: `WALK SR AE ${MARK}`, phone: aePhone, city: 'Dubai',
+  });
+  const srBad = await req('POST', '/sourcing-requests', { request_type: 'visit', phone: aePhone });
+  const vnCountry = sql(`SELECT country FROM sourcing_requests WHERE name='WALK SR VN ${MARK}' LIMIT 1`);
+  const aeCountry = sql(`SELECT country FROM sourcing_requests WHERE name='WALK SR AE ${MARK}' LIMIT 1`);
+  if (srVn.status === 201 && vnCountry === 'vn') ok(`+84 采购线索落 VN 桶（country=${vnCountry}）`);
+  else ng('+84 采购线索国家归属', `status=${srVn.status} country=${vnCountry || '(missing)'}`);
+  if (srAe.status === 201 && aeCountry === 'ae') ok(`+971 采购线索落 AE 桶（country=${aeCountry}）`);
+  else ng('+971 采购线索国家归属', `status=${srAe.status} country=${aeCountry || '(missing)'}`);
+  if (srBad.status === 400) ok('缺 name → 400（校验生效）');
+  else ng('缺 name 校验', `status=${srBad.status}（预期 400）`);
+
+  // admin 列表按 country 过滤：vn 视图见 VN 单，ae 视图不见
+  const listVn = await adminGet(`/admin/sourcing-requests?country=vn&limit=50`);
+  const listAe = await adminGet(`/admin/sourcing-requests?country=ae&limit=50`);
+  const inVn = (listVn.body?.requests || []).some(r => r.name === `WALK SR VN ${MARK}`);
+  const inAeWrong = (listAe.body?.requests || []).some(r => r.name === `WALK SR VN ${MARK}`);
+  if (inVn && !inAeWrong) ok('admin 采购线索列表国家隔离（VN 单只在 VN 视图）');
+  else ng('admin 采购线索列表国家隔离', `vn视图=${inVn} ae视图误现=${inAeWrong}`);
+}
+
 // ─── 清理测试数据 ────────────────────────────────────────────────────────────
 console.log('\n清理测试数据…');
+sql(`DELETE FROM sourcing_requests WHERE name LIKE 'WALK SR %'`);
 sql(`DELETE FROM design_inquiries WHERE name LIKE 'WALK %'`);
 sql(`DELETE FROM complaints WHERE reporter_email LIKE '%${MARK}@walk.local'`);
 sql(`DELETE FROM company_interviews WHERE company_name LIKE 'WALK %'`);
