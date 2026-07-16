@@ -1,0 +1,68 @@
+// AE 首页策展入口 — 按空间效果浏览（取代廉价产品网格，改版反馈 2026-07-16）
+// 用高端场景美图做瓦片，点击进 /materials 对应场景筛选。server component（纯链接+图）。
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+
+const TILES: { slug: string; label: string; blurb: string }[] = [
+  { slug: 'feature-wall', label: 'Feature Walls', blurb: 'Microcement, sintered stone & statement surfaces' },
+  { slug: 'flooring', label: 'Flooring', blurb: 'Large-format sintered stone & engineered floors' },
+  { slug: 'countertop', label: 'Countertops & Surfaces', blurb: 'Waterfall islands & solid slabs' },
+  { slug: 'kitchen-bath', label: 'Kitchen & Bath', blurb: 'Stone-clad spaces, fittings & sanitary ware' },
+  { slug: 'outdoor-garden', label: 'Outdoor & Facade', blurb: 'Natural stone cladding & paving' },
+  { slug: 'furniture', label: 'Furniture & Décor', blurb: 'Curated designer pieces & finishing touches' },
+];
+
+export default function HomeApplicationTiles() {
+  return (
+    <section className="bg-white py-14 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">Design with New Materials</p>
+          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
+            Start with the look you want
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-stone-500 sm:text-base">
+            Explore China&apos;s newest materials by where they go — every surface, curated for the way UAE homes are designed.
+          </p>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {TILES.map((t) => (
+            <Link
+              key={t.slug}
+              href={`/materials?scene=${t.slug}`}
+              className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-stone-200 isolate"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/images/sourcing/scene-${t.slug}-medium.webp`}
+                srcSet={`/images/sourcing/scene-${t.slug}-thumb.webp 600w, /images/sourcing/scene-${t.slug}-medium.webp 1200w, /images/sourcing/scene-${t.slug}.webp 2000w`}
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                alt={t.label}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <h3 className="font-serif text-xl text-white sm:text-2xl">{t.label}</h3>
+                <p className="mt-1 text-[13px] leading-snug text-white/80">{t.blurb}</p>
+                <span className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#e7c79a] opacity-0 transition group-hover:opacity-100">
+                  Explore <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/materials"
+            className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-6 py-3 text-sm font-medium text-[#1c1917] transition hover:border-[#b8864a] hover:text-[#b8864a]"
+          >
+            Browse the Full Material Library <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}

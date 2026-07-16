@@ -6,13 +6,13 @@ import HomeSpaceSection from '@/components/home/HomeSpaceSection';
 import HomeSupplierSection from '@/components/home/HomeSupplierSection';
 import HomeInsightsSection from '@/components/home/HomeInsightsSection';
 import HomeMaterialsHero from '@/components/home/HomeMaterialsHero';
-import HomeMaterialsShowcase from '@/components/home/HomeMaterialsShowcase';
+import HomeApplicationTiles from '@/components/home/HomeApplicationTiles';
+import HomeChinaTeam from '@/components/home/HomeChinaTeam';
 import HomeSourcingStrip from '@/components/home/HomeSourcingStrip';
 import HomeGuaranteeStrip from '@/components/home/HomeGuaranteeStrip';
 import HomePartnersSection from '@/components/home/HomePartnersSection';
 import HomeCaseStudySection from '@/components/home/HomeCaseStudySection';
 import { fetchPublicCompanies, fetchGuides } from '@/lib/publicApi';
-import { fetchMaterialProducts } from '@/lib/materialsApi';
 import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
@@ -105,15 +105,13 @@ export default async function HomePage() {
     );
   }
 
-  // AE：中国新材料首页（改版 spec §5 重排）
-  const [companiesResult, productsResult, guidesResult] = await Promise.allSettled([
+  // AE：中国新材料首页（改版 spec §5 + 2026-07-16 反馈：首页不再堆廉价产品，改策展入口+接待故事）
+  const [companiesResult, guidesResult] = await Promise.allSettled([
     fetchPublicCompanies(12, 'home', country),
-    fetchMaterialProducts({ limit: 8 }, 'ae'),
     fetchGuides(country),
   ]);
 
   const companies = companiesResult.status === 'fulfilled' ? companiesResult.value : [];
-  const products = productsResult.status === 'fulfilled' ? productsResult.value.products : [];
   const guides = guidesResult.status === 'fulfilled' ? guidesResult.value : [];
   // ⑤ 标杆案例位（spec §5）：取 story 栏目第一篇；无则整节隐藏
   const caseStudyGuide = guides.find((g) => g.category === 'story') ?? null;
@@ -122,8 +120,9 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <HomeMaterialsHero />
-      <HomeMaterialsShowcase products={products} />
+      <HomeApplicationTiles />
       <HomeSourcingStrip />
+      <HomeChinaTeam />
       <HomeGuaranteeStrip />
       <HomeCaseStudySection guide={caseStudyGuide} />
       <HomePartnersSection companies={companies} />

@@ -6,6 +6,7 @@
 // 契约见 docs/plans/china-materials-revamp-spec.md §1/§2.3。
 
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Palette, LayoutGrid, Layers, Bath, Lamp, Armchair, TreePine, Sparkles,
   type LucideIcon,
@@ -34,16 +35,20 @@ interface MaterialsCatalogClientProps {
 export default function MaterialsCatalogClient({ initialProducts }: MaterialsCatalogClientProps) {
   const { lang } = useSiteLocale();
   const country = countryFromLang(lang).code;
-  const [scene, setScene] = useState('');
+  // 首页策展瓦片链接 /materials?scene=slug → 初始按 URL 场景筛选（slug 须在字典内）
+  const searchParams = useSearchParams();
+  const urlScene = searchParams.get('scene') || '';
+  const initialScene = APPLICATION_SCENES.some((s) => s.slug === urlScene) ? urlScene : '';
+  const [scene, setScene] = useState(initialScene);
   const [products, setProducts] = useState<PublicMaterialProduct[]>(initialProducts);
   const [loading, setLoading] = useState(false);
-  // 首帧直接用 SSR 预取数据，不重复请求；之后场景/国家变化才重新拉取
+  // 无初始场景时首帧直接用 SSR 预取数据（未筛选），不重复请求；有初始场景则需拉取该场景
   const skippedFirstFetch = useRef(false);
 
   useEffect(() => {
     if (!skippedFirstFetch.current) {
       skippedFirstFetch.current = true;
-      return;
+      if (!scene) return; // SSR 数据即全量未筛选，无场景直接用
     }
     let cancelled = false;
     setLoading(true);
