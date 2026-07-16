@@ -2,6 +2,7 @@
 // 真实照片（客户面部隐私模糊），链接到 /services/china-sourcing。server component。
 import Link from 'next/link';
 import { ArrowRight, Languages, Plane, ShieldCheck } from 'lucide-react';
+import TeamPhotoCarousel from './TeamPhotoCarousel';
 
 const POINTS = [
   { icon: Languages, text: 'Bilingual consultants who host you in person' },
@@ -14,18 +15,8 @@ export default function HomeChinaTeam() {
     <section className="bg-[#faf8f5] py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
-          {/* 真实接待合影 */}
-          <div className="overflow-hidden rounded-2xl bg-stone-200">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/sourcing/team-clients-medium.webp"
-              srcSet="/images/sourcing/team-clients-thumb.webp 600w, /images/sourcing/team-clients-medium.webp 1200w, /images/sourcing/team-clients.webp 2000w"
-              sizes="(min-width: 1024px) 50vw, 100vw"
-              alt="Tarmeer team hosting overseas clients at a building materials showroom in China"
-              loading="lazy"
-              className="aspect-video h-full w-full object-cover"
-            />
-          </div>
+          {/* 真实接待多图切换轮播（合影 + 看厂照，客户面部脱敏） */}
+          <TeamPhotoCarousel />
 
           {/* 文案 */}
           <div>
