@@ -182,7 +182,8 @@ export default function Navbar({
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
 
-          {/* Portfolio Dropdown */}
+          {/* Portfolio Dropdown — AE 站隐藏（作品集瀑布流为旧定位遗留，页面保留不删仅隐藏入口，SEO 不受影响）；VN 站仍在用故保留 */}
+          {isVn && (
           <div
             className="relative"
             onMouseEnter={() => setPortfolioDropdownOpen(true)}
@@ -222,6 +223,7 @@ export default function Navbar({
               </div>
             </div>
           </div>
+          )}
 
           {/* Find Company Dropdown — 空间类型（后台可配置） */}
           <div
@@ -457,7 +459,8 @@ export default function Navbar({
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
 
-            {/* Mobile Portfolio */}
+            {/* Mobile Portfolio — AE 站隐藏（同桌面端），VN 保留 */}
+            {isVn && (
             <div className="py-2">
               <button onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)} className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
                 {tr.nav.portfolio}
@@ -487,6 +490,7 @@ export default function Navbar({
                 </div>
               )}
             </div>
+            )}
 
             {/* Mobile Find Company */}
             <div className="py-2">
