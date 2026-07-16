@@ -33,6 +33,26 @@ const FORM_ANCHOR = 'sourcing-form';
 
 // ─── 文案数据（单一来源：FAQ 同时渲染页面与 FAQPage JSON-LD） ─────────────────
 
+// 中国在地接待能力（③b 区块，对应策划案：双语顾问/工厂接待/考察行程）
+const HOST_POINTS = [
+  {
+    title: 'Bilingual consultants, in person',
+    body: 'English- and Chinese-speaking specialists walk the showrooms with you — translating specs, prices and negotiations on the spot.',
+  },
+  {
+    title: 'Hosted factory & showroom visits',
+    body: 'From airport pickup to factory floor in Foshan and across Guangdong, your itinerary is arranged and accompanied end to end.',
+  },
+  {
+    title: 'Eyes on your order after you fly home',
+    body: 'The same team that hosted you stays on the ground for production checks, QC and loading — you always know a person, not a portal.',
+  },
+  {
+    title: 'One WhatsApp away',
+    body: 'Direct line to your consultant before, during and after the trip — questions answered in your language, in your timezone.',
+  },
+];
+
 const VALUE_CARDS = [
   {
     icon: Gem,
@@ -258,6 +278,69 @@ export default async function ChinaSourcingPage() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* ③b 中国在地接待团队 — 真人形象传达亲切与可落地接待（2026-07-16 需求） */}
+      <section className="bg-[#faf8f5] py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            {/* 左：人物图组（迎宾主图 + 陪同选材辅图） */}
+            <div className="space-y-4">
+              <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-stone-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/sourcing/host-welcome-medium.webp"
+                  srcSet="/images/sourcing/host-welcome-thumb.webp 600w, /images/sourcing/host-welcome-medium.webp 1200w, /images/sourcing/host-welcome.webp 2000w"
+                  sizes="(min-width: 1024px) 45vw, 100vw"
+                  alt="Tarmeer's bilingual sourcing consultant welcoming clients at a materials showroom in China"
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="aspect-[21/9] overflow-hidden rounded-2xl bg-stone-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/sourcing/host-tour-medium.webp"
+                  srcSet="/images/sourcing/host-tour-thumb.webp 600w, /images/sourcing/host-tour-medium.webp 1200w, /images/sourcing/host-tour.webp 2000w"
+                  sizes="(min-width: 1024px) 45vw, 100vw"
+                  alt="Tarmeer consultant guiding clients through slab selections at a partner factory showroom in China"
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* 右：接待能力文案 */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#b8864a]">Your Team in China</p>
+              <h2 className="mt-2 font-serif text-2xl font-bold text-[#2c2c2c] sm:text-3xl">
+                Real people receive you on the ground in China
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-stone-500 sm:text-base">
+                Sourcing from China isn&apos;t a website and a tracking number. Our own consultants live where the
+                factories are — and they host you like a guest, not a purchase order.
+              </p>
+              <ul className="mt-7 space-y-4">
+                {HOST_POINTS.map(({ title, body }) => (
+                  <li key={title} className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#b8864a]" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#2c2c2c]">{title}</p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-stone-500">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={`#${FORM_ANCHOR}`}
+                className="mt-8 inline-flex h-12 items-center gap-2 rounded-lg bg-[#b8864a] px-6 text-sm font-semibold text-white transition hover:bg-[#a07640]"
+              >
+                Plan a Visit With Our Team
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
