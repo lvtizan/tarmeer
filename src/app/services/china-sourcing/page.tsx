@@ -53,6 +53,13 @@ const HOST_POINTS = [
   },
 ];
 
+// 真实接待瞬间照（客户面部已脱敏，团队真脸保留）
+const TOUR_PHOTOS = [
+  { src: 'tour-1', alt: 'Tarmeer team walking Gulf clients through a tile showroom in China' },
+  { src: 'tour-2', alt: 'Consultant explaining large-format slabs to a client at a China showroom' },
+  { src: 'tour-3', alt: 'Team presenting stone materials to visiting clients in China' },
+];
+
 const VALUE_CARDS = [
   {
     icon: Gem,
@@ -332,6 +339,31 @@ export default async function ChinaSourcingPage() {
                 <ArrowRight className="h-4 w-4" />
               </a>
             </div>
+          </div>
+
+          {/* 真实接待瞬间图组（客户面部隐私脱敏，团队真脸保留） */}
+          <div className="mt-12">
+            <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-[#b8864a]">
+              Moments From Real Client Visits
+            </p>
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {TOUR_PHOTOS.map((t) => (
+                <div key={t.src} className="overflow-hidden rounded-2xl bg-stone-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/images/sourcing/${t.src}-medium.webp`}
+                    srcSet={`/images/sourcing/${t.src}-thumb.webp 600w, /images/sourcing/${t.src}-medium.webp 1200w`}
+                    sizes="(min-width: 640px) 33vw, 100vw"
+                    alt={t.alt}
+                    loading="lazy"
+                    className="aspect-video h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-center text-xs text-stone-400">
+              Real client visits at partner showrooms in China. Client faces are blurred for privacy.
+            </p>
           </div>
         </div>
       </section>
