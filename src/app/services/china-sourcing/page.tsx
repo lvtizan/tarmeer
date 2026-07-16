@@ -285,21 +285,21 @@ export default async function ChinaSourcingPage() {
       <section className="bg-[#faf8f5] py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-            {/* 左：真人接待顾问（合成于中国材料展厅，传达真实可落地的接待形象） */}
+            {/* 左：真实接待合影（团队在中国瓷砖展厅接待海湾客户） */}
             <div>
-              <div className="aspect-[3/2] overflow-hidden rounded-2xl bg-stone-200">
+              <div className="aspect-video overflow-hidden rounded-2xl bg-stone-200">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/images/sourcing/team-consultant-medium.webp"
-                  srcSet="/images/sourcing/team-consultant-thumb.webp 600w, /images/sourcing/team-consultant-medium.webp 1200w, /images/sourcing/team-consultant.webp 2000w"
+                  src="/images/sourcing/team-clients-medium.webp"
+                  srcSet="/images/sourcing/team-clients-thumb.webp 600w, /images/sourcing/team-clients-medium.webp 1200w, /images/sourcing/team-clients.webp 2000w"
                   sizes="(min-width: 1024px) 45vw, 100vw"
-                  alt="Tarmeer's sourcing consultant at a building materials showroom in China, ready to host clients"
+                  alt="Tarmeer team hosting Gulf clients at a building materials showroom in China"
                   loading="lazy"
                   className="h-full w-full object-cover"
                 />
               </div>
               <p className="mt-3 text-xs text-stone-400">
-                Your dedicated sourcing consultant, on the ground in China.
+                Our team hosting overseas clients at a partner showroom in China.
               </p>
             </div>
 
