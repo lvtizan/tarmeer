@@ -185,6 +185,22 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // 供应商专属子管理员：唯一为真的权限就是 can_view_suppliers → 只能看供应商模块，屏蔽其它后台。
+  // 用白名单(而非逐个排除)判定,未来新增权限也不会误判。
+  const truthyPerms = admin?.permissions
+    ? Object.entries(admin.permissions).filter(([, v]) => v).map(([k]) => k)
+    : [];
+  const supplierScoped = admin?.role === 'sub_admin'
+    && truthyPerms.length > 0
+    && truthyPerms.every((k) => k === 'can_view_suppliers');
+  // 路由守卫：供应商专属管理员直接访问非供应商后台页 → 重定向回供应商列表
+  useEffect(() => {
+    if (supplierScoped && !isStandalone
+        && pathname !== '/admin/suppliers' && !pathname.startsWith('/admin/suppliers/')) {
+      router.replace('/admin/suppliers');
+    }
+  }, [supplierScoped, pathname, isStandalone, router]);
+
   // NOTE: all hooks must be declared before any conditional return (Rules of Hooks)
   const fetchNotificationCounts = useCallback(async () => {
     try {
@@ -293,12 +309,17 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // field_staff should not see the core business nav (Homeowners, Companies, etc.)
-  const filteredNavItems = isFieldStaff ? [] : navItems.filter(item =>
-    (!('permission' in item) || !(item as { permission?: string }).permission || hasPermission((item as { permission: 'can_approve' | 'can_sort' | 'can_view_stats' | 'can_view_interviews' | 'can_manage_field_staff' | 'can_view_suppliers' }).permission))
-  );
+  // field_staff 无核心业务菜单；供应商专属管理员只保留 Suppliers 一项，屏蔽其它模块
+  const filteredNavItems = isFieldStaff
+    ? []
+    : supplierScoped
+      ? navItems.filter(item => item.to === '/admin/suppliers')
+      : navItems.filter(item =>
+          (!('permission' in item) || !(item as { permission?: string }).permission || hasPermission((item as { permission: 'can_approve' | 'can_sort' | 'can_view_stats' | 'can_view_interviews' | 'can_manage_field_staff' | 'can_view_suppliers' }).permission))
+        );
 
-  const filteredAdminItems = adminItems.filter(item =>
+  // 供应商专属管理员：「系统管理」区(Types&Services/Complaints/Experts/Feedback 等)也一并屏蔽,与主菜单同口径
+  const filteredAdminItems = supplierScoped ? [] : adminItems.filter(item =>
     (!('superAdminOnly' in item) || !item.superAdminOnly || isSuperAdmin) &&
     (!('permission' in item) || !item.permission || hasPermission(item.permission))
   );
@@ -340,7 +361,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </button>
           <TarmeerLogo />
           <div className="hidden md:flex justify-center">
-            <AdminGlobalSearch />
+            {/* 供应商专属管理员不显示全局搜索(避免搜到其它装企/用户/线索) */}
+            {!supplierScoped && <AdminGlobalSearch />}
           </div>
           <div className="hidden md:flex justify-end items-center gap-2">
             <CountrySwitcher />

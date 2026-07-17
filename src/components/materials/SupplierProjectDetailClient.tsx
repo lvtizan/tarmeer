@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigat
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Maximize2, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
+import { supplierPublicTitle } from '@/lib/supplierConstants';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
 
@@ -13,6 +14,7 @@ interface Supplier {
   company_name: string;
   slug: string;
   logo_url: string | null;
+  categories?: unknown;
 }
 
 interface Material {
@@ -112,7 +114,9 @@ export default function SupplierProjectDetailClient() {
   );
 
   const materials = Array.isArray(project.materials) ? project.materials : [];
-  const initial = supplier.company_name?.[0]?.toUpperCase() || 'S';
+  // 公开去标识：用品类通用名,不显示遮蔽后的星号厂家名
+  const publicTitle = supplierPublicTitle(supplier.categories);
+  const initial = publicTitle?.[0]?.toUpperCase() || 'S';
   const currentImage = images[photoIdx];
 
   return (
@@ -123,7 +127,7 @@ export default function SupplierProjectDetailClient() {
           onClick={() => router.push(`/materials/suppliers/${slug}`)}
           className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-[#b8864a] transition"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to {supplier.company_name}
+          <ArrowLeft className="w-4 h-4" /> Back to {publicTitle}
         </button>
       </div>
 
@@ -175,12 +179,12 @@ export default function SupplierProjectDetailClient() {
             <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5">
               <div className="flex items-center gap-3 mb-3">
                 {supplier.logo_url && !logoError ? (
-                  <SmartImage src={supplier.logo_url} alt={supplier.company_name} className="w-10 h-10 rounded-xl object-contain border border-stone-100 bg-stone-50 p-1 shrink-0" onError={() => setLogoError(true)} />
+                  <SmartImage src={supplier.logo_url} alt={publicTitle} className="w-10 h-10 rounded-xl object-contain border border-stone-100 bg-stone-50 p-1 shrink-0" onError={() => setLogoError(true)} />
                 ) : (
                   <div className="w-10 h-10 rounded-xl bg-[#b8864a]/10 flex items-center justify-center text-[#b8864a] font-bold text-sm shrink-0">{initial}</div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-[15px] font-semibold text-[#2c2c2c] truncate">{supplier.company_name}</p>
+                  <p className="text-[15px] font-semibold text-[#2c2c2c] truncate">{publicTitle}</p>
                   <Link href={`/materials/suppliers/${slug}`} className="text-xs text-[#b8864a] hover:underline">
                     View Profile →
                   </Link>
@@ -252,7 +256,7 @@ export default function SupplierProjectDetailClient() {
       {allProjects.filter((p) => p.id !== project.id).length > 0 && (
         <div className="border-t border-stone-200 bg-white mt-4 py-6 px-4 sm:px-6">
           <div className="max-w-[1400px] mx-auto">
-            <p className="text-[15px] font-semibold text-[#2c2c2c] mb-4">Other Projects by {supplier.company_name}</p>
+            <p className="text-[15px] font-semibold text-[#2c2c2c] mb-4">More Projects from this Supplier</p>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {allProjects.filter((p) => p.id !== project.id).map((p) => {
                 const firstImg = parseImages(p.images)[0];

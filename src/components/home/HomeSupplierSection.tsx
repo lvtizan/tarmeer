@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { resolveVariantUrl, resolveImageUrl } from '../../lib/imageUrl';
+import { supplierPublicTitle } from '@/lib/supplierConstants';
 
 interface Supplier {
   id: number;
-  company_name: string;
   slug: string;
-  description: string;
+  categories?: unknown;
   cover_image_url: string | null;
   logo_url: string | null;
   origin: 'china' | 'dubai';
@@ -31,7 +31,9 @@ export default function HomeSupplierSection({ suppliers }: { suppliers: Supplier
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          {suppliers.map((s) => (
+          {suppliers.map((s) => {
+            const publicTitle = supplierPublicTitle(s.categories);
+            return (
             <Link key={s.id} href={`/materials/suppliers/${s.slug}`}
               className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-stone-300 hover:shadow-[0_12px_32px_rgba(28,25,23,0.08)]">
               <div className="relative aspect-video overflow-hidden bg-stone-100">
@@ -40,13 +42,13 @@ export default function HomeSupplierSection({ suppliers }: { suppliers: Supplier
                   <img
                     src={resolveVariantUrl(s.cover_image_url, 'thumb')}
                     onError={(e) => { e.currentTarget.src = resolveImageUrl(s.cover_image_url!); }}
-                    alt={s.company_name}
+                    alt={publicTitle}
                     loading="lazy"
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200">
-                    <span className="font-serif text-3xl text-stone-300">{s.company_name.charAt(0)}</span>
+                    <span className="font-serif text-3xl text-stone-300">{publicTitle.charAt(0)}</span>
                   </div>
                 )}
                 {s.origin === 'china' && (
@@ -57,14 +59,12 @@ export default function HomeSupplierSection({ suppliers }: { suppliers: Supplier
               </div>
               <div className="flex flex-col flex-1 p-3.5 sm:p-4">
                 <h3 className="font-medium text-[14px] leading-snug text-[#1c1917] group-hover:text-[#b8864a] transition sm:text-[15px]">
-                  {s.company_name}
+                  {publicTitle}
                 </h3>
-                {s.description && (
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-stone-500 sm:text-[13px]">{s.description}</p>
-                )}
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-5 flex justify-center sm:hidden">

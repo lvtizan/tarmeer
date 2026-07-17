@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { MapPin, Clock, Package, Search, X } from 'lucide-react';
 import { resolveVariantUrl, resolveImageUrl } from '@/lib/imageUrl';
-import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
+import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS, supplierPublicTitle } from '@/lib/supplierConstants';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { GOOGLE_MAPS_URL } from '@/lib/constants';
 // TODO: migrate SupplierLeadModal
@@ -50,6 +50,8 @@ function parseCategories(c: Supplier['categories']): string[] {
 
 function SupplierCard({ s }: { s: Supplier }) {
   const cats = parseCategories(s.categories);
+  // 公开去标识：卡片标题用品类通用名,不显示遮蔽后的星号厂家名
+  const publicTitle = supplierPublicTitle(s.categories);
   return (
     <Link
       href={`/materials/suppliers/${s.slug}`}
@@ -74,7 +76,7 @@ function SupplierCard({ s }: { s: Supplier }) {
               e.currentTarget.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80';
             }
           }}
-          alt={s.company_name}
+          alt={publicTitle}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
@@ -84,17 +86,13 @@ function SupplierCard({ s }: { s: Supplier }) {
         <div>
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
-              {s.company_name}
+              {publicTitle}
             </h3>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ORIGIN_BADGE_CLASS[s.origin]}`}>
               {ORIGIN_LABEL[s.origin]}
             </span>
           </div>
-          {s.description && (
-            <p className="text-stone-500 text-[13px] leading-relaxed line-clamp-2 mb-2.5">
-              {s.description}
-            </p>
-          )}
+          {/* 公开去标识：不显示遮蔽星号简介,品类 chips 承载信息 */}
           <div className="flex flex-wrap gap-1.5">
             {cats.slice(0, 4).map(c => (
               <span key={c} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded-2xl capitalize">
@@ -222,10 +220,13 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
     setSearchInput(prev => (prev.trim() === searchFilter ? prev : searchFilter));
   }, [searchFilter]);
 
-  // 本地即时过滤：按公司名（英文/拼音，库里存的就是这个）不区分大小写子串匹配
+  // 本地即时过滤：厂家名已遮蔽,改按品类通用名/品类关键词匹配(如搜 "windows" 命中 system_windows)
   const q = searchInput.trim().toLowerCase();
   const visibleSuppliers = q
-    ? suppliers.filter(s => (s.company_name || '').toLowerCase().includes(q))
+    ? suppliers.filter(s => {
+        const hay = `${supplierPublicTitle(s.categories)} ${parseCategories(s.categories).join(' ')}`.toLowerCase();
+        return hay.includes(q);
+      })
     : suppliers;
 
   return (

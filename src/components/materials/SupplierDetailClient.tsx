@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowUp, FileText, X,
-  Download, Package, Layers, FolderOpen, MapPin, ExternalLink,
+  Download, Package, Layers, FolderOpen, MapPin,
   Maximize2, Banknote,
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
-import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS } from '@/lib/supplierConstants';
+import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS, supplierPublicTitle } from '@/lib/supplierConstants';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -169,7 +169,10 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
 
   const categoryList = parseCategories(supplier.categories);
   const heroImage = products.length > 0 ? products[0].image_url : null;
-  const initial = supplier.company_name?.[0]?.toUpperCase() || 'S';
+  // 公开去标识：可见标题用品类通用名(与 SEO 一致),不显示遮蔽后的星号厂家名
+  const publicTitle = supplierPublicTitle(supplier.categories);
+  const prettyCat = (c: string) => c.replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+  const initial = publicTitle?.[0]?.toUpperCase() || 'S';
 
   const statItems: { label: string; count: number }[] = [];
   if (products.length > 0) statItems.push({ label: 'Products', count: products.length });
@@ -204,7 +207,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             <span>/</span>
             <Link href="/materials" className="hover:text-white transition-colors">Materials</Link>
             <span>/</span>
-            <span className="text-white/80 truncate max-w-[200px]">{supplier.company_name}</span>
+            <span className="text-white/80 truncate max-w-[200px]">{publicTitle}</span>
           </nav>
 
           <div className="flex items-start gap-5 sm:gap-6">
@@ -212,7 +215,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             {supplier.logo_url && !logoError ? (
               <SmartImage
                 src={supplier.logo_url}
-                alt={supplier.company_name}
+                alt={publicTitle}
                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain border border-white/10 bg-white/10 backdrop-blur-sm p-2 shrink-0"
                 onError={() => setLogoError(true)}
               />
@@ -224,7 +227,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{supplier.company_name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">{publicTitle}</h1>
                 <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${ORIGIN_HERO_BADGE_CLASS[supplier.origin]}`}>
                   {ORIGIN_LABEL[supplier.origin]}
                 </span>
@@ -234,17 +237,16 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {categoryList.map(c => (
                     <span key={c} className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/5">
-                      {c}
+                      {prettyCat(c)}
                     </span>
                   ))}
                 </div>
               )}
 
-              {supplier.description && !categoryList.some(c => supplier.description!.startsWith(c)) && (
-                <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
-                  {supplier.description.split(/\.\s/)[0].trim()}.
-                </p>
-              )}
+              {/* 公开去标识：不渲染带星号的自填简介,改用品类导语 */}
+              <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
+                Verified {publicTitle.toLowerCase()} on Tarmeer — browse products, projects and catalogs below.
+              </p>
             </div>
           </div>
 
@@ -261,30 +263,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
         </div>
       </div>
 
-      {/* ========== About ========== */}
-      {supplier.description && (
-        <div className="bg-white border-b border-stone-200">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-            <p className="text-[15px] text-[#2c2c2c] leading-relaxed">{supplier.description}</p>
-            {!!supplier.has_physical_store && supplier.store_address && (
-              <div className="flex items-start gap-2 mt-4 pt-4 border-t border-stone-100 text-sm text-[#6b6b6b]">
-                <MapPin className="w-4 h-4 text-[#b8864a] mt-0.5 shrink-0" />
-                <span>{supplier.store_address}</span>
-                {supplier.google_maps_url && (
-                  <a
-                    href={supplier.google_maps_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 inline-flex items-center gap-1 text-[#b8864a] hover:underline shrink-0"
-                  >
-                    View on Map <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* About 区已移除：公开去标识后简介为遮蔽星号、地址隐藏；Hero 已用品类导语承载 */}
 
       {/* ========== Sticky Tab Strip ========== */}
       <div className="sticky top-14 sm:top-16 z-40 bg-[#faf9f7]/95 backdrop-blur-sm">
@@ -479,8 +458,8 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             {/* Inline inquiry form — shown on screens < 1700px */}
             <div ref={mobileFormRef} className="min-[1700px]:hidden">
               <ServiceInquiryCard
-                title={`Contact ${supplier.company_name}`}
-                companyName={supplier.company_name}
+                title="Contact this Supplier"
+                companyName={publicTitle}
                 companySlug={supplier.slug}
                 companyId={supplier.id}
               />
@@ -491,8 +470,8 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
           <div className="hidden min-[1700px]:block w-72 shrink-0 ml-8" style={{ marginRight: '-320px' }}>
             <div className="sticky top-[112px]">
               <ServiceInquiryCard
-                title={`Contact ${supplier.company_name}`}
-                companyName={supplier.company_name}
+                title="Contact this Supplier"
+                companyName={publicTitle}
                 companySlug={supplier.slug}
                 companyId={supplier.id}
               />

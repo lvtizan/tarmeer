@@ -7,6 +7,7 @@ import { COUNTRY } from '@/lib/country';
 import { ADDRESS, VN_ADDRESS, GOOGLE_MAPS_URL, VN_GOOGLE_MAPS_URL, WHATSAPP_LINK, VN_WHATSAPP_NUMBERS } from '@/lib/constants';
 import { resolveImageUrl, resolveVariantUrl } from '@/lib/imageUrl';
 import type { Supplier } from '@/components/materials/MaterialsClient';
+import { supplierPublicTitle } from '@/lib/supplierConstants';
 import ProgressiveImage from '@/components/ui/ProgressiveImage';
 import { MapPin, ArrowRight, Building2, Home, Layers } from 'lucide-react';
 
@@ -247,7 +248,9 @@ export default function AboutClient() {
               {/* Supplier strip */}
               {suppliers.length > 0 && (
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {suppliers.map(s => (
+                  {suppliers.map(s => {
+                    const publicTitle = supplierPublicTitle(s.categories);
+                    return (
                     <Link
                       key={s.slug}
                       href={`/materials/suppliers/${s.slug}`}
@@ -256,7 +259,7 @@ export default function AboutClient() {
                       <div className="aspect-video overflow-hidden bg-stone-100">
                         <img
                           src={s.cover_image_url ? resolveVariantUrl(s.cover_image_url, 'thumb') : resolveImageUrl(s.logo_url)}
-                          alt={s.company_name}
+                          alt={publicTitle}
                           loading="lazy"
                           onError={e => {
                             const img = e.currentTarget;
@@ -267,9 +270,10 @@ export default function AboutClient() {
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       </div>
-                      <p className="truncate px-3 py-2 text-xs font-medium text-[#2c2c2c]">{s.company_name}</p>
+                      <p className="truncate px-3 py-2 text-xs font-medium text-[#2c2c2c]">{publicTitle}</p>
                     </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
