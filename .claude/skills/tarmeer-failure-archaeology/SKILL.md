@@ -81,6 +81,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：① 立即 `git show origin/main:<file>` 提取队友版本 rsync 回生产，恢复被覆盖的 4 文件；② `git rebase origin/main`（**零冲突**，我的权限增量与队友改动在文件不同区域，git 3-way 自动合并）把功能叠到队友之上；③ 核实生产前端 HEAD 已是队友最新 `118d028c`（team 已部署）→ 我的部署只加 1 提交，安全；④ 合并后重跑 tsc/build/smoke 11/11 + 后端端到端（超管 200/无权限 403）全绿再部署。
 - **预防**：① **部署前必先 `git fetch origin main` 并看 `git log --oneline HEAD..origin/main`**，远端领先就先 rebase 再动手，禁止在落后状态下 rsync 后端；② rsync 后端前用 `git merge-base --is-ancestor origin/main HEAD` 确认本地已含远端最新；③ 多人同仓库：**先 `git push`（分叉会被 non-fast-forward 拒绝）暴露远端领先，rebase 解决后再 rsync/部署——push 成功 = 安全门通过**，绝不在 push 之前 rsync 后端。已写进 `tarmeer-deploy-backend`。
 
+### FA-14 供应商去标识漏 name_zh + 遮蔽可见渲染 ≠ 遮蔽序列化 payload（2026-07-17）
+- **现象**：给公开供应商做去标识（英文厂名遮成星号、地址/联系方式/logo 隐藏、可见标题改品类通用名 "System Windows Supplier"）并上线后，`curl 首页 | grep name_zh` 仍能读到 `"name_zh":"华盛家具"` 等**真实中文厂名**；这些字段虽不在页面上可见渲染，却躺在 Next.js RSC/Flight 序列化数据流（`self.__next_f`）和 `/api/suppliers` JSON 里，view-source 一眼可得。
+- **根因**：两个叠加疏漏。① 去标识只处理了「显示名」`company_name`，漏了另一个身份字段 `name_zh`——`redactPublicSupplier` 没 null 它，`SELECT sp.*` 原样带出。② 误以为「前端不渲染星号名、改用品类名」就等于去标识完成；实际客户端组件收到的是**整个 supplier 对象**，Next 会把完整 props 序列化进 RSC payload，未被 null 的字段全部进页面源码。遮蔽发生在「render」层而非「数据出站」层 = 假去标识。
+- **修复**：① `redactPublicSupplier` 增加 `name_zh: null`，并把简介里出现的中文名一并 `maskSupplierMentions`（英文名已遮）；② `supplierProjectController.getPublicProject` 补取 `name_zh`、项目标题/简介用中英文名双重遮蔽、`redactedSupplier` 置 `name_zh=null`；③ 前端首页供应商栏（`HomeSupplierSection`）与关于页（`AboutClient`）此前仍直接渲染星号 `company_name`/`description`——补成 `supplierPublicTitle(categories)` 品类名。单测 name_zh=null + 中英文名均从 description 遮蔽通过；生产 `/api/suppliers` name_zh 0/6、首页源码 0 残留。
+- **预防**：① **去标识/脱敏必须在「数据出站」层做（controller 返回前的 redact 函数），列全部身份承载字段一次性 null/mask——不是只处理显示用的那一个**；同类身份字段清单：`company_name / name_zh / 任何 *_name / 联系方式 / 地址 / 坐标 / logo / user_*`。② **牢记 SSR 框架会把组件完整 props 序列化进页面源码（RSC/Flight、`__NEXT_DATA__`）**，"前端不渲染"不代表"数据不出站"；验证脱敏必须 `curl 页面源码 + /api 原始 JSON` grep 真实值，而非只看浏览器可见文本。③ 新增脱敏后按此法回归：`curl <页面> | grep <真实中英文名>` 应 0。已写进本条 + 与 tarmeer-country-isolation 的「显示层兜底」口径并列（一个防串国、一个防泄身份）。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
