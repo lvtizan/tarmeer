@@ -5,9 +5,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+// 只保留有客户在场的镜头（tour-2 客户侧对墙无法脱敏，已移除）
 const IMAGES = [
   { src: 'team-clients', alt: 'Tarmeer team with overseas clients at a showroom in China' },
-  { src: 'tour-2', alt: 'Consultant explaining large-format slabs to a client in China' },
   { src: 'tour-1', alt: 'Tarmeer team walking Gulf clients through a tile showroom in China' },
   { src: 'tour-3', alt: 'Team presenting stone materials to visiting clients in China' },
 ];

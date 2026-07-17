@@ -53,10 +53,10 @@ const HOST_POINTS = [
   },
 ];
 
-// 真实接待瞬间照（客户面部已脱敏，团队真脸保留）
+// 真实接待瞬间照（客户面部已脱敏，团队真脸保留；只保留有客户在场的镜头）
 const TOUR_PHOTOS = [
+  { src: 'team-clients', alt: 'Tarmeer team with overseas clients at a showroom in China' },
   { src: 'tour-1', alt: 'Tarmeer team walking Gulf clients through a tile showroom in China' },
-  { src: 'tour-2', alt: 'Consultant explaining large-format slabs to a client at a China showroom' },
   { src: 'tour-3', alt: 'Team presenting stone materials to visiting clients in China' },
 ];
 
