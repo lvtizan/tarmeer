@@ -56,16 +56,13 @@ async function ensurePartnerSupplier(partner, country, company, supplierRef) {
     [partner.id, supplierRef, country]);
   if (existing[0]) {
     if (company) {
-      // company payload provided: update all fields including company_name
+      // company payload provided: 更新资料字段，但不改 status/is_published——审核状态由后台管理员掌控
+      // （防止 partner 更新把待审/已下架的供应商自动改回 approved，绕过人工审核）
       await pool.execute(
-        "UPDATE supplier_profiles SET company_name=?, description=COALESCE(?,description), store_address=COALESCE(?,store_address), contact_phone=COALESCE(?,contact_phone), website=COALESCE(?,website), whatsapp=COALESCE(?,whatsapp), partner_supplier_ref=?, status='approved', is_published=1 WHERE id=?",
+        "UPDATE supplier_profiles SET company_name=?, description=COALESCE(?,description), store_address=COALESCE(?,store_address), contact_phone=COALESCE(?,contact_phone), website=COALESCE(?,website), whatsapp=COALESCE(?,whatsapp), partner_supplier_ref=? WHERE id=?",
         [name, desc, addr, phone, website, whatsapp, supplierRef || null, existing[0].id]);
-    } else {
-      // no company payload: only ensure approved+published, don't overwrite company_name
-      await pool.execute(
-        "UPDATE supplier_profiles SET status='approved', is_published=1 WHERE id=?",
-        [existing[0].id]);
     }
+    // no payload 分支：不再自动 approved+published，保留现有审核状态（无操作）
     return existing[0].id;
   }
   // slug 包含 supplierRef 保证多供应商间不碰撞
@@ -73,8 +70,9 @@ async function ensurePartnerSupplier(partner, country, company, supplierRef) {
   let slug = `${slugify(name) || "partner-" + partner.id}-${country}-p${partner.id}${slugSuffix}`;
   const [clash] = await pool.execute("SELECT id FROM supplier_profiles WHERE slug=? LIMIT 1", [slug]);
   if (clash[0]) slug = `${slug}-${Date.now() % 100000}`;
+  // 新上传的 partner 供应商建为 'pending'——需后台审核通过(status→approved)才在前端展示
   const [r] = await pool.execute(
-    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, partner_supplier_ref, status, is_published) VALUES (NULL,?,?,?,?,?,?,?,?, 'china', 'partner', ?, ?, 'approved', 1)",
+    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, partner_supplier_ref, status, is_published) VALUES (NULL,?,?,?,?,?,?,?,?, 'china', 'partner', ?, ?, 'pending', 1)",
     [name, slug, desc, addr, phone, website, whatsapp, country, partner.id, supplierRef || null]);
   return r.insertId;
 }

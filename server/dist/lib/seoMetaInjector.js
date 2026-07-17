@@ -380,27 +380,25 @@ async function getPageMeta(pathname, country) {
     const supplierMatch = pathname.match(/^\/materials\/suppliers\/([a-z0-9-]+)$/);
     if (supplierMatch) {
         const slug = supplierMatch[1];
-        const [rows] = await database_1.default.execute("SELECT company_name, description, logo_url, origin, store_address, has_physical_store FROM supplier_profiles WHERE slug = ? AND status IN ('approved', 'active') LIMIT 1", [slug]);
+        const [rows] = await database_1.default.execute("SELECT categories FROM supplier_profiles WHERE slug = ? AND status IN ('approved', 'active') LIMIT 1", [slug]);
         const sup = rows[0];
         if (sup) {
-            const name = sup.company_name || slug;
-            const desc = (sup.description || '').slice(0, 160) || `${name} — building material supplier in ${COUNTRY_NAME}`;
-            const image = sup.logo_url ? `${BASE_URL}${sup.logo_url}` : DEFAULT_IMAGE;
+            // 公开去标识：厂家名/logo/地址一律不注入，用品类做通用标题(藏身份+保 SEO 品类关键词)
+            const { supplierPublicTitle } = require('./supplierRedact');
+            const name = supplierPublicTitle(sup.categories);
+            const desc = `${name} in ${COUNTRY_NAME} — browse verified products and catalogs on Tarmeer.`;
             return {
-                title: `${name} — Material Supplier ${COUNTRY_NAME} | Tarmeer`,
+                title: `${name} in ${COUNTRY_NAME} | Tarmeer`,
                 description: desc,
                 canonical: `${BASE_URL}/materials/suppliers/${slug}`,
-                ogImage: image,
+                ogImage: DEFAULT_IMAGE,
                 jsonLd: {
                     '@context': 'https://schema.org',
-                    '@type': sup.has_physical_store ? 'LocalBusiness' : 'Organization',
+                    '@type': 'Organization',
                     name,
                     description: desc,
                     url: `${BASE_URL}/materials/suppliers/${slug}`,
-                    image,
-                    ...(sup.store_address && {
-                        address: { '@type': 'PostalAddress', streetAddress: sup.store_address, addressCountry: COUNTRY_ISO },
-                    }),
+                    image: DEFAULT_IMAGE,
                 },
             };
         }

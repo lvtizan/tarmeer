@@ -70,6 +70,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
   const [products, setProducts] = useState<Product[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
+  const [previewCatalog, setPreviewCatalog] = useState<Catalog | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<{
     images: string[];
@@ -453,8 +454,8 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
               </h2>
                 <div className="space-y-3">
                   {catalogs.map(c => (
-                    <a key={c.id} href={c.file_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
+                    <button key={c.id} type="button" onClick={() => setPreviewCatalog(c)}
+                      className="w-full text-left flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
                       <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
                         <FileText className="w-6 h-6 text-red-500" />
                       </div>
@@ -467,9 +468,9 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                         )}
                       </div>
                       <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-stone-50 text-sm font-medium text-[#2c2c2c] group-hover:bg-[#b8864a] group-hover:text-white transition">
-                        <Download className="w-4 h-4" /> Download
+                        <Maximize2 className="w-4 h-4" /> Preview
                       </div>
-                    </a>
+                    </button>
                   ))}
                 </div>
             </div>
@@ -526,6 +527,38 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ========== PDF Catalog Preview ========== */}
+      {previewCatalog && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col p-3 sm:p-6" onClick={() => setPreviewCatalog(null)}>
+          <div className="flex items-center justify-between gap-3 mb-3 shrink-0" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <p className="text-white text-[15px] font-medium truncate flex items-center gap-2 min-w-0">
+              <FileText className="w-5 h-5 text-red-400 shrink-0" />
+              <span className="truncate">{previewCatalog.title}</span>
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <a href={previewCatalog.file_url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-[#b8864a] text-white text-sm font-medium transition">
+                <Download className="w-4 h-4" /> Download
+              </a>
+              <button onClick={() => setPreviewCatalog(null)} aria-label="Close preview"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 min-h-0 rounded-xl overflow-hidden bg-white flex items-center justify-center" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            {/^\/(?!\/)/.test(previewCatalog.file_url) ? (
+              <iframe src={previewCatalog.file_url} title={previewCatalog.title} className="w-full h-full border-0" />
+            ) : (
+              <div className="text-center text-stone-500 text-sm p-8">
+                <FileText className="w-10 h-10 text-red-400 mx-auto mb-3" />
+                Preview unavailable — use Download to open this file.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ========== Lightbox ========== */}
       {lightbox !== null && (

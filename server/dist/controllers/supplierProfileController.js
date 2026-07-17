@@ -13,6 +13,8 @@ const promises_1 = __importDefault(require("fs/promises"));
 const path_1 = __importDefault(require("path"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
+const supplierRedact_1 = require("../lib/supplierRedact");
+const redactPublicSupplier = supplierRedact_1.redactPublicSupplier;
 async function uploadLicense(req, res) {
     try {
         const userId = req.supplierUser.id;
@@ -89,7 +91,7 @@ async function listPublicSuppliers(req, res) {
        ${where}
        ORDER BY ${orderBy}
        LIMIT ${limit} OFFSET ${offset}`, params);
-        res.json({ suppliers: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+        res.json({ suppliers: (Array.isArray(rows) ? rows : []).map(redactPublicSupplier), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }
     catch (error) {
         console.error('List suppliers error:', error);
@@ -112,7 +114,18 @@ async function getPublicProfile(req, res) {
         const [products] = await database_1.default.execute('SELECT * FROM supplier_products WHERE supplier_profile_id = ? ORDER BY sort_order, id', [supplier.id]);
         // Get catalogs
         const [catalogs] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [supplier.id]);
-        res.json({ supplier, products, catalogs });
+        // 自填文本(商品/目录标题·简介)里可能含品牌名,一并遮蔽(用真实厂家名匹配,遮完再 redact supplier)
+        const realName = supplier.company_name;
+        const maskedProducts = (Array.isArray(products) ? products : []).map((p) => ({
+            ...p,
+            title: supplierRedact_1.maskSupplierMentions(p.title, realName),
+            description: supplierRedact_1.maskSupplierMentions(p.description, realName),
+        }));
+        const maskedCatalogs = (Array.isArray(catalogs) ? catalogs : []).map((c) => ({
+            ...c,
+            title: supplierRedact_1.maskSupplierMentions(c.title, realName),
+        }));
+        res.json({ supplier: redactPublicSupplier(supplier), products: maskedProducts, catalogs: maskedCatalogs });
     }
     catch (error) {
         console.error('Get supplier profile error:', error);

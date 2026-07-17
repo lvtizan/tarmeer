@@ -7,6 +7,7 @@ import SupplierDetailClient from '@/components/materials/SupplierDetailClient';
 import { getCountry } from '@/lib/country';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
+import { supplierPublicTitle } from '@/lib/supplierConstants';
 
 const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
@@ -36,6 +37,7 @@ interface SupplierBasic {
   store_address?: string | null;
   has_physical_store?: boolean | number | null;
   country?: string | null;
+  categories?: unknown;
 }
 
 async function fetchSupplierBasic(slug: string): Promise<SupplierBasic | null> {
@@ -61,11 +63,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Supplier Not Found | Tarmeer' };
   }
 
-  const title = `${supplier.company_name} — Materials & Suppliers | Tarmeer ${c.name}`;
-  const description =
-    supplier.description
-      ? `${supplier.description.slice(0, 155)} | Tarmeer`
-      : `Browse products and projects from ${supplier.company_name} on Tarmeer.`;
+  // 公开去标识：用品类通用标题，不用真实/遮蔽后的厂家名（避免 title 变一串 ****，同时保 SEO 品类关键词）
+  const pubTitle = supplierPublicTitle(supplier.categories);
+  const title = `${pubTitle} in ${c.name}`; // root layout 模板会自动追加 " | Tarmeer"
+  const description = `Browse verified products and catalogs from a ${pubTitle.toLowerCase()} in ${c.name} on Tarmeer.`;
 
   return {
     title,
@@ -85,7 +86,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: `${c.baseUrl}/materials/suppliers/${slug}`,
     },
     keywords: [
-      supplier.company_name,
+      pubTitle,
       `building materials ${c.name}`,
       `material supplier ${c.defaultCity}`,
       'renovation supplies',
@@ -106,6 +107,8 @@ export default async function SupplierDetailPage({ params }: PageProps) {
   if (!supplier) notFound();
 
   const supplierUrl = `${c.baseUrl}/materials/suppliers/${slug}`;
+  // 公开去标识：用品类通用标题代替真实/遮蔽厂家名（title/JSON-LD/breadcrumb/h1 统一口径）
+  const pubTitle = supplierPublicTitle(supplier.categories);
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -113,7 +116,7 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: supplier?.company_name ?? slug, item: supplierUrl },
+      { '@type': 'ListItem', position: 3, name: pubTitle, item: supplierUrl },
     ],
   };
 
@@ -140,9 +143,9 @@ export default async function SupplierDetailPage({ params }: PageProps) {
   const hasStore = Boolean(supplier.has_physical_store) && Boolean(supplier.store_address);
   const supplierJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
+    '@type': 'Organization',
     '@id': `${supplierUrl}#business`,
-    name: supplier.company_name,
+    name: pubTitle,
     url: supplierUrl,
     ...(supplier.description ? { description: supplier.description.slice(0, 300) } : {}),
     ...(image ? { image } : {}),
@@ -165,7 +168,7 @@ export default async function SupplierDetailPage({ params }: PageProps) {
       />
       {supplier && (
         <div className="sr-only">
-          <h1>{supplier.company_name}</h1>
+          <h1>{pubTitle}</h1>
           {supplier.description && <p>{supplier.description}</p>}
         </div>
       )}

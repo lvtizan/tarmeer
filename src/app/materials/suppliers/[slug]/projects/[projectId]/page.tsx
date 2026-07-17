@@ -7,6 +7,7 @@ import SupplierProjectDetailClient from '@/components/materials/SupplierProjectD
 import { getCountry } from '@/lib/country';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
+import { supplierPublicTitle } from '@/lib/supplierConstants';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
@@ -15,7 +16,7 @@ interface PageProps {
 }
 
 interface ProjectDetail {
-  supplier: { id: number; company_name: string; slug: string; logo_url: string | null };
+  supplier: { id: number; company_name: string; slug: string; logo_url: string | null; categories?: unknown };
   project: { id: number; title: string; description: string | null; images: string[] | string | null };
 }
 
@@ -61,10 +62,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!detail) return { title: 'Project Not Found | Tarmeer', robots: { index: false, follow: false } };
 
   const { supplier, project } = detail;
-  const title = `${project.title} — ${supplier.company_name} | Tarmeer ${c.name}`;
+  // 公开去标识：标题只用项目名(产品内容),不带真实/遮蔽厂家名；作者用品类通用名
+  const pubTitle = supplierPublicTitle(supplier.categories);
+  const title = `${project.title}`; // root layout 模板会自动追加 " | Tarmeer"
   const description = project.description
     ? `${project.description.slice(0, 155)}`
-    : `View the ${project.title} project by ${supplier.company_name} on Tarmeer ${c.name}.`;
+    : `View the ${project.title} project from a ${pubTitle.toLowerCase()} on Tarmeer ${c.name}.`;
   const canonical = `${c.baseUrl}/materials/suppliers/${slug}/projects/${projectId}`;
   const image = toAbsolute(firstImage(project.images), c.baseUrl);
 
@@ -95,6 +98,7 @@ export default async function SupplierProjectDetailPage({ params }: PageProps) {
   if (!detail) notFound();
 
   const { supplier, project } = detail;
+  const pubTitle = supplierPublicTitle(supplier.categories);
   const canonical = `${c.baseUrl}/materials/suppliers/${slug}/projects/${projectId}`;
   const image = toAbsolute(firstImage(project.images), c.baseUrl);
 
@@ -104,7 +108,7 @@ export default async function SupplierProjectDetailPage({ params }: PageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: supplier.company_name, item: `${c.baseUrl}/materials/suppliers/${slug}` },
+      { '@type': 'ListItem', position: 3, name: pubTitle, item: `${c.baseUrl}/materials/suppliers/${slug}` },
       { '@type': 'ListItem', position: 4, name: project.title, item: canonical },
     ],
   };
@@ -116,7 +120,7 @@ export default async function SupplierProjectDetailPage({ params }: PageProps) {
     url: canonical,
     ...(project.description ? { description: project.description.slice(0, 300) } : {}),
     ...(image ? { image } : {}),
-    creator: { '@type': 'Organization', name: supplier.company_name, url: `${c.baseUrl}/materials/suppliers/${slug}` },
+    creator: { '@type': 'Organization', name: pubTitle, url: `${c.baseUrl}/materials/suppliers/${slug}` },
   };
 
   return (
@@ -125,7 +129,7 @@ export default async function SupplierProjectDetailPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(projectJsonLd) }} />
       {/* SSR SEO 正文兜底（客户端组件水合前爬虫可读） */}
       <div className="sr-only">
-        <h1>{project.title} — {supplier.company_name}</h1>
+        <h1>{project.title} — {pubTitle}</h1>
         {project.description && <p>{project.description}</p>}
       </div>
       <SupplierProjectDetailClient />
