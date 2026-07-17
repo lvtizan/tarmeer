@@ -120,9 +120,9 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <HomeMaterialsHero />
+      <HomeChinaTeam />
       <HomeApplicationTiles />
       <HomeSourcingStrip />
-      <HomeChinaTeam />
       <HomeGuaranteeStrip />
       <HomeCaseStudySection guide={caseStudyGuide} />
       <HomePartnersSection companies={companies} />
