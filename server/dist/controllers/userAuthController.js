@@ -223,7 +223,7 @@ async function register(req, res) {
     }
 }
 // Try admin_users table login, return response or null
-async function tryAdminLogin(email, password) {
+async function tryAdminLogin(email, password, req) {
     const [adminRows] = await database_1.default.execute('SELECT id, email, password, full_name, role, permissions, is_active FROM admin_users WHERE email = ?', [email.toLowerCase().trim()]);
     const admins = adminRows;
     if (admins.length === 0)
@@ -234,6 +234,15 @@ async function tryAdminLogin(email, password) {
     const isValid = await bcryptjs_1.default.compare(password, admin.password);
     if (!isValid)
         return null;
+    // 从主站登录页登入后台的管理员也要记录最后登录 + 登录日志（与 /admin/login 一致），否则后台「最后登录」永远显示「从未」
+    await database_1.default.execute('UPDATE admin_users SET last_login = NOW() WHERE id = ?', [admin.id]);
+    setImmediate(() => {
+        (0, activityLogger_1.logActivity)({
+            userId: admin.id, userName: admin.full_name || admin.email, userRole: 'admin',
+            action: 'login', targetType: 'session', description: `管理员「${admin.full_name || admin.email}」登录后台`,
+            ip: req ? (0, activityLogger_1.getClientIp)(req) : undefined,
+        }).catch(() => { });
+    });
     const adminToken = jsonwebtoken_1.default.sign({ adminId: admin.id, type: 'admin' }, config_1.default.jwt.secret, { expiresIn: '7d' });
     return {
         token: adminToken,
@@ -320,7 +329,7 @@ async function login(req, res) {
                 return res.json({ token: supplierToken, user: safeSupplier, accountType: 'supplier' });
             }
             // No user found — try admin_users, then legacy designers
-            const adminResult = await tryAdminLogin(email, password);
+            const adminResult = await tryAdminLogin(email, password, req);
             if (adminResult) {
                 (0, authRateLimit_1.recordAuthSuccess)(req, res, () => { });
                 return res.json(adminResult);
@@ -356,7 +365,7 @@ async function login(req, res) {
         const isValid = await bcryptjs_1.default.compare(password, user.password);
         if (!isValid) {
             // Password wrong for users table — try admin_users as fallback
-            const adminResult = await tryAdminLogin(email, password);
+            const adminResult = await tryAdminLogin(email, password, req);
             if (adminResult) {
                 (0, authRateLimit_1.recordAuthSuccess)(req, res, () => { });
                 return res.json(adminResult);
@@ -746,6 +755,15 @@ async function crossPortalToken(req, res) {
             if (!users.length)
                 return res.status(404).json({ error: 'No admin account found for this email.' });
             const u = users[0];
+            // 跨端切换到后台也要记最后登录 + 登录日志（否则后台「最后登录」显示「从未」）
+            await database_1.default.execute('UPDATE admin_users SET last_login = NOW() WHERE id = ?', [u.id]);
+            setImmediate(() => {
+                (0, activityLogger_1.logActivity)({
+                    userId: u.id, userName: u.full_name || u.email, userRole: 'admin',
+                    action: 'login', targetType: 'session', description: `管理员「${u.full_name || u.email}」登录后台`,
+                    ip: (0, activityLogger_1.getClientIp)(req),
+                }).catch(() => { });
+            });
             const token = jsonwebtoken_1.default.sign({ adminId: u.id, email: u.email, role: u.role, type: 'admin' }, config_1.default.jwt.secret, { expiresIn: '7d' });
             return res.json({ token, redirectUrl: '/admin' });
         }
