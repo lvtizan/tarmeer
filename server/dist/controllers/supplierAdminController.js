@@ -27,6 +27,26 @@ const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
+const activityLogger_1 = require("../lib/activityLogger");
+/** 记录供应商后台操作到 activity_log（审计）。整体 try/catch，记录失败绝不影响主操作。 */
+async function logSupplierAction(req, action, targetId, description) {
+    try {
+        await activityLogger_1.logActivity({
+            userId: req.admin?.id,
+            userName: req.admin?.full_name || req.admin?.email || 'admin',
+            userRole: req.admin?.role || 'admin',
+            action,
+            targetType: 'supplier',
+            targetId: targetId != null ? Number(targetId) : null,
+            description,
+            ip: activityLogger_1.getClientIp ? activityLogger_1.getClientIp(req) : undefined,
+            country: req.admin?.country,
+        });
+    }
+    catch (e) {
+        console.error('[SupplierAudit] log failed:', e);
+    }
+}
 /**
  * PATCH /admin/suppliers/catalogs/:id/title — 修改目录名称
  */
@@ -42,6 +62,7 @@ async function adminRenameCatalog(req, res) {
         if (rows.length === 0)
             return res.status(404).json({ error: 'catalog not found' });
         await database_1.default.execute('UPDATE supplier_catalogs SET title = ? WHERE id = ?', [title, catalogId]);
+        await logSupplierAction(req, 'supplier_catalog_rename', catalogId, `重命名目录#${catalogId} → ${title}`);
         res.json({ id: catalogId, title });
     }
     catch (error) {
@@ -72,6 +93,7 @@ async function adminReplaceCatalogFile(req, res) {
         await promises_1.default.writeFile(absPath, req.file.buffer, { mode: 0o644 });
         const newUrl = `/uploads/${relPath}`;
         await database_1.default.execute('UPDATE supplier_catalogs SET file_url = ? WHERE id = ?', [newUrl, catalogId]);
+        await logSupplierAction(req, 'supplier_catalog_file_replace', supplierId, `供应商#${supplierId} 替换目录#${catalogId} 文件`);
         res.json({ id: catalogId, file_url: newUrl, file_size: req.file.size });
     }
     catch (error) {
@@ -109,6 +131,7 @@ async function adminReplaceProductImage(req, res) {
         (0, variantWorker_1.enqueueVariants)(absPath);
         const newUrl = `/uploads/${relPath}`;
         await database_1.default.execute('UPDATE supplier_products SET image_url = ? WHERE id = ?', [newUrl, productId]);
+        await logSupplierAction(req, 'supplier_product_image_replace', supplierId, `供应商#${supplierId} 换商品#${productId} 图`);
         res.json({ id: productId, image_url: newUrl });
     }
     catch (error) {
@@ -204,6 +227,7 @@ async function updateSupplierStatus(req, res) {
             return res.status(400).json({ error: 'Invalid status.' });
         }
         await database_1.default.execute('UPDATE supplier_profiles SET status = ? WHERE id = ?', [status, id]);
+        await logSupplierAction(req, 'supplier_status_update', id, `供应商#${id} 状态→${status}`);
         res.json({ message: 'Status updated.' });
     }
     catch (error) {
@@ -235,6 +259,7 @@ async function updateSupplier(req, res) {
             return res.status(400).json({ error: 'No fields to update.' });
         values.push(id);
         await database_1.default.execute(`UPDATE supplier_profiles SET ${sets.join(', ')} WHERE id = ?`, values);
+        await logSupplierAction(req, 'supplier_update', id, `编辑供应商#${id} 资料(${sets.length}项)`);
         res.json({ message: 'Supplier updated.' });
     }
     catch (error) {
@@ -255,6 +280,7 @@ async function deleteSupplier(req, res) {
         await database_1.default.execute('DELETE FROM supplier_catalogs WHERE supplier_profile_id = ?', [id]);
         await database_1.default.execute('DELETE FROM supplier_profiles WHERE id = ?', [id]);
         await database_1.default.execute('DELETE FROM supplier_users WHERE id = ?', [profile.supplier_user_id]);
+        await logSupplierAction(req, 'supplier_delete', id, `删除供应商#${id}`);
         res.json({ message: 'Supplier deleted.' });
     }
     catch (error) {
@@ -273,6 +299,7 @@ async function adminAddProduct(req, res) {
             return res.status(400).json({ error: 'image_url is required.' });
         const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order) VALUES (?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0]);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [result.insertId]);
+        await logSupplierAction(req, 'supplier_product_add', id, `供应商#${id} 新增商品#${result.insertId}`);
         res.status(201).json({ product: created[0] });
     }
     catch (error) {
@@ -287,6 +314,7 @@ async function adminDeleteProduct(req, res) {
         if (rows.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
         await database_1.default.execute('DELETE FROM supplier_products WHERE id = ?', [productId]);
+        await logSupplierAction(req, 'supplier_product_delete', id, `供应商#${id} 删除商品#${productId}`);
         res.json({ message: 'Product deleted.' });
     }
     catch (error) {
@@ -303,6 +331,7 @@ async function adminUpdateProduct(req, res) {
         const { title, category } = req.body;
         await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ? WHERE id = ?', [title?.trim() || null, category || null, productId]);
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
+        await logSupplierAction(req, 'supplier_product_update', id, `供应商#${id} 编辑商品#${productId}`);
         res.json({ product: updated[0] });
     }
     catch (error) {
@@ -361,6 +390,7 @@ async function adminAddProject(req, res) {
         ]);
         const insertId = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_projects WHERE id = ?', [insertId]);
+        await logSupplierAction(req, 'supplier_project_add', supplierId, `供应商#${supplierId} 新增项目#${insertId}`);
         res.status(201).json({ project: created[0] });
     }
     catch (error) {
@@ -391,6 +421,7 @@ async function adminUpdateProject(req, res) {
             projectId,
         ]);
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_projects WHERE id = ?', [projectId]);
+        await logSupplierAction(req, 'supplier_project_update', id, `供应商#${id} 编辑项目#${projectId}`);
         res.json({ project: updated[0] });
     }
     catch (error) {
@@ -405,6 +436,7 @@ async function adminDeleteProject(req, res) {
         if (rows.length === 0)
             return res.status(404).json({ error: 'Project not found.' });
         await database_1.default.execute('DELETE FROM supplier_projects WHERE id = ?', [projectId]);
+        await logSupplierAction(req, 'supplier_project_delete', id, `供应商#${id} 删除项目#${projectId}`);
         res.json({ message: 'Project deleted.' });
     }
     catch (error) {
@@ -425,6 +457,7 @@ async function setSupplierHomeOrder(req, res) {
             await database_1.default.execute('UPDATE supplier_profiles SET home_display_order = 0 WHERE home_display_order = ? AND id != ?', [value, id]);
         }
         await database_1.default.execute('UPDATE supplier_profiles SET home_display_order = ? WHERE id = ?', [value, id]);
+        await logSupplierAction(req, 'supplier_home_order', id, `供应商#${id} 首页排序→${value}`);
         res.json({ id, home_display_order: value });
     }
     catch (error) {
@@ -445,6 +478,7 @@ async function setSupplierListOrder(req, res) {
             await database_1.default.execute('UPDATE supplier_profiles SET list_display_order = 0 WHERE list_display_order = ? AND id != ?', [value, id]);
         }
         await database_1.default.execute('UPDATE supplier_profiles SET list_display_order = ? WHERE id = ?', [value, id]);
+        await logSupplierAction(req, 'supplier_list_order', id, `供应商#${id} 列表排序→${value}`);
         res.json({ id, list_display_order: value });
     }
     catch (error) {
@@ -458,6 +492,7 @@ async function toggleSupplierPublished(req, res) {
         const { id } = req.params;
         const { is_published } = req.body;
         await database_1.default.execute('UPDATE supplier_profiles SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, id]);
+        await logSupplierAction(req, 'supplier_toggle_published', id, `供应商#${id} ${is_published ? '上架' : '下架'}`);
         res.json({ ok: true });
     }
     catch (error) {
@@ -474,6 +509,7 @@ async function toggleSupplierProjectPublished(req, res) {
         if (rows.length === 0)
             return res.status(404).json({ error: 'Project not found.' });
         await database_1.default.execute('UPDATE supplier_projects SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, projectId]);
+        await logSupplierAction(req, 'supplier_project_toggle_published', id, `供应商#${id} 项目#${projectId} ${is_published ? '发布' : '取消发布'}`);
         res.json({ ok: true });
     }
     catch (error) {
