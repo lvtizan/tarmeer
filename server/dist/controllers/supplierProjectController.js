@@ -41,7 +41,7 @@ async function listPublicProjects(req, res) {
 async function getPublicProject(req, res) {
     try {
         const { slug, id } = req.params;
-        const [profiles] = await database_1.default.execute("SELECT id, company_name, slug, logo_url, categories FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        const [profiles] = await database_1.default.execute("SELECT id, company_name, name_zh, slug, logo_url, categories FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
         const profile = profiles[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
@@ -50,11 +50,12 @@ async function getPublicProject(req, res) {
         if (!project)
             return res.status(404).json({ error: 'Project not found.' });
         const [allProjects] = await database_1.default.execute('SELECT id, title, images FROM supplier_projects WHERE supplier_profile_id = ? AND is_published = 1 ORDER BY sort_order ASC, id DESC', [profile.id]);
-        // 公开去标识：厂家名遮蔽、logo 隐藏；自填的项目标题/简介里若含品牌名一并遮蔽（用真实名匹配）
+        // 公开去标识：厂家名遮蔽、logo 隐藏；自填的项目标题/简介里若含品牌名(中英)一并遮蔽
         const realName = profile.company_name;
-        const maskedProject = { ...project, title: supplierRedact_1.maskSupplierMentions(project.title, realName), description: supplierRedact_1.maskSupplierMentions(project.description, realName) };
-        const maskedAll = (Array.isArray(allProjects) ? allProjects : []).map((p) => ({ ...p, title: supplierRedact_1.maskSupplierMentions(p.title, realName) }));
-        const redactedSupplier = { ...profile, company_name: supplierRedact_1.maskSupplierName(realName), logo_url: null };
+        const maskMentions = (txt) => supplierRedact_1.maskSupplierMentions(supplierRedact_1.maskSupplierMentions(txt, realName), profile.name_zh);
+        const maskedProject = { ...project, title: maskMentions(project.title), description: maskMentions(project.description) };
+        const maskedAll = (Array.isArray(allProjects) ? allProjects : []).map((p) => ({ ...p, title: maskMentions(p.title) }));
+        const redactedSupplier = { ...profile, company_name: supplierRedact_1.maskSupplierName(realName), name_zh: null, logo_url: null };
         res.json({ project: maskedProject, supplier: redactedSupplier, allProjects: maskedAll });
     }
     catch (error) {

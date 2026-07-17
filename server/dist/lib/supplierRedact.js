@@ -63,10 +63,15 @@ function redactPublicSupplier(row) {
     if (!row)
         return row;
     const name = row.company_name || '';
+    // 简介里可能同时出现英文名与中文名(name_zh)，两者都要遮蔽；name_zh 本身直接隐藏。
+    let desc = maskSupplierMentions(row.description, name);
+    if (row.name_zh)
+        desc = maskSupplierMentions(desc, row.name_zh);
     return {
         ...row,
         company_name: maskSupplierName(name),
-        description: maskSupplierMentions(row.description, name),
+        name_zh: null,
+        description: desc,
         store_address: null,
         google_maps_url: null,
         store_lat: null,
