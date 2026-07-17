@@ -6,7 +6,9 @@ import { api } from './api';
 // SSR(服务端) 用 API_INTERNAL_URL 直连后端(相对 /api 在服务端无法解析)，环境变量缺失时兜底内网 localhost:3002（Node fetch 不支持相对 URL）；客户端维持 /api（nginx 转发）。对齐 blog/[slug]、sitemap 等的解析方式。
 const API_BASE =
   typeof window === 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api')
+    // SSR 必须走内网直连后端(localhost:3002)，禁止用公网 NEXT_PUBLIC_API_URL 绕 nginx 回自己——
+    // 否则 SSR 流量以服务器自身 IP 命中 publicReadLimiter(120/分)，一爆整站 SSR 429("This page couldn't load")。
+    ? (process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api')
     : (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api');
 const ALLOW_LOCAL_FALLBACK = process.env.NODE_ENV === 'development';
 
