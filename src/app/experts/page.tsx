@@ -16,10 +16,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const isVn = country === 'vn';
 
   const title = isVn
-    ? 'Tìm Chuyên Gia Thiết Kế & Thi Công Nội Thất - Tarmeer'
-    : 'Find Interior Design & Fit-Out Experts in UAE - Tarmeer';
+    ? 'Tìm Nhà Thiết Kế & Thi Công Nội Thất - Tarmeer'
+    : 'Find Interior Designers in UAE - Tarmeer';
   const description = isVn
-    ? 'Kết nối với các chuyên gia thiết kế nội thất, thi công và hoàn thiện đã được xác minh tại Việt Nam. Xem hồ sơ, kinh nghiệm và chứng chỉ.'
+    ? 'Kết nối với các nhà thiết kế nội thất, thi công và hoàn thiện đã được xác minh tại Việt Nam. Xem hồ sơ, kinh nghiệm và chứng chỉ.'
     : 'Connect with verified interior design, carpentry, fit-out and finishing professionals in Dubai, Abu Dhabi and across the UAE. View profiles, experience and certificates.';
   const canonical = isVn ? 'https://vn.tarmeer.com/experts' : 'https://www.tarmeer.com/experts';
 
@@ -92,8 +92,8 @@ export default async function ExpertsPage({ searchParams }: Props) {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: isVn
-      ? 'Chuyên Gia Thiết Kế & Thi Công Nội Thất tại Việt Nam'
-      : 'Interior Design & Fit-Out Experts in UAE',
+      ? 'Nhà Thiết Kế Nội Thất tại Việt Nam'
+      : 'Interior Designers in UAE',
     numberOfItems: pagination.total,
     itemListElement: experts.slice(0, 30).map((e, i) => ({
       '@type': 'ListItem',

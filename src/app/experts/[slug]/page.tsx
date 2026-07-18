@@ -48,20 +48,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const expert = await fetchExpert(slug);
   if (!expert) {
     return {
-      title: isVn ? 'Hồ Sơ Chuyên Gia - Tarmeer' : 'Expert Profile - Tarmeer',
+      title: isVn ? 'Hồ Sơ Nhà Thiết Kế - Tarmeer' : 'Designer Profile - Tarmeer',
       description: isVn
-        ? 'Tìm các chuyên gia thiết kế và thi công nội thất đã được xác minh trên Tarmeer.'
-        : 'Find verified interior design and fit-out experts on Tarmeer.',
+        ? 'Tìm các nhà thiết kế nội thất đã được xác minh trên Tarmeer.'
+        : 'Find verified interior designers on Tarmeer.',
       alternates: { canonical: `${baseUrl}/experts/${slug}` },
     };
   }
 
-  const serviceLabel = expert.services[0] || (isVn ? 'Chuyên gia nội thất' : 'Interior Expert');
+  const serviceLabel = expert.services[0] || (isVn ? 'Nhà thiết kế nội thất' : 'Interior Designer');
   const locationPart = expert.city ? ` - ${expert.city}` : '';
   const title = `${expert.full_name} - ${serviceLabel}${locationPart} - Tarmeer`;
   const description = isVn
-    ? `${expert.full_name} — ${expert.services.slice(0, 3).join(', ') || 'chuyên gia nội thất'}${expert.city ? ` tại ${expert.city}` : ''}.${Number(expert.experience_years) > 0 ? ` ${expert.experience_years} năm kinh nghiệm.` : ''} Xem hồ sơ, chứng chỉ và liên hệ trên Tarmeer.`
-    : `${expert.full_name} — ${expert.services.slice(0, 3).join(', ') || 'interior expert'}${expert.city ? ` in ${expert.city}` : ''}.${Number(expert.experience_years) > 0 ? ` ${expert.experience_years} years of experience.` : ''} View profile, certificates and get in touch on Tarmeer.`;
+    ? `${expert.full_name} — ${expert.services.slice(0, 3).join(', ') || 'nhà thiết kế nội thất'}${expert.city ? ` tại ${expert.city}` : ''}.${Number(expert.experience_years) > 0 ? ` ${expert.experience_years} năm kinh nghiệm.` : ''} Xem hồ sơ, chứng chỉ và liên hệ trên Tarmeer.`
+    : `${expert.full_name} — ${expert.services.slice(0, 3).join(', ') || 'interior designer'}${expert.city ? ` in ${expert.city}` : ''}.${Number(expert.experience_years) > 0 ? ` ${expert.experience_years} years of experience.` : ''} View profile, certificates and get in touch on Tarmeer.`;
   const canonical = `${baseUrl}/experts/${expert.slug || slug}`;
 
   return {
@@ -123,7 +123,7 @@ export default async function ExpertDetailPage({ params }: Props) {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
-      { '@type': 'ListItem', position: 2, name: 'Experts', item: `${baseUrl}/experts` },
+      { '@type': 'ListItem', position: 2, name: 'Designers', item: `${baseUrl}/experts` },
       {
         '@type': 'ListItem',
         position: 3,
