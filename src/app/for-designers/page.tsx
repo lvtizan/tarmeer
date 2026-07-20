@@ -55,7 +55,6 @@ const BENEFITS: {
   desc: string;
   href?: string;
   linkLabel?: string;
-  comingSoon?: boolean;
 }[] = [
   {
     icon: BadgePercent,
@@ -88,7 +87,8 @@ const BENEFITS: {
     icon: Plane,
     title: 'China Factory Tours',
     desc: 'Join curated visits to partner factories and material hubs in China with our sourcing team.',
-    comingSoon: true,
+    href: '/for-designers/china-tour',
+    linkLabel: 'See the study tour',
   },
 ];
 
@@ -216,15 +216,8 @@ export default async function ForDesignersPage() {
                 key={b.title}
                 className="border border-stone-200 rounded-2xl p-6 bg-white hover:border-[#b8864a]/40 hover:shadow-sm transition"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#b8864a]/10">
-                    <b.icon className="w-5 h-5 text-[#b8864a]" />
-                  </div>
-                  {b.comingSoon && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 bg-stone-100 rounded-full px-2.5 py-1">
-                      Coming soon
-                    </span>
-                  )}
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#b8864a]/10">
+                  <b.icon className="w-5 h-5 text-[#b8864a]" />
                 </div>
                 <h3 className="font-serif text-lg font-bold text-[#1c1917] mt-4">{b.title}</h3>
                 <p className="text-sm text-stone-500 leading-relaxed mt-2">{b.desc}</p>

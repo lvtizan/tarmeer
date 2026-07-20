@@ -8,13 +8,23 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
   ArrowRight,
+  Boxes,
+  Brush,
   Building2,
   CheckCircle2,
   ClipboardList,
+  Clock,
   Container,
   FileBadge,
+  FileText,
   Gem,
+  Images,
+  Layers,
   LayoutGrid,
+  Leaf,
+  Package,
+  Palette,
+  PanelsTopLeft,
   SearchCheck,
   ShieldCheck,
   Tags,
@@ -119,6 +129,46 @@ const PROCESS_STEPS = [
     title: 'Local After-sales',
     body: 'A clear warranty period, free defect replacement and a local support desk — backed by our building-materials mall.',
   },
+];
+
+// 选品窄而深：主打新材料品类（新增 ③c Curated selection — narrow & deep）
+const MATERIAL_CATEGORIES = [
+  {
+    icon: Brush,
+    name: 'Microcement',
+    body: 'A seamless, jointless mineral coating that flows over floors, walls, wet areas and even joinery — the continuous, hand-finished look grout lines can never give you.',
+  },
+  {
+    icon: Layers,
+    name: 'Sintered stone',
+    body: 'Ultra-compact large-format slabs that shrug off heat, scratches and UV — thin and light enough for facades, worktops and full-height cladding alike.',
+  },
+  {
+    icon: Palette,
+    name: 'Art coatings',
+    body: 'Decorative lime, travertine and metallic plasters that build real depth and texture on feature walls, without the weight or cost of natural stone.',
+  },
+  {
+    icon: PanelsTopLeft,
+    name: 'New wall panels',
+    body: 'Lightweight bamboo-fibre, WPC and acoustic panels that clip straight over existing surfaces — built for fast-track fit-outs on a tight programme.',
+  },
+  {
+    icon: Leaf,
+    name: 'Functional & eco materials',
+    body: 'Low-VOC, recycled-content and thermally efficient materials for projects chasing green-building credits and healthier indoor air.',
+  },
+];
+
+// 标准样品包：每款材料随附的一整套决策资料（新增 ③d The standard sample pack）
+const SAMPLE_PACK = [
+  { icon: Package, label: 'Physical sample', note: 'A real swatch to touch and light-test — never just a screen render.' },
+  { icon: FileText, label: 'Spec sheet', note: 'Dimensions, thickness, finish and technical performance on one page.' },
+  { icon: FileBadge, label: 'Certifications', note: 'Fire, slip and environmental compliance documents on file.' },
+  { icon: Tags, label: 'FOB price', note: 'Transparent per-unit factory FOB pricing, itemised up front.' },
+  { icon: Boxes, label: 'MOQ', note: 'The real minimum order quantity, stated before you commit.' },
+  { icon: Clock, label: 'Lead time', note: 'A realistic production-plus-shipping timeline, not a guess.' },
+  { icon: Images, label: 'Image & video rights', note: 'Licensed photography and video you can reuse in your own proposals.' },
 ];
 
 const FAQS = [
@@ -367,6 +417,63 @@ export default async function ChinaSourcingPage() {
           </div>
         </div>
       </section>
+
+      {/* ③c 选品窄而深 — Curated selection: narrow & deep */}
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#b8864a]">Curated Selection</p>
+            <h2 className="mt-2 font-serif text-2xl font-bold text-[#2c2c2c] sm:text-3xl">
+              Narrow and deep — the new materials worth specifying
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-stone-500 sm:text-base">
+              We don&apos;t list everything China makes. We go deep on a few new material families that genuinely
+              change how a space looks and performs — and know each one down to the spec.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {MATERIAL_CATEGORIES.map(({ icon: Icon, name, body }) => (
+              <div key={name} className="rounded-xl border border-stone-200 bg-[#faf9f7] p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#b8864a]/10">
+                  <Icon className="h-5 w-5 text-[#b8864a]" />
+                </div>
+                <h3 className="mt-4 text-base font-semibold text-[#2c2c2c]">{name}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-stone-500">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ③d 标准样品包 — The standard sample pack */}
+      <section className="bg-[#faf8f5] py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#b8864a]">The Sample Pack</p>
+            <h2 className="mt-2 font-serif text-2xl font-bold text-[#2c2c2c] sm:text-3xl">
+              Every material arrives with the same standard pack
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-stone-500 sm:text-base">
+              No chasing factories for missing details. For each material you shortlist, you get one complete,
+              decision-ready pack — so you can compare like for like and specify with confidence.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {SAMPLE_PACK.map(({ icon: Icon, label, note }) => (
+              <div key={label} className="flex gap-3 rounded-xl border border-stone-200 bg-white p-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#b8864a]/10">
+                  <Icon className="h-5 w-5 text-[#b8864a]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#2c2c2c]">{label}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-stone-500">{note}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
 
       {/* ④ 信任条 → /guarantee */}
       <section className="bg-[#1c1917] py-14 sm:py-16">

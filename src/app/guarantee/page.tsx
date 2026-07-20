@@ -41,6 +41,7 @@ const PILLARS = [
       'On-time arrival with proactive status updates',
       'Every shipment inspected together with you on arrival',
       'No handover if materials don’t match the agreed specification',
+      'Any delay is explained up front, with a revised date — never silence',
     ],
   },
   {
@@ -66,7 +67,7 @@ const PILLARS = [
 ];
 
 const COMMITMENTS = [
-  { icon: Clock, title: 'On-time Delivery', body: 'Agreed dates are honoured, with proactive updates at every stage.' },
+  { icon: Clock, title: 'On-time Delivery', body: 'Agreed dates are honoured, with proactive updates — and any delay explained and re-dated, never left unspoken.' },
   { icon: PackageCheck, title: 'Inspection on Arrival', body: 'Every shipment is opened and checked with you before handover.' },
   { icon: ClipboardCheck, title: 'Spec-match Promise', body: 'If it doesn’t match the agreed specification, we don’t hand it over.' },
   { icon: RefreshCcw, title: 'Defect Replacement', body: 'Manufacturing defects are replaced free within the warranty period.' },

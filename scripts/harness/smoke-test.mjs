@@ -126,7 +126,7 @@ if (fStatus === null) {
 }
 
 // 转型新增页面可达性（本地默认 AE 站；500/404 都算失败——页面必须存在）
-for (const p of ['/materials', '/services/china-sourcing', '/guarantee', '/for-designers']) {
+for (const p of ['/materials', '/materials/showroom', '/services/china-sourcing', '/guarantee', '/for-designers', '/for-designers/china-tour']) {
   const st = await req('GET', `${FRONTEND}${p}`);
   if (st === 200) ok(`GET ${p} → 200`);
   else ng(`GET ${p}`, `${st ?? 'unreachable'}`);

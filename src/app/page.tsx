@@ -6,6 +6,7 @@ import HomeSpaceSection from '@/components/home/HomeSpaceSection';
 import HomeSupplierSection from '@/components/home/HomeSupplierSection';
 import HomeInsightsSection from '@/components/home/HomeInsightsSection';
 import HomeMaterialsHero from '@/components/home/HomeMaterialsHero';
+import HomeHowItWorks from '@/components/home/HomeHowItWorks';
 import HomeApplicationTiles from '@/components/home/HomeApplicationTiles';
 import HomeChinaTeam from '@/components/home/HomeChinaTeam';
 import HomeSourcingStrip from '@/components/home/HomeSourcingStrip';
@@ -120,6 +121,7 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <HomeMaterialsHero />
+      <HomeHowItWorks />
       <HomeChinaTeam />
       <HomeApplicationTiles />
       <HomeSourcingStrip />

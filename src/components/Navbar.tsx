@@ -405,6 +405,9 @@ export default function Navbar({
                     {tr.nav.allSuppliers} {'>'}
                   </Link>
                   {/* 中国新材料采购入口（AE 专属，业务转型新增） */}
+                  <Link href="/materials/showroom" onClick={() => handleClick('/materials/showroom')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    Selection Center
+                  </Link>
                   <Link href="/services/china-sourcing" onClick={() => handleClick('/services/china-sourcing')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
                     China Sourcing
                   </Link>
@@ -597,6 +600,9 @@ export default function Navbar({
                       {tr.nav.allSuppliers} {'>'}
                     </Link>
                     {/* 中国新材料采购入口（AE 专属，业务转型新增） */}
+                    <Link href="/materials/showroom" onClick={() => handleClick('/materials/showroom')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      Selection Center
+                    </Link>
                     <Link href="/services/china-sourcing" onClick={() => handleClick('/services/china-sourcing')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
                       China Sourcing
                     </Link>

@@ -68,6 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (isAe) {
     staticRoutes.push(
       { url: `${BASE}/materials`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+      { url: `${BASE}/materials/showroom`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
       { url: `${BASE}/for-suppliers`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
       { url: `${BASE}/services/soft-decoration`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
       { url: `${BASE}/services/new-home-design`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
@@ -76,6 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${BASE}/services/china-sourcing`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
       { url: `${BASE}/guarantee`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
       { url: `${BASE}/for-designers`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+      { url: `${BASE}/for-designers/china-tour`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     );
   }
 
