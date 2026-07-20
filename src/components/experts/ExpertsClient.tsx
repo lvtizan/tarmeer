@@ -283,8 +283,8 @@ export default function ExpertsClient({
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
           <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mb-10">
             {isVn
-              ? 'Tìm Chuyên Gia Thiết Kế & Thi Công Phù Hợp'
-              : 'Find the Right Design & Renovation Expert in UAE'}
+              ? 'Tìm Nhà Thiết Kế Nội Thất Phù Hợp'
+              : 'Find the Right Interior Designer in UAE'}
           </h1>
 
           {/* 3-Step Flow */}
@@ -296,7 +296,7 @@ export default function ExpertsClient({
               },
               {
                 icon: Users,
-                label: isVn ? 'Kết nối với chuyên gia' : 'Get matched with local experts',
+                label: isVn ? 'Kết nối với nhà thiết kế' : 'Get matched with local designers',
               },
               {
                 icon: Handshake,
@@ -382,7 +382,7 @@ export default function ExpertsClient({
               <div className="text-center py-20 bg-white rounded-[22px] border border-stone-100">
                 <Users className="w-10 h-10 mx-auto text-stone-300 mb-4" />
                 <p className="font-serif text-xl text-[#1c1917] mb-2">
-                  {isVn ? 'Chưa tìm thấy chuyên gia phù hợp' : 'No experts found'}
+                  {isVn ? 'Chưa tìm thấy nhà thiết kế phù hợp' : 'No designers found'}
                 </p>
                 <p className="text-sm text-stone-500 mb-5">
                   {isVn ? 'Hãy thử bộ lọc khác.' : 'Try a different filter.'}

@@ -446,12 +446,12 @@ function ExpertContactCard({ expert, isVn }: { expert: ExpertDetail; isVn: boole
 
       {/* Inquiry form — all countries */}
       <h3 className="font-serif text-base text-[#1c1917] mb-1">
-        {isVn ? 'Gửi tin nhắn cho chuyên gia' : 'Message this expert'}
+        {isVn ? 'Gửi tin nhắn cho nhà thiết kế' : 'Message this designer'}
       </h3>
       <p className="text-xs text-stone-500 mb-4">
         {isVn
-          ? 'Mô tả nhu cầu của bạn, chuyên gia sẽ phản hồi trực tiếp.'
-          : 'Describe your project and the expert will get back to you directly.'}
+          ? 'Mô tả nhu cầu của bạn, nhà thiết kế sẽ phản hồi trực tiếp.'
+          : 'Describe your project and the designer will get back to you directly.'}
       </p>
       <UnifiedInquiryForm variant="expert" expertId={expert.id} isVn={isVn} />
     </div>

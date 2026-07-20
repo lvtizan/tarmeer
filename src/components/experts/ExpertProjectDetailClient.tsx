@@ -217,12 +217,12 @@ export default function ExpertProjectDetailClient({ expert, project, isVn }: Pro
                 <div className="bg-white rounded-2xl border border-stone-200 p-5 space-y-4">
                   <div>
                     <p className="font-serif text-base text-[#1c1917]">
-                      {isVn ? 'Gửi tin nhắn cho chuyên gia' : 'Message this expert'}
+                      {isVn ? 'Gửi tin nhắn cho nhà thiết kế' : 'Message this designer'}
                     </p>
                     <p className="text-xs text-stone-500 mt-0.5">
                       {isVn
-                        ? 'Mô tả nhu cầu của bạn, chuyên gia sẽ phản hồi trực tiếp.'
-                        : 'Describe your project and the expert will get back to you directly.'}
+                        ? 'Mô tả nhu cầu của bạn, nhà thiết kế sẽ phản hồi trực tiếp.'
+                        : 'Describe your project and the designer will get back to you directly.'}
                     </p>
                   </div>
                   <ExpertInquiryForm expertId={expert.id} isVn={isVn} />

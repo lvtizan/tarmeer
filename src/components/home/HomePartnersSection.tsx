@@ -1,5 +1,5 @@
 // AE 首页压缩版「Local Execution Partners」（改版 spec §5 ⑥，AE 专用，不进 i18n）
-// 装企/专家降级为双入口卡；companies 复用 page.tsx 已取数据展示少量名字，可为空。
+// 装企/设计师降级为双入口卡（设计师卡指向 /experts 设计师目录：每位设计师带作品集，点进看其项目）；companies 复用 page.tsx 已取数据展示少量名字，可为空。
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { Company } from '@/lib/companyData';
@@ -51,13 +51,13 @@ export default function HomePartnersSection({ companies = [] }: { companies?: Co
             className="group flex flex-col rounded-2xl border border-stone-200 bg-white p-6 transition hover:border-stone-300 hover:shadow-[0_12px_32px_rgba(28,25,23,0.08)]"
           >
             <h3 className="font-serif text-[19px] leading-tight text-[#1c1917] transition group-hover:text-[#b8864a]">
-              Meet Design Experts
+              Find Designers
             </h3>
             <p className="mt-1.5 text-[13px] leading-5 text-stone-500">
-              Work with independent interior designers who specify and style the newest materials.
+              Browse portfolios from independent interior designers who specify and style the newest materials.
             </p>
             <span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-medium text-[#b8864a]">
-              Browse Experts <ArrowRight className="h-4 w-4" />
+              Browse Designers <ArrowRight className="h-4 w-4" />
             </span>
           </Link>
         </div>
