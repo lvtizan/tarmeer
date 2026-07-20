@@ -60,67 +60,55 @@ export default function HomeHowItWorks() {
   return (
     <section className="bg-white py-14 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-          {/* 左：核心业务实景图——顾问带海湾客户在中国选材 */}
-          <div className="overflow-hidden rounded-2xl bg-stone-200 aspect-[4/3]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/sourcing/people-hero-medium.webp"
-              srcSet="/images/sourcing/people-hero-thumb.webp 600w, /images/sourcing/people-hero-medium.webp 1200w, /images/sourcing/people-hero.webp 2000w"
-              sizes="(min-width: 1024px) 50vw, 100vw"
-              alt="A Tarmeer consultant guiding Gulf clients through new building materials from China"
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-          </div>
+        {/* 标题 */}
+        <div className="max-w-2xl">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">How It Works</p>
+          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
+            China&apos;s newest materials, in three steps
+          </h2>
+          <p className="mt-3 text-[15px] leading-7 text-stone-500 sm:text-base">
+            From the factory floor in China to your project in the UAE — curated, sourced and guaranteed by us.
+          </p>
+        </div>
 
-          {/* 右：一眼看懂——三步怎么运转 */}
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">How It Works</p>
-            <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
-              China&apos;s newest materials, in three steps
-            </h2>
-            <p className="mt-3 text-[15px] leading-7 text-stone-500 sm:text-base">
-              From the factory floor in China to your project in the UAE — curated, sourced and guaranteed by us.
-            </p>
-
-            <ol className="mt-8 space-y-5">
-              {STEPS.map((s) => (
-                <li key={s.n} className="flex items-start gap-4">
-                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#b8864a]/10 text-[#b8864a]">
-                    <s.icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <h3 className="font-serif text-lg font-bold text-[#1c1917]">
-                      <span className="text-[#b8864a]/50">{s.n}</span> &nbsp;{s.title}
-                    </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-stone-500">{s.desc}</p>
-                    <Link
-                      href={s.href}
-                      className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[#b8864a] transition hover:text-[#a07640]"
-                    >
-                      {s.linkLabel} <span aria-hidden>→</span>
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ol>
-
-            <div className="mt-8 flex flex-wrap gap-3">
+        {/* 三步卡片 */}
+        <div className="mt-10 grid gap-5 sm:grid-cols-3">
+          {STEPS.map((s) => (
+            <div
+              key={s.n}
+              className="flex flex-col rounded-2xl border border-stone-200 bg-white p-6 transition hover:border-[#b8864a]/40 hover:shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#b8864a]/10 text-[#b8864a]">
+                  <s.icon className="h-5 w-5" />
+                </span>
+                <span className="font-serif text-4xl font-bold leading-none text-[#b8864a]/20">{s.n}</span>
+              </div>
+              <h3 className="mt-4 font-serif text-lg font-bold text-[#1c1917]">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-stone-500">{s.desc}</p>
               <Link
-                href="/materials"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-[#b8864a] px-7 text-sm font-semibold text-white transition hover:bg-[#a07640]"
+                href={s.href}
+                className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[#b8864a] transition hover:text-[#a07640]"
               >
-                Browse Materials
-              </Link>
-              <Link
-                href="/for-designers"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-stone-300 px-7 text-sm font-semibold text-stone-700 transition hover:border-[#b8864a] hover:text-[#b8864a]"
-              >
-                For Designers
+                {s.linkLabel} <span aria-hidden>→</span>
               </Link>
             </div>
-          </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/materials"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-[#b8864a] px-7 text-sm font-semibold text-white transition hover:bg-[#a07640]"
+          >
+            Browse Materials
+          </Link>
+          <Link
+            href="/for-designers"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-stone-300 px-7 text-sm font-semibold text-stone-700 transition hover:border-[#b8864a] hover:text-[#b8864a]"
+          >
+            For Designers
+          </Link>
         </div>
 
         {/* 三点价值条 */}
