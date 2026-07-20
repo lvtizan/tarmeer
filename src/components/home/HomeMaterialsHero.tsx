@@ -39,10 +39,10 @@ export default function HomeMaterialsHero() {
               Browse Materials
             </Link>
             <Link
-              href="/materials#visit"
+              href="/materials/showroom"
               className="inline-flex h-12 items-center justify-center rounded-full border border-white/70 px-8 text-base font-medium text-white transition hover:border-white hover:bg-white/10"
             >
-              Book a Showroom Visit
+              Visit the Selection Center
             </Link>
           </div>
         </div>

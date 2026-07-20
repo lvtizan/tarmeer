@@ -9,24 +9,32 @@ const STEPS: {
   icon: typeof LayoutGrid;
   title: string;
   desc: string;
+  href: string;
+  linkLabel: string;
 }[] = [
   {
     n: '01',
     icon: LayoutGrid,
     title: 'Select your materials',
     desc: 'Browse the library online, or visit our UAE selection center to see and touch the newest materials in person.',
+    href: '/materials/showroom',
+    linkLabel: 'Visit the selection center',
   },
   {
     n: '02',
     icon: Factory,
     title: 'We source from China',
     desc: 'We buy direct from leading Chinese factories, quality-check every order and consolidate it for shipping.',
+    href: '/services/china-sourcing',
+    linkLabel: 'How sourcing works',
   },
   {
     n: '03',
     icon: ShieldCheck,
     title: 'Local delivery & guarantee',
     desc: 'Delivered to your project in the UAE — backed by our local delivery commitment and after-sales warranty.',
+    href: '/guarantee',
+    linkLabel: 'Our local guarantee',
   },
 ];
 
@@ -87,6 +95,12 @@ export default function HomeHowItWorks() {
                       <span className="text-[#b8864a]/50">{s.n}</span> &nbsp;{s.title}
                     </h3>
                     <p className="mt-1 text-sm leading-relaxed text-stone-500">{s.desc}</p>
+                    <Link
+                      href={s.href}
+                      className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[#b8864a] transition hover:text-[#a07640]"
+                    >
+                      {s.linkLabel} <span aria-hidden>→</span>
+                    </Link>
                   </div>
                 </li>
               ))}
@@ -100,10 +114,10 @@ export default function HomeHowItWorks() {
                 Browse Materials
               </Link>
               <Link
-                href="/services/china-sourcing"
+                href="/for-designers"
                 className="inline-flex h-11 items-center justify-center rounded-full border border-stone-300 px-7 text-sm font-semibold text-stone-700 transition hover:border-[#b8864a] hover:text-[#b8864a]"
               >
-                How sourcing works
+                For Designers
               </Link>
             </div>
           </div>
