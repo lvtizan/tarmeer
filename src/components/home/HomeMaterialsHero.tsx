@@ -1,25 +1,16 @@
 // AE 首页新 Hero — 中国新材料主张（改版 spec §5 ①，AE 专用，不进 i18n）
-// 全幅「带客视察中国厂家」真实场景图(hero-home，Agnes 生成)，左侧压暗放文案（不用纯黑硬块）。
-// 人物在画面偏后(头部约上 1/3)，全幅 object-center 不切头；左强右弱渐变保证白字可读、右侧场景清晰。
+// 首屏背景轮播「带客视察中国大板展厅」(HeroSlides，Agnes 生成，全身入镜不切头)，
+// 左侧压暗渐变放文案（不用纯黑硬块），图满铺到视口两缘。
 import Link from 'next/link';
-
-const HERO_BASE = '/images/sourcing/hero-home';
+import HeroSlides from './HeroSlides';
 
 export default function HomeMaterialsHero() {
   return (
     <section className="relative isolate flex min-h-[520px] items-center overflow-hidden sm:min-h-[600px] lg:min-h-[640px]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`${HERO_BASE}.webp`}
-        srcSet={`${HERO_BASE}-thumb.webp 600w, ${HERO_BASE}-medium.webp 1200w, ${HERO_BASE}.webp 2000w`}
-        sizes="100vw"
-        alt="A Chinese factory manager guiding visiting Gulf clients on an inspection tour of a building-materials factory in China"
-        loading="eager"
-        fetchPriority="high"
-        className="absolute inset-0 h-full w-full object-cover object-center"
-      />
-      {/* 左强右弱压暗：左侧文字可读，右侧厂区场景清晰 */}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(20,18,16,0.90)_0%,rgba(20,18,16,0.74)_38%,rgba(20,18,16,0.40)_65%,rgba(20,18,16,0.20)_100%)]" />
+      <HeroSlides />
+
+      {/* 左强右弱压暗：左侧文字可读，右侧展厅场景清晰 */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(20,18,16,0.90)_0%,rgba(20,18,16,0.74)_38%,rgba(20,18,16,0.40)_65%,rgba(20,18,16,0.20)_100%)]" />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className="max-w-xl">
