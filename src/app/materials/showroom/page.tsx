@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      images: [{ url: `${c.baseUrl}${HERO_IMG}-medium.webp` }],
+      images: [{ url: `${c.baseUrl}${HERO_IMG}-medium.webp`, width: 1200, height: 630 }],
       url: `${c.baseUrl}/materials/showroom`,
       type: 'website',
     },
@@ -109,11 +109,30 @@ export default async function SelectionCenterPage() {
     },
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${c.baseUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Selection Center',
+        item: `${c.baseUrl}/materials/showroom`,
+      },
+    ],
+  };
+
   return (
     <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(placeJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
 
       {/* Hero */}

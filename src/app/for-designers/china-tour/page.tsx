@@ -40,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      images: [{ url: `${c.baseUrl}${HERO_IMG}-medium.webp` }],
+      images: [{ url: `${c.baseUrl}${HERO_IMG}-medium.webp`, width: 1200, height: 630 }],
       url: `${c.baseUrl}/for-designers/china-tour`,
       type: 'website',
     },
@@ -121,12 +121,31 @@ export default async function ChinaTourPage() {
     },
   };
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${c.baseUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'For Designers', item: `${c.baseUrl}/for-designers` },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'China Study Tour',
+        item: `${c.baseUrl}/for-designers/china-tour`,
+      },
+    ],
+  };
+
   return (
     <div>
       {/* 统一走 jsonLdHtml 转义，防将来加动态字段踩 </script> 注入坑 */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(serviceJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
 
       {/* Hero */}
