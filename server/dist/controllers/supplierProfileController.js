@@ -62,7 +62,8 @@ async function listPublicSuppliers(req, res) {
         const category = req.query.category;
         const orderMode = req.query.order === 'home' ? 'home' : 'list';
         const displayOrderCol = orderMode === 'home' ? 'home_display_order' : 'list_display_order';
-        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND (\n  (SELECT COUNT(*) FROM supplier_projects spj WHERE spj.supplier_profile_id = sp.id AND spj.is_published = 1) > 0\n  OR (sp.source = 'partner' AND (SELECT COUNT(*) FROM supplier_products sprd WHERE sprd.supplier_profile_id = sp.id) > 0)\n)";
+        // 可见性门槛：供应商发布了任意已发布案例(projects) OR 任意产品(products) 即可出现（不再限定 source='partner'）。
+        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND (\n  (SELECT COUNT(*) FROM supplier_projects spj WHERE spj.supplier_profile_id = sp.id AND spj.is_published = 1) > 0\n  OR (SELECT COUNT(*) FROM supplier_products sprd WHERE sprd.supplier_profile_id = sp.id) > 0\n)";
         const params = [];
         // 国家隔离铁律：列表必须按站点国家过滤（query 优先，回退 x-country header，再回退 ae）。
         // 否则合作方扇出到 vn 的供应商(越南文公司名/简介)会泄漏进 AE 列表——反之 AE 供应商也会漏到 VN。
