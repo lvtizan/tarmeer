@@ -110,7 +110,7 @@ export default function HomeShowroom() {
                 )}
                 <Link
                   href={row.cta.href}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#b8864a] transition hover:text-[#a07640]"
+                  className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-6 py-3 text-sm font-medium text-[#1c1917] transition hover:border-[#b8864a] hover:text-[#b8864a]"
                 >
                   {row.cta.label} <ArrowRight className="h-4 w-4" />
                 </Link>

@@ -44,7 +44,7 @@ export default function HomeCaseStudySection({ guide }: { guide: PublicGuide | n
             )}
             <Link
               href={`/insights/${guide.slug}`}
-              className="inline-flex items-center gap-2 mt-6 px-6 h-12 rounded-lg bg-[#b8864a] hover:bg-[#a07640] text-white text-sm font-semibold transition"
+              className="inline-flex items-center gap-2 mt-6 rounded-full border border-stone-300 px-6 py-3 text-sm font-medium text-[#1c1917] transition hover:border-[#b8864a] hover:text-[#b8864a]"
             >
               Read the Story
               <ArrowRight className="w-4 h-4" />
