@@ -1,5 +1,5 @@
 // 「Visit Our Selection Center」预约区块 — /materials 产品流与供应商列表之间
-// 左图 /images/sourcing/visit-2.webp（明亮大理石展厅+客户顾问，冷调；变体仅 thumb/medium）
+// 左图 /images/sourcing/selection-center.webp（女顾问给中/西/阿客户讲木饰面，用户提供图；4档变体齐）
 // 右侧理念文案 + SourcingRequestForm variant='visit'。
 // server component（无状态），表单为 client 子组件。
 import { MapPin, ShieldCheck, Sparkles } from 'lucide-react';
@@ -32,8 +32,8 @@ export default function ShowroomVisitSection() {
           {/* Left: showroom image（显式 aspect 防 CLS；lg 拉伸填满与右列等高） */}
           <div className="rounded-2xl overflow-hidden bg-stone-200 aspect-[4/3] lg:aspect-auto lg:h-full lg:min-h-[480px]">
             <img
-              src="/images/sourcing/visit-2-medium.webp"
-              srcSet="/images/sourcing/visit-2-thumb.webp 600w, /images/sourcing/visit-2-medium.webp 1200w"
+              src="/images/sourcing/selection-center-medium.webp"
+              srcSet="/images/sourcing/selection-center-thumb.webp 600w, /images/sourcing/selection-center-medium.webp 1200w, /images/sourcing/selection-center.webp 2000w"
               sizes="(min-width: 1024px) 50vw, 100vw"
               alt="Tarmeer material selection center in Sharjah"
               loading="lazy"
