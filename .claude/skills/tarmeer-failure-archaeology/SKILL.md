@@ -100,6 +100,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **遗留（未修，属数据质量）**：品类 label 机翻污染——`石材`→"Stone Contact"、group `Stone, Tile & Flooring`→"tone,_tile_&_flooring"。翻译管线把权威枚举 label 译坏，需单独修 label 源。
 - **预防**：① **下拉选项的取值域必须与筛选所匹配的字段取值域同源**——选项来自产品品类枚举，就必须能匹配到产品品类，不能只匹配另一套档案枚举；新增筛选器先确认"选项 value ↔ WHERE 字段 value"同一命名空间。② 验证筛选器不能只看"有结果"，要对**每个选项**抽查是否真能命中（本例 3 个月里没人发现选项几乎全空）。③ 品类 label 走机翻前要挡住权威枚举的 label（枚举 label 应是人工固定文案，不进翻译管线）。
 
+### FA-15 sub_admin 后台绑定访谈公司搜索被 403，前端把错误吞成"无匹配公司"（2026-07-22）
+- **现象**：sub_admin（kp99.cn 数据录入组）在后台「访谈详情 → 绑定公司」搜索一家**确实存在**的公司（`company_profiles` id=284 "Najm alriyah"，country=ae），却显示"无匹配公司"。
+- **根因**：两层叠加。① 访谈列表/详情页对**所有 admin 角色**开放（`/api/admin/interviews` 注释就是 "all admins"），但公司搜索走的是 **field 路由** `/api/field/companies/search`，该路由被 `requireFieldOrSuperAdmin` 守卫——只放行 `super_admin`/`field_staff`，**sub_admin → 403**（实测 super/field→200，sub→403）。② 前端 `handleBindSearch` 的 `catch { setBindResults([]) }` 把 403/500/网络错误**一律吞成空结果**，渲染成"无匹配公司"，掩盖了真正的 403。用户看到的"搜索坏了"其实是权限被拒 + 错误被吞。
+- **修复**：① `server/dist/routes/field.js` 把 `requireFieldOrSuperAdmin` 下移——公司搜索只需 `requireAdmin`（任意已登录 admin，含 sub_admin），`/interviews/:id/load`、`/re-submit` 仍保留在其后受限。国家隔离不变：非 super_admin 的 `staffCountry` 仍强制取本人 `admin_users.country`（`?country=` 只对 super 生效），sub_admin 只能搜到本国公司，不越权。**注：sub_admin 本就能经 `PATCH /api/admin/interviews/:id` 绑定公司，此处仅补齐"搜索"能力，非提权。** ② 前端新增 `bindError`，搜索失败显示"搜索失败，请重试"（红字）而非"无匹配公司"。③ 新增回归 `scripts/harness/field-search-access.mjs` 并接入 smoke-test `[3b]`，守护中间件挂载顺序（sub 搜索 200 / load 403 双向）。生产实测：sub_admin 搜 Najm→200 返回 id284；`?country=vn` 仍只返 ae 数据；load 仍 403。
+- **预防**：① **同一功能被开放给某角色时，该功能依赖的每一个后端端点都要核对角色门禁是否一致**——不要"页面对所有 admin 开放，但底层 API 只放行部分角色"造成半残。改角色可见性/权限前用 Grep 找出该功能链路上的**所有**端点及其 `require*` 中间件。② **前端 `catch` 禁止把请求错误静默吞成"空/无数据"**——403/500/网络错误要与"真的没有数据"区分渲染，否则线上排障时"看起来没数据"其实是权限/接口坏了（本次就被误报成"搜索坏了"）。新增数据拉取一律：失败→显式错误态，空→空态。③ 中间件顺序改动必须加回归（`router.use` 只影响其**之后**注册的路由）。已并入 tarmeer-change-control 的"改权限先全链路 Grep"口径。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
