@@ -301,8 +301,8 @@ export default async function SelectionCenterPage() {
           {/* 顾问在展厅用双语给海湾客户讲材料的实景图 */}
           <div className="rounded-2xl overflow-hidden bg-stone-200 aspect-[3/2]">
             <img
-              src="/images/sourcing/people-hero-medium.webp"
-              srcSet="/images/sourcing/people-hero-thumb.webp 600w, /images/sourcing/people-hero-medium.webp 1200w, /images/sourcing/people-hero.webp 2000w"
+              src="/images/sourcing/cv-1-medium.webp"
+              srcSet="/images/sourcing/cv-1-thumb.webp 600w, /images/sourcing/cv-1-medium.webp 1200w"
               sizes="(min-width: 1024px) 50vw, 100vw"
               alt="A bilingual consultant explaining material samples to visiting clients at the Tarmeer selection center"
               loading="lazy"
