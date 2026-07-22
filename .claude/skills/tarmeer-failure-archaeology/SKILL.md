@@ -86,6 +86,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **根因**：两个叠加疏漏。① 去标识只处理了「显示名」`company_name`，漏了另一个身份字段 `name_zh`——`redactPublicSupplier` 没 null 它，`SELECT sp.*` 原样带出。② 误以为「前端不渲染星号名、改用品类名」就等于去标识完成；实际客户端组件收到的是**整个 supplier 对象**，Next 会把完整 props 序列化进 RSC payload，未被 null 的字段全部进页面源码。遮蔽发生在「render」层而非「数据出站」层 = 假去标识。
 - **修复**：① `redactPublicSupplier` 增加 `name_zh: null`，并把简介里出现的中文名一并 `maskSupplierMentions`（英文名已遮）；② `supplierProjectController.getPublicProject` 补取 `name_zh`、项目标题/简介用中英文名双重遮蔽、`redactedSupplier` 置 `name_zh=null`；③ 前端首页供应商栏（`HomeSupplierSection`）与关于页（`AboutClient`）此前仍直接渲染星号 `company_name`/`description`——补成 `supplierPublicTitle(categories)` 品类名。单测 name_zh=null + 中英文名均从 description 遮蔽通过；生产 `/api/suppliers` name_zh 0/6、首页源码 0 残留。
 - **预防**：① **去标识/脱敏必须在「数据出站」层做（controller 返回前的 redact 函数），列全部身份承载字段一次性 null/mask——不是只处理显示用的那一个**；同类身份字段清单：`company_name / name_zh / 任何 *_name / 联系方式 / 地址 / 坐标 / logo / user_*`。② **牢记 SSR 框架会把组件完整 props 序列化进页面源码（RSC/Flight、`__NEXT_DATA__`）**，"前端不渲染"不代表"数据不出站"；验证脱敏必须 `curl 页面源码 + /api 原始 JSON` grep 真实值，而非只看浏览器可见文本。③ 新增脱敏后按此法回归：`curl <页面> | grep <真实中英文名>` 应 0。已写进本条 + 与 tarmeer-country-isolation 的「显示层兜底」口径并列（一个防串国、一个防泄身份）。
+### FA-15 供应商上传产品却不上站——可见性门槛只认 partner（2026-07-22）
+- **现象**：广东福永发(id139)昨天上传 28 个产品(25 条 stone_materials)，admin 里 approved/published/Products=28，但公开供应商列表完全搜不到。
+- **根因**：`listPublicSuppliers`(supplierProfileController.js) 的可见性门槛写成「有已发布案例(projects) **OR** (`source='partner'` **AND** 有产品)」。该供应商 `source='manual'`、案例数=0，两分支皆 false → 被整条排除。这是「供应商自助上传产品」功能上线后的迁移遗漏：门槛只为 partner 扇出的产品放行，没覆盖 manual/company 账号自己传的产品。
+- **修复**：门槛改为「有已发布案例 **OR** 有任意产品」，去掉 `source='partner'` 限定（一处，SQL WHERE）。生产读复现：AE 56→59(+3 product-only 供应商)、139 现可见、VN 隔离仍为 2。
+- **次要坑（未改，属数据/策展）**：分类筛选走的是 **档案级** `sp.categories`(JSON_CONTAINS)，与**产品级** `category` 是两套枚举(`stone` vs `stone_materials`)且不自动回填；档案 categories 为空 → 即使进了列表，勾选某分类仍不显示。要在分类下出现须由 admin 用 Categories 列「+Add」策展，不能靠产品分类自动映射。
+- **预防**：① 新增「用户自助内容」功能时，务必同步检查**公开侧可见性门槛**是否只认旧来源(如 partner/manual/爬虫)，避免新来源内容被静默过滤；② admin 显示「有内容(Products=28)」不等于公开可见，两套判定条件要对齐；③ 档案 categories 与产品 category 是两套枚举，分类展示靠 admin 策展，别假设自动联动。
 
 ## 归档模板（新事故追加到本文件末尾）
 
