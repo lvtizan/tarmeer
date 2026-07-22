@@ -93,6 +93,13 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **次要坑（未改，属数据/策展）**：分类筛选走的是 **档案级** `sp.categories`(JSON_CONTAINS)，与**产品级** `category` 是两套枚举(`stone` vs `stone_materials`)且不自动回填；档案 categories 为空 → 即使进了列表，勾选某分类仍不显示。要在分类下出现须由 admin 用 Categories 列「+Add」策展，不能靠产品分类自动映射。
 - **预防**：① 新增「用户自助内容」功能时，务必同步检查**公开侧可见性门槛**是否只认旧来源(如 partner/manual/爬虫)，避免新来源内容被静默过滤；② admin 显示「有内容(Products=28)」不等于公开可见，两套判定条件要对齐；③ 档案 categories 与产品 category 是两套枚举，分类展示靠 admin 策展，别假设自动联动。
 
+### FA-16 分类筛选下拉枚举与档案枚举错位——选任一品类都"No suppliers found"（2026-07-22）
+- **现象**：/materials 选 Stone Contact 分类 → "No suppliers found"；福永发有 25 个 stone_materials 产品仍不出现（接 FA-15 之后仍看不到）。
+- **根因**：**两套品类枚举错位**。分类下拉选项来自 `/api/suppliers/categories`（产品品类枚举，值如 `stone_materials`、label 被机翻成 "Stone Contact"），但 `listPublicSuppliers` 的筛选 SQL 只 `JSON_CONTAINS(sp.categories, ?)` 匹配**档案级** categories（旧枚举，值如 `stone`）。生产实测 `category=stone_materials`→0 家、`category=stone`→4 家。于是选任一新枚举选项几乎都空，只传产品无档案分类的供应商永远不匹配。
+- **修复**：category 条件改为 `JSON_CONTAINS(sp.categories, ?) OR EXISTS(supplier_products WHERE category=?)`——命中档案分类或有对应品类产品二者取一即匹配。生产读复现 `stone_materials` 0→1，福永发现可在 Stone 下出现；smoke 12/12、price 9/9。
+- **遗留（未修，属数据质量）**：品类 label 机翻污染——`石材`→"Stone Contact"、group `Stone, Tile & Flooring`→"tone,_tile_&_flooring"。翻译管线把权威枚举 label 译坏，需单独修 label 源。
+- **预防**：① **下拉选项的取值域必须与筛选所匹配的字段取值域同源**——选项来自产品品类枚举，就必须能匹配到产品品类，不能只匹配另一套档案枚举；新增筛选器先确认"选项 value ↔ WHERE 字段 value"同一命名空间。② 验证筛选器不能只看"有结果"，要对**每个选项**抽查是否真能命中（本例 3 个月里没人发现选项几乎全空）。③ 品类 label 走机翻前要挡住权威枚举的 label（枚举 label 应是人工固定文案，不进翻译管线）。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
