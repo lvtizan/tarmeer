@@ -8,7 +8,17 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { getCountry } from '@/lib/country';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
-import { BRAND, getSeries, getProduct, productsOf, imgOf } from '@/lib/flooring';
+import {
+  BRAND,
+  getSeries,
+  getProduct,
+  productsOf,
+  imgOf,
+  shotsOf,
+  altOf,
+  seoDescOf,
+  FLOOR_KEYWORDS,
+} from '@/lib/flooring';
 import FlooringGallery from '@/components/flooring/FlooringGallery';
 import FloorCard from '@/components/flooring/FloorCard';
 
@@ -24,20 +34,27 @@ export async function generateMetadata({
   const { series, code } = await params;
   const p = getProduct(series, code);
   if (!p) notFound();
-  const title = `${BRAND.nameEn} ${p.code} — ${p.wood} Parquet | Tarmeer`;
-  const description = `${BRAND.nameEn} ${p.code}: ${p.wood}, ${p.size}, ${p.finish} finish. Art parquet flooring sourced direct from China through Tarmeer.`;
+  const title = `${BRAND.nameEn} ${p.code} ${p.wood} Flooring from China | Tarmeer UAE`;
+  const description = seoDescOf(p);
   return {
     title,
     description,
+    keywords: [`${p.wood} flooring`, `${p.code} parquet`, `${BRAND.nameEn} ${p.code}`, ...FLOOR_KEYWORDS],
     openGraph: {
       title,
       description,
-      images: [{ url: `${c.baseUrl}${imgOf(p, 'board')}`, width: 1000, height: 1000 }],
+      images: [{ url: `${c.baseUrl}${imgOf(p, 'board')}`, width: 1000, height: 1000, alt: altOf(p, 'board') }],
       url: `${c.baseUrl}/materials/flooring/${series}/${p.code}`,
       type: 'website',
+      siteName: 'Tarmeer',
     },
+    twitter: { card: 'summary_large_image', title, description, images: [`${c.baseUrl}${imgOf(p, 'board')}`] },
     alternates: { canonical: `${c.baseUrl}/materials/flooring/${series}/${p.code}` },
-    robots: 'index, follow, max-image-preview:large',
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    },
   };
 }
 
@@ -53,19 +70,15 @@ export default async function FlooringDetailPage({
   if (!p) notFound();
   const s = getSeries(series);
 
-  const shots = [
-    { kind: 'board', src: imgOf(p, 'board'), label: 'Panel' },
-    { kind: 'room', src: imgOf(p, 'room'), label: 'In situ' },
-    { kind: 'detail', src: imgOf(p, 'detail'), label: 'Grain detail' },
-  ];
+  const shots = shotsOf(p);
 
   const specs = [
     { label: 'Model', value: p.code },
     { label: 'Wood surface', value: p.wood },
     { label: 'Size', value: p.size },
     { label: 'Finish', value: p.finish },
-    { label: 'Collection', value: s ? `${s.nameEn} · ${s.nameZh}` : series },
-    { label: 'Brand', value: `${BRAND.nameEn} · ${BRAND.nameZh}` },
+    { label: 'Collection', value: s ? s.nameEn : series },
+    { label: 'Brand', value: BRAND.displayName },
   ];
 
   const related = productsOf(series)
@@ -75,13 +88,24 @@ export default async function FlooringDetailPage({
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: `${BRAND.nameEn} ${p.code} ${p.wood}`,
+    name: `${BRAND.nameEn} ${p.code} ${p.wood} Flooring`,
     sku: p.code,
+    mpn: p.code,
     brand: { '@type': 'Brand', name: BRAND.nameEn },
-    category: 'Parquet flooring',
+    manufacturer: { '@type': 'Organization', name: BRAND.displayName },
+    category: 'Wood flooring > Art parquet',
+    material: p.wood,
+    countryOfOrigin: 'CN',
     image: shots.map((sh) => `${c.baseUrl}${sh.src}`),
-    description: `${p.wood} art parquet, ${p.size}, ${p.finish} finish.`,
+    description: seoDescOf(p),
     url: `${c.baseUrl}/materials/flooring/${series}/${p.code}`,
+    additionalProperty: [
+      { '@type': 'PropertyValue', name: 'Wood surface', value: p.wood },
+      { '@type': 'PropertyValue', name: 'Size', value: p.size },
+      { '@type': 'PropertyValue', name: 'Finish', value: p.finish },
+      { '@type': 'PropertyValue', name: 'Collection', value: s ? s.nameEn : series },
+    ],
+    // 贸易价不公开（去标识铁律）→ 不输出 offers.price，改用 Service 询价语义在页面 CTA 承接
   };
 
   const breadcrumbJsonLd = {
@@ -131,11 +155,11 @@ export default async function FlooringDetailPage({
         </nav>
 
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
-          <FlooringGallery shots={shots} alt={`${BRAND.nameEn} ${p.code} ${p.wood}`} />
+          <FlooringGallery shots={shots} alt={`${BRAND.nameEn} ${p.code} ${p.wood} art flooring from China`} />
 
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-[#b8864a]">
-              {BRAND.nameEn} · {s?.nameZh ?? '拼花系列'}
+              {BRAND.nameEn} · {s?.nameEn ?? 'Flooring'}
             </p>
             <h1 className="mt-2 font-serif text-3xl font-bold text-[#1c1917] lg:text-4xl">
               {p.code}
@@ -170,6 +194,31 @@ export default async function FlooringDetailPage({
               visiting designers and trade partners.
             </p>
           </div>
+        </div>
+
+        {/* SEO 内容区：产品说明 + 关键词 + 内链 */}
+        <div className="mt-14 max-w-3xl border-t border-stone-100 pt-10">
+          <h2 className="font-serif text-xl font-bold text-[#1c1917]">
+            About {BRAND.nameEn} {p.code}
+          </h2>
+          <p className="mt-4 text-[15px] leading-relaxed text-stone-600">
+            {BRAND.nameEn} {p.code} — {p.wood} — is part of the {s?.nameEn ?? 'PARBRO'} art flooring
+            collection, measuring {p.size} with a {p.finish.toLowerCase()} finish. It is one of the
+            new building materials Tarmeer brings from China to the UAE and the wider Middle East.
+            See this parquet in person at our{' '}
+            <Link href="/materials/showroom" className="font-semibold text-[#b8864a] hover:text-[#a07640]">
+              Dubai material selection center
+            </Link>
+            , compare it with the rest of the{' '}
+            <Link href={`/materials/flooring/${series}`} className="font-semibold text-[#b8864a] hover:text-[#a07640]">
+              {s?.nameEn ?? 'flooring'} collection
+            </Link>
+            , or browse the full{' '}
+            <Link href="/materials" className="font-semibold text-[#b8864a] hover:text-[#a07640]">
+              China building material range
+            </Link>{' '}
+            — wood flooring, tiles, stone and more, delivered across the UAE.
+          </p>
         </div>
 
         {/* 同系列推荐 */}

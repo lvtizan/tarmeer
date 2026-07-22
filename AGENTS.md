@@ -288,6 +288,46 @@ rsync -avz public/images/about/ -e "ssh -i ~/.ssh/tarmeer_ecs" \
 
 ---
 
+## 内容页 SEO 最大化规则（铁律，违反 = 必须返工）
+
+**凡是「内容/详情/列表页」（材料、地板、瓷砖、供应商、专家、项目、指南等任何给终端用户看的信息页），SEO 信息必须做满，不得只写标题了事。** 参考实现：`src/app/materials/flooring/**` + `src/lib/flooring.ts`（SEO 中枢）。
+
+### 1. 每个页面必须有完整 metadata（`generateMetadata`）
+- `title`：唯一、关键词前置、品牌后缀（`… | Tarmeer` 或 `| Tarmeer UAE`）。
+- `description`：150–160 字，自然语句 + 关键词，别堆砌。
+- `keywords`：接目标关键词数组（复用中枢常量，如 `FLOOR_KEYWORDS`）。
+- `openGraph`：`title/description/url/type/siteName` + `images:[{url,width,height,alt}]`（**OG 图必须带 alt**）。
+- `twitter`：`summary_large_image` + `title/description/images`。
+- `alternates.canonical`：指向本页规范 URL（`${c.baseUrl}${path}`）。
+- `robots`：对象式 `{ index:true, follow:true, googleBot:{ 'max-image-preview':'large','max-snippet':-1 } }`。
+
+### 2. 结构化数据（JSON-LD，走 `jsonLdHtml()` 转义，禁裸 `JSON.stringify` 注入）
+- **每个页面**：`BreadcrumbList`。
+- 详情页：`Product`（含 `brand / manufacturer / material / category / countryOfOrigin / image[] / additionalProperty[]`）。
+- 列表/系列页：`ItemList`（每项 `url + image + name`）。
+- 落地/集合页：`CollectionPage` + 集合的 `ItemList`。
+- 有问答意图的页：`FAQPage`（**必须同时在页面渲染可见 FAQ**，schema 与可见内容一致）。
+- **贸易价不公开（去标识铁律）→ 禁止输出 `offers.price` 或无价的残缺 `offers`**（会判无效/误导）；询价用页面 CTA + `Service` 语义承接。
+
+### 3. 每张图片必须有描述性、含关键词的 alt（禁通用 alt）
+- 用**中枢 helper 统一生成**（如 `altOf(p,kind)` / `coverAltOf(s)`），禁止 `alt="image"`、纯型号、文件名、空 alt。
+- alt 要含：产品/主体 + 材质 + 场景（panel/room/detail）+ 品类关键词 + 地域（如 `… art wood flooring from China, at Tarmeer's Dubai material selection center`）。
+
+### 4. 页面正文可爬取 + 关键词 + 内链
+- 一个 `<h1>`（含主关键词/实体），`<h2>/<h3>` 带次级关键词。
+- 至少一段 SEO 正文（自然覆盖关键词）+ 可见 FAQ（若适用）。
+- **内链**到相关页（选材中心 `/materials/showroom`、材料库 `/materials`、中国采购 `/services/china-sourcing`、同系列/同类）。
+
+### 5. 目标关键词主题（AE/中东市场，一律英文）
+Middle East / China building materials、new materials、tiles / floor tiles、parquet & wood flooring、material selection center Dubai（上门/到店选材 on-site material selection）、oak/walnut/teak flooring。集中在中枢常量维护，别各页硬编码。
+
+### 6. 全站禁中文（铁律）
+面向 C 端展示的文字（材种/工艺/系列名/品牌/正文/alt）**一律英文**，数据源里的中文只能留在注释。新增数据必须同时给英文展示值。
+
+> 判断标准：新建/改任一内容页，若缺上述 1–4 任一项、或出现通用 alt、或页面出现中文展示文字 = SEO 不达标，必须返工。
+
+---
+
 ## Field Survey Rules
 
 **NEVER hardcode the survey schema (section titles, field keys, field labels, or options)** in any frontend file — not in the survey page, not in the admin visit-records detail view, nowhere.

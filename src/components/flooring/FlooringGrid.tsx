@@ -26,7 +26,7 @@ export default function FlooringGrid({ products }: { products: FloorProduct[] })
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by model, wood or finish…  搜型号/材种/工艺"
+          placeholder="Search by model, wood or finish…"
           className="w-full bg-transparent text-sm text-[#1c1917] outline-none placeholder:text-stone-400"
         />
       </div>

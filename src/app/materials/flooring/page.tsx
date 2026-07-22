@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, Layers, Ruler, Sparkles } from 'lucide-react';
 import { getCountry } from '@/lib/country';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
-import { BRAND, SERIES, PRODUCTS, productsOf } from '@/lib/flooring';
+import { BRAND, SERIES, PRODUCTS, productsOf, coverAltOf, FLOOR_KEYWORDS } from '@/lib/flooring';
 import FlooringGrid from '@/components/flooring/FlooringGrid';
 
 export const dynamic = 'force-dynamic';
@@ -16,29 +16,48 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata(): Promise<Metadata> {
   const c = getCountry((await headers()).get('x-country'));
   if (c.code !== 'ae') notFound();
-  const title = 'Art Parquet Flooring from China — PARBRO | Tarmeer';
+  const title =
+    'Building Materials from China for the UAE — Art Parquet & Wood Flooring | Tarmeer';
   const description =
-    "PARBRO art parquet and engineered wood flooring, sourced direct from China. Oak, walnut and teak geometric panels — see every design, spec and finish, then source it through Tarmeer's UAE selection center.";
+    "New building materials from China for the UAE — PARBRO art parquet and engineered wood flooring in oak, walnut and teak. See, touch and specify every design at Tarmeer's Dubai material selection center, then we source and deliver across the Middle East.";
   return {
     title,
     description,
+    keywords: FLOOR_KEYWORDS,
     openGraph: {
       title,
       description,
-      images: [{ url: `${c.baseUrl}${SERIES[0].cover}`, width: 1000, height: 1000 }],
+      images: [
+        {
+          url: `${c.baseUrl}${SERIES[0].cover}`,
+          width: 1000,
+          height: 1000,
+          alt: 'PARBRO art parquet flooring from China at Tarmeer Dubai',
+        },
+      ],
       url: `${c.baseUrl}/materials/flooring`,
       type: 'website',
+      siteName: 'Tarmeer',
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [`${c.baseUrl}${SERIES[0].cover}`],
+    },
     alternates: { canonical: `${c.baseUrl}/materials/flooring` },
-    robots: 'index, follow, max-image-preview:large',
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    },
   };
 }
 
 const HIGHLIGHTS = [
-  { icon: Layers, label: `${PRODUCTS.length} parquet designs` },
-  { icon: Ruler, label: '600×600 engineered panels' },
-  { icon: Sparkles, label: 'Brushed, grooved & metal finishes' },
+  { icon: Layers, label: `${PRODUCTS.length} art flooring designs` },
+  { icon: Ruler, label: `${SERIES.length} collections — parquet & puzzle` },
+  { icon: Sparkles, label: 'Oak, walnut & teak, with brass inlays' },
 ];
 
 export default async function FlooringLandingPage() {
@@ -55,11 +74,90 @@ export default async function FlooringLandingPage() {
     ],
   };
 
+  // 系列 ItemList（帮助 Google 理解页面为集合页）
+  const collectionsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'PARBRO art flooring collections',
+    numberOfItems: SERIES.length,
+    itemListElement: SERIES.map((s, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: `${s.nameEn} — ${BRAND.displayName}`,
+      url: `${c.baseUrl}/materials/flooring/${s.slug}`,
+      image: `${c.baseUrl}${s.cover}`,
+    })),
+  };
+
+  // 集合页本体
+  const collectionPageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Art Parquet & Wood Flooring from China — Tarmeer UAE',
+    description:
+      "New building materials from China for the UAE: PARBRO art parquet and engineered wood flooring, seen and specified at Tarmeer's Dubai material selection center.",
+    url: `${c.baseUrl}/materials/flooring`,
+    isPartOf: { '@type': 'WebSite', name: 'Tarmeer', url: c.baseUrl },
+    about: ['building materials', 'wood flooring', 'parquet', 'China sourcing', 'UAE'],
+  };
+
+  // FAQ（面向搜索意图 + rich result）
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Where can I see these China building materials in the UAE?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: "You can see, touch and specify every flooring design in person at Tarmeer's material selection center in Dubai. A bilingual consultant walks you through the range and prepares a quotation with lead times.",
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Do you source materials other than flooring from China?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. Alongside art parquet and wood flooring we source a full range of new building materials from China for Middle East projects — tiles, stone, sanitary ware, lighting and more. Browse the full material library or ask a consultant.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How is the flooring delivered to the UAE?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Orders are sourced factory-direct in China, quality-checked, consolidated and shipped to the UAE. Tarmeer handles sourcing, logistics and after-sales so you deal with one partner from selection to delivery.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What wood species and sizes are available?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `The range covers oak, walnut, teak, ash and more across ${PRODUCTS.length} designs in two collections — geometric Floral parquet and irregular Alien Puzzle panels, including brass-inlaid pieces, in sizes from small parquet tiles up to 750×750mm panels.`,
+        },
+      },
+    ],
+  };
+
   return (
     <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(collectionPageJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(collectionsJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqJsonLd) }}
       />
 
       {/* Hero */}
@@ -110,7 +208,7 @@ export default async function FlooringLandingPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={s.cover}
-                    alt={`${s.nameEn} parquet collection`}
+                    alt={coverAltOf(s)}
                     loading="lazy"
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   />
@@ -137,7 +235,7 @@ export default async function FlooringLandingPage() {
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-wider text-[#b8864a]">All Designs</p>
             <h2 className="mt-3 font-serif text-3xl font-bold text-[#1c1917] lg:text-4xl">
-              Every parquet design
+              Every design
             </h2>
             <p className="mt-3 text-stone-500">Search by model number, wood or finish.</p>
           </div>
@@ -145,8 +243,67 @@ export default async function FlooringLandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* SEO 内容区：关键词丰富的可爬取正文 + 内链（中东/中国建材、新材料、瓷砖、上门选材） */}
       <section className="bg-white py-14 lg:py-20">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <h2 className="font-serif text-2xl font-bold text-[#1c1917] [text-wrap:balance] lg:text-3xl">
+            New building materials from China, specified in the UAE
+          </h2>
+          <div className="mt-5 space-y-4 text-[15px] leading-relaxed text-stone-600">
+            <p>
+              Tarmeer brings the newest building materials from China to the Middle East. This
+              collection covers {PRODUCTS.length} designs of art parquet and engineered wood
+              flooring — oak, walnut and teak, from classic herringbone and Versailles parquet to
+              irregular puzzle panels inlaid with solid brass. Every design is sourced
+              factory-direct and can be seen, touched and specified at our{' '}
+              <Link href="/materials/showroom" className="font-semibold text-[#b8864a] hover:text-[#a07640]">
+                material selection center in Dubai
+              </Link>
+              .
+            </p>
+            <p>
+              Wood flooring is one part of a much wider range. Through Tarmeer you can source new
+              materials from China for any UAE project — floor and wall tiles, sintered stone,
+              sanitary ware, lighting and more. Browse the full{' '}
+              <Link href="/materials" className="font-semibold text-[#b8864a] hover:text-[#a07640]">
+                building material library
+              </Link>{' '}
+              or read how our{' '}
+              <Link href="/services/china-sourcing" className="font-semibold text-[#b8864a] hover:text-[#a07640]">
+                China sourcing service
+              </Link>{' '}
+              handles selection, quality control, shipping and after-sales to your door.
+            </p>
+          </div>
+
+          {/* 可见 FAQ（呼应 FAQPage schema） */}
+          <div className="mt-10 space-y-6">
+            <h3 className="font-serif text-xl font-bold text-[#1c1917]">Frequently asked questions</h3>
+            {[
+              {
+                q: 'Where can I see these China building materials in the UAE?',
+                a: "See, touch and specify every flooring design in person at Tarmeer's material selection center in Dubai, guided by a bilingual consultant who prepares a quotation with lead times.",
+              },
+              {
+                q: 'Do you source materials other than flooring from China?',
+                a: 'Yes — alongside parquet and wood flooring we source tiles, stone, sanitary ware and lighting, all new building materials from China for Middle East projects.',
+              },
+              {
+                q: 'How is the flooring delivered to the UAE?',
+                a: 'Sourced factory-direct in China, quality-checked, consolidated and shipped to the UAE — one partner from selection to delivery and after-sales.',
+              },
+            ].map((f) => (
+              <div key={f.q}>
+                <h4 className="text-[15px] font-semibold text-[#1c1917]">{f.q}</h4>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-stone-600">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-[#faf8f5] py-14 lg:py-20">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
           <h2 className="font-serif text-2xl font-bold text-[#1c1917] [text-wrap:balance] lg:text-3xl">
             Found a design you like?

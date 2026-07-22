@@ -1,26 +1,26 @@
-// 巴博罗艺术地板 PARBRO —— 产品目录数据（从厂家 PDF 画册用 pdf-catalog-extract 技能扒出）。
-// 静态数据 + 图片在 public/images/flooring/<series>/<code>-{board,room,detail}.webp（细节图保原尺不糊）。
-// 后续加系列/产品只需往 SERIES / PRODUCTS 追加。
+// PARBRO art flooring — product catalogue data (extracted from the manufacturer's PDF
+// via the pdf-catalog-extract skill). Images live at
+// public/images/flooring/<series>/<code>-{board,room,detail}.webp (FSRCNN 2x, detail kept sharp).
+// All display text is English (no Chinese on the site). Add series/products by appending below.
 
 export type FloorProduct = {
   code: string;
-  series: string; // 系列 slug
-  wood: string; // 表面材种
-  size: string; // 产品尺寸
-  finish: string; // 表面工艺
+  series: string; // series slug
+  wood: string; // surface wood species (English)
+  size: string; // panel size(s), mm
+  finish: string; // surface / edge finish (English)
 };
 
 export type FloorSeries = {
   slug: string;
   nameEn: string;
-  nameZh: string;
   blurb: string;
-  cover: string; // 用某款产品的 board 图做封面
+  cover: string; // a product board image used as the collection cover
 };
 
 export const BRAND = {
   nameEn: 'PARBRO',
-  nameZh: '巴博罗艺术地板',
+  displayName: 'PARBRO Art Flooring',
   tagline: 'Art parquet & engineered wood flooring',
 };
 
@@ -28,52 +28,114 @@ export const SERIES: FloorSeries[] = [
   {
     slug: 'parquet',
     nameEn: 'Floral',
-    nameZh: '拼花系列',
     blurb: 'Geometric oak, walnut and teak parquet panels — brushed, grooved and metal-finish artistry.',
     cover: '/images/flooring/parquet/5101-board.webp',
   },
+  {
+    slug: 'alien',
+    nameEn: 'Alien Puzzle',
+    blurb: 'Irregular geometric parquet — oak and walnut puzzle panels, several inlaid with solid brass.',
+    cover: '/images/flooring/alien/MY001-1-board.webp',
+  },
 ];
 
-// 拼花系列 38 款（PDF 第 5-42 页，规格完整）
+// Floral parquet — 38 designs (PDF pages 5-42)
 export const PRODUCTS: FloorProduct[] = [
-  { code: '5101', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '拉丝勾线' },
-  { code: '5103', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '拉丝勾线' },
-  { code: '5105', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '拉丝勾线' },
-  { code: '5106', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '拉丝勾线' },
-  { code: '5973', series: 'parquet', wood: '柚木多层拼花', size: '600*600*15/1.2mm', finish: '平面勾线' },
-  { code: '5975', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '本色拉丝' },
-  { code: '5976', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '奶白色拉丝' },
-  { code: '5977', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '黑色拉丝' },
-  { code: '5978', series: 'parquet', wood: '黑胡桃拼花', size: '600*600*15/1.2mm', finish: '平面勾线' },
-  { code: '5979', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '拉丝勾线' },
-  { code: '5982', series: 'parquet', wood: '红橡三层拼花', size: '600*600*15/1.2mm', finish: '拉丝' },
-  { code: '5983', series: 'parquet', wood: '水曲柳三层拼花', size: '600*600*15/1.2mm', finish: '拉丝' },
-  { code: '5985', series: 'parquet', wood: '白橡三层拼花', size: '600*600*15/1.2mm', finish: '拉丝' },
-  { code: '5986', series: 'parquet', wood: '黑胡桃双色三层拼花', size: '600*600*15/1.2mm', finish: '拉丝' },
-  { code: '5988', series: 'parquet', wood: '橡木多层拼花', size: '600*600*15/1.2mm', finish: '拉丝勾线' },
-  { code: '5989', series: 'parquet', wood: '黑胡桃拼花', size: '600*600*15/1.2mm', finish: '平面勾线' },
-  { code: '5991', series: 'parquet', wood: '橡木+酸枝+贝壳', size: '600*600*15mm', finish: '金属漆' },
-  { code: '5999', series: 'parquet', wood: '欧橡多层拼花', size: '600*600*15/3.0mm', finish: '拉丝勾线' },
-  { code: '5966', series: 'parquet', wood: '黑胡桃', size: '600*600*15mm', finish: '平面拉丝' },
-  { code: '5950', series: 'parquet', wood: '黑胡桃拼花', size: '600*600*15mm', finish: '平面勾线' },
-  { code: '5970', series: 'parquet', wood: '橡木', size: '600*600*15mm', finish: '拉丝' },
-  { code: 'HP10', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP11', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP12', series: 'parquet', wood: '黑胡桃拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP13', series: 'parquet', wood: '黑胡桃拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP15', series: 'parquet', wood: '柚木拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP16', series: 'parquet', wood: '大叶花梨拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP17', series: 'parquet', wood: '红橡拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP18', series: 'parquet', wood: '水曲柳拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP20', series: 'parquet', wood: '鸡翅木拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP19', series: 'parquet', wood: '水曲柳拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP21', series: 'parquet', wood: '橡木拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'HP22', series: 'parquet', wood: '黑胡桃拼花', size: '600*600*15/1.2mm', finish: '全桦基材' },
-  { code: 'QHP61', series: 'parquet', wood: '橡木钻石拼花(进口全桦)', size: '600*600*14.5/1.2mm', finish: '本色进口全桦基材' },
-  { code: 'QHP62', series: 'parquet', wood: '橡木钻石拼花(进口全桦)', size: '600*600*14.5/1.2mm', finish: '进口全桦基材' },
-  { code: 'QHP63', series: 'parquet', wood: '橡木钻石拼花(进口全桦)', size: '600*600*14.5/1.2mm', finish: '进口全桦基材' },
-  { code: 'QHP65', series: 'parquet', wood: '黑胡桃钻石拼花(进口全桦)', size: '600*600*14.5/1.2mm', finish: '进口全桦基材' },
-  { code: 'QHP66', series: 'parquet', wood: '柚木拼花(进口全桦)', size: '600*600*14.5/1.2mm', finish: '进口全桦基材' },
+  { code: '5101', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed & grooved' },
+  { code: '5103', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed & grooved' },
+  { code: '5105', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed & grooved' },
+  { code: '5106', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed & grooved' },
+  { code: '5973', series: 'parquet', wood: 'Teak multi-layer parquet', size: '600×600×15 / 1.2mm', finish: 'Grooved' },
+  { code: '5975', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Natural brushed' },
+  { code: '5976', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Cream brushed' },
+  { code: '5977', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Black brushed' },
+  { code: '5978', series: 'parquet', wood: 'Walnut parquet', size: '600×600×15 / 1.2mm', finish: 'Grooved' },
+  { code: '5979', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed & grooved' },
+  { code: '5982', series: 'parquet', wood: 'Red oak 3-layer parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed' },
+  { code: '5983', series: 'parquet', wood: 'Ash 3-layer parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed' },
+  { code: '5985', series: 'parquet', wood: 'White oak 3-layer parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed' },
+  { code: '5986', series: 'parquet', wood: 'Two-tone walnut 3-layer parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed' },
+  { code: '5988', series: 'parquet', wood: 'Oak multi-layer parquet', size: '600×600×15 / 1.2mm', finish: 'Brushed & grooved' },
+  { code: '5989', series: 'parquet', wood: 'Walnut parquet', size: '600×600×15 / 1.2mm', finish: 'Grooved' },
+  { code: '5991', series: 'parquet', wood: 'Oak + rosewood + shell', size: '600×600×15mm', finish: 'Metallic lacquer' },
+  { code: '5999', series: 'parquet', wood: 'European oak multi-layer parquet', size: '600×600×15 / 3.0mm', finish: 'Brushed & grooved' },
+  { code: '5966', series: 'parquet', wood: 'Walnut', size: '600×600×15mm', finish: 'Flat brushed' },
+  { code: '5950', series: 'parquet', wood: 'Walnut parquet', size: '600×600×15mm', finish: 'Grooved' },
+  { code: '5970', series: 'parquet', wood: 'Oak', size: '600×600×15mm', finish: 'Brushed' },
+  { code: 'HP10', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP11', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP12', series: 'parquet', wood: 'Walnut parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP13', series: 'parquet', wood: 'Walnut parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP15', series: 'parquet', wood: 'Teak parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP16', series: 'parquet', wood: 'Padauk parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP17', series: 'parquet', wood: 'Red oak parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP18', series: 'parquet', wood: 'Ash parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP20', series: 'parquet', wood: 'Wenge parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP19', series: 'parquet', wood: 'Ash parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP21', series: 'parquet', wood: 'Oak parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'HP22', series: 'parquet', wood: 'Walnut parquet', size: '600×600×15 / 1.2mm', finish: 'Birch core' },
+  { code: 'QHP61', series: 'parquet', wood: 'Oak diamond parquet (imported birch core)', size: '600×600×14.5 / 1.2mm', finish: 'Natural, imported birch core' },
+  { code: 'QHP62', series: 'parquet', wood: 'Oak diamond parquet (imported birch core)', size: '600×600×14.5 / 1.2mm', finish: 'Imported birch core' },
+  { code: 'QHP63', series: 'parquet', wood: 'Oak diamond parquet (imported birch core)', size: '600×600×14.5 / 1.2mm', finish: 'Imported birch core' },
+  { code: 'QHP65', series: 'parquet', wood: 'Walnut diamond parquet (imported birch core)', size: '600×600×14.5 / 1.2mm', finish: 'Imported birch core' },
+  { code: 'QHP66', series: 'parquet', wood: 'Teak parquet (imported birch core)', size: '600×600×14.5 / 1.2mm', finish: 'Imported birch core' },
+
+  // Alien Puzzle — 55 designs (PDF pages 4-58), all flat-lock joint
+  { code: 'MY001-1', series: 'alien', wood: 'Walnut', size: '181×181×14 / 256×128×14 / 362×181×14', finish: 'Flat-lock joint' },
+  { code: 'MY001-2', series: 'alien', wood: 'Walnut', size: '181×181×14 / 256×128×14 / 362×181×14', finish: 'Flat-lock joint' },
+  { code: 'MY001-3', series: 'alien', wood: 'Oak', size: '181×181×14 / 256×128×14 / 362×181×14', finish: 'Flat-lock joint' },
+  { code: 'MY001-4', series: 'alien', wood: 'Oak', size: '181×181×14 / 256×128×14 / 362×181×14', finish: 'Flat-lock joint' },
+  { code: 'MY001-5', series: 'alien', wood: 'Oak', size: '190×190×15/4 / 269×134.5×15/4 / 380×190×15/4', finish: 'Flat-lock joint' },
+  { code: 'MY002-1', series: 'alien', wood: 'Walnut', size: '439×190×14', finish: 'Flat-lock joint' },
+  { code: 'MY002-2', series: 'alien', wood: 'Walnut', size: '439×190×14', finish: 'Flat-lock joint' },
+  { code: 'MY002-4', series: 'alien', wood: 'Oak', size: '439×190×14', finish: 'Flat-lock joint' },
+  { code: 'MY003-4', series: 'alien', wood: 'Oak', size: '291×252×14', finish: 'Flat-lock joint' },
+  { code: 'MY004-1', series: 'alien', wood: 'Walnut', size: '333×192×14', finish: 'Flat-lock joint' },
+  { code: 'MY004-3', series: 'alien', wood: 'Oak', size: '333×192×14', finish: 'Flat-lock joint' },
+  { code: 'MY004-4', series: 'alien', wood: 'Oak', size: '333×192×14', finish: 'Flat-lock joint' },
+  { code: 'MY004-6', series: 'alien', wood: 'Walnut', size: '369×213×14/2', finish: 'Flat-lock joint' },
+  { code: 'MY004-9', series: 'alien', wood: 'Walnut', size: '369×213', finish: 'Flat-lock joint' },
+  { code: 'MY005-3', series: 'alien', wood: 'Walnut', size: '190×190×14', finish: 'Flat-lock joint' },
+  { code: 'MY006-3', series: 'alien', wood: 'Oak', size: '200×173×14', finish: 'Flat-lock joint' },
+  { code: 'MY006-4', series: 'alien', wood: 'Oak', size: '200×173×14', finish: 'Flat-lock joint' },
+  { code: 'MY007-1', series: 'alien', wood: 'Walnut', size: '366×160×14', finish: 'Flat-lock joint' },
+  { code: 'MY007-2', series: 'alien', wood: 'Walnut', size: '366×160×14', finish: 'Flat-lock joint' },
+  { code: 'MY007-3', series: 'alien', wood: 'Oak', size: '366×160×14', finish: 'Flat-lock joint' },
+  { code: 'MY007-4', series: 'alien', wood: 'Oak', size: '366×160×14', finish: 'Flat-lock joint' },
+  { code: 'MY008-1', series: 'alien', wood: 'Walnut', size: '398×273×14', finish: 'Flat-lock joint' },
+  { code: 'MY008-2', series: 'alien', wood: 'Walnut', size: '398×273×14', finish: 'Flat-lock joint' },
+  { code: 'MY009-1', series: 'alien', wood: 'Walnut', size: '750×750×14', finish: 'Flat-lock joint' },
+  { code: 'MY009-2', series: 'alien', wood: 'Walnut', size: '750×750×14', finish: 'Flat-lock joint' },
+  { code: 'MY009-3', series: 'alien', wood: 'Oak', size: '750×750×14', finish: 'Flat-lock joint' },
+  { code: 'MY009-4', series: 'alien', wood: 'Oak', size: '750×750×14', finish: 'Flat-lock joint' },
+  { code: 'MY010-1', series: 'alien', wood: 'Walnut', size: '600×92×14', finish: 'Flat-lock joint' },
+  { code: 'MY010-2', series: 'alien', wood: 'Walnut', size: '600×92×14', finish: 'Flat-lock joint' },
+  { code: 'MY011-1', series: 'alien', wood: 'Walnut', size: '550×75×14', finish: 'Flat-lock joint' },
+  { code: 'MY011-2', series: 'alien', wood: 'Walnut', size: '550×75×14', finish: 'Flat-lock joint' },
+  { code: 'MY011-3', series: 'alien', wood: 'Oak', size: '550×75×14', finish: 'Flat-lock joint' },
+  { code: 'MY011-4', series: 'alien', wood: 'Oak', size: '550×75×14', finish: 'Flat-lock joint' },
+  { code: 'MY012-1', series: 'alien', wood: 'Walnut', size: '291×252×14 / 430×254×14', finish: 'Flat-lock joint' },
+  { code: 'MY012-2', series: 'alien', wood: 'Walnut', size: '291×252×14 / 430×254×14', finish: 'Flat-lock joint' },
+  { code: 'MY012-4', series: 'alien', wood: 'Oak', size: '291×252×14 / 430×254×14', finish: 'Flat-lock joint' },
+  { code: 'MY013-3', series: 'alien', wood: 'Oak', size: '181×181×14', finish: 'Flat-lock joint' },
+  { code: 'MY013-4', series: 'alien', wood: 'Oak', size: '181×181×14', finish: 'Flat-lock joint' },
+  { code: 'MY015-3', series: 'alien', wood: 'Oak', size: '210×182×14', finish: 'Flat-lock joint' },
+  { code: 'MY015-4', series: 'alien', wood: 'Oak', size: '210×182×14', finish: 'Flat-lock joint' },
+  { code: 'MY016-1', series: 'alien', wood: 'Walnut', size: '800×120×14', finish: 'Flat-lock joint' },
+  { code: 'MY016-2', series: 'alien', wood: 'Walnut', size: '800×120×14', finish: 'Flat-lock joint' },
+  { code: 'MY016-3', series: 'alien', wood: 'Oak', size: '800×120×14', finish: 'Flat-lock joint' },
+  { code: 'MY016-4', series: 'alien', wood: 'Oak', size: '800×120×14', finish: 'Flat-lock joint' },
+  { code: 'MY018-1', series: 'alien', wood: 'Walnut', size: '385×255×14 / 364×92×14', finish: 'Flat-lock joint' },
+  { code: 'MY018-2', series: 'alien', wood: 'Walnut', size: '385×255×14 / 364×92×14', finish: 'Flat-lock joint' },
+  { code: 'MY018-3', series: 'alien', wood: 'Oak', size: '385×255×14 / 364×92×14', finish: 'Flat-lock joint' },
+  { code: 'MY018-4', series: 'alien', wood: 'Oak', size: '385×255×14 / 364×92×14', finish: 'Flat-lock joint' },
+  { code: 'MY019-1', series: 'alien', wood: 'Walnut', size: '300×300×14', finish: 'Flat-lock joint' },
+  { code: 'MY019-2', series: 'alien', wood: 'Walnut', size: '300×300×14', finish: 'Flat-lock joint' },
+  { code: 'MY021-1', series: 'alien', wood: 'Oak', size: '559×395×15/4', finish: 'Flat-lock joint' },
+  { code: 'MY-7501', series: 'alien', wood: 'Walnut + solid brass inlay', size: '750×750×15/3', finish: 'Flat-lock joint' },
+  { code: 'MY-7502', series: 'alien', wood: 'Walnut + solid brass inlay', size: '750×750×15/3', finish: 'Flat-lock joint' },
+  { code: 'MY-7506', series: 'alien', wood: 'Oak + solid brass inlay', size: '750×750×15/4', finish: 'Flat-lock joint' },
+  { code: 'MY-7508', series: 'alien', wood: 'Walnut', size: '750×750×15/1.2', finish: 'Flat-lock joint' },
 ];
 
 export const getSeries = (slug: string) => SERIES.find((s) => s.slug === slug);
@@ -82,3 +144,56 @@ export const getProduct = (series: string, code: string) =>
   PRODUCTS.find((p) => p.series === series && p.code.toLowerCase() === code.toLowerCase());
 export const imgOf = (p: FloorProduct, kind: 'board' | 'room' | 'detail') =>
   `/images/flooring/${p.series}/${p.code}-${kind}.webp`;
+
+// ─────────────────────────────────────────────────────────────────────────
+// SEO 中枢（内容页/图片关键词最大化，面向 UAE/中东市场，全英文）
+// 主题词：中东&中国建材 / 新材料 / 瓷砖 / 上门·到店选材 / 木地板拼花
+// ─────────────────────────────────────────────────────────────────────────
+
+/** 全站通用目标关键词（keywords meta + 内容锚点） */
+export const FLOOR_KEYWORDS = [
+  'building materials UAE',
+  'China building materials',
+  'Middle East building materials',
+  'new materials Dubai',
+  'parquet flooring UAE',
+  'wood flooring Dubai',
+  'engineered wood flooring',
+  'floor tiles UAE',
+  'tiles Dubai',
+  'art parquet',
+  'herringbone flooring',
+  'oak flooring',
+  'walnut flooring',
+  'teak flooring',
+  'material selection center Dubai',
+  'on-site material selection',
+  'sourcing materials from China',
+  'PARBRO flooring',
+  'Tarmeer materials',
+];
+
+/** 每张产品图的 SEO alt（描述性 + 关键词，禁止用通用 alt） */
+export const altOf = (p: FloorProduct, kind: 'board' | 'room' | 'detail') => {
+  const phrase = {
+    board: 'floor panel',
+    room: 'floor in a room setting',
+    detail: 'wood grain close-up detail',
+  }[kind];
+  return `${BRAND.nameEn} ${p.code} — ${p.wood} ${phrase}. Art wood flooring from China, sourced through Tarmeer's Dubai material selection center.`;
+};
+
+/** 系列封面图的 SEO alt */
+export const coverAltOf = (s: FloorSeries) =>
+  `${BRAND.nameEn} ${s.nameEn} collection — art wood flooring from China at Tarmeer's Dubai material selection center.`;
+
+/** 产品的一句话 SEO 描述（meta description / JSON-LD 复用） */
+export const seoDescOf = (p: FloorProduct) =>
+  `${BRAND.nameEn} ${p.code} ${p.wood.toLowerCase()} art flooring — size ${p.size}, ${p.finish.toLowerCase()} finish. New building material from China, see and specify it at Tarmeer's Dubai material selection center with delivery across the UAE.`;
+
+export type FloorShot = { kind: 'board' | 'room' | 'detail'; src: string; label: string; alt: string };
+export const shotsOf = (p: FloorProduct): FloorShot[] => [
+  { kind: 'board', src: imgOf(p, 'board'), label: 'Panel', alt: altOf(p, 'board') },
+  { kind: 'room', src: imgOf(p, 'room'), label: 'In situ', alt: altOf(p, 'room') },
+  { kind: 'detail', src: imgOf(p, 'detail'), label: 'Grain detail', alt: altOf(p, 'detail') },
+];
