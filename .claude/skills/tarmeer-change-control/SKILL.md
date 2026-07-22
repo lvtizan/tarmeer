@@ -17,6 +17,27 @@ description: Tarmeer 变更管控——写任何代码之前和提交之前的�
 1. **查锁定清单**：`tarmeer-protected-features` 里的功能（VN Footer 联系块、专家联系表单、问卷 schema 等）有逐条铁律，改之前逐条核对。
 2. **查历史**：`git log --oneline -10 -- <目标文件>`。如果该文件近期被反复修改或 revert 过（如 PortfolioClient 的 filter bar、SupplierDetailPage），说明有你不知道的隐性约束——先读 `tarmeer-failure-archaeology` 里的对应案例，再决定方案。
 3. **查国家维度**：改动涉及任何列表/查询/写入？→ 先过 `tarmeer-country-isolation`。
+4. **查权限一致性**：改动放开/收紧某功能对某角色的可见性时，先 Grep 出该功能**整条链路上的每个后端端点**及其 `require*` 中间件（`authenticateAdmin` / `requireAdmin` / `requireFieldOrSuperAdmin` / `requirePermission` / `blockFieldStaff`），确认门禁一致——禁止"页面对所有 admin 开放，但底层某个 API 只放行部分角色"造成半残功能。
+
+## 权限门禁一致性（铁律，FA-15）
+
+**页面/功能的可见角色，与它依赖的每个 API 的角色门禁，必须一致。**
+
+反面教材（2026-07-22 FA-15）：访谈页对**所有 admin** 开放，但"绑定公司"搜索走的 `/api/field/companies/search` 被 `requireFieldOrSuperAdmin` 拦，**sub_admin→403**，功能对 sub_admin 半残。
+
+- 改前用 Grep 把功能链路上的路由全列出来：`grep -rn "router\.\(get\|post\|patch\|delete\|use\)" server/dist/routes/`，逐个看它命中的中间件。
+- 注意 `router.use(mw)` **只作用于其后注册的路由**；调整中间件挂载顺序 = 高危，必须加回归用例（参考 `scripts/harness/field-search-access.mjs`：断言目标角色可达 + 敏感路由仍受限，双向守护）。
+- 放开权限前确认**不是提权**：核对该角色是否本就能经其它端点达到同等效果（FA-15 里 sub_admin 本就能经 `PATCH /api/admin/interviews/:id` 绑定，只缺"搜索"）。
+
+## 前端错误处理（铁律，FA-15）
+
+**前端 `catch` 禁止把请求错误（403/500/网络）静默吞成"空 / 无数据"。**
+
+反面教材（FA-15）：`catch { setBindResults([]) }` 把 403 吞成空，页面渲染"无匹配公司"——公司明明存在，把"没权限/接口坏"误报成"没数据"，线上排障被带偏成"搜索坏了"。
+
+- 每个数据拉取要区分三态：**加载中 / 显式错误态（"加载失败，请重试"）/ 真的空（空态文案）**。错误态与空态**不得共用同一个渲染分支**。
+- 逐键触发的搜索用**内联错误提示**（红字），不要 `alert()`（每次按键弹窗）。
+- 排障口径：用户报"某处没数据/搜不到"，先分清是「真没数据」还是「请求失败被吞」——直接 curl 该接口带真实 token 看状态码，别信页面文案。
 
 ## 修改逻辑 = 全量搜索后统一修正（铁律）
 
