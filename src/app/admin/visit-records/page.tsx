@@ -188,6 +188,7 @@ function AdminVisitRecordsContent() {
   const [bindQuery, setBindQuery] = useState('');
   const [bindResults, setBindResults] = useState<BindCandidate[]>([]);
   const [bindSearching, setBindSearching] = useState(false);
+  const [bindError, setBindError] = useState(false);
   const [binding, setBinding] = useState(false);
 
   useEffect(() => {
@@ -258,7 +259,7 @@ function AdminVisitRecordsContent() {
     setSelectedId(id);
     setDetail(null);
     setDetailLoading(true);
-    setBindOpen(false); setBindQuery(''); setBindResults([]);
+    setBindOpen(false); setBindQuery(''); setBindResults([]); setBindError(false);
     try {
       const data = await adminApi.getInterview(id);
       setDetail(data.interview || data);
@@ -270,6 +271,7 @@ function AdminVisitRecordsContent() {
   // 绑定公司：按访谈所属国家搜索（国家数据隔离），选中后 PATCH company_ref
   const handleBindSearch = async (q: string) => {
     setBindQuery(q);
+    setBindError(false);
     if (!q.trim()) { setBindResults([]); return; }
     setBindSearching(true);
     try {
@@ -277,6 +279,7 @@ function AdminVisitRecordsContent() {
       setBindResults(results || []);
     } catch {
       setBindResults([]);
+      setBindError(true);
     } finally {
       setBindSearching(false);
     }
@@ -416,6 +419,8 @@ function AdminVisitRecordsContent() {
                       <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
                         {bindSearching ? (
                           <p className="text-xs text-stone-400 py-2 text-center">{t('Searching…', '搜索中…')}</p>
+                        ) : bindError ? (
+                          <p className="text-xs text-red-500 py-2 text-center">{t('Search failed, please retry', '搜索失败，请重试')}</p>
                         ) : bindResults.length === 0 ? (
                           <p className="text-xs text-stone-400 py-2 text-center">{bindQuery.trim() ? t('No match', '无匹配公司') : t('Type to search', '输入公司名搜索')}</p>
                         ) : bindResults.map(c => (

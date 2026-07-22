@@ -103,6 +103,17 @@ if (fStatus === null) {
   ok(`GET localhost:5180 → ${fStatus}`);
 }
 
+// ─── 3b. field 公司搜索鉴权回归(sub_admin 可搜,load 仍受限) ──────────────────
+// 起因(2026-07-22): sub_admin 后台绑定访谈时公司搜索被 requireFieldOrSuperAdmin
+// 403 拦掉,前端吞成"无匹配公司"。此回归守卫 field 路由中间件挂载顺序。
+console.log('\n[3b] field 公司搜索鉴权 (sub_admin 可搜 / load 仍受限)');
+try {
+  execSync('node scripts/harness/field-search-access.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('field companies/search: sub_admin 开放, load 仍受限');
+} catch (e) {
+  ng('field companies/search 鉴权回归', (e.stdout?.toString() || e.message || '').trim().split('\n').slice(-6).join(' | '));
+}
+
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
 // 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
 // 不得硬编码,否则会与管理后台不一致(供应商品类踩坑 2026-06-30)。
