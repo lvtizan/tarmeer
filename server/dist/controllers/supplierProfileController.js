@@ -75,8 +75,11 @@ async function listPublicSuppliers(req, res) {
             params.push(origin);
         }
         if (category) {
-            where += ' AND JSON_CONTAINS(sp.categories, ?)';
-            params.push(JSON.stringify(category));
+            // 分类筛选下拉的取值来自产品品类枚举(如 stone_materials)，但档案级 sp.categories 用的是旧枚举(如 stone)。
+            // 只匹配 sp.categories 会导致选任一新品类几乎都"No suppliers found"，且只传产品的供应商永远不出现。
+            // 故：命中档案分类 OR 该供应商有对应品类的产品，二者取一即算匹配。
+            where += ' AND (JSON_CONTAINS(sp.categories, ?) OR EXISTS (SELECT 1 FROM supplier_products sprd2 WHERE sprd2.supplier_profile_id = sp.id AND sprd2.category = ?))';
+            params.push(JSON.stringify(category), category);
         }
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM supplier_profiles sp ${where}`, params);
         const total = countRows[0].total;
