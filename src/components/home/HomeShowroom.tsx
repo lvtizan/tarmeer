@@ -55,9 +55,9 @@ export default function HomeShowroom() {
   return (
     <section className="bg-white py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">One Partner, End to End</p>
-          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
+          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] [text-wrap:balance] text-[#1c1917] sm:text-[34px] lg:whitespace-nowrap">
             Your showroom in Dubai, your factory network in China
           </h2>
         </div>
