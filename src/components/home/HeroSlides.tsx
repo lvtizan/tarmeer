@@ -7,10 +7,10 @@ import { useState, useEffect } from 'react';
 // Hero 轮播图：hero-real-1=用户 GPT 生成宽幅图(2172px)，hero-real-2=真拍指板近景(2560px)。
 // 都是"中方 + 2-3 中东客、着装多样、全身不切头"，清晰。
 const SLIDES = [
-  { src: '/images/sourcing/hero-real-1', w: 2172, alt: 'Chinese hosts guiding Gulf clients on a walk-through of a large-format stone slab showroom in China' },
-  { src: '/images/sourcing/hero-real-3', w: 2172, alt: 'Chinese staff hosting Gulf clients touring a modern kitchen and stone showroom in China' },
-  { src: '/images/sourcing/hero-real-4', w: 2172, alt: 'Chinese staff showing bathroom fittings and finishes to Gulf clients at a showroom in China' },
-  { src: '/images/sourcing/hero-real-2', w: 2560, alt: 'A Chinese consultant showing new stone materials to Gulf clients at a showroom in China' },
+  { src: '/images/sourcing/hero-real-1', w: 2880, alt: 'Chinese hosts guiding Gulf clients on a walk-through of a large-format stone slab showroom in China' },
+  { src: '/images/sourcing/hero-real-3', w: 2880, alt: 'Chinese staff hosting Gulf clients touring a modern kitchen and stone showroom in China' },
+  { src: '/images/sourcing/hero-real-2', w: 2880, alt: 'Chinese hosts showing materials to Gulf clients in a wood and stone showroom in China' },
+  { src: '/images/sourcing/hero-real-4', w: 2880, alt: 'Chinese staff showing bathroom fittings and finishes to Gulf clients at a showroom in China' },
 ];
 
 export default function HeroSlides() {

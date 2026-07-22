@@ -2,11 +2,19 @@
 // 首屏背景轮播「带客视察中国大板展厅」(HeroSlides，Agnes 生成，全身入镜不切头)，
 // 左侧压暗渐变放文案（不用纯黑硬块），图满铺到视口两缘。
 import Link from 'next/link';
+import { Store, Sparkles, ShieldCheck } from 'lucide-react';
 import HeroSlides from './HeroSlides';
+
+// 定性证明点（不捏造数字）；头牌=迪拜前置展厅(我们 vs 敬城的差异点)
+const PROOF_CHIPS = [
+  { icon: Store, label: 'A Dubai selection center' },
+  { icon: Sparkles, label: "China's newest materials" },
+  { icon: ShieldCheck, label: 'Local delivery & guarantee' },
+];
 
 export default function HomeMaterialsHero() {
   return (
-    <section className="relative isolate flex min-h-[520px] items-center overflow-hidden sm:min-h-[600px] lg:min-h-[640px]">
+    <section className="relative isolate flex min-h-[560px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]">
       <HeroSlides />
 
       {/* 左强右弱压暗：左侧文字可读，右侧展厅场景清晰 */}
@@ -22,15 +30,14 @@ export default function HomeMaterialsHero() {
             <br />Curated for the UAE
           </h1>
           <p className="mt-5 text-base leading-7 text-white/85 sm:text-lg">
-            We take you to the factory floor in China, source the newest materials direct — then deliver
-            and guarantee them through a local building-materials mall in the UAE.
+            See them first at our Dubai showroom — sourced from China, guaranteed locally.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href="/materials"
               className="inline-flex h-12 items-center justify-center rounded-full bg-[#b8864a] px-8 text-base font-semibold text-white shadow-[0_16px_28px_rgba(184,134,74,0.28)] transition hover:bg-[#a07640]"
             >
-              Browse Materials
+              Get a Quote
             </Link>
             <Link
               href="/materials/showroom"
@@ -38,6 +45,16 @@ export default function HomeMaterialsHero() {
             >
               Visit the Selection Center
             </Link>
+          </div>
+
+          {/* 定性证明 chip 条 */}
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/15 pt-5">
+            {PROOF_CHIPS.map(({ icon: Icon, label }) => (
+              <span key={label} className="inline-flex items-center gap-2 text-[13px] font-medium text-white/80">
+                <Icon className="h-4 w-4 text-[#c6a065]" />
+                {label}
+              </span>
+            ))}
           </div>
         </div>
       </div>

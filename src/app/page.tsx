@@ -8,10 +8,9 @@ import HomeInsightsSection from '@/components/home/HomeInsightsSection';
 import HomeMaterialsHero from '@/components/home/HomeMaterialsHero';
 import HomeHowItWorks from '@/components/home/HomeHowItWorks';
 import HomeApplicationTiles from '@/components/home/HomeApplicationTiles';
-import HomeChinaTeam from '@/components/home/HomeChinaTeam';
-import HomeSourcingStrip from '@/components/home/HomeSourcingStrip';
-import HomeGuaranteeStrip from '@/components/home/HomeGuaranteeStrip';
-import HomePartnersSection from '@/components/home/HomePartnersSection';
+import HomeShowroom from '@/components/home/HomeShowroom';
+import HomeClientVisits from '@/components/home/HomeClientVisits';
+import HomeContactForm from '@/components/home/HomeContactForm';
 import HomeCaseStudySection from '@/components/home/HomeCaseStudySection';
 import { fetchPublicCompanies, fetchGuides } from '@/lib/publicApi';
 import { getCountry } from '@/lib/country';
@@ -106,29 +105,23 @@ export default async function HomePage() {
     );
   }
 
-  // AE：中国新材料首页（改版 spec §5 + 2026-07-16 反馈：首页不再堆廉价产品，改策展入口+接待故事）
-  const [companiesResult, guidesResult] = await Promise.allSettled([
-    fetchPublicCompanies(12, 'home', country),
-    fetchGuides(country),
-  ]);
-
-  const companies = companiesResult.status === 'fulfilled' ? companiesResult.value : [];
+  // AE：中国新材料首页（2026-07-20 重设计：单页叙事 8 段，Hero → 品类 → 三步 → 价值 → 团队 → 到访 → 案例 → 表单收口）
+  // Partners / Insights 移出主叙事（导航仍可达），首页只讲一条故事、结尾收在报价表单。
+  const [guidesResult] = await Promise.allSettled([fetchGuides(country)]);
   const guides = guidesResult.status === 'fulfilled' ? guidesResult.value : [];
-  // ⑤ 标杆案例位（spec §5）：取 story 栏目第一篇；无则整节隐藏
+  // 标杆案例位：取 story 栏目第一篇；无则整节隐藏
   const caseStudyGuide = guides.find((g) => g.category === 'story') ?? null;
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <HomeMaterialsHero />
-      <HomeHowItWorks />
-      <HomeChinaTeam />
       <HomeApplicationTiles />
-      <HomeSourcingStrip />
-      <HomeGuaranteeStrip />
+      <HomeHowItWorks />
+      <HomeShowroom />
+      <HomeClientVisits />
       <HomeCaseStudySection guide={caseStudyGuide} />
-      <HomePartnersSection companies={companies} />
-      <HomeInsightsSection guides={guides} />
+      <HomeContactForm />
     </>
   );
 }

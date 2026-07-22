@@ -1,15 +1,15 @@
-// AE 首页策展入口 — 按空间效果浏览（取代廉价产品网格，改版反馈 2026-07-16）
-// 用高端场景美图做瓦片，点击进 /materials 对应场景筛选。server component（纯链接+图）。
+// AE 首页「What you can source」— 品类图卡网格（2026-07-20 重设计：只放图 + 品类名，零描述句）
+// 高端场景美图做瓦片，点击进 /materials 对应场景筛选。server component（纯链接+图）。
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
-const TILES: { slug: string; label: string; blurb: string }[] = [
-  { slug: 'feature-wall', label: 'Feature Walls', blurb: 'Microcement, sintered stone & statement surfaces' },
-  { slug: 'flooring', label: 'Flooring', blurb: 'Large-format sintered stone & engineered floors' },
-  { slug: 'countertop', label: 'Countertops & Surfaces', blurb: 'Waterfall islands & solid slabs' },
-  { slug: 'kitchen-bath', label: 'Kitchen & Bath', blurb: 'Stone-clad spaces, fittings & sanitary ware' },
-  { slug: 'outdoor-garden', label: 'Outdoor & Facade', blurb: 'Natural stone cladding & paving' },
-  { slug: 'furniture', label: 'Furniture & Décor', blurb: 'Curated designer pieces & finishing touches' },
+const TILES: { slug: string; label: string }[] = [
+  { slug: 'feature-wall', label: 'Feature Walls' },
+  { slug: 'flooring', label: 'Flooring' },
+  { slug: 'countertop', label: 'Countertops & Surfaces' },
+  { slug: 'kitchen-bath', label: 'Kitchen & Bath' },
+  { slug: 'outdoor-garden', label: 'Outdoor & Facade' },
+  { slug: 'furniture', label: 'Furniture & Décor' },
 ];
 
 export default function HomeApplicationTiles() {
@@ -17,13 +17,10 @@ export default function HomeApplicationTiles() {
     <section className="bg-white py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">Design with New Materials</p>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">What You Can Source</p>
           <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
             Start with the look you want
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-stone-500 sm:text-base">
-            Explore China&apos;s newest materials by where they go — every surface, curated for the way UAE homes are designed.
-          </p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -43,11 +40,10 @@ export default function HomeApplicationTiles() {
                 className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5">
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-5">
                 <h3 className="font-serif text-xl text-white sm:text-2xl">{t.label}</h3>
-                <p className="mt-1 text-[13px] leading-snug text-white/80">{t.blurb}</p>
-                <span className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#e7c79a] opacity-0 transition group-hover:opacity-100">
-                  Explore <ArrowRight className="h-3.5 w-3.5" />
+                <span className="mb-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100">
+                  <ArrowRight className="h-4 w-4" />
                 </span>
               </div>
             </Link>

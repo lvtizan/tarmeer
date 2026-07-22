@@ -1,12 +1,13 @@
-// AE 首页「一眼看懂」主线 — Hero 正下方，接待团队之前（2026-07-20 反馈：首页要一眼看懂业务）
-// 两块：① 三步怎么运转（选材 → 中国采购+质检+拼柜 → 本地交付+担保）② 三点价值条。
+// AE 首页「How it works」三步（2026-07-20 重设计：只留三步卡，价值点并入 HomeWhyUs，CTA 由 Hero/结尾表单承担）
 // AE 专用，不进 i18n；纯 server component（无状态）。
+import { Fragment } from 'react';
 import Link from 'next/link';
-import { LayoutGrid, Factory, ShieldCheck, Sparkles, Wallet, MapPin } from 'lucide-react';
+import { LayoutGrid, Factory, ShieldCheck, ArrowRight, ArrowDown } from 'lucide-react';
 
 const STEPS: {
   n: string;
   icon: typeof LayoutGrid;
+  img: string;
   title: string;
   desc: string;
   href: string;
@@ -15,114 +16,85 @@ const STEPS: {
   {
     n: '01',
     icon: LayoutGrid,
+    img: 'step-select',
     title: 'Select your materials',
-    desc: 'Browse the library online, or visit our UAE selection center to see and touch the newest materials in person.',
+    desc: 'Browse online or visit our UAE selection center in person.',
     href: '/materials/showroom',
-    linkLabel: 'Visit the selection center',
+    linkLabel: 'Selection center',
   },
   {
     n: '02',
     icon: Factory,
+    img: 'step-source',
     title: 'We source from China',
-    desc: 'We buy direct from leading Chinese factories, quality-check every order and consolidate it for shipping.',
+    desc: 'Factory-direct, quality-checked and consolidated for you.',
     href: '/services/china-sourcing',
     linkLabel: 'How sourcing works',
   },
   {
     n: '03',
     icon: ShieldCheck,
+    img: 'step-deliver',
     title: 'Local delivery & guarantee',
-    desc: 'Delivered to your project in the UAE — backed by our local delivery commitment and after-sales warranty.',
+    desc: 'Delivered in the UAE, backed by a local after-sales guarantee.',
     href: '/guarantee',
-    linkLabel: 'Our local guarantee',
-  },
-];
-
-const VALUES: { icon: typeof Sparkles; title: string; desc: string }[] = [
-  {
-    icon: Sparkles,
-    title: "Materials you can't find in the UAE",
-    desc: 'The newest finishes from China — before they reach the wider market.',
-  },
-  {
-    icon: Wallet,
-    title: 'Factory-direct pricing',
-    desc: 'Sourced straight from the factory floor, without the middle layers.',
-  },
-  {
-    icon: MapPin,
-    title: 'Backed locally',
-    desc: 'A UAE building-materials mall stands behind delivery and after-sales.',
+    linkLabel: 'Our guarantee',
   },
 ];
 
 export default function HomeHowItWorks() {
   return (
-    <section className="bg-white py-14 sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+    <section className="bg-[#faf8f5] py-14 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         {/* 标题 */}
-        <div className="max-w-2xl">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">How It Works</p>
           <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
             China&apos;s newest materials, in three steps
           </h2>
-          <p className="mt-3 text-[15px] leading-7 text-stone-500 sm:text-base">
-            From the factory floor in China to your project in the UAE — curated, sourced and guaranteed by us.
-          </p>
         </div>
 
-        {/* 三步卡片 */}
-        <div className="mt-10 grid gap-5 sm:grid-cols-3">
-          {STEPS.map((s) => (
+        {/* 三步流程：卡片 + 1→2→3 箭头 */}
+        <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-stretch sm:gap-2">
+          {STEPS.map((s, i) => (
+            <Fragment key={s.n}>
             <div
-              key={s.n}
-              className="flex flex-col rounded-2xl border border-stone-200 bg-white p-6 transition hover:border-[#b8864a]/40 hover:shadow-sm"
+              className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm"
             >
-              <div className="flex items-center justify-between">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#b8864a]/10 text-[#b8864a]">
-                  <s.icon className="h-5 w-5" />
+              {/* 场景图 + 序号角标 */}
+              <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
+                <img
+                  src={`/images/sourcing/${s.img}-medium.webp`}
+                  srcSet={`/images/sourcing/${s.img}-thumb.webp 600w, /images/sourcing/${s.img}-medium.webp 1200w`}
+                  sizes="(min-width:640px) 33vw, 100vw"
+                  alt={s.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-[#1c1917]/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+                  <s.icon className="h-3.5 w-3.5 text-[#d8b487]" />
+                  Step {s.n}
                 </span>
-                <span className="font-serif text-4xl font-bold leading-none text-[#b8864a]/20">{s.n}</span>
               </div>
-              <h3 className="mt-4 font-serif text-lg font-bold text-[#1c1917]">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-stone-500">{s.desc}</p>
-              <Link
-                href={s.href}
-                className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[#b8864a] transition hover:text-[#a07640]"
-              >
-                {s.linkLabel} <span aria-hidden>→</span>
-              </Link>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/materials"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[#b8864a] px-7 text-sm font-semibold text-white transition hover:bg-[#a07640]"
-          >
-            Browse Materials
-          </Link>
-          <Link
-            href="/for-designers"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-stone-300 px-7 text-sm font-semibold text-stone-700 transition hover:border-[#b8864a] hover:text-[#b8864a]"
-          >
-            For Designers
-          </Link>
-        </div>
-
-        {/* 三点价值条 */}
-        <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-stone-200 bg-stone-200 sm:grid-cols-3">
-          {VALUES.map((v) => (
-            <div key={v.title} className="flex items-start gap-3 bg-[#faf8f5] p-6">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#b8864a]">
-                <v.icon className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-[#1c1917]">{v.title}</p>
-                <p className="mt-1 text-[13px] leading-relaxed text-stone-500">{v.desc}</p>
+              {/* 文字 */}
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="font-serif text-lg font-bold text-[#1c1917]">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-stone-500">{s.desc}</p>
+                <Link
+                  href={s.href}
+                  className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[#b8864a] transition hover:text-[#a07640]"
+                >
+                  {s.linkLabel} <span aria-hidden>→</span>
+                </Link>
               </div>
             </div>
+            {i < STEPS.length - 1 && (
+              <div className="flex items-center justify-center sm:w-8">
+                <ArrowRight className="hidden h-6 w-6 text-[#b8864a]/50 sm:block" />
+                <ArrowDown className="h-6 w-6 text-[#b8864a]/50 sm:hidden" />
+              </div>
+            )}
+            </Fragment>
           ))}
         </div>
       </div>
