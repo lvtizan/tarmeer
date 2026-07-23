@@ -27,7 +27,7 @@ export default function HomeApplicationTiles() {
           {TILES.map((t) => (
             <Link
               key={t.slug}
-              href={`/materials?scene=${t.slug}`}
+              href={`/materials/new-materials?scene=${t.slug}`}
               className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-stone-200 isolate"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -52,7 +52,7 @@ export default function HomeApplicationTiles() {
 
         <div className="mt-8 flex justify-center">
           <Link
-            href="/materials"
+            href="/materials/new-materials"
             className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-6 py-3 text-sm font-medium text-[#1c1917] transition hover:border-[#b8864a] hover:text-[#b8864a]"
           >
             Browse the Full Material Library <ArrowRight className="h-4 w-4" />

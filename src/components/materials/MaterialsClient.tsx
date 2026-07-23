@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { MapPin, Clock, Package, Search, X } from 'lucide-react';
+import { MapPin, Clock, Package, Search, X, ArrowRight } from 'lucide-react';
 import { resolveVariantUrl, resolveImageUrl } from '@/lib/imageUrl';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import AdminSelect from '@/components/ui/AdminSelect';
@@ -48,15 +48,16 @@ function parseCategories(c: Supplier['categories']): string[] {
   try { const p = JSON.parse(c); return Array.isArray(p) ? p : [c]; } catch { return [c]; }
 }
 
+// 紧凑网格卡：封面 16:9 + 名称 + 品类 chips（整卡可点）——替代旧整宽长行，页面不再天梯般长
 function SupplierCard({ s }: { s: Supplier }) {
   const cats = parseCategories(s.categories);
   return (
     <Link
       href={`/materials/suppliers/${s.slug}`}
-      className="group flex flex-col sm:flex-row border-b border-stone-200/60 hover:bg-[#faf8f5] transition-colors duration-150 py-5 gap-4 sm:gap-5"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm"
     >
-      {/* Cover image */}
-      <div className="w-full sm:w-[220px] md:w-[280px] h-[180px] flex-shrink-0 overflow-hidden bg-stone-100">
+      {/* Cover 16:9 */}
+      <div className="aspect-video overflow-hidden bg-stone-100">
         <img
           src={
             s.cover_image_url
@@ -75,41 +76,28 @@ function SupplierCard({ s }: { s: Supplier }) {
             }
           }}
           alt={s.company_name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
-              {s.company_name}
-            </h3>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ORIGIN_BADGE_CLASS[s.origin]}`}>
-              {ORIGIN_LABEL[s.origin]}
-            </span>
-          </div>
-          {s.description && (
-            <p className="text-stone-500 text-[13px] leading-relaxed line-clamp-2 mb-2.5">
-              {s.description}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-1.5">
-            {cats.slice(0, 4).map(c => (
-              <span key={c} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded-2xl capitalize">
-                {c}
-              </span>
-            ))}
-          </div>
+      <div className="flex flex-1 flex-col p-4">
+        <div className="mb-2 flex items-center gap-2 flex-wrap">
+          <h3 className="line-clamp-1 text-[15px] font-semibold text-[#1c1917] transition-colors group-hover:text-[#b8864a]">
+            {s.company_name}
+          </h3>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${ORIGIN_BADGE_CLASS[s.origin]}`}>
+            {ORIGIN_LABEL[s.origin]}
+          </span>
         </div>
-      </div>
-
-      {/* CTA */}
-      <div className="hidden sm:flex flex-col items-center justify-center flex-shrink-0 w-[140px] pl-4 border-l border-stone-100">
-        <span className="w-full flex items-center justify-center px-4 py-2.5 rounded-2xl border border-[#b8864a] text-[#b8864a] font-semibold text-sm group-hover:bg-[#b8864a] group-hover:text-white transition-colors duration-200">
-          View Profile
-        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {cats.slice(0, 3).map(c => (
+            <span key={c} className="rounded-2xl border border-stone-200 px-2 py-0.5 text-[11px] capitalize text-stone-500">
+              {c}
+            </span>
+          ))}
+        </div>
       </div>
     </Link>
   );
@@ -141,14 +129,11 @@ function FilterOption({
 
 interface MaterialsClientProps {
   initialSuppliers: Supplier[];
-  /**
-   * AE 新材料策展区（场景瓦片 + 产品流 + 选材中心预约），由 server page 组装注入，
-   * 插在 hero 与供应商列表之间；VN 站不传 → 页面渲染与改版前完全一致（国家隔离）。
-   */
-  catalogSection?: React.ReactNode;
+  /** AE 站在 hero 显示「Explore New Materials」入口（→ /materials/new-materials）；VN 站不显示。 */
+  showNewMaterialsEntry?: boolean;
 }
 
-export default function MaterialsClient({ initialSuppliers, catalogSection }: MaterialsClientProps) {
+export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntry }: MaterialsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
@@ -257,56 +242,25 @@ export default function MaterialsClient({ initialSuppliers, catalogSection }: Ma
             Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
           </p>
 
-          {/* 搜索条 + 供应商登录：整体居中同排（对齐公司列表页风格） */}
+          {/* 引导入口：新材料页（AE only，主 CTA）+ 供应商登录（次要，留在 hero 好找）。搜索已移到下方列表上方。 */}
           <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <div className="relative w-full sm:w-[30rem]">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search suppliers by name…"
-                aria-label="Search suppliers by name"
-                className="w-full h-12 pl-12 pr-11 rounded-xl bg-white text-left text-[#1c1917] placeholder:text-stone-400 text-[15px] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#b8864a]"
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  onClick={() => setSearchInput('')}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
+            {showNewMaterialsEntry && (
+              <Link
+                href="/materials/new-materials"
+                className="btn-primary inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap px-6"
+              >
+                Explore New Materials <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
             <Link
               href="/supplier/auth"
-              className="btn-primary self-start sm:self-auto sm:shrink-0 inline-flex items-center justify-center gap-2 whitespace-nowrap h-12"
+              className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/30 px-6 font-semibold text-white transition hover:bg-white/10"
             >
               Supplier Login
             </Link>
           </div>
         </div>
       </section>
-
-      {/* 新材料策展区（AE only，server page 注入；hero 与供应商列表之间） */}
-      {catalogSection}
-
-      {/* 小节标题过渡：策展区在场时给下方供应商列表一个章节头 */}
-      {catalogSection && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-14 text-center">
-          <p className="text-sm font-semibold text-[#b8864a] uppercase tracking-wider">
-            Our Suppliers
-          </p>
-          <h2 className="font-serif text-[24px] sm:text-[30px] text-[#1c1917] font-medium leading-tight mt-2">
-            The Partners Behind the Materials
-          </h2>
-          <p className="text-stone-500 text-[15px] mt-2 max-w-2xl mx-auto">
-            Every material we curate comes from a verified supplier — browse their full showrooms below.
-          </p>
-        </div>
-      )}
 
       {/* Breadcrumb */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-0">
@@ -379,6 +333,29 @@ export default function MaterialsClient({ initialSuppliers, catalogSection }: Ma
 
         {/* Right Content */}
         <div className="flex-1 min-w-0">
+          {/* 搜索条（从 hero 移下来，置于列表上方） */}
+          <div className="relative mb-4">
+            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search suppliers by name…"
+              aria-label="Search suppliers by name"
+              className="h-12 w-full rounded-xl border border-stone-200 bg-white pl-12 pr-11 text-left text-[15px] text-[#1c1917] placeholder:text-stone-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput('')}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
           {/* Mobile origin filter */}
           <div className="lg:hidden flex gap-1.5 bg-stone-100 rounded-full p-1 mb-3 w-fit">
             {[
@@ -431,7 +408,7 @@ export default function MaterialsClient({ initialSuppliers, catalogSection }: Ma
               </p>
             </div>
           ) : (
-            <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {visibleSuppliers.map(s => (
                 <SupplierCard key={s.id} s={s} />
               ))}
