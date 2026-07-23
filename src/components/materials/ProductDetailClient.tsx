@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { BadgeCheck, ShieldCheck, ArrowRight, ChevronRight } from 'lucide-react';
+import { BadgeCheck, ArrowRight, ChevronRight } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import SourcingRequestForm from '@/components/sourcing/SourcingRequestForm';
 import MaterialProductCard from './MaterialProductCard';
@@ -108,40 +108,6 @@ function ProductHeading({ product, asH1 }: { product: PublicMaterialProduct; asH
   );
 }
 
-/** 「From China, Guaranteed Locally」信任条（/guarantee 与 /services/china-sourcing 由并行 agent 开发） */
-function TrustBar() {
-  return (
-    <div className="relative isolate rounded-2xl bg-[#1c1917] p-6 sm:p-8 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_10%_0%,rgba(184,134,74,0.18),transparent_60%)]" />
-      <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-        <span className="inline-flex w-12 h-12 rounded-2xl bg-[#b8864a]/15 text-[#c6a065] items-center justify-center shrink-0">
-          <ShieldCheck className="w-6 h-6" />
-        </span>
-        <div className="flex-1">
-          <p className="text-white font-serif text-lg font-medium">From China, Guaranteed Locally</p>
-          <p className="text-white/60 text-[13px] leading-relaxed mt-1">
-            Every material we source is inspected before shipping and backed by our UAE team —
-            delivery, installation support and after-sales, all handled here.
-          </p>
-        </div>
-        <div className="flex flex-col sm:items-end gap-2 shrink-0">
-          <Link
-            href="/guarantee"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#c6a065] hover:text-white transition-colors"
-          >
-            Our Guarantee <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-          <Link
-            href="/services/china-sourcing"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#c6a065] hover:text-white transition-colors"
-          >
-            How Sourcing Works <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ProductDetailClient({ product, related, catalogs = [] }: ProductDetailClientProps) {
   const name = product.title || 'New Material';
@@ -181,19 +147,41 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
             {/* Gallery */}
             {images.length > 0 && (
               <div>
-                <button
-                  type="button"
-                  onClick={() => setLightboxIdx(mainIdx)}
-                  className="block w-full aspect-video rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 cursor-zoom-in"
-                  aria-label={`View ${name} full size`}
-                >
-                  <SmartImage
-                    src={images[mainIdx]}
-                    variant="medium"
-                    alt={name}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
+                {/* 主图 + 保障蒙层：黑块不再单占一段，改叠在图底部（渐变托底），省空间、按设计稿 */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIdx(mainIdx)}
+                    className="block w-full aspect-video rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 cursor-zoom-in"
+                    aria-label={`View ${name} full size`}
+                  >
+                    <SmartImage
+                      src={images[mainIdx]}
+                      variant="medium"
+                      alt={name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                  {/* 保障蒙层（容器 pointer-events-none 让点击穿透去开大图；链接区单独 auto 可点） */}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-2xl bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pt-12 pb-4 sm:px-6">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="font-serif text-base sm:text-lg font-medium text-white">From China, Guaranteed Locally</p>
+                        <p className="mt-0.5 hidden sm:block text-[12.5px] leading-relaxed text-white/70 max-w-xl">
+                          Inspected before shipping and backed by our UAE team — delivery, installation & after-sales, all handled here.
+                        </p>
+                      </div>
+                      <div className="pointer-events-auto flex shrink-0 gap-3">
+                        <Link href="/guarantee" className="inline-flex items-center gap-1 text-[13px] font-medium text-[#e6c88f] hover:text-white transition-colors">
+                          Our Guarantee <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                        <Link href="/services/china-sourcing" className="inline-flex items-center gap-1 text-[13px] font-medium text-[#e6c88f] hover:text-white transition-colors">
+                          How Sourcing Works <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 {images.length > 1 && (
                   <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
                     {images.map((img, i) => (
@@ -274,7 +262,7 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
               </div>
             )}
 
-            <TrustBar />
+            {/* From China Guaranteed Locally 已改为主图底部蒙层（见 Gallery），不再单占一段 */}
 
             {/* 移动端表单（sticky 侧栏桌面 only，内容底部补充显示） */}
             <div className="lg:hidden space-y-4">

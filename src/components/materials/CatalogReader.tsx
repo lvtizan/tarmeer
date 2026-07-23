@@ -160,7 +160,13 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
     });
 
     const src = resolveImageUrl(active.file_url);
-    const loadingTask = pdfjsLib.getDocument(src);
+    // 大 PDF 提速：服务器支持 Range，故只按需拉当前页字节、不预取整份文档（首页秒开）。
+    // 临时快招——最终由方案③(上传时预渲染 WebP)根治。
+    const loadingTask = pdfjsLib.getDocument({
+      url: src,
+      disableAutoFetch: true,
+      rangeChunkSize: 262144,
+    });
 
     (async () => {
       try {
