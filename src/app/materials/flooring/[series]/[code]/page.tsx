@@ -21,6 +21,7 @@ import {
 } from '@/lib/flooring';
 import FlooringGallery from '@/components/flooring/FlooringGallery';
 import FloorCard from '@/components/flooring/FloorCard';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,27 +109,13 @@ export default async function FlooringDetailPage({
     // 贸易价不公开（去标识铁律）→ 不输出 offers.price，改用 Service 询价语义在页面 CTA 承接
   };
 
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${c.baseUrl}/` },
-      { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: 'Flooring', item: `${c.baseUrl}/materials/flooring` },
-      {
-        '@type': 'ListItem',
-        position: 4,
-        name: s?.nameEn ?? series,
-        item: `${c.baseUrl}/materials/flooring/${series}`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 5,
-        name: p.code,
-        item: `${c.baseUrl}/materials/flooring/${series}/${p.code}`,
-      },
-    ],
-  };
+  const crumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'Materials', href: '/materials' },
+    { name: 'Flooring', href: '/materials/flooring' },
+    { name: s?.nameEn ?? series, href: `/materials/flooring/${series}` },
+    { name: p.code },
+  ];
 
   return (
     <div className="bg-white">
@@ -136,23 +123,11 @@ export default async function FlooringDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(productJsonLd) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
-      />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
-        <nav className="mb-8 flex flex-wrap items-center gap-2 text-[13px] text-stone-400">
-          <Link href="/materials" className="hover:text-[#b8864a]">Materials</Link>
-          <span>/</span>
-          <Link href="/materials/flooring" className="hover:text-[#b8864a]">Flooring</Link>
-          <span>/</span>
-          <Link href={`/materials/flooring/${series}`} className="hover:text-[#b8864a]">
-            {s?.nameEn ?? series}
-          </Link>
-          <span>/</span>
-          <span className="text-stone-600">{p.code}</span>
-        </nav>
+        <div className="mb-8">
+          <Breadcrumb items={crumbs} baseUrl={c.baseUrl} variant="light" />
+        </div>
 
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
           <FlooringGallery shots={shots} alt={`${BRAND.nameEn} ${p.code} ${p.wood} art flooring from China`} />

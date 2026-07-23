@@ -8,6 +8,7 @@ import { getCountry } from '@/lib/country';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import { BRAND, getSeries, productsOf, coverAltOf, FLOOR_KEYWORDS, imgOf } from '@/lib/flooring';
 import FlooringGrid from '@/components/flooring/FlooringGrid';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,21 +59,12 @@ export default async function FlooringSeriesPage({
   if (!s) notFound();
   const products = productsOf(series);
 
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${c.baseUrl}/` },
-      { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: 'Flooring', item: `${c.baseUrl}/materials/flooring` },
-      {
-        '@type': 'ListItem',
-        position: 4,
-        name: s.nameEn,
-        item: `${c.baseUrl}/materials/flooring/${series}`,
-      },
-    ],
-  };
+  const crumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'Materials', href: '/materials' },
+    { name: 'Flooring', href: '/materials/flooring' },
+    { name: s.nameEn },
+  ];
 
   // 系列内所有产品 ItemList（每个是可点进的 Product URL + 图）
   const itemListJsonLd = {
@@ -93,22 +85,14 @@ export default async function FlooringSeriesPage({
     <div>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(itemListJsonLd) }}
       />
 
       <section className="bg-[#1c1917]">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
-          <nav className="mb-6 flex flex-wrap items-center gap-2 text-[13px] text-white/50">
-            <Link href="/materials" className="hover:text-white/80">Materials</Link>
-            <span>/</span>
-            <Link href="/materials/flooring" className="hover:text-white/80">Flooring</Link>
-            <span>/</span>
-            <span className="text-white/80">{s.nameEn}</span>
-          </nav>
+          <div className="mb-6">
+            <Breadcrumb items={crumbs} baseUrl={c.baseUrl} variant="dark" />
+          </div>
           <p className="text-sm font-semibold uppercase tracking-wider text-[#c6a065]">
             {BRAND.nameEn} · {s.nameEn} Collection
           </p>

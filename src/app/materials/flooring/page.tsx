@@ -10,6 +10,7 @@ import { getCountry } from '@/lib/country';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import { BRAND, SERIES, PRODUCTS, productsOf, coverAltOf, FLOOR_KEYWORDS } from '@/lib/flooring';
 import FlooringGrid from '@/components/flooring/FlooringGrid';
+import Breadcrumb from '@/components/common/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,15 +65,11 @@ export default async function FlooringLandingPage() {
   const c = getCountry((await headers()).get('x-country'));
   if (c.code !== 'ae') notFound();
 
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${c.baseUrl}/` },
-      { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: 'Flooring', item: `${c.baseUrl}/materials/flooring` },
-    ],
-  };
+  const crumbs = [
+    { name: 'Home', href: '/' },
+    { name: 'Materials', href: '/materials' },
+    { name: 'Flooring' },
+  ];
 
   // 系列 ItemList（帮助 Google 理解页面为集合页）
   const collectionsJsonLd = {
@@ -145,10 +142,6 @@ export default async function FlooringLandingPage() {
     <div>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(collectionPageJsonLd) }}
       />
       <script
@@ -163,11 +156,9 @@ export default async function FlooringLandingPage() {
       {/* Hero */}
       <section className="bg-[#1c1917]">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
-          <nav className="mb-6 flex items-center gap-2 text-[13px] text-white/50">
-            <Link href="/materials" className="hover:text-white/80">Materials</Link>
-            <span>/</span>
-            <span className="text-white/80">Flooring</span>
-          </nav>
+          <div className="mb-6">
+            <Breadcrumb items={crumbs} baseUrl={c.baseUrl} variant="dark" />
+          </div>
           <p className="text-sm font-semibold uppercase tracking-wider text-[#c6a065]">
             {BRAND.nameEn} · Art Flooring
           </p>
