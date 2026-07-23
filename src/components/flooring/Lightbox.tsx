@@ -4,7 +4,10 @@
 // 画廊(FlooringGallery)与产品卡(FloorCard)共用，保证放大交互全站一致。
 import { useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { FloorShot } from '@/lib/flooring';
+
+// 通用图廊条目：flooring 的 FloorShot({kind,src,label,alt}) 结构上满足此形，故 flooring 调用方无需改；
+// 材料卡等其它场景可直接传 {src,alt,label}（放大交互全站一致）。
+export type LightboxShot = { src: string; alt: string; label: string };
 
 export default function Lightbox({
   shots,
@@ -13,7 +16,7 @@ export default function Lightbox({
   setIndex,
   onClose,
 }: {
-  shots: FloorShot[];
+  shots: LightboxShot[];
   alt: string;
   index: number;
   setIndex: (updater: (i: number) => number) => void;
@@ -104,7 +107,7 @@ export default function Lightbox({
         <div className="flex justify-center gap-2">
           {shots.map((s, i) => (
             <button
-              key={s.kind}
+              key={i}
               type="button"
               onClick={() => setIndex(() => i)}
               aria-label={s.label}
