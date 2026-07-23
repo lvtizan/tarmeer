@@ -6,6 +6,7 @@
 // 契约见 docs/plans/china-materials-revamp-spec.md §1/§2.3。
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   Palette, LayoutGrid, Layers, Bath, Lamp, Armchair, TreePine, Sparkles,
@@ -17,6 +18,11 @@ import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import MaterialProductCard from './MaterialProductCard';
 
 // 场景代表图标（slug 与 APPLICATION_SCENES 对齐；新增场景需补图标，缺省回退 Sparkles）
+// 场景 → 专属 L1 精品页（有则瓦片直接跳转，不就地筛 feed）。目前仅地板有独立目录页。
+const SCENE_DEDICATED_PAGE: Record<string, string> = {
+  flooring: '/materials/flooring',
+};
+
 const SCENE_ICONS: Record<string, LucideIcon> = {
   'feature-wall': Palette,
   flooring: LayoutGrid,
@@ -88,27 +94,33 @@ export default function MaterialsCatalogClient({ initialProducts }: MaterialsCat
           {APPLICATION_SCENES.map((s) => {
             const Icon = SCENE_ICONS[s.slug] ?? Sparkles;
             const selected = scene === s.slug;
-            return (
-              <button
-                key={s.slug}
-                type="button"
-                onClick={() => toggleScene(s.slug)}
-                aria-pressed={selected}
-                className={`group text-left rounded-2xl border p-4 sm:p-5 transition-all duration-200 ${
-                  selected
-                    ? 'border-[#b8864a] bg-[#f5f0e8] shadow-sm'
-                    : 'border-stone-200 bg-white hover:border-[#b8864a]/50 hover:shadow-sm'
-                }`}
-              >
+            // 有专属 L1 精品页的场景（如 flooring）→ 直接跳转进去，不在本页就地筛 feed
+            const dedicated = SCENE_DEDICATED_PAGE[s.slug];
+            const cls = `group block text-left rounded-2xl border p-4 sm:p-5 transition-all duration-200 ${
+              selected && !dedicated
+                ? 'border-[#b8864a] bg-[#f5f0e8] shadow-sm'
+                : 'border-stone-200 bg-white hover:border-[#b8864a]/50 hover:shadow-sm'
+            }`;
+            const inner = (
+              <>
                 <span
                   className={`inline-flex w-10 h-10 rounded-xl items-center justify-center transition-colors ${
-                    selected ? 'bg-[#b8864a] text-white' : 'bg-[#f5f0e8] text-[#b8864a] group-hover:bg-[#b8864a]/15'
+                    selected && !dedicated ? 'bg-[#b8864a] text-white' : 'bg-[#f5f0e8] text-[#b8864a] group-hover:bg-[#b8864a]/15'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </span>
                 <p className="text-sm font-semibold text-[#1c1917] mt-3">{s.label}</p>
                 <p className="text-xs text-stone-500 mt-1 leading-relaxed line-clamp-2">{s.blurb}</p>
+              </>
+            );
+            return dedicated ? (
+              <Link key={s.slug} href={dedicated} className={cls}>
+                {inner}
+              </Link>
+            ) : (
+              <button key={s.slug} type="button" onClick={() => toggleScene(s.slug)} aria-pressed={selected} className={cls}>
+                {inner}
               </button>
             );
           })}
