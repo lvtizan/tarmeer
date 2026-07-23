@@ -58,13 +58,23 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   const topRef = useRef(0);
   const seqRef = useRef(0); // 单调递增，切换图册时不重置（否则跨册 id 撞号会串页）
   const targetWRef = useRef(1400);
+  // 方案③：有预渲染 WebP 就走 image 模式（拉单页图，秒开），否则回退 pdf 模式（pdf.js 现渲）
+  const modeRef = useRef<'pdf' | 'image'>('pdf');
+  const pagesBaseRef = useRef('');
+  const numPagesRef = useRef(0);
+  const loadingTaskRef = useRef<ReturnType<typeof pdfjsLib.getDocument> | null>(null);
 
   const active = catalogs[activeIdx];
 
   const CACHE_CAP = 12;
   const ensurePage = useCallback(async (p: number): Promise<string | null> => {
+    if (p < 1 || p > numPagesRef.current) return null;
+    if (modeRef.current === 'image') {
+      // 预渲染视网膜 WebP：直接给 URL，浏览器缓存，无需渲染
+      return `${pagesBaseRef.current}/${p}.webp`;
+    }
     const pdf = pdfRef.current;
-    if (!pdf || p < 1 || p > pdf.numPages) return null;
+    if (!pdf) return null;
     const cached = urlsRef.current.get(p);
     if (cached) {
       urlsRef.current.delete(p);
@@ -95,8 +105,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
 
   const showPage = useCallback(
     async (n: number, mode?: 'open') => {
-      const pdf = pdfRef.current;
-      if (!pdf || n < 1 || n > pdf.numPages) return;
+      if (n < 1 || n > numPagesRef.current) return;
       const my = ++seqRef.current;
       const url = await ensurePage(n);
       if (my !== seqRef.current || !url) return;
@@ -159,20 +168,44 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
       }
     });
 
-    const src = resolveImageUrl(active.file_url);
-    // 大 PDF 提速：服务器支持 Range，故只按需拉当前页字节、不预取整份文档（首页秒开）。
-    // 临时快招——最终由方案③(上传时预渲染 WebP)根治。
-    const loadingTask = pdfjsLib.getDocument({
-      url: src,
-      disableAutoFetch: true,
-      rangeChunkSize: 262144,
-    });
+    modeRef.current = 'pdf';
+    pagesBaseRef.current = '';
+    numPagesRef.current = 0;
 
     (async () => {
       try {
+        // ① 优先用预渲染的 WebP（方案③）：拉单页图秒开，不碰大 PDF
+        const pagesBase = resolveImageUrl(`/uploads/suppliers/catalogs/pages/${active.id}`);
+        try {
+          const mf = await fetch(`${pagesBase}/manifest.json`, { cache: 'force-cache' });
+          if (mf.ok) {
+            const data = await mf.json();
+            const pages = Number(data?.pages) || 0;
+            if (pages > 0 && !cancelled) {
+              modeRef.current = 'image';
+              pagesBaseRef.current = pagesBase;
+              numPagesRef.current = pages;
+              setNumPages(pages);
+              setRatio(Number(data?.ar) || 1.4);
+              setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBase}/${i + 1}-thumb.webp`));
+              setLoading(false);
+              await showPage(1, 'open');
+              return; // 图片模式，无需 pdf.js
+            }
+          }
+        } catch {
+          /* 无预渲染或取 manifest 失败 → 回退 pdf.js */
+        }
+        if (cancelled) return;
+
+        // ② 回退：pdf.js 现渲（disableAutoFetch + Range，只按需拉字节）
+        const src = resolveImageUrl(active.file_url);
+        const loadingTask = pdfjsLib.getDocument({ url: src, disableAutoFetch: true, rangeChunkSize: 262144 });
+        loadingTaskRef.current = loadingTask;
         const pdf = await loadingTask.promise;
         if (cancelled) return;
         pdfRef.current = pdf;
+        numPagesRef.current = pdf.numPages;
         setNumPages(pdf.numPages);
         setThumbUrls(new Array(pdf.numPages).fill(null));
 
@@ -222,7 +255,8 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
 
     return () => {
       cancelled = true;
-      loadingTask.destroy?.();
+      loadingTaskRef.current?.destroy?.();
+      loadingTaskRef.current = null;
       pdfRef.current = null;
     };
   }, [active, ensurePage, showPage]);

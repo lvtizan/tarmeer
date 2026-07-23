@@ -52,6 +52,7 @@ async function rasterizeCatalog(catalogId, pdfPath, opts = {}) {
 
   await fs.mkdir(outDir, { recursive: true, mode: 0o755 });
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "cat-ras-"));
+  let ar = 1.4; // 首页宽高比（前端按它设舞台比例，防布局抖动）
   try {
     for (let p = 1; p <= n; p++) {
       // 单页渲染成 png（-f/-l 限定该页；-singlefile 去掉页码后缀）
@@ -61,11 +62,15 @@ async function rasterizeCatalog(catalogId, pdfPath, opts = {}) {
       ]);
       const pngPath = path.join(tmp, "pg.png");
       const buf = await fs.readFile(pngPath);
+      if (p === 1) {
+        const meta = await sharp(buf).metadata();
+        if (meta.width && meta.height) ar = Number((meta.width / meta.height).toFixed(4));
+      }
       await sharp(buf).resize({ width: RETINA_WIDTH, withoutEnlargement: true }).webp({ quality: 85 }).toFile(path.join(outDir, `${p}.webp`));
       await sharp(buf).resize({ width: THUMB_WIDTH }).webp({ quality: 72 }).toFile(path.join(outDir, `${p}-thumb.webp`));
       await fs.rm(pngPath, { force: true });
     }
-    await fs.writeFile(manifestPath, JSON.stringify({ pages: n, v: 1, w: RETINA_WIDTH }));
+    await fs.writeFile(manifestPath, JSON.stringify({ pages: n, v: 1, w: RETINA_WIDTH, ar }));
     // nginx/express 读取需 644
     for (const f of await fs.readdir(outDir)) {
       await fs.chmod(path.join(outDir, f), 0o644);
