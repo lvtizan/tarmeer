@@ -28,6 +28,7 @@ const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
 const productJsonFields_1 = require("../lib/productJsonFields");
+const catalogRasterizer_1 = require("../lib/catalogRasterizer");
 /**
  * PATCH /admin/suppliers/catalogs/:id/title — 修改目录名称
  */
@@ -73,6 +74,10 @@ async function adminReplaceCatalogFile(req, res) {
         await promises_1.default.writeFile(absPath, req.file.buffer, { mode: 0o644 });
         const newUrl = `/uploads/${relPath}`;
         await database_1.default.execute('UPDATE supplier_catalogs SET file_url = ? WHERE id = ?', [newUrl, catalogId]);
+        // 内容变了→强制重渲电子书图片(方案③)，不阻塞响应
+        catalogRasterizer_1.rasterizeCatalog(catalogId, absPath, { force: true })
+            .then((r) => { if (r && r.pages) console.log(`[catalog-raster] #${catalogId} re-rendered → ${r.pages} pages`); })
+            .catch((e) => console.error(`[catalog-raster] #${catalogId} re-render failed:`, e.message));
         res.json({ id: catalogId, file_url: newUrl, file_size: req.file.size });
     }
     catch (error) {

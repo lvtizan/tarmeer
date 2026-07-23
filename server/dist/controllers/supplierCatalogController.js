@@ -16,6 +16,15 @@ const path_1 = __importDefault(require("path"));
 const os_1 = __importDefault(require("os"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
+const catalogRasterizer_1 = require("../lib/catalogRasterizer");
+// 上传/替换图册后台预渲染（方案③）：不阻塞响应，失败仅日志，阅读器自动回退 pdf.js
+function rasterizeCatalogAsync(catalogId, fileUrl, force) {
+    const pdfPath = catalogRasterizer_1.pdfPathFromUrl(fileUrl);
+    if (!pdfPath) return; // 外链占位 URL 不处理
+    catalogRasterizer_1.rasterizeCatalog(catalogId, pdfPath, { force: !!force })
+        .then((r) => { if (r && r.pages) console.log(`[catalog-raster] #${catalogId} → ${r.pages} pages`); })
+        .catch((e) => console.error(`[catalog-raster] #${catalogId} failed:`, e.message));
+}
 async function getProfileId(supplierUserId) {
     const [rows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE supplier_user_id = ? LIMIT 1', [supplierUserId]);
     return rows[0]?.id || null;
@@ -134,6 +143,7 @@ async function uploadCatalog(req, res) {
         const [result] = await database_1.default.execute('INSERT INTO supplier_catalogs (supplier_profile_id, title, file_url, file_size) VALUES (?, ?, ?, ?)', [profileId, title, file_url, file_size || null]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE id = ?', [id]);
+        rasterizeCatalogAsync(id, file_url, false); // 上传即后台预渲染成电子书图片
         res.status(201).json({ catalog: created[0] });
     }
     catch (error) {
