@@ -6,17 +6,30 @@
 // 表单桌面 sticky 侧栏 + 移动端内容底部双位置（参照专家页模式）。
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { BadgeCheck, ShieldCheck, ArrowRight, ChevronRight } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import SourcingRequestForm from '@/components/sourcing/SourcingRequestForm';
 import MaterialProductCard from './MaterialProductCard';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
-import { APPLICATION_SCENES, type PublicMaterialProduct } from '@/lib/materialsApi';
+import { APPLICATION_SCENES, type PublicMaterialProduct, type SupplierCatalog } from '@/lib/materialsApi';
+
+// pdf.js 阅读器懒加载：只在客户端、独立 chunk，不进初始包（不看图册的用户零成本）
+// loading 占位预留 16:9 空间 → 避免标题短暂悬在塌陷的空白上 + 布局抖动(CLS)
+const CatalogReader = dynamic(() => import('./CatalogReader'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex w-full aspect-video items-center justify-center rounded-2xl bg-[#1c1917]">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-[#e6c88f]" />
+    </div>
+  ),
+});
 
 interface ProductDetailClientProps {
   product: PublicMaterialProduct;
   related: PublicMaterialProduct[];
+  catalogs?: SupplierCatalog[];
 }
 
 function sceneLabel(slug: string): string {
@@ -130,7 +143,7 @@ function TrustBar() {
   );
 }
 
-export default function ProductDetailClient({ product, related }: ProductDetailClientProps) {
+export default function ProductDetailClient({ product, related, catalogs = [] }: ProductDetailClientProps) {
   const name = product.title || 'New Material';
   const images = product.image_urls.length ? product.image_urls : product.image_url ? [product.image_url] : [];
   const [mainIdx, setMainIdx] = useState(0);
@@ -204,6 +217,14 @@ export default function ProductDetailClient({ product, related }: ProductDetailC
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* 产品图册（供应商 PDF → 电子书）— 无 catalog 时 CatalogReader 返回 null 自动隐藏 */}
+            {catalogs.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold text-[#1c1917] mb-4">Product Catalog</h2>
+                <CatalogReader catalogs={catalogs} />
               </div>
             )}
 

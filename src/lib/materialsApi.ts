@@ -169,6 +169,36 @@ export async function fetchMaterialProducts(
   }
 }
 
+/** 供应商图册（PDF）。供应商上传即入库；材料页据此渲染电子书阅读器，无 catalog 则不展示。 */
+export interface SupplierCatalog {
+  id: number;
+  title: string;
+  file_url: string;
+  file_size: number | null;
+}
+
+/** 拉某供应商的图册列表（slug 定位）。失败/无则返回空数组 → 阅读器模块自动隐藏。 */
+export async function fetchSupplierCatalogs(slug: string, country: string): Promise<SupplierCatalog[]> {
+  if (!slug) return [];
+  try {
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const result = await request<{ catalogs: any[] }>(
+      `/suppliers/detail/${encodeURIComponent(slug)}/catalogs`,
+      country
+    );
+    return (result.catalogs || [])
+      .map((c) => ({
+        id: Number(c.id),
+        title: String(c.title || 'Catalog'),
+        file_url: String(c.file_url || ''),
+        file_size: c.file_size != null ? Number(c.file_size) : null,
+      }))
+      .filter((c) => c.file_url);
+  } catch {
+    return [];
+  }
+}
+
 /** 产品详情。不存在/错国家返回 null（页面据此走 notFound()，禁止软 404）。 */
 export async function fetchMaterialProduct(
   id: string | number,

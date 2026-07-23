@@ -95,7 +95,10 @@ async function uploadCatalogChunk(req, res) {
 async function listCatalogs(req, res) {
     try {
         const { slug } = req.params;
-        const [profileRows] = await database_1.default.execute("SELECT id FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        // 国家隔离铁律：按站点国家解析供应商，禁止只靠 slug 猜（slug 跨国唯一性未强制约束）。
+        // 与 getPublicProfile 同口径：query 优先，回退 x-country，再回退 ae。
+        const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
+        const [profileRows] = await database_1.default.execute("SELECT id FROM supplier_profiles WHERE slug = ? AND status = 'approved' AND is_published = 1 AND country = ?", [slug, reqCountry]);
         const profile = profileRows[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });

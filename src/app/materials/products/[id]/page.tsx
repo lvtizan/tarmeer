@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import ProductDetailClient from '@/components/materials/ProductDetailClient';
 import { getCountry } from '@/lib/country';
-import { fetchMaterialProduct } from '@/lib/materialsApi';
+import { fetchMaterialProduct, fetchSupplierCatalogs } from '@/lib/materialsApi';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 
@@ -75,6 +75,10 @@ export default async function MaterialProductPage({ params }: PageProps) {
   if (!detail) notFound();
 
   const { product, related } = detail;
+  // 供应商图册（PDF→电子书）；无则空数组，客户端据此隐藏阅读器模块
+  const catalogs = product.supplier_slug
+    ? await fetchSupplierCatalogs(product.supplier_slug, c.code)
+    : [];
   const name = product.title || 'New Material';
   const productUrl = `${c.baseUrl}/materials/products/${product.id}`;
   const images = (product.image_urls.length ? product.image_urls : [product.image_url])
@@ -114,7 +118,7 @@ export default async function MaterialProductPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
-      <ProductDetailClient product={product} related={related} />
+      <ProductDetailClient product={product} related={related} catalogs={catalogs} />
     </>
   );
 }
