@@ -133,6 +133,8 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
           <span>/</span>
           <Link href="/materials" className="hover:text-[#b8864a] transition-colors">Materials</Link>
           <span>/</span>
+          <Link href="/materials/new-materials" className="hover:text-[#b8864a] transition-colors">New Materials</Link>
+          <span>/</span>
           <span className="text-stone-600 font-medium truncate max-w-[240px]">{name}</span>
         </nav>
 

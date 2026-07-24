@@ -104,7 +104,8 @@ export default async function MaterialProductPage({ params }: PageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name, item: productUrl },
+      { '@type': 'ListItem', position: 3, name: 'New Materials', item: `${c.baseUrl}/materials/new-materials` },
+      { '@type': 'ListItem', position: 4, name, item: productUrl },
     ],
   };
 

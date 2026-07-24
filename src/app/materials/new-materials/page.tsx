@@ -60,15 +60,17 @@ export default async function NewMaterialsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
       <div className="min-h-screen bg-[#faf9f7]">
-        {/* Breadcrumb */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
-          <nav className="flex items-center gap-1.5 text-xs text-stone-400">
-            <a href="/" className="hover:text-[#b8864a] transition-colors">Home</a>
-            <span>/</span>
-            <a href="/materials" className="hover:text-[#b8864a] transition-colors">Materials</a>
-            <span>/</span>
-            <span className="text-stone-600 font-medium">New Materials</span>
-          </nav>
+        {/* Breadcrumb：整条白底，与顶栏/首个内容区连续（去掉那条灰带） */}
+        <div className="bg-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 pb-1">
+            <nav className="flex items-center gap-1.5 text-xs text-stone-400">
+              <a href="/" className="hover:text-[#b8864a] transition-colors">Home</a>
+              <span>/</span>
+              <a href="/materials" className="hover:text-[#b8864a] transition-colors">Materials</a>
+              <span>/</span>
+              <span className="text-stone-600 font-medium">New Materials</span>
+            </nav>
+          </div>
         </div>
         <MaterialsCatalogClient initialProducts={initialProductsPage?.products ?? []} />
         <ShowroomVisitSection />
