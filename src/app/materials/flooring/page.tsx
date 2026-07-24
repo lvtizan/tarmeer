@@ -10,6 +10,7 @@ import { getCountry } from '@/lib/country';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import { BRAND, SERIES, PRODUCTS, productsOf, coverAltOf, FLOOR_KEYWORDS } from '@/lib/flooring';
 import FlooringGrid from '@/components/flooring/FlooringGrid';
+import FlooringHeroCatalog from '@/components/flooring/FlooringHeroCatalog';
 import Breadcrumb from '@/components/common/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
@@ -159,23 +160,33 @@ export default async function FlooringLandingPage() {
           <div className="mb-6">
             <Breadcrumb items={crumbs} baseUrl={c.baseUrl} variant="dark" />
           </div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-[#c6a065]">
-            {BRAND.nameEn} · Art Flooring
-          </p>
-          <h1 className="mt-4 max-w-2xl font-serif text-4xl font-bold leading-tight text-white [text-wrap:balance] lg:text-5xl">
-            China&apos;s art parquet, <span className="text-[#c6a065]">specified in the UAE</span>
-          </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/70">
-            {BRAND.tagline}. Oak, walnut and teak geometric panels — see every design and finish
-            here, then source it factory-direct through Tarmeer.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
-            {HIGHLIGHTS.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <Icon className="h-4 w-4 shrink-0 text-[#c6a065]" />
-                <span className="text-[15px] text-white/80">{label}</span>
+          <div className="grid items-center gap-10 lg:grid-cols-[55fr_45fr] lg:gap-12">
+            {/* 左：文案 + 数据 */}
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-[#c6a065]">
+                {BRAND.nameEn} · Art Flooring
+              </p>
+              <h1 className="mt-4 font-serif text-4xl font-bold leading-tight text-white [text-wrap:balance] lg:text-5xl">
+                China&apos;s art parquet, <span className="text-[#c6a065]">specified in the UAE</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/70">
+                {BRAND.tagline}. Oak, walnut and teak geometric panels — see every design and finish
+                here, then source it factory-direct through Tarmeer.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
+                {HIGHLIGHTS.map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0 text-[#c6a065]" />
+                    <span className="text-[15px] text-white/80">{label}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* 右：PDF 电子书阅读器（客户端包装，桌面右侧 / 移动端文案下方） */}
+            <div className="w-full">
+              <FlooringHeroCatalog />
+            </div>
           </div>
         </div>
       </section>
