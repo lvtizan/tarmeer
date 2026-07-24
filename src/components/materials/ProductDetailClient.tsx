@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { BadgeCheck, ArrowRight, ChevronRight } from 'lucide-react';
+import { BadgeCheck, ArrowRight, ArrowLeft, ChevronRight } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import SourcingRequestForm from '@/components/sourcing/SourcingRequestForm';
 import MaterialProductCard from './MaterialProductCard';
@@ -127,6 +127,14 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-12 sm:pb-16">
+        {/* 显式返回：回到新材料主页（比面包屑更好点） */}
+        <Link
+          href="/materials/new-materials"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-[#b8864a] transition-colors mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to New Materials
+        </Link>
+
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-stone-400 mb-6">
           <Link href="/" className="hover:text-[#b8864a] transition-colors">Home</Link>
