@@ -42,32 +42,38 @@ async function pageCountOf(pdfPath) {
  */
 async function rasterizeCatalog(catalogId, pdfPath, opts = {}) {
   const force = !!opts.force;
+  // startPage: 从第几页起渲（跳过首页 logo/客户信息用）。输出仍从 1.webp 编号。
+  const startPage = Math.max(1, parseInt(opts.startPage, 10) || 1);
   const outDir = path.join(PAGES_ROOT, String(catalogId));
   const manifestPath = path.join(outDir, "manifest.json");
   if (!force) {
     try { await fs.access(manifestPath); return { skipped: true }; } catch (_) { /* 未渲染，继续 */ }
   }
-  const n = await pageCountOf(pdfPath);
-  if (!n || n < 1) throw new Error("catalog has 0 pages: " + pdfPath);
+  const total = await pageCountOf(pdfPath);
+  if (!total || total < startPage) throw new Error("catalog page range invalid: " + pdfPath);
+  const n = total - startPage + 1; // 实际输出页数
 
+  await fs.rm(outDir, { recursive: true, force: true }); // 清旧产物(重渲/改页码时避免残留)
   await fs.mkdir(outDir, { recursive: true, mode: 0o755 });
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "cat-ras-"));
   let ar = 1.4; // 首页宽高比（前端按它设舞台比例，防布局抖动）
   try {
-    for (let p = 1; p <= n; p++) {
-      // 单页渲染成 png（-f/-l 限定该页；-singlefile 去掉页码后缀）
+    for (let src = startPage; src <= total; src++) {
+      const out = src - startPage + 1; // 源页 src → 输出页 out
+      // -scale-to-x：直接出 2400px 宽的 PNG（与 DPI 无关，保证视网膜；-scale-to-y -1 保持比例）
       await execFileP("pdftoppm", [
-        "-png", "-r", String(RENDER_DPI), "-f", String(p), "-l", String(p), "-singlefile",
+        "-png", "-scale-to-x", String(RETINA_WIDTH), "-scale-to-y", "-1",
+        "-f", String(src), "-l", String(src), "-singlefile",
         pdfPath, path.join(tmp, "pg"),
       ]);
       const pngPath = path.join(tmp, "pg.png");
       const buf = await fs.readFile(pngPath);
-      if (p === 1) {
+      if (out === 1) {
         const meta = await sharp(buf).metadata();
         if (meta.width && meta.height) ar = Number((meta.width / meta.height).toFixed(4));
       }
-      await sharp(buf).resize({ width: RETINA_WIDTH, withoutEnlargement: true }).webp({ quality: 85 }).toFile(path.join(outDir, `${p}.webp`));
-      await sharp(buf).resize({ width: THUMB_WIDTH }).webp({ quality: 72 }).toFile(path.join(outDir, `${p}-thumb.webp`));
+      await sharp(buf).webp({ quality: 85 }).toFile(path.join(outDir, `${out}.webp`));
+      await sharp(buf).resize({ width: THUMB_WIDTH }).webp({ quality: 72 }).toFile(path.join(outDir, `${out}-thumb.webp`));
       await fs.rm(pngPath, { force: true });
     }
     await fs.writeFile(manifestPath, JSON.stringify({ pages: n, v: 1, w: RETINA_WIDTH, ar }));
