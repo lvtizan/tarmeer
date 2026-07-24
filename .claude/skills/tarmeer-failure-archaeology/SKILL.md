@@ -84,3 +84,9 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：做了什么
 - **预防**：写进了哪份技能 / 新增了什么规则
 ```
+
+### FA-17 rsync 整个 controller 带出未部署依赖 → 后端 crash-loop、全 /api 变 HTML（2026-07-24）
+- **现象**：供应商登录页报 `Unexpected token '<', "<html> <h"... is not valid JSON`；实为 `tarmeer-api` errored、crash-loop（restarts 294、uptime 0），所有 `/api` 返回 nginx HTML 错误页，前端 `JSON.parse` 炸。
+- **根因**：部署 ③(catalog 预渲染)时 rsync 了本 worktree 的 `supplierAdminController.js`（为加 adminReplaceCatalogFile 的 rasterize 两行）。该文件 `require('../lib/productJsonFields')`——这个 helper 本地有、**生产没有**（生产后端版本比 worktree 旧）。缺模块 → controller 加载即抛 → routes→app.js 整条 require 链失败 → 进程启动即崩。**本质**：把一个"依赖了生产尚未部署的模块"的整文件覆盖上生产。与 FA-13 同类（跨 worktree/版本分叉）。
+- **修复**：`ls` 确认 `productJsonFields.js`（1KB、无额外 require）本地有、生产缺 → rsync 上去 + `pm2 restart tarmeer-api` → online 恢复；curl 验 login 400(JSON)/suppliers 200/catalogs 200、restarts 不再涨。
+- **预防**：① **rsync 后端文件后必须立刻 `pm2 describe` 看 status=online + uptime 增长**，errored/restarts 涨=启动崩，马上 `tail pm2 error.log` 看 `Cannot find module`；② **只改某函数的两行别 rsync 整个 diverged controller**——先 `diff` 生产版与 worktree 版，或只补必要改动；③ 后端部署前扫一遍新文件的 `require('../lib/x')`，确认每个 x 生产都有（`test -f`），缺的一并 rsync；④ 生产后端与 worktree server/dist 存在版本分叉，覆盖式 rsync 前警惕"新文件引新依赖"。已并入 tarmeer-deploy-backend。
