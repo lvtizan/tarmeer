@@ -1,18 +1,29 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowUp, FileText, X,
-  Download, Package, Layers, FolderOpen, MapPin, ExternalLink,
+  ArrowUp, X,
+  Package, Layers, FolderOpen, MapPin, ExternalLink,
   Maximize2, Banknote,
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
 import { sanitizeDescription } from '@/lib/materialsApi';
 import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS } from '@/lib/supplierConstants';
+
+// PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
+const CatalogReader = dynamic(() => import('./CatalogReader'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex w-full aspect-video items-center justify-center rounded-2xl bg-[#1c1917]">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-[#e6c88f]" />
+    </div>
+  ),
+});
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -456,27 +467,8 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                 Catalogs
                 <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>
               </h2>
-                <div className="space-y-3">
-                  {catalogs.map(c => (
-                    <a key={c.id} href={c.file_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
-                      <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
-                        <FileText className="w-6 h-6 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
-                        {c.file_size && (
-                          <p className="text-xs text-[#6b6b6b] mt-0.5">
-                            {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
-                          </p>
-                        )}
-                      </div>
-                      <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-stone-50 text-sm font-medium text-[#2c2c2c] group-hover:bg-[#b8864a] group-hover:text-white transition">
-                        <Download className="w-4 h-4" /> Download
-                      </div>
-                    </a>
-                  ))}
-                </div>
+                {/* PDF → 页面内电子书（多本 tab，无则不渲染）；替代旧的下载卡 */}
+                <CatalogReader catalogs={catalogs} />
             </div>
             )}
 
