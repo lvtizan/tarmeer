@@ -9,13 +9,23 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
-  Palette, LayoutGrid, Layers, Bath, Lamp, Armchair, TreePine, Sparkles,
+  Palette, LayoutGrid, Layers, Bath, Lamp, Armchair, TreePine, Sparkles, ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
 import { APPLICATION_SCENES, fetchMaterialProducts, type PublicMaterialProduct } from '@/lib/materialsApi';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import MaterialProductCard from './MaterialProductCard';
+import { PRODUCTS, type FloorProduct } from '@/lib/flooring';
+import FloorCard from '@/components/flooring/FloorCard';
+
+// DB 新材料产品为空时的兜底：展示 flooring 静态真实目录（93 款）里 12 款有代表性的产品卡。
+const FLOORING_FALLBACK: FloorProduct[] = [
+  '5106', '5973', '5975', '5977', '5983', '5991',
+  'MY001-1', 'MY009-1', 'MY-7501', 'MY007-1', 'HP16', 'QHP61',
+]
+  .map((code) => PRODUCTS.find((p) => p.code === code))
+  .filter((p): p is FloorProduct => Boolean(p));
 
 // 场景代表图标（slug 与 APPLICATION_SCENES 对齐；新增场景需补图标，缺省回退 Sparkles）
 // 场景 → 专属 L1 精品页（有则瓦片直接跳转，不就地筛 feed）。目前仅地板有独立目录页。
@@ -152,13 +162,31 @@ export default function MaterialsCatalogClient({ initialProducts }: MaterialsCat
             <div className="w-8 h-8 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />
           </div>
         ) : products.length === 0 ? (
-          <div className="py-14 text-center border border-dashed border-stone-200 rounded-2xl">
-            <p className="text-stone-500 text-[15px]">
-              {activeScene
-                ? `No materials curated for ${activeScene.label} yet — new arrivals land every month.`
-                : 'New materials are being curated — check back soon.'}
-            </p>
-          </div>
+          activeScene ? (
+            // 场景筛选下无 DB 数据 → 诚实空态
+            <div className="py-14 text-center border border-dashed border-stone-200 rounded-2xl">
+              <p className="text-stone-500 text-[15px]">
+                No materials curated for {activeScene.label} yet — new arrivals land every month.
+              </p>
+            </div>
+          ) : (
+            // 默认视图 DB 无数据 → 回退展示 flooring 真实产品目录（93 款静态数据）
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {FLOORING_FALLBACK.map((p) => (
+                  <FloorCard key={p.code} product={p} />
+                ))}
+              </div>
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href="/materials/flooring"
+                  className="inline-flex h-12 items-center gap-2 rounded-lg bg-[#b8864a] px-6 text-sm font-semibold text-white transition hover:bg-[#a07640]"
+                >
+                  See all 93 flooring designs <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </>
+          )
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
             {products.map((p) => (

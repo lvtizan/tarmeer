@@ -10,6 +10,7 @@ import HomeHowItWorks from '@/components/home/HomeHowItWorks';
 import HomeApplicationTiles from '@/components/home/HomeApplicationTiles';
 import HomeShowroom from '@/components/home/HomeShowroom';
 import HomeClientVisits from '@/components/home/HomeClientVisits';
+import HomeNewMaterials from '@/components/home/HomeNewMaterials';
 import HomeContactForm from '@/components/home/HomeContactForm';
 import HomeCaseStudySection from '@/components/home/HomeCaseStudySection';
 import { fetchPublicCompanies, fetchGuides } from '@/lib/publicApi';
@@ -119,6 +120,7 @@ export default async function HomePage() {
       <HomeApplicationTiles />
       <HomeHowItWorks />
       <HomeShowroom />
+      <HomeNewMaterials />
       <HomeClientVisits />
       <HomeCaseStudySection guide={caseStudyGuide} />
       <HomeContactForm />
