@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Paperclip, X, FileText } from 'lucide-react';
+import { getDroppedFiles } from '@/lib/dropFiles';
 
 interface ImageUploadZoneProps {
   value: string[];
@@ -52,74 +53,105 @@ export default function ImageUploadZone({
   const [progress, setProgress] = useState(0);
   const [err, setErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
-  const uploadFnRef = useRef<(file: File) => void>(() => {});
+  // Keep the latest committed value so batched uploads append without clobbering
+  // each other (fixes lost images when many files/a folder are dropped at once).
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const uploadManyRef = useRef<(files: File[]) => void>(() => {});
 
-  const upload = async (file: File) => {
-    const acceptsAny = accept.split(',').map(s => s.trim());
-    const allowed = acceptsAny.some(a => {
-      if (a.endsWith('/*')) return file.type.startsWith(a.slice(0, -1));
-      return file.type === a;
-    });
-    if (!allowed) { setErr('不支持该文件类型。'); return; }
+  const acceptMatchers = accept.split(',').map(s => s.trim());
+  const matchesAccept = (file: File) => acceptMatchers.some(a => {
+    if (a.endsWith('/*')) return file.type.startsWith(a.slice(0, -1));
+    return file.type === a;
+  });
+
+  const uploadOne = async (file: File): Promise<{ url: string; original_name?: string }> => {
+    if (chunkUploadUrl && file.size > 4 * 1024 * 1024) {
+      // Chunked upload for large files
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const uploadId = Array.from(crypto.getRandomValues(new Uint8Array(8)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+      let data: { url: string; original_name?: string } = { url: '' };
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        const fd = new FormData();
+        fd.append('file', chunk, file.name);
+        fd.append('upload_id', uploadId);
+        fd.append('chunk_index', String(i));
+        fd.append('total_chunks', String(totalChunks));
+        fd.append('original_name', file.name);
+        data = await xhrPost(chunkUploadUrl, getHeaders(), fd) as typeof data;
+        setProgress(Math.round((i + 1) / totalChunks * 100));
+      }
+      return data;
+    }
+    // Single upload
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('original_name', file.name);
+    return await xhrPost(uploadUrl, getHeaders(), fd, setProgress) as { url: string; original_name?: string };
+  };
+
+  const uploadMany = async (files: File[]) => {
+    const valid = files.filter(matchesAccept);
+    if (valid.length === 0) {
+      if (files.length > 0) setErr('不支持该文件类型。');
+      return;
+    }
     setUploading(true);
     setProgress(0);
     setErr('');
+    const uploaded: string[] = [];
+    // original_name per uploaded file, index-aligned with `uploaded`. Consumers
+    // (e.g. catalogs) keep a parallel names[] array, so onFileMeta must fire once
+    // per file, in order — fall back to file.name so alignment never drifts.
+    const names: string[] = [];
     try {
-      let data: { url: string; original_name?: string };
-      if (chunkUploadUrl && file.size > 4 * 1024 * 1024) {
-        // Chunked upload for large files
-        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-        const uploadId = Array.from(crypto.getRandomValues(new Uint8Array(8)))
-          .map(b => b.toString(16).padStart(2, '0')).join('');
-        for (let i = 0; i < totalChunks; i++) {
-          const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-          const fd = new FormData();
-          fd.append('file', chunk, file.name);
-          fd.append('upload_id', uploadId);
-          fd.append('chunk_index', String(i));
-          fd.append('total_chunks', String(totalChunks));
-          fd.append('original_name', file.name);
-          data = await xhrPost(chunkUploadUrl, getHeaders(), fd) as typeof data;
-          setProgress(Math.round((i + 1) / totalChunks * 100));
-        }
-      } else {
-        // Single upload
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('original_name', file.name);
-        data = await xhrPost(uploadUrl, getHeaders(), fd, setProgress) as typeof data;
+      // Sequential so the progress bar stays meaningful for folder uploads.
+      for (const file of valid) {
+        setProgress(0);
+        const data = await uploadOne(file);
+        uploaded.push(data.url);
+        names.push(data.original_name || file.name);
       }
-      onUpload([...value, data!.url]);
-      if (onFileMeta && data!.original_name) onFileMeta({ original_name: data!.original_name });
     } catch (e: unknown) {
       setErr((e instanceof Error ? e.message : null) || 'Upload failed');
     } finally {
+      // Commit whatever succeeded (even on partial failure) in a single update.
+      if (uploaded.length > 0) {
+        const merged = [...valueRef.current, ...uploaded];
+        valueRef.current = merged;
+        onUpload(merged);
+        if (onFileMeta) names.forEach(original_name => onFileMeta({ original_name }));
+      }
       setUploading(false);
       setProgress(0);
     }
   };
 
-  uploadFnRef.current = (file: File) => upload(file);
+  uploadManyRef.current = (files: File[]) => uploadMany(files);
 
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
       const item = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'));
       if (item) {
         const file = item.getAsFile();
-        if (file) uploadFnRef.current(file);
+        if (file) uploadManyRef.current([file]);
       }
     };
     document.addEventListener('paste', handler);
     return () => document.removeEventListener('paste', handler);
   }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    Array.from(e.dataTransfer.files).forEach(f => uploadFnRef.current(f));
+    // Recurse into dropped folders, filtering by this zone's `accept`.
+    const { files } = await getDroppedFiles(e, matchesAccept);
+    if (files.length > 0) uploadMany(files);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    Array.from(e.target.files ?? []).forEach(f => upload(f));
+    uploadMany(Array.from(e.target.files ?? []));
     e.target.value = '';
   };
 

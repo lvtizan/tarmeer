@@ -10,11 +10,14 @@ export interface DropResult {
 }
 
 /**
- * Read all image files from a drag-and-drop event.
+ * Read files from a drag-and-drop event, filtered by `matches`.
  * Supports both individual files AND folders (recursive).
  * Returns file names and folder name for auto-populating project title.
  */
-export async function getDroppedImageFiles(e: React.DragEvent): Promise<DropResult> {
+export async function getDroppedFiles(
+  e: React.DragEvent,
+  matches: (f: File) => boolean = () => true,
+): Promise<DropResult> {
   const items = e.dataTransfer.items;
 
   // If browser supports webkitGetAsEntry, use it for folder support
@@ -34,22 +37,29 @@ export async function getDroppedImageFiles(e: React.DragEvent): Promise<DropResu
       }
     }
 
-    const files = await readEntries(entries);
-    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const files = (await readEntries(entries)).filter(matches);
     return {
-      files: imageFiles,
-      fileNames: imageFiles.map(f => f.name),
+      files,
+      fileNames: files.map(f => f.name),
       folderName,
     };
   }
 
   // Fallback: plain files (no folder support)
-  const imageFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  const files = Array.from(e.dataTransfer.files).filter(matches);
   return {
-    files: imageFiles,
-    fileNames: imageFiles.map(f => f.name),
+    files,
+    fileNames: files.map(f => f.name),
     folderName: null,
   };
+}
+
+/**
+ * Read all image files from a drag-and-drop event.
+ * Supports both individual files AND folders (recursive).
+ */
+export function getDroppedImageFiles(e: React.DragEvent): Promise<DropResult> {
+  return getDroppedFiles(e, f => f.type.startsWith('image/'));
 }
 
 async function readEntries(entries: FileSystemEntry[]): Promise<File[]> {
