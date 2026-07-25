@@ -4,14 +4,13 @@
 // Premium 战略新材料(WPC/发泡瓷砖/艺术漆/SPC)暂无产品数据，占位引导询价。
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import {
   fetchMacroCategories,
   MACRO_BLURB,
   MACRO_DEDICATED_PAGE,
-  PREMIUM_MATERIALS,
   type MacroCategory,
 } from '@/lib/materialMacros';
 
@@ -36,31 +35,8 @@ export default function ByMaterialBrowse() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
-      {/* Premium 战略新材料 */}
-      <div className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-[#b8864a]" />
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#b8864a]">Premium New Materials</h2>
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {PREMIUM_MATERIALS.map((p) => (
-          <Link
-            key={p.key}
-            href={`/materials/category/${p.key}`}
-            className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[#b8864a]/30 bg-gradient-to-br from-[#faf6ef] to-[#f3ebdd] p-5 transition hover:border-[#b8864a] hover:shadow-sm"
-          >
-            <span className="inline-flex w-fit rounded-full bg-[#b8864a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-              Premium
-            </span>
-            <div className="mt-6">
-              <h3 className="font-serif text-lg font-bold text-[#1c1917]">{p.label}</h3>
-              <p className="mt-1 text-[12px] leading-relaxed text-stone-500">{p.blurb}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* 现有材料大类 */}
-      <div className="mb-4 mt-12 flex items-center justify-between">
+      {/* 材料大类 */}
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-[#b8864a]">Browse by Material</h2>
         {!loading && <span className="text-[13px] text-stone-400">{macros.length} categories</span>}
       </div>

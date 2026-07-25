@@ -29,7 +29,7 @@ export default function MaterialsTabs({
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       {/* 顶部搜索条 */}
-      <div className="border-b border-stone-200 bg-white">
+      <div className="bg-white">
         <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
           <div className="relative">
             <input
