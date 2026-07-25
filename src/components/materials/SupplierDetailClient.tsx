@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowUp, X,
-  Package, Layers, FolderOpen, MapPin, ExternalLink,
+  Package, Layers, MapPin, ExternalLink,
   Maximize2, Banknote,
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
@@ -99,8 +99,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
   const mobileFormRef = useRef<HTMLDivElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
-  const catalogsRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<'products' | 'projects' | 'catalogs'>('products');
+  const [activeSection, setActiveSection] = useState<'products' | 'projects'>('products');
 
   const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -138,7 +137,6 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
     const sections = [
       { ref: productsRef, key: 'products' as const },
       { ref: projectsRef, key: 'projects' as const },
-      { ref: catalogsRef, key: 'catalogs' as const },
     ];
     const observer = new IntersectionObserver(
       (entries) => {
@@ -190,10 +188,10 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
   const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
 
   // 没上传内容的模块整块隐藏，对应 tab 也不显示（下方 map 里按 count 跳过，避免点了滚动到空白）
+  // 画册不在 tab 里（已移到 hero 区展示）；tab 仅产品/项目
   const tabItems = [
     { key: 'products' as const, label: 'Products', icon: Package, count: products.length, ref: productsRef },
     { key: 'projects' as const, label: 'Projects', icon: Layers, count: projects.length, ref: projectsRef },
-    { key: 'catalogs' as const, label: 'Catalogs', icon: FolderOpen, count: catalogs.length, ref: catalogsRef },
   ];
 
   return (
@@ -218,57 +216,69 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             <span className="text-white/80 truncate max-w-[200px]">{supplier.company_name}</span>
           </nav>
 
-          <div className="flex items-start gap-5 sm:gap-6">
-            {/* Logo */}
-            {supplier.logo_url && !logoError ? (
-              <SmartImage
-                src={supplier.logo_url}
-                alt={supplier.company_name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain border border-white/10 bg-white/10 backdrop-blur-sm p-2 shrink-0"
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white/80 shrink-0">
-                {initial}
-              </div>
-            )}
+          <div className={catalogs.length > 0 ? 'grid items-start gap-8 lg:grid-cols-[55fr_45fr] lg:gap-12' : ''}>
+            {/* 左：品牌信息 + 数据 */}
+            <div className="min-w-0">
+              <div className="flex items-start gap-5 sm:gap-6">
+                {/* Logo */}
+                {supplier.logo_url && !logoError ? (
+                  <SmartImage
+                    src={supplier.logo_url}
+                    alt={supplier.company_name}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain border border-white/10 bg-white/10 backdrop-blur-sm p-2 shrink-0"
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white/80 shrink-0">
+                    {initial}
+                  </div>
+                )}
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{supplier.company_name}</h1>
-                <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${ORIGIN_HERO_BADGE_CLASS[supplier.origin]}`}>
-                  {ORIGIN_LABEL[supplier.origin]}
-                </span>
-              </div>
-
-              {categoryList.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {categoryList.map(c => (
-                    <span key={c} className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/5">
-                      {c}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl font-bold text-white">{supplier.company_name}</h1>
+                    <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${ORIGIN_HERO_BADGE_CLASS[supplier.origin]}`}>
+                      {ORIGIN_LABEL[supplier.origin]}
                     </span>
+                  </div>
+
+                  {categoryList.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {categoryList.map(c => (
+                        <span key={c} className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/5">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {supplier.description && !categoryList.some(c => supplier.description!.startsWith(c)) && (
+                    <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
+                      {supplier.description.split(/\.\s/)[0].trim()}.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {statItems.length > 0 && (
+                <div className="flex items-center gap-6 mt-8 pt-6 border-t border-white/10">
+                  {statItems.map((s, i) => (
+                    <div key={i} className="text-center">
+                      <p className="text-xl sm:text-2xl font-bold text-white">{s.count}</p>
+                      <p className="text-xs text-white/50 mt-0.5">{s.label}</p>
+                    </div>
                   ))}
                 </div>
               )}
-
-              {supplier.description && !categoryList.some(c => supplier.description!.startsWith(c)) && (
-                <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
-                  {supplier.description.split(/\.\s/)[0].trim()}.
-                </p>
-              )}
             </div>
+
+            {/* 右：PDF 电子书（供应商有 catalog 才显示；桌面右侧、移动端在文案下方），复用 flooring hero 同款控件 */}
+            {catalogs.length > 0 && (
+              <div className="w-full">
+                <CatalogReader catalogs={catalogs} />
+              </div>
+            )}
           </div>
-
-          {statItems.length > 0 && (
-            <div className="flex items-center gap-6 mt-8 pt-6 border-t border-white/10">
-              {statItems.map((s, i) => (
-                <div key={i} className="text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-white">{s.count}</p>
-                  <p className="text-xs text-white/50 mt-0.5">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -459,18 +469,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             </div>
             )}
 
-            {/* Catalogs section — 无画册则整块隐藏，不显示空状态 */}
-            {catalogs.length > 0 && (
-            <div ref={catalogsRef} id="section-catalogs" className="scroll-mt-28">
-              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
-                <FolderOpen className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
-                Catalogs
-                <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>
-              </h2>
-                {/* PDF → 页面内电子书（多本 tab，无则不渲染）；替代旧的下载卡 */}
-                <CatalogReader catalogs={catalogs} />
-            </div>
-            )}
+            {/* 画册已移到 hero 区右侧展示（复用 flooring hero 同款电子书控件），此处不再重复渲染 */}
 
             {/* Inline inquiry form — shown on screens < 1700px */}
             <div ref={mobileFormRef} className="min-[1700px]:hidden">
