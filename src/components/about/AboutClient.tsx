@@ -99,12 +99,15 @@ export default function AboutClient() {
   useEffect(() => {
     if (isVn) return;
     let mounted = true;
-    fetch(`${API_BASE}/suppliers?limit=6`)
+    // 多拉一些，优先展示有图的供应商（无图的排后，仅在不足 6 个时兜底）
+    fetch(`${API_BASE}/suppliers?limit=24`)
       .then(r => (r.ok ? r.json() : null))
       .then((d: { suppliers?: Supplier[] } | Supplier[] | null) => {
         if (!mounted || !d) return;
         const list = Array.isArray(d) ? d : (d.suppliers ?? []);
-        setSuppliers(list.slice(0, 6));
+        const withImg = list.filter(s => s.cover_image_url || s.logo_url);
+        const withoutImg = list.filter(s => !s.cover_image_url && !s.logo_url);
+        setSuppliers([...withImg, ...withoutImg].slice(0, 6));
       })
       .catch(() => {});
     return () => { mounted = false; };
@@ -247,29 +250,49 @@ export default function AboutClient() {
               {/* Supplier strip */}
               {suppliers.length > 0 && (
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {suppliers.map(s => (
-                    <Link
-                      key={s.slug}
-                      href={`/materials/suppliers/${s.slug}`}
-                      className="group overflow-hidden rounded-xl border border-stone-200 bg-white transition hover:shadow-md"
-                    >
-                      <div className="aspect-video overflow-hidden bg-stone-100">
-                        <img
-                          src={s.cover_image_url ? resolveVariantUrl(s.cover_image_url, 'thumb') : resolveImageUrl(s.logo_url)}
-                          alt={s.company_name}
-                          loading="lazy"
-                          onError={e => {
-                            const img = e.currentTarget;
-                            const orig = resolveImageUrl(s.cover_image_url || s.logo_url);
-                            if (!img.dataset.fb && img.src !== orig) { img.dataset.fb = '1'; img.src = orig; }
-                            else { img.style.display = 'none'; }
-                          }}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      </div>
-                      <p className="truncate px-3 py-2 text-xs font-medium text-[#2c2c2c]">{s.company_name}</p>
-                    </Link>
-                  ))}
+                  {suppliers.map(s => {
+                    // 无图供应商（cover/logo 都为空）→ 渲染首字母占位块，禁止空 src 破图
+                    const imgSrc = s.cover_image_url
+                      ? resolveVariantUrl(s.cover_image_url, 'thumb')
+                      : s.logo_url
+                        ? resolveImageUrl(s.logo_url)
+                        : null;
+                    return (
+                      <Link
+                        key={s.slug}
+                        href={`/materials/suppliers/${s.slug}`}
+                        className="group overflow-hidden rounded-xl border border-stone-200 bg-white transition hover:shadow-md"
+                      >
+                        <div className="aspect-video overflow-hidden bg-stone-100">
+                          {imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt={s.company_name}
+                              loading="lazy"
+                              onError={e => {
+                                const img = e.currentTarget;
+                                const orig = resolveImageUrl(s.cover_image_url || s.logo_url);
+                                if (!img.dataset.fb && orig && img.src !== orig) {
+                                  img.dataset.fb = '1';
+                                  img.src = orig;
+                                } else {
+                                  img.style.display = 'none'; // 兜底失败 → 隐藏，露出中性底(不破图)
+                                }
+                              }}
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200">
+                              <span className="font-serif text-2xl font-semibold text-stone-400">
+                                {s.company_name?.trim()?.[0]?.toUpperCase() ?? 'T'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="truncate px-3 py-2 text-xs font-medium text-[#2c2c2c]">{s.company_name}</p>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
 
