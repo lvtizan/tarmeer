@@ -118,8 +118,8 @@ async function adminListSourcingRequests(req, res) {
        FROM sourcing_requests sr
        LEFT JOIN supplier_products p
          ON p.id = sr.product_id
-        AND EXISTS (SELECT 1 FROM supplier_profiles psp WHERE psp.id = p.supplier_profile_id AND psp.country = sr.country)
-       LEFT JOIN supplier_profiles sp ON sp.id = sr.supplier_profile_id AND sp.country = sr.country
+        AND EXISTS (SELECT 1 FROM supplier_profiles psp WHERE psp.id = p.supplier_profile_id AND psp.country COLLATE utf8mb4_unicode_ci = sr.country)
+       LEFT JOIN supplier_profiles sp ON sp.id = sr.supplier_profile_id AND sp.country COLLATE utf8mb4_unicode_ci = sr.country
        ${where}
        ORDER BY sr.created_at DESC, sr.id DESC
        LIMIT ${limit} OFFSET ${offset}`, params);
