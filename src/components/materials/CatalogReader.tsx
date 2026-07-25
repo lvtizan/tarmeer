@@ -36,6 +36,27 @@ async function renderToDataURL(pdf: PdfDoc, num: number, targetW: number): Promi
   return c.toDataURL('image/jpeg', 0.82);
 }
 
+// 流式下载一张图并回报进度（loaded/total）→ 首页有确定进度条。返回 blob URL 直接当图源用。
+// 无 Content-Length（拿不到 total）时回报 null = 走不确定态；同源失败(如 CORS)由调用方 catch 回退普通 <img>。
+async function fetchWithProgress(url: string, onProgress: (pct: number | null) => void): Promise<string> {
+  const resp = await fetch(url);
+  if (!resp.ok || !resp.body) throw new Error('fetch failed: ' + resp.status);
+  const total = Number(resp.headers.get('Content-Length')) || 0;
+  const reader = resp.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    chunks.push(value);
+    received += value.length;
+    onProgress(total ? Math.min(99, Math.round((received / total) * 100)) : null);
+  }
+  onProgress(100);
+  return URL.createObjectURL(new Blob(chunks as BlobPart[], { type: 'image/webp' }));
+}
+
 export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[] }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [numPages, setNumPages] = useState(0);
@@ -43,6 +64,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   const [ratio, setRatio] = useState(1.6);
   const [thumbUrls, setThumbUrls] = useState<(string | null)[]>([]);
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState<number | null>(null); // 首页加载进度 %（null=不确定态）
   const [error, setError] = useState(false);
   const [fs, setFs] = useState(false);
 
@@ -72,7 +94,9 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   const ensurePage = useCallback(async (p: number): Promise<string | null> => {
     if (p < 1 || p > numPagesRef.current) return null;
     if (modeRef.current === 'image') {
-      // 预渲染视网膜 WebP：直接给 URL（带版本号），浏览器缓存，无需渲染
+      // 首页可能已带进度预取为 blob（见加载流程），命中直接用；否则给带版本号的 URL，浏览器缓存
+      const cachedImg = urlsRef.current.get(p);
+      if (cachedImg) return cachedImg;
       return `${pagesBaseRef.current}/${p}.webp${revQueryRef.current}`;
     }
     const pdf = pdfRef.current;
@@ -154,10 +178,12 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
     if (!active) return;
     let cancelled = false;
     setLoading(true);
+    setProgress(null);
     setError(false);
     setNumPages(0);
     setThumbUrls([]);
     setCurPage(1);
+    urlsRef.current.forEach((u) => { if (u.startsWith('blob:')) URL.revokeObjectURL(u); });
     urlsRef.current = new Map();
     pendingRef.current = new Map();
     topRef.current = 0;
@@ -193,7 +219,20 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
               setNumPages(pages);
               setRatio(Number(data?.ar) || 1.4);
               setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBase}/${i + 1}-thumb.webp${revQueryRef.current}`));
+              // 首页带进度加载：流式拉 WebP 显示真实百分比，加载完再淡入（用户有"加载到哪了"的底）
+              try {
+                const objUrl = await fetchWithProgress(
+                  `${pagesBase}/1.webp${revQueryRef.current}`,
+                  (pct) => { if (!cancelled) setProgress(pct); }
+                );
+                if (cancelled) { URL.revokeObjectURL(objUrl); return; }
+                urlsRef.current.set(1, objUrl);
+              } catch {
+                /* 带进度下载失败（如跨域 CORS）→ 退回让 <img> 直接拉 URL，不阻塞打开 */
+              }
+              if (cancelled) return;
               setLoading(false);
+              setProgress(null);
               await showPage(1, 'open');
               return; // 图片模式，无需 pdf.js
             }
@@ -206,6 +245,10 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
         // ② 回退：pdf.js 现渲（disableAutoFetch + Range，只按需拉字节）
         const src = resolveImageUrl(active.file_url);
         const loadingTask = pdfjsLib.getDocument({ url: src, disableAutoFetch: true, rangeChunkSize: 262144 });
+        // pdf.js 下载进度（字节级）→ 驱动进度条
+        loadingTask.onProgress = (data: { loaded: number; total: number }) => {
+          if (!cancelled) setProgress(data.total ? Math.min(99, Math.round((data.loaded / data.total) * 100)) : null);
+        };
         loadingTaskRef.current = loadingTask;
         const pdf = await loadingTask.promise;
         if (cancelled) return;
@@ -231,6 +274,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
           return;
         }
         setLoading(false);
+        setProgress(null);
         await showPage(1, 'open');
 
         // 缩略图（小图，便宜）——逐页容错，单页失败不拖垮整条
@@ -263,6 +307,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
       loadingTaskRef.current?.destroy?.();
       loadingTaskRef.current = null;
       pdfRef.current = null;
+      urlsRef.current.forEach((u) => { if (u.startsWith('blob:')) URL.revokeObjectURL(u); });
     };
   }, [active, ensurePage, showPage]);
 
@@ -395,11 +440,21 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
           </div>
         )}
 
-        {/* 加载态 */}
+        {/* 加载态：进度条（有 total 显示百分比，否则不确定态脉冲），让用户知道加载到哪了 */}
         {loading && !error && (
-          <div className="absolute inset-0 z-[7] flex items-center justify-center gap-2 text-sm text-white/60">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-[#e6c88f]" />
-            Loading…
+          <div className="absolute inset-0 z-[7] flex flex-col items-center justify-center gap-3 px-10">
+            <div className="flex items-center gap-2 text-sm text-white/70">
+              <BookOpen className="h-4 w-4 text-[#e6c88f]" />
+              {progress === null ? 'Loading…' : `Loading ${progress}%`}
+            </div>
+            <div className="h-1.5 w-52 max-w-[75%] overflow-hidden rounded-full bg-white/15">
+              <div
+                className={`h-full rounded-full bg-[#e6c88f] ${
+                  progress === null ? 'w-1/3 animate-pulse' : 'transition-[width] duration-200 ease-out'
+                }`}
+                style={progress === null ? undefined : { width: `${progress}%` }}
+              />
+            </div>
           </div>
         )}
 

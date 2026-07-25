@@ -19,8 +19,11 @@ import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS } from '@/lib/supplierConstants';
 const CatalogReader = dynamic(() => import('./CatalogReader'), {
   ssr: false,
   loading: () => (
-    <div className="flex w-full aspect-video items-center justify-center rounded-2xl bg-[#1c1917]">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-[#e6c88f]" />
+    <div className="flex w-full aspect-video flex-col items-center justify-center gap-3 rounded-2xl bg-[#1c1917] px-10">
+      <span className="text-sm text-white/70">Loading…</span>
+      <div className="h-1.5 w-52 max-w-[75%] overflow-hidden rounded-full bg-white/15">
+        <div className="h-full w-1/3 animate-pulse rounded-full bg-[#e6c88f]" />
+      </div>
     </div>
   ),
 });
