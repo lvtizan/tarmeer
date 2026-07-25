@@ -35,12 +35,8 @@ function autoRasterizeCatalogAsync(catalogId, fileUrl, companyName) {
             skip = await catalogRasterizer_1.detectFrontMatterPages(pdfPath, companyName || '');
         }
         catch (e) {
-            console.error(`[catalog-detect] #${catalogId} failed:`, e.message); // 失败 → skip=0，仍渲染，交人工
+            console.error(`[catalog-detect] #${catalogId} failed:`, e.message); // 失败 → skip=0，仍渲染
         }
-        try {
-            await database_1.default.execute('UPDATE supplier_catalogs SET skip_pages = ? WHERE id = ?', [skip, catalogId]);
-        }
-        catch (_) { /* skip_pages 列可能未建，忽略 */ }
         catalogRasterizer_1.rasterizeCatalog(catalogId, pdfPath, { force: true, startPage: skip + 1 })
             .then((r) => { if (r && r.pages) console.log(`[catalog-raster] #${catalogId} skip=${skip} → ${r.pages} pages`); })
             .catch((e) => console.error(`[catalog-raster] #${catalogId} failed:`, e.message));
