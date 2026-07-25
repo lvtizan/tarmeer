@@ -76,7 +76,8 @@ async function rasterizeCatalog(catalogId, pdfPath, opts = {}) {
       await sharp(buf).resize({ width: THUMB_WIDTH }).webp({ quality: 72 }).toFile(path.join(outDir, `${out}-thumb.webp`));
       await fs.rm(pngPath, { force: true });
     }
-    await fs.writeFile(manifestPath, JSON.stringify({ pages: n, v: 1, w: RETINA_WIDTH, ar }));
+    // rev：每次(重)渲染换新值 → 前端 URL 加 ?r=rev 打破 nginx 30d immutable 缓存(同名 WebP 内容变了也能刷新)
+    await fs.writeFile(manifestPath, JSON.stringify({ pages: n, v: 2, w: RETINA_WIDTH, ar, rev: Date.now() }));
     // nginx/express 读取需 644
     for (const f of await fs.readdir(outDir)) {
       await fs.chmod(path.join(outDir, f), 0o644);

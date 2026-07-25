@@ -61,6 +61,8 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   // 方案③：有预渲染 WebP 就走 image 模式（拉单页图，秒开），否则回退 pdf 模式（pdf.js 现渲）
   const modeRef = useRef<'pdf' | 'image'>('pdf');
   const pagesBaseRef = useRef('');
+  // 预渲染版本号 ?r=<rev>：重渲染换 rev → 打破 nginx 30d immutable 缓存（同名 WebP 内容变了也能刷新）
+  const revQueryRef = useRef('');
   const numPagesRef = useRef(0);
   const loadingTaskRef = useRef<ReturnType<typeof pdfjsLib.getDocument> | null>(null);
 
@@ -70,8 +72,8 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   const ensurePage = useCallback(async (p: number): Promise<string | null> => {
     if (p < 1 || p > numPagesRef.current) return null;
     if (modeRef.current === 'image') {
-      // 预渲染视网膜 WebP：直接给 URL，浏览器缓存，无需渲染
-      return `${pagesBaseRef.current}/${p}.webp`;
+      // 预渲染视网膜 WebP：直接给 URL（带版本号），浏览器缓存，无需渲染
+      return `${pagesBaseRef.current}/${p}.webp${revQueryRef.current}`;
     }
     const pdf = pdfRef.current;
     if (!pdf) return null;
@@ -170,6 +172,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
 
     modeRef.current = 'pdf';
     pagesBaseRef.current = '';
+    revQueryRef.current = '';
     numPagesRef.current = 0;
 
     (async () => {
@@ -177,17 +180,19 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
         // ① 优先用预渲染的 WebP（方案③）：拉单页图秒开，不碰大 PDF
         const pagesBase = resolveImageUrl(`/uploads/suppliers/catalogs/pages/${active.id}`);
         try {
-          const mf = await fetch(`${pagesBase}/manifest.json`, { cache: 'force-cache' });
+          // manifest 用 no-cache（每次向服务器校验）：重渲染后能拿到新页数/新版本号，不被 30d immutable 锁死
+          const mf = await fetch(`${pagesBase}/manifest.json`, { cache: 'no-cache' });
           if (mf.ok) {
             const data = await mf.json();
             const pages = Number(data?.pages) || 0;
             if (pages > 0 && !cancelled) {
               modeRef.current = 'image';
               pagesBaseRef.current = pagesBase;
+              revQueryRef.current = data?.rev ? `?r=${data.rev}` : '';
               numPagesRef.current = pages;
               setNumPages(pages);
               setRatio(Number(data?.ar) || 1.4);
-              setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBase}/${i + 1}-thumb.webp`));
+              setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBase}/${i + 1}-thumb.webp${revQueryRef.current}`));
               setLoading(false);
               await showPage(1, 'open');
               return; // 图片模式，无需 pdf.js
