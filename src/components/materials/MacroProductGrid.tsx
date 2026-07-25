@@ -78,13 +78,14 @@ export default function MacroProductGrid({ macroKey, label }: { macroKey: string
             href={p.supplier_slug ? `/materials/suppliers/${p.supplier_slug}` : '#'}
             className="group overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm"
           >
-            <div className="aspect-square overflow-hidden bg-stone-100">
+            {/* 竖 3:4 + object-contain：完整显示不裁切，竖状产品(植物/门等)统一竖 */}
+            <div className="aspect-[3/4] overflow-hidden bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.image_url}
                 alt={`${p.title} — ${label} from ${p.supplier_name ?? 'a China supplier'}, sourced through Tarmeer UAE`}
                 loading="lazy"
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
               />
             </div>
             <div className="p-3">
