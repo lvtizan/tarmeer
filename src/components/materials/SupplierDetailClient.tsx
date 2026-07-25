@@ -368,16 +368,16 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                       ))}
                     </div>
                   )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {/* 瀑布流(masonry)：图按自然比例(w-full h-auto)自适应，高图高/宽图宽，无留白无裁切 */}
+                  <div className="columns-2 sm:columns-3 gap-4 [column-fill:_balance]">
                     {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
-                      <div key={p.id} className="group cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
-                        {/* 统一竖高 3:4 + object-contain：完整显示不裁切(自适应)，竖状产品(植物/门/柜)统一竖 */}
-                        <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-white border border-stone-200">
+                      <div key={p.id} className="group mb-4 break-inside-avoid cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
+                        <div className="rounded-2xl overflow-hidden bg-white border border-stone-200">
                           <SmartImage
                             src={p.image_url}
                             variant="thumb"
                             alt={p.title || ''}
-                            className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
+                            className="w-full h-auto group-hover:scale-105 transition duration-300"
                             loading="lazy"
                           />
                         </div>

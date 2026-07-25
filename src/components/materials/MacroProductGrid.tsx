@@ -71,21 +71,21 @@ export default function MacroProductGrid({ macroKey, label }: { macroKey: string
   return (
     <div>
       <p className="mb-6 text-[13px] text-stone-400">{total} products from our China suppliers</p>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      {/* 瀑布流(masonry)：每张图按自然比例(w-full h-auto)，高图高/宽图宽，无上下留白——算法自适应 */}
+      <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 [column-fill:_balance]">
         {products.map((p) => (
           <Link
             key={p.id}
             href={p.supplier_slug ? `/materials/suppliers/${p.supplier_slug}` : '#'}
-            className="group overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm"
+            className="group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm"
           >
-            {/* 竖 3:4 + object-contain：完整显示不裁切，竖状产品(植物/门等)统一竖 */}
-            <div className="aspect-[3/4] overflow-hidden bg-white">
+            <div className="overflow-hidden bg-white">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.image_url}
                 alt={`${p.title} — ${label} from ${p.supplier_name ?? 'a China supplier'}, sourced through Tarmeer UAE`}
                 loading="lazy"
-                className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+                className="w-full h-auto transition duration-500 group-hover:scale-105"
               />
             </div>
             <div className="p-3">
