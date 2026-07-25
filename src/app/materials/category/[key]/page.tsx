@@ -80,7 +80,7 @@ export default async function MaterialCategoryPage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
+      <div className="px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
         <Link
           href="/materials"
           className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition hover:text-[#b8864a]"

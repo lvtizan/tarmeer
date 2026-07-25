@@ -79,7 +79,7 @@ export default function MacroProductGrid({ macroKey, label }: { macroKey: string
     <div>
       <p className="mb-6 text-[13px] text-stone-400">{total} products from our China suppliers</p>
       {/* 瀑布流(masonry)：每张图按自然比例(w-full h-auto)，高图高/宽图宽，无上下留白——算法自适应 */}
-      <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 [column-fill:_balance]">
+      <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 [column-fill:_balance]">
         {products.map((p) => (
           <div
             key={p.id}
