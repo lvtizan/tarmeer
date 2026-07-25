@@ -66,6 +66,7 @@ const translateLimiter = (0, express_rate_limit_1.default)({
 router.get('/categories', (0, memoryCache_1.cacheMiddleware)(60), enumAdminController_1.getPublicSupplierCategories);
 // By Material 大类聚合（跨供应商标签归一）
 router.get('/macro-categories', (0, memoryCache_1.cacheMiddleware)(60), materialsMacro.getMacroCategories);
+router.get('/macro-categories/:key/products', (0, memoryCache_1.cacheMiddleware)(60), materialsMacro.getMacroProducts);
 // 中国新材料改版：跨供应商产品 feed + 产品详情（spec §3.1）。注意：必须先于 /detail/:slug 等通配路由注册。
 router.get('/products/public', (0, memoryCache_1.cacheMiddleware)(60), products.listPublicProductsFeed);
 router.get('/products/public/:id', products.getPublicProductDetail);
