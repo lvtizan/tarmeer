@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Paperclip, X, FileText } from 'lucide-react';
 import { getDroppedFiles } from '@/lib/dropFiles';
+import { resolveImageUrl } from '@/lib/imageUrl';
 
 interface ImageUploadZoneProps {
   value: string[];
@@ -170,7 +171,7 @@ export default function ImageUploadZone({
                   <span className="text-[10px] text-red-400 font-medium">PDF</span>
                 </div>
               ) : (
-                <img src={url} alt="" className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
+                <img src={resolveImageUrl(url)} alt="" className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
               )}
               <button
                 type="button"
