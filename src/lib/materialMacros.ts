@@ -16,6 +16,7 @@ export type MacroProduct = {
   id: number;
   title: string;
   image_url: string;
+  image_urls: string[];
   supplier_slug: string | null;
   supplier_name: string | null;
 };
@@ -99,6 +100,7 @@ export async function fetchMacroProducts(
       products: (d.products || []).map((p: MacroProduct) => ({
         ...p,
         image_url: resolveImageUrl(p.image_url),
+        image_urls: (p.image_urls || []).map(resolveImageUrl),
       })),
       total: d.pagination?.total || 0,
     };
