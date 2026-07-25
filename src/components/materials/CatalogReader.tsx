@@ -7,6 +7,7 @@
 // - 多本图册用顶部 tab 切换；catalogs 为空时调用方不渲染本组件。
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Maximize2, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUrl';
@@ -78,6 +79,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   const urlsRef = useRef<Map<number, string>>(new Map());
   const pendingRef = useRef<Map<number, Promise<string | null>>>(new Map());
   const topRef = useRef(0);
+  const curPageRef = useRef(1); // 当前页（供全屏 portal 重挂后重绘用，不进渲染依赖）
   const seqRef = useRef(0); // 单调递增，切换图册时不重置（否则跨册 id 撞号会串页）
   const targetWRef = useRef(1400);
   // 方案③：有预渲染 WebP 就走 image 模式（拉单页图，秒开），否则回退 pdf 模式（pdf.js 现渲）
@@ -165,6 +167,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
         topWrap.style.opacity = '0';
       }
       topRef.current = bi;
+      curPageRef.current = n;
       setCurPage(n);
       // 预取相邻页，下次切换即时
       void ensurePage(n + 1);
@@ -328,13 +331,20 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
     };
   }, [fs, curPage, showPage]);
 
+  // 全屏切换用 portal（逃出 hero 的 z-10 堆叠上下文）会重挂 <img>，命令式 src 丢失 → 切换后重绘当前页
+  const fsMounted = useRef(false);
+  useEffect(() => {
+    if (!fsMounted.current) { fsMounted.current = true; return; } // 跳过首次挂载
+    if (numPagesRef.current > 0) void showPage(curPageRef.current, 'open');
+  }, [fs, showPage]);
+
   if (!catalogs || catalogs.length === 0) return null;
 
-  return (
+  const reader = (
     <div
       className={
         fs
-          ? 'fixed inset-0 z-[70] bg-[#141110] flex flex-col'
+          ? 'fixed inset-0 z-[9999] bg-[#141110] flex flex-col'
           : 'relative rounded-2xl overflow-hidden bg-[#1c1917]'
       }
     >
@@ -468,4 +478,7 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
       </div>
     </div>
   );
+
+  // 全屏时 portal 到 body：逃出 hero 的 z-10 堆叠上下文，否则页面 sticky tab 条 / 顶栏(z-40+)会盖住全屏 PDF
+  return fs && typeof document !== 'undefined' ? createPortal(reader, document.body) : reader;
 }
