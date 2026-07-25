@@ -38,6 +38,12 @@ export const MACRO_LABELS: Record<string, string> = {
   spc: 'SPC Flooring',
 };
 
+// 有专属精品页的大类 → 直接跳该页（不走通用 /materials/category/[key] 聚合页）
+// flooring 指向我们扒图入库的 93 款 PARBRO 艺术地板目录
+export const MACRO_DEDICATED_PAGE: Record<string, string> = {
+  flooring: '/materials/flooring',
+};
+
 // 每个大类一句英文说明
 export const MACRO_BLURB: Record<string, string> = {
   furniture: 'Living, bedroom, office & outdoor furniture',

@@ -10,6 +10,7 @@ import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import {
   fetchMacroCategories,
   MACRO_BLURB,
+  MACRO_DEDICATED_PAGE,
   PREMIUM_MATERIALS,
   type MacroCategory,
 } from '@/lib/materialMacros';
@@ -73,7 +74,7 @@ export default function ByMaterialBrowse() {
           {macros.map((m) => (
             <Link
               key={m.key}
-              href={`/materials/category/${m.key}`}
+              href={MACRO_DEDICATED_PAGE[m.key] ?? `/materials/category/${m.key}`}
               className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-stone-200 isolate"
             >
               {m.image ? (

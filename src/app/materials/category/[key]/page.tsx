@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { getCountry } from '@/lib/country';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import MacroProductGrid from '@/components/materials/MacroProductGrid';
@@ -66,8 +67,14 @@ export default async function MaterialCategoryPage({
     <div className="min-h-screen bg-[#faf9f7]">
       <section className="bg-[#1c1917]">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-          <div className="mb-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <Breadcrumb items={crumbs} baseUrl={c.baseUrl} variant="dark" />
+            <Link
+              href="/materials"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-white/70 transition hover:text-white"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to Materials
+            </Link>
           </div>
           <p className="text-sm font-semibold uppercase tracking-wider text-[#c6a065]">Material</p>
           <h1 className="mt-2 font-serif text-4xl font-bold text-white [text-wrap:balance] lg:text-5xl">
