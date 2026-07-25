@@ -25,6 +25,27 @@ function rasterizeCatalogAsync(catalogId, fileUrl, force) {
         .then((r) => { if (r && r.pages) console.log(`[catalog-raster] #${catalogId} → ${r.pages} pages`); })
         .catch((e) => console.error(`[catalog-raster] #${catalogId} failed:`, e.message));
 }
+// 上传即：OCR 自动识别企业信息前置页 → 存 skip_pages → 从产品页起预渲染（去标识铁律，admin 可后改）
+function autoRasterizeCatalogAsync(catalogId, fileUrl, companyName) {
+    const pdfPath = catalogRasterizer_1.pdfPathFromUrl(fileUrl);
+    if (!pdfPath) return; // 外链占位 URL 不处理
+    (async () => {
+        let skip = 0;
+        try {
+            skip = await catalogRasterizer_1.detectFrontMatterPages(pdfPath, companyName || '');
+        }
+        catch (e) {
+            console.error(`[catalog-detect] #${catalogId} failed:`, e.message); // 失败 → skip=0，仍渲染，交人工
+        }
+        try {
+            await database_1.default.execute('UPDATE supplier_catalogs SET skip_pages = ? WHERE id = ?', [skip, catalogId]);
+        }
+        catch (_) { /* skip_pages 列可能未建，忽略 */ }
+        catalogRasterizer_1.rasterizeCatalog(catalogId, pdfPath, { force: true, startPage: skip + 1 })
+            .then((r) => { if (r && r.pages) console.log(`[catalog-raster] #${catalogId} skip=${skip} → ${r.pages} pages`); })
+            .catch((e) => console.error(`[catalog-raster] #${catalogId} failed:`, e.message));
+    })();
+}
 async function getProfileId(supplierUserId) {
     const [rows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE supplier_user_id = ? LIMIT 1', [supplierUserId]);
     return rows[0]?.id || null;
@@ -143,7 +164,9 @@ async function uploadCatalog(req, res) {
         const [result] = await database_1.default.execute('INSERT INTO supplier_catalogs (supplier_profile_id, title, file_url, file_size) VALUES (?, ?, ?, ?)', [profileId, title, file_url, file_size || null]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE id = ?', [id]);
-        rasterizeCatalogAsync(id, file_url, false); // 上传即后台预渲染成电子书图片
+        // 取供应商公司名做去标识信号，上传即自动识别+跳过企业信息页再渲染
+        const [prof] = await database_1.default.execute('SELECT company_name FROM supplier_profiles WHERE id = ?', [profileId]);
+        autoRasterizeCatalogAsync(id, file_url, prof[0]?.company_name || '');
         res.status(201).json({ catalog: created[0] });
     }
     catch (error) {

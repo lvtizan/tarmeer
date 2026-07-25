@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.rasterizeCatalog = rasterizeCatalog;
 exports.pageCountOf = pageCountOf;
 exports.pdfPathFromUrl = pdfPathFromUrl;
+exports.detectFrontMatterPages = detectFrontMatterPages;
 
 const { execFile } = require("child_process");
 const { promisify } = require("util");
@@ -34,6 +35,76 @@ async function pageCountOf(pdfPath) {
   const { stdout } = await execFileP("pdfinfo", [pdfPath]);
   const m = stdout.match(/Pages:\s+(\d+)/);
   return m ? parseInt(m[1], 10) : 0;
+}
+
+// ===== 去标识：自动识别应跳过的"企业信息"前置页（OCR + 关键词，已在 wanli/PARBRO 真实样本校验 6/1/1）=====
+const OCR_CHECK_MAX = 15; // 只看前 15 页找边界，够覆盖封面/公司简介/工厂/联系页
+// 企业信息信号词（英 + 中）：命中即认为该页是"关于公司"，不是产品
+const COMPANY_KW = [
+  "company", "technology", "factory", "investment", "industrial", "university", "collaboration",
+  "research", "patent", "award", "established", "founded", "headquarters", "workshop", "enterprise",
+  "manufacturer", "profile", "introduction", "aboutus", "contact", "email", "address", "website",
+  "www", "certification", "partner",
+  "公司", "简介", "关于", "联系", "电话", "地址", "邮箱", "工厂", "园区", "投资", "有限公司",
+  "企业", "集团", "荣誉", "专利", "研发", "车间", "平方米", "大学", "科技", "认证", "合作",
+];
+function _companySignal(text, nameTokens) {
+  const c = text.toLowerCase().replace(/\s+/g, "");
+  for (const k of COMPANY_KW) if (c.includes(k)) return true;
+  for (const k of nameTokens) if (k && c.includes(k)) return true; // 供应商自己的公司名/品牌
+  return false;
+}
+// 产品页信号：一串 SERIES 列表(≥3) 或 型号网格(≥6 个 code)。用"phrase in prose"不行(公司简介也会写 product series)。
+function _productSignal(text) {
+  const c = text.toLowerCase();
+  const series = (c.match(/series/g) || []).length + (c.match(/系列/g) || []).length;
+  const codes = (text.match(/\b[A-Z]{1,5}\d{2,5}[A-Z0-9-]*\b/g) || []).length + (text.match(/\b\d{4}\b/g) || []).length;
+  return series >= 3 || codes >= 6;
+}
+function _nameTokens(companyName) {
+  if (!companyName) return [];
+  const lower = String(companyName).toLowerCase();
+  const stop = new Set(["co", "ltd", "inc", "the", "and", "company", "technology", "limited", "group"]);
+  const words = lower.split(/[^a-z0-9一-龥]+/).filter((w) => w.length >= 3 && !stop.has(w));
+  const cjk = lower.replace(/\s+/g, "").match(/[一-龥]{2,}/g) || [];
+  return [...new Set([...words, ...cjk])];
+}
+async function _ocrPage(pdfPath, page) {
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "cat-ocr-"));
+  try {
+    await execFileP("pdftoppm", ["-png", "-r", "120", "-f", String(page), "-l", String(page), "-singlefile", pdfPath, path.join(tmp, "x")]);
+    const { stdout } = await execFileP("tesseract", [path.join(tmp, "x.png"), "stdout", "-l", "eng+chi_sim"], { maxBuffer: 1 << 22 });
+    return stdout || "";
+  } catch (_) {
+    return ""; // 无 tesseract / OCR 失败 → 该页无信号，交由整体逻辑兜底
+  } finally {
+    await fs.rm(tmp, { recursive: true, force: true });
+  }
+}
+/**
+ * 自动判定应跳过的企业信息前置页数（去标识）。
+ * 思路：找到第一张产品页(SERIES 列表/型号网格) → 向前回退越过"无企业信号的产品分隔页" → 停在第一张有企业信号的页。
+ * 找不到产品页 / OCR 不可用 → 返回 0（不盲删，交人工兜底）。
+ */
+async function detectFrontMatterPages(pdfPath, companyName) {
+  let total;
+  try { total = await pageCountOf(pdfPath); } catch (_) { return 0; }
+  if (!total || total < 2) return 0;
+  const tokens = _nameTokens(companyName);
+  const check = Math.min(total, OCR_CHECK_MAX);
+  const cache = {};
+  const get = async (p) => (cache[p] !== undefined ? cache[p] : (cache[p] = await _ocrPage(pdfPath, p)));
+  let firstProduct = -1;
+  for (let p = 1; p <= check; p++) {
+    if (_productSignal(await get(p))) { firstProduct = p; break; }
+  }
+  if (firstProduct === -1) return 0; // 前 15 页找不到明确产品页 → 不盲删
+  let boundary = firstProduct;
+  for (let p = firstProduct - 1; p >= 1; p--) {
+    if (_companySignal(await get(p), tokens)) break; // 碰到企业信息页就停
+    boundary = p; // 无企业信号的产品分隔页并入"保留"区
+  }
+  return Math.max(0, Math.min(boundary - 1, total - 1));
 }
 
 /**
