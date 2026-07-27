@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, ExternalLink, ImageOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
+import { resolveImageUrl } from '@/lib/imageUrl';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
@@ -167,7 +168,7 @@ export default function AdminShowcaseImagesPage() {
                       onClick={() => !added && addFromPicker(url)}
                       className={`relative rounded-lg overflow-hidden aspect-[2/3] cursor-pointer group ${added ? 'ring-2 ring-[#B8864A] opacity-60 cursor-default' : 'hover:ring-2 hover:ring-[#B8864A]'}`}
                     >
-                      <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" onError={e => { (e.target as HTMLImageElement).style.opacity = '0.2'; }} />
+                      <img src={resolveImageUrl(url)} alt="" className="w-full h-full object-cover" loading="lazy" onError={e => { (e.target as HTMLImageElement).style.opacity = '0.2'; }} />
                       {!added && (
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                           <Plus className="w-5 h-5 text-white" />
@@ -196,7 +197,7 @@ export default function AdminShowcaseImagesPage() {
           {images.map((url, idx) => (
             <div key={idx} className="group relative rounded-xl overflow-hidden bg-stone-100 aspect-[2/3]">
               <img
-                src={url}
+                src={resolveImageUrl(url)}
                 alt=""
                 className="w-full h-full object-cover"
                 loading="lazy"

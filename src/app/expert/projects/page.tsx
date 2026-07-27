@@ -511,7 +511,7 @@ function ExpertProjectsInner() {
                       <div key={i} className="flex flex-col">
                         <div draggable onDragStart={()=>setDragI(i)} onDragOver={e=>{e.preventDefault();if(dragO!==i)setDragO(i)}} onDrop={e=>{e.preventDefault();if(dragI!==null)mvImg(dragI,i);setDragI(null);setDragO(null)}} onDragEnd={()=>{setDragI(null);setDragO(null)}}
                           className={`group relative aspect-square overflow-hidden rounded-xl border bg-stone-100 transition ${isCover?'border-[#b8864a] ring-2 ring-[#b8864a]/35':isChecked?'border-[#b8864a] ring-2 ring-[#b8864a]/55':dragO===i?'border-[#b8864a]/70':'border-stone-200'} ${dragI===i?'cursor-grabbing opacity-80':'cursor-grab'}`}>
-                          <img src={url} alt="" className="h-full w-full object-cover"/>
+                          <img src={resolveImageUrl(url)} alt="" className="h-full w-full object-cover"/>
                           <button type="button" onClick={e=>{e.stopPropagation();toggleCheck(i);}}
                             className={`absolute left-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white shadow-sm transition ${isChecked||isCover?'bg-[#b8864a]':'bg-black/35 hover:bg-black/55'}`}>
                             {isChecked?<Check className="h-2.5 w-2.5 text-white" strokeWidth={3}/>:isCover?<span className="text-[9px] text-white leading-none">★</span>:null}
@@ -590,7 +590,7 @@ function ExpertProjectsInner() {
               <button type="button" onClick={()=>setPrevI(null)} className="rounded-full p-1 text-stone-500 hover:bg-stone-100"><X className="h-4 w-4"/></button>
             </div>
             <div className="relative flex items-center justify-center rounded-xl bg-stone-100">
-              <img src={imgs[prevI]} alt="" className="max-h-[65vh] w-auto object-contain"/>
+              <img src={resolveImageUrl(imgs[prevI])} alt="" className="max-h-[65vh] w-auto object-contain"/>
               {imgs.length>1&&<>
                 <button type="button" onClick={()=>setPrevI(p=>(p??0)===0?imgs.length-1:(p??0)-1)} className="absolute left-3 rounded-full bg-white/90 p-2 text-stone-700"><ChevronLeft className="h-4 w-4"/></button>
                 <button type="button" onClick={()=>setPrevI(p=>((p??0)+1)%imgs.length)} className="absolute right-3 rounded-full bg-white/90 p-2 text-stone-700"><ChevronRight className="h-4 w-4"/></button>
