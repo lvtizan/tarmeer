@@ -43,6 +43,8 @@ async function getMacroCategories(req, res) {
     for (const s of sup) {
       const tags = String(s.categories || '').split(',').map(t => t.trim()).filter(Boolean);
       const macros = [...new Set(tags.map(t => TAG_TO_MACRO[t]).filter(Boolean))];
+      // 只有画册、没有产品的供应商不计入 By-Material：该页只展示产品，若计数会导致"数字≠展示内容"
+      if ((Number(s.pcnt) || 0) === 0) continue;
       for (const m of macros) {
         if (!bucket[m]) bucket[m] = { key: m, label: MACRO_LABEL[m], supplierCount: 0, productCount: 0, image: null };
         bucket[m].supplierCount += 1;

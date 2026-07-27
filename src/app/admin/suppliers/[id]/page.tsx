@@ -404,7 +404,7 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
 
 interface ProductEditModalProps {
   supplierId: number;
-  product: { id: number; image_url?: string; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
+  product: { id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
   onClose: () => void;
   onSaved: (product: { id: number; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }) => void;
   t: (en: string, zh: string) => string;
@@ -413,6 +413,10 @@ interface ProductEditModalProps {
 function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductEditModalProps) {
   const [title, setTitle] = useState(product.title || '');
   const [category, setCategory] = useState(product.category || '');
+  const [description, setDescription] = useState(product.description || '');
+  const [price, setPrice] = useState(product.price != null ? String(product.price) : '');
+  const [priceUnit, setPriceUnit] = useState(product.price_unit || '');
+  const [priceFrom, setPriceFrom] = useState(product.price_from != null ? String(product.price_from) : '');
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
 
@@ -425,6 +429,10 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
         body: JSON.stringify({
           title: title.trim() || null,
           category: category || null,
+          description: description.trim() || null,
+          price: price.trim() === '' ? null : Number(price),
+          price_unit: priceUnit.trim() || null,
+          price_from: priceFrom.trim() === '' ? null : Number(priceFrom),
           specs: cleaned.specs,
           certifications: cleaned.certifications,
           application_scenes: cleaned.application_scenes,
@@ -459,6 +467,26 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
               {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
             </select>
           </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Description', '描述')}</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
+              placeholder={t('Product description', '产品描述')}
+              className={inputCls + ' resize-none py-2 leading-relaxed'} />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Price', '价格')}</label>
+              <input type="number" min={0} step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Unit', '单位')}</label>
+              <input type="text" value={priceUnit} onChange={e => setPriceUnit(e.target.value)} placeholder={t('e.g. /m²', '如 /m²')} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('From price', '起价')}</label>
+              <input type="number" min={0} step="0.01" value={priceFrom} onChange={e => setPriceFrom(e.target.value)} placeholder="0" className={inputCls} />
+            </div>
+          </div>
           <ProductExtraFieldsEditor value={extras} onChange={setExtras} t={t} />
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
@@ -485,7 +513,7 @@ export default function AdminSupplierDetailPage() {
     has_physical_store?: boolean; store_address?: string; categories?: string[] | string;
     created_at: string;
   } | null>(null);
-  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
+  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number }>>([]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -501,12 +529,26 @@ export default function AdminSupplierDetailPage() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<{ id?: number; title?: string; location?: string; year?: number; area_sqm?: number; budget?: string; description?: string; images?: string[] | string } | null>(null);
   const [togglingPublished, setTogglingPublished] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
+  // 产品图大图 lightbox：存当前查看的产品下标，←/→ 在产品间切换
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
   const [savingCatalogId, setSavingCatalogId] = useState<number | null>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
+
+  // 产品图 lightbox 键盘导航：Esc 关，←/→ 在产品间切换
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxIdx(null);
+      else if (e.key === 'ArrowLeft') setLightboxIdx(i => (i != null && i > 0 ? i - 1 : i));
+      else if (e.key === 'ArrowRight') setLightboxIdx(i => (i != null && i < products.length - 1 ? i + 1 : i));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightboxIdx, products.length]);
 
   const startEditCatalog = (c: { id: number; title: string }) => {
     setEditingCatalogId(c.id);
@@ -742,6 +784,32 @@ export default function AdminSupplierDetailPage() {
         />
       )}
 
+      {/* Product image lightbox（点产品图看大图，←/→ 切换产品，复用装企项目编辑页交互） */}
+      {lightboxIdx !== null && products[lightboxIdx] && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4" onClick={() => setLightboxIdx(null)}>
+          <button onClick={() => setLightboxIdx(null)} className="absolute top-4 right-4 text-white/70 hover:text-white" aria-label={t('Close', '关闭')}>
+            <X className="w-7 h-7" />
+          </button>
+          {lightboxIdx > 0 && (
+            <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i != null ? i - 1 : i)); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition hover:bg-white/20" aria-label={t('Previous', '上一张')}>‹</button>
+          )}
+          {lightboxIdx < products.length - 1 && (
+            <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i != null ? i + 1 : i)); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition hover:bg-white/20" aria-label={t('Next', '下一张')}>›</button>
+          )}
+          <div className="flex max-w-full flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={products[lightboxIdx].image_url} alt={products[lightboxIdx].title || ''} className="max-h-[80vh] max-w-full rounded-lg object-contain" />
+            <div className="text-center text-sm text-white/80">
+              {products[lightboxIdx].category && <span className="mr-2 text-xs uppercase text-[#e6c88f]">{products[lightboxIdx].category}</span>}
+              {products[lightboxIdx].title}
+              <span className="ml-2 text-white/40">{lightboxIdx + 1}/{products.length}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Back */}
       <button onClick={() => router.push('/admin/suppliers')} className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="w-4 h-4" />
@@ -954,12 +1022,12 @@ export default function AdminSupplierDetailPage() {
             ) : (
               <div className="bg-white rounded-xl border border-stone-200 p-4">
                 <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
-                  {products.map((p) => {
+                  {products.map((p, idx) => {
                     const isCover = !!supplier.cover_image_url && supplier.cover_image_url === p.image_url;
                     return (
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
-                          <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                          <img src={p.image_url} alt={p.title || ''} onClick={() => setLightboxIdx(idx)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
                           {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显 */}
                           <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                             <button onClick={() => setEditingProduct(p)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white transition-colors" title={t('Edit', '编辑')}>

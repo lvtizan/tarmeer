@@ -306,9 +306,12 @@ async function adminUpdateProduct(req, res) {
         const [rows] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [productId, id]);
         if (rows.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
-        const { title, category, specs, certifications, application_scenes } = req.body;
-        // specs/certifications/application_scenes：只在传了数组时覆盖（COALESCE 忽略缺省，防误清空）
-        await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ?, specs = COALESCE(?, specs), certifications = COALESCE(?, certifications), application_scenes = COALESCE(?, application_scenes) WHERE id = ?', [title?.trim() || null, category || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), productId]);
+        const { title, category, description, price, price_unit, price_from, specs, certifications, application_scenes } = req.body;
+        // 价格：空串/未传 → null；否则原样存（admin 可信，不做强校验）
+        const priceVal = (price === '' || price === undefined || price === null) ? null : price;
+        const priceFromVal = (price_from === '' || price_from === undefined || price_from === null) ? null : price_from;
+        // 描述/价格由 admin 编辑弹窗整体提交，直接覆盖；specs 等只在传了数组时覆盖（COALESCE 忽略缺省，防误清空）
+        await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ?, description = ?, price = ?, price_unit = ?, price_from = ?, specs = COALESCE(?, specs), certifications = COALESCE(?, certifications), application_scenes = COALESCE(?, application_scenes) WHERE id = ?', [title?.trim() || null, category || null, description ?? null, priceVal, price_unit || null, priceFromVal, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), productId]);
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
         res.json({ product: updated[0] });
     }

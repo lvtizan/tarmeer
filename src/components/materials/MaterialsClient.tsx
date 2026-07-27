@@ -34,6 +34,8 @@ export interface Supplier {
   logo_url: string | null;
   cover_image_url: string | null;
   first_product_image?: string | null;
+  /** 无产品图时用最近一本画册的已渲染首页当封面（只有画册的供应商用） */
+  first_catalog_id?: number | null;
   origin: 'china' | 'dubai';
   categories: string[] | string | null;
   has_physical_store: number;
@@ -49,8 +51,19 @@ function parseCategories(c: Supplier['categories']): string[] {
 }
 
 // 紧凑网格卡：封面 16:9 + 名称 + 品类 chips（整卡可点）——替代旧整宽长行，页面不再天梯般长
+const SUPPLIER_CARD_FALLBACK = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80';
+
 function SupplierCard({ s }: { s: Supplier }) {
   const cats = parseCategories(s.categories);
+  // 封面优先级：手动封面 → 首张产品图 → 画册已渲染首页(缩略) → 通用占位（只有画册的供应商也有代表图）
+  const catalogCover = s.first_catalog_id
+    ? resolveImageUrl(`/uploads/suppliers/catalogs/pages/${s.first_catalog_id}/1-thumb.webp`)
+    : null;
+  const coverSrc = s.cover_image_url
+    ? resolveVariantUrl(s.cover_image_url, 'thumb')
+    : s.first_product_image
+      ? resolveVariantUrl(s.first_product_image, 'thumb')
+      : catalogCover || SUPPLIER_CARD_FALLBACK;
   return (
     <Link
       href={`/materials/suppliers/${s.slug}`}
@@ -59,20 +72,15 @@ function SupplierCard({ s }: { s: Supplier }) {
       {/* Cover 16:9 */}
       <div className="aspect-video overflow-hidden bg-stone-100">
         <img
-          src={
-            s.cover_image_url
-              ? resolveVariantUrl(s.cover_image_url, 'thumb')
-              : s.first_product_image
-                ? resolveVariantUrl(s.first_product_image, 'thumb')
-                : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'
-          }
+          src={coverSrc}
           onError={(e) => {
+            // 变体缺失→回退原图；再不行→通用占位（画册页 404 也走这里）
             const primary = s.cover_image_url || s.first_product_image || null;
             const fallback = resolveImageUrl(primary);
             if (fallback && e.currentTarget.src !== fallback) {
               e.currentTarget.src = fallback;
-            } else {
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80';
+            } else if (e.currentTarget.src !== SUPPLIER_CARD_FALLBACK) {
+              e.currentTarget.src = SUPPLIER_CARD_FALLBACK;
             }
           }}
           alt={s.company_name}

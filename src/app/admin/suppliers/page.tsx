@@ -6,8 +6,9 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, Tag } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
+import SupplierCategoriesManager from '@/components/admin/SupplierCategoriesManager';
 import AdminSelect from '@/components/ui/AdminSelect';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
@@ -55,6 +56,7 @@ export default function AdminSuppliersPage() {
   const [orderToast, setOrderToast] = useState<{ msg: string; key: string } | null>(null);
   const [editingNameZh, setEditingNameZh] = useState<Record<number, string>>({});
   const [editingName, setEditingName] = useState<Record<number, string>>({});
+  const [showCatManager, setShowCatManager] = useState(false); // 供应商分类管理弹层
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -237,6 +239,13 @@ export default function AdminSuppliersPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCatManager(true)}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white hover:border-[#b8864a] hover:text-[#b8864a] text-xs font-medium text-stone-600 transition"
+          >
+            <Tag className="w-3.5 h-3.5" />
+            {t('Supplier Categories', '供应商分类')}
+          </button>
           <button
             onClick={exportCsv}
             disabled={suppliers.length === 0}
@@ -516,6 +525,24 @@ export default function AdminSuppliersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* 供应商分类管理弹层（复用共享组件：增删改+启停+拖拽） */}
+      {showCatManager && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm p-4 sm:p-8" onClick={() => setShowCatManager(false)}>
+          <div className="w-full max-w-3xl rounded-2xl bg-[#faf9f7] shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-bold text-[#2c2c2c]">{t('Supplier Categories', '供应商分类')}</h2>
+                <p className="mt-0.5 text-xs text-stone-500">{t('Add / rename / enable / reorder — drives the public supplier filters', '增删改·启停·拖拽排序——驱动公开站供应商筛选')}</p>
+              </div>
+              <button onClick={() => setShowCatManager(false)} className="p-1 text-stone-400 hover:text-stone-600" aria-label={t('Close', '关闭')}><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-5">
+              <SupplierCategoriesManager />
+            </div>
+          </div>
         </div>
       )}
     </div>
