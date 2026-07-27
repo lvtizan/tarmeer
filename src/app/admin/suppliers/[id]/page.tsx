@@ -36,7 +36,6 @@ const STATUS_COLORS: Record<string, string> = {
 const inputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
 // 表单配色铁律：输入框背景必须 bg-white（新代码遵守，存量 inputCls 不动）
 const whiteInputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
-const PRODUCT_CATEGORIES = ['wardrobe', 'kitchen', 'furniture', 'stone', 'lighting', 'plants', 'flooring', 'curtains', 'paint', 'hardware', 'other'];
 
 /* ── 产品补充字段（specs / certifications / application_scenes）── */
 
@@ -540,6 +539,15 @@ export default function AdminSupplierDetailPage() {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ image_url: '', title: '', category: '' });
   const [newProductExtras, setNewProductExtras] = useState<ProductExtraFields>(emptyExtraFields());
+  // 新增产品的品类下拉也接后台「产品分类」(子类按大类分组)，与编辑弹窗一致
+  const [prodCatGroups, setProdCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
+  useEffect(() => {
+    adminApi.request('/enums/product-categories').then((d) => {
+      const rows = (d.categories || []) as Array<{ value: string; label: string; parent_value: string | null; is_enabled: number }>;
+      const on = rows.filter((r) => r.is_enabled);
+      setProdCatGroups(on.filter((r) => !r.parent_value).map((g) => ({ value: g.value, label: g.label, children: on.filter((c) => c.parent_value === g.value) })));
+    }).catch(() => { /* 拉不到就空 */ });
+  }, []);
   const [addingProduct, setAddingProduct] = useState(false);
   const [replacingId, setReplacingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1023,9 +1031,13 @@ export default function AdminSupplierDetailPage() {
                 <input type="text" placeholder={t('Image URL (e.g. /uploads/suppliers/68/xxx.jpg)', '图片地址（如 /uploads/suppliers/68/xxx.jpg）')} value={newProduct.image_url} onChange={e => setNewProduct(v => ({ ...v, image_url: e.target.value }))} className={inputCls} />
                 <div className="flex gap-2">
                   <input type="text" placeholder={t('Title (optional)', '名称（可选）')} value={newProduct.title} onChange={e => setNewProduct(v => ({ ...v, title: e.target.value }))} className={inputCls + ' flex-1'} />
-                  <select value={newProduct.category} onChange={e => setNewProduct(v => ({ ...v, category: e.target.value }))} className="h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]">
+                  <select value={newProduct.category} onChange={e => setNewProduct(v => ({ ...v, category: e.target.value }))} className="h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]">
                     <option value="">{t('Category', '分类')}</option>
-                    {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                    {prodCatGroups.map(g => (
+                      <optgroup key={g.value} label={g.label}>
+                        {g.children.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
                 <ProductExtraFieldsEditor value={newProductExtras} onChange={setNewProductExtras} t={t} />

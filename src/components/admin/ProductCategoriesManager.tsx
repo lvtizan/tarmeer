@@ -19,6 +19,7 @@ export default function ProductCategoriesManager() {
   const [newGroup, setNewGroup] = useState({ value: '', label: '' });
   const [newChild, setNewChild] = useState<Record<string, { value: string; label: string }>>({});
   const dragFrom = useRef<string>('');
+  const dragOver = useRef<string>(''); // 拖入的目标(onDragEnter 记录)；onDragEnd 触发在源上，必须从这里取目标
   const [dragKey, setDragKey] = useState('');
 
   async function load() {
@@ -35,14 +36,14 @@ export default function ProductCategoriesManager() {
   async function addGroup() {
     const value = newGroup.value.trim(); const label = newGroup.label.trim();
     if (!value || !label) { showToast('请填写 key 和显示名称', 'error'); return; }
-    try { await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label }) }); setNewGroup({ value: '', label: '' }); await load(); showToast('大类已添加', 'success'); }
+    try { const r = await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label }) }); if (r?.existed) { showToast(`key「${value}」已存在`, 'error'); return; } setNewGroup({ value: '', label: '' }); await load(); showToast('大类已添加', 'success'); }
     catch (e: unknown) { showToast(e instanceof Error ? e.message : '添加失败', 'error'); }
   }
   async function addChild(parent: string) {
     const nc = newChild[parent] || { value: '', label: '' };
     const value = nc.value.trim(); const label = nc.label.trim();
     if (!value || !label) { showToast('请填写子类 key 和显示名称', 'error'); return; }
-    try { await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label, parent_value: parent }) }); setNewChild((p) => ({ ...p, [parent]: { value: '', label: '' } })); await load(); showToast('子类已添加', 'success'); }
+    try { const r = await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label, parent_value: parent }) }); if (r?.existed) { showToast(`key「${value}」已存在`, 'error'); return; } setNewChild((p) => ({ ...p, [parent]: { value: '', label: '' } })); await load(); showToast('子类已添加', 'success'); }
     catch (e: unknown) { showToast(e instanceof Error ? e.message : '添加失败', 'error'); }
   }
   async function updateLabel(value: string, label: string, orig: string) {
@@ -66,15 +67,18 @@ export default function ProductCategoriesManager() {
       },
     });
   }
-  // 同层拖拽排序：拖动项与目标项须同一 parent（同为大类，或同一大类下的子类）
-  async function onDrop(target: PCat) {
-    const from = dragFrom.current; setDragKey('');
-    if (!from || from === target.value) return;
+  // 同层拖拽排序：拖动项与目标项须同一 parent（同为大类，或同一大类下的子类）。
+  // onDragEnd 触发在拖动源上，故目标从 dragOver ref 取（onDragEnter 记录），不能用事件所在行。
+  async function onDrop() {
+    const from = dragFrom.current; const toVal = dragOver.current;
+    dragFrom.current = ''; dragOver.current = ''; setDragKey('');
+    if (!from || !toVal || from === toVal) return;
     const src = cats.find((c) => c.value === from);
-    if (!src || (src.parent_value || null) !== (target.parent_value || null)) return; // 跨层不处理
+    const tgt = cats.find((c) => c.value === toVal);
+    if (!src || !tgt || (src.parent_value || null) !== (tgt.parent_value || null)) return; // 跨层不处理
     const sibs = cats.filter((c) => (c.parent_value || null) === (src.parent_value || null)).sort((a, b) => a.sort_order - b.sort_order);
     const fromIdx = sibs.findIndex((c) => c.value === from);
-    const toIdx = sibs.findIndex((c) => c.value === target.value);
+    const toIdx = sibs.findIndex((c) => c.value === toVal);
     if (fromIdx < 0 || toIdx < 0) return;
     const reordered = [...sibs]; const [m] = reordered.splice(fromIdx, 1); reordered.splice(toIdx, 0, m);
     setCats((prev) => prev.map((c) => { const i = reordered.findIndex((r) => r.value === c.value); return i >= 0 ? { ...c, sort_order: i } : c; }));
@@ -103,7 +107,7 @@ export default function ProductCategoriesManager() {
       {groups.map((g) => (
         <div key={g.value} className="rounded-xl border border-stone-200 bg-white overflow-hidden">
           {/* 大类头 */}
-          <div draggable onDragStart={() => { dragFrom.current = g.value; }} onDragEnter={() => setDragKey(g.value)} onDragEnd={() => onDrop(g)} onDragOver={(e) => e.preventDefault()}
+          <div draggable onDragStart={() => { dragFrom.current = g.value; }} onDragEnter={() => { dragOver.current = g.value; setDragKey(g.value); }} onDragEnd={onDrop} onDragOver={(e) => e.preventDefault()}
             className={`flex items-center gap-2 px-3 py-2.5 bg-stone-50 border-b border-stone-200 select-none ${dragKey === g.value ? 'ring-1 ring-[#B8864A]/40' : ''}`}>
             <span className="cursor-grab text-stone-300 text-[18px] leading-none" title="拖动排序大类">⠿</span>
             <span className="font-mono text-xs text-stone-400 w-40 shrink-0">{g.value}</span>
@@ -114,7 +118,7 @@ export default function ProductCategoriesManager() {
           {/* 子类 */}
           <div className="p-2 space-y-1">
             {childrenOf(g.value).map((c) => (
-              <div key={c.value} draggable onDragStart={() => { dragFrom.current = c.value; }} onDragEnter={() => setDragKey(c.value)} onDragEnd={() => onDrop(c)} onDragOver={(e) => e.preventDefault()}
+              <div key={c.value} draggable onDragStart={() => { dragFrom.current = c.value; }} onDragEnter={() => { dragOver.current = c.value; setDragKey(c.value); }} onDragEnd={onDrop} onDragOver={(e) => e.preventDefault()}
                 className={`flex items-center gap-2 px-2 py-1.5 rounded-lg select-none ${dragKey === c.value ? 'bg-amber-50 ring-1 ring-[#B8864A]/30' : 'hover:bg-stone-50'}`}>
                 <span className="cursor-grab text-stone-300 text-[16px] leading-none" title="拖动排序子类">⠿</span>
                 <span className="font-mono text-xs text-stone-400 w-40 shrink-0">{c.value}</span>

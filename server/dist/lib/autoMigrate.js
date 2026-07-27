@@ -42,6 +42,19 @@ const REQUIRED_TABLES = [
     )`,
     },
     {
+        name: 'product_categories',
+        sql: `CREATE TABLE IF NOT EXISTS product_categories (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      value VARCHAR(64) NOT NULL UNIQUE,
+      label VARCHAR(128) NOT NULL,
+      parent_value VARCHAR(64) DEFAULT NULL,
+      sort_order INT NOT NULL DEFAULT 0,
+      is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_parent (parent_value)
+    )`,
+    },
+    {
         name: 'weight_config',
         sql: `CREATE TABLE IF NOT EXISTS weight_config (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -786,6 +799,30 @@ async function runAutoMigrate() {
           ('decoration_materials', '装饰材料', 0, 1),
           ('furniture_group',      '家具',     1, 1)
         ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)
+      `);
+        }
+        catch { /* ignore */ }
+        // 7c-4. Seed product_categories（两级：大类 parent_value=NULL / 子类）。
+        // 用 INSERT IGNORE：只在缺失时插入，绝不覆盖运营后续的改名/排序/启停。
+        try {
+            await database_1.default.execute(`
+        INSERT IGNORE INTO product_categories (value, label, parent_value, sort_order) VALUES
+          ('building_materials','Building Materials',NULL,1),
+          ('soft_furnishing','Soft Furnishing',NULL,2),
+          ('new_materials','New Materials','building_materials',1),
+          ('tiles','Tiles','building_materials',2),
+          ('stone','Stone','building_materials',3),
+          ('boards','Boards & Panels','building_materials',4),
+          ('paint','Paint & Coatings','building_materials',5),
+          ('art_paint','Art Paint','building_materials',6),
+          ('doors_windows','Doors & Windows','building_materials',7),
+          ('kitchen_bath','Kitchen & Bath','building_materials',8),
+          ('hardware','Hardware','building_materials',9),
+          ('flooring','Flooring','building_materials',10),
+          ('furniture','Furniture','soft_furnishing',1),
+          ('lighting','Lighting','soft_furnishing',2),
+          ('curtains','Curtains','soft_furnishing',3),
+          ('decor','Decor & Accessories','soft_furnishing',4)
       `);
         }
         catch { /* ignore */ }
