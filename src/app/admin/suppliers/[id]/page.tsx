@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { APPLICATION_SCENES } from '@/lib/materialsApi';
+import { resolveImageUrl } from '@/lib/imageUrl';
 import SupplierEditModal from '@/components/admin/SupplierEditModal';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { showToast } from '@/components/ui/Toast';
@@ -376,7 +377,7 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {form.images.map((url, i) => (
                   <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-stone-100 group">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <img src={resolveImageUrl(url)} alt="" className="w-full h-full object-cover" />
                     <button onClick={() => removeImage(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600">
                       <X className="w-3 h-3" />
                     </button>
@@ -420,6 +421,16 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   const [priceFrom, setPriceFrom] = useState(!!product.price_from);
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
+  // 品类下拉：接后台可管理的「产品分类」(子类按大类分组)，替代写死常量
+  const [catGroups, setCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
+  useEffect(() => {
+    adminApi.request('/enums/product-categories').then((d) => {
+      const rows = (d.categories || []) as Array<{ value: string; label: string; parent_value: string | null; is_enabled: number }>;
+      const on = rows.filter((r) => r.is_enabled);
+      setCatGroups(on.filter((r) => !r.parent_value).map((g) => ({ value: g.value, label: g.label, children: on.filter((c) => c.parent_value === g.value) })));
+    }).catch(() => { /* 拉不到就只保留当前值 */ });
+  }, []);
+  const catInList = catGroups.some((g) => g.children.some((c) => c.value === category));
 
   const handleSave = async () => {
     setSaving(true);
@@ -456,7 +467,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
-          {product.image_url && <img src={product.image_url} alt="" className="w-full aspect-video object-cover rounded-lg bg-stone-100" />}
+          {product.image_url && <img src={resolveImageUrl(product.image_url)} alt="" className="w-full aspect-video object-cover rounded-lg bg-stone-100" />}
           <div>
             <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title', '名称')}</label>
             <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Product title', '产品名称')} className={inputCls} />
@@ -465,7 +476,13 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
             <label className="block text-xs font-medium text-stone-500 mb-1">{t('Category', '分类')}</label>
             <select value={category} onChange={e => setCategory(e.target.value)} className={inputCls + ' cursor-pointer'}>
               <option value="">{t('No category', '不分类')}</option>
-              {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              {catGroups.map(g => (
+                <optgroup key={g.value} label={g.label}>
+                  {g.children.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </optgroup>
+              ))}
+              {/* 当前值不在管理列表里(旧/脏数据)也保留可见，避免保存时丢失 */}
+              {category && !catInList && <option value={category}>{category}（{t('current', '当前')}）</option>}
             </select>
           </div>
           <div>
@@ -801,7 +818,7 @@ export default function AdminSupplierDetailPage() {
           )}
           <div className="flex max-w-full flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={products[lightboxIdx].image_url} alt={products[lightboxIdx].title || ''} className="max-h-[80vh] max-w-full rounded-lg object-contain" />
+            <img src={resolveImageUrl(products[lightboxIdx].image_url)} alt={products[lightboxIdx].title || ''} className="max-h-[80vh] max-w-full rounded-lg object-contain" />
             <div className="text-center text-sm text-white/80">
               {products[lightboxIdx].category && <span className="mr-2 text-xs uppercase text-[#e6c88f]">{products[lightboxIdx].category}</span>}
               {products[lightboxIdx].title}
@@ -908,7 +925,7 @@ export default function AdminSupplierDetailPage() {
             <div className="bg-white rounded-xl border border-stone-200 p-4 space-y-2">
               <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide">{t('Cover Image', '封面图')}</h2>
               <div className="aspect-video w-full rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
-                <img src={supplier.cover_image_url} alt="cover" className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(supplier.cover_image_url)} alt="cover" className="w-full h-full object-cover" />
               </div>
               <p className="text-[11px] text-stone-400">{t('Hover over any image below to change', '鼠标移到下方图片可更换')}</p>
             </div>
@@ -939,7 +956,7 @@ export default function AdminSupplierDetailPage() {
                     <div key={proj.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group relative">
                       <div className="aspect-video bg-stone-100 overflow-hidden relative">
                         {imgs[0] ? (
-                          <img src={imgs[0]} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          <img src={resolveImageUrl(imgs[0])} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-stone-300"><Layers className="w-8 h-8" /></div>
                         )}
@@ -1028,7 +1045,7 @@ export default function AdminSupplierDetailPage() {
                     return (
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
-                          <img src={p.image_url} alt={p.title || ''} onClick={() => setLightboxIdx(idx)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
+                          <img src={resolveImageUrl(p.image_url)} alt={p.title || ''} onClick={() => setLightboxIdx(idx)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
                           {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显 */}
                           <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                             <button onClick={() => setEditingProduct(p)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white transition-colors" title={t('Edit', '编辑')}>
