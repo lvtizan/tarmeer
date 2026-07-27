@@ -34,8 +34,6 @@ export interface Supplier {
   logo_url: string | null;
   cover_image_url: string | null;
   first_product_image?: string | null;
-  /** 无产品图时用最近一本画册的已渲染首页当封面（只有画册的供应商用） */
-  first_catalog_id?: number | null;
   origin: 'china' | 'dubai';
   categories: string[] | string | null;
   has_physical_store: number;
@@ -55,15 +53,13 @@ const SUPPLIER_CARD_FALLBACK = 'https://images.unsplash.com/photo-1600585154340-
 
 function SupplierCard({ s }: { s: Supplier }) {
   const cats = parseCategories(s.categories);
-  // 封面优先级：手动封面 → 首张产品图 → 画册已渲染首页(缩略) → 通用占位（只有画册的供应商也有代表图）
-  const catalogCover = s.first_catalog_id
-    ? resolveImageUrl(`/uploads/suppliers/catalogs/pages/${s.first_catalog_id}/1-thumb.webp`)
-    : null;
+  // 封面优先级：手动封面 → 首张产品图 → 通用占位。
+  // 注：只有画册的供应商暂用通用占位（不拿画册首页当封面，避免暴露厂家 logo/封面；待 AI 统一封面方案）
   const coverSrc = s.cover_image_url
     ? resolveVariantUrl(s.cover_image_url, 'thumb')
     : s.first_product_image
       ? resolveVariantUrl(s.first_product_image, 'thumb')
-      : catalogCover || SUPPLIER_CARD_FALLBACK;
+      : SUPPLIER_CARD_FALLBACK;
   return (
     <Link
       href={`/materials/suppliers/${s.slug}`}

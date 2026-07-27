@@ -416,7 +416,8 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   const [description, setDescription] = useState(product.description || '');
   const [price, setPrice] = useState(product.price != null ? String(product.price) : '');
   const [priceUnit, setPriceUnit] = useState(product.price_unit || '');
-  const [priceFrom, setPriceFrom] = useState(product.price_from != null ? String(product.price_from) : '');
+  // price_from 是布尔标志（价格是否显示为"起价"），不是数值
+  const [priceFrom, setPriceFrom] = useState(!!product.price_from);
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
 
@@ -432,7 +433,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
           description: description.trim() || null,
           price: price.trim() === '' ? null : Number(price),
           price_unit: priceUnit.trim() || null,
-          price_from: priceFrom.trim() === '' ? null : Number(priceFrom),
+          price_from: priceFrom ? 1 : 0,
           specs: cleaned.specs,
           certifications: cleaned.certifications,
           application_scenes: cleaned.application_scenes,
@@ -473,7 +474,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
               placeholder={t('Product description', '产品描述')}
               className={inputCls + ' resize-none py-2 leading-relaxed'} />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">{t('Price', '价格')}</label>
               <input type="number" min={0} step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" className={inputCls} />
@@ -482,11 +483,11 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
               <label className="block text-xs font-medium text-stone-500 mb-1">{t('Unit', '单位')}</label>
               <input type="text" value={priceUnit} onChange={e => setPriceUnit(e.target.value)} placeholder={t('e.g. /m²', '如 /m²')} className={inputCls} />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">{t('From price', '起价')}</label>
-              <input type="number" min={0} step="0.01" value={priceFrom} onChange={e => setPriceFrom(e.target.value)} placeholder="0" className={inputCls} />
-            </div>
           </div>
+          <label className="flex items-center gap-2 text-xs font-medium text-stone-600 cursor-pointer select-none">
+            <input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} className="h-4 w-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]/40" />
+            {t("Show price as 'from' (starting price)", '价格显示为「起」价（起步价）')}
+          </label>
           <ProductExtraFieldsEditor value={extras} onChange={setExtras} t={t} />
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
