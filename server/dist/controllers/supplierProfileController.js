@@ -13,6 +13,8 @@ const promises_1 = __importDefault(require("fs/promises"));
 const path_1 = __importDefault(require("path"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
+const supplierRedact_1 = require("../lib/supplierRedact");
+const redactPublicSupplier = supplierRedact_1.redactPublicSupplier;
 async function uploadLicense(req, res) {
     try {
         const userId = req.supplierUser.id;
@@ -60,7 +62,8 @@ async function listPublicSuppliers(req, res) {
         const category = req.query.category;
         const orderMode = req.query.order === 'home' ? 'home' : 'list';
         const displayOrderCol = orderMode === 'home' ? 'home_display_order' : 'list_display_order';
-        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND (\n  (SELECT COUNT(*) FROM supplier_projects spj WHERE spj.supplier_profile_id = sp.id AND spj.is_published = 1) > 0\n  OR (sp.source = 'partner' AND (SELECT COUNT(*) FROM supplier_products sprd WHERE sprd.supplier_profile_id = sp.id) > 0)\n)";
+        // 可见性门槛：供应商发布了任意已发布案例(projects) OR 任意产品(products) OR 任意画册(catalogs) 即可出现（不再限定 source='partner'）。
+        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND (\n  (SELECT COUNT(*) FROM supplier_projects spj WHERE spj.supplier_profile_id = sp.id AND spj.is_published = 1) > 0\n  OR (SELECT COUNT(*) FROM supplier_products sprd WHERE sprd.supplier_profile_id = sp.id) > 0\n  OR (SELECT COUNT(*) FROM supplier_catalogs sc WHERE sc.supplier_profile_id = sp.id) > 0\n)";
         const params = [];
         // 国家隔离铁律：列表必须按站点国家过滤（query 优先，回退 x-country header，再回退 ae）。
         // 否则合作方扇出到 vn 的供应商(越南文公司名/简介)会泄漏进 AE 列表——反之 AE 供应商也会漏到 VN。
@@ -72,8 +75,11 @@ async function listPublicSuppliers(req, res) {
             params.push(origin);
         }
         if (category) {
-            where += ' AND JSON_CONTAINS(sp.categories, ?)';
-            params.push(JSON.stringify(category));
+            // 分类筛选下拉的取值来自产品品类枚举(如 stone_materials)，但档案级 sp.categories 用的是旧枚举(如 stone)。
+            // 只匹配 sp.categories 会导致选任一新品类几乎都"No suppliers found"，且只传产品的供应商永远不出现。
+            // 故：命中档案分类 OR 该供应商有对应品类的产品，二者取一即算匹配。
+            where += ' AND (JSON_CONTAINS(sp.categories, ?) OR EXISTS (SELECT 1 FROM supplier_products sprd2 WHERE sprd2.supplier_profile_id = sp.id AND sprd2.category = ?))';
+            params.push(JSON.stringify(category), category);
         }
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total FROM supplier_profiles sp ${where}`, params);
         const total = countRows[0].total;
@@ -89,7 +95,7 @@ async function listPublicSuppliers(req, res) {
        ${where}
        ORDER BY ${orderBy}
        LIMIT ${limit} OFFSET ${offset}`, params);
-        res.json({ suppliers: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+        res.json({ suppliers: (Array.isArray(rows) ? rows : []).map(redactPublicSupplier), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }
     catch (error) {
         console.error('List suppliers error:', error);
@@ -112,7 +118,18 @@ async function getPublicProfile(req, res) {
         const [products] = await database_1.default.execute('SELECT * FROM supplier_products WHERE supplier_profile_id = ? ORDER BY sort_order, id', [supplier.id]);
         // Get catalogs
         const [catalogs] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [supplier.id]);
-        res.json({ supplier, products, catalogs });
+        // 自填文本(商品/目录标题·简介)里可能含品牌名,一并遮蔽(用真实厂家名匹配,遮完再 redact supplier)
+        const realName = supplier.company_name;
+        const maskedProducts = (Array.isArray(products) ? products : []).map((p) => ({
+            ...p,
+            title: supplierRedact_1.maskSupplierMentions(p.title, realName),
+            description: supplierRedact_1.maskSupplierMentions(p.description, realName),
+        }));
+        const maskedCatalogs = (Array.isArray(catalogs) ? catalogs : []).map((c) => ({
+            ...c,
+            title: supplierRedact_1.maskSupplierMentions(c.title, realName),
+        }));
+        res.json({ supplier: redactPublicSupplier(supplier), products: maskedProducts, catalogs: maskedCatalogs });
     }
     catch (error) {
         console.error('Get supplier profile error:', error);
