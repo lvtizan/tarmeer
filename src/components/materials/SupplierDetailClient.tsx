@@ -278,7 +278,14 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             {/* 右：PDF 电子书（供应商有 catalog 才显示；桌面右侧、移动端在文案下方），复用 flooring hero 同款控件 */}
             {catalogs.length > 0 && (
               <div className="w-full">
-                <CatalogReader catalogs={catalogs} />
+                <CatalogReader
+                  catalogs={catalogs}
+                  download={{
+                    companyName: supplier.company_name,
+                    companyId: supplier.id,
+                    companySlug: supplier.slug,
+                  }}
+                />
               </div>
             )}
           </div>

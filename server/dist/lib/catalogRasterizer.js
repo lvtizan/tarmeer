@@ -8,6 +8,7 @@ exports.rasterizeCatalog = rasterizeCatalog;
 exports.pageCountOf = pageCountOf;
 exports.pdfPathFromUrl = pdfPathFromUrl;
 exports.detectFrontMatterPages = detectFrontMatterPages;
+exports.buildCatalogPdf = buildCatalogPdf;
 
 const { execFile } = require("child_process");
 const { promisify } = require("util");
@@ -23,6 +24,29 @@ const PAGES_ROOT = path.join(CATALOG_DIR, "pages");
 const RETINA_WIDTH = 2400; // 视网膜全幅
 const THUMB_WIDTH = 200;
 const RENDER_DPI = 150;
+const PDF_WIDTH = 1600; // 下载 PDF 用的页宽（够清晰又不臃肿）
+
+// 把已渲染的产品页 WebP 合成一份"去标识版"下载 PDF（catalog.pdf）。
+// pdf-lib 只吃 JPEG/PNG，用 sharp 把 WebP 转 JPEG 再嵌入。pdf-lib 未装则抛错(调用方 try 掉)，不影响渲染主流程。
+async function buildCatalogPdf(outDir, pages) {
+  const { PDFDocument } = require("pdf-lib"); // 惰性 require：缺依赖只影响本功能
+  const doc = await PDFDocument.create();
+  let added = 0;
+  for (let i = 1; i <= pages; i++) {
+    let buf;
+    try { buf = await fs.readFile(path.join(outDir, `${i}.webp`)); } catch (_) { continue; }
+    const jpg = await sharp(buf).resize({ width: PDF_WIDTH, withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
+    const img = await doc.embedJpg(jpg);
+    const page = doc.addPage([img.width, img.height]);
+    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+    added++;
+  }
+  if (!added) throw new Error("no pages to compose");
+  const outPath = path.join(outDir, "catalog.pdf");
+  await fs.writeFile(outPath, await doc.save());
+  await fs.chmod(outPath, 0o644);
+  return outPath;
+}
 
 /** file_url(/uploads/...) → 服务器绝对路径 */
 function pdfPathFromUrl(fileUrl) {
@@ -149,6 +173,8 @@ async function rasterizeCatalog(catalogId, pdfPath, opts = {}) {
     }
     // rev：每次(重)渲染换新值 → 前端 URL 加 ?r=rev 打破 nginx 30d immutable 缓存(同名 WebP 内容变了也能刷新)
     await fs.writeFile(manifestPath, JSON.stringify({ pages: n, v: 2, w: RETINA_WIDTH, ar, rev: Date.now() }));
+    // 生成"去标识版"下载 PDF（只含已渲染的产品页）；失败不影响主流程
+    try { await buildCatalogPdf(outDir, n); } catch (e) { console.error("[catalog-pdf] #" + catalogId + " failed:", e.message); }
     // nginx/express 读取需 644
     for (const f of await fs.readdir(outDir)) {
       await fs.chmod(path.join(outDir, f), 0o644);

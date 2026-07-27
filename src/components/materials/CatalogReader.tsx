@@ -9,9 +9,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as pdfjsLib from 'pdfjs-dist';
-import { Maximize2, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { Maximize2, X, ChevronLeft, ChevronRight, BookOpen, Download } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import type { SupplierCatalog } from '@/lib/materialsApi';
+import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -58,8 +59,17 @@ async function fetchWithProgress(url: string, onProgress: (pct: number | null) =
   return URL.createObjectURL(new Blob(chunks as BlobPart[], { type: 'image/webp' }));
 }
 
-export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[] }) {
+// download 提供时：右上角显示下载按钮，点击先弹询单，提交成功后下载"去标识版"PDF（pages/<id>/catalog.pdf）
+export default function CatalogReader({
+  catalogs,
+  download,
+}: {
+  catalogs: SupplierCatalog[];
+  download?: { companyName?: string; companyId?: number; companySlug?: string };
+}) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [showInquiry, setShowInquiry] = useState(false);
+  const [unlocked, setUnlocked] = useState(false); // 询单提交后本会话解锁下载
   const [numPages, setNumPages] = useState(0);
   const [curPage, setCurPage] = useState(1);
   const [ratio, setRatio] = useState(1.6);
@@ -91,6 +101,23 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   const loadingTaskRef = useRef<ReturnType<typeof pdfjsLib.getDocument> | null>(null);
 
   const active = catalogs[activeIdx];
+
+  // 下载"去标识版"PDF（服务端渲染时生成的 catalog.pdf，只含展示的产品页）
+  const triggerDownload = useCallback(() => {
+    if (!active) return;
+    const url = resolveImageUrl(`/uploads/suppliers/catalogs/pages/${active.id}/catalog.pdf`);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(active.title || 'catalog').replace(/[^\w一-龥.-]+/g, '_')}.pdf`;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }, [active]);
+  const onDownloadClick = () => {
+    if (unlocked) triggerDownload(); // 本会话已填过询单 → 直接下
+    else setShowInquiry(true); // 否则先弹询单
+  };
 
   const CACHE_CAP = 12;
   const ensurePage = useCallback(async (p: number): Promise<string | null> => {
@@ -396,15 +423,28 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
           {curPage} / {numPages || '–'}
         </div>
 
-        {/* 全屏 / 退出（右上） */}
-        <button
-          type="button"
-          onClick={() => setFs((v) => !v)}
-          aria-label={fs ? 'Exit fullscreen' : 'Fullscreen'}
-          className="absolute top-2.5 right-2.5 z-[6] flex h-8 w-8 items-center justify-center rounded-lg bg-black/45 text-white backdrop-blur transition hover:bg-black/70"
-        >
-          {fs ? <X className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </button>
+        {/* 右上工具：下载(需填询单) + 全屏 */}
+        <div className="absolute top-2.5 right-2.5 z-[6] flex items-center gap-1.5">
+          {download && (
+            <button
+              type="button"
+              onClick={onDownloadClick}
+              aria-label="Download catalog"
+              className="flex h-8 items-center gap-1.5 rounded-lg bg-[#b8864a] px-2.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-[#a07640]"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Download</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setFs((v) => !v)}
+            aria-label={fs ? 'Exit fullscreen' : 'Fullscreen'}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/45 text-white backdrop-blur transition hover:bg-black/70"
+          >
+            {fs ? <X className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
 
         {/* 箭头 */}
         <button
@@ -480,5 +520,52 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   );
 
   // 全屏时 portal 到 body：逃出 hero 的 z-10 堆叠上下文，否则页面 sticky tab 条 / 顶栏(z-40+)会盖住全屏 PDF
-  return fs && typeof document !== 'undefined' ? createPortal(reader, document.body) : reader;
+  const rendered = fs && typeof document !== 'undefined' ? createPortal(reader, document.body) : reader;
+
+  // 下载询单弹层：portal 到 body，z 高于全屏(9999)；提交成功 → 解锁 + 触发下载 + 稍后自动关
+  const inquiryModal =
+    showInquiry && download && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 p-4"
+            onClick={() => setShowInquiry(false)}
+          >
+            <div
+              className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setShowInquiry(false)}
+                aria-label="Close"
+                className="absolute right-3 top-3 z-[1] flex h-8 w-8 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <ServiceInquiryCard
+                inline
+                title="Download this catalog"
+                subtitle="Tell us about your project — we’ll unlock the PDF and connect you."
+                submitLabel="Submit & Download"
+                companyId={download.companyId}
+                companyName={download.companyName}
+                companySlug={download.companySlug}
+                onSuccess={() => {
+                  setUnlocked(true);
+                  triggerDownload();
+                  setTimeout(() => setShowInquiry(false), 1600);
+                }}
+              />
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
+  return (
+    <>
+      {rendered}
+      {inquiryModal}
+    </>
+  );
 }
