@@ -45,6 +45,25 @@ export const MACRO_DEDICATED_PAGE: Record<string, string> = {
   flooring: '/materials/flooring',
 };
 
+// 大类统一风格首图（Agnes 生成的编辑级室内图，覆盖供应商随机产品图，彰显专业）。
+// 值为基名，组件按 `${base}-medium.webp` / `${base}-thumb.webp` 取。
+export const MACRO_COVER: Record<string, string> = {
+  furniture: '/images/materials/categories/furniture',
+  lighting: '/images/materials/categories/lighting',
+  stone: '/images/materials/categories/stone',
+  flooring: '/images/materials/categories/flooring',
+  'kitchen-bath': '/images/materials/categories/kitchen-bath',
+  'doors-windows': '/images/materials/categories/doors-windows',
+  stairs: '/images/materials/categories/stairs',
+  plants: '/images/materials/categories/plants',
+  curtains: '/images/materials/categories/curtains',
+  decorative: '/images/materials/categories/decorative',
+  spc: '/images/materials/categories/spc',
+  wpc: '/images/materials/categories/wpc',
+  'foamed-ceramic': '/images/materials/categories/foamed-ceramic',
+  'art-paint': '/images/materials/categories/art-paint',
+};
+
 // 每个大类一句英文说明
 export const MACRO_BLURB: Record<string, string> = {
   furniture: 'Living, bedroom, office & outdoor furniture',

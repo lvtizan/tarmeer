@@ -10,6 +10,7 @@ import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import {
   fetchMacroCategories,
   MACRO_BLURB,
+  MACRO_COVER,
   MACRO_DEDICATED_PAGE,
   type MacroCategory,
 } from '@/lib/materialMacros';
@@ -53,7 +54,17 @@ export default function ByMaterialBrowse() {
               href={MACRO_DEDICATED_PAGE[m.key] ?? `/materials/category/${m.key}`}
               className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-stone-200 isolate"
             >
-              {m.image ? (
+              {MACRO_COVER[m.key] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={`${MACRO_COVER[m.key]}-medium.webp`}
+                  srcSet={`${MACRO_COVER[m.key]}-thumb.webp 600w, ${MACRO_COVER[m.key]}-medium.webp 1200w`}
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  alt={`${m.label} materials from China, available in the UAE through Tarmeer`}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              ) : m.image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={m.image}
