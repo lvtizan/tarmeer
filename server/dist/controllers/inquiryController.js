@@ -134,10 +134,14 @@ async function getInquiries(req, res) {
             params.push(company_id);
         }
         if (type === 'homeowner') {
-            where += " AND (di.message IS NULL OR di.message NOT LIKE '[Company Inquiry]%')";
+            // 业主 = 既非公司线索也非材料询单
+            where += " AND (di.message IS NULL OR (di.message NOT LIKE '[Company Inquiry]%' AND di.message NOT LIKE '[Material Inquiry]%'))";
         }
         else if (type === 'company') {
             where += " AND di.message LIKE '[Company Inquiry]%'";
+        }
+        else if (type === 'material') {
+            where += " AND di.message LIKE '[Material Inquiry]%'";
         }
         if (search) {
             where += ' AND (di.name LIKE ? OR di.phone LIKE ? OR di.source_company_name LIKE ?)';

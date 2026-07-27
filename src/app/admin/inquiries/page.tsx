@@ -50,7 +50,7 @@ const CRM_STATUS_TOOLTIP = {
 };
 
 type StatusFilter = 'all' | 'new' | 'contacted' | 'resolved' | 'archived';
-type TypeFilter = 'homeowner' | 'company';
+type TypeFilter = 'homeowner' | 'company' | 'material';
 
 interface InquiryRecord {
   id: number;
@@ -124,7 +124,7 @@ export default function AdminInquiriesPage() {
   const [search] = useState(() => searchParams.get('search') || '');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(() => {
     const t = searchParams.get('type');
-    return t === 'homeowner' || t === 'company' ? t : 'homeowner';
+    return t === 'homeowner' || t === 'company' || t === 'material' ? t : 'homeowner';
   });
   const [error, setError] = useState('');
 
@@ -222,17 +222,19 @@ export default function AdminInquiriesPage() {
     loadInquiries();
   };
 
-  const [counts, setCounts] = useState<{ homeowner: number; company: number }>({ homeowner: 0, company: 0 });
+  const [counts, setCounts] = useState<{ homeowner: number; company: number; material: number }>({ homeowner: 0, company: 0, material: 0 });
   useEffect(() => {
     (async () => {
       try {
-        const [homeownerRes, companyRes] = await Promise.all([
+        const [homeownerRes, companyRes, materialRes] = await Promise.all([
           adminApi.getInquiries({ page: 1, limit: 1, type: 'homeowner', deleted: viewMode === 'deleted' }),
           adminApi.getInquiries({ page: 1, limit: 1, type: 'company', deleted: viewMode === 'deleted' }),
+          adminApi.getInquiries({ page: 1, limit: 1, type: 'material', deleted: viewMode === 'deleted' }),
         ]);
         setCounts({
           homeowner: homeownerRes.pagination.total,
           company: companyRes.pagination.total,
+          material: materialRes.pagination.total,
         });
       } catch {
         // non-blocking; leave counts at 0
@@ -259,6 +261,12 @@ export default function AdminInquiriesPage() {
             ? 'bg-[#b8864a] text-white'
             : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
           公司线索 ({counts.company})
+        </button>
+        <button onClick={() => { setTypeFilter('material'); setPage(1); }}
+          className={`h-9 rounded-2xl px-4 text-sm font-medium transition ${typeFilter === 'material'
+            ? 'bg-[#b8864a] text-white'
+            : 'border border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
+          材料询单 ({counts.material})
         </button>
 
         <div className="w-px h-5 bg-stone-200" />

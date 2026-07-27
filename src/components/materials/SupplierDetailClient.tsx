@@ -486,6 +486,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             <div ref={mobileFormRef} className="min-[1700px]:hidden">
               <ServiceInquiryCard
                 title={`Contact ${supplier.company_name}`}
+                leadTag="Material Inquiry"
                 companyName={supplier.company_name}
                 companySlug={supplier.slug}
                 companyId={supplier.id}
@@ -498,6 +499,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             <div className="sticky top-[112px]">
               <ServiceInquiryCard
                 title={`Contact ${supplier.company_name}`}
+                leadTag="Material Inquiry"
                 companyName={supplier.company_name}
                 companySlug={supplier.slug}
                 companyId={supplier.id}

@@ -204,11 +204,12 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   const fetchMenuCounts = useCallback(async () => {
     try {
-      const [usersRes, companiesRes, homeownerInqRes, companyInqRes, todayRes, suppliersRes, psProdRes, psCompRes] = await Promise.all([
+      const [usersRes, companiesRes, homeownerInqRes, companyInqRes, materialInqRes, todayRes, suppliersRes, psProdRes, psCompRes] = await Promise.all([
         adminApi.getUsers({ page: 1, limit: 1, country }),
         adminApi.getRegisteredCompanies({ page: 1, limit: 1, country }),
         adminApi.getInquiries({ page: 1, limit: 1, type: 'homeowner', country }),
         adminApi.getInquiries({ page: 1, limit: 1, type: 'company', country }),
+        adminApi.getInquiries({ page: 1, limit: 1, type: 'material', country }),
         adminApi.request(`/stats/today-new?country=${country}`).catch(() => null),
         adminApi.request(`/suppliers?page=1&limit=1&country=${country}`).catch(() => null),
         adminApi.getPartnerSyncProducts(country).catch(() => null),
@@ -222,7 +223,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         '/admin/users': usersRes?.pagination?.total ?? 0,
         '/admin/companies': companiesRes?.total ?? companiesRes?.pagination?.total ?? 0,
         '/admin/suppliers': suppliersRes?.pagination?.total ?? 0,
-        '/admin/inquiries': (homeownerInqRes?.pagination?.total ?? 0) + (companyInqRes?.pagination?.total ?? 0),
+        '/admin/inquiries': (homeownerInqRes?.pagination?.total ?? 0) + (companyInqRes?.pagination?.total ?? 0) + (materialInqRes?.pagination?.total ?? 0),
         '/admin/partner-sync': partnerPending,
       });
       if (todayRes) {

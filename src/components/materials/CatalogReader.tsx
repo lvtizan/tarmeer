@@ -547,6 +547,7 @@ export default function CatalogReader({
                 title="Download this catalog"
                 subtitle="Tell us about your project — we’ll unlock the PDF and connect you."
                 submitLabel="Submit & Download"
+                leadTag="Material Inquiry"
                 companyId={download.companyId}
                 companyName={download.companyName}
                 companySlug={download.companySlug}
