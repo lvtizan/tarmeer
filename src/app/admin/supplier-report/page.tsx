@@ -6,7 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { useAdminT } from '@/hooks/useAdminLang';
 
-interface Company { id: number; company_name: string; name_zh: string | null; status: string; is_published: number; source: string | null; created_at: string }
+interface Company { id: number; company_name: string; name_zh: string | null; status: string; is_published: number; source: string | null; created_at: string; listed_at: string }
 interface Account { account_id: number | null; email: string | null; name: string | null; count: number; companies: Company[] }
 interface Report { from: string; to: string; country: string; total: number; byDay: { date: string; count: number }[]; byAccount: Account[] }
 
@@ -48,7 +48,7 @@ export default function SupplierReportPage() {
       <div>
         <h1 className="text-xl font-bold text-[#1c1917]">{zh ? '供应商上架统计' : 'Supplier Listing Report'}</h1>
         <p className="mt-1 text-sm text-stone-500">
-          {zh ? '按日期统计上架了几家供应商，以及哪个号（供应商账号）传了哪几家。上架时间按创建时间计。' : 'Suppliers listed per date and which account uploaded which companies. Listing time = creation time.'}
+          {zh ? '按日期统计上架了几家供应商（已发布），以及哪个号（供应商账号）传了哪几家。上架时间＝发布/最后更新时间。' : 'Published suppliers listed per date and which account uploaded which companies. Listing time = publish/last-updated time.'}
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function SupplierReportPage() {
                           </span>
                           <span className="flex shrink-0 items-center gap-2 text-xs">
                             <StatusBadge status={c.status} published={!!c.is_published} zh={zh} />
-                            <span className="text-stone-400">{String(c.created_at).slice(0, 10)}</span>
+                            <span className="text-stone-400">{String(c.listed_at).slice(0, 10)}</span>
                           </span>
                         </li>
                       ))}

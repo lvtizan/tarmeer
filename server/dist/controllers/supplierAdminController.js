@@ -519,7 +519,10 @@ async function toggleSupplierProjectPublished(req, res) {
     }
 }
 // 供应商上架报表：按日期范围统计当天上架了几家 + 按「号」(supplier_user 账号) 分组哪个号传了哪几家。
-// 国家隔离：WHERE sp.country=?（admin 传当前 country）。"上架时间"=created_at。
+// 国家隔离：WHERE sp.country=?（admin 传当前 country）。
+// "上架"=已发布(is_published=1)，时间按 updated_at(发布/最后更新)——团队常先批量开号、之后每天挑老号
+// 填资料+发布上架，故用 created_at 会漏掉"老号当天上架"的；改按 updated_at 才对得上"每天至少一家"。
+// 注：updated_at 会被之后的任意编辑推后，属发布时间的近似(要精确需 published_at 列,见后续)。
 async function getSupplierReport(req, res) {
     try {
         const country = req.query.country || req.country || 'ae';
@@ -527,17 +530,17 @@ async function getSupplierReport(req, res) {
         let from = isDate(req.query.from) ? req.query.from : new Date().toISOString().slice(0, 10);
         let to = isDate(req.query.to) ? req.query.to : from;
         if (from > to) { const tmp = from; from = to; to = tmp; } // 直连 API 可能传反,保证 from<=to
-        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.status, sp.is_published, sp.source, sp.created_at,
-                DATE_FORMAT(sp.created_at, '%Y-%m-%d') AS created_date,
+        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.status, sp.is_published, sp.source, sp.created_at, sp.updated_at,
+                DATE_FORMAT(sp.updated_at, '%Y-%m-%d') AS listed_date,
                 sp.supplier_user_id, su.email AS account_email, su.full_name AS account_name
          FROM supplier_profiles sp
          LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
-         WHERE sp.country = ? AND DATE(sp.created_at) BETWEEN ? AND ?
-         ORDER BY sp.created_at DESC, sp.id DESC`, [country, from, to]);
+         WHERE sp.country = ? AND sp.is_published = 1 AND DATE(sp.updated_at) BETWEEN ? AND ?
+         ORDER BY sp.updated_at DESC, sp.id DESC`, [country, from, to]);
         // 按天统计（用 DB 格式化的日期，避免时区漂移）
         const byDayMap = {};
         for (const r of rows)
-            byDayMap[r.created_date] = (byDayMap[r.created_date] || 0) + 1;
+            byDayMap[r.listed_date] = (byDayMap[r.listed_date] || 0) + 1;
         const byDay = Object.entries(byDayMap).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? 1 : -1));
         // 按号(supplier_user_id)分组；NULL 归为「系统导入/无归属」
         const acctMap = new Map();
@@ -548,7 +551,7 @@ async function getSupplierReport(req, res) {
             }
             const a = acctMap.get(key);
             a.count += 1;
-            a.companies.push({ id: r.id, company_name: r.company_name, name_zh: r.name_zh, status: r.status, is_published: r.is_published, source: r.source, created_at: r.created_at });
+            a.companies.push({ id: r.id, company_name: r.company_name, name_zh: r.name_zh, status: r.status, is_published: r.is_published, source: r.source, created_at: r.created_at, listed_at: r.updated_at });
         }
         const byAccount = [...acctMap.values()].sort((a, b) => b.count - a.count);
         res.json({ from, to, country, total: rows.length, byDay, byAccount });
