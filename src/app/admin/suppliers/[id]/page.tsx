@@ -431,6 +431,14 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   const [priceFrom, setPriceFrom] = useState(!!product.price_from);
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
+  // 描述框:默认4行(min-h),超4行随内容自动撑高
+  const descRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }, [description]);
   // 品类下拉：接后台可管理的「产品分类」(子类按大类分组)，替代写死常量
   const [catGroups, setCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
   useEffect(() => {
@@ -473,10 +481,10 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       {/* 7:3 布局——左大图(浅底,非黑 lightbox)占大头,右侧一列 input */}
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden">
-        {/* 左 7：大图——填满面板高度(object-cover),图片高度随弹层自适应 */}
-        <div className="hidden md:flex md:w-[70%] items-center justify-center bg-stone-100 overflow-hidden">
+        {/* 左 7：大图——object-contain 完整显示全图(不裁切),浅底,居中留白 */}
+        <div className="hidden md:flex md:w-[70%] items-center justify-center bg-stone-100 overflow-hidden p-4">
           {product.image_url
-            ? <img src={resolveImageUrl(product.image_url)} alt={title || ''} className="w-full h-full object-cover" />
+            ? <img src={resolveImageUrl(product.image_url)} alt={title || ''} className="max-w-full max-h-full object-contain" />
             : <span className="text-stone-400 text-sm">{t('No image', '无图片')}</span>}
         </div>
         {/* 右 3：输入列 */}
@@ -507,9 +515,9 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">{t('Description', '描述')}</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
+              <textarea ref={descRef} value={description} onChange={e => setDescription(e.target.value)} rows={4}
                 placeholder={t('Product description', '产品描述')}
-                className={inputCls + ' resize-none py-2 leading-relaxed'} />
+                className={inputCls + ' resize-none py-2 leading-relaxed min-h-[108px] overflow-hidden'} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
