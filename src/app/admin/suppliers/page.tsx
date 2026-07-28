@@ -196,7 +196,7 @@ export default function AdminSuppliersPage() {
       t('Status', '状态'),
       t('Products', '商品数'),
       t('Email', '邮箱'),
-      t('Joined', '加入时间'),
+      t('Listed', '上架时间'),
     ];
     const rows = suppliers.map(s => [
       esc(s.name_zh ?? ''),
@@ -205,7 +205,7 @@ export default function AdminSuppliersPage() {
       esc(s.status),
       esc(s.product_count),
       esc(s.user_email),
-      esc(s.created_at),
+      esc(s.published_at || s.updated_at),
     ].join(','));
     const csv = [headers.map(esc).join(','), ...rows].join('\r\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
@@ -374,7 +374,7 @@ export default function AdminSuppliersPage() {
                 const list = [...suppliers];
                 if (productSort) list.sort((a, b) => productSort === 'asc' ? a.product_count - b.product_count : b.product_count - a.product_count);
                 if (joinedSort) list.sort((a, b) => {
-                  const d = new Date(a.published_at || a.created_at).getTime() - new Date(b.published_at || b.created_at).getTime();
+                  const d = new Date(a.published_at || a.updated_at).getTime() - new Date(b.published_at || b.updated_at).getTime();
                   return joinedSort === 'asc' ? d : -d;
                 });
                 if (editedSort) list.sort((a, b) => {
@@ -499,7 +499,7 @@ export default function AdminSuppliersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-stone-600 text-[15px] tabular-nums font-mono">{s.weight_score ?? '—'}</td>
-                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.published_at || s.created_at)}</td>
+                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.published_at || s.updated_at)}</td>
                   <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{s.updated_at ? formatAdminDateTime(s.updated_at) : '—'}</td>
                   <td className="px-4 py-3">
                     <AdminRowActions actions={[

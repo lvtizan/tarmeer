@@ -72,7 +72,7 @@ async function ensurePartnerSupplier(partner, country, company, supplierRef) {
   if (clash[0]) slug = `${slug}-${Date.now() % 100000}`;
   // 新上传的 partner 供应商建为 'pending'——需后台审核通过(status→approved)才在前端展示
   const [r] = await pool.execute(
-    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, partner_supplier_ref, status, is_published) VALUES (NULL,?,?,?,?,?,?,?,?, 'china', 'partner', ?, ?, 'pending', 1)",
+    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, partner_supplier_ref, status, is_published, published_at) VALUES (NULL,?,?,?,?,?,?,?,?, 'china', 'partner', ?, ?, 'pending', 1, NOW())",
     [name, slug, desc, addr, phone, website, whatsapp, country, partner.id, supplierRef || null]);
   return r.insertId;
 }
