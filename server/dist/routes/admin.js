@@ -433,28 +433,27 @@ router.get('/portfolio-images', adminAuth_1.requireAdmin, async (req, res) => {
 });
 // Supplier management
 router.get('/suppliers', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.listSuppliers);
+// 上架报表：必须在 /suppliers/:id 之前注册,否则被 :id 捕获
+router.get('/suppliers/report', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierReport);
 router.get('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierDetail);
+// 编辑类操作需 can_view_suppliers(查看=查看+编辑);审批/删除供应商/替换目录文件保持 can_approve(更高权限)
 router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.updateSupplierStatus);
-router.put('/suppliers/:id', supplierAdminController_1.updateSupplier);
+router.put('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.updateSupplier);
 router.delete('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.deleteSupplier);
-router.post('/suppliers/:id/products', supplierAdminController_1.adminAddProduct);
-router.put('/suppliers/:id/products/:productId', supplierAdminController_1.adminUpdateProduct);
-router.delete('/suppliers/:id/products/:productId', supplierAdminController_1.adminDeleteProduct);
+router.post('/suppliers/:id/products', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminAddProduct);
+router.put('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminUpdateProduct);
+router.delete('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteProduct);
 router.put('/suppliers/catalogs/:id/file', (0, adminAuth_1.requirePermission)('can_approve'), uploadLargePdf.single('file'), supplierAdminController_1.adminReplaceCatalogFile);
-router.patch('/suppliers/catalogs/:id/title', supplierAdminController_1.adminRenameCatalog);
-router.put('/suppliers/:id/products/:productId/image', upload.single('file'), supplierAdminController_1.adminReplaceProductImage);
-router.post('/suppliers/:id/project-image', upload.single('file'), supplierAdminController_1.adminUploadProjectImage);
-router.post('/suppliers/:id/projects', supplierAdminController_1.adminAddProject);
-router.put('/suppliers/:id/projects/:projectId', supplierAdminController_1.adminUpdateProject);
-router.delete('/suppliers/:id/projects/:projectId', supplierAdminController_1.adminDeleteProject);
-router.put('/suppliers/:id/home-order', supplierAdminController_1.setSupplierHomeOrder);
-router.put('/suppliers/:id/list-order', supplierAdminController_1.setSupplierListOrder);
-router.put('/suppliers/:id/toggle-published', supplierAdminController_1.toggleSupplierPublished);
-router.put('/suppliers/:id/projects/:projectId/toggle-published', supplierAdminController_1.toggleSupplierProjectPublished);
-// Sourcing requests（中国新材料采购线索：sample/visit/sourcing/designer_partner，spec §3.3，对齐 inquiries 鉴权模式）
-const sourcingRequestController_1 = require("../controllers/sourcingRequestController");
-router.get('/sourcing-requests', sourcingRequestController_1.adminListSourcingRequests);
-router.put('/sourcing-requests/:id/status', sourcingRequestController_1.adminUpdateSourcingRequestStatus);
+router.patch('/suppliers/catalogs/:id/title', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminRenameCatalog);
+router.put('/suppliers/:id/products/:productId/image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), upload.single('file'), supplierAdminController_1.adminReplaceProductImage);
+router.post('/suppliers/:id/project-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), upload.single('file'), supplierAdminController_1.adminUploadProjectImage);
+router.post('/suppliers/:id/projects', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminAddProject);
+router.put('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminUpdateProject);
+router.delete('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteProject);
+router.put('/suppliers/:id/home-order', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.setSupplierHomeOrder);
+router.put('/suppliers/:id/list-order', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.setSupplierListOrder);
+router.put('/suppliers/:id/toggle-published', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.toggleSupplierPublished);
+router.put('/suppliers/:id/projects/:projectId/toggle-published', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.toggleSupplierProjectPublished);
 // Admin management (super admin only)
 router.get('/admins', adminAuth_1.requireSuperAdmin, adminController_1.listAdmins);
 router.post('/admins', adminAuth_1.requireSuperAdmin, adminController_1.createSubAdmin);
