@@ -191,7 +191,7 @@ async function listSuppliers(req, res) {
        ORDER BY CASE WHEN GREATEST(COALESCE(sp.home_display_order,0), COALESCE(sp.list_display_order,0)) > 0 THEN 0 ELSE 1 END,
                 LEAST(CASE WHEN sp.home_display_order > 0 THEN sp.home_display_order ELSE 999999 END,
                       CASE WHEN sp.list_display_order > 0 THEN sp.list_display_order ELSE 999999 END) ASC,
-                sp.created_at DESC
+                COALESCE(sp.updated_at, sp.created_at) DESC
        LIMIT ${limit} OFFSET ${offset}`, params);
         res.json({ suppliers: rows, partnerCount, allCount, teamCount, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }

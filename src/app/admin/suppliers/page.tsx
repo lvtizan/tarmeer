@@ -47,9 +47,9 @@ export default function AdminSuppliersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
-  const [productSort, setProductSort] = useState<'asc' | 'desc' | null>('desc'); // 默认按产品数从多到少倒序
+  const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>(null);
-  const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>(null);
+  const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>('desc'); // 默认「最后编辑/上架」从新到旧,最新上架的在最前(与服务端 ORDER BY 一致)
   const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
@@ -336,36 +336,36 @@ export default function AdminSuppliersPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-stone-200 overflow-x-auto">
-          <table className="w-full text-[15px]">
+          <table className="w-full text-sm">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200 text-sm">
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Company', '公司')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">{t('Chinese Name', '中文名')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Origin', '产地')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Categories', '品类')}</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Status', '状态')}</th>
+                <th className="text-left px-2.5 py-2.5 font-medium text-stone-600">{t('Company', '公司')}</th>
+                <th className="text-left px-2.5 py-2.5 font-medium text-stone-600 whitespace-nowrap">{t('Chinese Name', '中文名')}</th>
+                <th className="text-left px-2.5 py-2.5 font-medium text-stone-600">{t('Origin', '产地')}</th>
+                <th className="text-left px-2.5 py-2.5 font-medium text-stone-600">{t('Categories', '品类')}</th>
+                <th className="text-left px-2.5 py-2.5 font-medium text-stone-600">{t('Status', '状态')}</th>
                 <th
-                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
+                  className="text-left px-2.5 py-2.5 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
                   onClick={() => setProductSort(s => s === 'desc' ? 'asc' : 'desc')}
                 >
                   {t('Products', '产品')} {productSort === 'asc' ? '↑' : productSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">首页排序</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">列表排序</th>
-                <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">权重</th>
+                <th className="hidden xl:table-cell text-left px-2.5 py-2.5 font-medium text-stone-600 whitespace-nowrap">首页排序</th>
+                <th className="hidden xl:table-cell text-left px-2.5 py-2.5 font-medium text-stone-600 whitespace-nowrap">列表排序</th>
+                <th className="hidden xl:table-cell text-left px-2.5 py-2.5 font-medium text-stone-600 whitespace-nowrap">权重</th>
                 <th
-                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
+                  className="text-left px-2.5 py-2.5 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
                   onClick={() => { setEditedSort(null); setJoinedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Joined', '加入时间')} {joinedSort === 'asc' ? '↑' : joinedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
                 <th
-                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
+                  className="text-left px-2.5 py-2.5 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
                   onClick={() => { setJoinedSort(null); setEditedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Last Edited', '最后编辑')} {editedSort === 'asc' ? '↑' : editedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
-                <th className="px-4 py-3" />
+                <th className="px-2.5 py-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -387,7 +387,7 @@ export default function AdminSuppliersPage() {
                   className="border-b border-stone-100 hover:bg-stone-50/50 cursor-pointer"
                   onClick={() => router.push(`/admin/suppliers/${s.id}`)}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-2.5 py-2.5">
                     {editingName[s.id] !== undefined ? (
                       <div onClick={e => e.stopPropagation()}>
                         <input
@@ -433,7 +433,7 @@ export default function AdminSuppliersPage() {
                     )}
                     <div className="text-[14px] text-stone-400 mt-0.5">{s.user_email}</div>
                   </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="px-2.5 py-2.5" onClick={e => e.stopPropagation()}>
                     <input
                       type="text"
                       value={editingNameZh[s.id] ?? (s.name_zh ?? '')}
@@ -444,21 +444,21 @@ export default function AdminSuppliersPage() {
                       className="w-32 px-2 py-1 text-[14px] bg-white border border-stone-200 rounded focus:outline-none focus:border-[#b8864a]"
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-2.5 py-2.5">
                     <span className={`text-[15px] font-medium px-2.5 py-0.5 rounded-full ${
                       s.origin === 'china' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
                     }`}>
                       {s.origin === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-2.5 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {parseCats(s.categories).slice(0, 2).map(c => (
                         <span key={c} className="text-[13px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{c}</span>
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-2.5 py-2.5">
                     <span className={`text-[15px] font-medium px-2.5 py-0.5 rounded-full ${
                       s.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
                       s.status === 'rejected' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
@@ -466,8 +466,8 @@ export default function AdminSuppliersPage() {
                       {s.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-[15px] text-stone-600">{s.product_count}</td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="px-2.5 py-2.5 text-[15px] text-stone-600">{s.product_count}</td>
+                  <td className="hidden xl:table-cell px-2.5 py-2.5" onClick={e => e.stopPropagation()}>
                     <div className="relative">
                       {orderToast?.key === getEditKey(s.id, 'home') && (
                         <div className="absolute -top-8 left-0 bg-white border border-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">{orderToast.msg}</div>
@@ -482,7 +482,7 @@ export default function AdminSuppliersPage() {
                       />
                     </div>
                   </td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="hidden xl:table-cell px-2.5 py-2.5" onClick={e => e.stopPropagation()}>
                     <div className="relative">
                       {orderToast?.key === getEditKey(s.id, 'list') && (
                         <div className="absolute -top-8 left-0 bg-white border border-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-lg shadow-sm whitespace-nowrap">{orderToast.msg}</div>
@@ -497,10 +497,10 @@ export default function AdminSuppliersPage() {
                       />
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-stone-600 text-[15px] tabular-nums font-mono">{s.weight_score ?? '—'}</td>
-                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.created_at)}</td>
-                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{s.updated_at ? formatAdminDateTime(s.updated_at) : '—'}</td>
-                  <td className="px-4 py-3">
+                  <td className="hidden xl:table-cell px-2.5 py-2.5 text-stone-600 text-sm tabular-nums font-mono">{s.weight_score ?? '—'}</td>
+                  <td className={`px-2.5 py-2.5 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.created_at)}</td>
+                  <td className={`px-2.5 py-2.5 ${ADMIN_TIME_CLS}`}>{s.updated_at ? formatAdminDateTime(s.updated_at) : '—'}</td>
+                  <td className="px-2.5 py-2.5">
                     <AdminRowActions actions={[
                       {
                         icon: <Pencil size={14} />,
