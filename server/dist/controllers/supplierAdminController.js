@@ -191,7 +191,7 @@ async function listSuppliers(req, res) {
        ORDER BY CASE WHEN GREATEST(COALESCE(sp.home_display_order,0), COALESCE(sp.list_display_order,0)) > 0 THEN 0 ELSE 1 END,
                 LEAST(CASE WHEN sp.home_display_order > 0 THEN sp.home_display_order ELSE 999999 END,
                       CASE WHEN sp.list_display_order > 0 THEN sp.list_display_order ELSE 999999 END) ASC,
-                COALESCE(sp.updated_at, sp.created_at) DESC,
+                COALESCE(sp.published_at, sp.created_at) DESC,
                 sp.id DESC
        LIMIT ${limit} OFFSET ${offset}`, params);
         res.json({ suppliers: rows, partnerCount, allCount, teamCount, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
@@ -540,7 +540,13 @@ async function toggleSupplierPublished(req, res) {
     try {
         const { id } = req.params;
         const { is_published } = req.body;
-        await database_1.default.execute('UPDATE supplier_profiles SET is_published = ? WHERE id = ?', [is_published ? 1 : 0, id]);
+        if (is_published) {
+            // 首次上架记录 published_at；再次上架(曾下架)保留首次时间,不覆盖(COALESCE)
+            await database_1.default.execute('UPDATE supplier_profiles SET is_published = 1, published_at = COALESCE(published_at, NOW()) WHERE id = ?', [id]);
+        }
+        else {
+            await database_1.default.execute('UPDATE supplier_profiles SET is_published = 0 WHERE id = ?', [id]);
+        }
         await logSupplierAction(req, 'supplier_toggle_published', id, `供应商#${id} ${is_published ? '上架' : '下架'}`);
         res.json({ ok: true });
     }
@@ -568,9 +574,9 @@ async function toggleSupplierProjectPublished(req, res) {
 }
 // 供应商上架报表：按日期范围统计当天上架了几家 + 按「号」(supplier_user 账号) 分组哪个号传了哪几家。
 // 国家隔离：WHERE sp.country=?（admin 传当前 country）。
-// "上架"=已发布(is_published=1)，时间按 updated_at(发布/最后更新)——团队常先批量开号、之后每天挑老号
-// 填资料+发布上架，故用 created_at 会漏掉"老号当天上架"的；改按 updated_at 才对得上"每天至少一家"。
-// 注：updated_at 会被之后的任意编辑推后，属发布时间的近似(要精确需 published_at 列,见后续)。
+// "上架"=已发布(is_published=1)，时间按 published_at(首次发布上架时刻,toggleSupplierPublished 里写入)——
+// 团队常先批量开号、之后每天挑老号填资料+发布上架，published_at 精确记录上架当天且不随后续编辑漂移。
+// COALESCE(published_at, updated_at) 兜底历史行(回填前 published_at 为 NULL 时退回 updated_at)。
 async function getSupplierReport(req, res) {
     try {
         const country = req.query.country || req.country || 'ae';
@@ -578,13 +584,14 @@ async function getSupplierReport(req, res) {
         let from = isDate(req.query.from) ? req.query.from : new Date().toISOString().slice(0, 10);
         let to = isDate(req.query.to) ? req.query.to : from;
         if (from > to) { const tmp = from; from = to; to = tmp; } // 直连 API 可能传反,保证 from<=to
-        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.categories, sp.status, sp.is_published, sp.source, sp.created_at, sp.updated_at,
-                DATE_FORMAT(sp.updated_at, '%Y-%m-%d') AS listed_date,
+        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.categories, sp.status, sp.is_published, sp.source, sp.created_at, sp.updated_at, sp.published_at,
+                COALESCE(sp.published_at, sp.updated_at) AS listed_ts,
+                DATE_FORMAT(COALESCE(sp.published_at, sp.updated_at), '%Y-%m-%d') AS listed_date,
                 sp.supplier_user_id, su.email AS account_email, su.full_name AS account_name
          FROM supplier_profiles sp
          LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
-         WHERE sp.country = ? AND sp.is_published = 1 AND DATE(sp.updated_at) BETWEEN ? AND ?
-         ORDER BY sp.updated_at DESC, sp.id DESC`, [country, from, to]);
+         WHERE sp.country = ? AND sp.is_published = 1 AND DATE(COALESCE(sp.published_at, sp.updated_at)) BETWEEN ? AND ?
+         ORDER BY COALESCE(sp.published_at, sp.updated_at) DESC, sp.id DESC`, [country, from, to]);
         // 按天统计（用 DB 格式化的日期，避免时区漂移）
         const byDayMap = {};
         for (const r of rows)
@@ -595,7 +602,7 @@ async function getSupplierReport(req, res) {
         const suppliers = rows.map(r => ({
             id: r.id, company_name: r.company_name, name_zh: r.name_zh,
             categories: parseArr(r.categories), status: r.status, is_published: r.is_published,
-            listed_at: r.updated_at,
+            listed_at: r.listed_ts,
             account_id: r.supplier_user_id, account_email: r.account_email || null, account_name: r.account_name || null,
         }));
         res.json({ from, to, country, total: rows.length, byDay, suppliers });

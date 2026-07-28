@@ -524,6 +524,8 @@ const REQUIRED_COLUMNS = [
     { table: 'company_profiles', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     { table: 'uae_companies', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     { table: 'supplier_profiles', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
+    // 供应商首次上架(发布)时间——报表「上架日期」+列表「上架时间」用它,不随后续编辑漂移(见 toggleSupplierPublished/getSupplierReport)
+    { table: 'supplier_profiles', column: 'published_at', type: 'DATETIME NULL' },
     { table: 'projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     { table: 'supplier_projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     // 国家归属 — 业主需求按 phone 前缀定国家（隔离铁律，见 AGENTS.md / detectCountry.js）

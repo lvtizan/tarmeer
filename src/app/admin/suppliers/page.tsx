@@ -28,6 +28,7 @@ interface Supplier {
   catalog_count: number;
   created_at: string;
   updated_at: string;
+  published_at: string | null;
   home_display_order: number;
   list_display_order: number;
   weight_score: number | null;
@@ -48,8 +49,8 @@ export default function AdminSuppliersPage() {
   const [sourceFilter, setSourceFilter] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
-  const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>(null);
-  const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>('desc'); // 默认「最后编辑/上架」从新到旧,最新上架的在最前(与服务端 ORDER BY 一致)
+  const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>('desc'); // 默认「上架时间(published_at)」从新到旧,最新上架的在最前(与服务端 ORDER BY 一致)
+  const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
@@ -357,7 +358,7 @@ export default function AdminSuppliersPage() {
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
                   onClick={() => { setEditedSort(null); setJoinedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
-                  {t('Joined', '加入时间')} {joinedSort === 'asc' ? '↑' : joinedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
+                  {t('Listed', '上架时间')} {joinedSort === 'asc' ? '↑' : joinedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
@@ -373,7 +374,7 @@ export default function AdminSuppliersPage() {
                 const list = [...suppliers];
                 if (productSort) list.sort((a, b) => productSort === 'asc' ? a.product_count - b.product_count : b.product_count - a.product_count);
                 if (joinedSort) list.sort((a, b) => {
-                  const d = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                  const d = new Date(a.published_at || a.created_at).getTime() - new Date(b.published_at || b.created_at).getTime();
                   return joinedSort === 'asc' ? d : -d;
                 });
                 if (editedSort) list.sort((a, b) => {
@@ -498,7 +499,7 @@ export default function AdminSuppliersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-stone-600 text-[15px] tabular-nums font-mono">{s.weight_score ?? '—'}</td>
-                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.created_at)}</td>
+                  <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatAdminDateTime(s.published_at || s.created_at)}</td>
                   <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{s.updated_at ? formatAdminDateTime(s.updated_at) : '—'}</td>
                   <td className="px-4 py-3">
                     <AdminRowActions actions={[
