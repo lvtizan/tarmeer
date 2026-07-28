@@ -530,7 +530,7 @@ async function getSupplierReport(req, res) {
         let from = isDate(req.query.from) ? req.query.from : new Date().toISOString().slice(0, 10);
         let to = isDate(req.query.to) ? req.query.to : from;
         if (from > to) { const tmp = from; from = to; to = tmp; } // 直连 API 可能传反,保证 from<=to
-        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.status, sp.is_published, sp.source, sp.created_at, sp.updated_at,
+        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.categories, sp.status, sp.is_published, sp.source, sp.created_at, sp.updated_at,
                 DATE_FORMAT(sp.updated_at, '%Y-%m-%d') AS listed_date,
                 sp.supplier_user_id, su.email AS account_email, su.full_name AS account_name
          FROM supplier_profiles sp
@@ -542,19 +542,15 @@ async function getSupplierReport(req, res) {
         for (const r of rows)
             byDayMap[r.listed_date] = (byDayMap[r.listed_date] || 0) + 1;
         const byDay = Object.entries(byDayMap).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? 1 : -1));
-        // 按号(supplier_user_id)分组；NULL 归为「系统导入/无归属」
-        const acctMap = new Map();
-        for (const r of rows) {
-            const key = r.supplier_user_id == null ? 'null' : String(r.supplier_user_id);
-            if (!acctMap.has(key)) {
-                acctMap.set(key, { account_id: r.supplier_user_id, email: r.account_email || null, name: r.account_name || null, count: 0, companies: [] });
-            }
-            const a = acctMap.get(key);
-            a.count += 1;
-            a.companies.push({ id: r.id, company_name: r.company_name, name_zh: r.name_zh, status: r.status, is_published: r.is_published, source: r.source, created_at: r.created_at, listed_at: r.updated_at });
-        }
-        const byAccount = [...acctMap.values()].sort((a, b) => b.count - a.count);
-        res.json({ from, to, country, total: rows.length, byDay, byAccount });
+        // 扁平表格：一行一家（含「号」=供应商账号 email）。已按 updated_at DESC 排序。
+        const parseArr = (v) => { if (Array.isArray(v)) return v; if (!v) return []; try { const a = JSON.parse(v); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+        const suppliers = rows.map(r => ({
+            id: r.id, company_name: r.company_name, name_zh: r.name_zh,
+            categories: parseArr(r.categories), status: r.status, is_published: r.is_published,
+            listed_at: r.updated_at,
+            account_id: r.supplier_user_id, account_email: r.account_email || null, account_name: r.account_name || null,
+        }));
+        res.json({ from, to, country, total: rows.length, byDay, suppliers });
     }
     catch (error) {
         console.error('getSupplierReport error:', error);

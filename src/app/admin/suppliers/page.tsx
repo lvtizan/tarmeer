@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import AdminSelect from '@/components/ui/AdminSelect';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
@@ -237,6 +237,13 @@ export default function AdminSuppliersPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/admin/supplier-report"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            {t('Listing Report', '上架统计')}
+          </a>
           <button
             onClick={exportCsv}
             disabled={suppliers.length === 0}

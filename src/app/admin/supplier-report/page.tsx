@@ -1,14 +1,17 @@
 'use client';
 
-// 供应商上架统计：日期筛选 → 当天上架几家 + 按「号」(supplier 账号) 统计哪个号传了哪几家。
+// 供应商上架统计：按日期筛选 → 扁平表格(一行一家)：上架日期 / 公司 / 中文名 / 品类 / 号 / 状态。
 import { useState, useEffect, useCallback } from 'react';
 import { adminApi } from '@/lib/adminApi';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { useAdminT } from '@/hooks/useAdminLang';
 
-interface Company { id: number; company_name: string; name_zh: string | null; status: string; is_published: number; source: string | null; created_at: string; listed_at: string }
-interface Account { account_id: number | null; email: string | null; name: string | null; count: number; companies: Company[] }
-interface Report { from: string; to: string; country: string; total: number; byDay: { date: string; count: number }[]; byAccount: Account[] }
+interface Supplier {
+  id: number; company_name: string; name_zh: string | null; categories: string[];
+  status: string; is_published: number; listed_at: string;
+  account_id: number | null; account_email: string | null; account_name: string | null;
+}
+interface Report { from: string; to: string; country: string; total: number; byDay: { date: string; count: number }[]; suppliers: Supplier[] }
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
@@ -16,7 +19,7 @@ function StatusBadge({ status, published, zh }: { status: string; published: boo
   const ok = status === 'approved' && published;
   const cls = ok ? 'bg-green-50 text-green-600' : status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-stone-100 text-stone-500';
   const label = ok ? (zh ? '已上架' : 'Live') : status === 'pending' ? (zh ? '待审' : 'Pending') : status === 'rejected' ? (zh ? '已拒' : 'Rejected') : (zh ? '未发布' : 'Unpublished');
-  return <span className={`rounded px-1.5 py-0.5 font-medium ${cls}`}>{label}</span>;
+  return <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${cls}`}>{label}</span>;
 }
 
 export default function SupplierReportPage() {
@@ -42,13 +45,17 @@ export default function SupplierReportPage() {
   useEffect(() => { load(); }, [load]);
 
   const setToday = () => { const d = todayStr(); setFrom(d); setTo(d); };
+  const setLastDays = (n: number) => {
+    const t = new Date(); const f = new Date(); f.setDate(f.getDate() - (n - 1));
+    setTo(t.toISOString().slice(0, 10)); setFrom(f.toISOString().slice(0, 10));
+  };
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[#1c1917]">{zh ? '供应商上架统计' : 'Supplier Listing Report'}</h1>
         <p className="mt-1 text-sm text-stone-500">
-          {zh ? '按日期统计上架了几家供应商（已发布），以及哪个号（供应商账号）传了哪几家。上架时间＝发布/最后更新时间。' : 'Published suppliers listed per date and which account uploaded which companies. Listing time = publish/last-updated time.'}
+          {zh ? '按日期看当天上架了哪几家供应商、哪个号传的。上架时间＝发布/最后更新时间。' : 'Suppliers listed per date and which account uploaded them. Listing time = publish/last-updated time.'}
         </p>
       </div>
 
@@ -65,6 +72,7 @@ export default function SupplierReportPage() {
             className="h-10 rounded-lg border border-stone-200 bg-white px-3 text-sm text-[#1c1917] focus:border-[#b8864a] focus:outline-none" />
         </label>
         <button type="button" onClick={setToday} className="h-10 rounded-lg border border-stone-200 px-4 text-sm text-stone-600 hover:bg-stone-50">{zh ? '今天' : 'Today'}</button>
+        <button type="button" onClick={() => setLastDays(7)} className="h-10 rounded-lg border border-stone-200 px-4 text-sm text-stone-600 hover:bg-stone-50">{zh ? '近7天' : '7 days'}</button>
         <button type="button" onClick={load} className="h-10 rounded-lg bg-[#b8864a] px-5 text-sm font-medium text-white transition hover:bg-[#a07640]">{zh ? '查询' : 'Search'}</button>
       </div>
 
@@ -91,39 +99,41 @@ export default function SupplierReportPage() {
             )}
           </div>
 
-          {/* 按号统计 */}
-          <div className="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 className="mb-3 text-sm font-semibold text-stone-700">{zh ? '按号统计（哪个号传了哪几家）' : 'By Account (who uploaded what)'}</h2>
-            {data.byAccount.length === 0 ? (
-              <p className="py-8 text-center text-sm text-stone-400">{zh ? '该时间段没有上架记录。' : 'No listings in this period.'}</p>
+          {/* 扁平表格 */}
+          <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
+            {data.suppliers.length === 0 ? (
+              <p className="py-16 text-center text-sm text-stone-400">{zh ? '该时间段没有上架记录。' : 'No listings in this period.'}</p>
             ) : (
-              <div className="space-y-4">
-                {data.byAccount.map((a, i) => (
-                  <div key={a.account_id ?? `null-${i}`} className="overflow-hidden rounded-lg border border-stone-100">
-                    <div className="flex items-center justify-between bg-stone-50 px-4 py-2.5">
-                      <span className="min-w-0 truncate text-sm font-medium text-[#1c1917]">
-                        {a.email || (zh ? '系统导入 / 无归属' : 'System import / unattributed')}
-                        {a.name && a.name !== a.email && <span className="ml-2 text-xs text-stone-400">{a.name}</span>}
-                      </span>
-                      <span className="ml-2 shrink-0 rounded-full bg-[#b8864a]/10 px-2.5 py-0.5 text-xs font-bold text-[#b8864a]">{a.count}{zh ? ' 家' : ''}</span>
-                    </div>
-                    <ul className="divide-y divide-stone-100">
-                      {a.companies.map(c => (
-                        <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
-                          <span className="min-w-0 truncate">
-                            <a href={`/admin/suppliers/${c.id}`} className="text-[#1c1917] hover:text-[#b8864a]">{c.company_name}</a>
-                            {c.name_zh && <span className="ml-2 text-xs text-stone-400">{c.name_zh}</span>}
-                          </span>
-                          <span className="flex shrink-0 items-center gap-2 text-xs">
-                            <StatusBadge status={c.status} published={!!c.is_published} zh={zh} />
-                            <span className="text-stone-400">{String(c.listed_at).slice(0, 10)}</span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
+              <table className="w-full min-w-[820px] text-sm">
+                <thead>
+                  <tr className="border-b border-stone-200 bg-stone-50 text-left text-xs font-semibold uppercase tracking-wider text-stone-500">
+                    <th className="px-4 py-3">{zh ? '上架日期' : 'Listed'}</th>
+                    <th className="px-4 py-3">{zh ? '供应商全称' : 'Company'}</th>
+                    <th className="px-4 py-3">{zh ? '中文名' : 'Chinese Name'}</th>
+                    <th className="px-4 py-3">{zh ? '品类' : 'Category'}</th>
+                    <th className="px-4 py-3">{zh ? '号（账号）' : 'Account'}</th>
+                    <th className="px-4 py-3">{zh ? '状态' : 'Status'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {data.suppliers.map(s => (
+                    <tr key={s.id} className="hover:bg-stone-50/60">
+                      <td className="whitespace-nowrap px-4 py-2.5 text-stone-500">{String(s.listed_at).slice(0, 10)}</td>
+                      <td className="px-4 py-2.5">
+                        <a href={`/admin/suppliers/${s.id}`} className="font-medium text-[#1c1917] hover:text-[#b8864a]">{s.company_name}</a>
+                      </td>
+                      <td className="px-4 py-2.5 text-stone-500">{s.name_zh || '—'}</td>
+                      <td className="px-4 py-2.5 text-stone-500">{s.categories.length ? s.categories.join('、') : '—'}</td>
+                      <td className="px-4 py-2.5">
+                        {s.account_email
+                          ? <span className="text-stone-600">{s.account_email}</span>
+                          : <span className="text-stone-400">{zh ? '系统导入/无归属' : 'Unattributed'}</span>}
+                      </td>
+                      <td className="px-4 py-2.5"><StatusBadge status={s.status} published={!!s.is_published} zh={zh} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </>

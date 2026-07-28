@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail,
-  CircleHelp, Info, ClipboardList, CalendarDays, Package, PackagePlus, Tags, Menu, X, MapPin,
+  CircleHelp, Info, ClipboardList, Package, PackagePlus, Tags, Menu, X, MapPin,
   UserCheck, HandCoins, Images, MessageSquare, Hammer,
 } from 'lucide-react';
 import { AdminProvider, useAdmin } from '@/contexts/AdminContext';
@@ -43,11 +43,6 @@ const navItems = [
     to: '/admin/suppliers', labelEn: 'Suppliers', labelZh: '供应商', icon: Package, permission: 'can_view_suppliers' as const,
     infoEn: 'Manage building material suppliers, review applications, and track supplier leads.',
     infoZh: '管理建材供应商、审核入驻申请、跟踪供应商线索。',
-  },
-  {
-    to: '/admin/supplier-report', labelEn: 'Listing Report', labelZh: '上架统计', icon: CalendarDays, permission: 'can_view_suppliers' as const,
-    infoEn: 'How many suppliers were listed per date and which account uploaded which companies.',
-    infoZh: '按日期统计上架了几家供应商，以及哪个号（供应商账号）传了哪几家。',
   },
   {
     to: '/admin/partner-sync', labelEn: 'Partner Sync', labelZh: '合作方同步', icon: PackagePlus,
@@ -319,7 +314,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const filteredNavItems = isFieldStaff
     ? []
     : supplierScoped
-      ? navItems.filter(item => item.to === '/admin/suppliers' || item.to === '/admin/supplier-report')
+      ? navItems.filter(item => item.to === '/admin/suppliers')
       : navItems.filter(item =>
           (!('permission' in item) || !(item as { permission?: string }).permission || hasPermission((item as { permission: 'can_approve' | 'can_sort' | 'can_view_stats' | 'can_view_interviews' | 'can_manage_field_staff' | 'can_view_suppliers' }).permission))
         );
