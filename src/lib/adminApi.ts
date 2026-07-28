@@ -1068,6 +1068,12 @@ class AdminApiClient {
   async getInterview(id: number) {
     return this.request(`/interviews/${id}`);
   }
+  // 供应商上架报表：日期范围 → 当天上架几家 + 按号(supplier 账号)分组哪个号传了哪几家
+  async getSupplierReport(from: string, to: string, country?: string) {
+    const qs = new URLSearchParams({ from, to });
+    if (country) qs.set('country', country);
+    return this.request(`/suppliers/report?${qs.toString()}`);
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async updateInterview(id: number, data: Record<string, any>) {
     return this.request(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });

@@ -432,6 +432,8 @@ router.get('/portfolio-images', adminAuth_1.requireAdmin, async (req, res) => {
 });
 // Supplier management
 router.get('/suppliers', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.listSuppliers);
+// 上架报表：必须在 /suppliers/:id 之前注册,否则被 :id 捕获
+router.get('/suppliers/report', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierReport);
 router.get('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierDetail);
 // 编辑类操作需 can_view_suppliers(查看=查看+编辑);审批/删除供应商/替换目录文件保持 can_approve(更高权限)
 router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.updateSupplierStatus);

@@ -22,6 +22,7 @@ exports.setSupplierHomeOrder = setSupplierHomeOrder;
 exports.setSupplierListOrder = setSupplierListOrder;
 exports.toggleSupplierPublished = toggleSupplierPublished;
 exports.toggleSupplierProjectPublished = toggleSupplierProjectPublished;
+exports.getSupplierReport = getSupplierReport;
 const database_1 = __importDefault(require("../config/database"));
 const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
@@ -515,5 +516,45 @@ async function toggleSupplierProjectPublished(req, res) {
     catch (error) {
         console.error('Toggle supplier project published error:', error);
         res.status(500).json({ error: 'Failed to update project published status.' });
+    }
+}
+// 供应商上架报表：按日期范围统计当天上架了几家 + 按「号」(supplier_user 账号) 分组哪个号传了哪几家。
+// 国家隔离：WHERE sp.country=?（admin 传当前 country）。"上架时间"=created_at。
+async function getSupplierReport(req, res) {
+    try {
+        const country = req.query.country || req.country || 'ae';
+        const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+        let from = isDate(req.query.from) ? req.query.from : new Date().toISOString().slice(0, 10);
+        let to = isDate(req.query.to) ? req.query.to : from;
+        if (from > to) { const tmp = from; from = to; to = tmp; } // 直连 API 可能传反,保证 from<=to
+        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.status, sp.is_published, sp.source, sp.created_at,
+                DATE_FORMAT(sp.created_at, '%Y-%m-%d') AS created_date,
+                sp.supplier_user_id, su.email AS account_email, su.full_name AS account_name
+         FROM supplier_profiles sp
+         LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
+         WHERE sp.country = ? AND DATE(sp.created_at) BETWEEN ? AND ?
+         ORDER BY sp.created_at DESC, sp.id DESC`, [country, from, to]);
+        // 按天统计（用 DB 格式化的日期，避免时区漂移）
+        const byDayMap = {};
+        for (const r of rows)
+            byDayMap[r.created_date] = (byDayMap[r.created_date] || 0) + 1;
+        const byDay = Object.entries(byDayMap).map(([date, count]) => ({ date, count })).sort((a, b) => (a.date < b.date ? 1 : -1));
+        // 按号(supplier_user_id)分组；NULL 归为「系统导入/无归属」
+        const acctMap = new Map();
+        for (const r of rows) {
+            const key = r.supplier_user_id == null ? 'null' : String(r.supplier_user_id);
+            if (!acctMap.has(key)) {
+                acctMap.set(key, { account_id: r.supplier_user_id, email: r.account_email || null, name: r.account_name || null, count: 0, companies: [] });
+            }
+            const a = acctMap.get(key);
+            a.count += 1;
+            a.companies.push({ id: r.id, company_name: r.company_name, name_zh: r.name_zh, status: r.status, is_published: r.is_published, source: r.source, created_at: r.created_at });
+        }
+        const byAccount = [...acctMap.values()].sort((a, b) => b.count - a.count);
+        res.json({ from, to, country, total: rows.length, byDay, byAccount });
+    }
+    catch (error) {
+        console.error('getSupplierReport error:', error);
+        res.status(500).json({ error: 'Failed to load supplier report.' });
     }
 }
