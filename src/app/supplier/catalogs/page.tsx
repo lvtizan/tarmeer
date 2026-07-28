@@ -119,6 +119,7 @@ export default function SupplierCatalogsPage() {
                 setUploadedNames(prev => [...prev, original_name]);
                 if (original_name && !title.trim()) setTitle(original_name);
               }}
+              onRemove={(idx) => setUploadedNames(prev => prev.filter((_, i) => i !== idx))}
             />
             {tried && uploadedUrls.length === 0 && <p className="text-xs text-red-500 mt-1">{t('Please upload a file', '请先上传文件')}</p>}
           </div>

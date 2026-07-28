@@ -66,14 +66,16 @@ async function readEntries(entries: FileSystemEntry[]): Promise<File[]> {
   const files: File[] = [];
 
   for (const entry of entries) {
-    if (entry.isFile) {
-      const file = await getFile(entry as FileSystemFileEntry);
-      files.push(file);
-    } else if (entry.isDirectory) {
-      const dirReader = (entry as FileSystemDirectoryEntry).createReader();
-      const subEntries = await readDirectoryEntries(dirReader);
-      const subFiles = await readEntries(subEntries);
-      files.push(...subFiles);
+    try {
+      if (entry.isFile) {
+        files.push(await getFile(entry as FileSystemFileEntry));
+      } else if (entry.isDirectory) {
+        const dirReader = (entry as FileSystemDirectoryEntry).createReader();
+        const subEntries = await readDirectoryEntries(dirReader);
+        files.push(...await readEntries(subEntries));
+      }
+    } catch {
+      // 跳过读不了的文件/目录(损坏软链/权限/枚举后被删),不因单个失败而丢整批
     }
   }
 

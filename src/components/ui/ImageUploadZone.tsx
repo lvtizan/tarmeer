@@ -14,6 +14,8 @@ interface ImageUploadZoneProps {
   sublabel?: string;
   accept?: string;
   onFileMeta?: (meta: { original_name: string }) => void;
+  /** 删除第 idx 个已上传文件时通知父组件(用于同步平行的 names[] 等,避免错位) */
+  onRemove?: (idx: number) => void;
   chunkUploadUrl?: string; // if set, files > 4MB are uploaded in 2MB chunks
 }
 
@@ -48,6 +50,7 @@ export default function ImageUploadZone({
   sublabel = 'JPG · PNG · WebP',
   accept = 'image/*',
   onFileMeta,
+  onRemove,
   chunkUploadUrl,
 }: ImageUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
@@ -59,11 +62,20 @@ export default function ImageUploadZone({
   const valueRef = useRef(value);
   valueRef.current = value;
   const uploadManyRef = useRef<(files: File[]) => void>(() => {});
+  const uploadingRef = useRef(false); // 供 paste 判断,避免与进行中的上传并发导致状态错乱
 
   const acceptMatchers = accept.split(',').map(s => s.trim());
+  const fileExt = (name: string) => { const m = /\.([a-z0-9]+)$/i.exec(name || ''); return m ? m[1].toLowerCase() : ''; };
+  const IMG_EXTS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic', 'heif'];
+  // MIME 不匹配时(空 / octet-stream / 其它不可信值)一律按扩展名兜底,避免误判"不支持"。
   const matchesAccept = (file: File) => acceptMatchers.some(a => {
-    if (a.endsWith('/*')) return file.type.startsWith(a.slice(0, -1));
-    return file.type === a;
+    if (a.endsWith('/*')) {
+      const prefix = a.slice(0, -1); // 如 'image/'
+      if (file.type.startsWith(prefix)) return true;
+      return prefix === 'image/' && IMG_EXTS.includes(fileExt(file.name));
+    }
+    if (file.type === a) return true;
+    return a === 'application/pdf' && fileExt(file.name) === 'pdf';
   });
 
   const uploadOne = async (file: File): Promise<{ url: string; original_name?: string }> => {
@@ -94,37 +106,32 @@ export default function ImageUploadZone({
   };
 
   const uploadMany = async (files: File[]) => {
+    if (uploadingRef.current) return; // 上传进行中,忽略并发调用(如 paste / 二次拖入),避免状态错乱
     const valid = files.filter(matchesAccept);
     if (valid.length === 0) {
       if (files.length > 0) setErr('不支持该文件类型。');
       return;
     }
+    uploadingRef.current = true;
     setUploading(true);
     setProgress(0);
     setErr('');
-    const uploaded: string[] = [];
-    // original_name per uploaded file, index-aligned with `uploaded`. Consumers
-    // (e.g. catalogs) keep a parallel names[] array, so onFileMeta must fire once
-    // per file, in order — fall back to file.name so alignment never drifts.
-    const names: string[] = [];
     try {
-      // Sequential so the progress bar stays meaningful for folder uploads.
+      // 顺序上传；每传好一个就立即提交显示(增量),不等全部完成。
+      // valueRef 保证追加基于最新值,onFileMeta 与 onUpload 同步逐个触发(名称/URL 对齐)。
       for (const file of valid) {
         setProgress(0);
         const data = await uploadOne(file);
-        uploaded.push(data.url);
-        names.push(data.original_name || file.name);
+        if (!data.url) throw new Error('Upload failed'); // 服务端 2xx 但没返回 url → 不提交空值
+        const merged = [...valueRef.current, data.url];
+        valueRef.current = merged;
+        onUpload(merged);
+        if (onFileMeta) onFileMeta({ original_name: data.original_name || file.name });
       }
     } catch (e: unknown) {
       setErr((e instanceof Error ? e.message : null) || 'Upload failed');
     } finally {
-      // Commit whatever succeeded (even on partial failure) in a single update.
-      if (uploaded.length > 0) {
-        const merged = [...valueRef.current, ...uploaded];
-        valueRef.current = merged;
-        onUpload(merged);
-        if (onFileMeta) names.forEach(original_name => onFileMeta({ original_name }));
-      }
+      uploadingRef.current = false;
       setUploading(false);
       setProgress(0);
     }
@@ -146,9 +153,13 @@ export default function ImageUploadZone({
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    // Recurse into dropped folders, filtering by this zone's `accept`.
-    const { files } = await getDroppedFiles(e, matchesAccept);
-    if (files.length > 0) uploadMany(files);
+    try {
+      // Recurse into dropped folders, filtering by this zone's `accept`.
+      const { files } = await getDroppedFiles(e, matchesAccept);
+      if (files.length > 0) uploadMany(files);
+    } catch {
+      setErr('读取拖入内容失败,请重试或点击选择文件。');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,7 +167,7 @@ export default function ImageUploadZone({
     e.target.value = '';
   };
 
-  const remove = (idx: number) => onUpload(value.filter((_, i) => i !== idx));
+  const remove = (idx: number) => { onUpload(value.filter((_, i) => i !== idx)); onRemove?.(idx); };
 
   return (
     <div className="space-y-3">
