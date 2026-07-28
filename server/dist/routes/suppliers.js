@@ -67,6 +67,9 @@ router.get('/categories', (0, memoryCache_1.cacheMiddleware)(60), enumAdminContr
 // By Material 大类聚合（跨供应商标签归一）
 router.get('/macro-categories', (0, memoryCache_1.cacheMiddleware)(60), materialsMacro.getMacroCategories);
 router.get('/macro-categories/:key/products', (0, memoryCache_1.cacheMiddleware)(60), materialsMacro.getMacroProducts);
+// 材料搜索 Hub：全文搜索 + 左目录/mega 浮层数据
+router.get('/search', materialsMacro.getMaterialSearch);
+router.get('/mega-menu', (0, memoryCache_1.cacheMiddleware)(120), materialsMacro.getMegaMenu);
 // 中国新材料改版：跨供应商产品 feed + 产品详情（spec §3.1）。注意：必须先于 /detail/:slug 等通配路由注册。
 router.get('/products/public', (0, memoryCache_1.cacheMiddleware)(60), products.listPublicProductsFeed);
 router.get('/products/public/:id', products.getPublicProductDetail);

@@ -4,7 +4,25 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMacroCategories = getMacroCategories;
 exports.getMacroProducts = getMacroProducts;
+exports.getMaterialSearch = getMaterialSearch;
+exports.getMegaMenu = getMegaMenu;
 const database_1 = require("../config/database");
+
+// 原始标签 → 英文子类名（mega 浮层 chips 用）
+const SUBTAG_LABEL = {
+  furniture: 'General', italian_minimal: 'Italian Minimalist', italian_luxury: 'Italian Luxury',
+  modern_functional: 'Modern Functional', european_style: 'European', american_style: 'American',
+  french_style: 'French', wabi_sabi: 'Wabi-sabi', childrens_furn: "Children's", outdoor_furn: 'Outdoor',
+  office_furn: 'Office', hotel_furn: 'Hotel', beds: 'Beds', bedding: 'Bedding', wardrobe: 'Wardrobe',
+  whole_house: 'Whole-house', smart_home: 'Smart Home', lighting: 'General', lighting_new: 'New Arrivals',
+  stone: 'Marble & Stone', stone_materials: 'Stone Materials', flooring: 'Flooring', kitchen: 'Kitchen',
+  sanitary_ware: 'Sanitary Ware', bath: 'Bath', system_windows: 'System Windows', entry_doors: 'Entry Doors',
+  interior_doors: 'Interior Doors', stairs: 'Stairs', plants: 'Plants', curtains: 'Curtains',
+  new_indoor_decorative: 'Indoor Decorative', outdoor_deco: 'Outdoor Decor',
+};
+
+// LIKE 转义(防 % _ 被当通配) + 包裹
+const likeParam = (q) => '%' + String(q).replace(/[\\%_]/g, (c) => '\\' + c) + '%';
 
 // 供应商自由标签 → 干净大类（英文；未列出的标签(如 other)不计入大类浏览）
 const TAG_TO_MACRO = {
@@ -112,5 +130,116 @@ async function getMacroProducts(req, res) {
   } catch (error) {
     console.error('getMacroProducts error:', error);
     res.status(500).json({ error: 'Failed to load category products.' });
+  }
+}
+
+// GET /api/materials/search?q=&type=products|suppliers&country=&page= — 全文搜索(hub 大搜索)
+async function getMaterialSearch(req, res) {
+  try {
+    const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
+    const type = req.query.type === 'suppliers' ? 'suppliers' : 'products';
+    const q = String(req.query.q || '').trim();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(48, Math.max(1, parseInt(req.query.limit) || 24));
+    const offset = (page - 1) * limit;
+    if (!q) return res.json({ type, q, results: [], pagination: { page, limit, total: 0, totalPages: 0 } });
+    const like = likeParam(q);
+
+    if (type === 'suppliers') {
+      // 供应商：按公司名 / 品类标签模糊搜（country 参数比较，无 collation 问题）
+      const [cntRows] = await database_1.default.query(
+        `SELECT COUNT(*) total FROM supplier_profiles sp
+         WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1
+           AND (sp.company_name LIKE ? OR sp.categories LIKE ?)`,
+        [country, like, like]
+      );
+      const total = cntRows[0].total;
+      const [rows] = await database_1.default.query(
+        `SELECT sp.id, sp.slug, sp.company_name, sp.origin, sp.cover_image_url, sp.logo_url,
+           (SELECT image_url FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'' ORDER BY p.sort_order,p.id LIMIT 1) first_product_image
+         FROM supplier_profiles sp
+         WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1
+           AND (sp.company_name LIKE ? OR sp.categories LIKE ?)
+         ORDER BY (sp.company_name LIKE ?) DESC, sp.id DESC
+         LIMIT ${limit} OFFSET ${offset}`,
+        [country, like, like, like]
+      );
+      return res.json({ type, q, results: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+    }
+
+    // products：按产品标题(原/译) / 品类模糊搜，join 供应商取国家 + 公司
+    const [cntRows] = await database_1.default.query(
+      `SELECT COUNT(*) total FROM supplier_products p
+       JOIN supplier_profiles sp ON sp.id=p.supplier_profile_id
+       WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1 AND p.image_url IS NOT NULL AND p.image_url<>''
+         AND (p.title LIKE ? OR p.title_translated LIKE ? OR p.category LIKE ?)`,
+      [country, like, like, like]
+    );
+    const total = cntRows[0].total;
+    const [rows] = await database_1.default.query(
+      `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url, p.category,
+         sp.slug AS supplier_slug, sp.company_name AS supplier_name
+       FROM supplier_products p
+       JOIN supplier_profiles sp ON sp.id=p.supplier_profile_id
+       WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1 AND p.image_url IS NOT NULL AND p.image_url<>''
+         AND (p.title LIKE ? OR p.title_translated LIKE ? OR p.category LIKE ?)
+       ORDER BY (p.title LIKE ? OR p.title_translated LIKE ?) DESC, p.sort_order, p.id
+       LIMIT ${limit} OFFSET ${offset}`,
+      [country, like, like, like, like, like]
+    );
+    return res.json({ type, q, results: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  } catch (error) {
+    console.error('getMaterialSearch error:', error);
+    res.status(500).json({ error: 'Search failed.' });
+  }
+}
+
+// GET /api/materials/mega-menu?country= — hub 左目录 + 每类子类 + 精选供应商（一次返回）
+async function getMegaMenu(req, res) {
+  try {
+    const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
+    const [sup] = await database_1.default.query(
+      `SELECT sp.id, sp.slug, sp.company_name, sp.categories, sp.cover_image_url, sp.logo_url,
+         (SELECT image_url FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'' ORDER BY p.sort_order,p.id LIMIT 1) img,
+         (SELECT COUNT(*) FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'') pcnt
+       FROM supplier_profiles sp
+       WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1`,
+      [country]
+    );
+    const macros = {};
+    for (const s of sup) {
+      const pcnt = Number(s.pcnt) || 0;
+      if (pcnt === 0) continue; // 只算有产品的供应商（与 By-Material 口径一致）
+      const tags = String(s.categories || '').split(',').map(t => t.trim()).filter(Boolean);
+      const macroSet = new Set();
+      for (const t of tags) {
+        const m = TAG_TO_MACRO[t];
+        if (!m) continue;
+        macroSet.add(m);
+        if (!macros[m]) macros[m] = { key: m, label: MACRO_LABEL[m], productCount: 0, supplierCount: 0, subs: {}, suppliers: [] };
+        // 子类计数
+        if (!macros[m].subs[t]) macros[m].subs[t] = { tag: t, label: SUBTAG_LABEL[t] || t, count: 0 };
+        macros[m].subs[t].count += 1;
+      }
+      // 该供应商计入其所属每个大类的精选池(带图) + 计数
+      const supImg = s.cover_image_url || s.img || s.logo_url || null;
+      for (const m of macroSet) {
+        macros[m].productCount += pcnt;
+        macros[m].supplierCount += 1;
+        if (supImg) macros[m].suppliers.push({ slug: s.slug, name: s.company_name, image: supImg, pcnt });
+      }
+    }
+    const out = Object.values(macros).map((m) => ({
+      key: m.key,
+      label: m.label,
+      productCount: m.productCount,
+      supplierCount: m.supplierCount,
+      subcategories: Object.values(m.subs).sort((a, b) => b.count - a.count).slice(0, 8),
+      featuredSuppliers: m.suppliers.sort((a, b) => b.pcnt - a.pcnt).slice(0, 3),
+    })).sort((a, b) => b.productCount - a.productCount);
+    res.json({ macros: out, country });
+  } catch (error) {
+    console.error('getMegaMenu error:', error);
+    res.status(500).json({ error: 'Failed to load menu.' });
   }
 }
