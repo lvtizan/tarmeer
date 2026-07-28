@@ -45,10 +45,12 @@ const inputCls =
 // ── ProductAddModal ────────────────────────────────────────────────────────────
 function ProductAddModal({
   supplierId,
+  categoryOptions,
   onClose,
   onAdded,
 }: {
   supplierId: number;
+  categoryOptions: { value: string; label: string }[];
   onClose: () => void;
   onAdded: (product: Product) => void;
 }) {
@@ -148,8 +150,9 @@ function ProductAddModal({
               onChange={setCategory}
               options={[
                 { value: '', label: '选择分类' },
-                ...['wardrobe', 'kitchen', 'furniture', 'stone', 'lighting', 'plants', 'flooring', 'curtains', 'paint', 'hardware', 'other']
-                  .map(c => ({ value: c, label: c })),
+                ...categoryOptions,
+                // 当前值不在管理列表(旧/脏数据)也保留可见,避免保存时丢失
+                ...(category && !categoryOptions.some(o => o.value === category) ? [{ value: category, label: category }] : []),
               ]}
               className="w-full"
             />
@@ -174,11 +177,13 @@ function ProductAddModal({
 function ProductEditInlineModal({
   supplierId,
   product,
+  categoryOptions,
   onClose,
   onSaved,
 }: {
   supplierId: number;
   product: Product;
+  categoryOptions: { value: string; label: string }[];
   onClose: () => void;
   onSaved: (product: Product) => void;
 }) {
@@ -222,8 +227,9 @@ function ProductEditInlineModal({
               onChange={setCategory}
               options={[
                 { value: '', label: '无分类' },
-                ...['wardrobe', 'kitchen', 'furniture', 'stone', 'lighting', 'plants', 'flooring', 'curtains', 'paint', 'hardware', 'other']
-                  .map(c => ({ value: c, label: c })),
+                ...categoryOptions,
+                // 当前值不在管理列表(旧/脏数据)也保留可见,避免保存时丢失
+                ...(category && !categoryOptions.some(o => o.value === category) ? [{ value: category, label: category }] : []),
               ]}
               className="w-full"
             />
@@ -252,6 +258,8 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
   const [data, setData] = useState<Partial<SupplierData>>({});
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+  // 产品品类(动态,接后台可管理的「产品分类」),供内联新增/编辑弹窗下拉,替代写死列表
+  const [productCats, setProductCats] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -270,9 +278,11 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
     Promise.all([
       adminApi.request(`/suppliers/${supplierId}`),
       adminApi.request('/enums/supplier-categories').catch(() => ({ categories: [] })),
-    ]).then(([detail, catsRes]) => {
+      adminApi.request('/enums/product-categories').catch(() => ({ categories: [] })),
+    ]).then(([detail, catsRes, prodCatsRes]) => {
       const d = detail as { supplier?: Partial<SupplierData>; products?: Product[] };
       const cr = catsRes as { categories?: { is_enabled?: number; value: string; label: string }[] };
+      const pc = prodCatsRes as { categories?: { value: string; label: string; parent_value: string | null; is_enabled: number }[] };
       const s = d.supplier || {};
       if (typeof s.categories === 'string') {
         try { s.categories = JSON.parse(s.categories); } catch { s.categories = []; }
@@ -283,6 +293,12 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
       setCategories(
         (cr.categories || [])
           .filter((c) => c.is_enabled !== 0)
+          .map((c) => ({ value: c.value, label: c.label })),
+      );
+      // 只取启用的子类(与产品编辑器 optgroup 口径一致);AdminSelect 扁平,不分组
+      setProductCats(
+        (pc.categories || [])
+          .filter((c) => c.is_enabled !== 0 && c.parent_value)
           .map((c) => ({ value: c.value, label: c.label })),
       );
     }).catch((e: unknown) => setError((e instanceof Error ? e.message : null) || 'Failed to load'))
@@ -570,6 +586,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
         <ProductEditInlineModal
           supplierId={supplierId}
           product={editingProduct}
+          categoryOptions={productCats}
           onClose={() => setEditingProduct(null)}
           onSaved={updated => {
             setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
@@ -580,6 +597,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
       {showAddProduct && (
         <ProductAddModal
           supplierId={supplierId}
+          categoryOptions={productCats}
           onClose={() => setShowAddProduct(false)}
           onAdded={product => {
             setProducts(prev => [...prev, product]);
