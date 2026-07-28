@@ -6,8 +6,9 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays, Tag } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
+import ProductCategoriesManager from '@/components/admin/ProductCategoriesManager';
 import AdminSelect from '@/components/ui/AdminSelect';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
@@ -55,6 +56,7 @@ export default function AdminSuppliersPage() {
   const [orderToast, setOrderToast] = useState<{ msg: string; key: string } | null>(null);
   const [editingNameZh, setEditingNameZh] = useState<Record<number, string>>({});
   const [editingName, setEditingName] = useState<Record<number, string>>({});
+  const [showCatManager, setShowCatManager] = useState(false);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -237,6 +239,13 @@ export default function AdminSuppliersPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCatManager(true)}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
+          >
+            <Tag className="w-3.5 h-3.5" />
+            {t('Product Categories', '产品分类')}
+          </button>
           <a
             href="/admin/supplier-report"
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
@@ -523,6 +532,24 @@ export default function AdminSuppliersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* 产品分类管理弹层（两级：大类→子类，增删改+启停+拖拽） */}
+      {showCatManager && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm p-4 sm:p-8" onClick={() => setShowCatManager(false)}>
+          <div className="w-full max-w-3xl rounded-2xl bg-[#faf9f7] shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-bold text-[#2c2c2c]">{t('Product Categories', '产品分类')}</h2>
+                <p className="mt-0.5 text-xs text-stone-500">{t('Two levels: top categories (Building Materials / Soft Furnishing) → sub-categories. Products pick a sub-category.', '两级：大类（建材/软装）→ 子类；产品归到子类')}</p>
+              </div>
+              <button onClick={() => setShowCatManager(false)} className="p-1 text-stone-400 hover:text-stone-600" aria-label={t('Close', '关闭')}><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-5">
+              <ProductCategoriesManager />
+            </div>
+          </div>
         </div>
       )}
     </div>

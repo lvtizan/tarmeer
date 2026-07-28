@@ -64,6 +64,7 @@ const companyController_1 = require("../controllers/companyController");
 const roleAdmin = __importStar(require("../controllers/roleAdminController"));
 const companyMergeController_1 = require("../controllers/companyMergeController");
 const enumAdminController_1 = require("../controllers/enumAdminController");
+const productCategoryController_1 = require("../controllers/productCategoryController");
 const companyImportService_1 = require("../services/companyImportService");
 const multer_1 = __importDefault(require("multer"));
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -493,6 +494,13 @@ router.put('/enums/supplier-categories/reorder', adminAuth_1.requireAdmin, enumA
 router.put('/enums/supplier-categories/:value/toggle', adminAuth_1.requireAdmin, enumAdminController_1.toggleSupplierCategory);
 router.put('/enums/supplier-categories/:value', adminAuth_1.requireAdmin, enumAdminController_1.updateSupplierCategory);
 router.delete('/enums/supplier-categories/:value', adminAuth_1.requireAdmin, enumAdminController_1.deleteSupplierCategory);
+// Product categories (两级：大类 parent_value=NULL / 子类)。运营在供应商列表页「产品分类」弹层里管理
+router.get('/enums/product-categories', productCategoryController_1.listProductCategories);
+router.post('/enums/product-categories', adminAuth_1.requireAdmin, productCategoryController_1.createProductCategory);
+router.put('/enums/product-categories/reorder', adminAuth_1.requireAdmin, productCategoryController_1.reorderProductCategories);
+router.put('/enums/product-categories/:value/toggle', adminAuth_1.requireAdmin, productCategoryController_1.toggleProductCategory);
+router.put('/enums/product-categories/:value', adminAuth_1.requireAdmin, productCategoryController_1.updateProductCategory);
+router.delete('/enums/product-categories/:value', adminAuth_1.requireAdmin, productCategoryController_1.deleteProductCategory);
 // Supplier category groups
 router.get('/enums/supplier-category-groups', enumAdminController_1.listSupplierCategoryGroups);
 router.post('/enums/supplier-category-groups', adminAuth_1.requireAdmin, enumAdminController_1.createSupplierCategoryGroup);
