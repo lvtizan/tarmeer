@@ -11,6 +11,7 @@ exports.updateProject = updateProject;
 exports.deleteProject = deleteProject;
 const database_1 = __importDefault(require("../config/database"));
 const projectImageStorage_1 = require("../lib/projectImageStorage");
+const supplierRedact_1 = require("../lib/supplierRedact");
 async function getProfile(supplierUserId) {
     const [rows] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE supplier_user_id = ? LIMIT 1', [supplierUserId]);
     return rows[0] || null;
@@ -18,12 +19,19 @@ async function getProfile(supplierUserId) {
 async function listPublicProjects(req, res) {
     try {
         const { slug } = req.params;
-        const [profiles] = await database_1.default.execute("SELECT id FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        const [profiles] = await database_1.default.execute("SELECT id, company_name FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
         const profile = profiles[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
         const [projects] = await database_1.default.execute('SELECT * FROM supplier_projects WHERE supplier_profile_id = ? AND is_published = 1 ORDER BY sort_order ASC, id DESC', [profile.id]);
-        res.json({ projects });
+        // 公开去标识：自填项目标题/简介里含品牌名一并遮蔽（与 getPublicProject 同口径）
+        const realName = profile.company_name;
+        const maskedProjects = (Array.isArray(projects) ? projects : []).map((p) => ({
+            ...p,
+            title: supplierRedact_1.maskSupplierMentions(p.title, realName),
+            description: supplierRedact_1.maskSupplierMentions(p.description, realName),
+        }));
+        res.json({ projects: maskedProjects });
     }
     catch (error) {
         console.error('List public projects error:', error);
@@ -33,7 +41,7 @@ async function listPublicProjects(req, res) {
 async function getPublicProject(req, res) {
     try {
         const { slug, id } = req.params;
-        const [profiles] = await database_1.default.execute("SELECT id, company_name, slug, logo_url FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        const [profiles] = await database_1.default.execute("SELECT id, company_name, name_zh, slug, logo_url, categories FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
         const profile = profiles[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
@@ -42,7 +50,13 @@ async function getPublicProject(req, res) {
         if (!project)
             return res.status(404).json({ error: 'Project not found.' });
         const [allProjects] = await database_1.default.execute('SELECT id, title, images FROM supplier_projects WHERE supplier_profile_id = ? AND is_published = 1 ORDER BY sort_order ASC, id DESC', [profile.id]);
-        res.json({ project, supplier: profile, allProjects });
+        // 公开去标识：厂家名遮蔽、logo 隐藏；自填的项目标题/简介里若含品牌名(中英)一并遮蔽
+        const realName = profile.company_name;
+        const maskMentions = (txt) => supplierRedact_1.maskSupplierMentions(supplierRedact_1.maskSupplierMentions(txt, realName), profile.name_zh);
+        const maskedProject = { ...project, title: maskMentions(project.title), description: maskMentions(project.description) };
+        const maskedAll = (Array.isArray(allProjects) ? allProjects : []).map((p) => ({ ...p, title: maskMentions(p.title) }));
+        const redactedSupplier = { ...profile, company_name: supplierRedact_1.maskSupplierName(realName), name_zh: null, logo_url: null };
+        res.json({ project: maskedProject, supplier: redactedSupplier, allProjects: maskedAll });
     }
     catch (error) {
         console.error('Get public project error:', error);

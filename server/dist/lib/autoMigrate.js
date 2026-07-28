@@ -404,29 +404,6 @@ const REQUIRED_TABLES = [
     )`,
     },
     {
-        // 中国新材料改版：样品申请/到店预约/采购咨询/设计师合作 四类线索（spec §2.2）
-        name: 'sourcing_requests',
-        sql: `CREATE TABLE IF NOT EXISTS sourcing_requests (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      request_type ENUM('sample','visit','sourcing','designer_partner') NOT NULL,
-      name VARCHAR(120) NOT NULL,
-      phone VARCHAR(40) NOT NULL,
-      email VARCHAR(160) NULL,
-      company_name VARCHAR(160) NULL,
-      city VARCHAR(80) NULL,
-      message TEXT NULL,
-      preferred_date VARCHAR(40) NULL,
-      product_id INT NULL,
-      supplier_profile_id INT NULL,
-      source_page VARCHAR(500) NULL,
-      country VARCHAR(5) NOT NULL DEFAULT 'ae',
-      status ENUM('new','contacted','completed','rejected') NOT NULL DEFAULT 'new',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_sourcing_country_status (country, status),
-      INDEX idx_sourcing_type (request_type)
-    )`,
-    },
-    {
         name: 'feedback_replies',
         sql: `CREATE TABLE IF NOT EXISTS feedback_replies (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -529,10 +506,6 @@ const REQUIRED_COLUMNS = [
     // Supplier product auto-translation (site-language; original kept in title/description)
     { table: 'supplier_products', column: 'title_translated', type: 'VARCHAR(255) NULL' },
     { table: 'supplier_products', column: 'description_translated', type: 'TEXT NULL' },
-    // 中国新材料改版：产品规格/认证/应用场景（spec: docs/plans/china-materials-revamp-spec.md §2.1）
-    { table: 'supplier_products', column: 'specs', type: 'JSON NULL' },
-    { table: 'supplier_products', column: 'certifications', type: 'JSON NULL' },
-    { table: 'supplier_products', column: 'application_scenes', type: 'JSON NULL' },
     // Company multi-type + service area
     { table: 'company_profiles', column: 'company_types', type: 'JSON NULL' },
     { table: 'company_profiles', column: 'emirates_served', type: 'JSON NULL' },
@@ -802,8 +775,7 @@ async function runAutoMigrate() {
       `);
         }
         catch { /* ignore */ }
-        // 7c-4. Seed product_categories（两级：大类 parent_value=NULL / 子类）。
-        // 用 INSERT IGNORE：只在缺失时插入，绝不覆盖运营后续的改名/排序/启停。
+        // 7c-4. Seed product_categories（两级：大类 parent_value=NULL / 子类）。INSERT IGNORE 只补缺，不覆盖运营编辑
         try {
             await database_1.default.execute(`
         INSERT IGNORE INTO product_categories (value, label, parent_value, sort_order) VALUES

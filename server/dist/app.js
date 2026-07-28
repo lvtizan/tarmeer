@@ -61,7 +61,6 @@ const articles_1 = __importDefault(require("./routes/articles"));
 const guides_1 = __importDefault(require("./routes/guides"));
 const supplierAuth_1 = __importDefault(require("./routes/supplierAuth"));
 const suppliers_1 = __importDefault(require("./routes/suppliers"));
-const sourcingRequests_1 = __importDefault(require("./routes/sourcingRequests"));
 const field_1 = __importDefault(require("./routes/field"));
 const site_1 = __importDefault(require("./routes/site"));
 const integration_1 = __importDefault(require("./routes/integration"));
@@ -127,6 +126,12 @@ const publicReadLimiter = (0, express_rate_limit_1.default)({
     message: 'Too many requests, please slow down.',
     standardHeaders: true,
     legacyHeaders: false,
+    // 放行本机内网流量(SSR 直连 localhost:3002)——否则全站 SSR 共用一个 IP 桶，120/分一爆就整页 429("This page couldn't load")。
+    // trust proxy=1 下外部用户是真实 IP、照常限流不丢防爬。
+    skip: (req) => {
+        const ip = req.ip;
+        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    },
 });
 app.use('/api/companies', publicReadLimiter);
 app.use('/api/public/companies', publicReadLimiter);
@@ -428,7 +433,6 @@ app.use('/api/articles', articles_1.default);
 app.use('/api/guides', guides_1.default);
 app.use('/api/supplier/auth', supplierAuth_1.default);
 app.use('/api/suppliers', suppliers_1.default);
-app.use('/api/sourcing-requests', sourcingRequests_1.default);
 app.use('/api/field', field_1.default);
 app.use('/api/site', site_1.default);
 app.use('/api/integration', integration_1.default);

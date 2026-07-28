@@ -59,19 +59,15 @@ function handleValidation(req, res, next) {
     }
     next();
 }
-// DISABLE_AUTH_RATE_LIMIT=true 仅供本地 harness 测试用，生产环境不得设置
-const skipRateLimit = () => process.env.DISABLE_AUTH_RATE_LIMIT === 'true';
 const registerLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60 * 60 * 1000,
     max: 5,
-    message: 'Too many registration attempts. Please try again later.',
-    skip: skipRateLimit
+    message: 'Too many registration attempts. Please try again later.'
 });
 const verificationLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60 * 60 * 1000,
     max: 3,
-    message: 'Too many verification emails sent. Please try again later.',
-    skip: skipRateLimit
+    message: 'Too many verification emails sent. Please try again later.'
 });
 router.post('/register', registerLimiter, [
     (0, express_validator_1.body)('email').isEmail().withMessage('Please enter a valid email address'),
