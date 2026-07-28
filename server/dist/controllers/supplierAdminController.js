@@ -329,8 +329,22 @@ async function adminUpdateProduct(req, res) {
         const [rows] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [productId, id]);
         if (rows.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
-        const { title, category } = req.body;
-        await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ? WHERE id = ?', [title?.trim() || null, category || null, productId]);
+        const { title, category, specs } = req.body;
+        // specs: [{label,value}] 属性数组(材质/面料/规格等) → 存 JSON;只在传了数组时更新,否则保持原值。
+        let specsJson;
+        if (Array.isArray(specs)) {
+            const clean = specs
+                .filter(s => s && typeof s === 'object' && (String(s.label || '').trim() || String(s.value || '').trim()))
+                .map(s => ({ label: String(s.label || '').trim().slice(0, 60), value: String(s.value || '').trim().slice(0, 500) }))
+                .slice(0, 50);
+            specsJson = JSON.stringify(clean);
+        }
+        if (specsJson !== undefined) {
+            await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ?, specs = ? WHERE id = ?', [title?.trim() || null, category || null, specsJson, productId]);
+        }
+        else {
+            await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ? WHERE id = ?', [title?.trim() || null, category || null, productId]);
+        }
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
         await logSupplierAction(req, 'supplier_product_update', id, `供应商#${id} 编辑商品#${productId}`);
         res.json({ product: updated[0] });

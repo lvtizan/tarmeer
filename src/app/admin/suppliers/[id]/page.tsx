@@ -219,23 +219,45 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
 
 interface ProductEditModalProps {
   supplierId: number;
-  product: { id: number; image_url?: string; title?: string; category?: string };
+  product: { id: number; image_url?: string; title?: string; category?: string; specs?: unknown };
   onClose: () => void;
-  onSaved: (product: { id: number; title?: string; category?: string }) => void;
+  onSaved: (product: { id: number; title?: string; category?: string; specs?: unknown }) => void;
   t: (en: string, zh: string) => string;
+}
+
+// 兼容:specs 可能是 {label,value}[] 对象数组,或旧的 "label: value" 字符串数组,或 JSON 字符串。
+function toAttrs(raw: unknown): { label: string; value: string }[] {
+  let arr: unknown = raw;
+  if (typeof raw === 'string') { try { arr = JSON.parse(raw); } catch { return []; } }
+  if (!Array.isArray(arr)) return [];
+  return arr.map((item) => {
+    if (item && typeof item === 'object') {
+      const o = item as { label?: unknown; value?: unknown };
+      return { label: String(o.label ?? ''), value: String(o.value ?? '') };
+    }
+    const s = String(item ?? '');
+    const idx = s.indexOf(':');
+    return idx >= 0 ? { label: s.slice(0, idx).trim(), value: s.slice(idx + 1).trim() } : { label: '', value: s };
+  });
 }
 
 function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductEditModalProps) {
   const [title, setTitle] = useState(product.title || '');
   const [category, setCategory] = useState(product.category || '');
+  const [attrs, setAttrs] = useState<{ label: string; value: string }[]>(() => toAttrs(product.specs));
   const [saving, setSaving] = useState(false);
+
+  const addAttr = () => setAttrs(a => [...a, { label: '', value: '' }]);
+  const removeAttr = (i: number) => setAttrs(a => a.filter((_, idx) => idx !== i));
+  const setAttr = (i: number, k: 'label' | 'value', v: string) => setAttrs(a => a.map((x, idx) => idx === i ? { ...x, [k]: v } : x));
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      const specs = attrs.filter(a => a.label.trim() || a.value.trim());
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title: title.trim() || null, category: category || null }),
+        body: JSON.stringify({ title: title.trim() || null, category: category || null, specs }),
       });
       onSaved(data.product);
       showToast(t('Product updated', '产品已更新'), 'success');
@@ -246,32 +268,58 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
     }
   };
 
+  const cellInput = 'w-full h-8 px-2 rounded border border-stone-200 bg-white text-xs text-[#1c1917] focus:outline-none focus:border-[#b8864a]';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between p-5 border-b border-stone-100">
-          <h2 className="text-base font-bold text-[#2c2c2c]">{t('Edit Product', '编辑产品')}</h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[86vh] flex overflow-hidden">
+        {/* 左 8:大图 */}
+        <div className="hidden md:flex md:w-4/5 items-center justify-center bg-stone-900/95 p-4">
+          {product.image_url
+            ? <img src={product.image_url} alt={title || ''} className="max-w-full max-h-full object-contain rounded" />
+            : <span className="text-stone-500 text-sm">{t('No image', '无图片')}</span>}
         </div>
-        <div className="p-5 space-y-4">
-          {product.image_url && <img src={product.image_url} alt="" className="w-full aspect-video object-cover rounded-lg bg-stone-100" />}
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title', '名称')}</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Product title', '产品名称')} className={inputCls} />
+        {/* 右 2:属性编辑列 */}
+        <div className="flex w-full flex-col md:w-1/5 border-l border-stone-100">
+          <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Product Attributes', '产品属性')}</h2>
+            <button onClick={onClose} className="p-1 text-stone-400 hover:text-stone-600"><X className="w-5 h-5" /></button>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Category', '分类')}</label>
-            <select value={category} onChange={e => setCategory(e.target.value)} className={inputCls + ' cursor-pointer'}>
-              <option value="">{t('No category', '不分类')}</option>
-              {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-            </select>
+          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Title', '名称')}</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Product title', '产品名称')} className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Category', '分类')}</label>
+              <select value={category} onChange={e => setCategory(e.target.value)} className={inputCls + ' cursor-pointer'}>
+                <option value="">{t('No category', '不分类')}</option>
+                {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              </select>
+            </div>
+            <div className="border-t border-stone-100 pt-2">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-stone-600">{t('Specs (material/fabric/size…)', '属性（材质/面料/规格…）')}</span>
+                <button type="button" onClick={addAttr} className="inline-flex items-center gap-0.5 text-xs font-medium text-[#b8864a] hover:text-[#a07540]"><Plus className="w-3 h-3" />{t('Add', '加一项')}</button>
+              </div>
+              <div className="space-y-2">
+                {attrs.map((a, i) => (
+                  <div key={i} className="relative rounded-lg border border-stone-200 p-2">
+                    <button type="button" onClick={() => removeAttr(i)} title={t('Remove', '删除')} className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="h-3 w-3" /></button>
+                    <input type="text" value={a.label} onChange={e => setAttr(i, 'label', e.target.value)} placeholder={t('Title (e.g. Material)', '标题（如 材质）')} className={cellInput + ' mb-1 font-medium'} />
+                    <input type="text" value={a.value} onChange={e => setAttr(i, 'value', e.target.value)} placeholder={t('Value (e.g. Lambskin)', '内容（如 小羊皮）')} className={cellInput + ' text-stone-700'} />
+                  </div>
+                ))}
+                {attrs.length === 0 && <p className="text-xs text-stone-400">{t('Click "Add" for material / fabric / size…', '点"加一项"添加材质/面料/规格等')}</p>}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex justify-end gap-2 px-5 pb-5">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
-          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
-            {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
-          </button>
+          <div className="flex justify-end gap-2 border-t border-stone-100 px-4 py-3">
+            <button onClick={onClose} className="rounded-lg bg-stone-100 px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-200">{t('Cancel', '取消')}</button>
+            <button onClick={handleSave} disabled={saving} className="rounded-lg bg-[#b8864a] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#a07540] disabled:opacity-50">
+              {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -291,7 +339,7 @@ export default function AdminSupplierDetailPage() {
     has_physical_store?: boolean; store_address?: string; categories?: string[] | string;
     created_at: string;
   } | null>(null);
-  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string }>>([]);
+  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; specs?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number }>>([]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -306,7 +354,7 @@ export default function AdminSupplierDetailPage() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<{ id?: number; title?: string; location?: string; year?: number; area_sqm?: number; budget?: string; description?: string; images?: string[] | string } | null>(null);
   const [togglingPublished, setTogglingPublished] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; specs?: unknown } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
@@ -758,7 +806,7 @@ export default function AdminSupplierDetailPage() {
                     return (
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
-                          <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                          <img src={p.image_url} alt={p.title || ''} onClick={() => setEditingProduct(p)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
                           {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显 */}
                           <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                             <button onClick={() => setEditingProduct(p)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white transition-colors" title={t('Edit', '编辑')}>
