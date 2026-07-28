@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import MaterialsClient, { type Supplier } from '@/components/materials/MaterialsClient';
-import MaterialsTabs from '@/components/materials/MaterialsTabs';
+import MaterialsHub from '@/components/materials/MaterialsHub';
 import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
@@ -86,7 +86,7 @@ export default async function MaterialsPage() {
       />
       <Suspense fallback={<div className="py-20 text-center text-stone-400">Loading suppliers...</div>}>
         {isAe ? (
-          <MaterialsTabs initialSuppliers={initialSuppliers} showNewMaterialsEntry={isAe} />
+          <MaterialsHub />
         ) : (
           <MaterialsClient initialSuppliers={initialSuppliers} showNewMaterialsEntry={isAe} />
         )}

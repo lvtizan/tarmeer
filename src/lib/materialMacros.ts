@@ -127,3 +127,78 @@ export async function fetchMacroProducts(
     return { label: '', products: [], total: 0 };
   }
 }
+
+// ── 搜索 Hub 数据层（mega-menu 左目录/浮层 + 全文搜索）──
+export type MegaSub = { tag: string; label: string; count: number };
+export type MegaSupplier = { slug: string; name: string; image: string };
+export type MegaCategory = {
+  key: string;
+  label: string;
+  productCount: number;
+  supplierCount: number;
+  subcategories: MegaSub[];
+  featuredSuppliers: MegaSupplier[];
+};
+
+export async function fetchMegaMenu(country: string): Promise<MegaCategory[]> {
+  try {
+    const res = await fetch(`${API_BASE}/suppliers/mega-menu?country=${country}`, {
+      headers: { 'x-country': country },
+    });
+    if (!res.ok) return [];
+    const d = await res.json();
+    return (d.macros || []).map((m: MegaCategory) => ({
+      ...m,
+      featuredSuppliers: (m.featuredSuppliers || []).map((s) => ({ ...s, image: resolveImageUrl(s.image) })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export type SearchProduct = {
+  id: number;
+  title: string;
+  image_url: string;
+  category: string | null;
+  supplier_slug: string | null;
+  supplier_name: string | null;
+};
+export type SearchSupplier = {
+  id: number;
+  slug: string;
+  company_name: string;
+  origin: 'china' | 'dubai';
+  cover_image_url: string | null;
+  logo_url: string | null;
+  first_product_image: string | null;
+};
+
+export async function searchMaterials(
+  type: 'products' | 'suppliers',
+  q: string,
+  country: string,
+  page = 1,
+): Promise<{ type: 'products' | 'suppliers'; results: (SearchProduct | SearchSupplier)[]; total: number }> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/suppliers/search?type=${type}&q=${encodeURIComponent(q)}&country=${country}&page=${page}&limit=24`,
+      { headers: { 'x-country': country } },
+    );
+    if (!res.ok) return { type, results: [], total: 0 };
+    const d = await res.json();
+    const results = (d.results || []).map((r: SearchProduct & SearchSupplier) =>
+      type === 'products'
+        ? { ...r, image_url: resolveImageUrl(r.image_url) }
+        : {
+            ...r,
+            cover_image_url: r.cover_image_url ? resolveImageUrl(r.cover_image_url) : null,
+            logo_url: r.logo_url ? resolveImageUrl(r.logo_url) : null,
+            first_product_image: r.first_product_image ? resolveImageUrl(r.first_product_image) : null,
+          },
+    );
+    return { type, results, total: d.pagination?.total || 0 };
+  } catch {
+    return { type, results: [], total: 0 };
+  }
+}
