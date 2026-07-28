@@ -144,8 +144,7 @@ export default function SupplierCatalogsPage() {
               {t('Cancel', '取消')}
             </button>
             <button onClick={handleAdd} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
-              <Plus className="w-4 h-4" />
-              {saving ? t('Saving...', '保存中...') : t('Add Catalog', '添加目录')}
+              {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
             </button>
           </div>
         </div>
