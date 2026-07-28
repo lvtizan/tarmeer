@@ -295,10 +295,12 @@ async function adminAddProduct(req, res) {
         const [profileRows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE id = ?', [id]);
         if (profileRows.length === 0)
             return res.status(404).json({ error: 'Supplier not found.' });
-        const { title, description, category, image_url, sort_order } = req.body;
+        const { title, description, category, image_url, sort_order, specs, certifications, application_scenes } = req.body;
         if (!image_url)
             return res.status(400).json({ error: 'image_url is required.' });
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order) VALUES (?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0]);
+        // 新增时也落规格/认证/应用场景(与编辑一致);数组→JSON串(空→'[]'),未传→null
+        const jarr = (x) => Array.isArray(x) ? JSON.stringify(x) : null;
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0, jarr(specs), jarr(certifications), jarr(application_scenes)]);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [result.insertId]);
         await logSupplierAction(req, 'supplier_product_add', id, `供应商#${id} 新增商品#${result.insertId}`);
         res.status(201).json({ product: created[0] });
