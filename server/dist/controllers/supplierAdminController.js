@@ -329,21 +329,52 @@ async function adminUpdateProduct(req, res) {
         const [rows] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [productId, id]);
         if (rows.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
-        const { title, category, specs } = req.body;
-        // specs: [{label,value}] 属性数组(材质/面料/规格等) → 存 JSON;只在传了数组时更新,否则保持原值。
-        let specsJson;
-        if (Array.isArray(specs)) {
-            const clean = specs
-                .filter(s => s && typeof s === 'object' && (String(s.label || '').trim() || String(s.value || '').trim()))
-                .map(s => ({ label: String(s.label || '').trim().slice(0, 60), value: String(s.value || '').trim().slice(0, 500) }))
-                .slice(0, 50);
-            specsJson = JSON.stringify(clean);
+        const body = req.body || {};
+        // 部分更新:只改本次传了 key 的字段。避免其它入口(如 SupplierEditModal 只传 title/category)清空 description/price 等。
+        // 列名为硬编码白名单,仅值走参数化,无注入风险。
+        const has = (k) => Object.prototype.hasOwnProperty.call(body, k);
+        const sets = [];
+        const params = [];
+        if (has('title')) {
+            sets.push('title = ?');
+            params.push(body.title?.trim() || null);
         }
-        if (specsJson !== undefined) {
-            await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ?, specs = ? WHERE id = ?', [title?.trim() || null, category || null, specsJson, productId]);
+        if (has('category')) {
+            sets.push('category = ?');
+            params.push(body.category || null);
         }
-        else {
-            await database_1.default.execute('UPDATE supplier_products SET title = ?, category = ? WHERE id = ?', [title?.trim() || null, category || null, productId]);
+        if (has('description')) {
+            sets.push('description = ?');
+            params.push(body.description ?? null);
+        }
+        if (has('price')) {
+            const priceNum = (body.price === '' || body.price === undefined || body.price === null) ? null : Number(body.price);
+            sets.push('price = ?');
+            params.push((priceNum == null || Number.isNaN(priceNum)) ? null : priceNum);
+        }
+        if (has('price_unit')) {
+            sets.push('price_unit = ?');
+            params.push(body.price_unit || null);
+        }
+        if (has('price_from')) {
+            sets.push('price_from = ?');
+            params.push(body.price_from ? 1 : 0); // tinyint(1) 布尔,绝不 null
+        }
+        if (Array.isArray(body.specs)) {
+            sets.push('specs = ?');
+            params.push(JSON.stringify(body.specs));
+        }
+        if (Array.isArray(body.certifications)) {
+            sets.push('certifications = ?');
+            params.push(JSON.stringify(body.certifications));
+        }
+        if (Array.isArray(body.application_scenes)) {
+            sets.push('application_scenes = ?');
+            params.push(JSON.stringify(body.application_scenes));
+        }
+        if (sets.length > 0) {
+            params.push(productId);
+            await database_1.default.execute(`UPDATE supplier_products SET ${sets.join(', ')} WHERE id = ?`, params);
         }
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
         await logSupplierAction(req, 'supplier_product_update', id, `供应商#${id} 编辑商品#${productId}`);

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
+import { resolveImageUrl } from '@/lib/imageUrl';
 import SupplierEditModal from '@/components/admin/SupplierEditModal';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { showToast } from '@/components/ui/Toast';
@@ -32,7 +33,202 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const inputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
-const PRODUCT_CATEGORIES = ['wardrobe', 'kitchen', 'furniture', 'stone', 'lighting', 'plants', 'flooring', 'curtains', 'paint', 'hardware', 'other'];
+// 表单配色铁律：输入框背景必须 bg-white（新代码遵守，存量 inputCls 不动）
+const whiteInputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
+
+/* ── 产品补充字段（specs / certifications / application_scenes）── */
+
+// 应用场景 slug（本页独立来源；主站无公开材料 feed）
+const APPLICATION_SCENES: { slug: string; label: string }[] = [
+  { slug: 'feature-wall', label: 'Feature Walls' },
+  { slug: 'flooring', label: 'Flooring' },
+  { slug: 'countertop', label: 'Countertops & Surfaces' },
+  { slug: 'kitchen-bath', label: 'Kitchen & Bath' },
+  { slug: 'lighting', label: 'Lighting' },
+  { slug: 'furniture', label: 'Furniture' },
+  { slug: 'outdoor-garden', label: 'Outdoor & Garden' },
+  { slug: 'decor', label: 'Décor & Accents' },
+];
+
+// 场景中文标注（slug 与 APPLICATION_SCENES 对齐）
+const SCENE_ZH: Record<string, string> = {
+  'feature-wall': '特色墙',
+  'flooring': '地面',
+  'countertop': '台面',
+  'kitchen-bath': '厨卫',
+  'lighting': '灯光',
+  'furniture': '家具',
+  'outdoor-garden': '户外',
+  'decor': '软装',
+};
+
+interface ProductSpecRow { label: string; value: string }
+
+interface ProductExtraFields {
+  specs: ProductSpecRow[];
+  certifications: string[];
+  application_scenes: string[];
+}
+
+function emptyExtraFields(): ProductExtraFields {
+  return { specs: [], certifications: [], application_scenes: [] };
+}
+
+/** 后端可能返回 JSON 字符串或已 parse 的数组，两种都兼容 */
+function parseJsonArray<T>(raw: unknown): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as T[]) : [];
+    } catch { return []; }
+  }
+  return [];
+}
+
+function productToExtraFields(p: { specs?: unknown; certifications?: unknown; application_scenes?: unknown }): ProductExtraFields {
+  return {
+    specs: parseJsonArray<ProductSpecRow>(p.specs).map(s => ({ label: String(s?.label ?? ''), value: String(s?.value ?? '') })),
+    certifications: parseJsonArray<string>(p.certifications).map(String),
+    application_scenes: parseJsonArray<string>(p.application_scenes).map(String),
+  };
+}
+
+/** 提交前清洗：specs 去掉空行、certifications 去空白 */
+function cleanExtraFields(e: ProductExtraFields): ProductExtraFields {
+  return {
+    specs: e.specs.map(s => ({ label: s.label.trim(), value: s.value.trim() })).filter(s => s.label && s.value),
+    certifications: e.certifications.map(c => c.trim()).filter(Boolean),
+    application_scenes: e.application_scenes,
+  };
+}
+
+function ProductExtraFieldsEditor({ value, onChange, t }: {
+  value: ProductExtraFields;
+  onChange: (v: ProductExtraFields) => void;
+  t: (en: string, zh: string) => string;
+}) {
+  const [certInput, setCertInput] = useState('');
+
+  const setSpec = (idx: number, key: keyof ProductSpecRow, v: string) => {
+    onChange({ ...value, specs: value.specs.map((s, i) => i === idx ? { ...s, [key]: v } : s) });
+  };
+  const addSpecRow = () => onChange({ ...value, specs: [...value.specs, { label: '', value: '' }] });
+  const removeSpecRow = (idx: number) => onChange({ ...value, specs: value.specs.filter((_, i) => i !== idx) });
+
+  const addCert = () => {
+    const c = certInput.trim();
+    if (!c) return;
+    if (!value.certifications.includes(c)) {
+      onChange({ ...value, certifications: [...value.certifications, c] });
+    }
+    setCertInput('');
+  };
+  const removeCert = (c: string) => onChange({ ...value, certifications: value.certifications.filter(x => x !== c) });
+
+  const toggleScene = (slug: string) => {
+    onChange({
+      ...value,
+      application_scenes: value.application_scenes.includes(slug)
+        ? value.application_scenes.filter(s => s !== slug)
+        : [...value.application_scenes, slug],
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 规格（键值对行编辑器） */}
+      <div>
+        <label className="block text-xs font-medium text-stone-500 mb-1.5">{t('Specs', '规格')}</label>
+        <div className="space-y-2">
+          {value.specs.map((s, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={s.label}
+                onChange={e => setSpec(i, 'label', e.target.value)}
+                placeholder={t('Label (e.g. Thickness)', '名称（如 厚度）')}
+                className={whiteInputCls + ' flex-1'}
+              />
+              <input
+                type="text"
+                value={s.value}
+                onChange={e => setSpec(i, 'value', e.target.value)}
+                placeholder={t('Value (e.g. 12mm)', '值（如 12mm）')}
+                className={whiteInputCls + ' flex-1'}
+              />
+              <button
+                type="button"
+                onClick={() => removeSpecRow(i)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition shrink-0"
+                title={t('Remove row', '删除该行')}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addSpecRow}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-stone-300 text-xs text-stone-500 hover:border-[#b8864a] hover:text-[#b8864a] transition"
+          >
+            <Plus className="w-3.5 h-3.5" />{t('Add Spec', '添加规格')}
+          </button>
+        </div>
+      </div>
+
+      {/* 认证（标签输入：回车添加，点 x 删除） */}
+      <div>
+        <label className="block text-xs font-medium text-stone-500 mb-1.5">{t('Certifications', '认证')}</label>
+        {value.certifications.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {value.certifications.map(c => (
+              <span key={c} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-xs">
+                {c}
+                <button
+                  type="button"
+                  onClick={() => removeCert(c)}
+                  className="text-stone-400 hover:text-red-500 transition"
+                  title={t('Remove', '删除')}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <input
+          type="text"
+          value={certInput}
+          onChange={e => setCertInput(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); addCert(); }
+          }}
+          placeholder={t('Type and press Enter (e.g. CE / ISO 9001)', '输入后回车添加（如 CE / ISO 9001）')}
+          className={whiteInputCls}
+        />
+      </div>
+
+      {/* 应用场景（多选） */}
+      <div>
+        <label className="block text-xs font-medium text-stone-500 mb-1.5">{t('Application Scenes', '应用场景')}</label>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+          {APPLICATION_SCENES.map(scene => (
+            <label key={scene.slug} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={value.application_scenes.includes(scene.slug)}
+                onChange={() => toggleScene(scene.slug)}
+                className="accent-[#b8864a]"
+              />
+              {t(scene.label, SCENE_ZH[scene.slug] ?? scene.label)}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface ProjectFormState {
   title: string;
@@ -219,45 +415,50 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
 
 interface ProductEditModalProps {
   supplierId: number;
-  product: { id: number; image_url?: string; title?: string; category?: string; specs?: unknown };
+  product: { id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
   onClose: () => void;
-  onSaved: (product: { id: number; title?: string; category?: string; specs?: unknown }) => void;
+  onSaved: (product: { id: number; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }) => void;
   t: (en: string, zh: string) => string;
-}
-
-// 兼容:specs 可能是 {label,value}[] 对象数组,或旧的 "label: value" 字符串数组,或 JSON 字符串。
-function toAttrs(raw: unknown): { label: string; value: string }[] {
-  let arr: unknown = raw;
-  if (typeof raw === 'string') { try { arr = JSON.parse(raw); } catch { return []; } }
-  if (!Array.isArray(arr)) return [];
-  return arr.map((item) => {
-    if (item && typeof item === 'object') {
-      const o = item as { label?: unknown; value?: unknown };
-      return { label: String(o.label ?? ''), value: String(o.value ?? '') };
-    }
-    const s = String(item ?? '');
-    const idx = s.indexOf(':');
-    return idx >= 0 ? { label: s.slice(0, idx).trim(), value: s.slice(idx + 1).trim() } : { label: '', value: s };
-  });
 }
 
 function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductEditModalProps) {
   const [title, setTitle] = useState(product.title || '');
   const [category, setCategory] = useState(product.category || '');
-  const [attrs, setAttrs] = useState<{ label: string; value: string }[]>(() => toAttrs(product.specs));
+  const [description, setDescription] = useState(product.description || '');
+  const [price, setPrice] = useState(product.price != null ? String(product.price) : '');
+  const [priceUnit, setPriceUnit] = useState(product.price_unit || '');
+  // price_from 是布尔标志（价格是否显示为"起价"），不是数值
+  const [priceFrom, setPriceFrom] = useState(!!product.price_from);
+  const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
-
-  const addAttr = () => setAttrs(a => [...a, { label: '', value: '' }]);
-  const removeAttr = (i: number) => setAttrs(a => a.filter((_, idx) => idx !== i));
-  const setAttr = (i: number, k: 'label' | 'value', v: string) => setAttrs(a => a.map((x, idx) => idx === i ? { ...x, [k]: v } : x));
+  // 品类下拉：接后台可管理的「产品分类」(子类按大类分组)，替代写死常量
+  const [catGroups, setCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
+  useEffect(() => {
+    adminApi.request('/enums/product-categories').then((d) => {
+      const rows = (d.categories || []) as Array<{ value: string; label: string; parent_value: string | null; is_enabled: number }>;
+      const on = rows.filter((r) => r.is_enabled);
+      setCatGroups(on.filter((r) => !r.parent_value).map((g) => ({ value: g.value, label: g.label, children: on.filter((c) => c.parent_value === g.value) })));
+    }).catch(() => { /* 拉不到就只保留当前值 */ });
+  }, []);
+  const catInList = catGroups.some((g) => g.children.some((c) => c.value === category));
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const specs = attrs.filter(a => a.label.trim() || a.value.trim());
+      const cleaned = cleanExtraFields(extras);
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title: title.trim() || null, category: category || null, specs }),
+        body: JSON.stringify({
+          title: title.trim() || null,
+          category: category || null,
+          description: description.trim() || null,
+          price: price.trim() === '' ? null : Number(price),
+          price_unit: priceUnit.trim() || null,
+          price_from: priceFrom ? 1 : 0,
+          specs: cleaned.specs,
+          certifications: cleaned.certifications,
+          application_scenes: cleaned.application_scenes,
+        }),
       });
       onSaved(data.product);
       showToast(t('Product updated', '产品已更新'), 'success');
@@ -268,55 +469,67 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
     }
   };
 
-  const cellInput = 'w-full h-8 px-2 rounded border border-stone-200 bg-white text-xs text-[#1c1917] focus:outline-none focus:border-[#b8864a]';
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[86vh] flex overflow-hidden">
-        {/* 左 8:大图 */}
-        <div className="hidden md:flex md:w-4/5 items-center justify-center bg-stone-900/95 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      {/* 7:3 布局——左大图(浅底,非黑 lightbox)占大头,右侧一列 input */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden">
+        {/* 左 7：大图——填满面板高度(object-cover),图片高度随弹层自适应 */}
+        <div className="hidden md:flex md:w-[70%] items-center justify-center bg-stone-100 overflow-hidden">
           {product.image_url
-            ? <img src={product.image_url} alt={title || ''} className="max-w-full max-h-full object-contain rounded" />
-            : <span className="text-stone-500 text-sm">{t('No image', '无图片')}</span>}
+            ? <img src={resolveImageUrl(product.image_url)} alt={title || ''} className="w-full h-full object-cover" />
+            : <span className="text-stone-400 text-sm">{t('No image', '无图片')}</span>}
         </div>
-        {/* 右 2:属性编辑列 */}
-        <div className="flex w-full flex-col md:w-1/5 border-l border-stone-100">
-          <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
-            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Product Attributes', '产品属性')}</h2>
-            <button onClick={onClose} className="p-1 text-stone-400 hover:text-stone-600"><X className="w-5 h-5" /></button>
+        {/* 右 3：输入列 */}
+        <div className="flex w-full flex-col md:w-[30%] min-w-0 border-l border-stone-100">
+          <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3 shrink-0">
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Edit Product', '编辑产品')}</h2>
+            <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
           </div>
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {/* 移动端顶部小图(桌面端已在左侧大图展示) */}
+            {product.image_url && <img src={resolveImageUrl(product.image_url)} alt="" className="md:hidden w-full aspect-video object-cover rounded-lg bg-stone-100" />}
             <div>
-              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Title', '名称')}</label>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title', '名称')}</label>
               <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Product title', '产品名称')} className={inputCls} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Category', '分类')}</label>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Category', '分类')}</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className={inputCls + ' cursor-pointer'}>
                 <option value="">{t('No category', '不分类')}</option>
-                {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                {catGroups.map(g => (
+                  <optgroup key={g.value} label={g.label}>
+                    {g.children.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </optgroup>
+                ))}
+                {/* 当前值不在管理列表里(旧/脏数据)也保留可见，避免保存时丢失 */}
+                {category && !catInList && <option value={category}>{category}（{t('current', '当前')}）</option>}
               </select>
             </div>
-            <div className="border-t border-stone-100 pt-2">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold text-stone-600">{t('Specs (material/fabric/size…)', '属性（材质/面料/规格…）')}</span>
-                <button type="button" onClick={addAttr} className="inline-flex items-center gap-0.5 text-xs font-medium text-[#b8864a] hover:text-[#a07540]"><Plus className="w-3 h-3" />{t('Add', '加一项')}</button>
+            <div>
+              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Description', '描述')}</label>
+              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
+                placeholder={t('Product description', '产品描述')}
+                className={inputCls + ' resize-none py-2 leading-relaxed'} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-stone-500 mb-1">{t('Price', '价格')}</label>
+                <input type="number" min={0} step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" className={inputCls} />
               </div>
-              <div className="space-y-2">
-                {attrs.map((a, i) => (
-                  <div key={i} className="relative rounded-lg border border-stone-200 p-2">
-                    <button type="button" onClick={() => removeAttr(i)} title={t('Remove', '删除')} className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="h-3 w-3" /></button>
-                    <input type="text" value={a.label} onChange={e => setAttr(i, 'label', e.target.value)} placeholder={t('Title (e.g. Material)', '标题（如 材质）')} className={cellInput + ' mb-1 font-medium'} />
-                    <input type="text" value={a.value} onChange={e => setAttr(i, 'value', e.target.value)} placeholder={t('Value (e.g. Lambskin)', '内容（如 小羊皮）')} className={cellInput + ' text-stone-700'} />
-                  </div>
-                ))}
-                {attrs.length === 0 && <p className="text-xs text-stone-400">{t('Click "Add" for material / fabric / size…', '点"加一项"添加材质/面料/规格等')}</p>}
+              <div>
+                <label className="block text-xs font-medium text-stone-500 mb-1">{t('Unit', '单位')}</label>
+                <input type="text" value={priceUnit} onChange={e => setPriceUnit(e.target.value)} placeholder={t('e.g. /m²', '如 /m²')} className={inputCls} />
               </div>
             </div>
+            <label className="flex items-center gap-2 text-xs font-medium text-stone-600 cursor-pointer select-none">
+              <input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} className="h-4 w-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]/40" />
+              {t("Show price as 'from' (starting price)", '价格显示为「起」价（起步价）')}
+            </label>
+            <ProductExtraFieldsEditor value={extras} onChange={setExtras} t={t} />
           </div>
-          <div className="flex justify-end gap-2 border-t border-stone-100 px-4 py-3">
-            <button onClick={onClose} className="rounded-lg bg-stone-100 px-3 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-200">{t('Cancel', '取消')}</button>
-            <button onClick={handleSave} disabled={saving} className="rounded-lg bg-[#b8864a] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#a07540] disabled:opacity-50">
+          <div className="flex justify-end gap-2 border-t border-stone-100 px-4 py-3 shrink-0">
+            <button onClick={onClose} className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
+            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
               {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
             </button>
           </div>
@@ -339,7 +552,7 @@ export default function AdminSupplierDetailPage() {
     has_physical_store?: boolean; store_address?: string; categories?: string[] | string;
     created_at: string;
   } | null>(null);
-  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; specs?: unknown }>>([]);
+  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number }>>([]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -347,6 +560,16 @@ export default function AdminSupplierDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ image_url: '', title: '', category: '' });
+  const [newProductExtras, setNewProductExtras] = useState<ProductExtraFields>(emptyExtraFields());
+  // 新增产品的品类下拉也接后台「产品分类」(子类按大类分组)，与编辑弹窗一致
+  const [prodCatGroups, setProdCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
+  useEffect(() => {
+    adminApi.request('/enums/product-categories').then((d) => {
+      const rows = (d.categories || []) as Array<{ value: string; label: string; parent_value: string | null; is_enabled: number }>;
+      const on = rows.filter((r) => r.is_enabled);
+      setProdCatGroups(on.filter((r) => !r.parent_value).map((g) => ({ value: g.value, label: g.label, children: on.filter((c) => c.parent_value === g.value) })));
+    }).catch(() => { /* 拉不到就空 */ });
+  }, []);
   const [addingProduct, setAddingProduct] = useState(false);
   const [replacingId, setReplacingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -354,7 +577,7 @@ export default function AdminSupplierDetailPage() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<{ id?: number; title?: string; location?: string; year?: number; area_sqm?: number; budget?: string; description?: string; images?: string[] | string } | null>(null);
   const [togglingPublished, setTogglingPublished] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; specs?: unknown } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
@@ -475,6 +698,7 @@ export default function AdminSupplierDetailPage() {
     if (!newProduct.image_url.trim()) { showToast(t('Image URL is required', '请填写图片地址'), 'error'); return; }
     setAddingProduct(true);
     try {
+      const cleanedExtras = cleanExtraFields(newProductExtras);
       const data = await adminApi.request(`/suppliers/${id}/products`, {
         method: 'POST',
         body: JSON.stringify({
@@ -482,10 +706,14 @@ export default function AdminSupplierDetailPage() {
           title: newProduct.title.trim() || null,
           category: newProduct.category || null,
           sort_order: products.length,
+          specs: cleanedExtras.specs,
+          certifications: cleanedExtras.certifications,
+          application_scenes: cleanedExtras.application_scenes,
         }),
       });
       setProducts(prev => [...prev, data.product]);
       setNewProduct({ image_url: '', title: '', category: '' });
+      setNewProductExtras(emptyExtraFields());
       setShowAddProduct(false);
       showToast(t('Product added', '产品图已添加'), 'success');
     } catch {
@@ -583,7 +811,8 @@ export default function AdminSupplierDetailPage() {
           product={editingProduct}
           onClose={() => setEditingProduct(null)}
           onSaved={(updated) => {
-            setProducts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p));
+            // 保留 p.image_url：编辑器不改图，避免覆盖掉换图后带缓存戳的 URL
+            setProducts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated, image_url: p.image_url } : p));
             setEditingProduct(null);
           }}
           t={t}
@@ -785,14 +1014,19 @@ export default function AdminSupplierDetailPage() {
                 <input type="text" placeholder={t('Image URL (e.g. /uploads/suppliers/68/xxx.jpg)', '图片地址（如 /uploads/suppliers/68/xxx.jpg）')} value={newProduct.image_url} onChange={e => setNewProduct(v => ({ ...v, image_url: e.target.value }))} className={inputCls} />
                 <div className="flex gap-2">
                   <input type="text" placeholder={t('Title (optional)', '名称（可选）')} value={newProduct.title} onChange={e => setNewProduct(v => ({ ...v, title: e.target.value }))} className={inputCls + ' flex-1'} />
-                  <select value={newProduct.category} onChange={e => setNewProduct(v => ({ ...v, category: e.target.value }))} className="h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]">
+                  <select value={newProduct.category} onChange={e => setNewProduct(v => ({ ...v, category: e.target.value }))} className="h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]">
                     <option value="">{t('Category', '分类')}</option>
-                    {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                    {prodCatGroups.map(g => (
+                      <optgroup key={g.value} label={g.label}>
+                        {g.children.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
+                <ProductExtraFieldsEditor value={newProductExtras} onChange={setNewProductExtras} t={t} />
                 <div className="flex gap-2">
                   <button onClick={handleAddProduct} disabled={addingProduct} className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition">{addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}</button>
-                  <button onClick={() => { setShowAddProduct(false); setNewProduct({ image_url: '', title: '', category: '' }); }} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
+                  <button onClick={() => { setShowAddProduct(false); setNewProduct({ image_url: '', title: '', category: '' }); setNewProductExtras(emptyExtraFields()); }} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
                 </div>
               </div>
             )}
@@ -806,9 +1040,9 @@ export default function AdminSupplierDetailPage() {
                     return (
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
-                          <img src={p.image_url} alt={p.title || ''} onClick={() => setEditingProduct(p)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
-                          {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显 */}
-                          <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                          <img src={resolveImageUrl(p.image_url)} alt={p.title || ''} onClick={() => setEditingProduct(p)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
+                          {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显。透明时禁点击,让点图直接开编辑器 */}
+                          <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'}`}>
                             <button onClick={() => setEditingProduct(p)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white transition-colors" title={t('Edit', '编辑')}>
                               <Pencil className="w-3 h-3" />
                               <span className="text-[9px] leading-none">{t('Edit', '编辑')}</span>
@@ -825,7 +1059,7 @@ export default function AdminSupplierDetailPage() {
                           <button
                             onClick={() => { replaceTargetRef.current = p.id; fileInputRef.current?.click(); }}
                             disabled={replacingId === p.id}
-                            className="absolute bottom-0 inset-x-0 py-1 bg-black/60 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1"
+                            className="absolute bottom-0 inset-x-0 py-1 bg-black/60 text-white text-[10px] font-medium opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity flex items-center justify-center gap-1"
                             title={t('Replace image', '更换图片')}
                           >
                             {replacingId === p.id ? <span className="text-[10px]">…</span> : <Upload className="w-3 h-3" />}
