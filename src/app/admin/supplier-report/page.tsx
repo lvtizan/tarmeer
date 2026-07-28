@@ -2,6 +2,8 @@
 
 // 供应商上架统计：按日期筛选 → 扁平表格(一行一家)：上架日期 / 公司 / 中文名 / 品类 / 号 / 状态。
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { useAdminT } from '@/hooks/useAdminLang';
@@ -23,6 +25,7 @@ function StatusBadge({ status, published, zh }: { status: string; published: boo
 }
 
 export default function SupplierReportPage() {
+  const router = useRouter();
   const { country } = useAdminCountry();
   const { lang } = useAdminT();
   const zh = lang === 'zh';
@@ -52,6 +55,10 @@ export default function SupplierReportPage() {
 
   return (
     <div className="space-y-5">
+      <button onClick={() => router.push('/admin/suppliers')} className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+        <ArrowLeft className="w-4 h-4" />
+        {zh ? '返回供应商列表' : 'Back to Suppliers'}
+      </button>
       <div>
         <h1 className="text-xl font-bold text-[#1c1917]">{zh ? '供应商上架统计' : 'Supplier Listing Report'}</h1>
         <p className="mt-1 text-sm text-stone-500">
