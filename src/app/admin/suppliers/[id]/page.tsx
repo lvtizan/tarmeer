@@ -32,9 +32,9 @@ const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
 };
 
-const inputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
-// 表单配色铁律：输入框背景必须 bg-white（新代码遵守，存量 inputCls 不动）
-const whiteInputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
+// 表单配色铁律(AGENTS.md)：输入框背景必须 bg-white，禁 bg-stone-50 灰底
+const inputCls = 'w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
+const whiteInputCls = inputCls;
 
 /* ── 产品补充字段（specs / certifications / application_scenes）── */
 
@@ -272,6 +272,7 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
   );
   const [saving, setSaving] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [activeImg, setActiveImg] = useState(0);
   const imgInputRef = useRef<HTMLInputElement>(null);
 
   const set = (k: keyof ProjectFormState, v: string) => setForm(f => ({ ...f, [k]: v }));
@@ -291,6 +292,7 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
       const data = await res.json();
       setForm(f => ({ ...f, images: [...f.images, data.url] }));
+      setActiveImg(Number.MAX_SAFE_INTEGER); // 上传后展示最新图(curIdx 会钳到最后一张)
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Upload failed', 'error');
     } finally {
@@ -343,70 +345,83 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
     }
   };
 
+  const curIdx = form.images.length ? Math.min(activeImg, form.images.length - 1) : 0;
+  // 图库(大图+缩略图+上传/删除)——桌面在左栏、移动在右栏顶部复用
+  const gallery = (
+    <>
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
+        {form.images.length > 0
+          ? <img src={resolveImageUrl(form.images[curIdx])} alt="" className="max-h-full max-w-full object-contain" />
+          : <span className="text-sm text-stone-400">{t('No image yet', '暂无图片')}</span>}
+        {form.images.length > 1 && (
+          <>
+            <button type="button" onClick={() => setActiveImg(Math.max(0, curIdx - 1))} disabled={curIdx === 0} className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-stone-700 shadow hover:bg-white disabled:opacity-30">‹</button>
+            <button type="button" onClick={() => setActiveImg(Math.min(form.images.length - 1, curIdx + 1))} disabled={curIdx === form.images.length - 1} className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-stone-700 shadow hover:bg-white disabled:opacity-30">›</button>
+          </>
+        )}
+      </div>
+      <div className="flex shrink-0 gap-2 overflow-x-auto border-t border-stone-200 bg-white p-3">
+        {form.images.map((url, i) => (
+          <div key={i} className="relative shrink-0">
+            <button type="button" onClick={() => setActiveImg(i)} className={`h-14 w-20 overflow-hidden rounded-lg border-2 ${i === curIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+              <img src={resolveImageUrl(url)} alt="" className="h-full w-full object-cover" />
+            </button>
+            <button type="button" onClick={() => removeImage(i)} className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="h-3 w-3" /></button>
+          </div>
+        ))}
+        <button type="button" onClick={() => imgInputRef.current?.click()} disabled={uploadingImg} className="flex h-14 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-stone-300 text-[10px] text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] disabled:opacity-50">
+          <Upload className="h-4 w-4" />{uploadingImg ? '...' : t('Add', '上传')}
+        </button>
+      </div>
+    </>
+  );
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-stone-100">
-          <h2 className="text-base font-bold text-[#2c2c2c]">
-            {editingProject ? t('Edit Project', '编辑项目') : t('Add Project', '添加项目')}
-          </h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title *', '标题 *')}</label>
-            <input type="text" value={form.title} onChange={e => set('title', e.target.value)} placeholder={t('e.g. Modern Living Room Renovation', '如：现代风格客厅改造')} className={inputCls} />
+      {/* 上传 input 只渲一次(桌面/移动图库共用同一 ref,避免两个 input 抢 ref) */}
+      <input ref={imgInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (file) handleUploadImage(file); }} />
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden">
+        {/* 左 7：图库 */}
+        <div className="hidden md:flex md:w-[70%] flex-col bg-stone-100">{gallery}</div>
+        {/* 右 3：属性字段(可编辑) */}
+        <div className="flex w-full flex-col border-l border-stone-100 md:w-[30%]">
+          <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3">
+            <h2 className="text-sm font-bold text-[#2c2c2c]">{editingProject ? t('Edit Project', '编辑项目') : t('Add Project', '添加项目')}</h2>
+            <button onClick={onClose} className="p-1 text-stone-400 hover:text-stone-600"><X className="h-5 w-5" /></button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {/* 移动端图库(桌面在左栏) */}
+            <div className="flex flex-col rounded-lg bg-stone-100 md:hidden">{gallery}</div>
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Location', '地点')}</label>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Title *', '标题 *')}</label>
+              <input type="text" value={form.title} onChange={e => set('title', e.target.value)} placeholder={t('e.g. Modern Living Room Renovation', '如：现代风格客厅改造')} className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Location', '地点')}</label>
               <input type="text" value={form.location} onChange={e => set('location', e.target.value)} placeholder="Dubai" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Year', '年份')}</label>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Year', '年份')}</label>
               <input type="text" value={form.year} onChange={e => set('year', e.target.value)} placeholder="2024" className={inputCls} />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Area (m²)', '面积（㎡）')}</label>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Area (m²)', '面积（㎡）')}</label>
               <input type="number" value={form.area_sqm} onChange={e => set('area_sqm', e.target.value)} placeholder="120" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Budget', '预算')}</label>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Budget', '预算')}</label>
               <input type="text" value={form.budget} onChange={e => set('budget', e.target.value)} placeholder="AED 50,000" className={inputCls} />
             </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-500">{t('Description', '描述')}</label>
+              <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} placeholder={t('Project description...', '项目描述...')} className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-[#1c1917] placeholder:text-stone-400 focus:border-[#B8864A] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15" />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1">{t('Description', '描述')}</label>
-            <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={3} placeholder={t('Project description...', '项目描述...')} className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] resize-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-500 mb-2">{t('Images', '图片')} ({form.images.length})</label>
-            {form.images.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {form.images.map((url, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-stone-100 group">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                    <button onClick={() => removeImage(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <input ref={imgInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (file) handleUploadImage(file); }} />
-            <button onClick={() => imgInputRef.current?.click()} disabled={uploadingImg} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-stone-300 text-xs text-stone-500 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-50">
-              <Upload className="w-3.5 h-3.5" />
-              {uploadingImg ? t('Uploading...', '上传中...') : t('Upload Image', '上传图片')}
+          <div className="flex shrink-0 justify-end gap-2 border-t border-stone-100 px-4 py-3">
+            <button onClick={onClose} className="rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-200">{t('Cancel', '取消')}</button>
+            <button onClick={handleSave} disabled={saving} className="rounded-lg bg-[#b8864a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a07540] disabled:opacity-50">
+              {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
             </button>
           </div>
-        </div>
-        <div className="flex justify-end gap-2 px-5 pb-5">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
-          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
-            {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
-          </button>
         </div>
       </div>
     </div>
@@ -562,28 +577,6 @@ export default function AdminSupplierDetailPage() {
   } | null>(null);
   const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number; description?: string; budget?: string }>>([]);
-  // 项目图查看器(7:3:左大图+下方缩略图切换 / 右信息);与编辑弹层分开——点图看,hover「编辑」按钮才编辑
-  const [viewingProject, setViewingProject] = useState<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; description?: string; budget?: string } | null>(null);
-  const [viewingImgIdx, setViewingImgIdx] = useState(0);
-  useEffect(() => {
-    if (!viewingProject) return;
-    const imgs = Array.isArray(viewingProject.images) ? viewingProject.images : [];
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setViewingProject(null);
-      else if (e.key === 'ArrowLeft') setViewingImgIdx(i => (i > 0 ? i - 1 : i));
-      else if (e.key === 'ArrowRight') setViewingImgIdx(i => (i < imgs.length - 1 ? i + 1 : i));
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [viewingProject]);
-  // 产品图查看器(7:3:左大图 / 右产品信息只读);点图看,hover「编辑」按钮才编辑——与项目一致
-  const [viewingProduct, setViewingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
-  useEffect(() => {
-    if (!viewingProduct) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setViewingProduct(null); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [viewingProduct]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -814,108 +807,6 @@ export default function AdminSupplierDetailPage() {
         }}
       />
 
-      {/* Project Viewer (7:3:左大图+下方缩略图切换 / 右信息) — 点项目图打开;编辑走弹层「编辑」按钮 */}
-      {viewingProject && (() => {
-        const vimgs = Array.isArray(viewingProject.images) ? viewingProject.images : [];
-        const cur = vimgs[viewingImgIdx] ?? vimgs[0];
-        const Info = ({ label, value }: { label: string; value: string | number }) => (
-          <div><span className="text-xs text-stone-400">{label}</span><div className="text-stone-800">{value}</div></div>
-        );
-        return (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingProject(null)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden" onClick={e => e.stopPropagation()}>
-              {/* 左 7：大图 + 缩略图 */}
-              <div className="hidden md:flex md:w-[70%] flex-col bg-stone-100">
-                <div className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
-                  {cur
-                    ? <img src={resolveImageUrl(cur)} alt={viewingProject.title} className="max-w-full max-h-full object-contain" />
-                    : <span className="text-sm text-stone-400">{t('No image', '无图片')}</span>}
-                  {vimgs.length > 1 && (
-                    <>
-                      <button onClick={() => setViewingImgIdx(i => (i > 0 ? i - 1 : i))} disabled={viewingImgIdx === 0} className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-stone-700 shadow hover:bg-white disabled:opacity-30">‹</button>
-                      <button onClick={() => setViewingImgIdx(i => (i < vimgs.length - 1 ? i + 1 : i))} disabled={viewingImgIdx === vimgs.length - 1} className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-stone-700 shadow hover:bg-white disabled:opacity-30">›</button>
-                    </>
-                  )}
-                </div>
-                {vimgs.length > 1 && (
-                  <div className="flex shrink-0 gap-2 overflow-x-auto border-t border-stone-200 bg-white p-3">
-                    {vimgs.map((im, i) => (
-                      <button key={i} onClick={() => setViewingImgIdx(i)} className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${i === viewingImgIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70 hover:opacity-100'}`}>
-                        <img src={resolveImageUrl(im)} alt="" className="h-full w-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {/* 右 3：项目信息 */}
-              <div className="flex w-full flex-col border-l border-stone-100 md:w-[30%]">
-                <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3">
-                  <h2 className="line-clamp-1 text-sm font-bold text-[#2c2c2c]">{viewingProject.title}</h2>
-                  <button onClick={() => setViewingProject(null)} className="p-1 text-stone-400 hover:text-stone-600"><X className="h-5 w-5" /></button>
-                </div>
-                <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
-                  {cur && <img src={resolveImageUrl(cur)} alt="" className="aspect-video w-full rounded-lg object-contain bg-stone-100 md:hidden" />}
-                  {vimgs.length > 1 && (
-                    <div className="flex gap-2 overflow-x-auto md:hidden">
-                      {vimgs.map((im, i) => (
-                        <button key={i} onClick={() => setViewingImgIdx(i)} className={`h-12 w-16 shrink-0 overflow-hidden rounded border-2 ${i === viewingImgIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70'}`}><img src={resolveImageUrl(im)} alt="" className="h-full w-full object-cover" /></button>
-                      ))}
-                    </div>
-                  )}
-                  {viewingProject.location && <Info label={t('Location', '地点')} value={viewingProject.location} />}
-                  {viewingProject.year && <Info label={t('Year', '年份')} value={viewingProject.year} />}
-                  {viewingProject.area_sqm && <Info label={t('Area', '面积')} value={`${viewingProject.area_sqm} m²`} />}
-                  {viewingProject.budget && <Info label={t('Budget', '预算')} value={viewingProject.budget} />}
-                  {viewingProject.description && <div><span className="text-xs text-stone-400">{t('Description', '描述')}</span><div className="whitespace-pre-wrap leading-relaxed text-stone-700">{viewingProject.description}</div></div>}
-                </div>
-                <div className="flex shrink-0 justify-end gap-2 border-t border-stone-100 px-4 py-3">
-                  <button onClick={() => { setEditingProject(viewingProject); setShowProjectModal(true); setViewingProject(null); }} className="rounded-lg bg-[#b8864a] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#a07540]">{t('Edit', '编辑')}</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Product Viewer (7:3:左大图 / 右产品信息只读) — 点产品图打开;编辑走「编辑」按钮 */}
-      {viewingProduct && (() => {
-        const ex = productToExtraFields(viewingProduct);
-        const specsView = ex.specs.filter(s => (s.label || '').trim() || (s.value || '').trim());
-        const sceneLabel = (slug: string) => { const s = APPLICATION_SCENES.find(a => a.slug === slug); return s ? t(s.label, SCENE_ZH[slug] ?? s.label) : slug; };
-        const priceStr = viewingProduct.price != null && String(viewingProduct.price) !== ''
-          ? `${viewingProduct.price_from ? t('from ', '起 ') : ''}${viewingProduct.price}${viewingProduct.price_unit ? ' ' + viewingProduct.price_unit : ''}`
-          : null;
-        return (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingProduct(null)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden" onClick={e => e.stopPropagation()}>
-              <div className="hidden md:flex md:w-[70%] items-center justify-center bg-stone-100 p-4">
-                {viewingProduct.image_url
-                  ? <img src={resolveImageUrl(viewingProduct.image_url)} alt={viewingProduct.title || ''} className="max-w-full max-h-full object-contain" />
-                  : <span className="text-sm text-stone-400">{t('No image', '无图片')}</span>}
-              </div>
-              <div className="flex w-full flex-col border-l border-stone-100 md:w-[30%]">
-                <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3">
-                  <h2 className="line-clamp-1 text-sm font-bold text-[#2c2c2c]">{viewingProduct.title || t('Untitled', '未命名')}</h2>
-                  <button onClick={() => setViewingProduct(null)} className="p-1 text-stone-400 hover:text-stone-600"><X className="h-5 w-5" /></button>
-                </div>
-                <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
-                  {viewingProduct.image_url && <img src={resolveImageUrl(viewingProduct.image_url)} alt="" className="aspect-video w-full rounded-lg object-contain bg-stone-100 md:hidden" />}
-                  {viewingProduct.category && <div><span className="text-xs text-stone-400">{t('Category', '分类')}</span><div className="text-stone-800">{viewingProduct.category}</div></div>}
-                  {priceStr && <div><span className="text-xs text-stone-400">{t('Price', '价格')}</span><div className="text-stone-800">{priceStr}</div></div>}
-                  {viewingProduct.description && <div><span className="text-xs text-stone-400">{t('Description', '描述')}</span><div className="whitespace-pre-wrap leading-relaxed text-stone-700">{viewingProduct.description}</div></div>}
-                  {specsView.length > 0 && <div><span className="text-xs text-stone-400">{t('Specs', '规格')}</span><div className="mt-1 space-y-1">{specsView.map((s, i) => <div key={i} className="flex justify-between gap-2 border-b border-stone-100 py-1"><span className="text-stone-500">{s.label}</span><span className="text-right text-stone-800">{s.value}</span></div>)}</div></div>}
-                  {ex.certifications.length > 0 && <div><span className="text-xs text-stone-400">{t('Certifications', '认证')}</span><div className="mt-1 flex flex-wrap gap-1">{ex.certifications.map((c, i) => <span key={i} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">{c}</span>)}</div></div>}
-                  {ex.application_scenes.length > 0 && <div><span className="text-xs text-stone-400">{t('Application Scenes', '应用场景')}</span><div className="mt-1 flex flex-wrap gap-1">{ex.application_scenes.map((s, i) => <span key={i} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-[#a07540]">{sceneLabel(s)}</span>)}</div></div>}
-                </div>
-                <div className="flex shrink-0 justify-end gap-2 border-t border-stone-100 px-4 py-3">
-                  <button onClick={() => { setEditingProduct(viewingProduct); setViewingProduct(null); }} className="rounded-lg bg-[#b8864a] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#a07540]">{t('Edit', '编辑')}</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
       {/* Project Modal */}
       {showProjectModal && supplier && (
         <ProjectModal
@@ -1079,7 +970,7 @@ export default function AdminSupplierDetailPage() {
                     <div key={proj.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group relative">
                       <div className="aspect-video bg-stone-100 overflow-hidden relative">
                         {imgs[0] ? (
-                          <img src={resolveImageUrl(imgs[0])} alt={proj.title} onClick={() => { setViewingProject(proj); setViewingImgIdx(0); }} className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          <img src={resolveImageUrl(imgs[0])} alt={proj.title} onClick={() => { setEditingProject(proj); setShowProjectModal(true); }} className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                         ) : (
                           <div onClick={() => { setEditingProject(proj); setShowProjectModal(true); }} className="w-full h-full flex items-center justify-center text-stone-300 cursor-pointer"><Layers className="w-8 h-8" /></div>
                         )}
@@ -1172,7 +1063,7 @@ export default function AdminSupplierDetailPage() {
                     return (
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
-                          <img src={resolveImageUrl(p.image_url)} alt={p.title || ''} onClick={() => setViewingProduct(p)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
+                          <img src={resolveImageUrl(p.image_url)} alt={p.title || ''} onClick={() => setEditingProduct(p)} className="w-full h-full object-cover cursor-pointer" loading="lazy" />
                           {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显。透明时禁点击,让点图直接开编辑器 */}
                           <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'}`}>
                             <button onClick={() => setEditingProduct(p)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white transition-colors" title={t('Edit', '编辑')}>
