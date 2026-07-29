@@ -59,10 +59,13 @@ async function fetchInitialSuppliers(country: string): Promise<Supplier[]> {
 }
 
 export default async function MaterialsPage() {
-  const c = getCountry((await headers()).get('x-country'));
-  // 新材料已拆到独立页 /materials/new-materials；本页专注供应商目录
-  const isAe = c.code === 'ae';
-  const initialSuppliers = await fetchInitialSuppliers(c.code);
+  const countryHeader = (await headers()).get('x-country');
+  const c = getCountry(countryHeader);
+  // 国家判定用原始 header（与首页 page.tsx 一致，未知国家 fail-safe 到非 AE），
+  // 不用 getCountry() 的回落值——否则未来新增第三国家会因回落 AE 误显新 Hub。
+  const isAe = !countryHeader || countryHeader === 'ae';
+  // AE 走新 MaterialsHub（自行拉数据），无需 SSR 预取供应商；仅 VN/非 AE 的旧 MaterialsClient 需要。
+  const initialSuppliers = isAe ? [] : await fetchInitialSuppliers(c.code);
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
@@ -88,7 +91,7 @@ export default async function MaterialsPage() {
         {isAe ? (
           <MaterialsHub />
         ) : (
-          <MaterialsClient initialSuppliers={initialSuppliers} showNewMaterialsEntry={isAe} />
+          <MaterialsClient initialSuppliers={initialSuppliers} showNewMaterialsEntry={false} />
         )}
       </Suspense>
     </>
