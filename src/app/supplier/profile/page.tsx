@@ -17,16 +17,18 @@ function authHeaders(): Record<string, string> {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` };
 }
 
-const CATEGORY_OPTIONS = [
-  'furniture', 'stone', 'lighting', 'plants', 'flooring',
-  'kitchen', 'curtains', 'paint', 'hardware', 'other',
-];
+// 品类选项从权威分类拉取(GET /suppliers/product-categories → product_categories 启用子类),
+// 禁止硬编码——否则供应商保存的 sp.categories 会重新污染旧 token(kitchen/other 等)。
+interface CatOption { value: string; label: string; label_zh?: string | null }
 
-const CATEGORY_ZH: Record<string, string> = {
-  furniture: '家具', stone: '石材', lighting: '灯具', plants: '植物景观',
-  flooring: '地板', kitchen: '厨卫', curtains: '窗帘纺织',
-  paint: '涂料', hardware: '五金配件', other: '其他',
-};
+// 拉取失败时的最后兜底:只列真实存在的子类 value(绝不含旧 kitchen/other)。
+// label 由 value 生成(下划线转空格 + 首字母大写),避免另起一套硬编码命名。
+const FALLBACK_CATEGORY_VALUES = [
+  'furniture', 'lighting', 'stone', 'flooring', 'kitchen_bath', 'doors_windows',
+  'paint', 'hardware', 'curtains', 'decor', 'plants', 'stairs',
+];
+const humanize = (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+const FALLBACK_CATEGORY_OPTIONS: CatOption[] = FALLBACK_CATEGORY_VALUES.map((v) => ({ value: v, label: humanize(v) }));
 
 const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
 const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
@@ -41,6 +43,7 @@ export default function SupplierProfilePage() {
   const [description, setDescription] = useState('');
   const [origin, setOrigin] = useState<'china' | 'dubai'>('china');
   const [categories, setCategories] = useState<string[]>([]);
+  const [catOptions, setCatOptions] = useState<CatOption[]>([]);
   const [licenseUrl, setLicenseUrl] = useState('');
   const [hasStore, setHasStore] = useState(false);
   const [storeAddress, setStoreAddress] = useState('');
@@ -71,6 +74,16 @@ export default function SupplierProfilePage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  // 拉取权威子类作为多选来源(公开接口,无 country,全局通用)
+  useEffect(() => {
+    fetch(`${API_BASE}/suppliers/product-categories`)
+      .then(r => r.json())
+      .then((d: { categories?: CatOption[] }) => {
+        setCatOptions(Array.isArray(d?.categories) && d.categories.length ? d.categories : FALLBACK_CATEGORY_OPTIONS);
+      })
+      .catch(() => setCatOptions(FALLBACK_CATEGORY_OPTIONS));
   }, []);
 
   const handleSave = async () => {
@@ -110,6 +123,13 @@ export default function SupplierProfilePage() {
   if (loading) return <ScreenSpinner />;
 
   const msgIsSuccess = msg.includes('saved') || msg.includes('成功');
+
+  // 显示列表 = 权威子类 + 已选但不在列表里的旧值(保留为可移除项,保存时不丢)
+  const optionValues = new Set(catOptions.map(c => c.value));
+  const legacyChips: CatOption[] = categories
+    .filter(v => !optionValues.has(v))
+    .map(v => ({ value: v, label: v }));
+  const categoryChips: CatOption[] = [...catOptions, ...legacyChips];
 
   return (
     <>
@@ -153,14 +173,20 @@ export default function SupplierProfilePage() {
           <div>
             <label className={labelCls}>{t('Categories', '产品品类')}</label>
             <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map(c => (
-                <button key={c} type="button" onClick={() => toggleCategory(c)}
-                  className={`px-3 py-1.5 rounded-2xl text-sm font-medium transition ${
-                    categories.includes(c) ? 'bg-[#b8864a] text-white' : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}>
-                  {t(c, CATEGORY_ZH[c])}
-                </button>
-              ))}
+              {categoryChips.map(c => {
+                const selected = categories.includes(c.value);
+                return (
+                  <button key={c.value} type="button" onClick={() => toggleCategory(c.value)}
+                    className={`px-3 py-1.5 rounded-2xl text-sm font-medium transition inline-flex items-center gap-1.5 ${
+                      selected ? 'bg-[#b8864a] text-white' : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+                    }`}>
+                    <span>{c.label}</span>
+                    {c.label_zh && c.label_zh !== c.label && (
+                      <span className={selected ? 'text-white/70' : 'text-stone-400'}>{c.label_zh}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

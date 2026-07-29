@@ -795,6 +795,8 @@ async function runAutoMigrate() {
           ('kitchen_bath','Kitchen & Bath','building_materials',8),
           ('hardware','Hardware','building_materials',9),
           ('flooring','Flooring','building_materials',10),
+          ('stairs','Stairs & Handrails','building_materials',11),
+          ('plants','Plants & Landscaping','building_materials',12),
           ('furniture','Furniture','soft_furnishing',1),
           ('lighting','Lighting','soft_furnishing',2),
           ('curtains','Curtains','soft_furnishing',3),
@@ -807,9 +809,10 @@ async function runAutoMigrate() {
           WHEN 'new_materials' THEN '新材料' WHEN 'tiles' THEN '瓷砖' WHEN 'stone' THEN '石材'
           WHEN 'boards' THEN '板材' WHEN 'paint' THEN '涂料' WHEN 'art_paint' THEN '艺术漆'
           WHEN 'doors_windows' THEN '门窗' WHEN 'kitchen_bath' THEN '厨卫' WHEN 'hardware' THEN '五金'
-          WHEN 'flooring' THEN '地板' WHEN 'furniture' THEN '家具' WHEN 'lighting' THEN '灯具'
+          WHEN 'flooring' THEN '地板' WHEN 'stairs' THEN '楼梯' WHEN 'plants' THEN '植物景观'
+          WHEN 'furniture' THEN '家具' WHEN 'lighting' THEN '灯具'
           WHEN 'curtains' THEN '窗帘' WHEN 'decor' THEN '软饰' ELSE label_zh END
-        WHERE label_zh IS NULL AND value IN ('building_materials','soft_furnishing','new_materials','tiles','stone','boards','paint','art_paint','doors_windows','kitchen_bath','hardware','flooring','furniture','lighting','curtains','decor')
+        WHERE label_zh IS NULL AND value IN ('building_materials','soft_furnishing','new_materials','tiles','stone','boards','paint','art_paint','doors_windows','kitchen_bath','hardware','flooring','stairs','plants','furniture','lighting','curtains','decor')
       `);
         }
         catch { /* ignore */ }

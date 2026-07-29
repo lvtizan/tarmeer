@@ -4,6 +4,7 @@
 // 单表自引用（product_categories.parent_value）——比供应商那套 groups+categories 双表更简单。
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listProductCategories = listProductCategories;
+exports.getPublicProductCategories = getPublicProductCategories;
 exports.createProductCategory = createProductCategory;
 exports.updateProductCategory = updateProductCategory;
 exports.toggleProductCategory = toggleProductCategory;
@@ -19,6 +20,17 @@ async function listProductCategories(req, res) {
     res.json({ categories: rows });
   } catch (error) {
     console.error('listProductCategories error:', error);
+    res.status(500).json({ error: 'Failed to load product categories.' });
+  }
+}
+
+// GET /suppliers/product-categories — 公开:启用的子类(材料页筛选下拉用,统一走 product_categories 真源)
+async function getPublicProductCategories(req, res) {
+  try {
+    const [rows] = await pool.execute("SELECT value, label, label_zh, parent_value FROM product_categories WHERE is_enabled = 1 AND parent_value IS NOT NULL ORDER BY sort_order, label");
+    res.json({ categories: rows });
+  } catch (error) {
+    console.error('getPublicProductCategories error:', error);
     res.status(500).json({ error: 'Failed to load product categories.' });
   }
 }

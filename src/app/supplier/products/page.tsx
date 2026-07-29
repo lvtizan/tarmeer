@@ -37,18 +37,19 @@ interface Product {
 export default function SupplierProductsPage() {
   const { t } = useAdminT();
 
-  // 品类选项从管理后台权威分类拉取(/api/public/supplier-categories,与导航/后台同源),
-  // 禁止硬编码——否则供应商后台品类与管理后台设置不一致。
+  // 品类选项从权威分类拉取(GET /suppliers/product-categories → product_categories 启用子类),
+  // 禁止硬编码——否则供应商写入 supplier_products.category 的会是旧 token(污染真源)。
   const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([
     { value: '', label: t('No category', '无品类') },
   ]);
   useEffect(() => {
-    fetch(`${API_BASE}/public/supplier-categories`)
+    fetch(`${API_BASE}/suppliers/product-categories`)
       .then((r) => r.json())
-      .then((d: { groups?: { categories?: { value: string; label: string }[] }[]; ungrouped?: { value: string; label: string }[] }) => {
-        const cats: { value: string; label: string }[] = [];
-        (d.groups || []).forEach((g) => (g.categories || []).forEach((c) => cats.push({ value: c.value, label: c.label })));
-        (d.ungrouped || []).forEach((c) => cats.push({ value: c.value, label: c.label }));
+      .then((d: { categories?: { value: string; label: string; label_zh?: string | null }[] }) => {
+        const cats = (d.categories || []).map((c) => ({
+          value: c.value,
+          label: c.label_zh && c.label_zh !== c.label ? `${c.label} · ${c.label_zh}` : c.label,
+        }));
         setCategoryOptions([{ value: '', label: t('No category', '无品类') }, ...cats]);
       })
       .catch(() => {});
@@ -222,7 +223,11 @@ export default function SupplierProductsPage() {
             </div>
             <div>
               <label className={labelCls}>{t('Category', '品类')}</label>
-              <AdminSelect options={categoryOptions} value={newCat} onChange={setNewCat} />
+              <AdminSelect
+                options={newCat && !categoryOptions.some(o => o.value === newCat)
+                  ? [...categoryOptions, { value: newCat, label: newCat }]
+                  : categoryOptions}
+                value={newCat} onChange={setNewCat} />
             </div>
             <div>
               <label className={labelCls}>{t('Price *', '价格 *')}</label>

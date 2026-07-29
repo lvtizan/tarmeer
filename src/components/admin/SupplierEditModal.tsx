@@ -32,6 +32,15 @@ interface Product {
   sort_order: number;
 }
 
+// 产品分类枚举（两级：大类 parent_value=null / 子类 parent_value=大类value）
+interface ProdCat {
+  value: string;
+  label: string;
+  label_zh: string | null;
+  parent_value: string | null;
+  is_enabled: number;
+}
+
 interface Props {
   supplierId: number;
   onClose: () => void;
@@ -257,9 +266,10 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [data, setData] = useState<Partial<SupplierData>>({});
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
-  // 产品品类(动态,接后台可管理的「产品分类」),供内联新增/编辑弹窗下拉,替代写死列表
-  const [productCats, setProductCats] = useState<{ value: string; label: string }[]>([]);
+  // 产品分类枚举全树(大类+子类),分类 picker(大类 tab)与产品内联弹窗下拉共用
+  const [prodCatTree, setProdCatTree] = useState<ProdCat[]>([]);
+  // 当前选中的大类 tab(parent_value=null 的 value)
+  const [activeCatTab, setActiveCatTab] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -277,12 +287,10 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
   useEffect(() => {
     Promise.all([
       adminApi.request(`/suppliers/${supplierId}`),
-      adminApi.request('/enums/supplier-categories').catch(() => ({ categories: [] })),
       adminApi.request('/enums/product-categories').catch(() => ({ categories: [] })),
-    ]).then(([detail, catsRes, prodCatsRes]) => {
+    ]).then(([detail, prodCatsRes]) => {
       const d = detail as { supplier?: Partial<SupplierData>; products?: Product[] };
-      const cr = catsRes as { categories?: { is_enabled?: number; value: string; label: string }[] };
-      const pc = prodCatsRes as { categories?: { value: string; label: string; parent_value: string | null; is_enabled: number }[] };
+      const pc = prodCatsRes as { categories?: ProdCat[] };
       const s = d.supplier || {};
       if (typeof s.categories === 'string') {
         try { s.categories = JSON.parse(s.categories); } catch { s.categories = []; }
@@ -290,17 +298,12 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
       if (!Array.isArray(s.categories)) s.categories = [];
       setData(s);
       setProducts(d.products || []);
-      setCategories(
-        (cr.categories || [])
-          .filter((c) => c.is_enabled !== 0)
-          .map((c) => ({ value: c.value, label: c.label })),
-      );
-      // 只取启用的子类(与产品编辑器 optgroup 口径一致);AdminSelect 扁平,不分组
-      setProductCats(
-        (pc.categories || [])
-          .filter((c) => c.is_enabled !== 0 && c.parent_value)
-          .map((c) => ({ value: c.value, label: c.label })),
-      );
+      // 只保留启用项;大类(parent_value=null) + 子类都留在树里,picker 与产品下拉共用
+      const tree = (pc.categories || []).filter((c) => c.is_enabled !== 0);
+      setProdCatTree(tree);
+      // 默认选中第一个大类 tab
+      const firstTop = tree.find((c) => !c.parent_value);
+      if (firstTop) setActiveCatTab(firstTop.value);
     }).catch((e: unknown) => setError((e instanceof Error ? e.message : null) || 'Failed to load'))
       .finally(() => setLoading(false));
   }, [supplierId]);
@@ -365,6 +368,15 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
   );
 
   const selectedCats: string[] = Array.isArray(data.categories) ? data.categories : [];
+  // 大类 tabs / 子类 chips
+  const topCats = prodCatTree.filter(c => !c.parent_value);
+  const childCats = prodCatTree.filter(c => !!c.parent_value);
+  // 产品内联新增/编辑弹窗下拉:扁平的启用子类(与旧 productCats 口径一致)
+  const productCats = childCats.map(c => ({ value: c.value, label: c.label }));
+  const knownChildValues = new Set(childCats.map(c => c.value));
+  // 已选但不在当前分类树里的旧值(遗留/脏数据)——单列出来,保存时不静默丢弃
+  const legacyCats = selectedCats.filter(v => !knownChildValues.has(v));
+  const activeChildren = childCats.filter(c => c.parent_value === activeCatTab);
 
   return (
     <>
@@ -464,11 +476,41 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                   />
                 </div>
 
-                {categories.length > 0 && (
+                {topCats.length > 0 && (
                   <div>
                     <label className={labelCls}>分类</label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {categories.map(cat => {
+                    {/* 大类 tabs */}
+                    <div className="flex flex-wrap gap-1 mt-1 border-b border-stone-100 pb-2">
+                      {topCats.map(top => {
+                        const on = activeCatTab === top.value;
+                        // 该大类下已选子类数量,给 tab 一个计数徽标
+                        const count = childCats.filter(c => c.parent_value === top.value && selectedCats.includes(c.value)).length;
+                        return (
+                          <button
+                            key={top.value}
+                            type="button"
+                            onClick={() => setActiveCatTab(top.value)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                              on
+                                ? 'bg-[#b8864a] text-white'
+                                : 'text-stone-500 hover:text-stone-800 hover:bg-stone-100'
+                            }`}
+                          >
+                            {top.label}
+                            {top.label_zh && <span className={`ml-1 text-xs ${on ? 'text-white/70' : 'text-stone-400'}`}>{top.label_zh}</span>}
+                            {count > 0 && (
+                              <span className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-semibold ${on ? 'bg-white/25 text-white' : 'bg-[#b8864a]/15 text-[#b8864a]'}`}>{count}</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* 当前大类的子类 chips(多选切换) */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {activeChildren.length === 0 && (
+                        <p className="text-xs text-stone-400 py-1">该大类暂无子分类</p>
+                      )}
+                      {activeChildren.map(cat => {
                         const on = selectedCats.includes(cat.value);
                         return (
                           <button
@@ -482,10 +524,31 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                             }`}
                           >
                             {cat.label}
+                            {cat.label_zh && <span className={`ml-1 text-xs ${on ? 'text-white/70' : 'text-stone-400'}`}>{cat.label_zh}</span>}
                           </button>
                         );
                       })}
                     </div>
+                    {/* 遗留/未分类:不在当前分类树里的旧值,保留可见+可移除,避免保存时静默丢失 */}
+                    {legacyCats.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs text-stone-400 mb-1.5">其他 / 未分类（旧数据，点击可移除）</p>
+                        <div className="flex flex-wrap gap-2">
+                          {legacyCats.map(val => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => toggleCategory(val)}
+                              title="点击移除该旧分类"
+                              className="px-3 py-1.5 rounded-lg text-sm font-medium transition border border-dashed border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                            >
+                              {val}
+                              <X className="inline w-3 h-3 ml-1 -mt-0.5" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

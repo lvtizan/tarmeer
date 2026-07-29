@@ -13,17 +13,21 @@ import { GOOGLE_MAPS_URL } from '@/lib/constants';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
+// 与 product_categories 子类口径一致(仅在公开接口拉取失败时兜底;正常从 /suppliers/product-categories 拉)
 const CATEGORY_OPTIONS_FALLBACK = [
   { value: 'furniture', label: 'Furniture' },
-  { value: 'stone', label: 'Tile & Stone' },
   { value: 'lighting', label: 'Lighting' },
-  { value: 'plants', label: 'Plants & Landscaping' },
+  { value: 'stone', label: 'Stone' },
+  { value: 'tiles', label: 'Tiles' },
   { value: 'flooring', label: 'Flooring' },
-  { value: 'kitchen', label: 'Kitchen & Bath' },
-  { value: 'curtains', label: 'Curtains & Textiles' },
+  { value: 'kitchen_bath', label: 'Kitchen & Bath' },
+  { value: 'doors_windows', label: 'Doors & Windows' },
   { value: 'paint', label: 'Paint & Coatings' },
-  { value: 'hardware', label: 'Doors & Windows' },
-  { value: 'other', label: 'Other' },
+  { value: 'hardware', label: 'Hardware' },
+  { value: 'curtains', label: 'Curtains' },
+  { value: 'decor', label: 'Decor & Accessories' },
+  { value: 'plants', label: 'Plants & Landscaping' },
+  { value: 'stairs', label: 'Stairs & Handrails' },
 ];
 
 export interface Supplier {
@@ -167,19 +171,14 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
   }
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/categories`)
+    // 统一走 product_categories 子类(与迁移后的数据 + 供应商编辑弹层同一套真源)
+    fetch(`${API_BASE}/suppliers/product-categories`)
       .then(r => r.json())
       .then(data => {
-        // API returns { groups: [{value, label, categories: [{value, label}]}], ungrouped: [{value, label}] }
-        const flat: { value: string; label: string }[] = [];
-        if (Array.isArray(data.groups)) {
-          for (const g of data.groups) {
-            if (Array.isArray(g.categories)) flat.push(...g.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
-          }
-        }
-        if (Array.isArray(data.ungrouped)) {
-          flat.push(...data.ungrouped.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label })));
-        }
+        // API returns { categories: [{value, label, label_zh, parent_value}] }（仅启用子类）
+        const flat: { value: string; label: string }[] = Array.isArray(data.categories)
+          ? data.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label }))
+          : [];
         if (flat.length) setCategoryOptions(flat);
       })
       .catch(() => {});

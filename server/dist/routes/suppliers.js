@@ -46,6 +46,7 @@ const products = __importStar(require("../controllers/supplierProductController"
 const catalogs = __importStar(require("../controllers/supplierCatalogController"));
 const leads = __importStar(require("../controllers/supplierLeadController"));
 const enumAdminController_1 = require("../controllers/enumAdminController");
+const productCategoryController_1 = require("../controllers/productCategoryController");
 const projects = __importStar(require("../controllers/supplierProjectController"));
 const memoryCache_1 = require("../lib/memoryCache");
 const router = (0, express_1.Router)();
@@ -63,6 +64,7 @@ const translateLimiter = (0, express_rate_limit_1.default)({
 });
 // ── Public ──
 router.get('/categories', (0, memoryCache_1.cacheMiddleware)(60), enumAdminController_1.getPublicSupplierCategories);
+router.get('/product-categories', (0, memoryCache_1.cacheMiddleware)(60), productCategoryController_1.getPublicProductCategories);
 router.get('/', (0, memoryCache_1.cacheMiddleware)(60), profile.listPublicSuppliers);
 router.get('/detail/:slug', profile.getPublicProfile);
 router.get('/detail/:slug/products', products.listProducts);
