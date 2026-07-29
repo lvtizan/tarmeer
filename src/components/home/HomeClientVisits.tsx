@@ -19,9 +19,9 @@ export default function HomeClientVisits() {
   return (
     <section className="bg-[#faf8f5] py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">Real Client Visits</p>
-          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
+          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] [text-wrap:balance] text-[#1c1917] sm:text-[34px]">
             Clients we&apos;ve hosted in China
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-stone-500 sm:text-base">

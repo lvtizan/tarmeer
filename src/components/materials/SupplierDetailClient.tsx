@@ -14,6 +14,7 @@ import SmartImage from '@/components/ui/SmartImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
 import { sanitizeDescription } from '@/lib/materialsApi';
 import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS } from '@/lib/supplierConstants';
+import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
 const CatalogReader = dynamic(() => import('./CatalogReader'), {
@@ -103,6 +104,8 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<'products' | 'projects'>('products');
+  // 产品分类 value→label 映射(单一数据源 product_categories),否则买家页直接显示原始 value 如 NEW_MATERIALS。
+  const catLabel = useProductCategoryLabels();
 
   const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -371,7 +374,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                         className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>All</button>
                       {productCategories.map(cat => (
                         <button key={cat} onClick={() => setProductCatFilter(cat)}
-                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{cat}</button>
+                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{catLabel(cat)}</button>
                       ))}
                     </div>
                   )}
@@ -388,7 +391,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                             loading="lazy"
                           />
                         </div>
-                        {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
+                        {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{catLabel(p.category)}</p>}
                         {(p.title_translated || p.title) && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title_translated || p.title}</p>}
                         {(() => {
                           // 与产品详情页同源清洗：合作方同步残留的出厂价/MOQ 不外显（spec §6）
@@ -463,7 +466,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                                       <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
                                     </div>
                                     <div className="p-2.5">
-                                      {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>}
+                                      {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{catLabel(m.category)}</p>}
                                       <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
                                       {m.description && <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>}
                                     </div>

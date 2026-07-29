@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigat
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Maximize2, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
+import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
 
@@ -53,6 +54,7 @@ export default function SupplierProjectDetailClient() {
   const projectId = params?.projectId;
   const searchParams = useSearchParams();
   const router = useRouter();
+  const catLabel = useProductCategoryLabels();
   const pathname = usePathname();
 
   const [supplier, setSupplier] = useState<Supplier | null>(null);
@@ -223,7 +225,7 @@ export default function SupplierProjectDetailClient() {
                         <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
                       </div>
                       <div className="p-1.5">
-                        {m.category && <p className="text-[9px] font-medium text-[#b8864a] uppercase tracking-wider truncate">{m.category}</p>}
+                        {m.category && <p className="text-[9px] font-medium text-[#b8864a] uppercase tracking-wider truncate">{catLabel(m.category)}</p>}
                         <p className="text-[11px] font-medium text-[#2c2c2c] truncate">{m.title || 'Material'}</p>
                       </div>
                     </div>

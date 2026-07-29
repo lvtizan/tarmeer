@@ -14,6 +14,7 @@ import SourcingRequestForm from '@/components/sourcing/SourcingRequestForm';
 import MaterialProductCard from './MaterialProductCard';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import { APPLICATION_SCENES, type PublicMaterialProduct, type SupplierCatalog } from '@/lib/materialsApi';
+import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 
 // pdf.js 阅读器懒加载：只在客户端、独立 chunk，不进初始包（不看图册的用户零成本）
 // loading 占位预留 16:9 空间 → 避免标题短暂悬在塌陷的空白上 + 布局抖动(CLS)
@@ -80,13 +81,14 @@ function SupplierCard({ product }: { product: PublicMaterialProduct }) {
 
 /** 品名 + category/scene 标签（桌面侧栏与移动头部两处复用） */
 function ProductHeading({ product, asH1 }: { product: PublicMaterialProduct; asH1?: boolean }) {
+  const catLabel = useProductCategoryLabels();
   const name = product.title || 'New Material';
   const Tag = asH1 ? 'h1' : 'p';
   return (
     <div>
       {product.category && (
         <p className="text-[11px] font-semibold text-[#b8864a] uppercase tracking-wider">
-          {product.category}
+          {catLabel(product.category)}
         </p>
       )}
       <Tag className="font-serif text-[24px] sm:text-[28px] text-[#1c1917] font-medium leading-tight mt-1">

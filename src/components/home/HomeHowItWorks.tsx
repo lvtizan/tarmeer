@@ -47,9 +47,9 @@ export default function HomeHowItWorks() {
     <section className="bg-[#faf8f5] py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         {/* 标题 */}
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[#b8864a]">How It Works</p>
-          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] text-[#1c1917] sm:text-[34px]">
+          <h2 className="mt-2 font-serif text-[26px] leading-tight tracking-[-0.01em] [text-wrap:balance] text-[#1c1917] sm:text-[34px]">
             China&apos;s newest materials, in three steps
           </h2>
         </div>

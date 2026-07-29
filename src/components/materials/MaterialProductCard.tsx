@@ -11,10 +11,12 @@ import Lightbox, { type LightboxShot } from '@/components/flooring/Lightbox';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import type { PublicMaterialProduct } from '@/lib/materialsApi';
+import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 
 export default function MaterialProductCard({ product }: { product: PublicMaterialProduct }) {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
+  const catLabel = useProductCategoryLabels();
   const title = product.title || 'Material';
 
   // 图廊用该材料的多图（image_urls），解析成可直接 <img> 的绝对/静态路径
@@ -41,7 +43,7 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
         </div>
         {product.category && (
           <p className="mt-3 text-[10px] font-medium uppercase tracking-wider text-[#b8864a]">
-            {product.category}
+            {catLabel(product.category)}
           </p>
         )}
         <h3 className="mt-0.5 line-clamp-1 text-[15px] font-medium text-[#1c1917] transition-colors group-hover:text-[#b8864a]">
