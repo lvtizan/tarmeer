@@ -561,7 +561,21 @@ export default function AdminSupplierDetailPage() {
     created_at: string;
   } | null>(null);
   const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
-  const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number }>>([]);
+  const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number; description?: string; budget?: string }>>([]);
+  // 项目图查看器(7:3:左大图+下方缩略图切换 / 右信息);与编辑弹层分开——点图看,hover「编辑」按钮才编辑
+  const [viewingProject, setViewingProject] = useState<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; description?: string; budget?: string } | null>(null);
+  const [viewingImgIdx, setViewingImgIdx] = useState(0);
+  useEffect(() => {
+    if (!viewingProject) return;
+    const imgs = Array.isArray(viewingProject.images) ? viewingProject.images : [];
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setViewingProject(null);
+      else if (e.key === 'ArrowLeft') setViewingImgIdx(i => (i > 0 ? i - 1 : i));
+      else if (e.key === 'ArrowRight') setViewingImgIdx(i => (i < imgs.length - 1 ? i + 1 : i));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [viewingProject]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -792,6 +806,69 @@ export default function AdminSupplierDetailPage() {
         }}
       />
 
+      {/* Project Viewer (7:3:左大图+下方缩略图切换 / 右信息) — 点项目图打开;编辑走弹层「编辑」按钮 */}
+      {viewingProject && (() => {
+        const vimgs = Array.isArray(viewingProject.images) ? viewingProject.images : [];
+        const cur = vimgs[viewingImgIdx] ?? vimgs[0];
+        const Info = ({ label, value }: { label: string; value: string | number }) => (
+          <div><span className="text-xs text-stone-400">{label}</span><div className="text-stone-800">{value}</div></div>
+        );
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingProject(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden" onClick={e => e.stopPropagation()}>
+              {/* 左 7：大图 + 缩略图 */}
+              <div className="hidden md:flex md:w-[70%] flex-col bg-stone-100">
+                <div className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
+                  {cur
+                    ? <img src={resolveImageUrl(cur)} alt={viewingProject.title} className="max-w-full max-h-full object-contain" />
+                    : <span className="text-sm text-stone-400">{t('No image', '无图片')}</span>}
+                  {vimgs.length > 1 && (
+                    <>
+                      <button onClick={() => setViewingImgIdx(i => (i > 0 ? i - 1 : i))} disabled={viewingImgIdx === 0} className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-stone-700 shadow hover:bg-white disabled:opacity-30">‹</button>
+                      <button onClick={() => setViewingImgIdx(i => (i < vimgs.length - 1 ? i + 1 : i))} disabled={viewingImgIdx === vimgs.length - 1} className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-stone-700 shadow hover:bg-white disabled:opacity-30">›</button>
+                    </>
+                  )}
+                </div>
+                {vimgs.length > 1 && (
+                  <div className="flex shrink-0 gap-2 overflow-x-auto border-t border-stone-200 bg-white p-3">
+                    {vimgs.map((im, i) => (
+                      <button key={i} onClick={() => setViewingImgIdx(i)} className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${i === viewingImgIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+                        <img src={resolveImageUrl(im)} alt="" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* 右 3：项目信息 */}
+              <div className="flex w-full flex-col border-l border-stone-100 md:w-[30%]">
+                <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3">
+                  <h2 className="line-clamp-1 text-sm font-bold text-[#2c2c2c]">{viewingProject.title}</h2>
+                  <button onClick={() => setViewingProject(null)} className="p-1 text-stone-400 hover:text-stone-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
+                  {cur && <img src={resolveImageUrl(cur)} alt="" className="aspect-video w-full rounded-lg object-contain bg-stone-100 md:hidden" />}
+                  {vimgs.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto md:hidden">
+                      {vimgs.map((im, i) => (
+                        <button key={i} onClick={() => setViewingImgIdx(i)} className={`h-12 w-16 shrink-0 overflow-hidden rounded border-2 ${i === viewingImgIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70'}`}><img src={resolveImageUrl(im)} alt="" className="h-full w-full object-cover" /></button>
+                      ))}
+                    </div>
+                  )}
+                  {viewingProject.location && <Info label={t('Location', '地点')} value={viewingProject.location} />}
+                  {viewingProject.year && <Info label={t('Year', '年份')} value={viewingProject.year} />}
+                  {viewingProject.area_sqm && <Info label={t('Area', '面积')} value={`${viewingProject.area_sqm} m²`} />}
+                  {viewingProject.budget && <Info label={t('Budget', '预算')} value={viewingProject.budget} />}
+                  {viewingProject.description && <div><span className="text-xs text-stone-400">{t('Description', '描述')}</span><div className="whitespace-pre-wrap leading-relaxed text-stone-700">{viewingProject.description}</div></div>}
+                </div>
+                <div className="flex shrink-0 justify-end gap-2 border-t border-stone-100 px-4 py-3">
+                  <button onClick={() => { setEditingProject(viewingProject); setShowProjectModal(true); setViewingProject(null); }} className="rounded-lg bg-[#b8864a] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#a07540]">{t('Edit', '编辑')}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Project Modal */}
       {showProjectModal && supplier && (
         <ProjectModal
@@ -955,7 +1032,7 @@ export default function AdminSupplierDetailPage() {
                     <div key={proj.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group relative">
                       <div className="aspect-video bg-stone-100 overflow-hidden relative">
                         {imgs[0] ? (
-                          <img src={imgs[0]} alt={proj.title} onClick={() => { setEditingProject(proj); setShowProjectModal(true); }} className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          <img src={resolveImageUrl(imgs[0])} alt={proj.title} onClick={() => { setViewingProject(proj); setViewingImgIdx(0); }} className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                         ) : (
                           <div onClick={() => { setEditingProject(proj); setShowProjectModal(true); }} className="w-full h-full flex items-center justify-center text-stone-300 cursor-pointer"><Layers className="w-8 h-8" /></div>
                         )}
