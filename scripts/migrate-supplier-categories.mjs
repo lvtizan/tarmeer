@@ -90,6 +90,8 @@ const MAP = {
   outdoor_furn: 'furniture', office_furn: 'furniture', office: 'furniture',
   hotel_furn: 'furniture', beds: 'furniture', bedding: 'furniture',
   wardrobe: 'furniture', whole_house: 'furniture',
+  // 自由文本客厅家具(某些VN供应商用整句作 product.category)→furniture,避免误丢(DRY_RUN 核对所得)
+  'Living Room Furniture': 'furniture', 'Đồ nội thất phòng khách': 'furniture',
   // → lighting
   lighting: 'lighting', lighting_new: 'lighting',
   // → stone
