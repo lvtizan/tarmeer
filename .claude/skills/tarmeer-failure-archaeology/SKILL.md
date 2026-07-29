@@ -106,6 +106,20 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：① `server/dist/routes/field.js` 把 `requireFieldOrSuperAdmin` 下移——公司搜索只需 `requireAdmin`（任意已登录 admin，含 sub_admin），`/interviews/:id/load`、`/re-submit` 仍保留在其后受限。国家隔离不变：非 super_admin 的 `staffCountry` 仍强制取本人 `admin_users.country`（`?country=` 只对 super 生效），sub_admin 只能搜到本国公司，不越权。**注：sub_admin 本就能经 `PATCH /api/admin/interviews/:id` 绑定公司，此处仅补齐"搜索"能力，非提权。** ② 前端新增 `bindError`，搜索失败显示"搜索失败，请重试"（红字）而非"无匹配公司"。③ 新增回归 `scripts/harness/field-search-access.mjs` 并接入 smoke-test `[3b]`，守护中间件挂载顺序（sub 搜索 200 / load 403 双向）。生产实测：sub_admin 搜 Najm→200 返回 id284；`?country=vn` 仍只返 ae 数据；load 仍 403。
 - **预防**：① **同一功能被开放给某角色时，该功能依赖的每一个后端端点都要核对角色门禁是否一致**——不要"页面对所有 admin 开放，但底层 API 只放行部分角色"造成半残。改角色可见性/权限前用 Grep 找出该功能链路上的**所有**端点及其 `require*` 中间件。② **前端 `catch` 禁止把请求错误静默吞成"空/无数据"**——403/500/网络错误要与"真的没有数据"区分渲染，否则线上排障时"看起来没数据"其实是权限/接口坏了（本次就被误报成"搜索坏了"）。新增数据拉取一律：失败→显式错误态，空→空态。③ 中间件顺序改动必须加回归（`router.use` 只影响其**之后**注册的路由）。已并入 tarmeer-change-control 的"改权限先全链路 Grep"口径。
 
+### FA-17 材料供应商/项目详情 SSR 页 VN 串到 AE 页——SSR 出站 fetch 不转发国家 + 后端项目端点缺 country 过滤（2026-07-29 改版合并 M6 抓出）
+
+- **现象**：VN 站（`Host: vn.*`）访问 `/materials/suppliers/<ae-slug>` 与 `.../projects/<id>` 返回 **200 并渲染 AE 供应商/项目内容**（`<title>… in Vietnam</title>` 但正文是 AE 厂家简介），应为 404。违反国家隔离铁律第 8 条。
+- **根因**：两层。① 前端 SSR：`suppliers/[slug]/page.tsx`、`projects/[projectId]/page.tsx` 的 `fetch(/suppliers/detail/…)` **没带国家**（中间件注入的 `x-country` 不会自动进 SSR 出站请求头），后端默认回落 `ae` → 拿到 AE 数据。对照 `products/[id]/page.tsx` 有显式 `if (c.code!=='ae') notFound()` 守卫所以不漏。② 后端：`supplierProjectController.js` 的 `getPublicProject`/`listPublicProjects` 按 slug 解析供应商时 `WHERE slug=? AND status='approved'` **缺 `AND country=?`**（供应商 `getPublicProfile` 有，项目端点漏了）——即使前端带了国家也命中错国家。
+- **修复**：① 两个 SSR 页把国家传进 fetch：`?country=${c.code}`（入 Next Data Cache 缓存键，防跨国缓存污染）+ `headers:{'x-country':c.code}`；后端 detail 对错国家 slug 返 404 → 页面 `notFound()`。② 后端两个项目端点补 `reqCountry`(`?country=`|`req.country`|`ae`) + `AND country=?`，与 `getPublicProfile` 对齐。实测：ae→200 / vn→404，且既有 AE 数据不受影响。
+- **预防**：① **任何 SSR 出站 fetch 命中"按国家隔离"的数据，必须显式带 `?country=`（入缓存键）+ `x-country` 头**——SSR 不继承入站头。新建材料/公司/专家类详情 SSR 页先照此模板。② **跨表按 slug/id 解析实体的每一个公开端点都要带 country 条件**——不能"列表端点隔离了、详情/子资源端点漏了"。改一处隔离逻辑先 Grep 出同实体的所有解析点统一补（AGENTS.md「修改前必须全量搜索」）。③ 详情页三选一防串域：SSR 转发国家 + 后端 country 过滤（本次）｜或页面 `c.code!=='ae' notFound()`（AE 专属页，如 products/[id]）——二者至少其一，禁裸 fetch。
+
+### FA-18 Next.js Data Cache（`revalidate`）跨 dev 重启存活——修完代码本地仍复现旧 bug，误判"没修好"（2026-07-29）
+
+- **现象**：修好 F4（VN 应 404）后，`kill` 并重启 `next dev`、甚至重启后端，本地 curl VN 页**仍返回 200 旧行为**；backend 直连却已正确 404。差点误判"前端改动没生效/代码还有 bug"。
+- **根因**：页面 `fetch(..., { next: { revalidate: 3600 } })` 命中 Next **Data Cache**（落盘 `.next/cache/fetch-cache`）。我**在后端修复前**先请求过一次带新 URL（`?country=vn`）的页面，把当时后端返回的"错误 200"缓存了；该缓存**不随 `next dev` 进程重启失效**（只按 URL+options+revalidate 过期），所以重启 dev 照样吐旧值。`export const dynamic='force-dynamic'` 只控页面级渲染，**不使带显式 `revalidate` 的 fetch 跳过 Data Cache**。
+- **修复**：`rm -rf .next`（或 `.next/cache`）后重启 dev → VN 立即 404。代码本无问题。
+- **预防**：① **验证"按国家/参数隔离"的 SSR 修复时，改完必须 `rm -rf .next` 再起 dev**，否则 Data Cache 会拿改前请求的旧响应骗你。② 结果与预期不符时，**先 curl 后端直连（`:3002`）区分"前端缓存 vs 真实行为"**，再判方向——别急着怀疑代码（systematic-debugging：先取证再改）。③ 隔离类 SSR fetch 若不希望跨值缓存污染，国家/关键参数务必进 **URL 查询串**（入缓存键），只塞 header 不进 key 会串。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
