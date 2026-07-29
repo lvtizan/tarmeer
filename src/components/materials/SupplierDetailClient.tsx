@@ -1,17 +1,33 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowUp, FileText, X,
-  Download, Package, Layers, FolderOpen, MapPin,
+  ArrowUp, X,
+  Package, Layers, MapPin,
   Maximize2, Banknote,
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
+import { sanitizeDescription } from '@/lib/materialsApi';
 import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS, supplierPublicTitle } from '@/lib/supplierConstants';
+import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
+
+// PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
+const CatalogReader = dynamic(() => import('./CatalogReader'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex w-full aspect-video flex-col items-center justify-center gap-3 rounded-2xl bg-[#1c1917] px-10">
+      <span className="text-sm text-white/70">Loading…</span>
+      <div className="h-1.5 w-52 max-w-[75%] overflow-hidden rounded-full bg-white/15">
+        <div className="h-full w-1/3 animate-pulse rounded-full bg-[#e6c88f]" />
+      </div>
+    </div>
+  ),
+});
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -70,7 +86,6 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
   const [products, setProducts] = useState<Product[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
-  const [previewCatalog, setPreviewCatalog] = useState<Catalog | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<{
     images: string[];
@@ -88,8 +103,9 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
   const mobileFormRef = useRef<HTMLDivElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
-  const catalogsRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<'products' | 'projects' | 'catalogs'>('products');
+  const [activeSection, setActiveSection] = useState<'products' | 'projects'>('products');
+  // 产品分类 value→label 映射(单一数据源 product_categories),否则买家页直接显示原始 value 如 NEW_MATERIALS。
+  const catLabel = useProductCategoryLabels();
 
   const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -127,7 +143,6 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
     const sections = [
       { ref: productsRef, key: 'products' as const },
       { ref: projectsRef, key: 'projects' as const },
-      { ref: catalogsRef, key: 'catalogs' as const },
     ];
     const observer = new IntersectionObserver(
       (entries) => {
@@ -182,10 +197,10 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
   const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
 
   // 没上传内容的模块整块隐藏，对应 tab 也不显示（下方 map 里按 count 跳过，避免点了滚动到空白）
+  // 画册不在 tab 里（已移到 hero 区展示）；tab 仅产品/项目
   const tabItems = [
     { key: 'products' as const, label: 'Products', icon: Package, count: products.length, ref: productsRef },
     { key: 'projects' as const, label: 'Projects', icon: Layers, count: projects.length, ref: projectsRef },
-    { key: 'catalogs' as const, label: 'Catalogs', icon: FolderOpen, count: catalogs.length, ref: catalogsRef },
   ];
 
   return (
@@ -210,56 +225,76 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             <span className="text-white/80 truncate max-w-[200px]">{publicTitle}</span>
           </nav>
 
-          <div className="flex items-start gap-5 sm:gap-6">
-            {/* Logo */}
-            {supplier.logo_url && !logoError ? (
-              <SmartImage
-                src={supplier.logo_url}
-                alt={publicTitle}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain border border-white/10 bg-white/10 backdrop-blur-sm p-2 shrink-0"
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white/80 shrink-0">
-                {initial}
-              </div>
-            )}
+          <div className={catalogs.length > 0 ? 'grid items-start gap-8 lg:grid-cols-[55fr_45fr] lg:gap-12' : ''}>
+            {/* 左：品牌信息 + 数据 */}
+            <div className="min-w-0">
+              <div className="flex items-start gap-5 sm:gap-6">
+                {/* Logo */}
+                {supplier.logo_url && !logoError ? (
+                  <SmartImage
+                    src={supplier.logo_url}
+                    alt={publicTitle}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain border border-white/10 bg-white/10 backdrop-blur-sm p-2 shrink-0"
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white/80 shrink-0">
+                    {initial}
+                  </div>
+                )}
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{publicTitle}</h1>
-                <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${ORIGIN_HERO_BADGE_CLASS[supplier.origin]}`}>
-                  {ORIGIN_LABEL[supplier.origin]}
-                </span>
-              </div>
-
-              {categoryList.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {categoryList.map(c => (
-                    <span key={c} className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/5">
-                      {prettyCat(c)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl font-bold text-white">{publicTitle}</h1>
+                    <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${ORIGIN_HERO_BADGE_CLASS[supplier.origin]}`}>
+                      {ORIGIN_LABEL[supplier.origin]}
                     </span>
+                  </div>
+
+                  {categoryList.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {categoryList.map(c => (
+                        <span key={c} className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/5">
+                          {prettyCat(c)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 公开去标识：不渲染带星号的自填简介,改用品类导语 */}
+                  <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
+                    Verified {publicTitle.toLowerCase()} on Tarmeer — browse products, projects and catalogs below.
+                  </p>
+                </div>
+              </div>
+
+              {statItems.length > 0 && (
+                <div className="flex items-center gap-6 mt-8 pt-6 border-t border-white/10">
+                  {statItems.map((s, i) => (
+                    <div key={i} className="text-center">
+                      <p className="text-xl sm:text-2xl font-bold text-white">{s.count}</p>
+                      <p className="text-xs text-white/50 mt-0.5">{s.label}</p>
+                    </div>
                   ))}
                 </div>
               )}
-
-              {/* 公开去标识：不渲染带星号的自填简介,改用品类导语 */}
-              <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
-                Verified {publicTitle.toLowerCase()} on Tarmeer — browse products, projects and catalogs below.
-              </p>
             </div>
+
+            {/* 右：PDF 电子书（供应商有 catalog 才显示；桌面右侧、移动端在文案下方），复用 flooring hero 同款控件 */}
+            {catalogs.length > 0 && (
+              <div className="w-full">
+                <CatalogReader
+                  catalogs={catalogs}
+                  download={{
+                    // 公开去标识：线索 payload 也用品类通用名（遮蔽可见渲染≠遮蔽序列化 payload，见 FA-14）；归因靠 companyId/slug
+                    companyName: publicTitle,
+                    companyId: supplier.id,
+                    companySlug: supplier.slug,
+                  }}
+                />
+              </div>
+            )}
           </div>
-
-          {statItems.length > 0 && (
-            <div className="flex items-center gap-6 mt-8 pt-6 border-t border-white/10">
-              {statItems.map((s, i) => (
-                <div key={i} className="text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-white">{s.count}</p>
-                  <p className="text-xs text-white/50 mt-0.5">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -319,25 +354,30 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                         className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>All</button>
                       {productCategories.map(cat => (
                         <button key={cat} onClick={() => setProductCatFilter(cat)}
-                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{cat}</button>
+                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{catLabel(cat)}</button>
                       ))}
                     </div>
                   )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {/* 瀑布流(masonry)：图按自然比例(w-full h-auto)自适应，高图高/宽图宽，无留白无裁切 */}
+                  <div className="columns-2 sm:columns-3 gap-4 [column-fill:_balance]">
                     {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
-                      <div key={p.id} className="group cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
-                        <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200">
+                      <div key={p.id} className="group mb-4 break-inside-avoid cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
+                        <div className="rounded-2xl overflow-hidden bg-white border border-stone-200">
                           <SmartImage
                             src={p.image_url}
                             variant="thumb"
                             alt={p.title || ''}
-                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            className="w-full h-auto group-hover:scale-105 transition duration-300"
                             loading="lazy"
                           />
                         </div>
-                        {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{p.category}</p>}
+                        {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{catLabel(p.category)}</p>}
                         {(p.title_translated || p.title) && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title_translated || p.title}</p>}
-                        {(p.description_translated || p.description) && <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{p.description_translated || p.description}</p>}
+                        {(() => {
+                          // 与产品详情页同源清洗：合作方同步残留的出厂价/MOQ 不外显（spec §6）
+                          const desc = sanitizeDescription(p.description_translated || p.description);
+                          return desc ? <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{desc}</p> : null;
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -406,7 +446,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
                                       <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
                                     </div>
                                     <div className="p-2.5">
-                                      {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{m.category}</p>}
+                                      {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{catLabel(m.category)}</p>}
                                       <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
                                       {m.description && <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>}
                                     </div>
@@ -423,42 +463,13 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             </div>
             )}
 
-            {/* Catalogs section — 无画册则整块隐藏，不显示空状态 */}
-            {catalogs.length > 0 && (
-            <div ref={catalogsRef} id="section-catalogs" className="scroll-mt-28">
-              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
-                <FolderOpen className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
-                Catalogs
-                <span className="text-sm font-normal text-stone-400">({catalogs.length})</span>
-              </h2>
-                <div className="space-y-3">
-                  {catalogs.map(c => (
-                    <button key={c.id} type="button" onClick={() => setPreviewCatalog(c)}
-                      className="w-full text-left flex items-center gap-4 p-4 rounded-2xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
-                      <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 group-hover:bg-red-100 transition">
-                        <FileText className="w-6 h-6 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-medium text-[#2c2c2c] truncate">{c.title}</p>
-                        {c.file_size && (
-                          <p className="text-xs text-[#6b6b6b] mt-0.5">
-                            {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
-                          </p>
-                        )}
-                      </div>
-                      <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-stone-50 text-sm font-medium text-[#2c2c2c] group-hover:bg-[#b8864a] group-hover:text-white transition">
-                        <Maximize2 className="w-4 h-4" /> Preview
-                      </div>
-                    </button>
-                  ))}
-                </div>
-            </div>
-            )}
+            {/* 画册已移到 hero 区右侧展示（复用 flooring hero 同款电子书控件），此处不再重复渲染 */}
 
             {/* Inline inquiry form — shown on screens < 1700px */}
             <div ref={mobileFormRef} className="min-[1700px]:hidden">
               <ServiceInquiryCard
                 title="Contact this Supplier"
+                leadTag="Material Inquiry"
                 companyName={publicTitle}
                 companySlug={supplier.slug}
                 companyId={supplier.id}
@@ -471,6 +482,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
             <div className="sticky top-[112px]">
               <ServiceInquiryCard
                 title="Contact this Supplier"
+                leadTag="Material Inquiry"
                 companyName={publicTitle}
                 companySlug={supplier.slug}
                 companyId={supplier.id}
@@ -506,38 +518,6 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ========== PDF Catalog Preview ========== */}
-      {previewCatalog && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col p-3 sm:p-6" onClick={() => setPreviewCatalog(null)}>
-          <div className="flex items-center justify-between gap-3 mb-3 shrink-0" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <p className="text-white text-[15px] font-medium truncate flex items-center gap-2 min-w-0">
-              <FileText className="w-5 h-5 text-red-400 shrink-0" />
-              <span className="truncate">{previewCatalog.title}</span>
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
-              <a href={previewCatalog.file_url} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-[#b8864a] text-white text-sm font-medium transition">
-                <Download className="w-4 h-4" /> Download
-              </a>
-              <button onClick={() => setPreviewCatalog(null)} aria-label="Close preview"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 min-h-0 rounded-xl overflow-hidden bg-white flex items-center justify-center" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            {/^\/(?!\/)/.test(previewCatalog.file_url) ? (
-              <iframe src={previewCatalog.file_url} title={previewCatalog.title} className="w-full h-full border-0" />
-            ) : (
-              <div className="text-center text-stone-500 text-sm p-8">
-                <FileText className="w-10 h-10 text-red-400 mx-auto mb-3" />
-                Preview unavailable — use Download to open this file.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ========== Lightbox ========== */}
       {lightbox !== null && (
