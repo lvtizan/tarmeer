@@ -955,14 +955,14 @@ export default function AdminSupplierDetailPage() {
                     <div key={proj.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden group relative">
                       <div className="aspect-video bg-stone-100 overflow-hidden relative">
                         {imgs[0] ? (
-                          <img src={imgs[0]} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          <img src={imgs[0]} alt={proj.title} onClick={() => { setEditingProject(proj); setShowProjectModal(true); }} className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-stone-300"><Layers className="w-8 h-8" /></div>
+                          <div onClick={() => { setEditingProject(proj); setShowProjectModal(true); }} className="w-full h-full flex items-center justify-center text-stone-300 cursor-pointer"><Layers className="w-8 h-8" /></div>
                         )}
                         {imgs.length > 1 && (
                           <span className="absolute bottom-2 right-2 text-[11px] bg-black/50 text-white px-1.5 py-0.5 rounded-md group-hover:opacity-0 transition-opacity">{imgs.length} {t('photos', '张')}</span>
                         )}
-                        <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
                           {imgs[0] && (() => {
                             const isCover = supplier.cover_image_url === imgs[0];
                             return (
