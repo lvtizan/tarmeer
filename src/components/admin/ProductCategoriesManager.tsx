@@ -13,6 +13,15 @@ interface PCat { value: string; label: string; parent_value: string | null; sort
 const inputCls =
   'h-[34px] px-3 rounded-lg border border-stone-200 bg-white text-[14px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
 
+// 预建分类的中文对照(仅置灰参考,帮中文团队识别;自定义新增的没有对照则不显示)。显示名仍以英文 label 为准。
+const CAT_ZH: Record<string, string> = {
+  building_materials: '建材', soft_furnishing: '软装',
+  new_materials: '新材料', tiles: '瓷砖', stone: '石材', boards: '板材',
+  paint: '涂料', art_paint: '艺术漆', doors_windows: '门窗',
+  kitchen_bath: '厨卫', hardware: '五金', flooring: '地板',
+  furniture: '家具', lighting: '灯具', curtains: '窗帘', decor: '软饰',
+};
+
 export default function ProductCategoriesManager() {
   const [cats, setCats] = useState<PCat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +121,7 @@ export default function ProductCategoriesManager() {
             <span className="cursor-grab text-stone-300 text-[18px] leading-none" title="拖动排序大类">⠿</span>
             <span className="font-mono text-xs text-stone-400 w-40 shrink-0">{g.value}</span>
             <input className={`${inputCls} flex-1 font-medium`} defaultValue={g.label} onBlur={(e) => updateLabel(g.value, e.target.value, g.label)} />
+            {CAT_ZH[g.value] && <span className="text-xs text-stone-400 shrink-0 w-16 text-right select-none" title="中文参考(仅提示)">{CAT_ZH[g.value]}</span>}
             {toggleBtn(g)}
             <button onClick={() => del(g)} className="text-xs text-red-400 hover:text-red-600 px-1">删除</button>
           </div>
@@ -123,6 +133,7 @@ export default function ProductCategoriesManager() {
                 <span className="cursor-grab text-stone-300 text-[16px] leading-none" title="拖动排序子类">⠿</span>
                 <span className="font-mono text-xs text-stone-400 w-40 shrink-0">{c.value}</span>
                 <input className={`${inputCls} flex-1`} defaultValue={c.label} onBlur={(e) => updateLabel(c.value, e.target.value, c.label)} />
+                {CAT_ZH[c.value] && <span className="text-xs text-stone-400 shrink-0 w-16 text-right select-none" title="中文参考(仅提示)">{CAT_ZH[c.value]}</span>}
                 {toggleBtn(c)}
                 <button onClick={() => del(c)} className="text-xs text-red-400 hover:text-red-600 px-1">删除</button>
               </div>
