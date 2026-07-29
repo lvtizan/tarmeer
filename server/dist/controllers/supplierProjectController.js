@@ -19,7 +19,9 @@ async function getProfile(supplierUserId) {
 async function listPublicProjects(req, res) {
     try {
         const { slug } = req.params;
-        const [profiles] = await database_1.default.execute("SELECT id, company_name FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        // 国家隔离铁律：按站点国家解析供应商，禁止 VN 站命中 AE 供应商项目（P0 串域）。
+        const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
+        const [profiles] = await database_1.default.execute("SELECT id, company_name FROM supplier_profiles WHERE slug = ? AND status = 'approved' AND country = ?", [slug, reqCountry]);
         const profile = profiles[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
@@ -41,7 +43,9 @@ async function listPublicProjects(req, res) {
 async function getPublicProject(req, res) {
     try {
         const { slug, id } = req.params;
-        const [profiles] = await database_1.default.execute("SELECT id, company_name, name_zh, slug, logo_url, categories FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        // 国家隔离铁律：按站点国家解析供应商，禁止 VN 站命中 AE 供应商项目详情（P0 串域）。
+        const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
+        const [profiles] = await database_1.default.execute("SELECT id, company_name, name_zh, slug, logo_url, categories FROM supplier_profiles WHERE slug = ? AND status = 'approved' AND country = ?", [slug, reqCountry]);
         const profile = profiles[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
