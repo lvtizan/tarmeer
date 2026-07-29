@@ -526,6 +526,8 @@ const REQUIRED_COLUMNS = [
     { table: 'supplier_profiles', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     // 供应商首次上架(发布)时间——报表「上架日期」+列表「上架时间」用它,不随后续编辑漂移(见 toggleSupplierPublished/getSupplierReport)
     { table: 'supplier_profiles', column: 'published_at', type: 'DATETIME NULL' },
+    // 产品分类中文对照(可后台编辑,置灰参考显示;替代前端 CAT_ZH 硬编码)
+    { table: 'product_categories', column: 'label_zh', type: 'VARCHAR(128) NULL' },
     { table: 'projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     { table: 'supplier_projects', column: 'is_published', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
     // 国家归属 — 业主需求按 phone 前缀定国家（隔离铁律，见 AGENTS.md / detectCountry.js）
@@ -797,6 +799,17 @@ async function runAutoMigrate() {
           ('lighting','Lighting','soft_furnishing',2),
           ('curtains','Curtains','soft_furnishing',3),
           ('decor','Decor & Accessories','soft_furnishing',4)
+      `);
+            // 中文对照(幂等:只补 label_zh 为空的,不覆盖运营已改的)——替代前端硬编码 CAT_ZH
+            await database_1.default.execute(`
+        UPDATE product_categories SET label_zh = CASE value
+          WHEN 'building_materials' THEN '建材' WHEN 'soft_furnishing' THEN '软装'
+          WHEN 'new_materials' THEN '新材料' WHEN 'tiles' THEN '瓷砖' WHEN 'stone' THEN '石材'
+          WHEN 'boards' THEN '板材' WHEN 'paint' THEN '涂料' WHEN 'art_paint' THEN '艺术漆'
+          WHEN 'doors_windows' THEN '门窗' WHEN 'kitchen_bath' THEN '厨卫' WHEN 'hardware' THEN '五金'
+          WHEN 'flooring' THEN '地板' WHEN 'furniture' THEN '家具' WHEN 'lighting' THEN '灯具'
+          WHEN 'curtains' THEN '窗帘' WHEN 'decor' THEN '软饰' ELSE label_zh END
+        WHERE label_zh IS NULL AND value IN ('building_materials','soft_furnishing','new_materials','tiles','stone','boards','paint','art_paint','doors_windows','kitchen_bath','hardware','flooring','furniture','lighting','curtains','decor')
       `);
         }
         catch { /* ignore */ }

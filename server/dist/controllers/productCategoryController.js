@@ -15,7 +15,7 @@ const pool = require("../config/database").default;
 // GET /admin/enums/product-categories — 全部（大类+子类），前端按 parent_value 分组
 async function listProductCategories(req, res) {
   try {
-    const [rows] = await pool.execute('SELECT value, label, parent_value, sort_order, is_enabled FROM product_categories ORDER BY sort_order, label');
+    const [rows] = await pool.execute('SELECT value, label, label_zh, parent_value, sort_order, is_enabled FROM product_categories ORDER BY sort_order, label');
     res.json({ categories: rows });
   } catch (error) {
     console.error('listProductCategories error:', error);
@@ -26,10 +26,11 @@ async function listProductCategories(req, res) {
 // POST /admin/enums/product-categories { value, label, parent_value? }
 async function createProductCategory(req, res) {
   try {
-    const { value, label, parent_value } = req.body;
+    const { value, label, label_zh, parent_value } = req.body;
     if (!value?.trim() || !label?.trim()) return res.status(400).json({ error: 'value and label are required.' });
     const cleanValue = value.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60);
     const cleanLabel = label.trim().slice(0, 120);
+    const cleanZh = label_zh != null && String(label_zh).trim() ? String(label_zh).trim().slice(0, 120) : null;
     const parent = parent_value ? String(parent_value).trim() : null;
     const [existing] = await pool.execute('SELECT value FROM product_categories WHERE value = ?', [cleanValue]);
     if (existing.length > 0) return res.status(200).json({ value: cleanValue, existed: true });
@@ -40,8 +41,8 @@ async function createProductCategory(req, res) {
     }
     const [maxRows] = await pool.execute('SELECT MAX(sort_order) AS m FROM product_categories WHERE parent_value <=> ?', [parent]);
     const nextOrd = (maxRows[0]?.m ?? -1) + 1;
-    await pool.execute('INSERT INTO product_categories (value, label, parent_value, sort_order, is_enabled) VALUES (?, ?, ?, ?, 1)', [cleanValue, cleanLabel, parent, nextOrd]);
-    res.status(201).json({ value: cleanValue, label: cleanLabel, parent_value: parent });
+    await pool.execute('INSERT INTO product_categories (value, label, label_zh, parent_value, sort_order, is_enabled) VALUES (?, ?, ?, ?, ?, 1)', [cleanValue, cleanLabel, cleanZh, parent, nextOrd]);
+    res.status(201).json({ value: cleanValue, label: cleanLabel, label_zh: cleanZh, parent_value: parent });
   } catch (error) {
     console.error('createProductCategory error:', error);
     res.status(500).json({ error: 'Failed to create product category.' });
@@ -52,10 +53,11 @@ async function createProductCategory(req, res) {
 async function updateProductCategory(req, res) {
   try {
     const value = decodeURIComponent(req.params.value);
-    const { label, parent_value } = req.body;
+    const { label, label_zh, parent_value } = req.body;
     const sets = [];
     const params = [];
     if (label?.trim()) { sets.push('label = ?'); params.push(label.trim().slice(0, 120)); }
+    if ('label_zh' in req.body) { sets.push('label_zh = ?'); params.push(label_zh != null && String(label_zh).trim() ? String(label_zh).trim().slice(0, 120) : null); }
     if ('parent_value' in req.body) {
       const parent = parent_value ? String(parent_value).trim() : null;
       if (parent === value) return res.status(400).json({ error: 'Category cannot be its own parent.' });

@@ -8,25 +8,16 @@ import { adminApi } from '@/lib/adminApi';
 import { showToast } from '@/components/ui/Toast';
 import { showConfirm } from '@/components/ui/ConfirmModal';
 
-interface PCat { value: string; label: string; parent_value: string | null; sort_order: number; is_enabled: number; }
+interface PCat { value: string; label: string; label_zh: string | null; parent_value: string | null; sort_order: number; is_enabled: number; }
 
 const inputCls =
   'h-[34px] px-3 rounded-lg border border-stone-200 bg-white text-[14px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]';
 
-// 预建分类的中文对照(仅置灰参考,帮中文团队识别;自定义新增的没有对照则不显示)。显示名仍以英文 label 为准。
-const CAT_ZH: Record<string, string> = {
-  building_materials: '建材', soft_furnishing: '软装',
-  new_materials: '新材料', tiles: '瓷砖', stone: '石材', boards: '板材',
-  paint: '涂料', art_paint: '艺术漆', doors_windows: '门窗',
-  kitchen_bath: '厨卫', hardware: '五金', flooring: '地板',
-  furniture: '家具', lighting: '灯具', curtains: '窗帘', decor: '软饰',
-};
-
 export default function ProductCategoriesManager() {
   const [cats, setCats] = useState<PCat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newGroup, setNewGroup] = useState({ value: '', label: '' });
-  const [newChild, setNewChild] = useState<Record<string, { value: string; label: string }>>({});
+  const [newGroup, setNewGroup] = useState({ value: '', label: '', label_zh: '' });
+  const [newChild, setNewChild] = useState<Record<string, { value: string; label: string; label_zh: string }>>({});
   const dragFrom = useRef<string>('');
   const dragOver = useRef<string>(''); // 拖入的目标(onDragEnter 记录)；onDragEnd 触发在源上，必须从这里取目标
   const [dragKey, setDragKey] = useState('');
@@ -43,21 +34,26 @@ export default function ProductCategoriesManager() {
   const childrenOf = (g: string) => cats.filter((c) => c.parent_value === g).sort((a, b) => a.sort_order - b.sort_order);
 
   async function addGroup() {
-    const value = newGroup.value.trim(); const label = newGroup.label.trim();
+    const value = newGroup.value.trim(); const label = newGroup.label.trim(); const label_zh = newGroup.label_zh.trim();
     if (!value || !label) { showToast('请填写 key 和显示名称', 'error'); return; }
-    try { const r = await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label }) }); if (r?.existed) { showToast(`key「${value}」已存在`, 'error'); return; } setNewGroup({ value: '', label: '' }); await load(); showToast('大类已添加', 'success'); }
+    try { const r = await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label, label_zh }) }); if (r?.existed) { showToast(`key「${value}」已存在`, 'error'); return; } setNewGroup({ value: '', label: '', label_zh: '' }); await load(); showToast('大类已添加', 'success'); }
     catch (e: unknown) { showToast(e instanceof Error ? e.message : '添加失败', 'error'); }
   }
   async function addChild(parent: string) {
-    const nc = newChild[parent] || { value: '', label: '' };
-    const value = nc.value.trim(); const label = nc.label.trim();
+    const nc = newChild[parent] || { value: '', label: '', label_zh: '' };
+    const value = nc.value.trim(); const label = nc.label.trim(); const label_zh = nc.label_zh.trim();
     if (!value || !label) { showToast('请填写子类 key 和显示名称', 'error'); return; }
-    try { const r = await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label, parent_value: parent }) }); if (r?.existed) { showToast(`key「${value}」已存在`, 'error'); return; } setNewChild((p) => ({ ...p, [parent]: { value: '', label: '' } })); await load(); showToast('子类已添加', 'success'); }
+    try { const r = await adminApi.request('/enums/product-categories', { method: 'POST', body: JSON.stringify({ value, label, label_zh, parent_value: parent }) }); if (r?.existed) { showToast(`key「${value}」已存在`, 'error'); return; } setNewChild((p) => ({ ...p, [parent]: { value: '', label: '', label_zh: '' } })); await load(); showToast('子类已添加', 'success'); }
     catch (e: unknown) { showToast(e instanceof Error ? e.message : '添加失败', 'error'); }
   }
   async function updateLabel(value: string, label: string, orig: string) {
     if (!label.trim() || label.trim() === orig) return;
     try { await adminApi.request(`/enums/product-categories/${encodeURIComponent(value)}`, { method: 'PUT', body: JSON.stringify({ label: label.trim() }) }); setCats((p) => p.map((c) => c.value === value ? { ...c, label: label.trim() } : c)); }
+    catch { showToast('更新失败', 'error'); }
+  }
+  async function updateLabelZh(value: string, label_zh: string, orig: string | null) {
+    if (label_zh.trim() === (orig || '')) return;
+    try { await adminApi.request(`/enums/product-categories/${encodeURIComponent(value)}`, { method: 'PUT', body: JSON.stringify({ label_zh: label_zh.trim() }) }); setCats((p) => p.map((c) => c.value === value ? { ...c, label_zh: label_zh.trim() || null } : c)); }
     catch { showToast('更新失败', 'error'); }
   }
   async function toggle(value: string) {
@@ -110,6 +106,7 @@ export default function ProductCategoriesManager() {
         <span className="text-sm font-medium text-stone-500 mr-1">新增大类</span>
         <input className={`${inputCls} w-36`} placeholder="key (如 appliances)" value={newGroup.value} onChange={(e) => setNewGroup((p) => ({ ...p, value: e.target.value }))} />
         <input className={`${inputCls} w-48`} placeholder="显示名 (如 Appliances)" value={newGroup.label} onChange={(e) => setNewGroup((p) => ({ ...p, label: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter') addGroup(); }} />
+        <input className={`${inputCls} w-28`} placeholder="中文 (可选)" value={newGroup.label_zh} onChange={(e) => setNewGroup((p) => ({ ...p, label_zh: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter') addGroup(); }} />
         <button onClick={addGroup} disabled={!newGroup.value.trim() || !newGroup.label.trim()} className="btn-primary inline-flex items-center justify-center h-[34px] px-4 text-sm disabled:opacity-40">添加</button>
       </div>
 
@@ -121,7 +118,7 @@ export default function ProductCategoriesManager() {
             <span className="cursor-grab text-stone-300 text-[18px] leading-none" title="拖动排序大类">⠿</span>
             <span className="font-mono text-xs text-stone-400 w-40 shrink-0">{g.value}</span>
             <input className={`${inputCls} flex-1 font-medium`} defaultValue={g.label} onBlur={(e) => updateLabel(g.value, e.target.value, g.label)} />
-            {CAT_ZH[g.value] && <span className="text-xs text-stone-400 shrink-0 w-16 text-right select-none" title="中文参考(仅提示)">{CAT_ZH[g.value]}</span>}
+            <input className={`${inputCls} w-24 shrink-0 !text-stone-500`} defaultValue={g.label_zh || ''} placeholder="中文" title="中文对照(可编辑,仅参考)" onBlur={(e) => updateLabelZh(g.value, e.target.value, g.label_zh)} />
             {toggleBtn(g)}
             <button onClick={() => del(g)} className="text-xs text-red-400 hover:text-red-600 px-1">删除</button>
           </div>
@@ -133,15 +130,16 @@ export default function ProductCategoriesManager() {
                 <span className="cursor-grab text-stone-300 text-[16px] leading-none" title="拖动排序子类">⠿</span>
                 <span className="font-mono text-xs text-stone-400 w-40 shrink-0">{c.value}</span>
                 <input className={`${inputCls} flex-1`} defaultValue={c.label} onBlur={(e) => updateLabel(c.value, e.target.value, c.label)} />
-                {CAT_ZH[c.value] && <span className="text-xs text-stone-400 shrink-0 w-16 text-right select-none" title="中文参考(仅提示)">{CAT_ZH[c.value]}</span>}
+                <input className={`${inputCls} w-24 shrink-0 !text-stone-500`} defaultValue={c.label_zh || ''} placeholder="中文" title="中文对照(可编辑,仅参考)" onBlur={(e) => updateLabelZh(c.value, e.target.value, c.label_zh)} />
                 {toggleBtn(c)}
                 <button onClick={() => del(c)} className="text-xs text-red-400 hover:text-red-600 px-1">删除</button>
               </div>
             ))}
             {/* 新增子类 */}
             <div className="flex gap-2 items-center px-2 pt-1">
-              <input className={`${inputCls} w-32`} placeholder="子类 key" value={newChild[g.value]?.value || ''} onChange={(e) => setNewChild((p) => ({ ...p, [g.value]: { ...(p[g.value] || { value: '', label: '' }), value: e.target.value } }))} />
-              <input className={`${inputCls} w-44`} placeholder="显示名" value={newChild[g.value]?.label || ''} onChange={(e) => setNewChild((p) => ({ ...p, [g.value]: { ...(p[g.value] || { value: '', label: '' }), label: e.target.value } }))} onKeyDown={(e) => { if (e.key === 'Enter') addChild(g.value); }} />
+              <input className={`${inputCls} w-32`} placeholder="子类 key" value={newChild[g.value]?.value || ''} onChange={(e) => setNewChild((p) => ({ ...p, [g.value]: { ...(p[g.value] || { value: '', label: '', label_zh: '' }), value: e.target.value } }))} />
+              <input className={`${inputCls} w-44`} placeholder="显示名" value={newChild[g.value]?.label || ''} onChange={(e) => setNewChild((p) => ({ ...p, [g.value]: { ...(p[g.value] || { value: '', label: '', label_zh: '' }), label: e.target.value } }))} onKeyDown={(e) => { if (e.key === 'Enter') addChild(g.value); }} />
+              <input className={`${inputCls} w-24`} placeholder="中文" value={newChild[g.value]?.label_zh || ''} onChange={(e) => setNewChild((p) => ({ ...p, [g.value]: { ...(p[g.value] || { value: '', label: '', label_zh: '' }), label_zh: e.target.value } }))} onKeyDown={(e) => { if (e.key === 'Enter') addChild(g.value); }} />
               <button onClick={() => addChild(g.value)} className="text-xs text-[#b8864a] hover:text-[#a07040] font-medium">+ 加子类</button>
             </div>
           </div>
