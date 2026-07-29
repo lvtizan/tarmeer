@@ -576,6 +576,14 @@ export default function AdminSupplierDetailPage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [viewingProject]);
+  // 产品图查看器(7:3:左大图 / 右产品信息只读);点图看,hover「编辑」按钮才编辑——与项目一致
+  const [viewingProduct, setViewingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
+  useEffect(() => {
+    if (!viewingProduct) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setViewingProduct(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [viewingProduct]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -869,6 +877,45 @@ export default function AdminSupplierDetailPage() {
         );
       })()}
 
+      {/* Product Viewer (7:3:左大图 / 右产品信息只读) — 点产品图打开;编辑走「编辑」按钮 */}
+      {viewingProduct && (() => {
+        const ex = productToExtraFields(viewingProduct);
+        const specsView = ex.specs.filter(s => (s.label || '').trim() || (s.value || '').trim());
+        const sceneLabel = (slug: string) => { const s = APPLICATION_SCENES.find(a => a.slug === slug); return s ? t(s.label, SCENE_ZH[slug] ?? s.label) : slug; };
+        const priceStr = viewingProduct.price != null && String(viewingProduct.price) !== ''
+          ? `${viewingProduct.price_from ? t('from ', '起 ') : ''}${viewingProduct.price}${viewingProduct.price_unit ? ' ' + viewingProduct.price_unit : ''}`
+          : null;
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingProduct(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="hidden md:flex md:w-[70%] items-center justify-center bg-stone-100 p-4">
+                {viewingProduct.image_url
+                  ? <img src={resolveImageUrl(viewingProduct.image_url)} alt={viewingProduct.title || ''} className="max-w-full max-h-full object-contain" />
+                  : <span className="text-sm text-stone-400">{t('No image', '无图片')}</span>}
+              </div>
+              <div className="flex w-full flex-col border-l border-stone-100 md:w-[30%]">
+                <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3">
+                  <h2 className="line-clamp-1 text-sm font-bold text-[#2c2c2c]">{viewingProduct.title || t('Untitled', '未命名')}</h2>
+                  <button onClick={() => setViewingProduct(null)} className="p-1 text-stone-400 hover:text-stone-600"><X className="h-5 w-5" /></button>
+                </div>
+                <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
+                  {viewingProduct.image_url && <img src={resolveImageUrl(viewingProduct.image_url)} alt="" className="aspect-video w-full rounded-lg object-contain bg-stone-100 md:hidden" />}
+                  {viewingProduct.category && <div><span className="text-xs text-stone-400">{t('Category', '分类')}</span><div className="text-stone-800">{viewingProduct.category}</div></div>}
+                  {priceStr && <div><span className="text-xs text-stone-400">{t('Price', '价格')}</span><div className="text-stone-800">{priceStr}</div></div>}
+                  {viewingProduct.description && <div><span className="text-xs text-stone-400">{t('Description', '描述')}</span><div className="whitespace-pre-wrap leading-relaxed text-stone-700">{viewingProduct.description}</div></div>}
+                  {specsView.length > 0 && <div><span className="text-xs text-stone-400">{t('Specs', '规格')}</span><div className="mt-1 space-y-1">{specsView.map((s, i) => <div key={i} className="flex justify-between gap-2 border-b border-stone-100 py-1"><span className="text-stone-500">{s.label}</span><span className="text-right text-stone-800">{s.value}</span></div>)}</div></div>}
+                  {ex.certifications.length > 0 && <div><span className="text-xs text-stone-400">{t('Certifications', '认证')}</span><div className="mt-1 flex flex-wrap gap-1">{ex.certifications.map((c, i) => <span key={i} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">{c}</span>)}</div></div>}
+                  {ex.application_scenes.length > 0 && <div><span className="text-xs text-stone-400">{t('Application Scenes', '应用场景')}</span><div className="mt-1 flex flex-wrap gap-1">{ex.application_scenes.map((s, i) => <span key={i} className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-[#a07540]">{sceneLabel(s)}</span>)}</div></div>}
+                </div>
+                <div className="flex shrink-0 justify-end gap-2 border-t border-stone-100 px-4 py-3">
+                  <button onClick={() => { setEditingProduct(viewingProduct); setViewingProduct(null); }} className="rounded-lg bg-[#b8864a] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#a07540]">{t('Edit', '编辑')}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Project Modal */}
       {showProjectModal && supplier && (
         <ProjectModal
@@ -1125,7 +1172,7 @@ export default function AdminSupplierDetailPage() {
                     return (
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
-                          <img src={resolveImageUrl(p.image_url)} alt={p.title || ''} onClick={() => setEditingProduct(p)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
+                          <img src={resolveImageUrl(p.image_url)} alt={p.title || ''} onClick={() => setViewingProduct(p)} className="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
                           {/* 右上角悬停操作组(复用装企交互:圆角按钮·图标在上+小字);当前封面则常显。透明时禁点击,让点图直接开编辑器 */}
                           <div className={`absolute top-1.5 right-1.5 flex gap-1 transition-opacity ${isCover ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'}`}>
                             <button onClick={() => setEditingProduct(p)} className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-md shadow-sm bg-white/95 text-stone-700 hover:bg-[#b8864a] hover:text-white transition-colors" title={t('Edit', '编辑')}>
