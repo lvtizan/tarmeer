@@ -61,6 +61,7 @@ const articles_1 = __importDefault(require("./routes/articles"));
 const guides_1 = __importDefault(require("./routes/guides"));
 const supplierAuth_1 = __importDefault(require("./routes/supplierAuth"));
 const suppliers_1 = __importDefault(require("./routes/suppliers"));
+const sourcingRequests_1 = __importDefault(require("./routes/sourcingRequests"));
 const field_1 = __importDefault(require("./routes/field"));
 const site_1 = __importDefault(require("./routes/site"));
 const integration_1 = __importDefault(require("./routes/integration"));
@@ -409,6 +410,7 @@ app.use((req, res, next) => {
 });
 const antiScraping_1 = require("./middleware/antiScraping");
 const enumAdminController_1 = require("./controllers/enumAdminController");
+const productCategoryController_1 = require("./controllers/productCategoryController");
 const feedbackController_1 = require("./controllers/feedbackController");
 // Anti-scraping protection on public data endpoints
 app.use('/api/designers', antiScraping_1.antiScraping);
@@ -433,6 +435,8 @@ app.use('/api/articles', articles_1.default);
 app.use('/api/guides', guides_1.default);
 app.use('/api/supplier/auth', supplierAuth_1.default);
 app.use('/api/suppliers', suppliers_1.default);
+// 中国新材料改版：采购线索表单（sample/visit/sourcing/designer_partner，公开+限流）
+app.use('/api/sourcing-requests', sourcingRequests_1.default);
 app.use('/api/field', field_1.default);
 app.use('/api/site', site_1.default);
 app.use('/api/integration', integration_1.default);
@@ -440,6 +444,7 @@ app.use('/api/partner-sync', partnerSync_1.default);
 app.get('/api/sso/consume', integrationController_1.ssoConsume);
 app.get('/api/public/service-categories', enumAdminController_1.getPublicServiceCategories);
 app.get('/api/public/supplier-categories', enumAdminController_1.getPublicSupplierCategories);
+app.get('/api/public/product-categories', productCategoryController_1.getPublicProductCategoryGroups);
 app.post('/api/feedback', feedbackController_1.submitFeedback);
 // 用户端反馈对话(登录态)：列表 / 未读角标 / 单条对话 / 继续回复
 // 注意 /my/unread-count 必须注册在 /my/:id 之前，否则被 :id 捕获

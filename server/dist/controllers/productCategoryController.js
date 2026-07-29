@@ -5,6 +5,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listProductCategories = listProductCategories;
 exports.getPublicProductCategories = getPublicProductCategories;
+exports.getPublicProductCategoryGroups = getPublicProductCategoryGroups;
 exports.createProductCategory = createProductCategory;
 exports.updateProductCategory = updateProductCategory;
 exports.toggleProductCategory = toggleProductCategory;
@@ -20,6 +21,32 @@ async function listProductCategories(req, res) {
     res.json({ categories: rows });
   } catch (error) {
     console.error('listProductCategories error:', error);
+    res.status(500).json({ error: 'Failed to load product categories.' });
+  }
+}
+
+// GET /api/public/product-categories — 公开只读：按大类分组返回"启用的"产品分类。
+// 前端 useProductCategoryLabels hook / 供应商自助上传页选择器用；结构与 /public/supplier-categories 保持一致，
+// 便于前端复用同一套 { groups:[{value,label,categories:[{value,label}]}], ungrouped } 解析。
+// 只暴露子类为可选项（大类作为分组标题，本身不入可选列表，与后台 optgroup 一致）。
+// 注意：与下面 getPublicProductCategories（/suppliers/product-categories，扁平 {categories} 形状）并存，
+// 二者形状不同、各有既存前端消费方，不得互相替换（additive，2026-07-29 材料改版合并）。
+async function getPublicProductCategoryGroups(req, res) {
+  try {
+    const [rows] = await pool.execute('SELECT value, label, parent_value FROM product_categories WHERE is_enabled = 1 ORDER BY sort_order, label');
+    const parents = rows.filter((r) => !r.parent_value);
+    const parentValues = new Set(parents.map((p) => p.value));
+    const children = rows.filter((r) => r.parent_value);
+    const groups = parents.map((p) => ({
+      value: p.value,
+      label: p.label,
+      categories: children.filter((c) => c.parent_value === p.value).map((c) => ({ value: c.value, label: c.label })),
+    }));
+    // 父级被停用/缺失的孤儿子类归入 ungrouped，避免丢失可选项
+    const ungrouped = children.filter((c) => !parentValues.has(c.parent_value)).map((c) => ({ value: c.value, label: c.label }));
+    res.json({ groups, ungrouped });
+  } catch (error) {
+    console.error('getPublicProductCategoryGroups error:', error);
     res.status(500).json({ error: 'Failed to load product categories.' });
   }
 }
