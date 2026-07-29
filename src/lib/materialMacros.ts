@@ -7,6 +7,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 export type MacroCategory = {
   key: string;
   label: string;
+  label_zh: string | null;
   supplierCount: number;
   productCount: number;
   image: string | null;
@@ -21,61 +22,13 @@ export type MacroProduct = {
   supplier_name: string | null;
 };
 
-// key → 英文标题（10 大类 + 4 Premium），供详情页 SSR 标题/校验用
-export const MACRO_LABELS: Record<string, string> = {
-  furniture: 'Furniture',
-  lighting: 'Lighting',
-  stone: 'Stone & Surfaces',
-  flooring: 'Flooring',
-  'kitchen-bath': 'Kitchen & Bath',
-  'doors-windows': 'Doors & Windows',
-  stairs: 'Stairs',
-  plants: 'Plants & Landscaping',
-  curtains: 'Curtains',
-  decorative: 'Decorative Surfaces',
-  wpc: 'WPC Board',
-  'foamed-ceramic': 'Foamed Ceramic Tile',
-  'art-paint': 'Art Paint',
-  spc: 'SPC Flooring',
-};
+// 分类的 label / 封面图 / counts 现在全部来自 fetchMacroCategories API（唯一数据源 = product_categories 表）。
+// 已删除硬编码 MACRO_LABELS / MACRO_COVER / MACRO_BLURB —— 后台改分类即刻反映，不再维护第二份口径。
 
-// 有专属精品页的大类 → 直接跳该页（不走通用 /materials/category/[key] 聚合页）
-// flooring 指向我们扒图入库的 93 款 PARBRO 艺术地板目录
+// 仅保留：少数子类有专属落地页（如 flooring 有扒图入库的 93 款 PARBRO 艺术地板定制目录）。
+// key = product_categories 子类 value；其余分类一律走通用 /materials/category/[value] 聚合页。
 export const MACRO_DEDICATED_PAGE: Record<string, string> = {
   flooring: '/materials/flooring',
-};
-
-// 大类统一风格首图（Agnes 生成的编辑级室内图，覆盖供应商随机产品图，彰显专业）。
-// 值为基名，组件按 `${base}-medium.webp` / `${base}-thumb.webp` 取。
-export const MACRO_COVER: Record<string, string> = {
-  furniture: '/images/materials/categories/furniture',
-  lighting: '/images/materials/categories/lighting',
-  stone: '/images/materials/categories/stone',
-  flooring: '/images/materials/categories/flooring',
-  'kitchen-bath': '/images/materials/categories/kitchen-bath',
-  'doors-windows': '/images/materials/categories/doors-windows',
-  stairs: '/images/materials/categories/stairs',
-  plants: '/images/materials/categories/plants',
-  curtains: '/images/materials/categories/curtains',
-  decorative: '/images/materials/categories/decorative',
-  spc: '/images/materials/categories/spc',
-  wpc: '/images/materials/categories/wpc',
-  'foamed-ceramic': '/images/materials/categories/foamed-ceramic',
-  'art-paint': '/images/materials/categories/art-paint',
-};
-
-// 每个大类一句英文说明
-export const MACRO_BLURB: Record<string, string> = {
-  furniture: 'Living, bedroom, office & outdoor furniture',
-  lighting: 'Architectural & decorative lighting',
-  stone: 'Marble, sintered stone & surfaces',
-  flooring: 'Parquet, wood & engineered flooring',
-  'kitchen-bath': 'Cabinetry, sanitary ware & fittings',
-  'doors-windows': 'Entry, interior doors & system windows',
-  stairs: 'Staircases & railings',
-  plants: 'Landscape & greenery',
-  curtains: 'Curtains & soft furnishing',
-  decorative: 'Wall coverings & decorative surfaces',
 };
 
 // 战略新材料主推线（优质：木塑板/发泡瓷砖/艺术漆）——暂无产品数据，作 Premium 占位引导询价
@@ -136,6 +89,7 @@ export type MegaCategory = {
   label: string;
   productCount: number;
   supplierCount: number;
+  image: string | null;
   subcategories: MegaSub[];
   featuredSuppliers: MegaSupplier[];
 };
@@ -149,6 +103,7 @@ export async function fetchMegaMenu(country: string): Promise<MegaCategory[]> {
     const d = await res.json();
     return (d.macros || []).map((m: MegaCategory) => ({
       ...m,
+      image: m.image ? resolveImageUrl(m.image) : null,
       featuredSuppliers: (m.featuredSuppliers || []).map((s) => ({ ...s, image: resolveImageUrl(s.image) })),
     }));
   } catch {

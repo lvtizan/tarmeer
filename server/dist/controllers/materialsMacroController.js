@@ -1,6 +1,9 @@
 "use strict";
-// 材料大类聚合（By Material 浏览）——把供应商自由标签归一到干净大类，聚合供应商数/产品数/代表图。
-// 数据源：supplier_profiles.categories(逗号分隔标签) + supplier_products(有图)。国家隔离：只算 req.country。
+// 材料大类聚合（By Material 浏览 / Mega 菜单 / 大类产品 / 搜索）。
+// 分类口径的唯一真相源 = product_categories 表（运营在后台可编辑：value/label/parent_value/sort_order/is_enabled）。
+// 不再硬编码 TAG_TO_MACRO / MACRO_LABEL / SUBTAG_LABEL —— 后台改分类即刻反映到材料页。
+// 归属唯一判据：supplier_products.category = 子类 value（精确匹配）。计数与列表同一判据 → 二者恒等。
+// 国家隔离（铁律）：所有查询都带 WHERE sp.country=?，绝不跨国聚合。
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMacroCategories = getMacroCategories;
 exports.getMacroProducts = getMacroProducts;
@@ -9,83 +12,127 @@ exports.getMegaMenu = getMegaMenu;
 exports.getPopularProducts = getPopularProducts;
 const database_1 = require("../config/database");
 
-// 原始标签 → 英文子类名（mega 浮层 chips 用）
-const SUBTAG_LABEL = {
-  furniture: 'General', italian_minimal: 'Italian Minimalist', italian_luxury: 'Italian Luxury',
-  modern_functional: 'Modern Functional', european_style: 'European', american_style: 'American',
-  french_style: 'French', wabi_sabi: 'Wabi-sabi', childrens_furn: "Children's", outdoor_furn: 'Outdoor',
-  office_furn: 'Office', hotel_furn: 'Hotel', beds: 'Beds', bedding: 'Bedding', wardrobe: 'Wardrobe',
-  whole_house: 'Whole-house', smart_home: 'Smart Home', lighting: 'General', lighting_new: 'New Arrivals',
-  stone: 'Marble & Stone', stone_materials: 'Stone Materials', flooring: 'Flooring', kitchen: 'Kitchen',
-  sanitary_ware: 'Sanitary Ware', bath: 'Bath', system_windows: 'System Windows', entry_doors: 'Entry Doors',
-  interior_doors: 'Interior Doors', stairs: 'Stairs', plants: 'Plants', curtains: 'Curtains',
-  new_indoor_decorative: 'Indoor Decorative', outdoor_deco: 'Outdoor Decor',
-};
-
 // LIKE 转义(防 % _ 被当通配) + 包裹
 const likeParam = (q) => '%' + String(q).replace(/[\\%_]/g, (c) => '\\' + c) + '%';
 
-// 解析 supplier_profiles.categories —— 库里混合格式：JSON 数组 ["furniture","other"] 或逗号串 furniture,other
-// 两种都要解析，否则 JSON 数组格式的供应商标签匹配不上 TAG_TO_MACRO → 大类漏计。
-function parseTags(raw) {
-  if (!raw) return [];
-  const s = String(raw).trim();
-  if (s.startsWith('[')) {
-    try {
-      const a = JSON.parse(s);
-      if (Array.isArray(a)) return a.map((x) => String(x).trim()).filter(Boolean);
-    } catch (e) { /* 落到逗号 split */ }
+// product_categories.label_zh 列可能尚未上线（并行迁移在加）——探测一次并缓存，避免 SELECT 不存在列直接 500。
+let _hasLabelZh = null;
+async function hasLabelZh() {
+  if (_hasLabelZh !== null) return _hasLabelZh;
+  try {
+    const [rows] = await database_1.default.query("SHOW COLUMNS FROM product_categories LIKE 'label_zh'");
+    _hasLabelZh = Array.isArray(rows) && rows.length > 0;
+  } catch (e) {
+    _hasLabelZh = false;
   }
-  return s.split(',').map((t) => t.trim()).filter(Boolean);
+  return _hasLabelZh;
 }
 
-// 供应商自由标签 → 干净大类（英文；未列出的标签(如 other)不计入大类浏览）
-const TAG_TO_MACRO = {
-  furniture: 'furniture', italian_minimal: 'furniture', italian_luxury: 'furniture', modern_functional: 'furniture',
-  european_style: 'furniture', american_style: 'furniture', french_style: 'furniture', wabi_sabi: 'furniture',
-  childrens_furn: 'furniture', outdoor_furn: 'furniture', office_furn: 'furniture', hotel_furn: 'furniture',
-  beds: 'furniture', bedding: 'furniture', wardrobe: 'furniture', whole_house: 'furniture', smart_home: 'furniture',
-  lighting: 'lighting', lighting_new: 'lighting',
-  stone: 'stone', stone_materials: 'stone',
-  flooring: 'flooring',
-  kitchen: 'kitchen-bath', sanitary_ware: 'kitchen-bath', bath: 'kitchen-bath',
-  system_windows: 'doors-windows', entry_doors: 'doors-windows', interior_doors: 'doors-windows',
-  stairs: 'stairs', plants: 'plants', curtains: 'curtains',
-  new_indoor_decorative: 'decorative', outdoor_deco: 'decorative',
-};
+// 加载启用的「子类」（parent_value 非空 = 二级分类），按 sort_order 尊重后台排序。
+async function loadChildren() {
+  const withZh = await hasLabelZh();
+  const cols = withZh
+    ? 'value, label, label_zh, parent_value, sort_order'
+    : 'value, label, parent_value, sort_order';
+  const [rows] = await database_1.default.query(
+    `SELECT ${cols} FROM product_categories
+     WHERE parent_value IS NOT NULL AND is_enabled = 1
+     ORDER BY sort_order, label`
+  );
+  return rows.map((r) => ({
+    value: r.value,
+    label: r.label,
+    label_zh: withZh ? (r.label_zh ?? null) : null,
+    parent_value: r.parent_value,
+    sort_order: Number(r.sort_order) || 0,
+  }));
+}
 
-const MACRO_LABEL = {
-  furniture: 'Furniture', lighting: 'Lighting', stone: 'Stone & Surfaces', flooring: 'Flooring',
-  'kitchen-bath': 'Kitchen & Bath', 'doors-windows': 'Doors & Windows', stairs: 'Stairs',
-  plants: 'Plants & Landscaping', curtains: 'Curtains', decorative: 'Decorative Surfaces',
-};
+// 核心聚合：按 product_categories 子类归桶（供应商数 / 产品数 / 代表图 / 供应商列表）。
+// By-Material 网格与 Mega 菜单共用此函数（单一真相源，口径一致）。
+// 归属唯一判据（canonical predicate）：supplier_products.category = 子类 value（精确匹配）。
+// —— 与 getMacroProducts 的列表判据完全一致 → 侧栏计数 == 分类页产品数，且不跨类重复。
+//    category 为 NULL/'' 的产品不进任何分类浏览（在供应商自己页面展示），可接受。
+async function aggregateByChild(country) {
+  const children = await loadChildren();
+  const childMap = new Map(children.map((c) => [c.value, c]));
 
-// GET /api/suppliers/macro-categories — By Material 大类列表
+  // 供应商元信息（国家隔离 + 已批准发布）+ 代表图 + 权重（供 featured 排序）。
+  const [sup] = await database_1.default.query(
+    `SELECT sp.id, sp.slug, sp.company_name, sp.cover_image_url, sp.logo_url,
+       COALESCE(sp.weight_score, 0) AS weight,
+       (SELECT image_url FROM supplier_products p
+          WHERE p.supplier_profile_id = sp.id AND p.image_url IS NOT NULL AND p.image_url <> ''
+          ORDER BY p.sort_order, p.id LIMIT 1) img
+     FROM supplier_profiles sp
+     WHERE sp.country = ? AND sp.status = 'approved' AND sp.is_published = 1`,
+    [country]
+  );
+  const supMeta = new Map();
+  for (const s of sup) {
+    supMeta.set(s.id, {
+      slug: s.slug,
+      name: s.company_name,
+      image: s.img || s.cover_image_url || s.logo_url || null,
+      weight: Number(s.weight) || 0,
+    });
+  }
+
+  // 每供应商每分类的有图产品数（精确通道，只取已归类到 product_categories 子类的产品）。
+  const [prod] = await database_1.default.query(
+    `SELECT p.supplier_profile_id AS sid, p.category AS cat, COUNT(*) AS cnt
+     FROM supplier_products p
+     JOIN supplier_profiles sp ON sp.id = p.supplier_profile_id
+     WHERE sp.country = ? AND sp.status = 'approved' AND sp.is_published = 1
+       AND p.image_url IS NOT NULL AND p.image_url <> ''
+       AND p.category IS NOT NULL AND p.category <> ''
+     GROUP BY p.supplier_profile_id, p.category`,
+    [country]
+  );
+
+  const bucket = new Map(); // value -> aggregate
+  for (const r of prod) {
+    const cat = String(r.cat).trim();
+    if (!childMap.has(cat)) continue; // 未知/未启用子类值 → 不归桶（不 crash）
+    const meta = supMeta.get(r.sid);
+    if (!meta) continue; // 供应商不在 approved/published/本国 集合内（JOIN 已保证，防御）
+    let b = bucket.get(cat);
+    if (!b) {
+      const c = childMap.get(cat);
+      b = { key: cat, label: c.label, label_zh: c.label_zh, productCount: 0, supplierCount: 0, image: null, sort_order: c.sort_order, suppliers: [] };
+      bucket.set(cat, b);
+    }
+    b.productCount += Number(r.cnt) || 0;
+    // GROUP BY (sid,cat) 保证同一供应商在同一分类只出现一次 → suppliers 天然去重
+    b.suppliers.push({ slug: meta.slug, name: meta.name, image: meta.image, weight: meta.weight, pcnt: Number(r.cnt) || 0 });
+  }
+
+  const list = [];
+  for (const b of bucket.values()) {
+    if (b.productCount <= 0) continue;
+    b.supplierCount = b.suppliers.length; // 有该类产品的不同供应商数（与列表口径一致）
+    b.suppliers.sort((a, z) => (z.weight - a.weight) || (z.pcnt - a.pcnt));
+    const withImg = b.suppliers.find((s) => s.image);
+    b.image = withImg ? withImg.image : null;
+    list.push(b);
+  }
+  // 按后台 sort_order 排序（尊重运营顺序）
+  return list.sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label));
+}
+
+// GET /api/suppliers/macro-categories?country= — By Material 浏览网格（分类来自 product_categories）
 async function getMacroCategories(req, res) {
   try {
     const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
-    const [sup] = await database_1.default.query(
-      `SELECT sp.id, sp.categories,
-         (SELECT image_url FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'' ORDER BY p.sort_order,p.id LIMIT 1) img,
-         (SELECT COUNT(*) FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'') pcnt
-       FROM supplier_profiles sp
-       WHERE sp.country = ? AND sp.status='approved' AND sp.is_published=1`,
-      [country]
-    );
-    const bucket = {};
-    for (const s of sup) {
-      const tags = parseTags(s.categories);
-      const macros = [...new Set(tags.map(t => TAG_TO_MACRO[t]).filter(Boolean))];
-      // 只有画册、没有产品的供应商不计入 By-Material：该页只展示产品，若计数会导致"数字≠展示内容"
-      if ((Number(s.pcnt) || 0) === 0) continue;
-      for (const m of macros) {
-        if (!bucket[m]) bucket[m] = { key: m, label: MACRO_LABEL[m], supplierCount: 0, productCount: 0, image: null };
-        bucket[m].supplierCount += 1;
-        bucket[m].productCount += Number(s.pcnt) || 0;
-        if (!bucket[m].image && s.img) bucket[m].image = s.img;
-      }
-    }
-    const macros = Object.values(bucket).sort((a, b) => b.productCount - a.productCount);
+    const list = await aggregateByChild(country);
+    const macros = list.map((b) => ({
+      key: b.key,
+      label: b.label,
+      label_zh: b.label_zh,
+      supplierCount: b.supplierCount,
+      productCount: b.productCount,
+      image: b.image,
+    }));
     res.json({ macros, country });
   } catch (error) {
     console.error('getMacroCategories error:', error);
@@ -93,53 +140,50 @@ async function getMacroCategories(req, res) {
   }
 }
 
-// GET /api/suppliers/macro-categories/:key/products — 某大类下聚合的供应商产品(穿透到公司)
+// GET /api/suppliers/macro-categories/:key/products — 某子类的产品瀑布流
 async function getMacroProducts(req, res) {
   try {
     const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
-    const key = String(req.params.key || '');
-    const label = MACRO_LABEL[key];
-    if (!label) return res.status(404).json({ error: 'Unknown category.' });
+    const key = String(req.params.key || '').trim();
+    const children = await loadChildren();
+    const child = children.find((c) => c.value === key);
+    if (!child) return res.status(404).json({ error: 'Unknown category.' });
+    const label = child.label;
+
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(48, Math.max(1, parseInt(req.query.limit) || 24));
     const offset = (page - 1) * limit;
-    // 1) 找属于该大类的 AE 供应商
-    const [sup] = await database_1.default.query(
-      `SELECT id, slug, company_name, categories FROM supplier_profiles
-       WHERE country = ? AND status='approved' AND is_published=1`,
-      [country]
-    );
-    const ids = [];
-    const supMeta = {};
-    for (const s of sup) {
-      const tags = parseTags(s.categories);
-      if (tags.some(t => TAG_TO_MACRO[t] === key)) {
-        ids.push(s.id);
-        supMeta[s.id] = { slug: s.slug, name: s.company_name };
-      }
-    }
-    if (ids.length === 0) return res.json({ label, key, products: [], pagination: { page, limit, total: 0, totalPages: 0 } });
-    // 2) 这些供应商的有图产品
-    const placeholders = ids.map(() => '?').join(',');
+
+    // 唯一判据：精确归类 p.category = key（与 aggregateByChild 完全一致 → 计数 == 列表）。
+    const where = `sp.country = ? AND sp.status = 'approved' AND sp.is_published = 1
+      AND p.image_url IS NOT NULL AND p.image_url <> '' AND p.category = ?`;
+    const params = [country, key];
+
     const [cntRows] = await database_1.default.query(
-      `SELECT COUNT(*) total FROM supplier_products WHERE supplier_profile_id IN (${placeholders}) AND image_url IS NOT NULL AND image_url<>''`,
-      ids
+      `SELECT COUNT(*) total FROM supplier_products p
+       JOIN supplier_profiles sp ON sp.id = p.supplier_profile_id
+       WHERE ${where}`,
+      params
     );
     const total = cntRows[0].total;
+    if (total === 0) return res.json({ label, key, products: [], pagination: { page, limit, total: 0, totalPages: 0 } });
+
     const [rows] = await database_1.default.query(
-      `SELECT id, supplier_profile_id, title, title_translated, image_url, category
-       FROM supplier_products
-       WHERE supplier_profile_id IN (${placeholders}) AND image_url IS NOT NULL AND image_url<>''
-       ORDER BY sort_order, id
+      `SELECT p.id, p.title, p.title_translated, p.image_url, p.category,
+         sp.slug AS supplier_slug, sp.company_name AS supplier_name
+       FROM supplier_products p
+       JOIN supplier_profiles sp ON sp.id = p.supplier_profile_id
+       WHERE ${where}
+       ORDER BY p.sort_order, p.id
        LIMIT ${limit} OFFSET ${offset}`,
-      ids
+      params
     );
-    const products = rows.map(r => ({
+    const products = rows.map((r) => ({
       id: r.id,
       title: r.title_translated || r.title || 'Product',
       image_url: r.image_url,
-      supplier_slug: supMeta[r.supplier_profile_id] ? supMeta[r.supplier_profile_id].slug : null,
-      supplier_name: supMeta[r.supplier_profile_id] ? supMeta[r.supplier_profile_id].name : null,
+      supplier_slug: r.supplier_slug || null,
+      supplier_name: r.supplier_name || null,
     }));
     res.json({ label, key, products, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
@@ -178,7 +222,7 @@ async function getPopularProducts(req, res) {
   }
 }
 
-// GET /api/materials/search?q=&type=products|suppliers&country=&page= — 全文搜索(hub 大搜索)
+// GET /api/suppliers/search — 材料/供应商搜索（不依赖分类硬编码；按名称/标题/分类值 LIKE）
 async function getMaterialSearch(req, res) {
   try {
     const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
@@ -191,7 +235,6 @@ async function getMaterialSearch(req, res) {
     const like = likeParam(q);
 
     if (type === 'suppliers') {
-      // 供应商：按公司名 / 品类标签模糊搜（country 参数比较，无 collation 问题）
       const [cntRows] = await database_1.default.query(
         `SELECT COUNT(*) total FROM supplier_profiles sp
          WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1
@@ -212,7 +255,6 @@ async function getMaterialSearch(req, res) {
       return res.json({ type, q, results: rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }
 
-    // products：按产品标题(原/译) / 品类模糊搜，join 供应商取国家 + 公司
     const [cntRows] = await database_1.default.query(
       `SELECT COUNT(*) total FROM supplier_products p
        JOIN supplier_profiles sp ON sp.id=p.supplier_profile_id
@@ -239,50 +281,22 @@ async function getMaterialSearch(req, res) {
   }
 }
 
-// GET /api/materials/mega-menu?country= — hub 左目录 + 每类子类 + 精选供应商（一次返回）
+// GET /api/suppliers/mega-menu?country= — 目录浮层（分类=product_categories 子类；含代表图 + 精选供应商）
 async function getMegaMenu(req, res) {
   try {
     const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
-    const [sup] = await database_1.default.query(
-      `SELECT sp.id, sp.slug, sp.company_name, sp.categories, sp.cover_image_url, sp.logo_url,
-         (SELECT image_url FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'' ORDER BY p.sort_order,p.id LIMIT 1) img,
-         (SELECT COUNT(*) FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'') pcnt
-       FROM supplier_profiles sp
-       WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1`,
-      [country]
-    );
-    const macros = {};
-    for (const s of sup) {
-      const pcnt = Number(s.pcnt) || 0;
-      if (pcnt === 0) continue; // 只算有产品的供应商（与 By-Material 口径一致）
-      const tags = parseTags(s.categories);
-      const macroSet = new Set();
-      for (const t of tags) {
-        const m = TAG_TO_MACRO[t];
-        if (!m) continue;
-        macroSet.add(m);
-        if (!macros[m]) macros[m] = { key: m, label: MACRO_LABEL[m], productCount: 0, supplierCount: 0, subs: {}, suppliers: [] };
-        // 子类计数
-        if (!macros[m].subs[t]) macros[m].subs[t] = { tag: t, label: SUBTAG_LABEL[t] || t, count: 0 };
-        macros[m].subs[t].count += 1;
-      }
-      // 该供应商计入其所属每个大类的精选池(带图) + 计数
-      const supImg = s.cover_image_url || s.img || s.logo_url || null;
-      for (const m of macroSet) {
-        macros[m].productCount += pcnt;
-        macros[m].supplierCount += 1;
-        if (supImg) macros[m].suppliers.push({ slug: s.slug, name: s.company_name, image: supImg, pcnt });
-      }
-    }
-    const out = Object.values(macros).map((m) => ({
-      key: m.key,
-      label: m.label,
-      productCount: m.productCount,
-      supplierCount: m.supplierCount,
-      subcategories: Object.values(m.subs).sort((a, b) => b.count - a.count).slice(0, 8),
-      featuredSuppliers: m.suppliers.sort((a, b) => b.pcnt - a.pcnt).slice(0, 3),
-    })).sort((a, b) => b.productCount - a.productCount);
-    res.json({ macros: out, country });
+    const list = await aggregateByChild(country);
+    const macros = list.map((b) => ({
+      key: b.key,
+      label: b.label,
+      productCount: b.productCount,
+      supplierCount: b.supplierCount,
+      image: b.image,
+      subcategories: [], // product_categories 只有两级（大类/子类），子类下无三级 → 无 chips
+      // 已按 weight_score 排序（供应商查询 ORDER BY），取前 3
+      featuredSuppliers: b.suppliers.slice(0, 3).map((s) => ({ slug: s.slug, name: s.name, image: s.image })),
+    }));
+    res.json({ macros, country });
   } catch (error) {
     console.error('getMegaMenu error:', error);
     res.status(500).json({ error: 'Failed to load menu.' });

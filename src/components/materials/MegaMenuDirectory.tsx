@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import {
-  MACRO_COVER,
-  MACRO_BLURB,
   MACRO_DEDICATED_PAGE,
   fetchMacroProducts,
   type MegaCategory,
@@ -93,7 +91,7 @@ export default function MegaMenuDirectory({
           {categories.map((c) => {
             const isActive = activeKey === c.key;
             const isOpen = openKey === c.key;
-            const cover = MACRO_COVER[c.key];
+            const cover = c.image;
             return (
               <li key={c.key}>
                 {/* Row */}
@@ -119,7 +117,7 @@ export default function MegaMenuDirectory({
                   {cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={`${cover}-thumb.webp`}
+                      src={cover}
                       alt={c.label}
                       width={40}
                       height={40}
@@ -198,7 +196,6 @@ function MegaPanel({
   loadingProducts: boolean;
 }) {
   const href = categoryHref(c);
-  const blurb = MACRO_BLURB[c.key];
 
   return (
     <div>
@@ -211,9 +208,9 @@ function MegaPanel({
           >
             {c.label}
           </h3>
-          {blurb && (
-            <p className="mt-1 text-sm text-stone-500">{blurb}</p>
-          )}
+          <p className="mt-1 text-sm text-stone-500">
+            {c.supplierCount} suppliers · {c.productCount} products
+          </p>
         </div>
         <Link
           href={href}

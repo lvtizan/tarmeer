@@ -1,10 +1,9 @@
 'use client';
 
-// 材料搜索 Hub（替换 MaterialsTabs）：Hero 大搜索 + Products/Suppliers tab；
+// 材料搜索 Hub（/materials AE 主页）：顶部 Products/Suppliers tab + 搜索条；
 // 左侧类目目录(hover mega 浮层)；右侧未搜索=精选(HubFeatured)，搜索后=结果(HubSearchResults)。
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { Search, ArrowRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import {
@@ -79,16 +78,13 @@ export default function MaterialsHub() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       {/* Hero：大标题 + tab + 大搜索 */}
-      <section className="bg-[#1c1917]">
-        <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:px-6 lg:py-20">
-          <h1 className="font-serif text-4xl font-bold leading-tight text-white [text-wrap:balance] sm:text-5xl">
-            See it in Dubai, <span className="text-[#c6a065]">source it from China</span>
+      <section className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-4xl px-4 py-8 text-center sm:px-6 lg:py-10">
+          <h1 className="font-serif text-3xl font-bold leading-tight text-[#1c1917] [text-wrap:balance] sm:text-4xl">
+            Materials &amp; Suppliers
           </h1>
-          <p className="mx-auto mt-3 text-[13px] leading-relaxed text-white/55">
-            Touch the newest materials in Dubai — sourced factory-direct from China, delivered across the UAE.
-          </p>
 
-          <div className="mt-8 mb-6 flex items-center justify-center gap-6">
+          <div className="mt-6 mb-5 flex items-center justify-center gap-6">
             {(
               [
                 { key: 'products', label: 'Products' },
@@ -100,17 +96,17 @@ export default function MaterialsHub() {
                 type="button"
                 onClick={() => switchTab(t.key)}
                 className={`relative pb-1 text-lg font-semibold transition ${
-                  tab === t.key ? 'text-white' : 'text-white/45 hover:text-white/80'
+                  tab === t.key ? 'text-[#1c1917]' : 'text-stone-400 hover:text-stone-600'
                 }`}
               >
                 {t.label}
                 {tab === t.key && (
-                  <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#c6a065]" />
+                  <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#b8864a]" />
                 )}
               </button>
             ))}
           </div>
-          <form onSubmit={onSubmit} className="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-lg">
+          <form onSubmit={onSubmit} className="flex items-center gap-2 rounded-2xl border border-stone-300 bg-white p-2 shadow-sm">
             <Search className="ml-2 h-5 w-5 shrink-0 text-stone-400" />
             <input
               value={q}
@@ -120,19 +116,11 @@ export default function MaterialsHub() {
             />
             <button
               type="submit"
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#1c1917] px-6 text-sm font-semibold text-white transition hover:bg-black"
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#b8864a] px-6 text-sm font-semibold text-white transition hover:bg-[#a07640]"
             >
               <Search className="h-4 w-4" /> Search
             </button>
           </form>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px]">
-            <Link href="/materials/showroom" className="inline-flex items-center gap-1.5 font-semibold text-[#c6a065] transition hover:text-white">
-              Visit the selection center <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-            <Link href="/for-designers/china-tour" className="text-white/50 transition hover:text-white/80">
-              See the study tour
-            </Link>
-          </div>
         </div>
       </section>
 

@@ -9,7 +9,6 @@ import { ArrowLeft } from 'lucide-react';
 import { getCountry } from '@/lib/country';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import MacroProductGrid from '@/components/materials/MacroProductGrid';
-import { MACRO_LABELS, MACRO_BLURB } from '@/lib/materialMacros';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +18,25 @@ const FLOOR_KEYWORDS = [
   'material selection center Dubai',
 ];
 
+// 分类 label 来自 product_categories（经后端 /suppliers/macro-categories/:key/products 解析）——
+// 不再硬编码 MACRO_LABELS。
+// 返回 null 仅代表「未知 key」(后端 404) → 调用方 notFound()。
+// 后端 500 / 网络错误 → throw（交给 Next 错误边界渲染可重试的 500），绝不误判成硬 404。
+async function resolveCategoryLabel(key: string, country: string): Promise<string | null> {
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
+  const res = await fetch(
+    `${API_BASE}/suppliers/macro-categories/${encodeURIComponent(key)}/products?country=${country}&limit=1`,
+    { headers: { 'x-country': country } },
+  );
+  if (res.status === 404) return null; // 未知/未启用分类 → 真 404
+  if (!res.ok) throw new Error(`resolveCategoryLabel: backend returned HTTP ${res.status}`);
+  const d = await res.json();
+  // 有效分类（含空分类）后端恒返回 200 + label；缺 label 视为异常，宁可 throw 也不误判 404
+  if (typeof d.label === 'string' && d.label) return d.label;
+  throw new Error('resolveCategoryLabel: valid response missing label');
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -27,7 +45,7 @@ export async function generateMetadata({
   const c = getCountry((await headers()).get('x-country'));
   if (c.code !== 'ae') notFound();
   const { key } = await params;
-  const label = MACRO_LABELS[key];
+  const label = await resolveCategoryLabel(key, c.code);
   if (!label) notFound();
   const title = `${label} from China for the UAE | Tarmeer`;
   const description = `Source ${label.toLowerCase()} from vetted China suppliers, delivered across the UAE. See products and specify with Tarmeer's Dubai material selection center.`;
@@ -54,7 +72,7 @@ export default async function MaterialCategoryPage({
   const c = getCountry((await headers()).get('x-country'));
   if (c.code !== 'ae') notFound();
   const { key } = await params;
-  const label = MACRO_LABELS[key];
+  const label = await resolveCategoryLabel(key, c.code);
   if (!label) notFound();
 
   const crumbs = [
@@ -75,7 +93,7 @@ export default async function MaterialCategoryPage({
             {label}
           </h1>
           <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70">
-            {MACRO_BLURB[key] ?? `${label} sourced from China for UAE projects.`}
+            {`${label} sourced from China for UAE projects.`}
           </p>
         </div>
       </section>
