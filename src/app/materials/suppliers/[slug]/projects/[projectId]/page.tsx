@@ -21,10 +21,12 @@ interface ProjectDetail {
 }
 
 /** 服务端取项目详情；缺失返回 null（→ notFound，禁止软 404） */
-async function fetchProjectDetail(slug: string, projectId: string): Promise<ProjectDetail | null> {
+async function fetchProjectDetail(slug: string, projectId: string, country: string): Promise<ProjectDetail | null> {
   try {
-    const res = await fetch(`${API_BASE}/suppliers/detail/${slug}/projects/${projectId}`, {
+    // 国家隔离铁律：SSR 出站 fetch 必须带国家（?country= 入缓存键 + x-country 头），否则 VN 站默认 ae 渲染 AE 项目页（P0 串域）。
+    const res = await fetch(`${API_BASE}/suppliers/detail/${slug}/projects/${projectId}?country=${country}`, {
       next: { revalidate: 3600 },
+      headers: { 'x-country': country },
     });
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<ProjectDetail>;
@@ -58,7 +60,7 @@ function toAbsolute(url: string | null, baseUrl: string): string | undefined {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug, projectId } = await params;
   const c = getCountry((await headers()).get('x-country'));
-  const detail = await fetchProjectDetail(slug, projectId);
+  const detail = await fetchProjectDetail(slug, projectId, c.code);
   if (!detail) return { title: 'Project Not Found | Tarmeer', robots: { index: false, follow: false } };
 
   const { supplier, project } = detail;
@@ -94,7 +96,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SupplierProjectDetailPage({ params }: PageProps) {
   const { slug, projectId } = await params;
   const c = getCountry((await headers()).get('x-country'));
-  const detail = await fetchProjectDetail(slug, projectId);
+  const detail = await fetchProjectDetail(slug, projectId, c.code);
   if (!detail) notFound();
 
   const { supplier, project } = detail;

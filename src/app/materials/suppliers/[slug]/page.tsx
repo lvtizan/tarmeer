@@ -40,11 +40,14 @@ interface SupplierBasic {
   categories?: unknown;
 }
 
-async function fetchSupplierBasic(slug: string): Promise<SupplierBasic | null> {
+async function fetchSupplierBasic(slug: string, country: string): Promise<SupplierBasic | null> {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
   try {
-    const res = await fetch(`${API_BASE}/suppliers/detail/${slug}`, {
+    // 国家隔离铁律：SSR 出站 fetch 必须显式带国家（?country= 入缓存键防跨国缓存污染 + x-country 头供后端过滤），
+    // 否则 VN 站 SSR 默认 ae → 渲染 AE 供应商页（P0 串域）。后端 detail 对错国家 slug 返回 404 → notFound。
+    const res = await fetch(`${API_BASE}/suppliers/detail/${slug}?country=${country}`, {
       next: { revalidate: 3600 },
+      headers: { 'x-country': country },
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -57,7 +60,7 @@ async function fetchSupplierBasic(slug: string): Promise<SupplierBasic | null> {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const c = getCountry((await headers()).get('x-country'));
-  const supplier = await fetchSupplierBasic(slug);
+  const supplier = await fetchSupplierBasic(slug, c.code);
 
   if (!supplier) {
     return { title: 'Supplier Not Found | Tarmeer' };
@@ -103,7 +106,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SupplierDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const c = getCountry((await headers()).get('x-country'));
-  const supplier = await fetchSupplierBasic(slug);
+  const supplier = await fetchSupplierBasic(slug, c.code);
   if (!supplier) notFound();
 
   const supplierUrl = `${c.baseUrl}/materials/suppliers/${slug}`;
