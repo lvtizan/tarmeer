@@ -547,21 +547,15 @@ export default function CatalogReader({
                 title="Download this catalog"
                 subtitle="Tell us about your project — we’ll unlock the PDF and connect you."
                 submitLabel="Submit & Download"
+                leadTag="Material Inquiry"
                 companyId={download.companyId}
                 companyName={download.companyName}
                 companySlug={download.companySlug}
-                // TODO(M2 revamp-merge): leadTag/onSuccess 是改版侧对共享文件 ServiceInquiryCard 新增的 props
-                // （见 lvtizan/网站改版 对 ServiceInquiryCard.tsx 的 +13 diff）。M1 只带纯新增文件，
-                // 共享文件留待 M2 手工 union。此处用展开+类型逃逸传入：main 版组件运行时忽略这两个
-                // props（下载解锁/线索打标暂不生效），M2 union 后无需改本文件即自动恢复。届时删除此逃逸。
-                {...({
-                  leadTag: 'Material Inquiry',
-                  onSuccess: () => {
-                    setUnlocked(true);
-                    triggerDownload();
-                    setTimeout(() => setShowInquiry(false), 1600);
-                  },
-                } as Record<string, unknown>)}
+                onSuccess={() => {
+                  setUnlocked(true);
+                  triggerDownload();
+                  setTimeout(() => setShowInquiry(false), 1600);
+                }}
               />
             </div>
           </div>,

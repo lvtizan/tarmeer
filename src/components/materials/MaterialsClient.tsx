@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { MapPin, Clock, Package, Search, X } from 'lucide-react';
+import { MapPin, Clock, Package, Search, X, ArrowRight } from 'lucide-react';
 import { resolveVariantUrl, resolveImageUrl } from '@/lib/imageUrl';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS, supplierPublicTitle } from '@/lib/supplierConstants';
 import AdminSelect from '@/components/ui/AdminSelect';
@@ -143,9 +143,11 @@ function FilterOption({
 
 interface MaterialsClientProps {
   initialSuppliers: Supplier[];
+  /** AE 站在 hero 显示「Explore New Materials」入口（→ /materials/new-materials）；VN 站不显示。 */
+  showNewMaterialsEntry?: boolean;
 }
 
-export default function MaterialsClient({ initialSuppliers }: MaterialsClientProps) {
+export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntry }: MaterialsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
@@ -252,8 +254,16 @@ export default function MaterialsClient({ initialSuppliers }: MaterialsClientPro
             Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
           </p>
 
-          {/* 搜索条 + 供应商登录：整体居中同排（对齐公司列表页风格） */}
+          {/* 搜索条 + 供应商登录：整体居中同排（对齐公司列表页风格）；AE 站额外带新材料页入口（M2 union：改版侧 showNewMaterialsEntry） */}
           <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {showNewMaterialsEntry && (
+              <Link
+                href="/materials/new-materials"
+                className="btn-primary inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap px-6"
+              >
+                Explore New Materials <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
             <div className="relative w-full sm:w-[30rem]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
               <input

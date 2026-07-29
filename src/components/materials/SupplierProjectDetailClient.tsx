@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, MapPin, Maximize2, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import { supplierPublicTitle } from '@/lib/supplierConstants';
+import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
 
@@ -56,6 +57,8 @@ export default function SupplierProjectDetailClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  // 产品分类 value→label 映射(单一数据源 product_categories)，否则显示原始 value 如 NEW_MATERIALS
+  const catLabel = useProductCategoryLabels();
 
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [project, setProject] = useState<Project | null>(null);
@@ -227,7 +230,7 @@ export default function SupplierProjectDetailClient() {
                         <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
                       </div>
                       <div className="p-1.5">
-                        {m.category && <p className="text-[9px] font-medium text-[#b8864a] uppercase tracking-wider truncate">{m.category}</p>}
+                        {m.category && <p className="text-[9px] font-medium text-[#b8864a] uppercase tracking-wider truncate">{catLabel(m.category)}</p>}
                         <p className="text-[11px] font-medium text-[#2c2c2c] truncate">{m.title || 'Material'}</p>
                       </div>
                     </div>

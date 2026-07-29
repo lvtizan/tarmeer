@@ -43,6 +43,10 @@ interface ServiceInquiryCardProps {
   minimal?: boolean;
   /** Vietnam site: show VN cities */
   isVn?: boolean;
+  /** 提交成功后回调（如：解锁 PDF 下载）。仍会显示内置成功态。 */
+  onSuccess?: () => void;
+  /** 线索分类标记：给 message 加 `[tag]` 前缀，后台按前缀分 tab（如 'Material Inquiry' → 材料询单）。 */
+  leadTag?: string;
 }
 
 export default function ServiceInquiryCard({
@@ -57,6 +61,8 @@ export default function ServiceInquiryCard({
   companySlug,
   minimal = false,
   isVn = false,
+  onSuccess,
+  leadTag,
 }: ServiceInquiryCardProps) {
   const CITIES = isVn ? VN_CITIES : UAE_CITIES;
   const [form, setForm] = useState({
@@ -80,12 +86,16 @@ export default function ServiceInquiryCard({
     setSubmitting(true);
     setError('');
     try {
+      // 线索标记：加 [tag] 前缀，后台据此分 tab（如材料询单）。用户留言拼在标记之后。
+      const taggedMessage = leadTag
+        ? `[${leadTag}]${form.message ? ' ' + form.message : ''}`
+        : form.message || undefined;
       await api.post('/inquiries', {
         name: form.name || undefined,
         phone: form.phone,
         city: form.city || undefined,
         area_range: `${Number(form.areaSize)}m²`,
-        message: form.message || undefined,
+        message: taggedMessage,
         company_id: companyId || undefined,
         source_company_name: companyName || undefined,
         source_company_slug: companySlug || undefined,
@@ -94,6 +104,8 @@ export default function ServiceInquiryCard({
       setSubmitted(true);
       trackContact({ content_name: companyName || 'Service Page', content_id: companySlug || '' });
       trackLead({ content_name: companyName || 'Service Page', content_id: companySlug || '' });
+      onSuccess?.(); // 解锁下载等后续动作
+
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to submit. Please try again.');
     } finally {

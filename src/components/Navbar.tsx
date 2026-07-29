@@ -182,7 +182,8 @@ export default function Navbar({
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
 
-          {/* Portfolio Dropdown */}
+          {/* Portfolio Dropdown — AE 站隐藏（作品集瀑布流为旧定位遗留，页面保留不删仅隐藏入口，SEO 不受影响）；VN 站仍在用故保留 */}
+          {isVn && (
           <div
             className="relative"
             onMouseEnter={() => setPortfolioDropdownOpen(true)}
@@ -222,6 +223,7 @@ export default function Navbar({
               </div>
             </div>
           </div>
+          )}
 
           {/* Find Company Dropdown — 空间类型（后台可配置） */}
           <div
@@ -398,9 +400,22 @@ export default function Navbar({
                     ));
                   })()}
                 </div>
-                <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
+                <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg flex flex-wrap items-center gap-x-6 gap-y-2">
                   <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
                     {tr.nav.allSuppliers} {'>'}
+                  </Link>
+                  {/* 中国新材料采购入口（AE 专属，业务转型新增） */}
+                  <Link href="/materials/showroom" onClick={() => handleClick('/materials/showroom')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    Selection Center
+                  </Link>
+                  <Link href="/services/china-sourcing" onClick={() => handleClick('/services/china-sourcing')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    China Sourcing
+                  </Link>
+                  <Link href="/guarantee" onClick={() => handleClick('/guarantee')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    Local Guarantee
+                  </Link>
+                  <Link href="/for-designers" onClick={() => handleClick('/for-designers')} className="text-sm font-medium text-stone-600 hover:text-[#b8864a] transition">
+                    For Designers
                   </Link>
                 </div>
               </div>
@@ -447,7 +462,8 @@ export default function Navbar({
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
 
-            {/* Mobile Portfolio */}
+            {/* Mobile Portfolio — AE 站隐藏（同桌面端），VN 保留 */}
+            {isVn && (
             <div className="py-2">
               <button onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)} className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
                 {tr.nav.portfolio}
@@ -477,6 +493,7 @@ export default function Navbar({
                 </div>
               )}
             </div>
+            )}
 
             {/* Mobile Find Company */}
             <div className="py-2">
@@ -581,6 +598,19 @@ export default function Navbar({
                   <div className="border-t border-stone-200 pt-2">
                     <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
                       {tr.nav.allSuppliers} {'>'}
+                    </Link>
+                    {/* 中国新材料采购入口（AE 专属，业务转型新增） */}
+                    <Link href="/materials/showroom" onClick={() => handleClick('/materials/showroom')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      Selection Center
+                    </Link>
+                    <Link href="/services/china-sourcing" onClick={() => handleClick('/services/china-sourcing')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      China Sourcing
+                    </Link>
+                    <Link href="/guarantee" onClick={() => handleClick('/guarantee')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      Local Guarantee
+                    </Link>
+                    <Link href="/for-designers" onClick={() => handleClick('/for-designers')} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
+                      For Designers
                     </Link>
                   </div>
                 </div>

@@ -18,9 +18,18 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
 
   const footerNavLinks = [
     { to: '/', label: tr.footer.navLinks.Home },
-    { to: '/portfolio', label: tr.footer.navLinks.Portfolio },
+    // 作品集瀑布流 AE 站隐藏（旧定位遗留；页面保留不删，SEO 不受影响）；VN 站仍在用故保留
+    ...(lang === 'vi' ? [{ to: '/portfolio', label: tr.footer.navLinks.Portfolio }] : []),
     { to: '/companies', label: tr.footer.navLinks['Find Company'] },
     { to: '/materials', label: tr.footer.navLinks.Materials },
+    // 中国新材料采购入口 — AE 专属（VN 站无这些路由，走 notFound）
+    ...(lang !== 'vi'
+      ? [
+          { to: '/services/china-sourcing', label: 'China Sourcing' },
+          { to: '/guarantee', label: 'Local Guarantee' },
+          { to: '/for-designers', label: 'For Designers' },
+        ]
+      : []),
     { to: '/insights', label: lang === 'vi' ? 'Cẩm nang' : 'Insights' },
     { to: '/for-companies', label: tr.footer.navLinks['Join as Company'] },
     { to: '/about', label: tr.footer.navLinks['About Us'] },
