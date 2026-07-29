@@ -16,6 +16,7 @@ const path_1 = __importDefault(require("path"));
 const os_1 = __importDefault(require("os"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
+const supplierRedact_1 = require("../lib/supplierRedact");
 async function getProfileId(supplierUserId) {
     const [rows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE supplier_user_id = ? LIMIT 1', [supplierUserId]);
     return rows[0]?.id || null;
@@ -95,12 +96,25 @@ async function uploadCatalogChunk(req, res) {
 async function listCatalogs(req, res) {
     try {
         const { slug } = req.params;
-        const [profileRows] = await database_1.default.execute("SELECT id FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        // 国家隔离铁律：按站点国家解析供应商，禁 VN 命中 AE 供应商目录（P0 串域）。
+        const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
+        const [profileRows] = await database_1.default.execute("SELECT id, company_name, name_zh FROM supplier_profiles WHERE slug = ? AND status = 'approved' AND country = ?", [slug, reqCountry]);
         const profile = profileRows[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
         const [catalogs] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [profile.id]);
-        res.json({ catalogs });
+        // 公开去标识：目录标题里的真实厂名(中英)一并遮蔽(与 getPublicProfile 同口径,修 C1/退 F3)。
+        // 注意：file_url 仍含真实文件名(pre-existing F2,与供应商详情页 CatalogReader 共用),需 proxy 下载路由单独治理。
+        const realName = profile.company_name || '';
+        const realZh = profile.name_zh || '';
+        const maskTitle = (t) => {
+            let out = supplierRedact_1.maskSupplierMentions(t, realName);
+            if (realZh)
+                out = supplierRedact_1.maskSupplierMentions(out, realZh);
+            return out;
+        };
+        const masked = (Array.isArray(catalogs) ? catalogs : []).map((c) => ({ ...c, title: maskTitle(c.title) }));
+        res.json({ catalogs: masked });
     }
     catch (error) {
         console.error('List catalogs error:', error);
