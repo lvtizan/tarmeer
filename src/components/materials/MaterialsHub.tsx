@@ -3,7 +3,8 @@
 // 材料搜索 Hub（替换 MaterialsTabs）：Hero 大搜索 + Products/Suppliers tab；
 // 左侧类目目录(hover mega 浮层)；右侧未搜索=精选(HubFeatured)，搜索后=结果(HubSearchResults)。
 import { useState, useEffect, useCallback } from 'react';
-import { Search } from 'lucide-react';
+import Link from 'next/link';
+import { Search, ArrowRight } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import {
@@ -77,10 +78,17 @@ export default function MaterialsHub() {
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
-      {/* Hero：tab + 大搜索 */}
+      {/* Hero：大标题 + tab + 大搜索 */}
       <section className="bg-[#1c1917]">
-        <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 lg:py-16">
-          <div className="mb-6 flex items-center justify-center gap-6">
+        <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:px-6 lg:py-20">
+          <h1 className="font-serif text-4xl font-bold leading-tight text-white [text-wrap:balance] sm:text-5xl">
+            See it in Dubai, <span className="text-[#c6a065]">source it from China</span>
+          </h1>
+          <p className="mx-auto mt-3 text-[13px] leading-relaxed text-white/55">
+            Touch the newest materials in Dubai — sourced factory-direct from China, delivered across the UAE.
+          </p>
+
+          <div className="mt-8 mb-6 flex items-center justify-center gap-6">
             {(
               [
                 { key: 'products', label: 'Products' },
@@ -117,9 +125,14 @@ export default function MaterialsHub() {
               <Search className="h-4 w-4" /> Search
             </button>
           </form>
-          <p className="mt-4 text-[13px] text-white/50">
-            China&apos;s newest building materials — see them in Dubai, sourced factory-direct.
-          </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px]">
+            <Link href="/materials/showroom" className="inline-flex items-center gap-1.5 font-semibold text-[#c6a065] transition hover:text-white">
+              Visit the selection center <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+            <Link href="/for-designers/china-tour" className="text-white/50 transition hover:text-white/80">
+              See the study tour
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -132,7 +145,7 @@ export default function MaterialsHub() {
           {isSearching ? (
             <HubSearchResults type={tab} results={results} total={total} query={submitted} loading={searching} />
           ) : (
-            <HubFeatured categories={mega} />
+            <HubFeatured />
           )}
         </div>
       </div>

@@ -6,6 +6,7 @@ exports.getMacroCategories = getMacroCategories;
 exports.getMacroProducts = getMacroProducts;
 exports.getMaterialSearch = getMaterialSearch;
 exports.getMegaMenu = getMegaMenu;
+exports.getPopularProducts = getPopularProducts;
 const database_1 = require("../config/database");
 
 // 原始标签 → 英文子类名（mega 浮层 chips 用）
@@ -23,6 +24,20 @@ const SUBTAG_LABEL = {
 
 // LIKE 转义(防 % _ 被当通配) + 包裹
 const likeParam = (q) => '%' + String(q).replace(/[\\%_]/g, (c) => '\\' + c) + '%';
+
+// 解析 supplier_profiles.categories —— 库里混合格式：JSON 数组 ["furniture","other"] 或逗号串 furniture,other
+// 两种都要解析，否则 JSON 数组格式的供应商标签匹配不上 TAG_TO_MACRO → 大类漏计。
+function parseTags(raw) {
+  if (!raw) return [];
+  const s = String(raw).trim();
+  if (s.startsWith('[')) {
+    try {
+      const a = JSON.parse(s);
+      if (Array.isArray(a)) return a.map((x) => String(x).trim()).filter(Boolean);
+    } catch (e) { /* 落到逗号 split */ }
+  }
+  return s.split(',').map((t) => t.trim()).filter(Boolean);
+}
 
 // 供应商自由标签 → 干净大类（英文；未列出的标签(如 other)不计入大类浏览）
 const TAG_TO_MACRO = {
@@ -59,7 +74,7 @@ async function getMacroCategories(req, res) {
     );
     const bucket = {};
     for (const s of sup) {
-      const tags = String(s.categories || '').split(',').map(t => t.trim()).filter(Boolean);
+      const tags = parseTags(s.categories);
       const macros = [...new Set(tags.map(t => TAG_TO_MACRO[t]).filter(Boolean))];
       // 只有画册、没有产品的供应商不计入 By-Material：该页只展示产品，若计数会导致"数字≠展示内容"
       if ((Number(s.pcnt) || 0) === 0) continue;
@@ -97,7 +112,7 @@ async function getMacroProducts(req, res) {
     const ids = [];
     const supMeta = {};
     for (const s of sup) {
-      const tags = String(s.categories || '').split(',').map(t => t.trim()).filter(Boolean);
+      const tags = parseTags(s.categories);
       if (tags.some(t => TAG_TO_MACRO[t] === key)) {
         ids.push(s.id);
         supMeta[s.id] = { slug: s.slug, name: s.company_name };
@@ -130,6 +145,36 @@ async function getMacroProducts(req, res) {
   } catch (error) {
     console.error('getMacroProducts error:', error);
     res.status(500).json({ error: 'Failed to load category products.' });
+  }
+}
+
+// GET /api/suppliers/popular-products?country=&limit= — 按热度(供应商 weight_score 代理)展示单品，每供应商≤2 保多样
+async function getPopularProducts(req, res) {
+  try {
+    const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
+    const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 16));
+    const [rows] = await database_1.default.query(
+      `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url,
+         sp.slug AS supplier_slug, sp.company_name AS supplier_name
+       FROM supplier_products p
+       JOIN supplier_profiles sp ON sp.id = p.supplier_profile_id
+       WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1 AND p.image_url IS NOT NULL AND p.image_url<>''
+       ORDER BY COALESCE(sp.weight_score,0) DESC, p.sort_order, p.id`,
+      [country]
+    );
+    const perSup = {};
+    const out = [];
+    for (const r of rows) {
+      const c = perSup[r.supplier_slug] || 0;
+      if (c >= 2) continue; // 每供应商最多 2 个，避免一家刷屏
+      perSup[r.supplier_slug] = c + 1;
+      out.push(r);
+      if (out.length >= limit) break;
+    }
+    res.json({ products: out });
+  } catch (error) {
+    console.error('getPopularProducts error:', error);
+    res.status(500).json({ error: 'Failed to load popular products.' });
   }
 }
 
@@ -210,7 +255,7 @@ async function getMegaMenu(req, res) {
     for (const s of sup) {
       const pcnt = Number(s.pcnt) || 0;
       if (pcnt === 0) continue; // 只算有产品的供应商（与 By-Material 口径一致）
-      const tags = String(s.categories || '').split(',').map(t => t.trim()).filter(Boolean);
+      const tags = parseTags(s.categories);
       const macroSet = new Set();
       for (const t of tags) {
         const m = TAG_TO_MACRO[t];

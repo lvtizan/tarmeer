@@ -156,6 +156,27 @@ export async function fetchMegaMenu(country: string): Promise<MegaCategory[]> {
   }
 }
 
+export type PopularProduct = {
+  id: number;
+  title: string;
+  image_url: string;
+  supplier_slug: string | null;
+  supplier_name: string | null;
+};
+
+export async function fetchPopularProducts(country: string, limit = 16): Promise<PopularProduct[]> {
+  try {
+    const res = await fetch(`${API_BASE}/suppliers/popular-products?country=${country}&limit=${limit}`, {
+      headers: { 'x-country': country },
+    });
+    if (!res.ok) return [];
+    const d = await res.json();
+    return (d.products || []).map((p: PopularProduct) => ({ ...p, image_url: resolveImageUrl(p.image_url) }));
+  } catch {
+    return [];
+  }
+}
+
 export type SearchProduct = {
   id: number;
   title: string;
