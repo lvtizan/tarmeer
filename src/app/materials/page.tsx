@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import MaterialsClient, { type Supplier } from '@/components/materials/MaterialsClient';
+import MaterialsHub from '@/components/materials/MaterialsHub';
 import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
@@ -59,6 +60,8 @@ async function fetchInitialSuppliers(country: string): Promise<Supplier[]> {
 
 export default async function MaterialsPage() {
   const c = getCountry((await headers()).get('x-country'));
+  // 新材料已拆到独立页 /materials/new-materials；本页专注供应商目录
+  const isAe = c.code === 'ae';
   const initialSuppliers = await fetchInitialSuppliers(c.code);
 
   const collectionJsonLd = {
@@ -82,7 +85,11 @@ export default async function MaterialsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
       <Suspense fallback={<div className="py-20 text-center text-stone-400">Loading suppliers...</div>}>
-        <MaterialsClient initialSuppliers={initialSuppliers} />
+        {isAe ? (
+          <MaterialsHub />
+        ) : (
+          <MaterialsClient initialSuppliers={initialSuppliers} showNewMaterialsEntry={isAe} />
+        )}
       </Suspense>
     </>
   );

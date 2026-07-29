@@ -5,53 +5,61 @@ import HomeDesignSection from '@/components/home/HomeDesignSection';
 import HomeSpaceSection from '@/components/home/HomeSpaceSection';
 import HomeSupplierSection from '@/components/home/HomeSupplierSection';
 import HomeInsightsSection from '@/components/home/HomeInsightsSection';
+import HomeMaterialsHero from '@/components/home/HomeMaterialsHero';
+import HomeHowItWorks from '@/components/home/HomeHowItWorks';
+import HomeApplicationTiles from '@/components/home/HomeApplicationTiles';
+import HomeShowroom from '@/components/home/HomeShowroom';
+import HomeClientVisits from '@/components/home/HomeClientVisits';
+import HomeNewMaterials from '@/components/home/HomeNewMaterials';
+import HomeContactForm from '@/components/home/HomeContactForm';
+import HomeCaseStudySection from '@/components/home/HomeCaseStudySection';
 import { fetchPublicCompanies, fetchGuides } from '@/lib/publicApi';
 import { getCountry } from '@/lib/country';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = getCountry((await headers()).get('x-country'));
-  const cityList = c.cities.slice(0, 2).join(', ');
-  return {
-    title: `Tarmeer - Find Interior Design & Renovation Companies in ${c.name}`,
-    description:
-      `Connect with top interior designers, renovation companies, and fit-out professionals across ${cityList}, and ${c.name}. Browse portfolios, compare services, get personalized quotes.`,
-    openGraph: {
+  const countryHeader = (await headers()).get('x-country');
+  const c = getCountry(countryHeader);
+  const isAe = !countryHeader || countryHeader === 'ae';
+
+  if (!isAe) {
+    // VN（及其他非 AE 国家）：metadata 与改版前完全一致，零变化（P0 保护）。
+    const cityList = c.cities.slice(0, 2).join(', ');
+    return {
       title: `Tarmeer - Find Interior Design & Renovation Companies in ${c.name}`,
-      description: `Connect with top interior designers and renovation companies in ${c.name}.`,
+      description:
+        `Connect with top interior designers, renovation companies, and fit-out professionals across ${cityList}, and ${c.name}. Browse portfolios, compare services, get personalized quotes.`,
+      openGraph: {
+        title: `Tarmeer - Find Interior Design & Renovation Companies in ${c.name}`,
+        description: `Connect with top interior designers and renovation companies in ${c.name}.`,
+        url: `${c.baseUrl}/`,
+        images: [{ url: `${c.baseUrl}/images/hero/hero-living-1.jpg`, width: 1200, height: 630 }],
+      },
+      alternates: { canonical: `${c.baseUrl}/` },
+      keywords:
+        `interior design ${c.name}, renovation companies ${c.cities[0]}, fit-out ${c.cities[1] ?? c.defaultCity}, interior designer, home renovation, Tarmeer, villa design, apartment renovation`,
+    };
+  }
+
+  // AE：中国新材料新主张（改版 spec §5）
+  const title = "Tarmeer — China's Newest Building Materials in the UAE | Curated & Guaranteed";
+  const description =
+    'Discover the newest building materials from leading Chinese factories — curated, imported and guaranteed by a local UAE building-materials mall. Browse materials, book a showroom visit, and get local delivery with after-sales warranty.';
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description:
+        "China's newest building materials, curated for the UAE — sourced direct from factories, delivered and guaranteed locally.",
       url: `${c.baseUrl}/`,
-      images: [{ url: `${c.baseUrl}/images/hero/hero-living-1.jpg`, width: 1200, height: 630 }],
+      images: [{ url: `${c.baseUrl}/images/sourcing/hero-home.webp`, width: 1200, height: 630 }],
     },
     alternates: { canonical: `${c.baseUrl}/` },
     keywords:
-      `interior design ${c.name}, renovation companies ${c.cities[0]}, fit-out ${c.cities[1] ?? c.defaultCity}, interior designer, home renovation, Tarmeer, villa design, apartment renovation`,
+      'building materials UAE, Chinese building materials Dubai, china sourcing UAE, sintered stone Dubai, materials showroom Dubai, building materials mall, Tarmeer',
   };
-}
-
-interface Supplier {
-  id: number;
-  company_name: string;
-  slug: string;
-  description: string;
-  cover_image_url: string | null;
-  logo_url: string | null;
-  origin: 'china' | 'dubai';
-}
-
-async function fetchSuppliers(): Promise<Supplier[]> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
-  try {
-    const res = await fetch(`${API_BASE}/suppliers?limit=4&order=home`, {
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { suppliers?: Supplier[] } | Supplier[];
-    return (Array.isArray(data) ? data : ((data as { suppliers?: Supplier[] }).suppliers ?? [])).slice(0, 4);
-  } catch (e) {
-    console.error('[home] fetchSuppliers failed:', e);
-    return [];
-  }
 }
 
 export default async function HomePage() {
@@ -75,24 +83,47 @@ export default async function HomePage() {
   // Organization 实体由根 layout 全站统一发出(src/lib/schema/organization.ts),
   // 首页不再单独发,避免同 @id 双节点属性冲突 + AE 社媒硬编码泄进 VN。
   const isAe = !country || country === 'ae';
-  const [companiesResult, suppliersResult, guidesResult] = await Promise.allSettled([
-    fetchPublicCompanies(30, 'home', country),
-    isAe ? fetchSuppliers() : Promise.resolve([]),
-    fetchGuides(country),
-  ]);
 
-  const companies = companiesResult.status === 'fulfilled' ? companiesResult.value : [];
-  const suppliers = suppliersResult.status === 'fulfilled' ? suppliersResult.value : [];
+  if (!isAe) {
+    // VN（及其他非 AE 国家）：渲染树与改版前完全一致，零变化（P0 保护）。
+    // 改版前 VN 的 suppliers 恒为 []（isAe=false → Promise.resolve([])），此处直传 []。
+    const [companiesResult, guidesResult] = await Promise.allSettled([
+      fetchPublicCompanies(30, 'home', country),
+      fetchGuides(country),
+    ]);
+    const companies = companiesResult.status === 'fulfilled' ? companiesResult.value : [];
+    const guides = guidesResult.status === 'fulfilled' ? guidesResult.value : [];
+
+    return (
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+        <Banner />
+        <HomeDesignSection initialCompanies={companies} />
+        <HomeSpaceSection />
+        <HomeSupplierSection suppliers={[]} />
+        <HomeInsightsSection guides={guides} />
+      </>
+    );
+  }
+
+  // AE：中国新材料首页（2026-07-20 重设计：单页叙事 8 段，Hero → 品类 → 三步 → 价值 → 团队 → 到访 → 案例 → 表单收口）
+  // Partners / Insights 移出主叙事（导航仍可达），首页只讲一条故事、结尾收在报价表单。
+  const [guidesResult] = await Promise.allSettled([fetchGuides(country)]);
   const guides = guidesResult.status === 'fulfilled' ? guidesResult.value : [];
+  // 标杆案例位：取 story 栏目第一篇；无则整节隐藏
+  const caseStudyGuide = guides.find((g) => g.category === 'story') ?? null;
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
-      <Banner />
-      <HomeDesignSection initialCompanies={companies} />
-      <HomeSpaceSection />
-      <HomeSupplierSection suppliers={suppliers} />
-      <HomeInsightsSection guides={guides} />
+      <HomeMaterialsHero />
+      <HomeApplicationTiles />
+      <HomeHowItWorks />
+      <HomeShowroom />
+      <HomeNewMaterials />
+      <HomeClientVisits />
+      <HomeCaseStudySection guide={caseStudyGuide} />
+      <HomeContactForm />
     </>
   );
 }
