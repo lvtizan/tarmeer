@@ -143,7 +143,9 @@ async function adminUpdateSourcingRequestStatus(req, res) {
         const { status } = req.body;
         if (!STATUSES.includes(status))
             return res.status(400).json({ error: 'Invalid status.' });
-        const [result] = await database_1.default.execute('UPDATE sourcing_requests SET status = ? WHERE id = ?', [status, id]);
+        // 国家隔离铁律：更新按 country 作用域（对齐 list；前端 PUT 带 ?country=，超管切国家亦对），防跨国改单。
+        const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
+        const [result] = await database_1.default.execute('UPDATE sourcing_requests SET status = ? WHERE id = ? AND country = ?', [status, id, country]);
         if (result.affectedRows === 0)
             return res.status(404).json({ error: 'Request not found.' });
         res.json({ message: 'Status updated.' });

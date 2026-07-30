@@ -555,4 +555,8 @@ router.get('/partner-sync/companies', (0, adminAuth_1.requirePermission)('can_ap
 router.post('/partner-sync/companies/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveCompany);
 router.post('/partner-sync/companies/:id/reject', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.rejectCompany);
 router.post('/partner-sync/bulk-delete', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.bulkDeleteSellers);
+// 采购线索 admin 管理（迁自 test；继承上方 router.use(authenticateAdmin)+requireAdmin，任意登录 admin 可访问；列表/更新按 country 隔离）
+const sourcingRequestController_1 = require("../controllers/sourcingRequestController");
+router.get('/sourcing-requests', sourcingRequestController_1.adminListSourcingRequests);
+router.put('/sourcing-requests/:id/status', sourcingRequestController_1.adminUpdateSourcingRequestStatus);
 exports.default = router;
