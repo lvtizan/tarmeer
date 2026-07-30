@@ -67,8 +67,8 @@ function extractImageEntries(raw) {
 const PUBLIC_COMPANY_WHERE = `WHERE is_active = 1`;
 async function getCompanies(req, res) {
     try {
-        const page = parseInt(req.query.page, 10) || 1;
-        const limit = Math.min(parseInt(req.query.limit, 10) || 26, 100);
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 26), 100);
         const offset = (page - 1) * limit;
         const orderMode = req.query?.order === 'home' ? 'home' : 'list';
         // ?space=residential|commercial|public|outdoor → filter by L2 specialties

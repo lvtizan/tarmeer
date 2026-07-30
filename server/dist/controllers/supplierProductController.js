@@ -229,12 +229,33 @@ async function translateText(req, res) {
 async function listProducts(req, res) {
     try {
         const { slug } = req.params;
-        const [profileRows] = await database_1.default.execute("SELECT id FROM supplier_profiles WHERE slug = ? AND status = 'approved'", [slug]);
+        // 国家隔离铁律：按站点国家解析供应商(与 detail/catalogs/projects 兄弟端点对齐,禁 VN 命中 AE 供应商产品)。
+        const reqCountry = resolvePublicCountry(req);
+        const [profileRows] = await database_1.default.execute("SELECT id, company_name, name_zh FROM supplier_profiles WHERE slug = ? AND status = 'approved' AND is_published = 1 AND country = ?", [slug, reqCountry]);
         const profile = profileRows[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
         const [products] = await database_1.default.execute('SELECT * FROM supplier_products WHERE supplier_profile_id = ? ORDER BY sort_order, id', [profile.id]);
-        res.json({ products });
+        // 公开去标识(FA-14 遮 payload)：产品自填 title/description/specs/certs/scenes 里的真实厂名(中英)遮蔽。
+        const __rn = profile.company_name || '';
+        const __rz = profile.name_zh || '';
+        const __mask = (t) => { if (typeof t !== 'string') return t; let o = supplierRedact_1.maskSupplierMentions(t, __rn); if (__rz) o = supplierRedact_1.maskSupplierMentions(o, __rz); return o; };
+        const __maskField = (v) => {
+            if (v == null) return v;
+            if (typeof v === 'string') return __mask(v);
+            if (Array.isArray(v)) return v.map(__maskField);
+            if (typeof v === 'object') { const o = {}; for (const k in v) o[k] = __maskField(v[k]); return o; }
+            return v;
+        };
+        const masked = (Array.isArray(products) ? products : []).map((p) => ({
+            ...p,
+            title: __mask(p.title),
+            description: __mask(p.description),
+            specs: __maskField(p.specs),
+            certifications: __maskField(p.certifications),
+            application_scenes: __maskField(p.application_scenes),
+        }));
+        res.json({ products: masked });
     }
     catch (error) {
         console.error('List products error:', error);

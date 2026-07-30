@@ -55,8 +55,8 @@ function slugify(name) {
 }
 async function listPublicSuppliers(req, res) {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 20), 100);
         const offset = (page - 1) * limit;
         const origin = req.query.origin; // 'china' | 'dubai'
         const category = req.query.category;

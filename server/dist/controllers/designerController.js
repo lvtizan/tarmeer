@@ -43,8 +43,8 @@ function sanitizePrivateDesigner(designer) {
 }
 async function getDesigners(req, res) {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 10), 100);
         const offset = (page - 1) * limit;
         const whereClause = `WHERE status = 'approved' AND is_approved = 1 AND deleted_at IS NULL`;
         const params = [];
