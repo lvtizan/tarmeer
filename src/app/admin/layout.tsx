@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, UserCog, LogOut, Activity, Building2, ShieldAlert, Mail,
   CircleHelp, Info, ClipboardList, Package, PackagePlus, Tags, Menu, X, MapPin,
-  UserCheck, HandCoins, Images, MessageSquare, Hammer,
+  UserCheck, HandCoins, ShoppingCart, Images, MessageSquare, Hammer,
 } from 'lucide-react';
 import { AdminProvider, useAdmin } from '@/contexts/AdminContext';
 import { adminApi } from '@/lib/adminApi';
@@ -53,6 +53,11 @@ const navItems = [
     to: '/admin/inquiries', labelEn: 'Leads', labelZh: '线索', icon: HandCoins,
     infoEn: 'Review customer leads, update follow-up status, and keep conversion notes synchronized.',
     infoZh: '查看客户线索、更新跟进状态，并同步转化备注。',
+  },
+  {
+    to: '/admin/sourcing-requests', labelEn: 'Sourcing', labelZh: '采购线索', icon: ShoppingCart,
+    infoEn: 'Manage China-materials sourcing requests from Get-a-Quote (sample / showroom visit / sourcing / designer partner).',
+    infoZh: '管理"Get a Quote"提交的中国材料采购线索（样品/看展厅/采购/设计师合作），按状态跟进。',
   },
 ];
 
