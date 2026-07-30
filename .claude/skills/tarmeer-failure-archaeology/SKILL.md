@@ -120,6 +120,13 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：`rm -rf .next`（或 `.next/cache`）后重启 dev → VN 立即 404。代码本无问题。
 - **预防**：① **验证"按国家/参数隔离"的 SSR 修复时，改完必须 `rm -rf .next` 再起 dev**，否则 Data Cache 会拿改前请求的旧响应骗你。② 结果与预期不符时，**先 curl 后端直连（`:3002`）区分"前端缓存 vs 真实行为"**，再判方向——别急着怀疑代码（systematic-debugging：先取证再改）。③ 隔离类 SSR fetch 若不希望跨值缓存污染，国家/关键参数务必进 **URL 查询串**（入缓存键），只塞 header 不进 key 会串。
 
+### FA-19 前端部署 build 失败：合并加了新 npm 依赖，生产 node_modules 没同步（2026-07-30 材料改版上线）
+
+- **现象**：合并材料改版到 main、生产 `tarmeer_web_next` checkout origin/main 后 `npm run build` **EXIT=1**：`Module not found: Can't resolve 'pdfjs-dist'`（CatalogReader 的 PDF 阅读依赖）。`.next/BUILD_ID` 被清空。
+- **根因**：改版在 test 栈开发时 `npm install` 过 pdfjs-dist（`package.json` 有 `^4.4.168`），但**生产 www 的 `node_modules` 从未 install 过这个新依赖**。前端部署流程"checkout→build"跳过了 `npm install`，build 遇到 import 但 node_modules 没有 → 失败。幸而**没重启 pm2**（我先看 BUILD_EXIT 才决定重启），生产 pm2 仍跑旧构建内存版，站点没坏。
+- **修复**：生产 `npm install`（NPM_EXIT=0，pdfjs-dist 装上）→ 重新 `npm run build`（EXIT=0，BUILD_ID 变）→ 再 `pm2 restart tarmeer-next`。
+- **预防**：① **前端部署若本次合并动了 `package.json`（尤其加依赖），checkout 后 build 前必须先 `npm install`**；不确定就无脑先 install。② 部署脚本顺序固定：`checkout → npm install →(EXIT=0)→ build →(EXIT=0 且 BUILD_ID 变)→ pm2 restart`，**任一步非 0 就停、不重启**（build 失败别重启，pm2 会继续跑旧内存版=站点不坏，FA-5）。③ 判断"是否需要 install"：`git diff <old>..<new> -- package.json` 看有无依赖增删。已写进 tarmeer-deploy-frontend。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
