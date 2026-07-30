@@ -72,8 +72,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${BASE}/services/soft-decoration`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
       { url: `${BASE}/services/new-home-design`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
       { url: `${BASE}/services/house-exterior`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
-      // 旧 AE 首页保留页（M3）：VN 站 /classic 走 notFound，不进 VN sitemap
-      { url: `${BASE}/classic`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+      // 中国材料 Mall 落地页（AE 专属，非 AE notFound 不进 VN sitemap）
+      { url: `${BASE}/mall`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     );
   }
 

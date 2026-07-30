@@ -346,6 +346,17 @@ export default function Navbar({
             </div>
           </div>
 
+          {/* Mall 入口 — 中国材料落地页（AE 专属，VN 站隐藏） */}
+          {!isVn && (
+            <Link
+              href="/mall"
+              onClick={() => handleClick('/mall')}
+              className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+            >
+              Mall
+            </Link>
+          )}
+
           {/* Materials Dropdown — VN 站隐藏供应商/材料导航 */}
           {!isVn && (
           <div
@@ -461,6 +472,9 @@ export default function Navbar({
             {navLinks.map(({ to, label }) => (
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
+
+            {/* Mobile Mall 入口 — 中国材料落地页（AE 专属） */}
+            {!isVn && renderNavLink('/mall', 'Mall', 'py-2')}
 
             {/* Mobile Portfolio — AE 站隐藏（同桌面端），VN 保留 */}
             {isVn && (

@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
       { source: "/materials/brands", destination: "/materials", permanent: true },
       { source: "/materials/brands/:path*", destination: "/materials", permanent: true },
       { source: "/home", destination: "/", permanent: true },
+      // 材料改版调整(2026-07-30)：原首页搬回 /，昨天临时的 /classic 归一到 /；材料首页移到 /mall。
+      { source: "/classic", destination: "/", permanent: true },
       { source: "/login", destination: "/auth", permanent: true },
       { source: "/register", destination: "/auth", permanent: true },
       { source: "/join", destination: "/for-companies", permanent: true },

@@ -28,8 +28,8 @@ export default function Footer({ whatsAppLink }: { whatsAppLink: string }) {
           { to: '/services/china-sourcing', label: 'China Sourcing' },
           { to: '/guarantee', label: 'Local Guarantee' },
           { to: '/for-designers', label: 'For Designers' },
-          // 旧 AE 首页保留入口（M4 后 `/` 切材料叙事，旧首页在 /classic；VN 的 `/` 本就是这套内容故不显示）
-          { to: '/classic', label: 'Classic Home' },
+          // 中国材料 Mall 落地页入口（AE 专属；`/` 已换回原首页，材料叙事在 /mall）
+          { to: '/mall', label: 'Mall' },
         ]
       : []),
     { to: '/insights', label: lang === 'vi' ? 'Cẩm nang' : 'Insights' },

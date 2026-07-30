@@ -78,9 +78,9 @@ export default function MaterialsHub() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       {/* Hero：大标题 + tab + 大搜索 */}
-      <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-4xl px-4 py-8 text-center sm:px-6 lg:py-10">
-          <h1 className="font-serif text-3xl font-bold leading-tight text-[#1c1917] [text-wrap:balance] sm:text-4xl">
+      <section className="bg-[#2c2c2c]">
+        <div className="mx-auto max-w-4xl px-4 py-8 text-center sm:px-6 lg:py-12">
+          <h1 className="font-serif text-3xl font-bold leading-tight text-white [text-wrap:balance] sm:text-4xl">
             Materials &amp; Suppliers
           </h1>
 
@@ -96,7 +96,7 @@ export default function MaterialsHub() {
                 type="button"
                 onClick={() => switchTab(t.key)}
                 className={`relative pb-1 text-lg font-semibold transition ${
-                  tab === t.key ? 'text-[#1c1917]' : 'text-stone-400 hover:text-stone-600'
+                  tab === t.key ? 'text-white' : 'text-white/50 hover:text-white/80'
                 }`}
               >
                 {t.label}
