@@ -3,6 +3,7 @@
 // 材料搜索 Hub（/materials AE 主页）：顶部 Products/Suppliers tab + 搜索条；
 // 左侧类目目录(hover mega 浮层)；右侧未搜索=精选(HubFeatured)，搜索后=结果(HubSearchResults)。
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
@@ -121,6 +122,16 @@ export default function MaterialsHub() {
               <Search className="h-4 w-4" /> Search
             </button>
           </form>
+
+          {/* 供应商登录入口（沿用旧材料页的 Supplier Login 按钮；深色头下用金色 btn-primary） */}
+          <div className="mt-4 flex justify-center">
+            <Link
+              href="/supplier/auth"
+              className="btn-primary inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap px-6"
+            >
+              Supplier Login
+            </Link>
+          </div>
         </div>
       </section>
 
