@@ -4,7 +4,7 @@
 // 左侧类目目录(hover mega 浮层)；右侧未搜索=精选(HubFeatured)，搜索后=结果(HubSearchResults)。
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Search, LogIn } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import {
@@ -79,8 +79,15 @@ export default function MaterialsHub() {
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       {/* Hero：大标题 + tab + 大搜索 */}
-      <section className="bg-[#2c2c2c]">
-        <div className="mx-auto max-w-4xl px-4 py-8 text-center sm:px-6 lg:py-12">
+      <section className="relative overflow-hidden bg-[#221d19]">
+        {/* 材料底图 + 压暗遮罩（深色渐变），保证白字/搜索可读 */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/images/materials/suppliers-hero.webp)' }}
+          aria-hidden
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/70 to-black/80" aria-hidden />
+        <div className="relative z-10 mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 lg:py-14">
           <h1 className="font-serif text-3xl font-bold leading-tight text-white [text-wrap:balance] sm:text-4xl">
             Materials &amp; Suppliers
           </h1>
@@ -107,29 +114,29 @@ export default function MaterialsHub() {
               </button>
             ))}
           </div>
-          <form onSubmit={onSubmit} className="flex items-center gap-2 rounded-2xl border border-stone-300 bg-white p-2 shadow-sm">
-            <Search className="ml-2 h-5 w-5 shrink-0 text-stone-400" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={tab === 'products' ? 'Search materials & products…' : 'Search suppliers by name or category…'}
-              className="w-full bg-transparent px-1 py-2 text-[15px] text-[#1c1917] outline-none placeholder:text-stone-400"
-            />
-            <button
-              type="submit"
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#b8864a] px-6 text-sm font-semibold text-white transition hover:bg-[#a07640]"
-            >
-              <Search className="h-4 w-4" /> Search
-            </button>
-          </form>
-
-          {/* 供应商登录入口（沿用旧材料页的 Supplier Login 按钮；深色头下用金色 btn-primary） */}
-          <div className="mt-4 flex justify-center">
+          {/* 搜索条 + 供应商登录：同排（按钮跟在搜索条后面）；移动端堆叠 */}
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+            <form onSubmit={onSubmit} className="flex flex-1 items-center gap-2 rounded-2xl border border-white/10 bg-white p-2 shadow-xl">
+              <Search className="ml-2 h-5 w-5 shrink-0 text-stone-400" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={tab === 'products' ? 'Search materials & products…' : 'Search suppliers by name or category…'}
+                className="w-full bg-transparent px-1 py-2 text-[15px] text-[#1c1917] outline-none placeholder:text-stone-400"
+              />
+              <button
+                type="submit"
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#b8864a] px-6 text-sm font-semibold text-white transition hover:bg-[#a07640]"
+              >
+                <Search className="h-4 w-4" /> Search
+              </button>
+            </form>
+            {/* 大气金边玻璃质感，hover 填金；同排跟在搜索条后面 */}
             <Link
               href="/supplier/auth"
-              className="btn-primary inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap px-6"
+              className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-[#b8864a] bg-[#b8864a]/20 px-7 text-sm font-semibold tracking-wide text-white shadow-lg backdrop-blur-sm transition hover:bg-[#b8864a] hover:shadow-[#b8864a]/30 sm:px-8"
             >
-              Supplier Login
+              <LogIn className="h-4 w-4" /> Supplier Login
             </Link>
           </div>
         </div>
