@@ -48,6 +48,7 @@ const leads = __importStar(require("../controllers/supplierLeadController"));
 const enumAdminController_1 = require("../controllers/enumAdminController");
 const productCategoryController_1 = require("../controllers/productCategoryController");
 const projects = __importStar(require("../controllers/supplierProjectController"));
+const materialsMacro = require("../controllers/materialsMacroController");
 const memoryCache_1 = require("../lib/memoryCache");
 const router = (0, express_1.Router)();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
@@ -65,6 +66,16 @@ const translateLimiter = (0, express_rate_limit_1.default)({
 // ── Public ──
 router.get('/categories', (0, memoryCache_1.cacheMiddleware)(60), enumAdminController_1.getPublicSupplierCategories);
 router.get('/product-categories', (0, memoryCache_1.cacheMiddleware)(60), productCategoryController_1.getPublicProductCategories);
+// By Material 大类聚合（跨供应商标签归一）
+router.get('/macro-categories', (0, memoryCache_1.cacheMiddleware)(60), materialsMacro.getMacroCategories);
+router.get('/macro-categories/:key/products', (0, memoryCache_1.cacheMiddleware)(60), materialsMacro.getMacroProducts);
+// 材料搜索 Hub：全文搜索 + 左目录/mega 浮层数据
+router.get('/search', materialsMacro.getMaterialSearch);
+router.get('/mega-menu', (0, memoryCache_1.cacheMiddleware)(120), materialsMacro.getMegaMenu);
+router.get('/popular-products', (0, memoryCache_1.cacheMiddleware)(120), materialsMacro.getPopularProducts);
+// 中国新材料改版：跨供应商产品 feed + 产品详情（spec §3.1）。注意：必须先于 /detail/:slug 等通配路由注册。
+router.get('/products/public', (0, memoryCache_1.cacheMiddleware)(60), products.listPublicProductsFeed);
+router.get('/products/public/:id', products.getPublicProductDetail);
 router.get('/', (0, memoryCache_1.cacheMiddleware)(60), profile.listPublicSuppliers);
 router.get('/detail/:slug', profile.getPublicProfile);
 router.get('/detail/:slug/products', products.listProducts);
