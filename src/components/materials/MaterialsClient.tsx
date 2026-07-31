@@ -44,6 +44,7 @@ export interface Supplier {
   store_address: string | null;
   google_maps_url: string | null;
   contact_phone: string | null;
+  product_count?: number;
 }
 
 function parseCategories(c: Supplier['categories']): string[] {
@@ -86,24 +87,32 @@ function SupplierCard({ s }: { s: Supplier }) {
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
-              {publicTitle}
-            </h3>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ORIGIN_BADGE_CLASS[s.origin]}`}>
-              {ORIGIN_LABEL[s.origin]}
+      <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 py-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
+            {publicTitle}
+          </h3>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ORIGIN_BADGE_CLASS[s.origin]}`}>
+            {ORIGIN_LABEL[s.origin]}
+          </span>
+        </div>
+        {/* meta：产品数 + 来源（去标识安全填充，对齐 /companies 卡的"项目数·城市"） */}
+        <p className="text-[13px] text-stone-500">
+          {typeof s.product_count === 'number' && s.product_count > 0 && (
+            <>
+              <span className="font-semibold text-[#b8864a]">{s.product_count} products</span>
+              <span className="mx-1.5 text-stone-300">·</span>
+            </>
+          )}
+          Sourced from {s.origin === 'china' ? 'China' : 'Dubai'}
+        </p>
+        {/* 公开去标识：不显示遮蔽星号简介,品类 chips 承载信息 */}
+        <div className="flex flex-wrap gap-1.5">
+          {cats.slice(0, 4).map(c => (
+            <span key={c} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded-2xl capitalize">
+              {c}
             </span>
-          </div>
-          {/* 公开去标识：不显示遮蔽星号简介,品类 chips 承载信息 */}
-          <div className="flex flex-wrap gap-1.5">
-            {cats.slice(0, 4).map(c => (
-              <span key={c} className="px-2.5 py-0.5 text-[11px] text-stone-500 border border-stone-200 rounded-2xl capitalize">
-                {c}
-              </span>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
