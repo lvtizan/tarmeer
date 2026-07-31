@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowUp, X,
+  ArrowUp, ArrowLeft, X,
   Package, Layers, MapPin,
   Maximize2, Banknote,
 } from 'lucide-react';
@@ -217,10 +217,16 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
         )}
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-10 sm:pt-8 sm:pb-14">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Suppliers
+          </button>
           <nav className="flex items-center gap-1.5 text-xs text-white/50 mb-8">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <span>/</span>
-            <Link href="/materials" className="hover:text-white transition-colors">Materials</Link>
+            <Link href="/materials?tab=suppliers" className="hover:text-white transition-colors">Materials</Link>
             <span>/</span>
             <span className="text-white/80 truncate max-w-[200px]">{publicTitle}</span>
           </nav>
