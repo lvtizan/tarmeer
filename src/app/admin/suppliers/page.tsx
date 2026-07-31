@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays, Tag } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays, Tag, Search } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import ProductCategoriesManager from '@/components/admin/ProductCategoriesManager';
 import AdminSelect from '@/components/ui/AdminSelect';
@@ -47,6 +47,7 @@ export default function AdminSuppliersPage() {
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
+  const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>('desc'); // 默认「上架时间(published_at)」从新到旧,最新上架的在最前(与服务端 ORDER BY 一致)
@@ -306,6 +307,16 @@ export default function AdminSuppliersPage() {
           </button>
         </div>
         <div className="flex items-center gap-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={t('Search name / email', '搜索公司名 / 中文名 / 邮箱')}
+            className="h-8 w-56 pl-8 pr-3 rounded-lg border border-stone-200 bg-white text-xs text-[#2c2c2c] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] transition"
+          />
+        </div>
         <AdminSelect
           size="sm"
           value={originFilter}
@@ -371,7 +382,13 @@ export default function AdminSuppliersPage() {
             </thead>
             <tbody>
               {((() => {
-                const list = [...suppliers];
+                const q = search.trim().toLowerCase();
+                const list = suppliers.filter(s =>
+                  !q ||
+                  s.company_name.toLowerCase().includes(q) ||
+                  (s.name_zh ?? '').toLowerCase().includes(q) ||
+                  (s.user_email ?? '').toLowerCase().includes(q)
+                );
                 if (productSort) list.sort((a, b) => productSort === 'asc' ? a.product_count - b.product_count : b.product_count - a.product_count);
                 if (joinedSort) list.sort((a, b) => {
                   const d = new Date(a.published_at || a.updated_at).getTime() - new Date(b.published_at || b.updated_at).getTime();
