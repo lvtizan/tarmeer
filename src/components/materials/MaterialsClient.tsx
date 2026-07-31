@@ -87,7 +87,7 @@ function SupplierCard({ s }: { s: Supplier }) {
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 py-1">
+      <div className="flex-1 min-w-0 flex flex-col justify-start gap-2 py-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
             {publicTitle}

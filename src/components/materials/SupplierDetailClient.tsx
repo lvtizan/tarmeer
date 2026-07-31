@@ -159,7 +159,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
     return () => observer.disconnect();
   }, [supplier]);
 
-  const handleBack = () => router.push('/materials');
+  const handleBack = () => router.push('/materials?tab=suppliers');
 
   const parseCategories = (cats: string[] | string | null): string[] => {
     if (!cats) return [];

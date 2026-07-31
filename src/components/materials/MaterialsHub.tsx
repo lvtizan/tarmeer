@@ -4,6 +4,7 @@
 // 左侧类目目录(hover mega 浮层)；右侧未搜索=精选(HubFeatured)，搜索后=结果(HubSearchResults)。
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Search, LogIn } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
@@ -23,7 +24,9 @@ type Tab = 'products' | 'suppliers';
 
 export default function MaterialsHub() {
   const country = countryFromLang(useSiteLocale().lang).code;
-  const [tab, setTab] = useState<Tab>('products');
+  const searchParams = useSearchParams();
+  // 初始 tab 从 URL 读（供应商详情页"返回"→ /materials?tab=suppliers 落到供应商 tab）
+  const [tab, setTab] = useState<Tab>(searchParams.get('tab') === 'suppliers' ? 'suppliers' : 'products');
   const [q, setQ] = useState('');
   const [submitted, setSubmitted] = useState('');
   const [results, setResults] = useState<(SearchProduct | SearchSupplier)[]>([]);
