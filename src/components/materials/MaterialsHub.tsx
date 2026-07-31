@@ -17,6 +17,7 @@ import {
 import MegaMenuDirectory from './MegaMenuDirectory';
 import HubSearchResults from './HubSearchResults';
 import HubFeatured from './HubFeatured';
+import HubSuppliers from './HubSuppliers';
 
 type Tab = 'products' | 'suppliers';
 
@@ -150,6 +151,8 @@ export default function MaterialsHub() {
         <div>
           {isSearching ? (
             <HubSearchResults type={tab} results={results} total={total} query={submitted} loading={searching} />
+          ) : tab === 'suppliers' ? (
+            <HubSuppliers country={country} />
           ) : (
             <HubFeatured />
           )}
