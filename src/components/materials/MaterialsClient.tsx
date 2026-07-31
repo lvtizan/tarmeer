@@ -145,9 +145,11 @@ interface MaterialsClientProps {
   initialSuppliers: Supplier[];
   /** AE 站在 hero 显示「Explore New Materials」入口（→ /materials/new-materials）；VN 站不显示。 */
   showNewMaterialsEntry?: boolean;
+  /** 嵌入模式（如 MaterialsHub 的 Suppliers tab）：隐藏自带 hero/面包屑，只保留筛选栏+列表；宿主已提供顶部搜索/背景。 */
+  embedded?: boolean;
 }
 
-export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntry }: MaterialsClientProps) {
+export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntry, embedded }: MaterialsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
@@ -231,7 +233,9 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
     : suppliers;
 
   return (
-    <div className="min-h-screen bg-[#faf9f7]">
+    <div className={embedded ? '' : 'min-h-screen bg-[#faf9f7]'}>
+      {!embedded && (
+      <>
       {/* Hero：真实供应商室内图（Suofeiya 定制家居，走多档 webp）+ 左深右浅遮罩保证白字可读 + 金色光晕 + 金色 eyebrow + 衬线标题 + 顶部搜索条 */}
       <section className="relative overflow-hidden bg-[#201b17]">
         {/* 背景照片：本地(public/images)与线上(rsync 到 portal)同路径均可显 */}
@@ -303,6 +307,8 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
           <span className="text-stone-600 font-medium">Materials</span>
         </nav>
       </div>
+      </>
+      )}
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex gap-8 items-start">
         {/* Left Sidebar */}

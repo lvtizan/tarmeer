@@ -17,7 +17,7 @@ import {
 import MegaMenuDirectory from './MegaMenuDirectory';
 import HubSearchResults from './HubSearchResults';
 import HubFeatured from './HubFeatured';
-import HubSuppliers from './HubSuppliers';
+import MaterialsClient from './MaterialsClient';
 
 type Tab = 'products' | 'suppliers';
 
@@ -143,21 +143,23 @@ export default function MaterialsHub() {
         </div>
       </section>
 
-      {/* 左目录 + 右内容 */}
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[300px_1fr] lg:py-10">
-        <div className="relative lg:z-20">
-          <MegaMenuDirectory categories={mega} loading={megaLoading} />
+      {/* 供应商 tab（未搜索）：全宽复用旧 MaterialsClient 的公司列表式（左筛选栏 + 全宽大行），跳过其自带 hero（Hub 顶部已有 tab/搜索） */}
+      {tab === 'suppliers' && !isSearching ? (
+        <MaterialsClient initialSuppliers={[]} embedded />
+      ) : (
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[300px_1fr] lg:py-10">
+          <div className="relative lg:z-20">
+            <MegaMenuDirectory categories={mega} loading={megaLoading} />
+          </div>
+          <div>
+            {isSearching ? (
+              <HubSearchResults type={tab} results={results} total={total} query={submitted} loading={searching} />
+            ) : (
+              <HubFeatured />
+            )}
+          </div>
         </div>
-        <div>
-          {isSearching ? (
-            <HubSearchResults type={tab} results={results} total={total} query={submitted} loading={searching} />
-          ) : tab === 'suppliers' ? (
-            <HubSuppliers country={country} />
-          ) : (
-            <HubFeatured />
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
