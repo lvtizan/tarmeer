@@ -262,7 +262,8 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Find Experts Dropdown — AE: 服务商=公司 / VN: 专家 */}
+          {/* Find Experts Dropdown — 仅 VN 显示（AE 隐藏：AE 的"专家"指向公司，与"找公司"重复） */}
+          {isVn && (
           <div
             className="relative"
             onMouseEnter={() => setExpertsDropdownOpen(true)}
@@ -345,19 +346,9 @@ export default function Navbar({
               </div>
             </div>
           </div>
-
-          {/* Mall 入口 — 中国材料落地页（AE 专属，VN 站隐藏） */}
-          {!isVn && (
-            <Link
-              href="/mall"
-              onClick={() => handleClick('/mall')}
-              className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-            >
-              Mall
-            </Link>
           )}
 
-          {/* Materials Dropdown — VN 站隐藏供应商/材料导航 */}
+          {/* Materials Dropdown — VN 站隐藏供应商/材料导航（移到"找公司"后、"Mall"前） */}
           {!isVn && (
           <div
             className="relative"
@@ -432,6 +423,17 @@ export default function Navbar({
               </div>
             </div>
           </div>
+          )}
+
+          {/* Mall 入口 — 中国材料落地页（AE 专属，VN 站隐藏）；置于 Materials 之后 */}
+          {!isVn && (
+            <Link
+              href="/mall"
+              onClick={() => handleClick('/mall')}
+              className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+            >
+              Mall
+            </Link>
           )}
 
           {showUserEntry ? (
@@ -538,7 +540,8 @@ export default function Navbar({
               )}
             </div>
 
-            {/* Mobile Find Experts — AE: 公司 / VN: 专家 */}
+            {/* Mobile Find Experts — 仅 VN 显示（AE 隐藏，同桌面端） */}
+            {isVn && (
             <div className="py-2">
               <div className="flex items-center justify-between">
                 <Link href={expertsBase} onClick={() => handleClick(expertsBase)} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
@@ -571,6 +574,7 @@ export default function Navbar({
                 </div>
               )}
             </div>
+            )}
 
             {/* Mobile Materials — VN 站隐藏供应商/材料导航 */}
             {!isVn && (
