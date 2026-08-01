@@ -12,6 +12,7 @@ import {
   Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon,
   Plus, X, Upload, Eye, EyeOff,
 } from 'lucide-react';
+import { PRODUCT_CURRENCIES, parsePriceInput } from '@/lib/supplierProductUnits';
 
 function InfoRow({ label, value, isLink }: { label: string; value: string; isLink?: boolean }) {
   return (
@@ -430,7 +431,7 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
 
 interface ProductEditModalProps {
   supplierId: number;
-  product: { id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
+  product: { id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
   onClose: () => void;
   onSaved: (product: { id: number; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }) => void;
   t: (en: string, zh: string) => string;
@@ -442,6 +443,9 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   const [description, setDescription] = useState(product.description || '');
   const [price, setPrice] = useState(product.price != null ? String(product.price) : '');
   const [priceUnit, setPriceUnit] = useState(product.price_unit || '');
+  // '' = 未指定（沿用旧数据语义：展示层按供应商国家回落）。绝不默认成 AED——
+  // 否则管理员一保存就把 VN 供应商的"未指定"硬写成 AED。
+  const [priceCurrency, setPriceCurrency] = useState(product.price_currency || '');
   // price_from 是布尔标志（价格是否显示为"起价"），不是数值
   const [priceFrom, setPriceFrom] = useState(!!product.price_from);
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
@@ -466,6 +470,14 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   const catInList = catGroups.some((g) => g.children.some((c) => c.value === category));
 
   const handleSave = async () => {
+    // 价格留空 = 清除价格（合法）；填了但解析不出数字则中止，绝不静默存成 null
+    const parsed = parsePriceInput(price);
+    if (!parsed.ok && parsed.reason !== 'empty') {
+      showToast(parsed.reason === 'range'
+        ? t('Price must be a single number, not a range. Enter the lowest price and tick "from".', '价格只能填一个数字，不能填区间。请填最低价并勾选「起」价。')
+        : t('Please enter a valid number greater than 0.', '请填写大于 0 的数字。'), 'error');
+      return;
+    }
     setSaving(true);
     try {
       const cleaned = cleanExtraFields(extras);
@@ -475,8 +487,9 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
           title: title.trim() || null,
           category: category || null,
           description: description.trim() || null,
-          price: price.trim() === '' ? null : Number(price),
+          price: parsed.ok ? parsed.value : null,
           price_unit: priceUnit.trim() || null,
+          price_currency: parsed.ok ? (priceCurrency || null) : null,
           price_from: priceFrom ? 1 : 0,
           specs: cleaned.specs,
           certifications: cleaned.certifications,
@@ -534,10 +547,18 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
                 placeholder={t('Product description', '产品描述')}
                 className={inputCls + ' resize-none py-2 leading-relaxed min-h-[108px] overflow-hidden'} />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-stone-500 mb-1">{t('Currency', '币种')}</label>
+                <select value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)} className={inputCls + ' cursor-pointer'}>
+                  <option value="">{t('By country', '按国家')}</option>
+                  {PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">{t('Price', '价格')}</label>
-                <input type="number" min={0} step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" className={inputCls} />
+                {/* text 而非 number：number 框会把区间价等非法输入静默读成空串，导致价格被清成 null */}
+                <input type="text" inputMode="decimal" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" className={inputCls} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-stone-500 mb-1">{t('Unit', '单位')}</label>
@@ -575,7 +596,7 @@ export default function AdminSupplierDetailPage() {
     has_physical_store?: boolean; store_address?: string; categories?: string[] | string;
     created_at: string;
   } | null>(null);
-  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
+  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number; description?: string; budget?: string }>>([]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -600,7 +621,7 @@ export default function AdminSupplierDetailPage() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<{ id?: number; title?: string; location?: string; year?: number; area_sqm?: number; budget?: string; description?: string; images?: string[] | string } | null>(null);
   const [togglingPublished, setTogglingPublished] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');

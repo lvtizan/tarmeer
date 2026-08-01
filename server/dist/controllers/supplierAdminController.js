@@ -29,6 +29,8 @@ const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
 const activityLogger_1 = require("../lib/activityLogger");
+// 报价币种白名单。⚠️ 与 supplierProductController.PRODUCT_CURRENCIES / 前端 src/lib/supplierProductUnits.ts 同源。
+const SUPPORTED_PRICE_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'];
 /** 记录供应商后台操作到 activity_log（审计）。整体 try/catch，记录失败绝不影响主操作。 */
 async function logSupplierAction(req, action, targetId, description) {
     try {
@@ -358,6 +360,11 @@ async function adminUpdateProduct(req, res) {
         if (has('price_unit')) {
             sets.push('price_unit = ?');
             params.push(body.price_unit || null);
+        }
+        if (has('price_currency')) {
+            // 白名单外一律落 null，展示层回落到国家默认币种（与 supplierProductController.normalizeCurrency 同源）
+            sets.push('price_currency = ?');
+            params.push(SUPPORTED_PRICE_CURRENCIES.includes(body.price_currency) ? body.price_currency : null);
         }
         if (has('price_from')) {
             sets.push('price_from = ?');

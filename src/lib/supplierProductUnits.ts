@@ -29,10 +29,49 @@ export const PRODUCT_UNITS: ProductUnit[] = [
 
 const UNIT_MAP = new Map(PRODUCT_UNITS.map(u => [u.value, u]));
 
+/**
+ * 供应商可选报价币种（单一真相源）。
+ * 中国供应商按人民币报价是常态，站点币种（profile.country → AED/VND）只作默认值。
+ * ⚠️ 后端 server/dist/controllers/supplierProductController.js 有一份同源白名单，改这里必须同步改那里。
+ */
+export const PRODUCT_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'] as const;
+export type ProductCurrency = (typeof PRODUCT_CURRENCIES)[number];
+
+/** 币种是否在白名单内。 */
+export function isValidCurrency(currency: unknown): currency is ProductCurrency {
+  return typeof currency === 'string' && (PRODUCT_CURRENCIES as readonly string[]).includes(currency);
+}
+
 /** 单位是否有效：预设码 或 非空自定义文本。 */
 export function isValidUnit(unit: unknown): boolean {
   if (typeof unit !== 'string') return false;
   return unit.trim().length > 0;
+}
+
+/** parsePriceInput 的失败原因：空 / 区间价 / 其它非法输入。 */
+export type PriceParseFailure = 'empty' | 'range' | 'invalid';
+export type PriceParseResult =
+  | { ok: true; value: number }
+  | { ok: false; reason: PriceParseFailure };
+
+/** 区间价写法：120-200 / 120~200 / 120 — 200 / 120 到 200 / 120 至 200。 */
+const RANGE_RE = /\d\s*(?:[-–—~～]|到|至)\s*\d/;
+
+/**
+ * 解析用户手填的价格文本。
+ *
+ * 存在的理由：价格输入框曾用 `<input type="number">`，浏览器对非法数字（如区间价 "120-200"）
+ * 的 value sanitization 会把 value 读成空串——界面上还显示着 120-200，程序拿到的却是 ''，
+ * 提交按钮永久置灰且不给任何提示（FA：供应商无法保存产品）。改用 text 输入 + 本函数显式解析，
+ * 让每一种失败都有明确原因，绝不静默。
+ */
+export function parsePriceInput(raw: string): PriceParseResult {
+  const s = raw.trim();
+  if (!s) return { ok: false, reason: 'empty' };
+  if (RANGE_RE.test(s)) return { ok: false, reason: 'range' };
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0) return { ok: false, reason: 'invalid' };
+  return { ok: true, value: n };
 }
 
 /** 把存储的 unit 值转成显示文本（预设码→中文 label；自定义→原样）。 */

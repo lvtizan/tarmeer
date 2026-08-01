@@ -6,7 +6,7 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { ScreenSpinner } from '@/components/ui/Spinner';
-import { PRODUCT_UNITS, formatProductPrice } from '@/lib/supplierProductUnits';
+import { PRODUCT_UNITS, PRODUCT_CURRENCIES, formatProductPrice, parsePriceInput, isValidCurrency } from '@/lib/supplierProductUnits';
 import { getCountry } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
@@ -31,6 +31,7 @@ interface Product {
   image_urls?: string[];
   price?: number | null;
   price_unit?: string | null;
+  price_currency?: string | null;
   price_from?: 0 | 1 | boolean;
 }
 
@@ -71,7 +72,9 @@ export default function SupplierProductsPage() {
   const [newUnit, setNewUnit] = useState('');          // '' = 未选；'__custom__' = 自定义
   const [newUnitCustom, setNewUnitCustom] = useState('');
   const [newPriceFrom, setNewPriceFrom] = useState(false);
+  /** 站点默认币种（由供应商所属国家决定），作为新产品的初始值和旧产品的兜底展示 */
   const [currency, setCurrency] = useState('AED');
+  const [newCurrency, setNewCurrency] = useState('AED');
   const [newTitleEn, setNewTitleEn] = useState('');
   const [newDescEn, setNewDescEn] = useState('');
   const [translating, setTranslating] = useState<'title' | 'desc' | null>(null);
@@ -87,7 +90,14 @@ export default function SupplierProductsPage() {
   useEffect(() => {
     fetch(`${API_BASE}/suppliers/me/profile`, { headers: authHeaders() as HeadersInit })
       .then(r => r.json())
-      .then(data => { if (data?.profile?.country) setCurrency(getCountry(data.profile.country).currency); })
+      .then(data => {
+        if (!data?.profile?.country) return;
+        // 国家币种未必在报价白名单内（将来加国家时）→ 兜底到白名单首项，避免提交被后端 400
+        const raw = getCountry(data.profile.country).currency;
+        const cur = isValidCurrency(raw) ? raw : PRODUCT_CURRENCIES[0];
+        setCurrency(cur);
+        setNewCurrency(cur);
+      })
       .catch(() => {});
   }, []);
 
@@ -97,9 +107,24 @@ export default function SupplierProductsPage() {
     { value: '__custom__', label: t('Custom…', '自定义…') },
   ];
 
+  const CURRENCY_OPTIONS = PRODUCT_CURRENCIES.map(c => ({ value: c, label: c }));
+
+  // 价格解析失败的三种原因各给可执行的提示——区间价必须告诉供应商正确填法（填最低价 + 勾起价）。
+  const PRICE_ERRORS: Record<'empty' | 'range' | 'invalid', string> = {
+    empty: t('Please enter a price.', '请填写价格。'),
+    range: t('Enter a single number, not a range. For a range, enter the lowest price and tick "Price is from".',
+      '价格只能填一个数字，不能填区间。区间价请填最低价，并勾选「此为起价」。'),
+    invalid: t('Please enter a valid number greater than 0.', '请填写大于 0 的数字。'),
+  };
+
+  const priceParse = parsePriceInput(newPrice);
+  // 只在用户已经输入过内容时提示——空框还没填不算错
+  const priceHint = newPrice.trim() !== '' && !priceParse.ok ? PRICE_ERRORS[priceParse.reason] : '';
+
   const resetForm = () => {
     setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
     setNewPrice(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
+    setNewCurrency(currency);
     setNewTitleEn(''); setNewDescEn('');
     setMsg('');
   };
@@ -125,8 +150,9 @@ export default function SupplierProductsPage() {
 
   const handleAdd = async () => {
     if (newImageUrls.length === 0) { setMsg(t('Please upload at least one image.', '请至少上传一张图片。')); return; }
-    const priceNum = Number(newPrice);
-    if (!Number.isFinite(priceNum) || priceNum <= 0) { setMsg(t('Please enter a valid price.', '请输入有效价格。')); return; }
+    const parsed = parsePriceInput(newPrice);
+    if (!parsed.ok) { setMsg(PRICE_ERRORS[parsed.reason]); return; }
+    const priceNum = parsed.value;
     const unitVal = newUnit === '__custom__' ? newUnitCustom.trim() : newUnit;
     if (!unitVal) { setMsg(t('Please select or enter a unit.', '请选择或填写单位。')); return; }
     setSaving(true);
@@ -144,6 +170,7 @@ export default function SupplierProductsPage() {
           image_urls: newImageUrls,
           price: priceNum,
           price_unit: unitVal,
+          price_currency: newCurrency,
           price_from: newPriceFrom,
         }),
       });
@@ -173,8 +200,9 @@ export default function SupplierProductsPage() {
           <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Products', '产品')}</h1>
           <p className="text-sm text-stone-500 mt-1">{t(`${products.length} product${products.length !== 1 ? 's' : ''} uploaded`, `已上传 ${products.length} 件产品`)}</p>
         </div>
+        {/* 开表单时同步默认币种：profile 若在挂载后才返回，避免表单停留在初始 AED 而误存错币种 */}
         {!adding && (
-          <button onClick={() => setAdding(true)} className="btn-primary flex items-center gap-2">
+          <button onClick={() => { setNewCurrency(currency); setAdding(true); }} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t('Add Product', '添加产品')}
           </button>
         )}
@@ -232,10 +260,15 @@ export default function SupplierProductsPage() {
             <div>
               <label className={labelCls}>{t('Price *', '价格 *')}</label>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-stone-400 shrink-0">{currency}</span>
-                <input type="number" min="0" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)}
+                {/* 币种可选：中国供应商常按人民币报价，站点币种只作默认值 */}
+                <div className="w-[104px] shrink-0">
+                  <AdminSelect options={CURRENCY_OPTIONS} value={newCurrency} onChange={setNewCurrency} />
+                </div>
+                {/* 必须是 text：type="number" 会把区间价等非法输入静默清空(值读成空串)，用户看得见却提交不了 */}
+                <input type="text" inputMode="decimal" value={newPrice} onChange={e => setNewPrice(e.target.value)}
                   placeholder="0.00" className={inputCls} />
               </div>
+              {priceHint && <p className="mt-1.5 text-xs text-red-600">{priceHint}</p>}
               <label className="mt-2 flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
                 <input type="checkbox" checked={newPriceFrom} onChange={e => setNewPriceFrom(e.target.checked)}
                   className="rounded border-stone-300 text-[#b8864a] focus:ring-[#B8864A]/30" />
@@ -278,7 +311,9 @@ export default function SupplierProductsPage() {
               className="h-11 px-5 rounded-2xl border border-stone-200 text-[15px] text-stone-600 hover:bg-stone-50 transition">
               {t('Cancel', '取消')}
             </button>
-            <button onClick={handleAdd} disabled={saving || translating !== null || newImageUrls.length === 0 || !(Number(newPrice) > 0) || !(newUnit === '__custom__' ? newUnitCustom.trim() : newUnit)} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+            {/* 只在"正在进行中"时禁用。校验不通过不置灰——交给 handleAdd 报出具体原因，
+                否则用户只看到一个灰按钮，无从知道哪一栏有问题（供应商无法保存产品的成因）。 */}
+            <button onClick={handleAdd} disabled={saving || translating !== null} className="btn-primary flex items-center gap-2 disabled:opacity-50">
               <Plus className="w-4 h-4" />
               {saving ? t('Saving...', '保存中...') : t('Add Product', '添加产品')}
             </button>
@@ -308,7 +343,7 @@ export default function SupplierProductsPage() {
                 {p.description && (
                   <p className="text-xs text-stone-500 line-clamp-2 mt-0.5">{p.description}</p>
                 )}
-                {(() => { const txt = formatProductPrice(p.price, p.price_unit ?? null, !!p.price_from, currency); return txt ? <p className="text-sm font-semibold text-[#b8864a] mt-1">{txt}</p> : null; })()}
+                {(() => { const txt = formatProductPrice(p.price, p.price_unit ?? null, !!p.price_from, p.price_currency || currency); return txt ? <p className="text-sm font-semibold text-[#b8864a] mt-1">{txt}</p> : null; })()}
               </div>
               <button onClick={() => handleDelete(p.id)}
                 className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"

@@ -127,6 +127,14 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：生产 `npm install`（NPM_EXIT=0，pdfjs-dist 装上）→ 重新 `npm run build`（EXIT=0，BUILD_ID 变）→ 再 `pm2 restart tarmeer-next`。
 - **预防**：① **前端部署若本次合并动了 `package.json`（尤其加依赖），checkout 后 build 前必须先 `npm install`**；不确定就无脑先 install。② 部署脚本顺序固定：`checkout → npm install →(EXIT=0)→ build →(EXIT=0 且 BUILD_ID 变)→ pm2 restart`，**任一步非 0 就停、不重启**（build 失败别重启，pm2 会继续跑旧内存版=站点不坏，FA-5）。③ 判断"是否需要 install"：`git diff <old>..<new> -- package.json` 看有无依赖增删。已写进 tarmeer-deploy-frontend。
 
+### FA-20 供应商无法保存产品：`<input type="number">` 把区间价静默吞成空串，按钮永久置灰且零提示（2026-08-01）
+
+- **现象**：供应商在门户「添加产品」里每一栏都填了（图片、名称、品类、价格 `120-200`、自定义单位 `元/㎡`、描述），「+ 添加产品」按钮**始终灰着点不动，页面不给任何错误提示**。用户误判是"单位那栏和左边 AED 没对上"。
+- **根因**：价格框是 `<input type="number">`。HTML 规范的 value sanitization 规定：number 框内容**只要不是合法浮点数，`.value` 就返回空串**——`120-200` 中间的减号使其非法，于是**屏幕上显示 `120-200`，React state 拿到 `''`**。按钮 disabled 条件含 `!(Number(newPrice) > 0)` → `Number('')=0` → 永久置灰；因为按钮灰着，`handleAdd` 根本不执行，`setMsg` 没机会跑，**连"价格无效"都弹不出来**。同一陷阱在 admin 产品编辑弹窗（`admin/suppliers/[id]`）更危险：那里不置灰而是直接 `price: price.trim()===''? null : Number(price)`，**把管理员填的区间价静默存成 `null`（价格丢失，无任何报错）**。
+- **附带根因（币种）**：供应商把 `元/㎡` 填进"单位"，是因为币种由 `profile.country` 固定推出（AED/VND）**没有给中国供应商选人民币的位置**，最终会拼出自相矛盾的 `AED 120 起 / 元/㎡`。
+- **修复**：① 两处价格框 `type="number"` → `type="text" inputMode="decimal"`，新增单一真相源 `parsePriceInput()`（`src/lib/supplierProductUnits.ts`）显式区分 `empty|range|invalid` 三种失败并各给可执行文案（区间价 → "填最低价并勾选『此为起价』"）。② 供应商门户提交按钮**只在 `saving/translating` 时置灰**，校验失败改为点击后报出具体原因，杜绝"哑巴灰按钮"。③ 新增 `supplier_products.price_currency`（VARCHAR(8) NULL）+ 白名单 `AED/CNY/USD/VND`，前后台均可选币种；`NULL` = 未指定，展示层回落供应商国家币种。④ 用例：单元 10/10（含 6 种区间写法 `-`/`~`/`～`/en dash/em dash/到/至）、新增 `scripts/harness/supplier-product-currency.mjs` 21/21（打真实 MySQL，含 admin 局部更新不误清 price）。
+- **预防**：① **禁止用 `<input type="number">` 承接用户手填的业务数值**——它会静默丢弃非法输入且不可见，用 `type="text" inputMode="decimal"` + 显式解析函数。② **禁止让提交按钮承担校验反馈**：按钮只反映"正在进行中"，校验失败必须由点击后的显式提示说明**哪一栏、怎么改**；置灰而不说明原因 = 用户无从自救（本次用户盯着单位栏找了半天，问题在价格栏）。③ 表单里凡是"系统自动推导、用户改不了"的字段（本次币种），要检查用户是否会**把它硬塞进旁边的自由文本框**——那是需求缺口的信号。④ 改表单校验必须**同时 Grep 所有写同一张表的入口**（本次供应商门户 + admin 弹窗同坑，admin 那处后果更重）。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```

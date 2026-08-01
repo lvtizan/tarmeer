@@ -502,6 +502,8 @@ const REQUIRED_COLUMNS = [
     // Supplier product pricing (price required at API/form layer; column nullable for legacy rows)
     { table: 'supplier_products', column: 'price', type: 'DECIMAL(12,2) NULL' },
     { table: 'supplier_products', column: 'price_unit', type: 'VARCHAR(32) NULL' },
+    // 报价币种（中国供应商常按 CNY 报价）；NULL = 旧数据，展示时回落到供应商所属国家币种
+    { table: 'supplier_products', column: 'price_currency', type: 'VARCHAR(8) NULL' },
     { table: 'supplier_products', column: 'price_from', type: 'TINYINT(1) NOT NULL DEFAULT 0' },
     // Supplier product auto-translation (site-language; original kept in title/description)
     { table: 'supplier_products', column: 'title_translated', type: 'VARCHAR(255) NULL' },

@@ -1,6 +1,7 @@
 // 供应商产品价格 端到端回归
 // 用法：先确保本地后端 3002 在跑（已含价格校验改动），然后 node scripts/harness/supplier-product-price.mjs
-// 校验：UC1 不填价格→400, UC2 价格<=0→400, UC3 缺单位→400, UC4 合法→201 且落库, 然后清理
+// 校验：UC1 不填价格→400, UC2 价格<=0→400, UC3 缺单位→400, UC4 合法→201 且落库,
+//       UC5 币种落库, UC6 非法币种→400, UC7 缺省币种→null(展示层回落国家币种), 然后清理
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -58,11 +59,25 @@ check('UC4 price 落库 = 1200', Number(j4.product?.price) === 1200, `got ${j4.p
 check('UC4 unit 落库 = SQM', j4.product?.price_unit === 'SQM', `got ${j4.product?.price_unit}`);
 check('UC4 from 落库 = 1', Number(j4.product?.price_from) === 1, `got ${j4.product?.price_from}`);
 
+// UC5 币种落库（中国供应商按 CNY 报价）
+const [s5, j5] = await post({ image_urls: ['/uploads/x.jpg'], price: 150, price_unit: 'SQM', price_currency: 'CNY' });
+check('UC5 带币种 → 201', s5 === 201, `got ${s5}`);
+check('UC5 price_currency 落库 = CNY', j5.product?.price_currency === 'CNY', `got ${j5.product?.price_currency}`);
+
+// UC6 非白名单币种 → 400（防止"元"这类脏值入库）
+[s] = await post({ image_urls: ['/uploads/x.jpg'], price: 150, price_unit: 'SQM', price_currency: '元' });
+check('UC6 非法币种 → 400', s === 400, `got ${s}`);
+
+// UC7 不传币种 → 落 null（旧数据同形，展示层回落到供应商所属国家币种）
+const [s7, j7] = await post({ image_urls: ['/uploads/x.jpg'], price: 88, price_unit: 'PCS' });
+check('UC7 缺省币种 → 201', s7 === 201, `got ${s7}`);
+check('UC7 price_currency = null', j7.product?.price_currency === null, `got ${j7.product?.price_currency}`);
+
 // 清理
-const id = j4.product?.id;
-if (id) {
-  const d = await fetch(`${BASE}/suppliers/me/products/${id}`, { method: 'DELETE', headers: H });
-  check('cleanup: DELETE 200', d.status === 200, `got ${d.status}`);
+for (const [label, pid] of [['UC4', j4.product?.id], ['UC5', j5.product?.id], ['UC7', j7.product?.id]]) {
+  if (!pid) continue;
+  const d = await fetch(`${BASE}/suppliers/me/products/${pid}`, { method: 'DELETE', headers: H });
+  check(`cleanup ${label}: DELETE 200`, d.status === 200, `got ${d.status}`);
 }
 
 console.log(`\nsupplier-product-price: ${pass}/${pass + fail} PASS`);
