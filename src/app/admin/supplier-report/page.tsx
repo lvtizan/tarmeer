@@ -84,6 +84,7 @@ export default function SupplierReportPage() {
         </label>
         <button type="button" onClick={setToday} className="h-10 rounded-lg border border-stone-200 px-4 text-sm text-stone-600 hover:bg-stone-50">{zh ? '今天' : 'Today'}</button>
         <button type="button" onClick={() => setLastDays(7)} className="h-10 rounded-lg border border-stone-200 px-4 text-sm text-stone-600 hover:bg-stone-50">{zh ? '近7天' : '7 days'}</button>
+        <button type="button" onClick={() => setLastDays(30)} className="h-10 rounded-lg border border-stone-200 px-4 text-sm text-stone-600 hover:bg-stone-50">{zh ? '近1个月' : '30 days'}</button>
         <button type="button" onClick={load} className="h-10 rounded-lg bg-[#b8864a] px-5 text-sm font-medium text-white transition hover:bg-[#a07640]">{zh ? '查询' : 'Search'}</button>
       </div>
 
