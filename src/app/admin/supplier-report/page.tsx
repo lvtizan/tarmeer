@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import { useAdminT } from '@/hooks/useAdminLang';
+import SupplierCategoryThumbs from '@/components/admin/SupplierCategoryThumbs';
 
 interface Supplier {
   id: number; company_name: string; name_zh: string | null; categories: string[];
@@ -130,7 +131,7 @@ export default function SupplierReportPage() {
                         <a href={`/admin/suppliers/${s.id}`} className="font-medium text-[#1c1917] hover:text-[#b8864a]">{s.company_name}</a>
                       </td>
                       <td className="px-4 py-2.5 text-stone-500">{s.name_zh || '—'}</td>
-                      <td className="px-4 py-2.5 text-stone-500">{s.categories.length ? s.categories.join('、') : '—'}</td>
+                      <td className="px-4 py-2.5 text-stone-500"><SupplierCategoryThumbs supplierId={s.id} categories={s.categories} /></td>
                       <td className="px-4 py-2.5">
                         {s.account_email
                           ? <span className="text-stone-600">{s.account_email}</span>
