@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import SupplierEditModal from '@/components/admin/SupplierEditModal';
@@ -588,6 +588,12 @@ export default function AdminSupplierDetailPage() {
   const id = routeParams?.id as string | undefined;
   const { t } = useAdminT();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // 返回目标：从上架统计(?from=report)进来则回到该报表并带回日期筛选，否则回外层供应商列表
+  const fromReport = searchParams.get('from') === 'report';
+  const backHref = fromReport
+    ? `/admin/supplier-report?rf=${encodeURIComponent(searchParams.get('rf') || '')}&rt=${encodeURIComponent(searchParams.get('rt') || '')}`
+    : '/admin/suppliers';
 
   const [supplier, setSupplier] = useState<{
     id: number; company_name: string; logo_url?: string; origin: string; status: string;
@@ -864,9 +870,9 @@ export default function AdminSupplierDetailPage() {
       )}
 
       {/* Back */}
-      <button onClick={() => router.push('/admin/suppliers')} className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+      <button onClick={() => router.push(backHref)} className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="w-4 h-4" />
-        {t('Back to Suppliers', '返回供应商列表')}
+        {fromReport ? t('Back to Listing Report', '返回上架统计') : t('Back to Suppliers', '返回供应商列表')}
       </button>
 
       <div className="flex gap-6 items-start">

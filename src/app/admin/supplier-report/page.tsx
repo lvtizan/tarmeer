@@ -2,7 +2,7 @@
 
 // 供应商上架统计：按日期筛选 → 扁平表格(一行一家)：上架日期 / 公司 / 中文名 / 品类 / 号 / 状态。
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
@@ -17,6 +17,7 @@ interface Supplier {
 interface Report { from: string; to: string; country: string; total: number; byDay: { date: string; count: number }[]; suppliers: Supplier[] }
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
+function validDate(v: string | null): string | null { return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null; }
 
 function StatusBadge({ status, published, zh }: { status: string; published: boolean; zh: boolean }) {
   const ok = status === 'approved' && published;
@@ -27,11 +28,13 @@ function StatusBadge({ status, published, zh }: { status: string; published: boo
 
 export default function SupplierReportPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { country } = useAdminCountry();
   const { lang } = useAdminT();
   const zh = lang === 'zh';
-  const [from, setFrom] = useState(todayStr());
-  const [to, setTo] = useState(todayStr());
+  // 从详情页返回时(?rf=&rt=)恢复上次筛选日期，否则默认今天
+  const [from, setFrom] = useState(() => validDate(searchParams.get('rf')) || todayStr());
+  const [to, setTo] = useState(() => validDate(searchParams.get('rt')) || todayStr());
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
@@ -128,7 +131,7 @@ export default function SupplierReportPage() {
                     <tr key={s.id} className="hover:bg-stone-50/60">
                       <td className="whitespace-nowrap px-4 py-2.5 text-stone-500">{String(s.listed_at).slice(0, 10)}</td>
                       <td className="px-4 py-2.5">
-                        <a href={`/admin/suppliers/${s.id}`} className="font-medium text-[#1c1917] hover:text-[#b8864a]">{s.company_name}</a>
+                        <a href={`/admin/suppliers/${s.id}?from=report&rf=${encodeURIComponent(data.from)}&rt=${encodeURIComponent(data.to)}`} className="font-medium text-[#1c1917] hover:text-[#b8864a]">{s.company_name}</a>
                       </td>
                       <td className="px-4 py-2.5 text-stone-500">{s.name_zh || '—'}</td>
                       <td className="px-4 py-2.5 text-stone-500"><SupplierCategoryThumbs supplierId={s.id} categories={s.categories} /></td>
