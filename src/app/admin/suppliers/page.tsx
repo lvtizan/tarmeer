@@ -6,11 +6,12 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays, Tag, Search } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays, Tag, Search, EyeOff } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import ProductCategoriesManager from '@/components/admin/ProductCategoriesManager';
 import AdminSelect from '@/components/ui/AdminSelect';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
+import SupplierThumbsPreview from '@/components/admin/SupplierThumbsPreview';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface Supplier {
@@ -21,6 +22,7 @@ interface Supplier {
   origin: 'china' | 'dubai';
   categories: string[] | string | null;
   status: string;
+  is_published?: number; // 0=已下架(admin toggle-published 下架);默认 1
   has_physical_store: number;
   user_email: string;
   user_name: string;
@@ -423,7 +425,9 @@ export default function AdminSuppliersPage() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-[16px] font-semibold text-[#2c2c2c] leading-tight">{s.company_name}</span>
+                        <SupplierThumbsPreview supplierId={s.id} productCount={s.product_count}>
+                          <span className="text-[16px] font-semibold text-[#2c2c2c] leading-tight">{s.company_name}</span>
+                        </SupplierThumbsPreview>
                         <button
                           type="button"
                           onClick={e => { e.stopPropagation(); startEditName(s); }}
@@ -445,6 +449,12 @@ export default function AdminSuppliersPage() {
                         {s.source === 'partner' && (
                           <span className="inline-flex items-center h-5 px-2 rounded-full bg-[#f5ecdf] text-[#a07640] text-[12px] font-medium shrink-0">
                             {t('Partner', '合作方同步')}
+                          </span>
+                        )}
+                        {s.is_published === 0 && (
+                          <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-stone-200/80 text-stone-600 text-[12px] font-medium shrink-0" title={t('Hidden from public site', '未在公开站点展示')}>
+                            <EyeOff className="w-3 h-3" />
+                            {t('Delisted', '已下架')}
                           </span>
                         )}
                       </div>
