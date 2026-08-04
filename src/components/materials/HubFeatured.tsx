@@ -54,7 +54,7 @@ export default function HubFeatured() {
                   src={p.image_url}
                   alt={`${p.title}${p.supplier_name ? ' — ' + p.supplier_name : ''}, sourced from China through Tarmeer UAE`}
                   loading="lazy"
-                  className="w-full h-auto transition duration-500 group-hover:scale-105"
+                  className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
                 />
               </Link>
               <div className="p-3">

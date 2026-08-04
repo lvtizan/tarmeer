@@ -53,7 +53,7 @@ export default function HubSearchResults({
                 <img
                   src={r.image_url}
                   alt={r.title}
-                  className="h-auto w-full transition-transform duration-300 group-hover:scale-105"
+                  className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="p-3">
                   <p className="line-clamp-1 text-sm font-medium text-[#1c1917]">{r.title}</p>
