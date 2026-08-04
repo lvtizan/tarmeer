@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ].join(' ').slice(0, 320);
 
     const ogImage = project.images[0]
-      ? `https://www.tarmeer.com${project.images[0]}`
+      ? (project.images[0].startsWith('http') ? project.images[0] : `https://www.tarmeer.com${project.images[0]}`)
       : 'https://www.tarmeer.com/images/tarmeer_logo.svg';
 
     return {
@@ -147,7 +147,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     numberOfItems: project.images.length,
     image: project.images.slice(0, 20).map((img, i) => ({
       '@type': 'ImageObject',
-      contentUrl: `https://www.tarmeer.com${img}`,
+      contentUrl: img.startsWith('http') ? img : `https://www.tarmeer.com${img}`,
       name: `${project.title} — photo ${i + 1}`,
       representativeOfPage: i === 0,
     })),
