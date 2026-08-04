@@ -31,7 +31,7 @@ const CatalogReader = dynamic(() => import('./CatalogReader'), {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
-interface SupplierProfile {
+export interface SupplierProfile {
   id: number;
   company_name: string;
   slug: string;
@@ -45,7 +45,7 @@ interface SupplierProfile {
   website: string | null;
 }
 
-interface Product {
+export interface Product {
   id: number;
   title: string | null;
   description: string | null;
@@ -78,15 +78,18 @@ interface Catalog {
 
 interface SupplierDetailClientProps {
   slug: string;
+  // SSR seed：服务端把 supplier+products 传进来 → 首屏 SSR 直接渲染真实内容(非转圈)，消除软 404
+  initialSupplier?: SupplierProfile | null;
+  initialProducts?: Product[];
 }
 
-export default function SupplierDetailClient({ slug }: SupplierDetailClientProps) {
+export default function SupplierDetailClient({ slug, initialSupplier = null, initialProducts = [] }: SupplierDetailClientProps) {
   const router = useRouter();
-  const [supplier, setSupplier] = useState<SupplierProfile | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [supplier, setSupplier] = useState<SupplierProfile | null>(initialSupplier);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [projects, setProjects] = useState<Project[]>([]);
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialSupplier);
   const [lightbox, setLightbox] = useState<{
     images: string[];
     labels?: (string | null)[];
@@ -126,7 +129,7 @@ export default function SupplierDetailClient({ slug }: SupplierDetailClientProps
           images: typeof p.images === 'string' ? JSON.parse(p.images) : (p.images || []),
         })));
       })
-      .catch(() => setSupplier(null))
+      .catch(() => { if (!initialSupplier) setSupplier(null); }) // 有 SSR 数据时,客户端刷新瞬时失败不清空已渲染内容
       .finally(() => setLoading(false));
   }, [slug]);
 

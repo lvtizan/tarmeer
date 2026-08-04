@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import SupplierDetailClient from '@/components/materials/SupplierDetailClient';
+import SupplierDetailClient, { type SupplierProfile, type Product } from '@/components/materials/SupplierDetailClient';
 import { getCountry } from '@/lib/country';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
@@ -52,6 +52,24 @@ async function fetchSupplierBasic(slug: string, country: string): Promise<Suppli
     if (!res.ok) return null;
     const data = await res.json();
     return data.supplier || null;
+  } catch {
+    return null;
+  }
+}
+
+// SSR 版：一次取回 supplier + products（detail 端点内联返回 products），用于把首屏内容渲进服务端 HTML（消除软 404）。
+// 与 fetchSupplierBasic 同源同缓存键（?country= + x-country），国家隔离一致。
+async function fetchSupplierWithProducts(slug: string, country: string): Promise<{ supplier: SupplierBasic; products: unknown[] } | null> {
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
+  try {
+    const res = await fetch(`${API_BASE}/suppliers/detail/${slug}?country=${country}`, {
+      next: { revalidate: 3600 },
+      headers: { 'x-country': country },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.supplier) return null;
+    return { supplier: data.supplier as SupplierBasic, products: Array.isArray(data.products) ? data.products : [] };
   } catch {
     return null;
   }
@@ -106,8 +124,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SupplierDetailPage({ params }: PageProps) {
   const { slug } = await params;
   const c = getCountry((await headers()).get('x-country'));
-  const supplier = await fetchSupplierBasic(slug, c.code);
-  if (!supplier) notFound();
+  const detail = await fetchSupplierWithProducts(slug, c.code);
+  if (!detail) notFound();
+  const supplier = detail.supplier;
 
   const supplierUrl = `${c.baseUrl}/materials/suppliers/${slug}`;
   // 公开去标识：用品类通用标题代替真实/遮蔽厂家名（title/JSON-LD/breadcrumb/h1 统一口径）
@@ -175,7 +194,11 @@ export default async function SupplierDetailPage({ params }: PageProps) {
           {supplier.description && <p>{supplier.description}</p>}
         </div>
       )}
-      <SupplierDetailClient slug={slug} />
+      <SupplierDetailClient
+        slug={slug}
+        initialSupplier={detail.supplier as unknown as SupplierProfile}
+        initialProducts={detail.products as unknown as Product[]}
+      />
     </>
   );
 }
