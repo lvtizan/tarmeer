@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
     const tagLabel = tagPool.join(' ') || 'Interior Design';
     const locationLabel = project.location || company.city || c.name;
-    const canonicalUrl = `${c.baseUrl}/companies/${companySlug}/${projectSlug}`;
+    const canonicalUrl = `${c.baseUrl}/companies/${company.slug || companySlug}/${project.slug || projectSlug}`;
 
     const title = `${project.title} - ${tagLabel} Design in ${locationLabel} by ${company.name} | Tarmeer`;
     const desc = [
@@ -116,7 +116,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   const { project, company } = initialData;
   // 国家数据隔离（铁律）：跨国访问项目页触发真 404
   if (company.country && company.country !== c.code) notFound();
-  const canonicalUrl = `${c.baseUrl}/companies/${companySlug}/${projectSlug}`;
+  const canonicalUrl = `${c.baseUrl}/companies/${company.slug || companySlug}/${project.slug || projectSlug}`;
 
   const tagPool: string[] = [];
   if (project.style) tagPool.push(project.style);
