@@ -82,7 +82,7 @@ function mapPublicProduct(row) {
     return {
         ...rest,
         title: mask(enTitle),
-        description: mask(enDesc),
+        description: supplierRedact_1.stripLeadingRedact(mask(enDesc)),
         supplier_name: supplierRedact_1.supplierPublicTitle(supplier_categories),
         supplier_logo: null,
         image_urls: (0, productJsonFields_1.parseJsonArray)(rest.image_urls),

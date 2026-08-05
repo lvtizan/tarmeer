@@ -6,6 +6,7 @@ exports.maskPhraseInText = maskPhraseInText;
 exports.maskSupplierMentions = maskSupplierMentions;
 exports.redactPublicSupplier = redactPublicSupplier;
 exports.supplierPublicTitle = supplierPublicTitle;
+exports.stripLeadingRedact = stripLeadingRedact;
 /** 遮蔽自填文本(商品/项目/目录标题·简介)里出现的完整厂家名 + 品牌首词(≥4)，大小写不敏感。 */
 function maskSupplierMentions(text, companyName) {
     if (typeof text !== 'string' || !companyName)
@@ -43,6 +44,12 @@ function maskSupplierName(name) {
     if (!name)
         return name;
     return REDACT_LABEL;
+}
+/** 去掉文本开头被遮蔽成 REDACT_LABEL 的"品牌头"（真名原在句首 · 分隔列表）→ 描述直接以产品关键词起头（SEO 更优）。
+    仅当 REDACT_LABEL 后紧跟分隔符(· • | : - – —)才 strip；prose（如 "our supplier's premium ..."）不动。 */
+const RE_LEAD_REDACT = new RegExp('^\\s*' + REDACT_LABEL + '\\s*[·•|:\\-–—]\\s*', 'i');
+function stripLeadingRedact(text) {
+    return typeof text === 'string' ? text.replace(RE_LEAD_REDACT, '') : text;
 }
 /** 把 text 中出现的 phrase（大小写不敏感、整词短语）替换成等长的星号遮蔽。 */
 function maskPhraseInText(text, phrase) {
