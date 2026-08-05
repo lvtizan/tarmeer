@@ -120,6 +120,8 @@ export function toMaterialProduct(row: any): PublicMaterialProduct {
   const imageUrls = normalizeStringArray(row.image_urls);
   return {
     id: Number(row.id),
+    // 中文英文化 + 去标识由后端序列化(mapPublicProduct)统一处理：title/description 已是「遮蔽后的英文」。
+    // 前端只透传，绝不在此读 title_translated(后端已 strip 不外发,防泄露真名)。
     title: row.title ?? null,
     description: sanitizeDescription(row.description),
     category: row.category ?? null,

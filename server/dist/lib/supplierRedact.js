@@ -37,11 +37,12 @@ function supplierPublicTitle(categories) {
         : 'Building Materials';
     return `${label} Supplier`;
 }
-/** 厂家名整体遮蔽：字母/数字/CJK 字符 → *，保留空格与符号(& - 等)。 */
+/** 厂家名遮蔽：替换成中性脱敏文字（不再用一串星号 `***`，观感更好且仍不露真名）。 */
+const REDACT_LABEL = 'our supplier';
 function maskSupplierName(name) {
     if (!name)
         return name;
-    return String(name).replace(/[\p{L}\p{N}]/gu, '*');
+    return REDACT_LABEL;
 }
 /** 把 text 中出现的 phrase（大小写不敏感、整词短语）替换成等长的星号遮蔽。 */
 function maskPhraseInText(text, phrase) {

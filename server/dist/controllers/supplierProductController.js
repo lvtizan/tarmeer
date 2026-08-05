@@ -39,6 +39,7 @@ const SCENE_CATEGORY_FALLBACK = {
 // 去标识（P0，对齐 redactPublicSupplier/FA-14）：真实厂名/name_zh 只取来遮蔽用，不外发；logo 不外发。
 const PUBLIC_PRODUCT_SELECT = `p.id, p.title, p.description, p.category, p.image_url, p.image_urls,
        p.specs, p.certifications, p.application_scenes, p.price, p.price_unit, p.price_from,
+       p.title_translated, p.description_translated,
        sp.id AS supplier_id, sp.slug AS supplier_slug, sp.origin AS supplier_origin,
        sp.company_name AS supplier_real_name, sp.name_zh AS supplier_real_name_zh,
        sp.categories AS supplier_categories`;
@@ -73,11 +74,15 @@ function mapPublicProduct(row) {
             return el;
         })
         : arr);
-    const { supplier_real_name, supplier_real_name_zh, supplier_categories, ...rest } = row;
+    // 中文产品优先用英文译名（洞石系列→TRAVERTINE SLAB），再走同一 mask() 遮蔽真名。
+    // title_translated/description_translated 从 rest 剥离，绝不外发（否则前端拿未遮蔽译名 = 泄露真名 P0）。
+    const { supplier_real_name, supplier_real_name_zh, supplier_categories, title_translated, description_translated, ...rest } = row;
+    const enTitle = (typeof title_translated === 'string' && title_translated.trim()) ? title_translated.trim() : rest.title;
+    const enDesc = (typeof description_translated === 'string' && description_translated.trim()) ? description_translated : rest.description;
     return {
         ...rest,
-        title: mask(rest.title),
-        description: mask(rest.description),
+        title: mask(enTitle),
+        description: mask(enDesc),
         supplier_name: supplierRedact_1.supplierPublicTitle(supplier_categories),
         supplier_logo: null,
         image_urls: (0, productJsonFields_1.parseJsonArray)(rest.image_urls),
