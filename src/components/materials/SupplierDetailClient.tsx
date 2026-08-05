@@ -381,7 +381,16 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                           />
                         </div>
                         {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{catLabel(p.category)}</p>}
-                        {(p.title_translated || p.title) && <p className="text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate">{p.title_translated || p.title}</p>}
+                        {(p.title_translated || p.title) && (
+                          // 标题作可爬内链 → 产品详情页(供应商页已 SSR,链接进 HTML；图片点击仍开 lightbox，stopPropagation 隔开)
+                          <Link
+                            href={`/materials/products/${p.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="block text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate hover:text-[#b8864a] transition-colors"
+                          >
+                            {p.title_translated || p.title}
+                          </Link>
+                        )}
                         {(() => {
                           // 与产品详情页同源清洗：合作方同步残留的出厂价/MOQ 不外显（spec §6）
                           const desc = sanitizeDescription(p.description_translated || p.description);
