@@ -20,6 +20,11 @@ function truncate(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
 }
 
+/** category/scene slug → 展示 label（服务端用，不依赖客户端 hook）：flooring → Flooring */
+function prettifyCategory(cat: string | null | undefined): string {
+  return cat ? cat.replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase()) : '';
+}
+
 /** 相对路径图片补 baseUrl（resolveImageUrl 已规范 /uploads → /api/uploads；禁止 https:/// 三斜杠） */
 function toAbsoluteImage(url: string | null | undefined, baseUrl: string): string | undefined {
   const resolved = resolveImageUrl(url);
@@ -38,16 +43,46 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { product } = detail;
   const name = product.title || 'New Material';
-  const title = `${name} | New Materials | Tarmeer`;
-  const description = product.description
-    ? truncate(product.description, 155)
-    : `${name} — curated new material from ${product.supplier_name || 'a verified supplier'}, available in the UAE through Tarmeer.`;
+  const catLabel = prettifyCategory(product.category);
+  // 标题：品名 + 品类 + 地域关键词。不手拼 " | Tarmeer"（root layout 模板会追加 → 避免双 Tarmeer）
+  const title = catLabel ? `${name} — ${catLabel} in the UAE` : `${name} — New Material in the UAE`;
+
+  // 描述：真实描述去遮蔽(***)后够料就用；否则用 specs 拼出关键词丰富的兜底描述
+  const cleanDesc = (product.description || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const specText = product.specs.map((s) => `${s.label}: ${s.value}`).join(' · ');
+  const description = cleanDesc.length >= 40
+    ? truncate(cleanDesc, 155)
+    : truncate(
+        [`${name}${catLabel ? ` — ${catLabel}` : ''} building material available in the UAE via Tarmeer.`, specText]
+          .filter(Boolean)
+          .join(' '),
+        160,
+      );
+
+  // keywords：品名 + 品类 + 应用场景 + 地域长尾（去重去空）
+  const keywords = Array.from(
+    new Set(
+      [
+        name,
+        catLabel,
+        ...product.application_scenes.map((s) => prettifyCategory(s)),
+        catLabel ? `${catLabel} UAE` : '',
+        catLabel ? `${catLabel} Dubai` : '',
+        'building materials UAE',
+        'building materials Dubai',
+        'construction materials Dubai',
+        'Tarmeer',
+      ].filter(Boolean) as string[],
+    ),
+  );
+
   const url = `${c.baseUrl}/materials/products/${product.id}`;
   const ogImage = toAbsoluteImage(product.image_url, c.baseUrl);
 
   return {
     title,
     description,
+    keywords,
     openGraph: {
       title,
       description,
@@ -80,10 +115,19 @@ export default async function MaterialProductPage({ params }: PageProps) {
     ? await fetchSupplierCatalogs(product.supplier_slug, c.code)
     : [];
   const name = product.title || 'New Material';
+  const catLabel = prettifyCategory(product.category);
   const productUrl = `${c.baseUrl}/materials/products/${product.id}`;
   const images = (product.image_urls.length ? product.image_urls : [product.image_url])
     .map((img) => toAbsoluteImage(img, c.baseUrl))
     .filter((img): img is string => Boolean(img));
+
+  const cleanDesc = (product.description || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const materialSpec = product.specs.find((s) => /material|材质/i.test(s.label));
+  // specs + certifications → 结构化 additionalProperty（Product 富结果 + 关键词）
+  const additionalProperty = [
+    ...product.specs.map((s) => ({ '@type': 'PropertyValue', name: s.label, value: s.value })),
+    ...product.certifications.map((cert) => ({ '@type': 'PropertyValue', name: 'Certification', value: cert })),
+  ];
 
   // Product schema：brand=supplier；offers 不外显价格（spec §6，业务定价不外显）
   const productJsonLd = {
@@ -92,9 +136,12 @@ export default async function MaterialProductPage({ params }: PageProps) {
     '@id': `${productUrl}#product`,
     name,
     url: productUrl,
+    sku: String(product.id),
     ...(images.length ? { image: images } : {}),
-    ...(product.description ? { description: truncate(product.description, 300) } : {}),
-    ...(product.category ? { category: product.category } : {}),
+    ...(cleanDesc ? { description: truncate(cleanDesc, 300) } : {}),
+    ...(catLabel ? { category: catLabel } : {}),
+    ...(materialSpec ? { material: materialSpec.value } : {}),
+    ...(additionalProperty.length ? { additionalProperty } : {}),
     ...(product.supplier_name ? { brand: { '@type': 'Brand', name: product.supplier_name } } : {}),
   };
 
