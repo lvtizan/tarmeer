@@ -161,6 +161,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ── AE-only 动态/SEO 内容 ────────────────────────────────────
   let supplierRoutes: MetadataRoute.Sitemap = [];
   let supplierProjectRoutes: MetadataRoute.Sitemap = [];
+  let productRoutes: MetadataRoute.Sitemap = [];
   let guideRoutes: MetadataRoute.Sitemap = [];
   let serviceCityRoutes: MetadataRoute.Sitemap = [];
 
@@ -197,6 +198,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }),
       )
     ).flat();
+
+    // 中国材料产品详情页 /materials/products/[id]（AE 专属，已 SSR+唯一标题+index，非 AE notFound）
+    // 冲收录量主力：527 个产品页此前从不进 sitemap → Google 发现不了。分页拉全（镜像 projectRoutes）。
+    try {
+      let ppage = 1;
+      while (true) {
+        const batch = await fetchJson<{
+          products: Array<{ id: number; updated_at?: string }>;
+          pagination: { total: number };
+        }>(`/suppliers/products/public?page=${ppage}&limit=100`, country);
+        if (!batch?.products?.length) break;
+        for (const p of batch.products) {
+          if (p.id) {
+            productRoutes.push({
+              url: `${BASE}/materials/products/${p.id}`,
+              lastModified: p.updated_at ? new Date(p.updated_at) : now,
+              changeFrequency: 'weekly' as const,
+              priority: 0.6,
+            });
+          }
+        }
+        if (productRoutes.length >= (batch.pagination?.total ?? 0)) break;
+        ppage++;
+      }
+    } catch { /* skip */ }
 
     // 迪拜专属装修指南
     guideRoutes = GUIDE_SLUGS.map((slug) => ({
@@ -239,5 +265,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...insightRoutes,
     ...supplierRoutes,
     ...supplierProjectRoutes,
+    ...productRoutes,
   ];
 }
