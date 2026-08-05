@@ -69,6 +69,19 @@ function normalizeSpecs(value: unknown): ProductSpec[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((item) => {
+      // 公开端点返回字符串形 "Label: Value"（如 "Material: SPC stone-plastic composite"）
+      // → 拆成 {label,value}；无冒号则整串作 value。对象形保持原逻辑不变。
+      if (typeof item === 'string') {
+        const s = item.trim();
+        if (!s) return null;
+        const idx = s.indexOf(':');
+        if (idx > 0) {
+          const label = s.slice(0, idx).trim();
+          const val = s.slice(idx + 1).trim();
+          if (label && val) return { label, value: val };
+        }
+        return { label: '', value: s };
+      }
       if (!item || typeof item !== 'object') return null;
       const label = String((item as Record<string, unknown>).label ?? '').trim();
       const val = String((item as Record<string, unknown>).value ?? '').trim();

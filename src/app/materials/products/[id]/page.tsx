@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = catLabel ? `${name} — ${catLabel} in the UAE` : `${name} — New Material in the UAE`;
 
   // 描述：真实描述去遮蔽(***)后够料就用；否则用 specs 拼出关键词丰富的兜底描述
-  const cleanDesc = (product.description || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const cleanDesc = (product.description || '').replace(/\*/g, '').replace(/\s+/g, ' ').replace(/^[\s·\-|:]+/, '').trim();
   const specText = product.specs.map((s) => `${s.label}: ${s.value}`).join(' · ');
   const description = cleanDesc.length >= 40
     ? truncate(cleanDesc, 155)
@@ -121,7 +121,7 @@ export default async function MaterialProductPage({ params }: PageProps) {
     .map((img) => toAbsoluteImage(img, c.baseUrl))
     .filter((img): img is string => Boolean(img));
 
-  const cleanDesc = (product.description || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const cleanDesc = (product.description || '').replace(/\*/g, '').replace(/\s+/g, ' ').replace(/^[\s·\-|:]+/, '').trim();
   const materialSpec = product.specs.find((s) => /material|材质/i.test(s.label));
   // specs + certifications → 结构化 additionalProperty（Product 富结果 + 关键词）
   const additionalProperty = [
