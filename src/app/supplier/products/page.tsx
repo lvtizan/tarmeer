@@ -328,7 +328,7 @@ export default function SupplierProductsPage() {
             <div key={p.id} className="group relative bg-white rounded-2xl border border-stone-200 overflow-hidden">
               <div className="aspect-[3/4] bg-stone-100 relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-cover" />
+                <img src={p.image_url} alt={p.title || ''} className="w-full h-full object-contain" />
                 {Array.isArray(p.image_urls) && p.image_urls.length > 1 && (
                   <span className="absolute bottom-1.5 right-1.5 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-md">
                     +{p.image_urls.length - 1}
