@@ -23,6 +23,9 @@ const ORIGINAL_QUALITY = 88;
 async function processUploadedImage(buffer) {
     try {
         const processed = await (0, sharp_1.default)(buffer)
+            // EXIF 自动转向：把手机/相机拍摄时靠 Orientation 标签记录的旋转"烤进像素"并去掉标签，
+            // 否则转 WebP 后方向标签丢失，竖图会按原始横向像素显示（上传后变横）。必须在 resize 之前。
+            .rotate()
             .resize(MAX_ORIGINAL_LONG_EDGE, MAX_ORIGINAL_LONG_EDGE, {
             fit: 'inside',
             withoutEnlargement: true,
