@@ -21,11 +21,24 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 type PdfDoc = Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']>;
 
+// 浏览器 canvas 上限：Chrome 单边 16384、Safari 限总面积（~16.7M px）。取保守值，
+// 否则超长/超大页（如把整张价目表拼成一条 597×7418pt 的长页）会算出几万像素的 canvas，
+// 渲染直接失败 → 阅读器报 "Unable to load"。用较严约束缩小，宁可小一点也要渲染成功。
+const MAX_CANVAS_SIDE = 8192;
+const MAX_CANVAS_AREA = 16_000_000;
+
 async function renderToCanvas(pdf: PdfDoc, num: number, canvas: HTMLCanvasElement, targetW: number) {
   const page = await pdf.getPage(num);
   const vp0 = page.getViewport({ scale: 1 });
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-  const vp = page.getViewport({ scale: (targetW / vp0.width) * dpr });
+  // 目标按宽度缩放；再对超高/超大页做单边 + 面积双重钳制，防 canvas 超过浏览器上限导致渲染失败
+  const scale = Math.min(
+    (targetW / vp0.width) * dpr,
+    MAX_CANVAS_SIDE / vp0.width,
+    MAX_CANVAS_SIDE / vp0.height,
+    Math.sqrt(MAX_CANVAS_AREA / (vp0.width * vp0.height)),
+  );
+  const vp = page.getViewport({ scale });
   canvas.width = vp.width;
   canvas.height = vp.height;
   await page.render({ canvasContext: canvas.getContext('2d')!, viewport: vp }).promise;
@@ -289,7 +302,10 @@ export default function CatalogReader({
 
         const d0 = (await pdf.getPage(1)).getViewport({ scale: 1 });
         if (cancelled) return;
-        setRatio(Number((d0.width / d0.height).toFixed(4)) || 1.6);
+        // 极端比例页（如 1:12 的长条价目表）会把阅读器盒子撑到几千像素高，破坏布局 →
+        // 显示比例钳到 [0.5, 3]；超长页在框内 object-contain 居中显示（全屏可放大细看）。
+        const r0 = Number((d0.width / d0.height).toFixed(4)) || 1.6;
+        setRatio(Math.min(3, Math.max(0.5, r0)));
         targetWRef.current = Math.min(
           Math.round((window.innerWidth || 1200) * (window.devicePixelRatio || 1)),
           1600
