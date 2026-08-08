@@ -866,6 +866,26 @@ class AdminApiClient {
     return res.json();
   }
 
+  // 管理员帮供应商上传目录 PDF（multipart，字段 file + title）
+  async uploadSupplierCatalog(supplierId: number | string, file: File, title: string): Promise<{ catalog: { id: number; title: string; file_url: string; file_size?: number } }> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    fd.append('title', title);
+    const url = `${API_BASE}/admin/suppliers/${supplierId}/catalogs`;
+    const token = this.getToken();
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: fd,
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); if (j?.error) msg = j.error; } catch { /* ignore */ }
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
   // Complaint management
   async getComplaints(params?: { page?: number; limit?: number; status?: string; search?: string; country?: string }) {
     const query = new URLSearchParams();

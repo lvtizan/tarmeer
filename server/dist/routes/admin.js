@@ -445,6 +445,8 @@ router.put('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermissi
 router.delete('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteProduct);
 router.put('/suppliers/catalogs/:id/file', (0, adminAuth_1.requirePermission)('can_approve'), uploadLargePdf.single('file'), supplierAdminController_1.adminReplaceCatalogFile);
 router.patch('/suppliers/catalogs/:id/title', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminRenameCatalog);
+router.post('/suppliers/:id/catalogs', (0, adminAuth_1.requirePermission)('can_view_suppliers'), (req, res, next) => uploadLargePdf.single('file')(req, res, (err) => err ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'PDF exceeds the 50MB limit. For larger catalogs, ask the supplier to upload it from their own portal (chunked upload).' : 'Upload failed.' }) : next()), supplierAdminController_1.adminAddCatalog);
+router.delete('/suppliers/catalogs/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteCatalog);
 router.put('/suppliers/:id/products/:productId/image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), upload.single('file'), supplierAdminController_1.adminReplaceProductImage);
 router.post('/suppliers/:id/project-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), upload.single('file'), supplierAdminController_1.adminUploadProjectImage);
 router.post('/suppliers/:id/projects', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminAddProject);

@@ -633,6 +633,8 @@ export default function AdminSupplierDetailPage() {
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
   const [savingCatalogId, setSavingCatalogId] = useState<number | null>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingCatalog, setUploadingCatalog] = useState(false);
+  const catalogFileRef = useRef<HTMLInputElement>(null);
 
   const startEditCatalog = (c: { id: number; title: string }) => {
     setEditingCatalogId(c.id);
@@ -652,6 +654,31 @@ export default function AdminSupplierDetailPage() {
       showToast(t('Catalog renamed', '目录已重命名'), 'success');
     } catch { showToast(t('Failed to rename', '重命名失败'), 'error'); }
     finally { setSavingCatalogId(null); }
+  };
+
+  // 管理员帮供应商上传目录 PDF
+  const handleAddCatalog = async (file: File) => {
+    if (!file || !id) return;
+    setUploadingCatalog(true);
+    try {
+      const data = await adminApi.uploadSupplierCatalog(id, file, file.name.replace(/\.pdf$/i, ''));
+      setCatalogs(prev => [...prev, data.catalog]);
+      showToast(t('Catalog added', '目录已添加'), 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : t('Upload failed', '上传失败'), 'error');
+    } finally {
+      setUploadingCatalog(false);
+      if (catalogFileRef.current) catalogFileRef.current.value = '';
+    }
+  };
+
+  const handleDeleteCatalog = async (catalogId: number) => {
+    if (!window.confirm(t('Delete this catalog?', '确认删除这个目录？'))) return;
+    try {
+      await adminApi.request(`/suppliers/catalogs/${catalogId}`, { method: 'DELETE' });
+      setCatalogs(prev => prev.filter(c => c.id !== catalogId));
+      showToast(t('Catalog deleted', '目录已删除'), 'success');
+    } catch { showToast(t('Failed to delete', '删除失败'), 'error'); }
   };
 
   const handleReplaceImage = async (file: File, productId: number) => {
@@ -1127,13 +1154,25 @@ export default function AdminSupplierDetailPage() {
           </section>
 
           {/* Catalogs */}
-          {catalogs.length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-2">
                 <FolderOpen className="w-4 h-4" />
                 {t('Catalogs', '目录')}
                 <span className="font-normal text-stone-400 normal-case tracking-normal">({catalogs.length})</span>
               </h2>
+              <button onClick={() => catalogFileRef.current?.click()} disabled={uploadingCatalog}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition disabled:opacity-50">
+                <Upload className="w-3.5 h-3.5" /> {uploadingCatalog ? t('Uploading…', '上传中…') : t('Upload PDF', '上传目录')}
+              </button>
+              <input ref={catalogFileRef} type="file" accept=".pdf,application/pdf" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleAddCatalog(f); }} />
+            </div>
+            {catalogs.length === 0 ? (
+              <p className="text-sm text-stone-400 py-6 text-center bg-white border border-dashed border-stone-200 rounded-xl">
+                {t('No catalogs yet. Click "Upload PDF" to add one.', '暂无目录，点上方「上传目录」帮供应商添加。')}
+              </p>
+            ) : (
               <div className="space-y-2">
                 {catalogs.map((c) => {
                   const isEditing = editingCatalogId === c.id;
@@ -1188,14 +1227,18 @@ export default function AdminSupplierDetailPage() {
                             className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-[#b8864a] hover:bg-stone-100 transition">
                             <Download className="w-4 h-4" />
                           </a>
+                          <button onClick={() => handleDeleteCatalog(c.id)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition opacity-0 group-hover:opacity-100" title={t('Delete', '删除')}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       )}
                     </div>
                   );
                 })}
               </div>
-            </section>
-          )}
+            )}
+          </section>
         </div>
       </div>
 

@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.adminRenameCatalog = adminRenameCatalog;
 exports.adminReplaceCatalogFile = adminReplaceCatalogFile;
+exports.adminAddCatalog = adminAddCatalog;
+exports.adminDeleteCatalog = adminDeleteCatalog;
 exports.adminReplaceProductImage = adminReplaceProductImage;
 exports.listSuppliers = listSuppliers;
 exports.getSupplierDetail = getSupplierDetail;
@@ -102,6 +104,57 @@ async function adminReplaceCatalogFile(req, res) {
     catch (error) {
         console.error('Admin replace catalog file error:', error);
         res.status(500).json({ error: 'Failed to replace catalog file.' });
+    }
+}
+/** 管理员帮供应商新增目录 PDF。multipart/form-data：file(PDF) + title(可选，缺省用文件名)。 */
+async function adminAddCatalog(req, res) {
+    try {
+        const supplierId = Number(req.params.id);
+        if (!supplierId)
+            return res.status(400).json({ error: 'invalid supplier id' });
+        if (!req.file?.buffer)
+            return res.status(400).json({ error: 'no file uploaded' });
+        const isPdf = req.file.mimetype === 'application/pdf' || /\.pdf$/i.test(req.file.originalname || '');
+        if (!isPdf)
+            return res.status(400).json({ error: 'Only PDF files are allowed.' });
+        const [supRows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE id = ?', [supplierId]);
+        if (supRows.length === 0)
+            return res.status(404).json({ error: 'supplier not found' });
+        const title = (typeof req.body.title === 'string' && req.body.title.trim())
+            || (req.file.originalname || 'Catalog').replace(/\.pdf$/i, '').trim()
+            || 'Catalog';
+        const fileName = `admin-${supplierId}-${require('crypto').randomUUID()}.pdf`;
+        const relPath = `suppliers/catalogs/${fileName}`;
+        const absPath = path_1.default.resolve(process.cwd(), 'public/uploads', relPath);
+        await promises_1.default.mkdir(path_1.default.dirname(absPath), { recursive: true });
+        await promises_1.default.writeFile(absPath, req.file.buffer, { mode: 0o644 });
+        const fileUrl = `/uploads/${relPath}`;
+        const [result] = await database_1.default.execute('INSERT INTO supplier_catalogs (supplier_profile_id, title, file_url, file_size) VALUES (?, ?, ?, ?)', [supplierId, title, fileUrl, req.file.size || null]);
+        await logSupplierAction(req, 'supplier_catalog_add', supplierId, `供应商#${supplierId} 新增目录#${result.insertId}`);
+        const [created] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE id = ?', [result.insertId]);
+        res.status(201).json({ catalog: created[0] });
+    }
+    catch (error) {
+        console.error('Admin add catalog error:', error);
+        res.status(500).json({ error: 'Failed to add catalog.' });
+    }
+}
+/** 管理员帮供应商删除目录（按 supplier 侧口径只删库记录，磁盘文件保留）。 */
+async function adminDeleteCatalog(req, res) {
+    try {
+        const catalogId = Number(req.params.id);
+        if (!catalogId)
+            return res.status(400).json({ error: 'invalid catalog id' });
+        const [rows] = await database_1.default.execute('SELECT id, supplier_profile_id FROM supplier_catalogs WHERE id = ?', [catalogId]);
+        if (rows.length === 0)
+            return res.status(404).json({ error: 'catalog not found' });
+        await database_1.default.execute('DELETE FROM supplier_catalogs WHERE id = ?', [catalogId]);
+        await logSupplierAction(req, 'supplier_catalog_delete', rows[0].supplier_profile_id, `供应商#${rows[0].supplier_profile_id} 删除目录#${catalogId}`);
+        res.json({ message: 'Catalog deleted.' });
+    }
+    catch (error) {
+        console.error('Admin delete catalog error:', error);
+        res.status(500).json({ error: 'Failed to delete catalog.' });
     }
 }
 /**
