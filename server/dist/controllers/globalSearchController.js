@@ -71,8 +71,8 @@ async function globalSearch(req, res) {
             database_1.default.execute(`SELECT sp.id, sp.company_name AS name, su.email, sp.origin, sp.status
          FROM supplier_profiles sp
          JOIN supplier_users su ON su.id = sp.supplier_user_id
-         WHERE sp.company_name LIKE ? OR su.email LIKE ?
-         ORDER BY sp.created_at DESC LIMIT 5`, [like, like]),
+         WHERE sp.company_name LIKE ? OR sp.name_zh LIKE ? OR su.email LIKE ?
+         ORDER BY sp.created_at DESC LIMIT 5`, [like, like, like]),
         ]);
         const pick = (i) => settled[i].status === 'fulfilled' ? settled[i].value : [[], []];
         const [hlRows, clRows, userRows, cpRows, ucRows, spRows] = settled.map((_, i) => pick(i));

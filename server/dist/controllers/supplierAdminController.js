@@ -168,8 +168,8 @@ async function listSuppliers(req, res) {
             params.push(source);
         }
         if (search) {
-            where += ' AND (sp.company_name LIKE ? OR su.email LIKE ?)';
-            params.push(`%${search}%`, `%${search}%`);
+            where += ' AND (sp.company_name LIKE ? OR sp.name_zh LIKE ? OR su.email LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
         if (group === 'team') {
             where += ' AND su.email LIKE ?';
