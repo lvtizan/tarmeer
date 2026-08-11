@@ -280,6 +280,50 @@ if (pid) {
   check('UC10 admin 非白名单币种落 null（不入脏值）', dirty[0]?.price_currency === null, `got ${dirty[0]?.price_currency}`);
 }
 
+const [legacyInsert] = await pool.execute(
+  `INSERT INTO supplier_products
+   (supplier_profile_id, title, image_url, price, price_max, price_unit, price_currency, price_from)
+   VALUES (?, ?, ?, NULL, NULL, NULL, ?, 1)`,
+  [profileId, `Legacy ${marker}`, IMG.image_urls[0], 'CNY']);
+const legacyPid = legacyInsert.insertId;
+created.push(legacyPid);
+const legacyTitleUpdate = mkRes();
+await ctrl.updateProduct({
+  supplierUser: { id: userId }, params: { id: legacyPid },
+  body: { title: `Legacy renamed ${marker}`, image_url: IMG.image_urls[0] },
+}, legacyTitleUpdate);
+check('UC11 legacy无价产品省略价格组仍可编辑', legacyTitleUpdate.statusCode === 200,
+  `got ${legacyTitleUpdate.statusCode} ${JSON.stringify(legacyTitleUpdate.body)}`);
+const [legacyAfterTitle] = await pool.execute(
+  'SELECT title, price, price_max, price_unit, price_currency, price_from FROM supplier_products WHERE id = ?',
+  [legacyPid]);
+check('UC11 legacy编辑不触碰五个价格字段',
+  legacyAfterTitle[0]?.title === `Legacy renamed ${marker}`
+    && legacyAfterTitle[0]?.price === null
+    && legacyAfterTitle[0]?.price_max === null
+    && legacyAfterTitle[0]?.price_unit === null
+    && legacyAfterTitle[0]?.price_currency === 'CNY'
+    && Number(legacyAfterTitle[0]?.price_from) === 1,
+  JSON.stringify(legacyAfterTitle[0]));
+
+const incompletePriceGroup = mkRes();
+await ctrl.updateProduct({
+  supplierUser: { id: userId }, params: { id: legacyPid },
+  body: { title: 'must not persist', price_from: false },
+}, incompletePriceGroup);
+check('UC12 supplier更新出现任一价格键但缺完整组 → 400', incompletePriceGroup.statusCode === 400,
+  `got ${incompletePriceGroup.statusCode} ${JSON.stringify(incompletePriceGroup.body)}`);
+
+const completePriceGroup = mkRes();
+await ctrl.updateProduct({
+  supplierUser: { id: userId }, params: { id: legacyPid },
+  body: { title: `Priced ${marker}`, price: '12.50', price_max: '20.00', price_unit: 'SQM', price_currency: 'AED', price_from: false },
+}, completePriceGroup);
+check('UC13 supplier更新完整价格组成功', completePriceGroup.statusCode === 200
+  && Number(completePriceGroup.body?.product?.price) === 12.5
+  && Number(completePriceGroup.body?.product?.price_max) === 20,
+  `got ${completePriceGroup.statusCode} ${JSON.stringify(completePriceGroup.body)}`);
+
 } catch (error) {
   primaryError = error;
 } finally {

@@ -338,15 +338,24 @@ async function updateProduct(req, res) {
         const [existing] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [id, profileId]);
         if (existing.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
-        const parsedPrice = validatePrice(req.body);
-        if (parsedPrice.error)
+        const priceFields = ['price', 'price_max', 'price_unit', 'price_currency', 'price_from'];
+        const hasPriceGroup = priceFields.some((field) => Object.prototype.hasOwnProperty.call(req.body, field));
+        const parsedPrice = hasPriceGroup ? validatePrice(req.body) : null;
+        if (parsedPrice?.error)
             return res.status(400).json({ error: parsedPrice.error });
         const urls = Array.isArray(image_urls) && image_urls.length > 0 ? image_urls : null;
         const primaryUrl = urls ? urls[0] : (image_url || null);
         const urlsJson = urls ? JSON.stringify(urls) : null;
         // 供应商门户：specs/certifications/application_scenes 只在传了数组时覆盖（COALESCE 忽略缺省，防误清空）
         const { specs, certifications, application_scenes } = req.body;
-        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_max=?, price_unit=?, price_currency=?, price_from=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, parsedPrice.price, parsedPrice.priceMax, price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), id]);
+        const commonParams = [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0];
+        const contentParams = [title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), id];
+        if (hasPriceGroup) {
+            await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_max=?, price_unit=?, price_currency=?, price_from=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [...commonParams, parsedPrice.price, parsedPrice.priceMax, price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, ...contentParams]);
+        }
+        else {
+            await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [...commonParams, ...contentParams]);
+        }
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         res.json({ product: updated[0] });
     }
