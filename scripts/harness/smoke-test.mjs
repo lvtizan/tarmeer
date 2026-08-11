@@ -183,7 +183,7 @@ import('fs').then(({ readFileSync, existsSync }) => {
   const guards = [
     {
       file: 'src/app/supplier/products/page.tsx',
-      mustInclude: '/public/supplier-categories',
+      mustInclude: '/suppliers/product-categories',
       forbid: /value:\s*['"](furniture|lighting|stone|curtains|hardware|flooring)['"]/,
       label: '供应商产品品类',
     },

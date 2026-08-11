@@ -9,13 +9,33 @@
 // 本用例用桩替换 DB/鉴权，只验证 field 路由的中间件挂载顺序，无需数据库。
 import { createRequire } from 'module';
 import Module from 'module';
+import { execFileSync } from 'child_process';
+import { existsSync } from 'fs';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const serverDir = path.resolve(__dirname, '../../server');
-const require = createRequire(path.join(serverDir, 'package.json'));
+// server/package.json / server/node_modules 是本地运行资产，未纳入 git；隔离 worktree
+// 需从主 checkout 复用依赖。git common dir 可移植地指回主 checkout，不绑定用户名路径。
+let dependencyServerDir = serverDir;
+if (!existsSync(path.join(dependencyServerDir, 'node_modules', 'express'))) {
+  const commonDir = execFileSync('git', ['rev-parse', '--git-common-dir'], {
+    cwd: path.resolve(__dirname, '../..'),
+    encoding: 'utf8',
+  }).trim();
+  dependencyServerDir = path.join(path.dirname(path.resolve(path.resolve(__dirname, '../..'), commonDir)), 'server');
+}
+if (!existsSync(path.join(dependencyServerDir, 'node_modules', 'express'))) {
+  throw new Error('server dependencies unavailable; install server/node_modules in the main checkout');
+}
+process.env.NODE_PATH = [
+  path.join(dependencyServerDir, 'node_modules'),
+  process.env.NODE_PATH,
+].filter(Boolean).join(path.delimiter);
+Module._initPaths();
+const require = createRequire(path.join(serverDir, 'dist', 'app.js'));
 const express = require('express');
 
 // 用桩替换 field 路由的两个依赖，避免真连数据库
@@ -35,7 +55,7 @@ Module._load = function (request, ...rest) {
   if (request.includes('Controller')) return stubCtrl;
   return origLoad.call(this, request, ...rest);
 };
-const router = require('./dist/routes/field.js').default;
+const router = require(path.join(serverDir, 'dist', 'routes', 'field.js')).default;
 Module._load = origLoad;
 
 const app = express();
