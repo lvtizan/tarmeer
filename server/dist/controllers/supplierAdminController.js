@@ -31,23 +31,9 @@ const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
 const activityLogger_1 = require("../lib/activityLogger");
+const productPriceRange_1 = require("../lib/productPriceRange");
 // 报价币种白名单。⚠️ 与 supplierProductController.PRODUCT_CURRENCIES / 前端 src/lib/supplierProductUnits.ts 同源。
 const SUPPORTED_PRICE_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'];
-function parseNullablePositivePrice(value) {
-    if (value === undefined || value === null || value === '')
-        return { value: null };
-    if ((typeof value !== 'number' && typeof value !== 'string') || (typeof value === 'string' && value.trim() === ''))
-        return { error: 'Price must be a valid number greater than 0.' };
-    const parsed = Number(value);
-    return Number.isFinite(parsed) && parsed > 0
-        ? { value: parsed }
-        : { error: 'Price must be a valid number greater than 0.' };
-}
-function validatePriceBounds(price, priceMax) {
-    if (priceMax !== null && (price === null || priceMax < price))
-        return 'Maximum price must be greater than or equal to the minimum price.';
-    return null;
-}
 /** 记录供应商后台操作到 activity_log（审计）。整体 try/catch，记录失败绝不影响主操作。 */
 async function logSupplierAction(req, action, targetId, description) {
     try {
@@ -371,17 +357,17 @@ async function adminAddProduct(req, res) {
             return res.status(400).json({ error: 'image_url is required.' });
         // 新增时也落规格/认证/应用场景(与编辑一致);数组→JSON串(空→'[]'),未传→null
         const jarr = (x) => Array.isArray(x) ? JSON.stringify(x) : null;
-        const parsedPrice = parseNullablePositivePrice(req.body.price);
-        const parsedPriceMax = parseNullablePositivePrice(req.body.price_max);
-        if (parsedPrice.error || parsedPriceMax.error)
+        const parsedPrice = (0, productPriceRange_1.parseProductPrice)(req.body.price, 'price', { allowClear: true });
+        const parsedPriceMax = (0, productPriceRange_1.parseProductPrice)(req.body.price_max, 'price_max', { allowClear: true });
+        if (parsedPrice.kind === 'invalid' || parsedPriceMax.kind === 'invalid')
             return res.status(400).json({ error: parsedPrice.error || parsedPriceMax.error });
-        const boundsError = validatePriceBounds(parsedPrice.value, parsedPriceMax.value);
+        const boundsError = (0, productPriceRange_1.validateProductPriceRange)(parsedPrice, parsedPriceMax);
         if (boundsError)
             return res.status(400).json({ error: boundsError });
         const priceCurrency = req.body.price_currency === undefined || req.body.price_currency === null
             ? null
             : SUPPORTED_PRICE_CURRENCIES.includes(req.body.price_currency) ? req.body.price_currency : null;
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order, price, price_max, price_unit, price_currency, price_from, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0, parsedPrice.value, parsedPriceMax.value, req.body.price_unit || null, priceCurrency, req.body.price_from ? 1 : 0, jarr(specs), jarr(certifications), jarr(application_scenes)]);
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order, price, price_max, price_unit, price_currency, price_from, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0, parsedPrice.kind === 'valid' ? parsedPrice.value : null, parsedPriceMax.kind === 'valid' ? parsedPriceMax.value : null, req.body.price_unit || null, priceCurrency, req.body.price_from ? 1 : 0, jarr(specs), jarr(certifications), jarr(application_scenes)]);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [result.insertId]);
         await logSupplierAction(req, 'supplier_product_add', id, `供应商#${id} 新增商品#${result.insertId}`);
         res.status(201).json({ product: created[0] });
@@ -407,24 +393,35 @@ async function adminDeleteProduct(req, res) {
     }
 }
 async function adminUpdateProduct(req, res) {
+    let connection;
     try {
         const { id, productId } = req.params;
-        const [rows] = await database_1.default.execute('SELECT id, price, price_max FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [productId, id]);
-        if (rows.length === 0)
+        connection = await database_1.default.getConnection();
+        await connection.beginTransaction();
+        const [rows] = await connection.execute('SELECT id, price, price_max FROM supplier_products WHERE id = ? AND supplier_profile_id = ? FOR UPDATE', [productId, id]);
+        if (rows.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ error: 'Product not found.' });
+        }
         const body = req.body || {};
         // 部分更新:只改本次传了 key 的字段。避免其它入口(如 SupplierEditModal 只传 title/category)清空 description/price 等。
         // 列名为硬编码白名单,仅值走参数化,无注入风险。
         const has = (k) => Object.prototype.hasOwnProperty.call(body, k);
         const sets = [];
         const params = [];
-        const parsedPrice = has('price') ? parseNullablePositivePrice(body.price) : { value: rows[0].price === null ? null : Number(rows[0].price) };
-        const parsedPriceMax = has('price_max') ? parseNullablePositivePrice(body.price_max) : { value: rows[0].price_max === null ? null : Number(rows[0].price_max) };
-        if (parsedPrice.error || parsedPriceMax.error)
+        const effectivePriceValue = has('price') ? body.price : rows[0].price;
+        const effectiveMaxValue = has('price_max') ? body.price_max : rows[0].price_max;
+        const parsedPrice = (0, productPriceRange_1.parseProductPrice)(effectivePriceValue, 'price', { allowClear: true });
+        const parsedPriceMax = (0, productPriceRange_1.parseProductPrice)(effectiveMaxValue, 'price_max', { allowClear: true });
+        if (parsedPrice.kind === 'invalid' || parsedPriceMax.kind === 'invalid') {
+            await connection.rollback();
             return res.status(400).json({ error: parsedPrice.error || parsedPriceMax.error });
-        const boundsError = validatePriceBounds(parsedPrice.value, parsedPriceMax.value);
-        if (boundsError)
+        }
+        const boundsError = (0, productPriceRange_1.validateProductPriceRange)(parsedPrice, parsedPriceMax);
+        if (boundsError) {
+            await connection.rollback();
             return res.status(400).json({ error: boundsError });
+        }
         if (has('title')) {
             sets.push('title = ?');
             params.push(body.title?.trim() || null);
@@ -439,11 +436,11 @@ async function adminUpdateProduct(req, res) {
         }
         if (has('price')) {
             sets.push('price = ?');
-            params.push(parsedPrice.value);
+            params.push(parsedPrice.kind === 'valid' ? parsedPrice.value : null);
         }
         if (has('price_max')) {
             sets.push('price_max = ?');
-            params.push(parsedPriceMax.value);
+            params.push(parsedPriceMax.kind === 'valid' ? parsedPriceMax.value : null);
         }
         if (has('price_unit')) {
             sets.push('price_unit = ?');
@@ -472,15 +469,30 @@ async function adminUpdateProduct(req, res) {
         }
         if (sets.length > 0) {
             params.push(productId);
-            await database_1.default.execute(`UPDATE supplier_products SET ${sets.join(', ')} WHERE id = ?`, params);
+            await connection.execute(`UPDATE supplier_products SET ${sets.join(', ')} WHERE id = ?`, params);
         }
-        const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
+        const [updated] = await connection.execute('SELECT * FROM supplier_products WHERE id = ?', [productId]);
+        await connection.commit();
+        connection.release();
+        connection = null;
         await logSupplierAction(req, 'supplier_product_update', id, `供应商#${id} 编辑商品#${productId}`);
         res.json({ product: updated[0] });
     }
     catch (error) {
+        if (connection) {
+            try {
+                await connection.rollback();
+            }
+            catch (rollbackError) {
+                console.error('Admin update product rollback error:', rollbackError);
+            }
+        }
         console.error('Admin update product error:', error);
         res.status(500).json({ error: 'Failed to update product.' });
+    }
+    finally {
+        if (connection)
+            connection.release();
     }
 }
 /** Upload a single image file for use in a project; returns the stored URL. */

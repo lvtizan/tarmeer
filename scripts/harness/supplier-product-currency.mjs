@@ -144,6 +144,21 @@ check('UC6 非白名单币种 → 400（防脏值入库）', r.statusCode === 40
 r = await add({ ...IMG, price: 200, price_max: 199.99, price_unit: 'SQM' });
 check('UC6b 最高价低于最低价 → 400', r.statusCode === 400, `got ${r.statusCode}`);
 
+const invalidDecimals = [
+  ['', '空串'], [' ', '空白'], [null, 'null'], [Infinity, 'Infinity'], [NaN, 'NaN'],
+  ['1e2', '科学计数'], ['0x10', '十六进制'], ['0.001', '超过2位小数'], ['10000000000', '超过DECIMAL上界'],
+];
+for (const [value, label] of invalidDecimals) {
+  const invalidPrice = await add({ ...IMG, price: value, price_unit: 'SQM' });
+  check(`UC6c price拒绝${label}`, invalidPrice.statusCode === 400 && /price/i.test(invalidPrice.body?.error || ''), `got ${invalidPrice.statusCode} ${JSON.stringify(invalidPrice.body)}`);
+}
+for (const [value, label] of invalidDecimals.filter(([value]) => value !== null)) {
+  const invalidMax = await add({ ...IMG, price: 1, price_max: value, price_unit: 'SQM' });
+  check(`UC6d price_max拒绝${label}`, invalidMax.statusCode === 400 && /price_max/i.test(invalidMax.body?.error || ''), `got ${invalidMax.statusCode} ${JSON.stringify(invalidMax.body)}`);
+}
+const upperBound = await add({ ...IMG, price: '9999999999.99', price_max: '9999999999.99', price_unit: 'SQM' });
+check('UC6e DECIMAL(12,2)上界可写', upperBound.statusCode === 201, `got ${upperBound.statusCode} ${JSON.stringify(upperBound.body)}`);
+
 const r7 = await add({ ...IMG, price: 88, price_unit: 'PCS' });
 check('UC7 缺省币种 → 201', r7.statusCode === 201, `got ${r7.statusCode}`);
 check('UC7 price_currency = null（展示层回落国家币种）', r7.body?.product?.price_currency === null, `got ${JSON.stringify(r7.body?.product?.price_currency)}`);
@@ -196,10 +211,26 @@ if (rangePid) {
   check('UC7i 为 admin 清除用例恢复最高价 → 200', restoreSupplierMax.statusCode === 200, `got ${restoreSupplierMax.statusCode}`);
   await checkBounds('UC7i 最高价恢复为 240', rangePid, 130, 240);
 
+  const concurrentMin = mkRes();
+  const concurrentMax = mkRes();
+  await Promise.all([
+    admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price: 230 } }, concurrentMin),
+    admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price_max: 220 } }, concurrentMax),
+  ]);
+  const concurrentBounds = await readBounds(rangePid);
+  const concurrentValid = concurrentBounds?.price_max === null || Number(concurrentBounds?.price_max) >= Number(concurrentBounds?.price);
+  check('UC7j admin 并发局部更新至少一方拒绝', [concurrentMin.statusCode, concurrentMax.statusCode].filter((code) => code === 400).length >= 1,
+    `got ${concurrentMin.statusCode}/${concurrentMax.statusCode}`);
+  check('UC7j admin 并发后区间仍合法', concurrentValid, JSON.stringify(concurrentBounds));
+
+  const resetConcurrent = mkRes();
+  await ctrl.updateProduct({ supplierUser: { id: userId }, params: { id: rangePid }, body: { ...IMG, price: 130, price_max: 240, price_unit: 'SQM' } }, resetConcurrent);
+  check('UC7k 并发用例后恢复区间', resetConcurrent.statusCode === 200, `got ${resetConcurrent.statusCode}`);
+
   const clearAdminMax = mkRes();
   await admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price_max: null } }, clearAdminMax);
-  check('UC7j admin 用 null 清除已有最高价 → 200', clearAdminMax.statusCode === 200, `got ${clearAdminMax.statusCode}`);
-  await checkBounds('UC7j admin 清除后真实落库 = 130/null', rangePid, 130, null);
+  check('UC7l admin 用 null 清除已有最高价 → 200', clearAdminMax.statusCode === 200, `got ${clearAdminMax.statusCode}`);
+  await checkBounds('UC7l admin 清除后真实落库 = 130/null', rangePid, 130, null);
 }
 
 const pid = r5.body?.product?.id;
