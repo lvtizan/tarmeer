@@ -102,19 +102,17 @@ const hasSingleFormatterWithArgs = (source, expected) => {
 
 for (const [label, source] of [['supplier portal', supplier], ['admin detail', adminDetail], ['admin modal', adminModal]]) {
   check(`${label}: price_max state/type`, has(source, /price_max\??\s*:/) && has(source, /(?:priceMax|newPriceMax)/));
-  check(`${label}: price_max payload`, has(source, /price_max\s*:\s*(?:parsed|max|newProduct|parsedPrice)/));
+  check(`${label}: save path uses shared price validation/payload builder`,
+    has(source, /buildProductPriceSubmission/) && has(source, /\.\.\.priceSubmission\.payload/));
   const markers = label === 'supplier portal' ? ['newPriceMax'] : label === 'admin detail' ? ['priceMax', 'newProduct.price_max'] : ['priceMax'];
   check(`${label}: maximum inputs are decimal text with white background`, hasDecimalWhiteInputs(source, markers));
 }
 
-check('supplier: max empty serializes to null', has(supplier, /price_max\s*:\s*parsed\.max/));
-check('supplier: legacy edit uses priceDirty partial payload', has(supplier, /const priceDirty[\s\S]*\.\.\.\(priceDirty && parsed\.ok/));
+check('supplier: edit dirty state is passed into shared builder', has(supplier, /dirty:\s*priceDirty/));
 check('supplier: async profile preserves explicit or user-selected currency', has(supplier, /!currencyTouchedRef\.current\s*&&\s*\(editingIdRef\.current\s*==\s*null\s*\|\|\s*editingExplicitCurrencyRef\.current\s*==\s*null\)\)\s*setNewCurrency\(cur\)/) && has(supplier, /currencyTouchedRef\.current\s*=\s*true;\s*setNewCurrency\(value\)/));
 check('supplier: unit selector exposes field-specific error', has(supplier, /id="supplier-price-unit"[\s\S]{0,500}aria-describedby=\{displayedPriceErrorField === 'unit'/));
-check('admin detail add/edit: max empty serializes to null', has(adminDetail, /price_max\s*:\s*parsedPrice\.max/) && has(adminDetail, /price_max\s*:\s*parsed\.max/));
-check('admin modal add/edit: max empty serializes to null', (adminModal.match(/price_max\s*:\s*parsed\.max/g) || []).length >= 2);
-check('admin detail: legacy edit uses priceDirty partial payload', has(adminDetail, /const priceDirty[\s\S]*\.\.\.\(priceDirty && parsed\.ok/));
-check('admin modal: legacy edit uses priceDirty partial payload', has(adminModal, /const priceDirty[\s\S]*\.\.\.\(priceDirty && parsed\.ok/));
+check('admin detail: add/edit both use shared builder', (adminDetail.match(/buildProductPriceSubmission\(/g) || []).length >= 2);
+check('admin modal: add/edit both use shared builder', (adminModal.match(/buildProductPriceSubmission\(/g) || []).length >= 2);
 for (const [label, source, ids] of [
   ['supplier portal', supplier, ['supplier-price-min', 'supplier-price-max', 'supplier-price-unit', 'supplier-price-currency']],
   ['admin detail', adminDetail, ['admin-product-price-min', 'admin-product-price-max', 'admin-product-price-unit', 'admin-product-price-currency', 'admin-new-product-price-min', 'admin-new-product-price-max', 'admin-new-product-price-unit', 'admin-new-product-price-currency']],
@@ -182,9 +180,9 @@ check('supplier hydration refetches when country changes',
 check('supplier hydration clears stale route or country state before refetch',
   has(supplierDetail, /if\s*\(identityChanged\)[\s\S]{0,300}setSupplier\(null\)[\s\S]{0,300}setProducts\(\[\]\)/));
 check('supplier hydration ignores obsolete country requests',
-  has(supplierDetail, /let active = true/) && has(supplierDetail, /if\s*\(!active\)\s*return/) && has(supplierDetail, /active = false/));
+  has(supplierDetail, /createSupplierIdentityGuard/) && has(supplierDetail, /\.isCurrent\(requestToken\)/) && has(supplierDetail, /\.cancel\(requestToken\)/));
 check('supplier rendering gates stale route or country identity before effects run',
-  has(supplierDetail, /loadedIdentity !== requestIdentity/) && has(supplierDetail, /if\s*\(loading \|\| contentStale\)/));
+  has(supplierDetail, /isSupplierContentStale\(loadedIdentity, requestIdentity\)/) && has(supplierDetail, /if\s*\(loading \|\| contentStale\)/));
 check('supplier identity switch clears entity-specific visual state',
   has(supplierDetail, /if\s*\(identityChanged\)[\s\S]{0,500}setLightbox\(null\)[\s\S]{0,500}setProductCatFilter\(null\)[\s\S]{0,500}setLogoError\(false\)/));
 

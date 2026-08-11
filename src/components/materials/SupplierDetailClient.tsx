@@ -18,6 +18,7 @@ import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 import ProductPriceLine from './ProductPriceLine';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { createSupplierIdentityGuard, isSupplierContentStale } from '@/lib/supplierDetailIdentity';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
 const CatalogReader = dynamic(() => import('./CatalogReader'), {
@@ -118,6 +119,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   const projectsRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<'products' | 'projects'>('products');
   const hydratedIdentityRef = useRef(requestIdentity);
+  const requestGuardRef = useRef(createSupplierIdentityGuard(requestIdentity));
   const [loadedIdentity, setLoadedIdentity] = useState(requestIdentity);
   // 产品分类 value→label 映射(单一数据源 product_categories),否则买家页直接显示原始 value 如 NEW_MATERIALS。
   const catLabel = useProductCategoryLabels();
@@ -128,7 +130,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
 
   useEffect(() => {
     if (!slug) return;
-    let active = true;
+    const requestToken = requestGuardRef.current.begin(requestIdentity);
     const identityChanged = hydratedIdentityRef.current !== requestIdentity;
     hydratedIdentityRef.current = requestIdentity;
     if (identityChanged) {
@@ -153,7 +155,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
       }).then(r => r.ok ? r.json() : { projects: [] }),
     ])
       .then(([detail, projData]) => {
-        if (!active) return;
+        if (!requestGuardRef.current.isCurrent(requestToken)) return;
         setSupplier(detail.supplier);
         setProducts(detail.products || []);
         setCatalogs(detail.catalogs || []);
@@ -163,15 +165,15 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
         })));
       })
       .catch(() => {
-        if (!active) return;
+        if (!requestGuardRef.current.isCurrent(requestToken)) return;
         if (!initialSupplier || identityChanged) setSupplier(null);
       }) // 首次同 identity hydration 瞬时失败保留 SSR；路由/跨国失败绝不保留旧实体
       .finally(() => {
-        if (!active) return;
+        if (!requestGuardRef.current.isCurrent(requestToken)) return;
         setLoadedIdentity(requestIdentity);
         setLoading(false);
       });
-    return () => { active = false; };
+    return () => { requestGuardRef.current.cancel(requestToken); };
   }, [slug, country.code]);
 
   useEffect(() => {
@@ -211,7 +213,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
     try { return JSON.parse(cats); } catch { return []; }
   };
 
-  const contentStale = loadedIdentity !== requestIdentity;
+  const contentStale = isSupplierContentStale(loadedIdentity, requestIdentity);
   if (loading || contentStale) return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7]">
       <div className="w-8 h-8 border-2 border-[#b8864a]/30 border-t-[#b8864a] rounded-full animate-spin" />

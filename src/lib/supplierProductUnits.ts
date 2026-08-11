@@ -139,6 +139,36 @@ export function parseProductPriceRange(minRaw: string, maxRaw: string): ProductP
   return { ok: true, min: min.value, max: max.value };
 }
 
+export type ProductPriceSubmissionResult =
+  | { ok: true; payload: Partial<ProductPriceFields> }
+  | { ok: false; field: 'min' | 'max' | 'unit'; reason: 'required' | 'invalid' | 'below_min' };
+
+/** Shared save-boundary behavior for supplier portal and both admin product editors. */
+export function buildProductPriceSubmission(input: {
+  min: string;
+  max: string;
+  unit: string;
+  currency: string;
+  from: boolean;
+  dirty: boolean;
+}): ProductPriceSubmissionResult {
+  if (!input.dirty) return { ok: true, payload: {} };
+  const parsed = parseProductPriceRange(input.min, input.max);
+  if (!parsed.ok) return parsed;
+  const unit = input.unit.trim();
+  if (!unit) return { ok: false, field: 'unit', reason: 'required' };
+  return {
+    ok: true,
+    payload: {
+      price: parsed.min,
+      price_max: parsed.max,
+      price_unit: unit,
+      price_currency: isValidCurrency(input.currency) ? input.currency : null,
+      price_from: parsed.max == null && input.from,
+    },
+  };
+}
+
 /** 把存储的 unit 值转成显示文本（预设码→中文 label；自定义→原样）。 */
 export function unitLabel(unit?: string | null, lang: 'zh' | 'en' = 'zh'): string {
   if (!unit) return '';

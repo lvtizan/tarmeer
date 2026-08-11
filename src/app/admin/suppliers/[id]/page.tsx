@@ -13,7 +13,7 @@ import {
   Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon,
   Plus, X, Upload, Eye, EyeOff,
 } from 'lucide-react';
-import { PRODUCT_CURRENCIES, PRODUCT_UNITS, formatProductPrice, parseProductPriceRange } from '@/lib/supplierProductUnits';
+import { PRODUCT_CURRENCIES, PRODUCT_UNITS, formatProductPrice, buildProductPriceSubmission } from '@/lib/supplierProductUnits';
 
 function InfoRow({ label, value, isLink }: { label: string; value: string; isLink?: boolean }) {
   return (
@@ -479,17 +479,18 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
       || priceMax !== (product.price_max != null ? String(product.price_max) : '')
       || priceUnit !== (product.price_unit || '') || priceCurrency !== (product.price_currency || '')
       || priceFrom !== !!product.price_from;
-    const parsed = parseProductPriceRange(price, priceMax);
-    if (priceDirty && !parsed.ok) {
-      const message = parsed.field === 'min'
+    const priceSubmission = buildProductPriceSubmission({ min: price, max: priceMax, unit: priceUnit, currency: priceCurrency, from: priceFrom, dirty: priceDirty });
+    if (!priceSubmission.ok) {
+      const message = priceSubmission.field === 'min'
         ? t('Minimum price is required and must be a positive number with up to 2 decimal places.', '最低价必填，且必须是大于 0、最多两位小数的数字。')
-        : parsed.reason === 'below_min'
+        : priceSubmission.field === 'unit'
+          ? t('Please select a unit.', '请选择单位。')
+        : priceSubmission.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
           : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。');
-      setPriceErrorField(parsed.field); setPriceError(message); showToast(message, 'error');
+      setPriceErrorField(priceSubmission.field); setPriceError(message); showToast(message, 'error');
       return;
     }
-    if (priceDirty && !priceUnit) { const message = t('Please select a unit.', '请选择单位。'); setPriceErrorField('unit'); setPriceError(message); showToast(message, 'error'); return; }
     setSaving(true);
     try {
       const cleaned = cleanExtraFields(extras);
@@ -499,10 +500,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
           title: title.trim() || null,
           category: category || null,
           description: description.trim() || null,
-          ...(priceDirty && parsed.ok ? {
-            price: parsed.min, price_max: parsed.max, price_unit: priceUnit,
-            price_currency: priceCurrency || null, price_from: parsed.max == null && priceFrom ? 1 : 0,
-          } : {}),
+          ...priceSubmission.payload,
           specs: cleaned.specs,
           certifications: cleaned.certifications,
           application_scenes: cleaned.application_scenes,
@@ -797,17 +795,18 @@ export default function AdminSupplierDetailPage() {
 
   const handleAddProduct = async () => {
     if (!newProduct.image_url.trim()) { showToast(t('Image URL is required', '请填写图片地址'), 'error'); return; }
-    const parsedPrice = parseProductPriceRange(newProduct.price, newProduct.price_max);
-    if (!parsedPrice.ok) {
-      const message = parsedPrice.field === 'min'
+    const priceSubmission = buildProductPriceSubmission({ min: newProduct.price, max: newProduct.price_max, unit: newProduct.price_unit, currency: newProduct.price_currency, from: newProduct.price_from, dirty: true });
+    if (!priceSubmission.ok) {
+      const message = priceSubmission.field === 'min'
         ? t('Minimum price is required and must be a positive number with up to 2 decimal places.', '最低价必填，且必须是大于 0、最多两位小数的数字。')
-        : parsedPrice.reason === 'below_min'
+        : priceSubmission.field === 'unit'
+          ? t('Please select a unit.', '请选择单位。')
+        : priceSubmission.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
           : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。');
-      setNewProductPriceErrorField(parsedPrice.field); setNewProductPriceError(message); showToast(message, 'error');
+      setNewProductPriceErrorField(priceSubmission.field); setNewProductPriceError(message); showToast(message, 'error');
       return;
     }
-    if (!newProduct.price_unit) { const message = t('Please select a unit.', '请选择单位。'); setNewProductPriceErrorField('unit'); setNewProductPriceError(message); showToast(message, 'error'); return; }
     setAddingProduct(true);
     try {
       const cleanedExtras = cleanExtraFields(newProductExtras);
@@ -817,11 +816,7 @@ export default function AdminSupplierDetailPage() {
           image_url: newProduct.image_url.trim(),
           title: newProduct.title.trim() || null,
           category: newProduct.category || null,
-          price: parsedPrice.min,
-          price_max: parsedPrice.max,
-          price_unit: newProduct.price_unit,
-          price_currency: newProduct.price_currency || null,
-          price_from: parsedPrice.max == null && newProduct.price_from ? 1 : 0,
+          ...priceSubmission.payload,
           sort_order: products.length,
           specs: cleanedExtras.specs,
           certifications: cleanedExtras.certifications,

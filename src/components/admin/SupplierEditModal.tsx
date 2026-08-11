@@ -8,7 +8,7 @@ import PhoneCountryInput from '@/components/ui/PhoneCountryInput';
 import { showToast } from '@/components/ui/Toast';
 import { showConfirm } from '@/components/ui/ConfirmModal';
 import { getCountry } from '@/lib/country';
-import { PRODUCT_CURRENCIES, PRODUCT_UNITS, formatProductPrice, parseProductPriceRange } from '@/lib/supplierProductUnits';
+import { PRODUCT_CURRENCIES, PRODUCT_UNITS, formatProductPrice, buildProductPriceSubmission } from '@/lib/supplierProductUnits';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SupplierData {
@@ -110,23 +110,22 @@ function ProductAddModal({
 
   const handleSave = async () => {
     if (!imageUrl) { showToast('请先上传图片', 'error'); return; }
-    const parsed = parseProductPriceRange(price, priceMax);
-    if (!parsed.ok) {
-      const message = parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
-        : parsed.reason === 'below_min' ? '最高价必须大于或等于最低价。'
+    const priceSubmission = buildProductPriceSubmission({ min: price, max: priceMax, unit: priceUnit, currency: priceCurrency, from: priceFrom, dirty: true });
+    if (!priceSubmission.ok) {
+      const message = priceSubmission.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+        : priceSubmission.field === 'unit' ? '请选择单位。'
+        : priceSubmission.reason === 'below_min' ? '最高价必须大于或等于最低价。'
           : '最高价必须是大于 0、最多两位小数的数字，或留空。';
-      setPriceErrorField(parsed.field); setPriceError(message); showToast(message, 'error');
+      setPriceErrorField(priceSubmission.field); setPriceError(message); showToast(message, 'error');
       return;
     }
-    if (!priceUnit) { const message = '请选择单位。'; setPriceErrorField('unit'); setPriceError(message); showToast(message, 'error'); return; }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products`, {
         method: 'POST',
         body: JSON.stringify({
           title: title.trim() || null, category: category || null, image_url: imageUrl,
-          price: parsed.min, price_max: parsed.max, price_unit: priceUnit,
-          price_currency: priceCurrency || null, price_from: parsed.max == null && priceFrom ? 1 : 0,
+          ...priceSubmission.payload,
         }),
       }) as { product: Product };
       onAdded(data.product);
@@ -248,25 +247,22 @@ function ProductEditInlineModal({
       || priceMax !== (product.price_max != null ? String(product.price_max) : '')
       || priceUnit !== (product.price_unit || '') || priceCurrency !== (product.price_currency || '')
       || priceFrom !== !!product.price_from;
-    const parsed = parseProductPriceRange(price, priceMax);
-    if (priceDirty && !parsed.ok) {
-      const message = parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
-        : parsed.reason === 'below_min' ? '最高价必须大于或等于最低价。'
+    const priceSubmission = buildProductPriceSubmission({ min: price, max: priceMax, unit: priceUnit, currency: priceCurrency, from: priceFrom, dirty: priceDirty });
+    if (!priceSubmission.ok) {
+      const message = priceSubmission.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+        : priceSubmission.field === 'unit' ? '请选择单位。'
+        : priceSubmission.reason === 'below_min' ? '最高价必须大于或等于最低价。'
           : '最高价必须是大于 0、最多两位小数的数字，或留空。';
-      setPriceErrorField(parsed.field); setPriceError(message); showToast(message, 'error');
+      setPriceErrorField(priceSubmission.field); setPriceError(message); showToast(message, 'error');
       return;
     }
-    if (priceDirty && !priceUnit) { const message = '请选择单位。'; setPriceErrorField('unit'); setPriceError(message); showToast(message, 'error'); return; }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
         body: JSON.stringify({
           title: title.trim() || null, category: category || null,
-          ...(priceDirty && parsed.ok ? {
-            price: parsed.min, price_max: parsed.max, price_unit: priceUnit,
-            price_currency: priceCurrency || null, price_from: parsed.max == null && priceFrom ? 1 : 0,
-          } : {}),
+          ...priceSubmission.payload,
         }),
       }) as { product: Product };
       onSaved(data.product);

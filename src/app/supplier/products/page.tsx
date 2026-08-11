@@ -6,7 +6,7 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { ScreenSpinner } from '@/components/ui/Spinner';
-import { PRODUCT_UNITS, PRODUCT_CURRENCIES, formatProductPrice, parseProductPriceRange, isValidCurrency } from '@/lib/supplierProductUnits';
+import { PRODUCT_UNITS, PRODUCT_CURRENCIES, formatProductPrice, parseProductPriceRange, isValidCurrency, buildProductPriceSubmission } from '@/lib/supplierProductUnits';
 import { getCountry } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
@@ -200,16 +200,19 @@ export default function SupplierProductsPage() {
       || unitVal !== (originalPriceFields.price_unit || '')
       || newCurrency !== (originalPriceFields.price_currency || currency)
       || newPriceFrom !== !!originalPriceFields.price_from;
-    const parsed = parseProductPriceRange(newPrice, newPriceMax);
-    if (priceDirty && !parsed.ok) {
-      setPriceErrorField(parsed.field); setPriceError(parsed.field === 'min'
+    const priceSubmission = buildProductPriceSubmission({
+      min: newPrice, max: newPriceMax, unit: unitVal, currency: newCurrency, from: newPriceFrom, dirty: priceDirty,
+    });
+    if (!priceSubmission.ok) {
+      setPriceErrorField(priceSubmission.field); setPriceError(priceSubmission.field === 'min'
         ? t('Enter a minimum price greater than 0 with up to 2 decimal places.', '请填写大于 0、最多两位小数的最低价。')
-        : parsed.reason === 'below_min'
+        : priceSubmission.field === 'unit'
+          ? t('Please select or enter a unit.', '请选择或填写单位。')
+        : priceSubmission.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
           : t('Enter a maximum price greater than 0 with up to 2 decimal places, or leave it blank.', '最高价请填写大于 0、最多两位小数的数字，或留空。'));
       return;
     }
-    if (priceDirty && !unitVal) { setPriceErrorField('unit'); setPriceError(t('Please select or enter a unit.', '请选择或填写单位。')); return; }
     setSaving(true);
     setMsg('');
     try {
@@ -224,10 +227,7 @@ export default function SupplierProductsPage() {
           description_translated: newDescEn || null,
           category: newCat || null,
           image_urls: newImageUrls,
-          ...(priceDirty && parsed.ok ? {
-            price: parsed.min, price_max: parsed.max, price_unit: unitVal,
-            price_currency: newCurrency, price_from: parsed.max == null && newPriceFrom,
-          } : {}),
+          ...priceSubmission.payload,
           // 编辑时回传原 sort_order：后端 updateProduct 用 sort_order=? (非 COALESCE)，
           // 不回传会被重写成 0，将来接入拖拽排序会乱序。JSON.stringify 会丢弃 undefined（新增时不发）。
           sort_order: isEdit ? (products.find(p => p.id === editingId)?.sort_order ?? 0) : undefined,

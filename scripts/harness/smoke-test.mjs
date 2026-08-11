@@ -168,6 +168,12 @@ try {
   ng('公开产品价格 DOM 行为', commandTail(e));
 }
 try {
+  execSync('node --test src/lib/materialPublicBehavior.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('产品表单 payload 与 Supplier identity 行为');
+} catch (e) {
+  ng('产品表单 payload 与 Supplier identity 行为', commandTail(e));
+}
+try {
   execSync('node scripts/harness/material-public-price-api.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('公开产品价格本地 DB controller 契约');
 } catch (e) {
