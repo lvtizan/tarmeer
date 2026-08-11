@@ -144,6 +144,15 @@ for (const p of ['/materials', '/materials/showroom', '/services/china-sourcing'
   else ng(`GET ${p}`, `${st ?? 'unreachable'}`);
 }
 
+// ─── 3d. 材料产品价格区间 UI 源码契约 ─────────────────────────────────────
+console.log('\n[3d] 材料产品价格区间 UI 契约');
+try {
+  execSync('node scripts/harness/material-price-range-ui.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('supplier/admin 产品价格区间入口与预览');
+} catch (e) {
+  ng('材料产品价格区间 UI 契约', (e.stdout?.toString() || e.stderr?.toString() || e.message || '').trim().split('\n').slice(-8).join(' | '));
+}
+
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
 // 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
 // 不得硬编码,否则会与管理后台不一致(供应商品类踩坑 2026-06-30)。

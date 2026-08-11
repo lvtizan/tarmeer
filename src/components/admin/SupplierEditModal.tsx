@@ -7,7 +7,8 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import PhoneCountryInput from '@/components/ui/PhoneCountryInput';
 import { showToast } from '@/components/ui/Toast';
 import { showConfirm } from '@/components/ui/ConfirmModal';
-import { PRODUCT_CURRENCIES, PRODUCT_UNITS, parseProductPriceRange } from '@/lib/supplierProductUnits';
+import { getCountry } from '@/lib/country';
+import { PRODUCT_CURRENCIES, PRODUCT_UNITS, formatProductPrice, parseProductPriceRange } from '@/lib/supplierProductUnits';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SupplierData {
@@ -23,6 +24,7 @@ interface SupplierData {
   whatsapp: string | null;
   website: string | null;
   status: string;
+  country?: string;
 }
 
 interface Product {
@@ -653,7 +655,13 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                     <p className="text-sm">暂无产品</p>
                   </div>
                 )}
-                {products.map(product => (
+                {products.map(product => {
+                  const priceLabel = formatProductPrice(
+                    product.price, product.price_unit, !!product.price_from,
+                    product.price_currency || getCountry(data.country || 'ae').currency,
+                    product.price_max,
+                  );
+                  return (
                   <div key={product.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-stone-50 group">
                     <img src={product.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-stone-100" />
                     <div className="flex-1 min-w-0">
@@ -661,6 +669,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                         {product.title || <span className="text-stone-400">未命名</span>}
                       </p>
                       {product.category && <p className="text-xs text-stone-400">{product.category}</p>}
+                      {priceLabel && <p className="text-xs font-semibold text-[#b8864a]">{priceLabel}</p>}
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0">
                       <button
@@ -677,7 +686,8 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 <button
                   onClick={() => setShowAddProduct(true)}
                   className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-stone-300 text-sm text-stone-500 hover:border-[#b8864a] hover:text-[#b8864a] transition w-full justify-center"

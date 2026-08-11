@@ -1153,6 +1153,12 @@ export default function AdminSupplierDetailPage() {
                 <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
                   {products.map((p) => {
                     const isCover = !!supplier.cover_image_url && supplier.cover_image_url === p.image_url;
+                    const priceLabel = formatProductPrice(
+                      p.price == null ? null : Number(p.price), p.price_unit, !!p.price_from,
+                      p.price_currency || getCountry(supplier.country || 'ae').currency,
+                      p.price_max == null ? null : Number(p.price_max),
+                      lang === 'zh' ? 'zh' : 'en',
+                    );
                     return (
                       <div key={p.id} className="group">
                         <div className="aspect-video rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative">
@@ -1184,9 +1190,7 @@ export default function AdminSupplierDetailPage() {
                         </div>
                         {p.category && <p className="text-[10px] text-[#b8864a] uppercase tracking-wide mt-1">{p.category}</p>}
                         {p.title && <p className="text-[11px] text-stone-500 truncate">{p.title}</p>}
-                        {formatProductPrice(p.price == null ? null : Number(p.price), p.price_unit, !!p.price_from, p.price_currency || getCountry(supplier.country || 'ae').currency, p.price_max == null ? null : Number(p.price_max), lang === 'zh' ? 'zh' : 'en') && (
-                          <p className="text-[11px] font-semibold text-[#b8864a]">{formatProductPrice(p.price == null ? null : Number(p.price), p.price_unit, !!p.price_from, p.price_currency || getCountry(supplier.country || 'ae').currency, p.price_max == null ? null : Number(p.price_max), lang === 'zh' ? 'zh' : 'en')}</p>
-                        )}
+                        {priceLabel && <p className="text-[11px] font-semibold text-[#b8864a]">{priceLabel}</p>}
                       </div>
                     );
                   })}
