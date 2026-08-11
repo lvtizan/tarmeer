@@ -562,7 +562,7 @@ async function isColumnNullable(table, column) {
     return row?.IS_NULLABLE === 'YES';
 }
 // ─── 主逻辑 ─────────────────────────────────────────────
-async function runAutoMigrate() {
+async function runAutoMigrate(options = {}) {
     console.log(`${TAG} Checking database schema...`);
     let changes = 0;
     try {
@@ -919,7 +919,11 @@ async function runAutoMigrate() {
         }
     }
     catch (error) {
-        // 迁移失败不阻止服务启动
+        if (options.strict) {
+            console.error(`${TAG} Required migration failed:`, error);
+            throw error;
+        }
+        // 兼容脚本/维护任务的既有容错契约；生产启动显式传 strict=true。
         console.error(`${TAG} Migration error (non-fatal):`, error);
     }
 }

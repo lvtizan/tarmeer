@@ -124,6 +124,14 @@ console.log('\n[2c] 新材料采购公开接口');
 }
 
 // ─── 3. Frontend reachability ────────────────────────────────────────────────
+console.log('\n[2d] 后端 required migration 启动门禁');
+try {
+  execSync('node --test server/dist/lib/startServer.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('required migration 完成后监听 / 失败拒绝启动');
+} catch (e) {
+  ng('后端 required migration 启动门禁', commandTail(e));
+}
+
 console.log('\n[3/3] Frontend reachability');
 const fStatus = await req('GET', FRONTEND);
 if (fStatus === null) {

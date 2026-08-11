@@ -141,6 +141,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：从 `useSiteLocale()` 经 `countryFromLang()` 得到当前国家；detail/projects 两个请求同时追加 `?country=` 与 `x-country`，并把 `country.code` 加入 effect 依赖；以 `country+slug` 作为已加载 identity，渲染阶段即挡住旧 identity，切换后清空旧 state，cleanup 标记阻止慢旧请求回写，失败也不保留旧实体 SSR seed；补 hydration 契约及价格 DOM 行为测试。
 - **预防**：继续执行 FA-17 的同一规则：所有按国家隔离的 SSR 页面，其客户端 hydration/refetch 也必须逐请求显式传 `?country=` + `x-country`；以「国家+路由实体」作为请求 identity，在 render 阶段先门控旧 identity，再清 state、取消或忽略过期请求后重取。验收同时观察 SSR HTML 与 hydration 后稳定 DOM，不能只验首屏。
 
+### FA-22 后端先监听再迁移，公开查询抢跑缺列（2026-08-11）
+- **现象**：后端端口已对外监听，但 `supplier_products.price_max` 等 required schema 仍在启动回调中 ALTER；此窗口公开 feed/detail 查询可能先到并因缺列 500。迁移失败又被吞掉，服务继续以不完整 schema 对外。
+- **根因**：`app.listen()` 先执行，`runAutoMigrate()` 放在 listen callback；同时 autoMigrate 顶层 catch 固定 non-fatal，调用方无法拒绝启动。
+- **修复**：新增 pre-listen 启动门禁，生产以 strict 模式 await required migration，成功后才 listen；失败先关闭 DB pool，再向上传播并设置失败退出。autoMigrate 默认模式继续保持维护脚本的既有容错契约。
+- **预防**：所有公开查询依赖的 required schema migration 必须是 readiness 前置条件；启动顺序用行为测试验证「pending 不监听 / reject cleanup 且不监听」，禁止只在 listen callback 内补 schema。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
