@@ -1,6 +1,7 @@
 // 新材料目录数据层 — 跨供应商产品 feed / 产品详情 / 应用场景字典
 // 契约见 docs/plans/china-materials-revamp-spec.md（§2.3 / §3.1）
 // SSR 与客户端解析方式对齐 publicApi.ts：country 同时走 query + x-country header。
+import { isValidCurrency } from '@/lib/supplierProductUnits';
 
 const API_BASE =
   typeof window === 'undefined'
@@ -37,7 +38,9 @@ export interface PublicMaterialProduct {
   certifications: string[];
   application_scenes: string[];
   price: number | null;
+  price_max: number | null;
   price_unit: string | null;
+  price_currency: string | null;
   price_from: boolean;
   supplier_id: number;
   supplier_slug: string;
@@ -130,9 +133,11 @@ export function toMaterialProduct(row: any): PublicMaterialProduct {
     specs: normalizeSpecs(row.specs),
     certifications: normalizeStringArray(row.certifications),
     application_scenes: normalizeStringArray(row.application_scenes),
-    price: row.price != null && Number.isFinite(Number(row.price)) ? Number(row.price) : null,
+    price: normalizeNullableNumber(row.price),
+    price_max: normalizeNullableNumber(row.price_max),
     price_unit: row.price_unit ?? null,
-    price_from: Boolean(row.price_from),
+    price_currency: isValidCurrency(row.price_currency) ? row.price_currency : null,
+    price_from: row.price_from === true || row.price_from === 1 || row.price_from === '1',
     supplier_id: Number(row.supplier_id),
     supplier_slug: String(row.supplier_slug || ''),
     supplier_name: String(row.supplier_name || ''),
@@ -141,6 +146,12 @@ export function toMaterialProduct(row: any): PublicMaterialProduct {
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+function normalizeNullableNumber(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
 
 async function request<T>(endpoint: string, country?: string): Promise<T> {
   let url = `${API_BASE}${endpoint}`;

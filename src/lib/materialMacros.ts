@@ -1,6 +1,7 @@
 // By Material 大类浏览 —— 前端数据层（对接后端 /suppliers/macro-categories）。
 // 大类 = 供应商标签归一后的 10 个干净材料类；Premium = 战略新材料主推线(暂无产品数据，占位引导询价)。
 import { resolveImageUrl } from '@/lib/imageUrl';
+import { isValidCurrency } from '@/lib/supplierProductUnits';
 
 // SSR 走内网直连(API_INTERNAL_URL→localhost:3002)，禁止公网 NEXT_PUBLIC_API_URL 绕 nginx 回自己(429 事故)；对齐 publicApi.ts。
 const API_BASE =
@@ -17,7 +18,32 @@ export type MacroCategory = {
   image: string | null;
 };
 
-export type MacroProduct = {
+export type ProductPriceFields = {
+  price: number | null;
+  price_max: number | null;
+  price_unit: string | null;
+  price_currency: string | null;
+  price_from: boolean;
+};
+
+function normalizeProductPriceFields(product: Record<string, unknown>): ProductPriceFields {
+  const normalizeNumber = (value: unknown): number | null => {
+    if (value == null || value === '') return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  };
+  return {
+    price: normalizeNumber(product.price),
+    price_max: normalizeNumber(product.price_max),
+    price_unit: typeof product.price_unit === 'string' && product.price_unit.trim()
+      ? product.price_unit
+      : null,
+    price_currency: isValidCurrency(product.price_currency) ? product.price_currency : null,
+    price_from: product.price_from === true || product.price_from === 1 || product.price_from === '1',
+  };
+}
+
+export type MacroProduct = ProductPriceFields & {
   id: number;
   title: string;
   image_url: string;
@@ -75,6 +101,7 @@ export async function fetchMacroProducts(
       label: d.label || '',
       products: (d.products || []).map((p: MacroProduct) => ({
         ...p,
+        ...normalizeProductPriceFields(p),
         image_url: resolveImageUrl(p.image_url),
         image_urls: (p.image_urls || []).map(resolveImageUrl),
       })),
@@ -115,7 +142,7 @@ export async function fetchMegaMenu(country: string): Promise<MegaCategory[]> {
   }
 }
 
-export type PopularProduct = {
+export type PopularProduct = ProductPriceFields & {
   id: number;
   title: string;
   image_url: string;
@@ -130,13 +157,17 @@ export async function fetchPopularProducts(country: string, limit = 16): Promise
     });
     if (!res.ok) return [];
     const d = await res.json();
-    return (d.products || []).map((p: PopularProduct) => ({ ...p, image_url: resolveImageUrl(p.image_url) }));
+    return (d.products || []).map((p: PopularProduct) => ({
+      ...p,
+      ...normalizeProductPriceFields(p),
+      image_url: resolveImageUrl(p.image_url),
+    }));
   } catch {
     return [];
   }
 }
 
-export type SearchProduct = {
+export type SearchProduct = ProductPriceFields & {
   id: number;
   title: string;
   image_url: string;
@@ -169,7 +200,7 @@ export async function searchMaterials(
     const d = await res.json();
     const results = (d.results || []).map((r: SearchProduct & SearchSupplier) =>
       type === 'products'
-        ? { ...r, image_url: resolveImageUrl(r.image_url) }
+        ? { ...r, ...normalizeProductPriceFields(r), image_url: resolveImageUrl(r.image_url) }
         : {
             ...r,
             cover_image_url: r.cover_image_url ? resolveImageUrl(r.cover_image_url) : null,

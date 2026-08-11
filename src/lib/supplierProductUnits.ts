@@ -91,12 +91,19 @@ export function formatProductPrice(
   unit: string | null | undefined,
   from: boolean,
   currency: string,
+  priceMax: number | null | undefined = null,
   lang: 'zh' | 'en' = 'zh',
 ): string {
   if (price == null || !Number.isFinite(Number(price)) || Number(price) <= 0) return '';
   const num = Number(price);
-  const amount = num.toLocaleString('en-US', { maximumFractionDigits: 2 });
-  const fromTxt = from ? (lang === 'en' ? ' (from)' : ' 起') : '';
+  const formatAmount = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  let amount = formatAmount(num);
+  if (priceMax != null) {
+    const max = Number(priceMax);
+    if (!Number.isFinite(max) || max <= 0 || max < num) return '';
+    amount += `–${formatAmount(max)}`;
+  }
+  const fromTxt = priceMax == null && from ? (lang === 'en' ? ' (from)' : ' 起') : '';
   const u = unitLabel(unit, lang);
   const unitTxt = u ? ` / ${u}` : '';
   return `${currency} ${amount}${fromTxt}${unitTxt}`;
