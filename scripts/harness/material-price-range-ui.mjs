@@ -1,14 +1,27 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(fileURLToPath(import.meta.url), '../../..');
 const read = (file) => readFileSync(path.join(root, file), 'utf8');
+const readOptional = (file) => existsSync(path.join(root, file)) ? read(file) : '';
 const supplier = read('src/app/supplier/products/page.tsx');
 const adminDetail = read('src/app/admin/suppliers/[id]/page.tsx');
 const adminModal = read('src/components/admin/SupplierEditModal.tsx');
+const publicPrice = readOptional('src/components/materials/ProductPriceLine.tsx');
+const supplierDetail = read('src/components/materials/SupplierDetailClient.tsx');
+const publicSurfaces = [
+  ['material product card', read('src/components/materials/MaterialProductCard.tsx')],
+  ['material search results', read('src/components/materials/MaterialSearchResults.tsx')],
+  ['hub featured', read('src/components/materials/HubFeatured.tsx')],
+  ['hub search results', read('src/components/materials/HubSearchResults.tsx')],
+  ['macro product grid', read('src/components/materials/MacroProductGrid.tsx')],
+  ['mega menu directory', read('src/components/materials/MegaMenuDirectory.tsx')],
+  ['product detail title', read('src/components/materials/ProductDetailClient.tsx')],
+  ['supplier detail products', supplierDetail],
+];
 
 const checks = [];
 const check = (label, condition) => checks.push({ label, condition: Boolean(condition) });
@@ -137,6 +150,28 @@ check('admin modal preview has one correctly wired formatter call', hasSingleFor
   [3, "product.price_currency || getCountry(data.country || 'ae').currency"],
   [4, 'product.price_max'],
 ]));
+
+check('public price line uses the shared formatter with all five product price fields', hasSingleFormatterWithArgs(publicPrice, [
+  [0, 'product.price'],
+  [1, 'product.price_unit'],
+  [2, 'product.price_from'],
+  [3, 'product.price_currency || country.currency'],
+  [4, 'product.price_max'],
+  [5, "'en'"],
+]));
+check('public price line derives fallback currency from current site locale',
+  has(publicPrice, /countryFromLang\(useSiteLocale\(\)\.lang\)/));
+check('public price line renders nothing when formatter is empty',
+  has(publicPrice, /if\s*\(!label\)\s*return\s+null/));
+check('public price line has stable branded-gold typography when present',
+  has(publicPrice, /min-h-/) && has(publicPrice, /text-\[#b8864a\]/));
+for (const [label, source] of publicSurfaces) {
+  check(`${label}: renders shared public price line`,
+    has(source, /import ProductPriceLine from ['"]\.\/ProductPriceLine['"]/) && has(source, /<ProductPriceLine\s+product=\{/));
+}
+check('supplier detail Product type includes all price fields',
+  ['price', 'price_max', 'price_unit', 'price_currency', 'price_from'].every((field) =>
+    new RegExp(`${field}\\??\\s*:`).test(supplierDetail)));
 
 let passed = 0;
 for (const item of checks) {

@@ -9,6 +9,7 @@ import { fetchMaterialProducts, type PublicMaterialProduct } from '@/lib/materia
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import ProductPriceLine from './ProductPriceLine';
 
 export default function MaterialSearchResults({ query }: { query: string }) {
   const country = countryFromLang(useSiteLocale().lang).code;
@@ -72,6 +73,7 @@ export default function MaterialSearchResults({ query }: { query: string }) {
                 </button>
                 <div className="p-3">
                   <p className="line-clamp-1 text-sm font-medium text-[#1c1917]">{p.title}</p>
+                  <ProductPriceLine product={p} />
                   {p.supplier_name && (
                     <p className="mt-0.5 line-clamp-1 text-[12px] text-stone-500">{p.supplier_name}</p>
                   )}

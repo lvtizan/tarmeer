@@ -15,6 +15,7 @@ import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
 import { sanitizeDescription } from '@/lib/materialsApi';
 import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS, supplierPublicTitle } from '@/lib/supplierConstants';
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
+import ProductPriceLine from './ProductPriceLine';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
 const CatalogReader = dynamic(() => import('./CatalogReader'), {
@@ -54,6 +55,11 @@ export interface Product {
   sort_order: number;
   title_translated: string | null;
   description_translated: string | null;
+  price: number | null;
+  price_max: number | null;
+  price_unit: string | null;
+  price_currency: 'AED' | 'CNY' | 'USD' | 'VND' | null;
+  price_from: boolean;
 }
 
 interface Project {
@@ -391,6 +397,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                             {p.title_translated || p.title}
                           </Link>
                         )}
+                        <ProductPriceLine product={p} />
                         {(() => {
                           // 与产品详情页同源清洗：合作方同步残留的出厂价/MOQ 不外显（spec §6）
                           const desc = sanitizeDescription(p.description_translated || p.description);
