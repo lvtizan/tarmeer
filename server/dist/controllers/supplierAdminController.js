@@ -398,7 +398,10 @@ async function adminUpdateProduct(req, res) {
         const { id, productId } = req.params;
         connection = await database_1.default.getConnection();
         await connection.beginTransaction();
+        // Controller-level harness hooks; Express clients cannot populate request object properties.
+        await req.priceRangeTestHooks?.beforeLock?.();
         const [rows] = await connection.execute('SELECT id, price, price_max FROM supplier_products WHERE id = ? AND supplier_profile_id = ? FOR UPDATE', [productId, id]);
+        await req.priceRangeTestHooks?.afterLock?.();
         if (rows.length === 0) {
             await connection.rollback();
             return res.status(404).json({ error: 'Product not found.' });

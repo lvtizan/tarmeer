@@ -227,10 +227,36 @@ if (rangePid) {
   await ctrl.updateProduct({ supplierUser: { id: userId }, params: { id: rangePid }, body: { ...IMG, price: 130, price_max: 240, price_unit: 'SQM' } }, resetConcurrent);
   check('UC7k 并发用例后恢复区间', resetConcurrent.statusCode === 200, `got ${resetConcurrent.statusCode}`);
 
+  const blocker = await pool.getConnection();
+  await blocker.beginTransaction();
+  await blocker.execute('SELECT id FROM supplier_products WHERE id = ? FOR UPDATE', [rangePid]);
+  let beforeLockReached = false;
+  let afterLockReached = false;
+  let lockRequestCompleted = false;
+  const lockedUpdate = mkRes();
+  const lockedUpdatePromise = admin.adminUpdateProduct({
+    admin: { id: 1, role: 'admin' },
+    params: { id: profileId, productId: rangePid },
+    body: { price_from: false },
+    priceRangeTestHooks: {
+      beforeLock: () => { beforeLockReached = true; },
+      afterLock: () => { afterLockReached = true; },
+    },
+  }, lockedUpdate).finally(() => { lockRequestCompleted = true; });
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  check('UC7l admin 已发起加锁读取', beforeLockReached, `beforeLock=${beforeLockReached}`);
+  check('UC7l blocker COMMIT 前不能越过行锁', !afterLockReached && !lockRequestCompleted,
+    `afterLock=${afterLockReached}, completed=${lockRequestCompleted}`);
+  await blocker.commit();
+  blocker.release();
+  await lockedUpdatePromise;
+  check('UC7l blocker COMMIT 后更新完成', afterLockReached && lockRequestCompleted && lockedUpdate.statusCode === 200,
+    `afterLock=${afterLockReached}, completed=${lockRequestCompleted}, status=${lockedUpdate.statusCode}`);
+
   const clearAdminMax = mkRes();
   await admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price_max: null } }, clearAdminMax);
-  check('UC7l admin 用 null 清除已有最高价 → 200', clearAdminMax.statusCode === 200, `got ${clearAdminMax.statusCode}`);
-  await checkBounds('UC7l admin 清除后真实落库 = 130/null', rangePid, 130, null);
+  check('UC7m admin 用 null 清除已有最高价 → 200', clearAdminMax.statusCode === 200, `got ${clearAdminMax.statusCode}`);
+  await checkBounds('UC7m admin 清除后真实落库 = 130/null', rangePid, 130, null);
 }
 
 const pid = r5.body?.product?.id;
