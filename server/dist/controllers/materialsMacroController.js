@@ -182,6 +182,7 @@ async function getMacroProducts(req, res) {
 
         const [rows] = await database_1.default.query(
             `SELECT p.id, p.title, p.title_translated, p.image_url, p.category,
+         p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
          sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
          sp.name_zh AS supplier_real_name_zh, sp.categories AS supplier_categories
        FROM supplier_products p
@@ -195,6 +196,11 @@ async function getMacroProducts(req, res) {
             id: r.id,
             title: maskTitle(r.title_translated || r.title || 'Product', r.supplier_real_name, r.supplier_real_name_zh),
             image_url: r.image_url,
+            price: r.price,
+            price_max: r.price_max,
+            price_unit: r.price_unit,
+            price_currency: r.price_currency,
+            price_from: r.price_from,
             supplier_slug: r.supplier_slug || null,
             supplier_name: supplierRedact_1.supplierPublicTitle(r.supplier_categories),
         }));
@@ -212,6 +218,7 @@ async function getPopularProducts(req, res) {
         const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 16));
         const [rows] = await database_1.default.query(
             `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url,
+         p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
          sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
          sp.name_zh AS supplier_real_name_zh, sp.categories AS supplier_categories
        FROM supplier_products p
@@ -230,6 +237,11 @@ async function getPopularProducts(req, res) {
                 id: r.id,
                 title: maskTitle(r.title, r.supplier_real_name, r.supplier_real_name_zh),
                 image_url: r.image_url,
+                price: r.price,
+                price_max: r.price_max,
+                price_unit: r.price_unit,
+                price_currency: r.price_currency,
+                price_from: r.price_from,
                 supplier_slug: r.supplier_slug,
                 supplier_name: supplierRedact_1.supplierPublicTitle(r.supplier_categories),
             });
@@ -295,6 +307,7 @@ async function getMaterialSearch(req, res) {
         const total = cntRows[0].total;
         const [rows] = await database_1.default.query(
             `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url, p.category,
+         p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
          sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
          sp.name_zh AS supplier_real_name_zh, sp.categories AS supplier_categories
        FROM supplier_products p
@@ -310,6 +323,11 @@ async function getMaterialSearch(req, res) {
             title: maskTitle(r.title, r.supplier_real_name, r.supplier_real_name_zh),
             image_url: r.image_url,
             category: r.category,
+            price: r.price,
+            price_max: r.price_max,
+            price_unit: r.price_unit,
+            price_currency: r.price_currency,
+            price_from: r.price_from,
             supplier_slug: r.supplier_slug,
             supplier_name: supplierRedact_1.supplierPublicTitle(r.supplier_categories),
         }));
