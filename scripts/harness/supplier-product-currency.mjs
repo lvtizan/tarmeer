@@ -8,15 +8,35 @@
 // 安全：仅允许连本地库（DB_HOST 非 localhost 直接拒跑），绝不碰生产 RDS。
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(path.join(ROOT, 'server/dist/app.js'));
+const resolveMainServer = () => {
+  if (process.env.TARMEER_MAIN_SERVER_DIR) return path.resolve(process.env.TARMEER_MAIN_SERVER_DIR);
+  try {
+    const commonDirRaw = execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: ROOT, encoding: 'utf8' }).trim();
+    const commonDir = path.resolve(ROOT, commonDirRaw);
+    return path.join(path.dirname(commonDir), 'server');
+  } catch {
+    throw new Error('拒绝执行：无法从 Git common dir 推导主 checkout；请设置 TARMEER_MAIN_SERVER_DIR。');
+  }
+};
+const MAIN_SERVER = resolveMainServer();
+const worktreeEnv = path.join(ROOT, 'server/.env');
+const envPath = existsSync(worktreeEnv) ? worktreeEnv : path.join(MAIN_SERVER, '.env');
+if (!existsSync(envPath)) throw new Error('拒绝执行：找不到 server/.env，无法确认数据库环境。');
 
-const host = process.env.DB_HOST || 'localhost';
-if (!['localhost', '127.0.0.1'].includes(host)) {
-  console.error(`拒绝执行：DB_HOST=${host} 不是本地库。本脚本会写入并删除数据，只允许本地运行。`);
-  process.exit(1);
+// 必须在 require database/config 之前加载并验证最终环境，避免 config 内部 dotenv 后加载绕过安全闸门。
+const mainRequire = createRequire(path.join(MAIN_SERVER, 'package.json'));
+mainRequire('dotenv').config({ path: envPath, override: true, quiet: true });
+const host = process.env.DB_HOST;
+const databaseName = process.env.DB_NAME;
+if (!['localhost', '127.0.0.1', '::1'].includes(host || '') || databaseName !== 'tarmeer') {
+  throw new Error('拒绝执行：数据库环境未明确指向本地 tarmeer；不会显示或连接实际配置值。');
 }
 
 const pool = require(path.join(ROOT, 'server/dist/config/database.js')).default;
@@ -38,6 +58,13 @@ function mkRes() {
   return r;
 }
 
+const created = [];
+let seeded = null;
+const marker = `${Date.now()}-${process.pid}-${randomUUID().slice(0, 8)}`;
+const IMG = { image_urls: [`/uploads/harness-currency-${marker}.jpg`] };
+let primaryError = null;
+
+try {
 await runAutoMigrate();
 const [cols] = await pool.execute(
   `SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
@@ -46,22 +73,45 @@ check('迁移后 price_currency 列存在', cols.length === 1, JSON.stringify(co
 check('列类型 varchar(8) NULL',
   cols[0]?.DATA_TYPE === 'varchar' && Number(cols[0]?.CHARACTER_MAXIMUM_LENGTH) === 8 && cols[0]?.IS_NULLABLE === 'YES',
   JSON.stringify(cols[0]));
+const [maxCols] = await pool.execute(
+  `SELECT DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'supplier_products' AND COLUMN_NAME = 'price_max'`);
+check('迁移后 price_max 列存在', maxCols.length === 1, JSON.stringify(maxCols));
+check('price_max 类型 decimal(12,2) NULL',
+  maxCols[0]?.DATA_TYPE === 'decimal'
+    && Number(maxCols[0]?.NUMERIC_PRECISION) === 12
+    && Number(maxCols[0]?.NUMERIC_SCALE) === 2
+    && maxCols[0]?.IS_NULLABLE === 'YES',
+  JSON.stringify(maxCols[0]));
+const hasPriceMaxColumn = maxCols.length === 1;
+const readBounds = async (productId) => {
+  if (!hasPriceMaxColumn) return null;
+  const [rows] = await pool.execute('SELECT price, price_max FROM supplier_products WHERE id = ?', [productId]);
+  return rows[0] || null;
+};
+const checkBounds = async (name, productId, expectedPrice, expectedMax) => {
+  const bounds = await readBounds(productId);
+  check(name,
+    Number(bounds?.price) === expectedPrice
+      && (expectedMax === null ? bounds?.price_max === null : Number(bounds?.price_max) === expectedMax),
+    bounds ? JSON.stringify(bounds) : 'price_max schema missing');
+};
 
 // 宿主 profile：优先用已有的，本地空库则临时造一个（跑完删除）
 let [profs] = await pool.execute('SELECT id, supplier_user_id FROM supplier_profiles WHERE supplier_user_id IS NOT NULL ORDER BY id LIMIT 1');
-let seeded = null;
 if (profs.length === 0) {
-  const [u] = await pool.execute("INSERT INTO supplier_users (email, password, full_name) VALUES ('harness-currency@local.test', 'x', 'harness')");
+  const [u] = await pool.execute(
+    'INSERT INTO supplier_users (email, password, full_name) VALUES (?, ?, ?)',
+    [`harness-currency-${marker}@local.test`, 'x', 'harness']);
+  seeded = { userId: u.insertId, profileId: null };
   const [p] = await pool.execute(
-    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, origin, status, country) VALUES (?, 'Harness Currency Co', 'harness-currency-co', 'china', 'approved', 'ae')",
-    [u.insertId]);
-  seeded = { userId: u.insertId, profileId: p.insertId };
+    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, origin, status, country) VALUES (?, 'Harness Currency Co', ?, 'china', 'approved', 'ae')",
+    [u.insertId, `harness-currency-${marker}`]);
+  seeded = { ...seeded, profileId: p.insertId };
   profs = [{ id: p.insertId, supplier_user_id: u.insertId }];
 }
 const { id: profileId, supplier_user_id: userId } = profs[0];
 
-const created = [];
-const IMG = { image_urls: ['/uploads/harness-currency.jpg'] };
 const add = async (body) => {
   const res = mkRes();
   await ctrl.addProduct({ supplierUser: { id: userId }, body }, res);
@@ -91,9 +141,66 @@ check('UC5 price_currency 落库 = CNY', r5.body?.product?.price_currency === 'C
 r = await add({ ...IMG, price: 150, price_unit: 'SQM', price_currency: '元' });
 check('UC6 非白名单币种 → 400（防脏值入库）', r.statusCode === 400, `got ${r.statusCode}`);
 
+r = await add({ ...IMG, price: 200, price_max: 199.99, price_unit: 'SQM' });
+check('UC6b 最高价低于最低价 → 400', r.statusCode === 400, `got ${r.statusCode}`);
+
 const r7 = await add({ ...IMG, price: 88, price_unit: 'PCS' });
 check('UC7 缺省币种 → 201', r7.statusCode === 201, `got ${r7.statusCode}`);
 check('UC7 price_currency = null（展示层回落国家币种）', r7.body?.product?.price_currency === null, `got ${JSON.stringify(r7.body?.product?.price_currency)}`);
+check('UC7 price_max = null（无最高价不虚构范围）', r7.body?.product?.price_max === null, `got ${JSON.stringify(r7.body?.product?.price_max)}`);
+if (r7.body?.product?.id) await checkBounds('UC7 price_max 真实落库 = null', r7.body.product.id, 88, null);
+
+const rangeCreated = await add({ ...IMG, price: 120, price_max: 200, price_unit: 'SQM', price_currency: 'AED', price_from: true });
+check('UC7b 合法区间创建 → 201', rangeCreated.statusCode === 201, `got ${rangeCreated.statusCode} ${JSON.stringify(rangeCreated.body)}`);
+check('UC7b price 保留最低价 = 120', Number(rangeCreated.body?.product?.price) === 120, `got ${rangeCreated.body?.product?.price}`);
+check('UC7b price_max 创建响应/落库 = 200', Number(rangeCreated.body?.product?.price_max) === 200, `got ${rangeCreated.body?.product?.price_max}`);
+
+const rangePid = rangeCreated.body?.product?.id;
+check('UC7b 区间产品 id 存在（后续用例不得静默跳过）', Number.isInteger(Number(rangePid)) && Number(rangePid) > 0, `got ${rangePid}`);
+if (rangePid) {
+  const rangeUpdate = mkRes();
+  await ctrl.updateProduct({ supplierUser: { id: userId }, params: { id: rangePid }, body: { ...IMG, price: 130, price_max: 240, price_unit: 'SQM', price_currency: 'AED' } }, rangeUpdate);
+  check('UC7c 合法区间更新 → 200', rangeUpdate.statusCode === 200, `got ${rangeUpdate.statusCode} ${JSON.stringify(rangeUpdate.body)}`);
+  check('UC7c price 更新响应仍为最低价 130', Number(rangeUpdate.body?.product?.price) === 130, `got ${rangeUpdate.body?.product?.price}`);
+  check('UC7c price_max 更新响应/落库 = 240', Number(rangeUpdate.body?.product?.price_max) === 240, `got ${rangeUpdate.body?.product?.price_max}`);
+  await checkBounds('UC7c price/price_max 真实落库 = 130/240', rangePid, 130, 240);
+
+  const invalidSupplierUpdate = mkRes();
+  await ctrl.updateProduct({ supplierUser: { id: userId }, params: { id: rangePid }, body: { ...IMG, price: 130, price_max: 129, price_unit: 'SQM' } }, invalidSupplierUpdate);
+  check('UC7d 供应商更新最高价低于最低价 → 400', invalidSupplierUpdate.statusCode === 400, `got ${invalidSupplierUpdate.statusCode}`);
+  await checkBounds('UC7d 拒绝后两端仍为 130/240', rangePid, 130, 240);
+
+  const invalidAdminMin = mkRes();
+  await admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price: 250 } }, invalidAdminMin);
+  check('UC7e admin 只提高最低价越过已存最高价 → 400', invalidAdminMin.statusCode === 400, `got ${invalidAdminMin.statusCode}`);
+  await checkBounds('UC7e 拒绝后两端仍为 130/240', rangePid, 130, 240);
+
+  const invalidAdminMax = mkRes();
+  await admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price_max: 100 } }, invalidAdminMax);
+  check('UC7f admin 只降低最高价到已存最低价以下 → 400', invalidAdminMax.statusCode === 400, `got ${invalidAdminMax.statusCode}`);
+  await checkBounds('UC7f 拒绝后两端仍为 130/240', rangePid, 130, 240);
+
+  const boundaryAdmin = mkRes();
+  await admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price_max: 130 } }, boundaryAdmin);
+  check('UC7g admin 最高价等于最低价边界 → 200', boundaryAdmin.statusCode === 200, `got ${boundaryAdmin.statusCode}`);
+  await checkBounds('UC7g 边界值真实落库 = 130/130', rangePid, 130, 130);
+
+  const clearSupplierMax = mkRes();
+  await ctrl.updateProduct({ supplierUser: { id: userId }, params: { id: rangePid }, body: { ...IMG, price: 130, price_max: null, price_unit: 'SQM' } }, clearSupplierMax);
+  check('UC7h 供应商用 null 清除已有最高价 → 200', clearSupplierMax.statusCode === 200, `got ${clearSupplierMax.statusCode}`);
+  check('UC7h 清除响应 price_max = null', clearSupplierMax.body?.product?.price_max === null, `got ${JSON.stringify(clearSupplierMax.body?.product?.price_max)}`);
+  await checkBounds('UC7h 清除后真实落库 = 130/null', rangePid, 130, null);
+
+  const restoreSupplierMax = mkRes();
+  await ctrl.updateProduct({ supplierUser: { id: userId }, params: { id: rangePid }, body: { ...IMG, price: 130, price_max: 240, price_unit: 'SQM' } }, restoreSupplierMax);
+  check('UC7i 为 admin 清除用例恢复最高价 → 200', restoreSupplierMax.statusCode === 200, `got ${restoreSupplierMax.statusCode}`);
+  await checkBounds('UC7i 最高价恢复为 240', rangePid, 130, 240);
+
+  const clearAdminMax = mkRes();
+  await admin.adminUpdateProduct({ admin: { id: 1, role: 'admin' }, params: { id: profileId, productId: rangePid }, body: { price_max: null } }, clearAdminMax);
+  check('UC7j admin 用 null 清除已有最高价 → 200', clearAdminMax.statusCode === 200, `got ${clearAdminMax.statusCode}`);
+  await checkBounds('UC7j admin 清除后真实落库 = 130/null', rangePid, 130, null);
+}
 
 const pid = r5.body?.product?.id;
 if (pid) {
@@ -116,15 +223,42 @@ if (pid) {
   check('UC10 admin 非白名单币种落 null（不入脏值）', dirty[0]?.price_currency === null, `got ${dirty[0]?.price_currency}`);
 }
 
-// 清理
-for (const id of created) await pool.execute('DELETE FROM supplier_products WHERE id = ?', [id]);
-if (seeded) {
-  await pool.execute('DELETE FROM supplier_profiles WHERE id = ?', [seeded.profileId]);
-  await pool.execute('DELETE FROM supplier_users WHERE id = ?', [seeded.userId]);
+} catch (error) {
+  primaryError = error;
+} finally {
+  const cleanupErrors = [];
+  let fallbackAffected = null;
+  let leftoverCount = null;
+  for (const id of created) {
+    try { await pool.execute('DELETE FROM supplier_products WHERE id = ?', [id]); }
+    catch (error) { cleanupErrors.push(error); }
+  }
+  try {
+    const [fallback] = await pool.execute('DELETE FROM supplier_products WHERE image_url = ?', [IMG.image_urls[0]]);
+    fallbackAffected = Number(fallback.affectedRows);
+    const [leftover] = await pool.execute('SELECT COUNT(*) c FROM supplier_products WHERE image_url = ?', [IMG.image_urls[0]]);
+    leftoverCount = Number(leftover[0]?.c);
+  } catch (error) {
+    cleanupErrors.push(error);
+  }
+  check('cleanup: marker 兜底删除已执行并返回 affectedRows', Number.isInteger(fallbackAffected) && fallbackAffected >= 0, `got ${fallbackAffected}`);
+  check('cleanup: 本轮 marker 产品残留 = 0', leftoverCount === 0, `残留 ${leftoverCount}`);
+  if (seeded?.profileId) {
+    try { await pool.execute('DELETE FROM supplier_profiles WHERE id = ?', [seeded.profileId]); }
+    catch (error) { cleanupErrors.push(error); }
+  }
+  if (seeded?.userId) {
+    try { await pool.execute('DELETE FROM supplier_users WHERE id = ?', [seeded.userId]); }
+    catch (error) { cleanupErrors.push(error); }
+  }
+  try { await pool.end(); }
+  catch (error) { cleanupErrors.push(error); }
+
+  check('cleanup: 已记录的测试数据均已尝试清理', cleanupErrors.length === 0, `${cleanupErrors.length} 个清理错误`);
+  if (cleanupErrors.length > 0 && !primaryError) primaryError = new AggregateError(cleanupErrors, '测试清理失败');
+  else if (cleanupErrors.length > 0) console.error(`另有 ${cleanupErrors.length} 个清理错误；保留原始失败。`);
 }
-const [leftover] = await pool.execute('SELECT COUNT(*) c FROM supplier_products WHERE image_url = ?', [IMG.image_urls[0]]);
-check('cleanup: 测试数据已删净', Number(leftover[0].c) === 0, `残留 ${leftover[0].c} 条`);
 
 console.log(`\nsupplier-product-currency: ${pass}/${pass + fail} PASS`);
-await pool.end();
-process.exit(fail === 0 ? 0 : 1);
+if (primaryError) throw primaryError;
+process.exitCode = fail === 0 ? 0 : 1;

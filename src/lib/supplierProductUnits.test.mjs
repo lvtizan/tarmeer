@@ -24,6 +24,23 @@ test('formatProductPrice：千分位 + 币种 + 起价 + 单位', () => {
   assert.equal(formatProductPrice(80, '每托盘', false, 'AED'), 'AED 80 / 每托盘');
 });
 
+test('formatProductPrice：有效最高价显示范围，且范围优先于起价', () => {
+  assert.equal(formatProductPrice(120, 'SQM', false, 'AED', 200), 'AED 120–200 / ㎡');
+  assert.equal(formatProductPrice(1200.5, 'PCS', true, 'USD', 2500.75), 'USD 1,200.5–2,500.75 / 件');
+  assert.equal(formatProductPrice(120, 'SQM', true, 'AED', 120), 'AED 120–120 / ㎡');
+});
+
+test('formatProductPrice：最高价为空时保留单价/起价行为', () => {
+  assert.equal(formatProductPrice(120, 'SQM', false, 'AED', null), 'AED 120 / ㎡');
+  assert.equal(formatProductPrice(120, 'SQM', true, 'AED', null), 'AED 120 起 / ㎡');
+});
+
+test('formatProductPrice：无效最高价不生成价格标签', () => {
+  assert.equal(formatProductPrice(120, 'SQM', false, 'AED', 119.99), '');
+  assert.equal(formatProductPrice(120, 'SQM', false, 'AED', 0), '');
+  assert.equal(formatProductPrice(120, 'SQM', false, 'AED', Infinity), '');
+});
+
 test('formatProductPrice：无价格返回空串（旧产品不显示价格块）', () => {
   assert.equal(formatProductPrice(null, 'SQM', false, 'AED'), '');
   assert.equal(formatProductPrice(undefined, null, false, 'AED'), '');
@@ -33,8 +50,8 @@ test('formatProductPrice：无价格返回空串（旧产品不显示价格块�
 });
 
 test('formatProductPrice：en 语言用英文单位', () => {
-  assert.equal(formatProductPrice(80, 'PCS', false, 'AED', 'en'), 'AED 80 / pcs');
-  assert.equal(formatProductPrice(1200, 'SQM', true, 'AED', 'en'), 'AED 1,200 (from) / ㎡');
+  assert.equal(formatProductPrice(80, 'PCS', false, 'AED', null, 'en'), 'AED 80 / pcs');
+  assert.equal(formatProductPrice(1200, 'SQM', true, 'AED', null, 'en'), 'AED 1,200 (from) / ㎡');
 });
 
 test('PRODUCT_CURRENCIES / isValidCurrency：白名单内为真，其余为假', () => {
