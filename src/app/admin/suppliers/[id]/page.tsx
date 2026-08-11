@@ -451,6 +451,8 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   const [priceCurrency, setPriceCurrency] = useState(product.price_currency || '');
   // price_from 是布尔标志（价格是否显示为"起价"），不是数值
   const [priceFrom, setPriceFrom] = useState(!!product.price_from);
+  const [priceError, setPriceError] = useState('');
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
   // 描述框:默认4行(min-h),超4行随内容自动撑高
@@ -479,14 +481,15 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
       || priceFrom !== !!product.price_from;
     const parsed = parseProductPriceRange(price, priceMax);
     if (priceDirty && !parsed.ok) {
-      showToast(parsed.field === 'min'
+      const message = parsed.field === 'min'
         ? t('Minimum price is required and must be a positive number with up to 2 decimal places.', '最低价必填，且必须是大于 0、最多两位小数的数字。')
         : parsed.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
-          : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。'), 'error');
+          : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。');
+      setPriceErrorField(parsed.field); setPriceError(message); showToast(message, 'error');
       return;
     }
-    if (priceDirty && !priceUnit) { showToast(t('Please select a unit.', '请选择单位。'), 'error'); return; }
+    if (priceDirty && !priceUnit) { const message = t('Please select a unit.', '请选择单位。'); setPriceErrorField('unit'); setPriceError(message); showToast(message, 'error'); return; }
     setSaving(true);
     try {
       const cleaned = cleanExtraFields(extras);
@@ -558,29 +561,30 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">{t('Currency', '币种')}</label>
-                <select value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)} className={inputCls + ' cursor-pointer'}>
+                <label htmlFor="admin-product-price-currency" className="block text-xs font-medium text-stone-500 mb-1">{t('Currency', '币种')}</label>
+                <select id="admin-product-price-currency" value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)} className={inputCls + ' cursor-pointer'}>
                   <option value="">{t('By country', '按国家')}</option>
                   {PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">{t('Minimum price *', '最低价 *')}</label>
-                <input type="text" inputMode="decimal" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className={inputCls + ' bg-white'} />
+                <label htmlFor="admin-product-price-min" className="block text-xs font-medium text-stone-500 mb-1">{t('Minimum price *', '最低价 *')}</label>
+                <input id="admin-product-price-min" type="text" inputMode="decimal" value={price} onChange={e => { setPrice(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'min' ? 'admin-product-price-error' : undefined} aria-invalid={priceErrorField === 'min'} placeholder="0.00" className={inputCls + ' bg-white'} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">{t('Maximum price (optional)', '最高价（选填）')}</label>
-                <input type="text" inputMode="decimal" value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="0.00" className={inputCls + ' bg-white'} />
+                <label htmlFor="admin-product-price-max" className="block text-xs font-medium text-stone-500 mb-1">{t('Maximum price (optional)', '最高价（选填）')}</label>
+                <input id="admin-product-price-max" type="text" inputMode="decimal" value={priceMax} onChange={e => { setPriceMax(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'max' ? 'admin-product-price-error' : undefined} aria-invalid={priceErrorField === 'max'} placeholder="0.00" className={inputCls + ' bg-white'} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-stone-500 mb-1">{t('Unit', '单位')}</label>
-                <select value={priceUnit} onChange={e => setPriceUnit(e.target.value)} className={inputCls + ' cursor-pointer bg-white'}>
+                <label htmlFor="admin-product-price-unit" className="block text-xs font-medium text-stone-500 mb-1">{t('Unit', '单位')}</label>
+                <select id="admin-product-price-unit" value={priceUnit} onChange={e => { setPriceUnit(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'unit' ? 'admin-product-price-error' : undefined} aria-invalid={priceErrorField === 'unit'} className={inputCls + ' cursor-pointer bg-white'}>
                   <option value="">{t('Select unit', '选择单位')}</option>
                   {PRODUCT_UNITS.map(unit => <option key={unit.value} value={unit.value}>{t(unit.en, unit.zh)}</option>)}
                   {priceUnit && !PRODUCT_UNITS.some(unit => unit.value === priceUnit) && <option value={priceUnit}>{priceUnit}</option>}
                 </select>
               </div>
             </div>
+            {priceError && <p id="admin-product-price-error" role="alert" className="text-xs text-red-600">{priceError}</p>}
             <label className="flex items-center gap-2 text-xs font-medium text-stone-600 cursor-pointer select-none">
               <input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} className="h-4 w-4 rounded border-stone-300 text-[#b8864a] focus:ring-[#b8864a]/40" />
               {t('Show as a starting price when no maximum is provided', '未填写最高价时显示为起价')}
@@ -628,7 +632,9 @@ export default function AdminSupplierDetailPage() {
   const emptyNewProduct = () => ({ image_url: '', title: '', category: '', price: '', price_max: '', price_unit: '', price_currency: '', price_from: false });
   const [newProduct, setNewProduct] = useState(emptyNewProduct);
   const [newProductExtras, setNewProductExtras] = useState<ProductExtraFields>(emptyExtraFields());
-  const resetNewProduct = () => { setNewProduct(emptyNewProduct()); setNewProductExtras(emptyExtraFields()); };
+  const [newProductPriceError, setNewProductPriceError] = useState('');
+  const [newProductPriceErrorField, setNewProductPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
+  const resetNewProduct = () => { setNewProduct(emptyNewProduct()); setNewProductExtras(emptyExtraFields()); setNewProductPriceError(''); setNewProductPriceErrorField(null); };
   // 新增产品的品类下拉也接后台「产品分类」(子类按大类分组)，与编辑弹窗一致
   const [prodCatGroups, setProdCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
   useEffect(() => {
@@ -793,14 +799,15 @@ export default function AdminSupplierDetailPage() {
     if (!newProduct.image_url.trim()) { showToast(t('Image URL is required', '请填写图片地址'), 'error'); return; }
     const parsedPrice = parseProductPriceRange(newProduct.price, newProduct.price_max);
     if (!parsedPrice.ok) {
-      showToast(parsedPrice.field === 'min'
+      const message = parsedPrice.field === 'min'
         ? t('Minimum price is required and must be a positive number with up to 2 decimal places.', '最低价必填，且必须是大于 0、最多两位小数的数字。')
         : parsedPrice.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
-          : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。'), 'error');
+          : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。');
+      setNewProductPriceErrorField(parsedPrice.field); setNewProductPriceError(message); showToast(message, 'error');
       return;
     }
-    if (!newProduct.price_unit) { showToast(t('Please select a unit.', '请选择单位。'), 'error'); return; }
+    if (!newProduct.price_unit) { const message = t('Please select a unit.', '请选择单位。'); setNewProductPriceErrorField('unit'); setNewProductPriceError(message); showToast(message, 'error'); return; }
     setAddingProduct(true);
     try {
       const cleanedExtras = cleanExtraFields(newProductExtras);
@@ -825,8 +832,8 @@ export default function AdminSupplierDetailPage() {
       resetNewProduct();
       setShowAddProduct(false);
       showToast(t('Product added', '产品图已添加'), 'success');
-    } catch {
-      showToast(t('Failed to add product', '添加失败'), 'error');
+    } catch (error: unknown) {
+      showToast(error instanceof Error ? error.message : t('Failed to add product', '添加失败'), 'error');
     } finally {
       setAddingProduct(false);
     }
@@ -1133,11 +1140,12 @@ export default function AdminSupplierDetailPage() {
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><label className={labelCls}>{t('Minimum price *', '最低价 *')}</label><input type="text" inputMode="decimal" value={newProduct.price} onChange={e => setNewProduct(v => ({ ...v, price: e.target.value }))} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
-                  <div><label className={labelCls}>{t('Maximum price (optional)', '最高价（选填）')}</label><input type="text" inputMode="decimal" value={newProduct.price_max} onChange={e => setNewProduct(v => ({ ...v, price_max: e.target.value }))} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
-                  <div><label className={labelCls}>{t('Currency', '币种')}</label><select value={newProduct.price_currency} onChange={e => setNewProduct(v => ({ ...v, price_currency: e.target.value }))} className={inputCls + ' bg-white'}><option value="">{t('By country', '按国家')}</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                  <div><label className={labelCls}>{t('Unit *', '单位 *')}</label><select value={newProduct.price_unit} onChange={e => setNewProduct(v => ({ ...v, price_unit: e.target.value }))} className={inputCls + ' bg-white'}><option value="">{t('Select unit', '选择单位')}</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{t(u.en, u.zh)}</option>)}</select></div>
+                  <div><label htmlFor="admin-new-product-price-min" className={labelCls}>{t('Minimum price *', '最低价 *')}</label><input id="admin-new-product-price-min" type="text" inputMode="decimal" value={newProduct.price} onChange={e => { setNewProduct(v => ({ ...v, price: e.target.value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'min' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'min'} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
+                  <div><label htmlFor="admin-new-product-price-max" className={labelCls}>{t('Maximum price (optional)', '最高价（选填）')}</label><input id="admin-new-product-price-max" type="text" inputMode="decimal" value={newProduct.price_max} onChange={e => { setNewProduct(v => ({ ...v, price_max: e.target.value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'max' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'max'} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
+                  <div><label htmlFor="admin-new-product-price-currency" className={labelCls}>{t('Currency', '币种')}</label><select id="admin-new-product-price-currency" value={newProduct.price_currency} onChange={e => setNewProduct(v => ({ ...v, price_currency: e.target.value }))} className={inputCls + ' bg-white'}><option value="">{t('By country', '按国家')}</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                  <div><label htmlFor="admin-new-product-price-unit" className={labelCls}>{t('Unit *', '单位 *')}</label><select id="admin-new-product-price-unit" value={newProduct.price_unit} onChange={e => { setNewProduct(v => ({ ...v, price_unit: e.target.value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'unit' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'unit'} className={inputCls + ' bg-white'}><option value="">{t('Select unit', '选择单位')}</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{t(u.en, u.zh)}</option>)}</select></div>
                 </div>
+                {newProductPriceError && <p id="admin-new-product-price-error" role="alert" className="text-xs text-red-600">{newProductPriceError}</p>}
                 <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={newProduct.price_from} onChange={e => setNewProduct(v => ({ ...v, price_from: e.target.checked }))} />{t('Show as a starting price when no maximum is provided', '未填写最高价时显示为起价')}</label>
                 <ProductExtraFieldsEditor value={newProductExtras} onChange={setNewProductExtras} t={t} />
                 <div className="flex gap-2">

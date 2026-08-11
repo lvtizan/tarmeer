@@ -141,3 +141,18 @@ test('parseProductPriceRange：最高价不得低于最低价', () => {
   assert.deepEqual(productUnits.parseProductPriceRange('120', '120'), { ok: true, min: 120, max: 120 });
   assert.deepEqual(productUnits.parseProductPriceRange('120', '200'), { ok: true, min: 120, max: 200 });
 });
+
+test('parseProductPriceRange：遵守 DECIMAL(12,2) 精确边界', () => {
+  assert.deepEqual(productUnits.parseProductPriceRange('9999999999.99', ''), { ok: true, min: 9999999999.99, max: null });
+  for (const value of ['10000000000', '9999999999.999', '12345678901.23', '9007199254740991']) {
+    assert.deepEqual(productUnits.parseProductPriceRange(value, ''), { ok: false, field: 'min', reason: 'invalid' });
+  }
+  assert.deepEqual(productUnits.parseProductPriceRange('9999999999.98', '9999999999.99'), { ok: true, min: 9999999999.98, max: 9999999999.99 });
+});
+
+test('normalizeProductPriceFields：number 同样拒绝 DECIMAL(12,2) 溢出和不安全精度', () => {
+  assert.equal(productUnits.normalizeProductPriceFields({ price: 9999999999.99 }).price, 9999999999.99);
+  for (const price of [10000000000, Number.MAX_SAFE_INTEGER, 9999999999.999]) {
+    assert.equal(productUnits.normalizeProductPriceFields({ price }).price, null);
+  }
+});

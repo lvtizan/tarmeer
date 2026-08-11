@@ -20,10 +20,13 @@ interface AdminSelectProps {
   searchable?: boolean;
   /** 下拉项列数，默认 1。设 2 时列表用双列网格（适合选项多但文字短，如单位）。分组模式下忽略。 */
   columns?: 1 | 2;
+  id?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
 }
 
 const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
-  ({ value, onChange, options, className = '', disabled, error, size = 'lg', searchable = false, columns = 1 }, ref) => {
+  ({ value, onChange, options, className = '', disabled, error, size = 'lg', searchable = false, columns = 1, id, 'aria-describedby': ariaDescribedBy, 'aria-invalid': ariaInvalid }, ref) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [mounted, setMounted] = useState(false);
@@ -111,7 +114,7 @@ const AdminSelect = forwardRef<HTMLSelectElement, AdminSelectProps>(
         <select ref={internalSelectRef} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} className="sr-only" tabIndex={-1} aria-hidden="true">
           {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
-        <button type="button" disabled={disabled} onClick={() => !disabled && setOpen((o) => !o)}
+        <button id={id} type="button" disabled={disabled} onClick={() => !disabled && setOpen((o) => !o)} aria-describedby={ariaDescribedBy} aria-invalid={ariaInvalid}
           className={`flex items-center justify-between w-full border bg-stone-50/80 text-left cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${size === 'sm' ? 'h-9 px-3 rounded-lg text-sm' : 'h-[50px] px-5 rounded-2xl text-[15px]'} ${error ? 'border-red-400 ring-2 ring-red-200/30' : 'border-stone-200'} ${!value ? 'text-stone-400' : 'text-[#1c1917]'} ${className}`}>
           <span className="truncate">{selected?.label || options[0]?.label}</span>
           <svg className={`flex-shrink-0 ml-2 w-4 h-4 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

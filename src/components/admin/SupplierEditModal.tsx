@@ -79,6 +79,8 @@ function ProductAddModal({
   const [priceUnit, setPriceUnit] = useState('');
   const [priceCurrency, setPriceCurrency] = useState('');
   const [priceFrom, setPriceFrom] = useState(false);
+  const [priceError, setPriceError] = useState('');
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -110,12 +112,13 @@ function ProductAddModal({
     if (!imageUrl) { showToast('请先上传图片', 'error'); return; }
     const parsed = parseProductPriceRange(price, priceMax);
     if (!parsed.ok) {
-      showToast(parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+      const message = parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
         : parsed.reason === 'below_min' ? '最高价必须大于或等于最低价。'
-          : '最高价必须是大于 0、最多两位小数的数字，或留空。', 'error');
+          : '最高价必须是大于 0、最多两位小数的数字，或留空。';
+      setPriceErrorField(parsed.field); setPriceError(message); showToast(message, 'error');
       return;
     }
-    if (!priceUnit) { showToast('请选择单位。', 'error'); return; }
+    if (!priceUnit) { const message = '请选择单位。'; setPriceErrorField('unit'); setPriceError(message); showToast(message, 'error'); return; }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products`, {
@@ -192,11 +195,12 @@ function ProductAddModal({
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div><label className={labelCls}>最低价 *</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" /></div>
-            <div><label className={labelCls}>最高价（选填）</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="0.00" /></div>
-            <div><label className={labelCls}>币种</label><select className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div><label className={labelCls}>单位 *</label><select className={inputCls + ' bg-white'} value={priceUnit} onChange={e => setPriceUnit(e.target.value)}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}</select></div>
+            <div><label htmlFor="quick-add-product-price-min" className={labelCls}>最低价 *</label><input id="quick-add-product-price-min" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => { setPrice(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'min' ? 'quick-add-product-price-error' : undefined} aria-invalid={priceErrorField === 'min'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-add-product-price-max" className={labelCls}>最高价（选填）</label><input id="quick-add-product-price-max" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => { setPriceMax(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'max' ? 'quick-add-product-price-error' : undefined} aria-invalid={priceErrorField === 'max'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-add-product-price-currency" className={labelCls}>币种</label><select id="quick-add-product-price-currency" className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label htmlFor="quick-add-product-price-unit" className={labelCls}>单位 *</label><select id="quick-add-product-price-unit" className={inputCls + ' bg-white'} value={priceUnit} onChange={e => { setPriceUnit(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'unit' ? 'quick-add-product-price-error' : undefined} aria-invalid={priceErrorField === 'unit'}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}</select></div>
           </div>
+          {priceError && <p id="quick-add-product-price-error" role="alert" className="text-xs text-red-600">{priceError}</p>}
           <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
@@ -235,6 +239,8 @@ function ProductEditInlineModal({
   const [priceUnit, setPriceUnit] = useState(product.price_unit || '');
   const [priceCurrency, setPriceCurrency] = useState(product.price_currency || '');
   const [priceFrom, setPriceFrom] = useState(!!product.price_from);
+  const [priceError, setPriceError] = useState('');
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -244,12 +250,13 @@ function ProductEditInlineModal({
       || priceFrom !== !!product.price_from;
     const parsed = parseProductPriceRange(price, priceMax);
     if (priceDirty && !parsed.ok) {
-      showToast(parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+      const message = parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
         : parsed.reason === 'below_min' ? '最高价必须大于或等于最低价。'
-          : '最高价必须是大于 0、最多两位小数的数字，或留空。', 'error');
+          : '最高价必须是大于 0、最多两位小数的数字，或留空。';
+      setPriceErrorField(parsed.field); setPriceError(message); showToast(message, 'error');
       return;
     }
-    if (priceDirty && !priceUnit) { showToast('请选择单位。', 'error'); return; }
+    if (priceDirty && !priceUnit) { const message = '请选择单位。'; setPriceErrorField('unit'); setPriceError(message); showToast(message, 'error'); return; }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
@@ -299,11 +306,12 @@ function ProductEditInlineModal({
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div><label className={labelCls}>最低价 *</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" /></div>
-            <div><label className={labelCls}>最高价（选填）</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="0.00" /></div>
-            <div><label className={labelCls}>币种</label><select className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div><label className={labelCls}>单位 *</label><select className={inputCls + ' bg-white'} value={priceUnit} onChange={e => setPriceUnit(e.target.value)}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}{priceUnit && !PRODUCT_UNITS.some(u => u.value === priceUnit) && <option value={priceUnit}>{priceUnit}</option>}</select></div>
+            <div><label htmlFor="quick-edit-product-price-min" className={labelCls}>最低价 *</label><input id="quick-edit-product-price-min" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => { setPrice(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'min' ? 'quick-edit-product-price-error' : undefined} aria-invalid={priceErrorField === 'min'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-edit-product-price-max" className={labelCls}>最高价（选填）</label><input id="quick-edit-product-price-max" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => { setPriceMax(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'max' ? 'quick-edit-product-price-error' : undefined} aria-invalid={priceErrorField === 'max'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-edit-product-price-currency" className={labelCls}>币种</label><select id="quick-edit-product-price-currency" className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label htmlFor="quick-edit-product-price-unit" className={labelCls}>单位 *</label><select id="quick-edit-product-price-unit" className={inputCls + ' bg-white'} value={priceUnit} onChange={e => { setPriceUnit(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'unit' ? 'quick-edit-product-price-error' : undefined} aria-invalid={priceErrorField === 'unit'}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}{priceUnit && !PRODUCT_UNITS.some(u => u.value === priceUnit) && <option value={priceUnit}>{priceUnit}</option>}</select></div>
           </div>
+          {priceError && <p id="quick-edit-product-price-error" role="alert" className="text-xs text-red-600">{priceError}</p>}
           <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">

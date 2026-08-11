@@ -28,6 +28,16 @@ const hasDecimalWhiteInputs = (source, markers) => markers.every((marker) => {
   const tags = inputTagsFor(source, marker);
   return tags.length > 0 && tags.every((tag) => tag.includes('type="text"') && tag.includes('inputMode="decimal"') && tag.includes('bg-white'));
 });
+const controlHasErrorAria = (source, id, errorId) => {
+  const at = source.indexOf(`id="${id}"`);
+  if (at === -1) return false;
+  const start = source.lastIndexOf('<', at);
+  let end = at;
+  while ((end = source.indexOf('>', end + 1)) !== -1 && source[end - 1] === '=') { /* skip JSX arrow => */ }
+  if (start === -1 || end === -1) return false;
+  const control = source.slice(start, end + 1);
+  return control.includes('aria-invalid=') && control.includes('aria-describedby=') && control.includes(errorId);
+};
 const functionCalls = (source, name) => {
   const calls = [];
   let start = source.indexOf(`${name}(`);
@@ -84,10 +94,30 @@ for (const [label, source] of [['supplier portal', supplier], ['admin detail', a
 }
 
 check('supplier: max empty serializes to null', has(supplier, /price_max\s*:\s*parsed\.max/));
+check('supplier: legacy edit uses priceDirty partial payload', has(supplier, /const priceDirty[\s\S]*\.\.\.\(priceDirty && parsed\.ok/));
+check('supplier: async profile preserves explicit or user-selected currency', has(supplier, /!currencyTouchedRef\.current\s*&&\s*\(editingIdRef\.current\s*==\s*null\s*\|\|\s*editingExplicitCurrencyRef\.current\s*==\s*null\)\)\s*setNewCurrency\(cur\)/) && has(supplier, /currencyTouchedRef\.current\s*=\s*true;\s*setNewCurrency\(value\)/));
+check('supplier: unit selector exposes field-specific error', has(supplier, /id="supplier-price-unit"[\s\S]{0,500}aria-describedby=\{displayedPriceErrorField === 'unit'/));
 check('admin detail add/edit: max empty serializes to null', has(adminDetail, /price_max\s*:\s*parsedPrice\.max/) && has(adminDetail, /price_max\s*:\s*parsed\.max/));
 check('admin modal add/edit: max empty serializes to null', (adminModal.match(/price_max\s*:\s*parsed\.max/g) || []).length >= 2);
 check('admin detail: legacy edit uses priceDirty partial payload', has(adminDetail, /const priceDirty[\s\S]*\.\.\.\(priceDirty && parsed\.ok/));
 check('admin modal: legacy edit uses priceDirty partial payload', has(adminModal, /const priceDirty[\s\S]*\.\.\.\(priceDirty && parsed\.ok/));
+for (const [label, source, ids] of [
+  ['supplier portal', supplier, ['supplier-price-min', 'supplier-price-max', 'supplier-price-unit', 'supplier-price-currency']],
+  ['admin detail', adminDetail, ['admin-product-price-min', 'admin-product-price-max', 'admin-product-price-unit', 'admin-product-price-currency', 'admin-new-product-price-min', 'admin-new-product-price-max', 'admin-new-product-price-unit', 'admin-new-product-price-currency']],
+  ['admin modal', adminModal, ['quick-add-product-price-min', 'quick-add-product-price-max', 'quick-add-product-price-unit', 'quick-add-product-price-currency', 'quick-edit-product-price-min', 'quick-edit-product-price-max', 'quick-edit-product-price-unit', 'quick-edit-product-price-currency']],
+]) {
+  for (const id of ids) {
+    check(`${label}: ${id} label is bound`, source.includes(`htmlFor="${id}"`) && source.includes(`id="${id}"`));
+  }
+  check(`${label}: price errors are announced`, has(source, /role="alert"|aria-live="(?:polite|assertive)"/));
+}
+for (const [label, source, fields] of [
+  ['supplier portal', supplier, [['supplier-price-min', 'supplier-price-error'], ['supplier-price-max', 'supplier-price-error'], ['supplier-price-unit', 'supplier-price-error']]],
+  ['admin detail', adminDetail, [['admin-product-price-min', 'admin-product-price-error'], ['admin-product-price-max', 'admin-product-price-error'], ['admin-product-price-unit', 'admin-product-price-error'], ['admin-new-product-price-min', 'admin-new-product-price-error'], ['admin-new-product-price-max', 'admin-new-product-price-error'], ['admin-new-product-price-unit', 'admin-new-product-price-error']]],
+  ['admin modal', adminModal, [['quick-add-product-price-min', 'quick-add-product-price-error'], ['quick-add-product-price-max', 'quick-add-product-price-error'], ['quick-add-product-price-unit', 'quick-add-product-price-error'], ['quick-edit-product-price-min', 'quick-edit-product-price-error'], ['quick-edit-product-price-max', 'quick-edit-product-price-error'], ['quick-edit-product-price-unit', 'quick-edit-product-price-error']]],
+]) {
+  for (const [id, errorId] of fields) check(`${label}: ${id} exposes its error relationship`, controlHasErrorAria(source, id, errorId));
+}
 check('supplier preview has one correctly wired formatter call', hasSingleFormatterWithArgs(supplier, [
   [0, 'p.price'], [1, 'p.price_unit ?? null'], [2, '!!p.price_from'],
   [3, 'p.price_currency || currency'], [4, 'p.price_max'],

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, ImagePlus, X, Pencil } from 'lucide-react';
 import AdminSelect from '@/components/ui/AdminSelect';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -64,6 +64,9 @@ export default function SupplierProductsPage() {
   const [adding, setAdding] = useState(false);
   // null = 新增；非空 = 正在编辑该产品(走弹层 + PUT)
   const [editingId, setEditingId] = useState<number | null>(null);
+  const editingIdRef = useRef<number | null>(null);
+  const editingExplicitCurrencyRef = useRef<string | null>(null);
+  const currencyTouchedRef = useRef(false);
 
   // new product form
   const [newTitle, setNewTitle] = useState('');
@@ -74,6 +77,9 @@ export default function SupplierProductsPage() {
   const [msg, setMsg] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newPriceMax, setNewPriceMax] = useState('');
+  const [originalPriceFields, setOriginalPriceFields] = useState<Pick<Product, 'price' | 'price_max' | 'price_unit' | 'price_currency' | 'price_from'> | null>(null);
+  const [priceError, setPriceError] = useState('');
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
   const [newUnit, setNewUnit] = useState('');          // '' = 未选；'__custom__' = 自定义
   const [newUnitCustom, setNewUnitCustom] = useState('');
   const [newPriceFrom, setNewPriceFrom] = useState(false);
@@ -101,7 +107,7 @@ export default function SupplierProductsPage() {
         const raw = getCountry(data.profile.country).currency;
         const cur = isValidCurrency(raw) ? raw : PRODUCT_CURRENCIES[0];
         setCurrency(cur);
-        setNewCurrency(cur);
+        if (!currencyTouchedRef.current && (editingIdRef.current == null || editingExplicitCurrencyRef.current == null)) setNewCurrency(cur);
       })
       .catch(() => {});
   }, []);
@@ -121,20 +127,22 @@ export default function SupplierProductsPage() {
       : priceRange.reason === 'below_min'
         ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
         : t('Maximum price must be a positive number with up to 2 decimal places.', '最高价必须是大于 0、最多两位小数的数字。');
+  const displayedPriceError = priceHint || priceError;
+  const displayedPriceErrorField = priceHint ? (priceRange.ok ? null : priceRange.field) : priceErrorField;
 
   const resetForm = () => {
     setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
-    setNewPrice(''); setNewPriceMax(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
+    setNewPrice(''); setNewPriceMax(''); setOriginalPriceFields(null); setPriceError(''); setPriceErrorField(null); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
     setNewCurrency(currency);
     setNewTitleEn(''); setNewDescEn('');
     setMsg('');
   };
 
   // 关闭表单(新增面板 / 编辑弹层通用)
-  const closeForm = () => { setAdding(false); setEditingId(null); resetForm(); };
+  const closeForm = () => { setAdding(false); editingIdRef.current = null; editingExplicitCurrencyRef.current = null; currencyTouchedRef.current = false; setEditingId(null); resetForm(); };
 
   // 打开新增(内联面板)
-  const openAdd = () => { resetForm(); setEditingId(null); setNewCurrency(currency); setAdding(true); };
+  const openAdd = () => { resetForm(); editingIdRef.current = null; editingExplicitCurrencyRef.current = null; currencyTouchedRef.current = false; setEditingId(null); setNewCurrency(currency); setAdding(true); };
 
   // 打开编辑弹层：用产品当前数据预填(含已有图片，支持加图/换图)
   const openEdit = (p: Product) => {
@@ -147,14 +155,19 @@ export default function SupplierProductsPage() {
     setNewImageUrls(imgs);
     setNewPrice(p.price != null ? String(p.price) : '');
     setNewPriceMax(p.price_max != null ? String(p.price_max) : '');
+    setOriginalPriceFields({ price: p.price, price_max: p.price_max, price_unit: p.price_unit, price_currency: p.price_currency, price_from: p.price_from });
     const unit = p.price_unit || '';
     if (unit && PRODUCT_UNITS.some(u => u.value === unit)) { setNewUnit(unit); setNewUnitCustom(''); }
     else if (unit) { setNewUnit('__custom__'); setNewUnitCustom(unit); }
     else { setNewUnit(''); setNewUnitCustom(''); }
     setNewPriceFrom(!!p.price_from);
-    setNewCurrency(p.price_currency && isValidCurrency(p.price_currency) ? p.price_currency : currency);
+    const explicitCurrency = p.price_currency && isValidCurrency(p.price_currency) ? p.price_currency : null;
+    editingExplicitCurrencyRef.current = explicitCurrency;
+    currencyTouchedRef.current = false;
+    setNewCurrency(explicitCurrency || currency);
     setMsg('');
     setAdding(false);
+    editingIdRef.current = p.id;
     setEditingId(p.id);
   };
 
@@ -180,17 +193,23 @@ export default function SupplierProductsPage() {
   // 新增(POST) / 编辑(PUT) 共用保存逻辑，按 editingId 分支
   const handleSave = async () => {
     if (newImageUrls.length === 0) { setMsg(t('Please upload at least one image.', '请至少上传一张图片。')); return; }
+    const unitVal = newUnit === '__custom__' ? newUnitCustom.trim() : newUnit;
+    const priceDirty = editingId == null || originalPriceFields == null
+      || newPrice !== (originalPriceFields.price != null ? String(originalPriceFields.price) : '')
+      || newPriceMax !== (originalPriceFields.price_max != null ? String(originalPriceFields.price_max) : '')
+      || unitVal !== (originalPriceFields.price_unit || '')
+      || newCurrency !== (originalPriceFields.price_currency || currency)
+      || newPriceFrom !== !!originalPriceFields.price_from;
     const parsed = parseProductPriceRange(newPrice, newPriceMax);
-    if (!parsed.ok) {
-      setMsg(parsed.field === 'min'
+    if (priceDirty && !parsed.ok) {
+      setPriceErrorField(parsed.field); setPriceError(parsed.field === 'min'
         ? t('Enter a minimum price greater than 0 with up to 2 decimal places.', '请填写大于 0、最多两位小数的最低价。')
         : parsed.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
           : t('Enter a maximum price greater than 0 with up to 2 decimal places, or leave it blank.', '最高价请填写大于 0、最多两位小数的数字，或留空。'));
       return;
     }
-    const unitVal = newUnit === '__custom__' ? newUnitCustom.trim() : newUnit;
-    if (!unitVal) { setMsg(t('Please select or enter a unit.', '请选择或填写单位。')); return; }
+    if (priceDirty && !unitVal) { setPriceErrorField('unit'); setPriceError(t('Please select or enter a unit.', '请选择或填写单位。')); return; }
     setSaving(true);
     setMsg('');
     try {
@@ -205,8 +224,10 @@ export default function SupplierProductsPage() {
           description_translated: newDescEn || null,
           category: newCat || null,
           image_urls: newImageUrls,
-          price: parsed.min, price_max: parsed.max, price_unit: unitVal,
-          price_currency: newCurrency, price_from: parsed.max == null && newPriceFrom,
+          ...(priceDirty && parsed.ok ? {
+            price: parsed.min, price_max: parsed.max, price_unit: unitVal,
+            price_currency: newCurrency, price_from: parsed.max == null && newPriceFrom,
+          } : {}),
           // 编辑时回传原 sort_order：后端 updateProduct 用 sort_order=? (非 COALESCE)，
           // 不回传会被重写成 0，将来接入拖拽排序会乱序。JSON.stringify 会丢弃 undefined（新增时不发）。
           sort_order: isEdit ? (products.find(p => p.id === editingId)?.sort_order ?? 0) : undefined,
@@ -282,22 +303,25 @@ export default function SupplierProductsPage() {
           <div className="flex items-center gap-2">
             {/* 币种可选：中国供应商常按人民币报价，站点币种只作默认值 */}
             <div className="w-[104px] shrink-0">
-              <AdminSelect options={CURRENCY_OPTIONS} value={newCurrency} onChange={setNewCurrency} />
+              <label htmlFor="supplier-price-currency" className="sr-only">{t('Currency', '币种')}</label>
+              <AdminSelect id="supplier-price-currency" options={CURRENCY_OPTIONS} value={newCurrency} onChange={(value) => { currencyTouchedRef.current = true; setNewCurrency(value); }} />
             </div>
             <div className="grid flex-1 grid-cols-2 gap-2">
               <div>
-                <label className="mb-1 block text-xs text-stone-500">{t('Minimum price *', '最低价 *')}</label>
-                <input type="text" inputMode="decimal" value={newPrice} onChange={e => setNewPrice(e.target.value)}
+                <label htmlFor="supplier-price-min" className="mb-1 block text-xs text-stone-500">{t('Minimum price *', '最低价 *')}</label>
+                <input id="supplier-price-min" type="text" inputMode="decimal" value={newPrice} onChange={e => { setNewPrice(e.target.value); setPriceError(''); setPriceErrorField(null); }}
+                  aria-describedby={displayedPriceErrorField === 'min' ? 'supplier-price-error' : undefined} aria-invalid={displayedPriceErrorField === 'min'}
                   placeholder="0.00" className={`${inputCls} bg-white`} />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-stone-500">{t('Maximum price (optional)', '最高价（选填）')}</label>
-                <input type="text" inputMode="decimal" value={newPriceMax} onChange={e => setNewPriceMax(e.target.value)}
+                <label htmlFor="supplier-price-max" className="mb-1 block text-xs text-stone-500">{t('Maximum price (optional)', '最高价（选填）')}</label>
+                <input id="supplier-price-max" type="text" inputMode="decimal" value={newPriceMax} onChange={e => { setNewPriceMax(e.target.value); setPriceError(''); setPriceErrorField(null); }}
+                  aria-describedby={displayedPriceErrorField === 'max' ? 'supplier-price-error' : undefined} aria-invalid={displayedPriceErrorField === 'max'}
                   placeholder="0.00" className={`${inputCls} bg-white`} />
               </div>
             </div>
           </div>
-          {priceHint && <p className="mt-1.5 text-xs text-red-600">{priceHint}</p>}
+          {displayedPriceError && <p id="supplier-price-error" role="alert" className="mt-1.5 text-xs text-red-600">{displayedPriceError}</p>}
           <label className="mt-2 flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
             <input type="checkbox" checked={newPriceFrom} onChange={e => setNewPriceFrom(e.target.checked)}
               className="rounded border-stone-300 text-[#b8864a] focus:ring-[#B8864A]/30" />
@@ -305,10 +329,12 @@ export default function SupplierProductsPage() {
           </label>
         </div>
         <div>
-          <label className={labelCls}>{t('Unit *', '单位 *')}</label>
-          <AdminSelect options={UNIT_OPTIONS} value={newUnit} onChange={setNewUnit} columns={2} />
+          <label htmlFor="supplier-price-unit" className={labelCls}>{t('Unit *', '单位 *')}</label>
+          <AdminSelect id="supplier-price-unit" options={UNIT_OPTIONS} value={newUnit} onChange={(value) => { setNewUnit(value); setPriceError(''); setPriceErrorField(null); }} columns={2}
+            error={displayedPriceErrorField === 'unit'} aria-describedby={displayedPriceErrorField === 'unit' ? 'supplier-price-error' : undefined} aria-invalid={displayedPriceErrorField === 'unit'} />
           {newUnit === '__custom__' && (
-            <input type="text" value={newUnitCustom} onChange={e => setNewUnitCustom(e.target.value)}
+            <input id="supplier-price-unit-custom" type="text" value={newUnitCustom} onChange={e => { setNewUnitCustom(e.target.value); setPriceError(''); setPriceErrorField(null); }}
+              aria-label={t('Custom unit', '自定义单位')} aria-describedby={displayedPriceErrorField === 'unit' ? 'supplier-price-error' : undefined} aria-invalid={displayedPriceErrorField === 'unit'}
               placeholder={t('e.g. per pallet', '如：每托盘')} className={`${inputCls} mt-2`} />
           )}
         </div>

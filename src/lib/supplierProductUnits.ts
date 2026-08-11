@@ -50,17 +50,22 @@ export function isValidCurrency(currency: unknown): currency is ProductCurrency 
   return typeof currency === 'string' && (PRODUCT_CURRENCIES as readonly string[]).includes(currency);
 }
 
-const DECIMAL_PRICE_RE = /^\d+(?:\.\d{1,2})?$/;
+const DECIMAL_PRICE_RE = /^\d{1,10}(?:\.\d{1,2})?$/;
+const MAX_PRICE_CENTS = 999_999_999_999;
+
+function parseDecimalPrice(value: unknown): { value: number; cents: number } | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  if (typeof value === 'number' && (!Number.isFinite(value) || !Number.isSafeInteger(Math.trunc(value)))) return null;
+  const text = typeof value === 'string' ? value.trim() : String(value);
+  if (!DECIMAL_PRICE_RE.test(text)) return null;
+  const [whole, fraction = ''] = text.split('.');
+  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
+  if (!Number.isSafeInteger(cents) || cents <= 0 || cents > MAX_PRICE_CENTS) return null;
+  return { value: Number(text), cents };
+}
 
 function normalizePositivePrice(value: unknown): number | null {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) && value > 0 && DECIMAL_PRICE_RE.test(String(value)) ? value : null;
-  }
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!DECIMAL_PRICE_RE.test(trimmed)) return null;
-  const number = Number(trimmed);
-  return Number.isFinite(number) && number > 0 ? number : null;
+  return parseDecimalPrice(value)?.value ?? null;
 }
 
 /** 把不可信 API 行中的五个价格字段收窄为公共前端契约。 */
@@ -109,10 +114,9 @@ export function parsePriceInput(raw: string): PriceParseResult {
   const s = raw.trim();
   if (!s) return { ok: false, reason: 'empty' };
   if (RANGE_RE.test(s)) return { ok: false, reason: 'range' };
-  if (!DECIMAL_PRICE_RE.test(s)) return { ok: false, reason: 'invalid' };
-  const n = Number(s);
-  if (!Number.isFinite(n) || n <= 0) return { ok: false, reason: 'invalid' };
-  return { ok: true, value: n };
+  const parsed = parseDecimalPrice(s);
+  if (!parsed) return { ok: false, reason: 'invalid' };
+  return { ok: true, value: parsed.value };
 }
 
 export type ProductPriceRangeParseResult =
@@ -128,7 +132,10 @@ export function parseProductPriceRange(minRaw: string, maxRaw: string): ProductP
   if (!maxRaw.trim()) return { ok: true, min: min.value, max: null };
   const max = parsePriceInput(maxRaw);
   if (!max.ok) return { ok: false, field: 'max', reason: 'invalid' };
-  if (max.value < min.value) return { ok: false, field: 'max', reason: 'below_min' };
+  const minCents = parseDecimalPrice(minRaw)?.cents;
+  const maxCents = parseDecimalPrice(maxRaw)?.cents;
+  if (minCents == null || maxCents == null) return { ok: false, field: 'max', reason: 'invalid' };
+  if (maxCents < minCents) return { ok: false, field: 'max', reason: 'below_min' };
   return { ok: true, min: min.value, max: max.value };
 }
 
