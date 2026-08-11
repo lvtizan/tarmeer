@@ -11,6 +11,7 @@ const supplier = read('src/app/supplier/products/page.tsx');
 const adminDetail = read('src/app/admin/suppliers/[id]/page.tsx');
 const adminModal = read('src/components/admin/SupplierEditModal.tsx');
 const publicPrice = readOptional('src/components/materials/ProductPriceLine.tsx');
+const publicPriceDisplay = readOptional('src/lib/productPriceDisplay.ts');
 const supplierDetail = read('src/components/materials/SupplierDetailClient.tsx');
 const publicSurfaces = [
   ['material product card', read('src/components/materials/MaterialProductCard.tsx')],
@@ -151,20 +152,20 @@ check('admin modal preview has one correctly wired formatter call', hasSingleFor
   [4, 'product.price_max'],
 ]));
 
-check('public price line uses the shared formatter with all five product price fields', hasSingleFormatterWithArgs(publicPrice, [
+check('public price display uses the shared formatter with all five product price fields', hasSingleFormatterWithArgs(publicPriceDisplay, [
   [0, 'product.price'],
   [1, 'product.price_unit'],
   [2, 'product.price_from'],
-  [3, 'product.price_currency || country.currency'],
+  [3, 'product.price_currency || fallbackCurrency'],
   [4, 'product.price_max'],
   [5, "'en'"],
 ]));
 check('public price line derives fallback currency from current site locale',
-  has(publicPrice, /countryFromLang\(useSiteLocale\(\)\.lang\)/));
-check('public price line renders nothing when formatter is empty',
-  has(publicPrice, /if\s*\(!label\)\s*return\s+null/));
-check('public price line has stable branded-gold typography when present',
-  has(publicPrice, /min-h-/) && has(publicPrice, /text-\[#b8864a\]/));
+  has(publicPrice, /countryFromLang\(useSiteLocale\(\)\.lang\)/) && has(publicPrice, /fallbackCurrency(?:=\{|:)\s*country\.currency/));
+check('public price display renders nothing when formatter is empty',
+  has(publicPriceDisplay, /if\s*\(!label\)\s*return\s+null/));
+check('public price display has stable branded-gold typography when present',
+  has(publicPriceDisplay, /min-h-/) && has(publicPriceDisplay, /text-\[#b8864a\]/));
 for (const [label, source] of publicSurfaces) {
   check(`${label}: renders shared public price line`,
     has(source, /import ProductPriceLine from ['"]\.\/ProductPriceLine['"]/) && has(source, /<ProductPriceLine\s+product=\{/));
@@ -172,6 +173,20 @@ for (const [label, source] of publicSurfaces) {
 check('supplier detail Product type includes all price fields',
   ['price', 'price_max', 'price_unit', 'price_currency', 'price_from'].every((field) =>
     new RegExp(`${field}\\??\\s*:`).test(supplierDetail)));
+check('supplier hydration forwards country in both request cache keys',
+  (supplierDetail.match(/country=\$\{country\.code\}/g) || []).length >= 2);
+check('supplier hydration forwards x-country in both request headers',
+  (supplierDetail.match(/headers:\s*\{\s*'x-country':\s*country\.code\s*\}/g) || []).length >= 2);
+check('supplier hydration refetches when country changes',
+  has(supplierDetail, /\},\s*\[slug,\s*country\.code\]\)/));
+check('supplier hydration clears stale route or country state before refetch',
+  has(supplierDetail, /if\s*\(identityChanged\)[\s\S]{0,300}setSupplier\(null\)[\s\S]{0,300}setProducts\(\[\]\)/));
+check('supplier hydration ignores obsolete country requests',
+  has(supplierDetail, /let active = true/) && has(supplierDetail, /if\s*\(!active\)\s*return/) && has(supplierDetail, /active = false/));
+check('supplier rendering gates stale route or country identity before effects run',
+  has(supplierDetail, /loadedIdentity !== requestIdentity/) && has(supplierDetail, /if\s*\(loading \|\| contentStale\)/));
+check('supplier identity switch clears entity-specific visual state',
+  has(supplierDetail, /if\s*\(identityChanged\)[\s\S]{0,500}setLightbox\(null\)[\s\S]{0,500}setProductCatFilter\(null\)[\s\S]{0,500}setLogoError\(false\)/));
 
 let passed = 0;
 for (const item of checks) {
