@@ -37,9 +37,47 @@ const UNIT_MAP = new Map(PRODUCT_UNITS.map(u => [u.value, u]));
 export const PRODUCT_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'] as const;
 export type ProductCurrency = (typeof PRODUCT_CURRENCIES)[number];
 
+export interface ProductPriceFields {
+  price: number | null;
+  price_max: number | null;
+  price_unit: string | null;
+  price_currency: ProductCurrency | null;
+  price_from: boolean;
+}
+
 /** 币种是否在白名单内。 */
 export function isValidCurrency(currency: unknown): currency is ProductCurrency {
   return typeof currency === 'string' && (PRODUCT_CURRENCIES as readonly string[]).includes(currency);
+}
+
+const DECIMAL_PRICE_RE = /^\d+(?:\.\d{1,2})?$/;
+
+function normalizePositivePrice(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) && value > 0 ? value : null;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!DECIMAL_PRICE_RE.test(trimmed)) return null;
+  const number = Number(trimmed);
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+/** 把不可信 API 行中的五个价格字段收窄为公共前端契约。 */
+export function normalizeProductPriceFields(value: unknown): ProductPriceFields {
+  const row = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const price = normalizePositivePrice(row.price);
+  const hasPriceMax = row.price_max != null;
+  const priceMax = hasPriceMax ? normalizePositivePrice(row.price_max) : null;
+  const validRange = price !== null && (!hasPriceMax || (priceMax !== null && priceMax >= price));
+  const unit = typeof row.price_unit === 'string' ? row.price_unit.trim() : '';
+  return {
+    price: validRange ? price : null,
+    price_max: validRange ? priceMax : null,
+    price_unit: unit || null,
+    price_currency: isValidCurrency(row.price_currency) ? row.price_currency : null,
+    price_from: row.price_from === true || row.price_from === 1 || row.price_from === '1',
+  };
 }
 
 /** 单位是否有效：预设码 或 非空自定义文本。 */
@@ -91,9 +129,12 @@ export function formatProductPrice(
   unit: string | null | undefined,
   from: boolean,
   currency: string,
-  priceMax: number | null | undefined = null,
+  priceMaxOrLang: number | null | undefined | 'zh' | 'en' = null,
   lang: 'zh' | 'en' = 'zh',
 ): string {
+  const legacyLang = typeof priceMaxOrLang === 'string' ? priceMaxOrLang : null;
+  const priceMax = legacyLang ? null : priceMaxOrLang;
+  const displayLang = legacyLang ?? lang;
   if (price == null || !Number.isFinite(Number(price)) || Number(price) <= 0) return '';
   const num = Number(price);
   const formatAmount = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -103,8 +144,8 @@ export function formatProductPrice(
     if (!Number.isFinite(max) || max <= 0 || max < num) return '';
     amount += `–${formatAmount(max)}`;
   }
-  const fromTxt = priceMax == null && from ? (lang === 'en' ? ' (from)' : ' 起') : '';
-  const u = unitLabel(unit, lang);
+  const fromTxt = priceMax == null && from ? (displayLang === 'en' ? ' (from)' : ' 起') : '';
+  const u = unitLabel(unit, displayLang);
   const unitTxt = u ? ` / ${u}` : '';
   return `${currency} ${amount}${fromTxt}${unitTxt}`;
 }

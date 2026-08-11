@@ -1,7 +1,7 @@
 // By Material 大类浏览 —— 前端数据层（对接后端 /suppliers/macro-categories）。
 // 大类 = 供应商标签归一后的 10 个干净材料类；Premium = 战略新材料主推线(暂无产品数据，占位引导询价)。
 import { resolveImageUrl } from '@/lib/imageUrl';
-import { isValidCurrency } from '@/lib/supplierProductUnits';
+import { normalizeProductPriceFields, type ProductPriceFields } from '@/lib/supplierProductUnits';
 
 // SSR 走内网直连(API_INTERNAL_URL→localhost:3002)，禁止公网 NEXT_PUBLIC_API_URL 绕 nginx 回自己(429 事故)；对齐 publicApi.ts。
 const API_BASE =
@@ -17,31 +17,6 @@ export type MacroCategory = {
   productCount: number;
   image: string | null;
 };
-
-export type ProductPriceFields = {
-  price: number | null;
-  price_max: number | null;
-  price_unit: string | null;
-  price_currency: string | null;
-  price_from: boolean;
-};
-
-function normalizeProductPriceFields(product: Record<string, unknown>): ProductPriceFields {
-  const normalizeNumber = (value: unknown): number | null => {
-    if (value == null || value === '') return null;
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
-  };
-  return {
-    price: normalizeNumber(product.price),
-    price_max: normalizeNumber(product.price_max),
-    price_unit: typeof product.price_unit === 'string' && product.price_unit.trim()
-      ? product.price_unit
-      : null,
-    price_currency: isValidCurrency(product.price_currency) ? product.price_currency : null,
-    price_from: product.price_from === true || product.price_from === 1 || product.price_from === '1',
-  };
-}
 
 export type MacroProduct = ProductPriceFields & {
   id: number;

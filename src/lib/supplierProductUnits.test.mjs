@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import { test } from 'node:test';
+import * as productUnits from './supplierProductUnits.ts';
 import { PRODUCT_UNITS, PRODUCT_CURRENCIES, isValidUnit, isValidCurrency, formatProductPrice, parsePriceInput } from './supplierProductUnits.ts';
 
 test('PRODUCT_UNITS 覆盖建材外贸常用单位', () => {
@@ -54,6 +55,11 @@ test('formatProductPrice：en 语言用英文单位', () => {
   assert.equal(formatProductPrice(1200, 'SQM', true, 'AED', null, 'en'), 'AED 1,200 (from) / ㎡');
 });
 
+test('formatProductPrice：旧第五参 lang 调用保持兼容', () => {
+  assert.equal(formatProductPrice(80, 'PCS', false, 'AED', 'en'), 'AED 80 / pcs');
+  assert.equal(formatProductPrice(1200, 'SQM', true, 'AED', 'en'), 'AED 1,200 (from) / ㎡');
+});
+
 test('PRODUCT_CURRENCIES / isValidCurrency：白名单内为真，其余为假', () => {
   for (const c of ['AED', 'CNY', 'USD', 'VND']) {
     assert.ok(PRODUCT_CURRENCIES.includes(c), `缺币种 ${c}`);
@@ -63,6 +69,26 @@ test('PRODUCT_CURRENCIES / isValidCurrency：白名单内为真，其余为假',
   assert.equal(isValidCurrency('aed'), false); // 大小写敏感，避免脏值入库
   assert.equal(isValidCurrency(''), false);
   assert.equal(isValidCurrency(null), false);
+});
+
+test('normalizeProductPriceFields：规范 DECIMAL 字符串、单位、币种与起价标记', () => {
+  assert.deepEqual(productUnits.normalizeProductPriceFields({
+    price: ' 120.50 ', price_max: '200.00', price_unit: ' SQM ', price_currency: 'AED', price_from: '1',
+  }), {
+    price: 120.5, price_max: 200, price_unit: 'SQM', price_currency: 'AED', price_from: true,
+  });
+  assert.equal(productUnits.normalizeProductPriceFields({ price: '120', price_from: '0' }).price_from, false);
+});
+
+test('normalizeProductPriceFields：拒绝非规范价格及脏字段', () => {
+  for (const price of ['', '   ', '1e3', '1.234', 0, -1, Infinity, true, [], {}]) {
+    assert.equal(productUnits.normalizeProductPriceFields({ price }).price, null, `应拒绝 ${String(price)}`);
+  }
+  assert.deepEqual(productUnits.normalizeProductPriceFields({
+    price: '120', price_max: '119.99', price_unit: ['SQM'], price_currency: 'aed', price_from: 'yes',
+  }), {
+    price: null, price_max: null, price_unit: null, price_currency: null, price_from: false,
+  });
 });
 
 test('parsePriceInput：正常数字通过（含小数、前后空格）', () => {
