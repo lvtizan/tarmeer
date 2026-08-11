@@ -21,6 +21,15 @@ let pass = 0, fail = 0;
 
 function ok(label) { console.log(`  \x1b[32m✓\x1b[0m ${label}`); pass++; }
 function ng(label, detail) { console.log(`  \x1b[31m✗\x1b[0m ${label}${detail ? ' — ' + detail : ''}`); fail++; }
+function commandTail(error, lines = 8) {
+  return [error.stdout?.toString(), error.stderr?.toString(), error.message]
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+    .split('\n')
+    .slice(-lines)
+    .join(' | ');
+}
 
 async function req(method, url) {
   try {
@@ -144,13 +153,25 @@ for (const p of ['/materials', '/materials/showroom', '/services/china-sourcing'
   else ng(`GET ${p}`, `${st ?? 'unreachable'}`);
 }
 
-// ─── 3d. 材料产品价格区间 UI 源码契约 ─────────────────────────────────────
-console.log('\n[3d] 材料产品价格区间 UI 契约');
+// ─── 3d. 材料产品价格区间（源码契约 + DOM 行为 + 本地 DB controller）────
+console.log('\n[3d] 材料产品价格区间公开展示契约');
 try {
   execSync('node scripts/harness/material-price-range-ui.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('supplier/admin 产品价格区间入口与预览');
 } catch (e) {
-  ng('材料产品价格区间 UI 契约', (e.stdout?.toString() || e.stderr?.toString() || e.message || '').trim().split('\n').slice(-8).join(' | '));
+  ng('材料产品价格区间 UI 契约', commandTail(e));
+}
+try {
+  execSync('node --test src/lib/productPriceDisplay.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('公开产品价格 DOM 行为');
+} catch (e) {
+  ng('公开产品价格 DOM 行为', commandTail(e));
+}
+try {
+  execSync('node scripts/harness/material-public-price-api.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('公开产品价格本地 DB controller 契约');
+} catch (e) {
+  ng('公开产品价格本地 DB controller 契约', commandTail(e));
 }
 
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
