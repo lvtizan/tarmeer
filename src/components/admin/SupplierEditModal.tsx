@@ -7,6 +7,7 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import PhoneCountryInput from '@/components/ui/PhoneCountryInput';
 import { showToast } from '@/components/ui/Toast';
 import { showConfirm } from '@/components/ui/ConfirmModal';
+import { PRODUCT_CURRENCIES, PRODUCT_UNITS, parseProductPriceRange } from '@/lib/supplierProductUnits';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SupplierData {
@@ -30,6 +31,11 @@ interface Product {
   category: string | null;
   image_url: string;
   sort_order: number;
+  price?: number | null;
+  price_max?: number | null;
+  price_unit?: string | null;
+  price_currency?: string | null;
+  price_from?: number | boolean | null;
 }
 
 // 产品分类枚举（两级：大类 parent_value=null / 子类 parent_value=大类value）
@@ -66,6 +72,11 @@ function ProductAddModal({
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [price, setPrice] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [priceUnit, setPriceUnit] = useState('');
+  const [priceCurrency, setPriceCurrency] = useState('');
+  const [priceFrom, setPriceFrom] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,11 +106,23 @@ function ProductAddModal({
 
   const handleSave = async () => {
     if (!imageUrl) { showToast('请先上传图片', 'error'); return; }
+    const parsed = parseProductPriceRange(price, priceMax);
+    if (!parsed.ok) {
+      showToast(parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+        : parsed.reason === 'below_min' ? '最高价必须大于或等于最低价。'
+          : '最高价必须是大于 0、最多两位小数的数字，或留空。', 'error');
+      return;
+    }
+    if (!priceUnit) { showToast('请选择单位。', 'error'); return; }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products`, {
         method: 'POST',
-        body: JSON.stringify({ title: title.trim() || null, category: category || null, image_url: imageUrl }),
+        body: JSON.stringify({
+          title: title.trim() || null, category: category || null, image_url: imageUrl,
+          price: parsed.min, price_max: parsed.max, price_unit: priceUnit,
+          price_currency: priceCurrency || null, price_from: parsed.max == null && priceFrom ? 1 : 0,
+        }),
       }) as { product: Product };
       onAdded(data.product);
       showToast('产品已添加', 'success');
@@ -166,12 +189,19 @@ function ProductAddModal({
               className="w-full"
             />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className={labelCls}>最低价 *</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" /></div>
+            <div><label className={labelCls}>最高价（选填）</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="0.00" /></div>
+            <div><label className={labelCls}>币种</label><select className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label className={labelCls}>单位 *</label><select className={inputCls + ' bg-white'} value={priceUnit} onChange={e => setPriceUnit(e.target.value)}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}</select></div>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition">取消</button>
           <button
             onClick={handleSave}
-            disabled={saving || !imageUrl}
+            disabled={saving || uploading}
             className="px-5 h-9 text-sm bg-[#b8864a] text-white rounded-lg hover:bg-[#a07540] disabled:opacity-50 font-medium transition"
           >
             {saving ? '保存中...' : '保存'}
@@ -198,14 +228,37 @@ function ProductEditInlineModal({
 }) {
   const [title, setTitle] = useState(product.title || '');
   const [category, setCategory] = useState(product.category || '');
+  const [price, setPrice] = useState(product.price != null ? String(product.price) : '');
+  const [priceMax, setPriceMax] = useState(product.price_max != null ? String(product.price_max) : '');
+  const [priceUnit, setPriceUnit] = useState(product.price_unit || '');
+  const [priceCurrency, setPriceCurrency] = useState(product.price_currency || '');
+  const [priceFrom, setPriceFrom] = useState(!!product.price_from);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    const priceDirty = price !== (product.price != null ? String(product.price) : '')
+      || priceMax !== (product.price_max != null ? String(product.price_max) : '')
+      || priceUnit !== (product.price_unit || '') || priceCurrency !== (product.price_currency || '')
+      || priceFrom !== !!product.price_from;
+    const parsed = parseProductPriceRange(price, priceMax);
+    if (priceDirty && !parsed.ok) {
+      showToast(parsed.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+        : parsed.reason === 'below_min' ? '最高价必须大于或等于最低价。'
+          : '最高价必须是大于 0、最多两位小数的数字，或留空。', 'error');
+      return;
+    }
+    if (priceDirty && !priceUnit) { showToast('请选择单位。', 'error'); return; }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title: title.trim() || null, category: category || null }),
+        body: JSON.stringify({
+          title: title.trim() || null, category: category || null,
+          ...(priceDirty && parsed.ok ? {
+            price: parsed.min, price_max: parsed.max, price_unit: priceUnit,
+            price_currency: priceCurrency || null, price_from: parsed.max == null && priceFrom ? 1 : 0,
+          } : {}),
+        }),
       }) as { product: Product };
       onSaved(data.product);
       showToast('产品已更新', 'success');
@@ -243,6 +296,13 @@ function ProductEditInlineModal({
               className="w-full"
             />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className={labelCls}>最低价 *</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" /></div>
+            <div><label className={labelCls}>最高价（选填）</label><input type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="0.00" /></div>
+            <div><label className={labelCls}>币种</label><select className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label className={labelCls}>单位 *</label><select className={inputCls + ' bg-white'} value={priceUnit} onChange={e => setPriceUnit(e.target.value)}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}{priceUnit && !PRODUCT_UNITS.some(u => u.value === priceUnit) && <option value={priceUnit}>{priceUnit}</option>}</select></div>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 rounded-lg hover:bg-stone-100 transition">取消</button>

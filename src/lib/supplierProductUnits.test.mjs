@@ -78,10 +78,11 @@ test('normalizeProductPriceFields：规范 DECIMAL 字符串、单位、币种�
     price: 120.5, price_max: 200, price_unit: 'SQM', price_currency: 'AED', price_from: true,
   });
   assert.equal(productUnits.normalizeProductPriceFields({ price: '120', price_from: '0' }).price_from, false);
+  assert.equal(productUnits.normalizeProductPriceFields({ price: 1.15 }).price, 1.15);
 });
 
 test('normalizeProductPriceFields：拒绝非规范价格及脏字段', () => {
-  for (const price of ['', '   ', '1e3', '1.234', 0, -1, Infinity, true, [], {}]) {
+  for (const price of ['', '   ', '1e3', '1.234', 1.234, 9999999999.990002, 0, -1, Infinity, true, [], {}]) {
     assert.equal(productUnits.normalizeProductPriceFields({ price }).price, null, `应拒绝 ${String(price)}`);
   }
   assert.deepEqual(productUnits.normalizeProductPriceFields({
@@ -120,5 +121,23 @@ test('parsePriceInput：空值与非法值各自报因，绝不静默', () => {
 
 test('parsePriceInput：科学计数/Infinity 不被当成有效价格', () => {
   assert.deepEqual(parsePriceInput('Infinity'), { ok: false, reason: 'invalid' });
-  assert.equal(parsePriceInput('1e3').ok, true); // Number('1e3')=1000，合法数字
+  assert.deepEqual(parsePriceInput('1e3'), { ok: false, reason: 'invalid' });
+  assert.deepEqual(parsePriceInput('1.234'), { ok: false, reason: 'invalid' });
+});
+
+test('parseProductPriceRange：最低价必填，最高价留空规范为 null', () => {
+  assert.deepEqual(productUnits.parseProductPriceRange('', ''), { ok: false, field: 'min', reason: 'required' });
+  assert.deepEqual(productUnits.parseProductPriceRange('120.50', '  '), { ok: true, min: 120.5, max: null });
+});
+
+test('parseProductPriceRange：最高价必须是规范正数且最多两位小数', () => {
+  for (const max of ['0', '-1', '1e3', '200.001', 'abc']) {
+    assert.deepEqual(productUnits.parseProductPriceRange('120', max), { ok: false, field: 'max', reason: 'invalid' });
+  }
+});
+
+test('parseProductPriceRange：最高价不得低于最低价', () => {
+  assert.deepEqual(productUnits.parseProductPriceRange('120', '119.99'), { ok: false, field: 'max', reason: 'below_min' });
+  assert.deepEqual(productUnits.parseProductPriceRange('120', '120'), { ok: true, min: 120, max: 120 });
+  assert.deepEqual(productUnits.parseProductPriceRange('120', '200'), { ok: true, min: 120, max: 200 });
 });

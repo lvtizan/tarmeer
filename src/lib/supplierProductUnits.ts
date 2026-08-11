@@ -53,7 +53,9 @@ export function isValidCurrency(currency: unknown): currency is ProductCurrency 
 const DECIMAL_PRICE_RE = /^\d+(?:\.\d{1,2})?$/;
 
 function normalizePositivePrice(value: unknown): number | null {
-  if (typeof value === 'number') return Number.isFinite(value) && value > 0 ? value : null;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value > 0 && DECIMAL_PRICE_RE.test(String(value)) ? value : null;
+  }
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   if (!DECIMAL_PRICE_RE.test(trimmed)) return null;
@@ -107,9 +109,27 @@ export function parsePriceInput(raw: string): PriceParseResult {
   const s = raw.trim();
   if (!s) return { ok: false, reason: 'empty' };
   if (RANGE_RE.test(s)) return { ok: false, reason: 'range' };
+  if (!DECIMAL_PRICE_RE.test(s)) return { ok: false, reason: 'invalid' };
   const n = Number(s);
   if (!Number.isFinite(n) || n <= 0) return { ok: false, reason: 'invalid' };
   return { ok: true, value: n };
+}
+
+export type ProductPriceRangeParseResult =
+  | { ok: true; min: number; max: number | null }
+  | { ok: false; field: 'min' | 'max'; reason: 'required' | 'invalid' | 'below_min' };
+
+/** Parse the two form fields together so every product entry point enforces one range contract. */
+export function parseProductPriceRange(minRaw: string, maxRaw: string): ProductPriceRangeParseResult {
+  const min = parsePriceInput(minRaw);
+  if (!min.ok) {
+    return { ok: false, field: 'min', reason: min.reason === 'empty' ? 'required' : 'invalid' };
+  }
+  if (!maxRaw.trim()) return { ok: true, min: min.value, max: null };
+  const max = parsePriceInput(maxRaw);
+  if (!max.ok) return { ok: false, field: 'max', reason: 'invalid' };
+  if (max.value < min.value) return { ok: false, field: 'max', reason: 'below_min' };
+  return { ok: true, min: min.value, max: max.value };
 }
 
 /** 把存储的 unit 值转成显示文本（预设码→中文 label；自定义→原样）。 */

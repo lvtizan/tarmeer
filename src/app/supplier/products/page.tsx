@@ -6,7 +6,7 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { ScreenSpinner } from '@/components/ui/Spinner';
-import { PRODUCT_UNITS, PRODUCT_CURRENCIES, formatProductPrice, parsePriceInput, isValidCurrency } from '@/lib/supplierProductUnits';
+import { PRODUCT_UNITS, PRODUCT_CURRENCIES, formatProductPrice, parseProductPriceRange, isValidCurrency } from '@/lib/supplierProductUnits';
 import { getCountry } from '@/lib/country';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
@@ -30,6 +30,7 @@ interface Product {
   image_url: string;
   image_urls?: string[];
   price?: number | null;
+  price_max?: number | null;
   price_unit?: string | null;
   price_currency?: string | null;
   price_from?: 0 | 1 | boolean;
@@ -72,6 +73,7 @@ export default function SupplierProductsPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [newPrice, setNewPrice] = useState('');
+  const [newPriceMax, setNewPriceMax] = useState('');
   const [newUnit, setNewUnit] = useState('');          // '' = 未选；'__custom__' = 自定义
   const [newUnitCustom, setNewUnitCustom] = useState('');
   const [newPriceFrom, setNewPriceFrom] = useState(false);
@@ -112,21 +114,17 @@ export default function SupplierProductsPage() {
 
   const CURRENCY_OPTIONS = PRODUCT_CURRENCIES.map(c => ({ value: c, label: c }));
 
-  // 价格解析失败的三种原因各给可执行的提示——区间价必须告诉供应商正确填法（填最低价 + 勾起价）。
-  const PRICE_ERRORS: Record<'empty' | 'range' | 'invalid', string> = {
-    empty: t('Please enter a price.', '请填写价格。'),
-    range: t('Enter a single number, not a range. For a range, enter the lowest price and tick "Price is from".',
-      '价格只能填一个数字，不能填区间。区间价请填最低价，并勾选「此为起价」。'),
-    invalid: t('Please enter a valid number greater than 0.', '请填写大于 0 的数字。'),
-  };
-
-  const priceParse = parsePriceInput(newPrice);
-  // 只在用户已经输入过内容时提示——空框还没填不算错
-  const priceHint = newPrice.trim() !== '' && !priceParse.ok ? PRICE_ERRORS[priceParse.reason] : '';
+  const priceRange = parseProductPriceRange(newPrice, newPriceMax);
+  const priceHint = priceRange.ok || (!newPrice.trim() && !newPriceMax.trim()) ? ''
+    : priceRange.field === 'min'
+      ? t('Minimum price must be a positive number with up to 2 decimal places.', '最低价必须是大于 0、最多两位小数的数字。')
+      : priceRange.reason === 'below_min'
+        ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
+        : t('Maximum price must be a positive number with up to 2 decimal places.', '最高价必须是大于 0、最多两位小数的数字。');
 
   const resetForm = () => {
     setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
-    setNewPrice(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
+    setNewPrice(''); setNewPriceMax(''); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
     setNewCurrency(currency);
     setNewTitleEn(''); setNewDescEn('');
     setMsg('');
@@ -148,6 +146,7 @@ export default function SupplierProductsPage() {
     const imgs = Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls : (p.image_url ? [p.image_url] : []);
     setNewImageUrls(imgs);
     setNewPrice(p.price != null ? String(p.price) : '');
+    setNewPriceMax(p.price_max != null ? String(p.price_max) : '');
     const unit = p.price_unit || '';
     if (unit && PRODUCT_UNITS.some(u => u.value === unit)) { setNewUnit(unit); setNewUnitCustom(''); }
     else if (unit) { setNewUnit('__custom__'); setNewUnitCustom(unit); }
@@ -181,9 +180,15 @@ export default function SupplierProductsPage() {
   // 新增(POST) / 编辑(PUT) 共用保存逻辑，按 editingId 分支
   const handleSave = async () => {
     if (newImageUrls.length === 0) { setMsg(t('Please upload at least one image.', '请至少上传一张图片。')); return; }
-    const parsed = parsePriceInput(newPrice);
-    if (!parsed.ok) { setMsg(PRICE_ERRORS[parsed.reason]); return; }
-    const priceNum = parsed.value;
+    const parsed = parseProductPriceRange(newPrice, newPriceMax);
+    if (!parsed.ok) {
+      setMsg(parsed.field === 'min'
+        ? t('Enter a minimum price greater than 0 with up to 2 decimal places.', '请填写大于 0、最多两位小数的最低价。')
+        : parsed.reason === 'below_min'
+          ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
+          : t('Enter a maximum price greater than 0 with up to 2 decimal places, or leave it blank.', '最高价请填写大于 0、最多两位小数的数字，或留空。'));
+      return;
+    }
     const unitVal = newUnit === '__custom__' ? newUnitCustom.trim() : newUnit;
     if (!unitVal) { setMsg(t('Please select or enter a unit.', '请选择或填写单位。')); return; }
     setSaving(true);
@@ -200,10 +205,8 @@ export default function SupplierProductsPage() {
           description_translated: newDescEn || null,
           category: newCat || null,
           image_urls: newImageUrls,
-          price: priceNum,
-          price_unit: unitVal,
-          price_currency: newCurrency,
-          price_from: newPriceFrom,
+          price: parsed.min, price_max: parsed.max, price_unit: unitVal,
+          price_currency: newCurrency, price_from: parsed.max == null && newPriceFrom,
           // 编辑时回传原 sort_order：后端 updateProduct 用 sort_order=? (非 COALESCE)，
           // 不回传会被重写成 0，将来接入拖拽排序会乱序。JSON.stringify 会丢弃 undefined（新增时不发）。
           sort_order: isEdit ? (products.find(p => p.id === editingId)?.sort_order ?? 0) : undefined,
@@ -274,22 +277,31 @@ export default function SupplierProductsPage() {
               : categoryOptions}
             value={newCat} onChange={setNewCat} />
         </div>
-        <div>
-          <label className={labelCls}>{t('Price *', '价格 *')}</label>
+        <div className="sm:col-span-2">
+          <label className={labelCls}>{t('Price range', '价格区间')}</label>
           <div className="flex items-center gap-2">
             {/* 币种可选：中国供应商常按人民币报价，站点币种只作默认值 */}
             <div className="w-[104px] shrink-0">
               <AdminSelect options={CURRENCY_OPTIONS} value={newCurrency} onChange={setNewCurrency} />
             </div>
-            {/* 必须是 text：type="number" 会把区间价等非法输入静默清空(值读成空串)，用户看得见却提交不了 */}
-            <input type="text" inputMode="decimal" value={newPrice} onChange={e => setNewPrice(e.target.value)}
-              placeholder="0.00" className={inputCls} />
+            <div className="grid flex-1 grid-cols-2 gap-2">
+              <div>
+                <label className="mb-1 block text-xs text-stone-500">{t('Minimum price *', '最低价 *')}</label>
+                <input type="text" inputMode="decimal" value={newPrice} onChange={e => setNewPrice(e.target.value)}
+                  placeholder="0.00" className={`${inputCls} bg-white`} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-stone-500">{t('Maximum price (optional)', '最高价（选填）')}</label>
+                <input type="text" inputMode="decimal" value={newPriceMax} onChange={e => setNewPriceMax(e.target.value)}
+                  placeholder="0.00" className={`${inputCls} bg-white`} />
+              </div>
+            </div>
           </div>
           {priceHint && <p className="mt-1.5 text-xs text-red-600">{priceHint}</p>}
           <label className="mt-2 flex items-center gap-2 text-xs text-stone-500 cursor-pointer">
             <input type="checkbox" checked={newPriceFrom} onChange={e => setNewPriceFrom(e.target.checked)}
               className="rounded border-stone-300 text-[#b8864a] focus:ring-[#B8864A]/30" />
-            {t('Price is "from" (starting price)', '此为起价（from）')}
+            {t('Show as a starting price when no maximum is provided', '未填写最高价时显示为起价')}
           </label>
         </div>
         <div>
@@ -409,7 +421,7 @@ export default function SupplierProductsPage() {
                 {p.description && (
                   <p className="text-xs text-stone-500 line-clamp-2 mt-0.5">{p.description}</p>
                 )}
-                {(() => { const txt = formatProductPrice(p.price, p.price_unit ?? null, !!p.price_from, p.price_currency || currency); return txt ? <p className="text-sm font-semibold text-[#b8864a] mt-1">{txt}</p> : null; })()}
+                {(() => { const txt = formatProductPrice(p.price, p.price_unit ?? null, !!p.price_from, p.price_currency || currency, p.price_max); return txt ? <p className="text-sm font-semibold text-[#b8864a] mt-1">{txt}</p> : null; })()}
               </div>
               <button onClick={() => handleDelete(p.id)}
                 className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
