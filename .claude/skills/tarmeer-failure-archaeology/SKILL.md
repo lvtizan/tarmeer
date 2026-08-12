@@ -147,6 +147,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：新增 pre-listen 启动门禁，生产以 strict 模式 await required migration，成功后才 listen；失败先关闭 DB pool，再向上传播并设置失败退出。autoMigrate 默认模式继续保持维护脚本的既有容错契约。
 - **预防**：所有公开查询依赖的 required schema migration 必须是 readiness 前置条件；启动顺序用行为测试验证「pending 不监听 / reject cleanup 且不监听」，禁止只在 listen callback 内补 schema。
 
+### FA-23 Admin 密码恢复入口打到通用 auth + 材料产品卡片只有局部可点（2026-08-12）
+- **现象**：后台用户在 `/admin/login` 输入旧/错误密码只看到 `Invalid email or password.`；同时 `/materials` 热门/搜索产品卡看起来整卡可点，但部分区域或无 supplier slug 的卡片点不进去。
+- **根因**：生产核查显示目标 admin 账号存在、启用、bcrypt hash 正常，登录失败属于凭据不匹配；可修复缺口是后台忘记密码页仍直连 `/api/auth/forgot-password`，没有强制走 admin 专用 reset flow。材料页产品卡只把图片或 `View Supplier` 局部包成链接，且旧逻辑可能对缺 slug 生成 `#`，交互语义不清。
+- **修复**：`/admin/forgot-password` 改为调用 `adminApi.forgotPassword()`，失败文案泛化；热门/搜索产品卡在合法 `supplier_slug` 时整卡链接到 `/materials/suppliers/{slug}`，非法/缺失 slug 渲染为普通卡片；新增 `scripts/harness/admin-materials-clickability.mjs` 并接入 smoke。
+- **预防**：登录失败先查账号状态、hash 长度和 reset flow，不要弱化登录校验；任何“卡片可点”UI 必须让整卡语义与视觉一致，无合法目标时不得伪装为链接或使用 `href="#"`；相关行为进入 smoke 静态守卫并用浏览器点击验证补证。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```

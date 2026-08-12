@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { adminApi } from '@/lib/adminApi';
 
 export default function AdminForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -16,15 +17,10 @@ export default function AdminForgotPasswordPage() {
     setError(null);
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) throw new Error('Failed to send reset email.');
+      await adminApi.forgotPassword(email);
       setSuccess(true);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset email.');
+    } catch {
+      setError('Failed to send reset email.');
     } finally {
       setLoading(false);
     }

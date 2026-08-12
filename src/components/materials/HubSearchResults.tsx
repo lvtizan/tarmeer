@@ -5,6 +5,10 @@ import { ArrowRight } from 'lucide-react';
 import type { SearchProduct, SearchSupplier } from '@/lib/materialMacros';
 import ProductPriceLine from './ProductPriceLine';
 
+function isValidSupplierSlug(slug: string | null): slug is string {
+  return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
+}
+
 export default function HubSearchResults({
   type,
   results,
@@ -45,11 +49,9 @@ export default function HubSearchResults({
         <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 [column-fill:_balance]">
           {results.map((item) => {
             const r = item as SearchProduct;
-            return (
-              <div
-                key={r.id}
-                className="group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm"
-              >
+            const supplierSlug = isValidSupplierSlug(r.supplier_slug) ? r.supplier_slug : null;
+            const card = (
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={r.image_url}
@@ -62,16 +64,26 @@ export default function HubSearchResults({
                   {r.supplier_name && (
                     <p className="mt-0.5 text-xs text-stone-500">{r.supplier_name}</p>
                   )}
-                  {r.supplier_slug && (
-                    <Link
-                      href={`/materials/suppliers/${r.supplier_slug}`}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#b8864a] transition hover:text-[#a07640]"
-                    >
+                  {supplierSlug && (
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#b8864a] transition group-hover:text-[#a07640]">
                       View Supplier
                       <ArrowRight className="h-3 w-3" />
-                    </Link>
+                    </span>
                   )}
                 </div>
+              </>
+            );
+            const className = 'group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm';
+            if (supplierSlug) {
+              return (
+                <Link key={r.id} href={`/materials/suppliers/${supplierSlug}`} className={`${className} cursor-pointer`}>
+                  {card}
+                </Link>
+              );
+            }
+            return (
+              <div key={r.id} className={className}>
+                {card}
               </div>
             );
           })}

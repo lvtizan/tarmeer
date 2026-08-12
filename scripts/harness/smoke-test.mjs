@@ -187,6 +187,12 @@ try {
 } catch (e) {
   ng('公开产品价格本地 DB controller 契约', commandTail(e));
 }
+try {
+  execSync('node scripts/harness/admin-materials-clickability.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('admin 重置入口与材料卡片点击契约');
+} catch (e) {
+  ng('admin 重置入口与材料卡片点击契约', commandTail(e));
+}
 
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
 // 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
