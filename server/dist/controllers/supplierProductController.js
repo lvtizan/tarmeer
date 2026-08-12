@@ -21,6 +21,7 @@ const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
 const translate_1 = require("../lib/translate");
 const productJsonFields_1 = require("../lib/productJsonFields");
+const productPriceRange_1 = require("../lib/productPriceRange");
 const supplierRedact_1 = require("../lib/supplierRedact");
 // ── 公开产品 feed（中国新材料改版 spec §3.1，additive：不改动任何既有端点行为）──
 // 应用场景 slug → 存量 category 兜底映射（spec docs/plans/china-materials-revamp-spec.md §2.3）。
@@ -38,7 +39,7 @@ const SCENE_CATEGORY_FALLBACK = {
 // 公开产品 feed 的 SELECT/JOIN 片段：供应商字段平铺（spec §3.1 契约）。
 // 去标识（P0，对齐 redactPublicSupplier/FA-14）：真实厂名/name_zh 只取来遮蔽用，不外发；logo 不外发。
 const PUBLIC_PRODUCT_SELECT = `p.id, p.title, p.description, p.category, p.image_url, p.image_urls,
-       p.specs, p.certifications, p.application_scenes, p.price, p.price_unit, p.price_from,
+       p.specs, p.certifications, p.application_scenes, p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
        p.title_translated, p.description_translated,
        sp.id AS supplier_id, sp.slug AS supplier_slug, sp.origin AS supplier_origin,
        sp.company_name AS supplier_real_name, sp.name_zh AS supplier_real_name_zh,
@@ -175,18 +176,23 @@ function normalizeCurrency(value) {
     return typeof value === 'string' && PRODUCT_CURRENCIES.includes(value) ? value : null;
 }
 function validatePrice(body) {
-    const price = Number(body.price);
-    if (!Number.isFinite(price) || price <= 0) {
-        return 'A valid price greater than 0 is required.';
-    }
+    const price = (0, productPriceRange_1.parseProductPrice)(body.price, 'price');
+    if (price.kind !== 'valid')
+        return { error: price.error || 'price is required.' };
+    const priceMax = (0, productPriceRange_1.parseProductPrice)(body.price_max, 'price_max', { allowClear: true });
+    if (priceMax.kind === 'invalid')
+        return { error: priceMax.error };
+    const boundsError = (0, productPriceRange_1.validateProductPriceRange)(price, priceMax);
+    if (boundsError)
+        return { error: boundsError };
     const unit = typeof body.price_unit === 'string' ? body.price_unit.trim() : '';
     if (unit.length === 0) {
-        return 'Price unit is required.';
+        return { error: 'Price unit is required.' };
     }
     if (body.price_currency !== undefined && body.price_currency !== null && normalizeCurrency(body.price_currency) === null) {
-        return `Unsupported currency. Allowed: ${PRODUCT_CURRENCIES.join(', ')}.`;
+        return { error: `Unsupported currency. Allowed: ${PRODUCT_CURRENCIES.join(', ')}.` };
     }
-    return null; // ok
+    return { price: price.value, priceMax: priceMax.kind === 'valid' ? priceMax.value : null };
 }
 async function uploadProductImage(req, res) {
     try {
@@ -301,14 +307,14 @@ async function addProduct(req, res) {
             : image_url ? [image_url] : [];
         if (urls.length === 0)
             return res.status(400).json({ error: 'At least one image is required.' });
-        const priceErr = validatePrice(req.body);
-        if (priceErr)
-            return res.status(400).json({ error: priceErr });
+        const parsedPrice = validatePrice(req.body);
+        if (parsedPrice.error)
+            return res.status(400).json({ error: parsedPrice.error });
         const primaryUrl = urls[0];
         const urlsJson = JSON.stringify(urls);
         // 供应商门户：specs/certifications/application_scenes 随产品落库（生产已上线的门户能力，reconcile 保留）
         const { specs, certifications, application_scenes } = req.body;
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_unit, price_currency, price_from, title_translated, description_translated, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, Number(price), price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes)]);
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_max, price_unit, price_currency, price_from, title_translated, description_translated, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, parsedPrice.price, parsedPrice.priceMax, price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes)]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         const product = created[0];
@@ -332,15 +338,24 @@ async function updateProduct(req, res) {
         const [existing] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [id, profileId]);
         if (existing.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
-        const priceErr = validatePrice(req.body);
-        if (priceErr)
-            return res.status(400).json({ error: priceErr });
+        const priceFields = ['price', 'price_max', 'price_unit', 'price_currency', 'price_from'];
+        const hasPriceGroup = priceFields.some((field) => Object.prototype.hasOwnProperty.call(req.body, field));
+        const parsedPrice = hasPriceGroup ? validatePrice(req.body) : null;
+        if (parsedPrice?.error)
+            return res.status(400).json({ error: parsedPrice.error });
         const urls = Array.isArray(image_urls) && image_urls.length > 0 ? image_urls : null;
         const primaryUrl = urls ? urls[0] : (image_url || null);
         const urlsJson = urls ? JSON.stringify(urls) : null;
         // 供应商门户：specs/certifications/application_scenes 只在传了数组时覆盖（COALESCE 忽略缺省，防误清空）
         const { specs, certifications, application_scenes } = req.body;
-        await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_unit=?, price_currency=?, price_from=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0, Number(price), price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), id]);
+        const commonParams = [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0];
+        const contentParams = [title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), id];
+        if (hasPriceGroup) {
+            await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_max=?, price_unit=?, price_currency=?, price_from=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [...commonParams, parsedPrice.price, parsedPrice.priceMax, price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, ...contentParams]);
+        }
+        else {
+            await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [...commonParams, ...contentParams]);
+        }
         const [updated] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         res.json({ product: updated[0] });
     }

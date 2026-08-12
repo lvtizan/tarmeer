@@ -74,6 +74,8 @@ const corsOrigins_1 = require("./lib/corsOrigins");
 const rateLimitPolicy_1 = require("./lib/rateLimitPolicy");
 const jwtManager_1 = require("./lib/jwtManager");
 const autoMigrate_1 = require("./lib/autoMigrate");
+const startServer_1 = require("./lib/startServer");
+const database_1 = __importDefault(require("./config/database"));
 const weightCalculator_1 = require("./lib/weightCalculator");
 const passport_1 = __importDefault(require("./middleware/passport"));
 dotenv_1.default.config();
@@ -567,21 +569,37 @@ function scheduleWeightCalculation() {
     // Schedule next run
     setTimeout(run, getNextRun());
 }
-app.listen(PORT, async () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Environment: ${config_1.default.nodeEnv}`);
-    console.log(`🔒 Security: Helmet enabled, Rate limiting active`);
-    // Ensure nginx can traverse the app root directory.
-    // tar extraction during deploy resets this dir to 700 (macOS mktemp default),
-    // blocking nginx from serving /uploads/ files (403 Forbidden).
-    // __dirname = /tarmeer/tarmeer_api/dist → resolve('..')  = /tarmeer/tarmeer_api
-    try {
-        fs_1.default.chmodSync(path_1.default.resolve(__dirname, '..'), 0o701);
-    }
-    catch { /* non-fatal */ }
-    // 启动后自动检查并补齐数据库结构
-    await (0, autoMigrate_1.runAutoMigrate)();
-    // Weight calculation scheduler
-    scheduleWeightCalculation();
-});
+async function startProductionServer(dependencies = {}) {
+    const runAutoMigrate = dependencies.runAutoMigrate || autoMigrate_1.runAutoMigrate;
+    const cleanup = dependencies.cleanup || (() => database_1.default.end());
+    const listen = dependencies.listen || (() => new Promise((resolve, reject) => {
+        const onStartupError = (error) => reject(error);
+        const server = app.listen(PORT, () => {
+            server.off('error', onStartupError);
+            console.log(`🚀 Server running on port ${PORT}`);
+            console.log(`📍 Environment: ${config_1.default.nodeEnv}`);
+            console.log(`🔒 Security: Helmet enabled, Rate limiting active`);
+            // Ensure nginx can traverse the app root directory.
+            try {
+                fs_1.default.chmodSync(path_1.default.resolve(__dirname, '..'), 0o701);
+            }
+            catch { /* non-fatal */ }
+            scheduleWeightCalculation();
+            resolve(server);
+        });
+        server.once('error', onStartupError);
+    }));
+    return (0, startServer_1.startProductionServer)({
+        runAutoMigrate,
+        listen,
+        cleanup,
+    });
+}
+exports.startProductionServer = startProductionServer;
+if (require.main === module) {
+    startProductionServer().catch((error) => {
+        console.error('[startup] Server refused to start:', error);
+        process.exitCode = 1;
+    });
+}
 exports.default = app;

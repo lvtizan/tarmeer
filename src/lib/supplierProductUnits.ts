@@ -37,9 +37,54 @@ const UNIT_MAP = new Map(PRODUCT_UNITS.map(u => [u.value, u]));
 export const PRODUCT_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'] as const;
 export type ProductCurrency = (typeof PRODUCT_CURRENCIES)[number];
 
+export interface ProductPriceFields {
+  price: number | null;
+  price_max: number | null;
+  price_unit: string | null;
+  price_currency: ProductCurrency | null;
+  price_from: boolean;
+}
+
 /** 币种是否在白名单内。 */
 export function isValidCurrency(currency: unknown): currency is ProductCurrency {
   return typeof currency === 'string' && (PRODUCT_CURRENCIES as readonly string[]).includes(currency);
+}
+
+const DECIMAL_PRICE_RE = /^\d{1,10}(?:\.\d{1,2})?$/;
+const MAX_PRICE_CENTS = 999_999_999_999;
+
+function parseDecimalPrice(value: unknown): { value: number; cents: number } | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  if (typeof value === 'number' && (!Number.isFinite(value) || !Number.isSafeInteger(Math.trunc(value)))) return null;
+  const text = typeof value === 'string' ? value.trim() : String(value);
+  if (!DECIMAL_PRICE_RE.test(text)) return null;
+  const [whole, fraction = ''] = text.split('.');
+  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
+  if (!Number.isSafeInteger(cents) || cents <= 0 || cents > MAX_PRICE_CENTS) return null;
+  return { value: Number(text), cents };
+}
+
+function normalizePositivePrice(value: unknown): number | null {
+  return parseDecimalPrice(value)?.value ?? null;
+}
+
+/** 把不可信 API 行中的五个价格字段收窄为公共前端契约。 */
+export function normalizeProductPriceFields(value: unknown): ProductPriceFields {
+  const row = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const price = normalizePositivePrice(row.price);
+  const hasPriceMax = row.price_max != null;
+  const priceMax = hasPriceMax ? normalizePositivePrice(row.price_max) : null;
+  const validRange = price !== null && (!hasPriceMax || (priceMax !== null && priceMax >= price));
+  const unit = typeof row.price_unit === 'string' ? row.price_unit.trim() : '';
+  return {
+    price: validRange ? price : null,
+    price_max: validRange ? priceMax : null,
+    price_unit: unit || null,
+    price_currency: isValidCurrency(row.price_currency) ? row.price_currency : null,
+    price_from: row.price_from === true || row.price_from === 1 || row.price_from === '1',
+  };
 }
 
 /** 单位是否有效：预设码 或 非空自定义文本。 */
@@ -69,9 +114,59 @@ export function parsePriceInput(raw: string): PriceParseResult {
   const s = raw.trim();
   if (!s) return { ok: false, reason: 'empty' };
   if (RANGE_RE.test(s)) return { ok: false, reason: 'range' };
-  const n = Number(s);
-  if (!Number.isFinite(n) || n <= 0) return { ok: false, reason: 'invalid' };
-  return { ok: true, value: n };
+  const parsed = parseDecimalPrice(s);
+  if (!parsed) return { ok: false, reason: 'invalid' };
+  return { ok: true, value: parsed.value };
+}
+
+export type ProductPriceRangeParseResult =
+  | { ok: true; min: number; max: number | null }
+  | { ok: false; field: 'min' | 'max'; reason: 'required' | 'invalid' | 'below_min' };
+
+/** Parse the two form fields together so every product entry point enforces one range contract. */
+export function parseProductPriceRange(minRaw: string, maxRaw: string): ProductPriceRangeParseResult {
+  const min = parsePriceInput(minRaw);
+  if (!min.ok) {
+    return { ok: false, field: 'min', reason: min.reason === 'empty' ? 'required' : 'invalid' };
+  }
+  if (!maxRaw.trim()) return { ok: true, min: min.value, max: null };
+  const max = parsePriceInput(maxRaw);
+  if (!max.ok) return { ok: false, field: 'max', reason: 'invalid' };
+  const minCents = parseDecimalPrice(minRaw)?.cents;
+  const maxCents = parseDecimalPrice(maxRaw)?.cents;
+  if (minCents == null || maxCents == null) return { ok: false, field: 'max', reason: 'invalid' };
+  if (maxCents < minCents) return { ok: false, field: 'max', reason: 'below_min' };
+  return { ok: true, min: min.value, max: max.value };
+}
+
+export type ProductPriceSubmissionResult =
+  | { ok: true; payload: Partial<ProductPriceFields> }
+  | { ok: false; field: 'min' | 'max' | 'unit'; reason: 'required' | 'invalid' | 'below_min' };
+
+/** Shared save-boundary behavior for supplier portal and both admin product editors. */
+export function buildProductPriceSubmission(input: {
+  min: string;
+  max: string;
+  unit: string;
+  currency: string;
+  from: boolean;
+  dirty: boolean;
+}): ProductPriceSubmissionResult {
+  if (!input.dirty) return { ok: true, payload: {} };
+  const parsed = parseProductPriceRange(input.min, input.max);
+  if (!parsed.ok) return parsed;
+  const unit = input.unit.trim();
+  if (!unit) return { ok: false, field: 'unit', reason: 'required' };
+  return {
+    ok: true,
+    payload: {
+      price: parsed.min,
+      price_max: parsed.max,
+      price_unit: unit,
+      price_currency: isValidCurrency(input.currency) ? input.currency : null,
+      price_from: parsed.max == null && input.from,
+    },
+  };
 }
 
 /** 把存储的 unit 值转成显示文本（预设码→中文 label；自定义→原样）。 */
@@ -91,13 +186,23 @@ export function formatProductPrice(
   unit: string | null | undefined,
   from: boolean,
   currency: string,
+  priceMaxOrLang: number | null | undefined | 'zh' | 'en' = null,
   lang: 'zh' | 'en' = 'zh',
 ): string {
+  const legacyLang = typeof priceMaxOrLang === 'string' ? priceMaxOrLang : null;
+  const priceMax = legacyLang ? null : priceMaxOrLang;
+  const displayLang = legacyLang ?? lang;
   if (price == null || !Number.isFinite(Number(price)) || Number(price) <= 0) return '';
   const num = Number(price);
-  const amount = num.toLocaleString('en-US', { maximumFractionDigits: 2 });
-  const fromTxt = from ? (lang === 'en' ? ' (from)' : ' 起') : '';
-  const u = unitLabel(unit, lang);
+  const formatAmount = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  let amount = formatAmount(num);
+  if (priceMax != null) {
+    const max = Number(priceMax);
+    if (!Number.isFinite(max) || max <= 0 || max < num) return '';
+    amount += `–${formatAmount(max)}`;
+  }
+  const fromTxt = priceMax == null && from ? (displayLang === 'en' ? ' (from)' : ' 起') : '';
+  const u = unitLabel(unit, displayLang);
   const unitTxt = u ? ` / ${u}` : '';
   return `${currency} ${amount}${fromTxt}${unitTxt}`;
 }

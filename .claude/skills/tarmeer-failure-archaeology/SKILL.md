@@ -135,6 +135,18 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：① 两处价格框 `type="number"` → `type="text" inputMode="decimal"`，新增单一真相源 `parsePriceInput()`（`src/lib/supplierProductUnits.ts`）显式区分 `empty|range|invalid` 三种失败并各给可执行文案（区间价 → "填最低价并勾选『此为起价』"）。② 供应商门户提交按钮**只在 `saving/translating` 时置灰**，校验失败改为点击后报出具体原因，杜绝"哑巴灰按钮"。③ 新增 `supplier_products.price_currency`（VARCHAR(8) NULL）+ 白名单 `AED/CNY/USD/VND`，前后台均可选币种；`NULL` = 未指定，展示层回落供应商国家币种。④ 用例：单元 10/10（含 6 种区间写法 `-`/`~`/`～`/en dash/em dash/到/至）、新增 `scripts/harness/supplier-product-currency.mjs` 21/21（打真实 MySQL，含 admin 局部更新不误清 price）。
 - **预防**：① **禁止用 `<input type="number">` 承接用户手填的业务数值**——它会静默丢弃非法输入且不可见，用 `type="text" inputMode="decimal"` + 显式解析函数。② **禁止让提交按钮承担校验反馈**：按钮只反映"正在进行中"，校验失败必须由点击后的显式提示说明**哪一栏、怎么改**；置灰而不说明原因 = 用户无从自救（本次用户盯着单位栏找了半天，问题在价格栏）。③ 表单里凡是"系统自动推导、用户改不了"的字段（本次币种），要检查用户是否会**把它硬塞进旁边的自由文本框**——那是需求缺口的信号。④ 改表单校验必须**同时 Grep 所有写同一张表的入口**（本次供应商门户 + admin 弹窗同坑，admin 那处后果更重）。
 
+### FA-21 Supplier 详情 hydration 裸 fetch 覆盖正确 SSR 国家数据（2026-08-11）
+- **现象**：VN Supplier 详情首屏由 SSR 正确渲染 VN 数据，但 hydration 后客户端重新请求未携带国家，后端按默认 AE 返回并覆盖 state；新增价格行后还会把 AED 显示到 VN 页面，使串国更明显也更隐蔽（首屏与稳定态不一致）。
+- **根因**：`SupplierDetailClient` 的 detail/projects 客户端 fetch 只带 slug，既没有把 `country` 放进 URL 缓存键，也没有转发 `x-country`；effect 依赖也缺 country。SSR 链路正确不代表 hydration 链路自动继承入站国家。
+- **修复**：从 `useSiteLocale()` 经 `countryFromLang()` 得到当前国家；detail/projects 两个请求同时追加 `?country=` 与 `x-country`，并把 `country.code` 加入 effect 依赖；以 `country+slug` 作为已加载 identity，渲染阶段即挡住旧 identity，切换后清空旧 state，cleanup 标记阻止慢旧请求回写，失败也不保留旧实体 SSR seed；补 hydration 契约及价格 DOM 行为测试。
+- **预防**：继续执行 FA-17 的同一规则：所有按国家隔离的 SSR 页面，其客户端 hydration/refetch 也必须逐请求显式传 `?country=` + `x-country`；以「国家+路由实体」作为请求 identity，在 render 阶段先门控旧 identity，再清 state、取消或忽略过期请求后重取。验收同时观察 SSR HTML 与 hydration 后稳定 DOM，不能只验首屏。
+
+### FA-22 后端先监听再迁移，公开查询抢跑缺列（2026-08-11）
+- **现象**：后端端口已对外监听，但 `supplier_products.price_max` 等 required schema 仍在启动回调中 ALTER；此窗口公开 feed/detail 查询可能先到并因缺列 500。迁移失败又被吞掉，服务继续以不完整 schema 对外。
+- **根因**：`app.listen()` 先执行，`runAutoMigrate()` 放在 listen callback；同时 autoMigrate 顶层 catch 固定 non-fatal，调用方无法拒绝启动。
+- **修复**：新增 pre-listen 启动门禁，生产以 strict 模式 await required migration，成功后才 listen；失败先关闭 DB pool，再向上传播并设置失败退出。autoMigrate 默认模式继续保持维护脚本的既有容错契约。
+- **预防**：所有公开查询依赖的 required schema migration 必须是 readiness 前置条件；启动顺序用行为测试验证「pending 不监听 / reject cleanup 且不监听」，禁止只在 listen callback 内补 schema。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```

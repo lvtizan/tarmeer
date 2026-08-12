@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { SearchProduct, SearchSupplier } from '@/lib/materialMacros';
+import ProductPriceLine from './ProductPriceLine';
 
 export default function HubSearchResults({
   type,
@@ -57,6 +58,7 @@ export default function HubSearchResults({
                 />
                 <div className="p-3">
                   <p className="line-clamp-1 text-sm font-medium text-[#1c1917]">{r.title}</p>
+                  <ProductPriceLine product={r} />
                   {r.supplier_name && (
                     <p className="mt-0.5 text-xs text-stone-500">{r.supplier_name}</p>
                   )}

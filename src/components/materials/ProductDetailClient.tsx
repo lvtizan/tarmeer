@@ -15,6 +15,7 @@ import MaterialProductCard from './MaterialProductCard';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import { APPLICATION_SCENES, type PublicMaterialProduct, type SupplierCatalog } from '@/lib/materialsApi';
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
+import ProductPriceLine from './ProductPriceLine';
 
 // pdf.js 阅读器懒加载：只在客户端、独立 chunk，不进初始包（不看图册的用户零成本）
 // loading 占位预留 16:9 空间 → 避免标题短暂悬在塌陷的空白上 + 布局抖动(CLS)
@@ -94,6 +95,7 @@ function ProductHeading({ product, asH1 }: { product: PublicMaterialProduct; asH
       <Tag className="font-serif text-[24px] sm:text-[28px] text-[#1c1917] font-medium leading-tight mt-1">
         {name}
       </Tag>
+      <ProductPriceLine product={product} />
       {product.application_scenes.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {product.application_scenes.map((slug) => (

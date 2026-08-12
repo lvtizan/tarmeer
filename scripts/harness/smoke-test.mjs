@@ -21,6 +21,15 @@ let pass = 0, fail = 0;
 
 function ok(label) { console.log(`  \x1b[32m✓\x1b[0m ${label}`); pass++; }
 function ng(label, detail) { console.log(`  \x1b[31m✗\x1b[0m ${label}${detail ? ' — ' + detail : ''}`); fail++; }
+function commandTail(error, lines = 8) {
+  return [error.stdout?.toString(), error.stderr?.toString(), error.message]
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+    .split('\n')
+    .slice(-lines)
+    .join(' | ');
+}
 
 async function req(method, url) {
   try {
@@ -115,6 +124,14 @@ console.log('\n[2c] 新材料采购公开接口');
 }
 
 // ─── 3. Frontend reachability ────────────────────────────────────────────────
+console.log('\n[2d] 后端 required migration 启动门禁');
+try {
+  execSync('node --test server/dist/lib/startServer.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('required migration 完成后监听 / 失败拒绝启动');
+} catch (e) {
+  ng('后端 required migration 启动门禁', commandTail(e));
+}
+
 console.log('\n[3/3] Frontend reachability');
 const fStatus = await req('GET', FRONTEND);
 if (fStatus === null) {
@@ -144,6 +161,33 @@ for (const p of ['/materials', '/materials/showroom', '/services/china-sourcing'
   else ng(`GET ${p}`, `${st ?? 'unreachable'}`);
 }
 
+// ─── 3d. 材料产品价格区间（源码契约 + DOM 行为 + 本地 DB controller）────
+console.log('\n[3d] 材料产品价格区间公开展示契约');
+try {
+  execSync('node scripts/harness/material-price-range-ui.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('supplier/admin 产品价格区间入口与预览');
+} catch (e) {
+  ng('材料产品价格区间 UI 契约', commandTail(e));
+}
+try {
+  execSync('node --test src/lib/productPriceDisplay.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('公开产品价格 DOM 行为');
+} catch (e) {
+  ng('公开产品价格 DOM 行为', commandTail(e));
+}
+try {
+  execSync('node --test src/lib/materialPublicBehavior.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('产品表单 payload 与 Supplier identity 行为');
+} catch (e) {
+  ng('产品表单 payload 与 Supplier identity 行为', commandTail(e));
+}
+try {
+  execSync('node scripts/harness/material-public-price-api.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('公开产品价格本地 DB controller 契约');
+} catch (e) {
+  ng('公开产品价格本地 DB controller 契约', commandTail(e));
+}
+
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
 // 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
 // 不得硬编码,否则会与管理后台不一致(供应商品类踩坑 2026-06-30)。
@@ -153,7 +197,7 @@ import('fs').then(({ readFileSync, existsSync }) => {
   const guards = [
     {
       file: 'src/app/supplier/products/page.tsx',
-      mustInclude: '/public/supplier-categories',
+      mustInclude: '/suppliers/product-categories',
       forbid: /value:\s*['"](furniture|lighting|stone|curtains|hardware|flooring)['"]/,
       label: '供应商产品品类',
     },

@@ -7,6 +7,8 @@ import AdminSelect from '@/components/ui/AdminSelect';
 import PhoneCountryInput from '@/components/ui/PhoneCountryInput';
 import { showToast } from '@/components/ui/Toast';
 import { showConfirm } from '@/components/ui/ConfirmModal';
+import { getCountry } from '@/lib/country';
+import { PRODUCT_CURRENCIES, PRODUCT_UNITS, formatProductPrice, buildProductPriceSubmission } from '@/lib/supplierProductUnits';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SupplierData {
@@ -22,6 +24,7 @@ interface SupplierData {
   whatsapp: string | null;
   website: string | null;
   status: string;
+  country?: string;
 }
 
 interface Product {
@@ -30,6 +33,11 @@ interface Product {
   category: string | null;
   image_url: string;
   sort_order: number;
+  price?: number | null;
+  price_max?: number | null;
+  price_unit?: string | null;
+  price_currency?: string | null;
+  price_from?: number | boolean | null;
 }
 
 // 产品分类枚举（两级：大类 parent_value=null / 子类 parent_value=大类value）
@@ -66,6 +74,13 @@ function ProductAddModal({
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [price, setPrice] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [priceUnit, setPriceUnit] = useState('');
+  const [priceCurrency, setPriceCurrency] = useState('');
+  const [priceFrom, setPriceFrom] = useState(false);
+  const [priceError, setPriceError] = useState('');
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,11 +110,23 @@ function ProductAddModal({
 
   const handleSave = async () => {
     if (!imageUrl) { showToast('请先上传图片', 'error'); return; }
+    const priceSubmission = buildProductPriceSubmission({ min: price, max: priceMax, unit: priceUnit, currency: priceCurrency, from: priceFrom, dirty: true });
+    if (!priceSubmission.ok) {
+      const message = priceSubmission.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+        : priceSubmission.field === 'unit' ? '请选择单位。'
+        : priceSubmission.reason === 'below_min' ? '最高价必须大于或等于最低价。'
+          : '最高价必须是大于 0、最多两位小数的数字，或留空。';
+      setPriceErrorField(priceSubmission.field); setPriceError(message); showToast(message, 'error');
+      return;
+    }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products`, {
         method: 'POST',
-        body: JSON.stringify({ title: title.trim() || null, category: category || null, image_url: imageUrl }),
+        body: JSON.stringify({
+          title: title.trim() || null, category: category || null, image_url: imageUrl,
+          ...priceSubmission.payload,
+        }),
       }) as { product: Product };
       onAdded(data.product);
       showToast('产品已添加', 'success');
@@ -166,12 +193,20 @@ function ProductAddModal({
               className="w-full"
             />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><label htmlFor="quick-add-product-price-min" className={labelCls}>最低价 *</label><input id="quick-add-product-price-min" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => { setPrice(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'min' ? 'quick-add-product-price-error' : undefined} aria-invalid={priceErrorField === 'min'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-add-product-price-max" className={labelCls}>最高价（选填）</label><input id="quick-add-product-price-max" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => { setPriceMax(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'max' ? 'quick-add-product-price-error' : undefined} aria-invalid={priceErrorField === 'max'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-add-product-price-currency" className={labelCls}>币种</label><select id="quick-add-product-price-currency" className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label htmlFor="quick-add-product-price-unit" className={labelCls}>单位 *</label><select id="quick-add-product-price-unit" className={inputCls + ' bg-white'} value={priceUnit} onChange={e => { setPriceUnit(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'unit' ? 'quick-add-product-price-error' : undefined} aria-invalid={priceErrorField === 'unit'}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}</select></div>
+          </div>
+          {priceError && <p id="quick-add-product-price-error" role="alert" className="text-xs text-red-600">{priceError}</p>}
+          <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition">取消</button>
           <button
             onClick={handleSave}
-            disabled={saving || !imageUrl}
+            disabled={saving || uploading}
             className="px-5 h-9 text-sm bg-[#b8864a] text-white rounded-lg hover:bg-[#a07540] disabled:opacity-50 font-medium transition"
           >
             {saving ? '保存中...' : '保存'}
@@ -198,14 +233,37 @@ function ProductEditInlineModal({
 }) {
   const [title, setTitle] = useState(product.title || '');
   const [category, setCategory] = useState(product.category || '');
+  const [price, setPrice] = useState(product.price != null ? String(product.price) : '');
+  const [priceMax, setPriceMax] = useState(product.price_max != null ? String(product.price_max) : '');
+  const [priceUnit, setPriceUnit] = useState(product.price_unit || '');
+  const [priceCurrency, setPriceCurrency] = useState(product.price_currency || '');
+  const [priceFrom, setPriceFrom] = useState(!!product.price_from);
+  const [priceError, setPriceError] = useState('');
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    const priceDirty = price !== (product.price != null ? String(product.price) : '')
+      || priceMax !== (product.price_max != null ? String(product.price_max) : '')
+      || priceUnit !== (product.price_unit || '') || priceCurrency !== (product.price_currency || '')
+      || priceFrom !== !!product.price_from;
+    const priceSubmission = buildProductPriceSubmission({ min: price, max: priceMax, unit: priceUnit, currency: priceCurrency, from: priceFrom, dirty: priceDirty });
+    if (!priceSubmission.ok) {
+      const message = priceSubmission.field === 'min' ? '最低价必填，且必须是大于 0、最多两位小数的数字。'
+        : priceSubmission.field === 'unit' ? '请选择单位。'
+        : priceSubmission.reason === 'below_min' ? '最高价必须大于或等于最低价。'
+          : '最高价必须是大于 0、最多两位小数的数字，或留空。';
+      setPriceErrorField(priceSubmission.field); setPriceError(message); showToast(message, 'error');
+      return;
+    }
     setSaving(true);
     try {
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ title: title.trim() || null, category: category || null }),
+        body: JSON.stringify({
+          title: title.trim() || null, category: category || null,
+          ...priceSubmission.payload,
+        }),
       }) as { product: Product };
       onSaved(data.product);
       showToast('产品已更新', 'success');
@@ -243,6 +301,14 @@ function ProductEditInlineModal({
               className="w-full"
             />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><label htmlFor="quick-edit-product-price-min" className={labelCls}>最低价 *</label><input id="quick-edit-product-price-min" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={price} onChange={e => { setPrice(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'min' ? 'quick-edit-product-price-error' : undefined} aria-invalid={priceErrorField === 'min'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-edit-product-price-max" className={labelCls}>最高价（选填）</label><input id="quick-edit-product-price-max" type="text" inputMode="decimal" className={inputCls + ' bg-white'} value={priceMax} onChange={e => { setPriceMax(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'max' ? 'quick-edit-product-price-error' : undefined} aria-invalid={priceErrorField === 'max'} placeholder="0.00" /></div>
+            <div><label htmlFor="quick-edit-product-price-currency" className={labelCls}>币种</label><select id="quick-edit-product-price-currency" className={inputCls + ' bg-white'} value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)}><option value="">按国家</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label htmlFor="quick-edit-product-price-unit" className={labelCls}>单位 *</label><select id="quick-edit-product-price-unit" className={inputCls + ' bg-white'} value={priceUnit} onChange={e => { setPriceUnit(e.target.value); setPriceError(''); setPriceErrorField(null); }} aria-describedby={priceErrorField === 'unit' ? 'quick-edit-product-price-error' : undefined} aria-invalid={priceErrorField === 'unit'}><option value="">选择单位</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{u.zh} / {u.en}</option>)}{priceUnit && !PRODUCT_UNITS.some(u => u.value === priceUnit) && <option value={priceUnit}>{priceUnit}</option>}</select></div>
+          </div>
+          {priceError && <p id="quick-edit-product-price-error" role="alert" className="text-xs text-red-600">{priceError}</p>}
+          <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 rounded-lg hover:bg-stone-100 transition">取消</button>
@@ -593,7 +659,13 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                     <p className="text-sm">暂无产品</p>
                   </div>
                 )}
-                {products.map(product => (
+                {products.map(product => {
+                  const priceLabel = formatProductPrice(
+                    product.price, product.price_unit, !!product.price_from,
+                    product.price_currency || getCountry(data.country || 'ae').currency,
+                    product.price_max,
+                  );
+                  return (
                   <div key={product.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-stone-50 group">
                     <img src={product.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-stone-100" />
                     <div className="flex-1 min-w-0">
@@ -601,6 +673,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                         {product.title || <span className="text-stone-400">未命名</span>}
                       </p>
                       {product.category && <p className="text-xs text-stone-400">{product.category}</p>}
+                      {priceLabel && <p className="text-xs font-semibold text-[#b8864a]">{priceLabel}</p>}
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0">
                       <button
@@ -617,7 +690,8 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 <button
                   onClick={() => setShowAddProduct(true)}
                   className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-stone-300 text-sm text-stone-500 hover:border-[#b8864a] hover:text-[#b8864a] transition w-full justify-center"

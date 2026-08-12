@@ -12,6 +12,7 @@ import { resolveImageUrl } from '@/lib/imageUrl';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import type { PublicMaterialProduct } from '@/lib/materialsApi';
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
+import ProductPriceLine from './ProductPriceLine';
 
 export default function MaterialProductCard({ product }: { product: PublicMaterialProduct }) {
   const [open, setOpen] = useState(false);
@@ -49,6 +50,7 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
         <h3 className="mt-0.5 line-clamp-1 text-[15px] font-medium text-[#1c1917] transition-colors group-hover:text-[#b8864a]">
           {title}
         </h3>
+        <ProductPriceLine product={product} />
         {product.supplier_name && (
           <div className="mt-1.5 flex min-w-0 items-center gap-2">
             <span className="truncate text-xs text-stone-500">{product.supplier_name}</span>

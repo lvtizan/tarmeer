@@ -1,6 +1,7 @@
 // 新材料目录数据层 — 跨供应商产品 feed / 产品详情 / 应用场景字典
 // 契约见 docs/plans/china-materials-revamp-spec.md（§2.3 / §3.1）
 // SSR 与客户端解析方式对齐 publicApi.ts：country 同时走 query + x-country header。
+import { normalizeProductPriceFields, type ProductPriceFields } from '@/lib/supplierProductUnits';
 
 const API_BASE =
   typeof window === 'undefined'
@@ -26,7 +27,7 @@ export interface ProductSpec {
   value: string;
 }
 
-export interface PublicMaterialProduct {
+export interface PublicMaterialProduct extends ProductPriceFields {
   id: number;
   title: string | null;
   description: string | null;
@@ -36,9 +37,6 @@ export interface PublicMaterialProduct {
   specs: ProductSpec[];
   certifications: string[];
   application_scenes: string[];
-  price: number | null;
-  price_unit: string | null;
-  price_from: boolean;
   supplier_id: number;
   supplier_slug: string;
   supplier_name: string;
@@ -130,9 +128,7 @@ export function toMaterialProduct(row: any): PublicMaterialProduct {
     specs: normalizeSpecs(row.specs),
     certifications: normalizeStringArray(row.certifications),
     application_scenes: normalizeStringArray(row.application_scenes),
-    price: row.price != null && Number.isFinite(Number(row.price)) ? Number(row.price) : null,
-    price_unit: row.price_unit ?? null,
-    price_from: Boolean(row.price_from),
+    ...normalizeProductPriceFields(row),
     supplier_id: Number(row.supplier_id),
     supplier_slug: String(row.supplier_slug || ''),
     supplier_name: String(row.supplier_name || ''),

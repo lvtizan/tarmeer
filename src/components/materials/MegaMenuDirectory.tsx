@@ -11,6 +11,7 @@ import {
 } from '@/lib/materialMacros';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import ProductPriceLine from './ProductPriceLine';
 
 const GOLD = '#b8864a';
 const GOLD_DARK = '#a07640';
@@ -273,28 +274,31 @@ function MegaPanel({
             <p className="text-sm text-stone-400">No products yet.</p>
           ) : (
             products.map((p) => {
-              const img = (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={p.image_url}
-                  alt={p.title}
-                  width={80}
-                  height={80}
-                  loading="lazy"
-                  className="h-20 w-20 flex-none rounded-lg object-cover ring-1 ring-stone-200 transition-transform hover:scale-[1.03]"
-                />
+              const content = (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.image_url}
+                    alt={p.title}
+                    width={80}
+                    height={80}
+                    loading="lazy"
+                    className="h-20 w-20 flex-none rounded-lg object-cover ring-1 ring-stone-200 transition-transform hover:scale-[1.03]"
+                  />
+                  <ProductPriceLine product={p} compact />
+                </>
               );
               return p.supplier_slug ? (
                 <Link
                   key={p.id}
                   href={`/materials/suppliers/${p.supplier_slug}`}
-                  className="flex-none"
+                  className="w-20 flex-none"
                 >
-                  {img}
+                  {content}
                 </Link>
               ) : (
-                <div key={p.id} className="flex-none">
-                  {img}
+                <div key={p.id} className="w-20 flex-none">
+                  {content}
                 </div>
               );
             })

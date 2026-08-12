@@ -210,6 +210,8 @@ const REQUIRED_TABLES = [
       description TEXT,
       image_url VARCHAR(500) NOT NULL,
       sort_order INT DEFAULT 0,
+      price DECIMAL(12,2) NULL,
+      price_max DECIMAL(12,2) NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_supplier (supplier_profile_id)
     )`,
@@ -501,6 +503,7 @@ const REQUIRED_COLUMNS = [
     { table: 'supplier_products', column: 'category', type: 'VARCHAR(100) NULL' },
     // Supplier product pricing (price required at API/form layer; column nullable for legacy rows)
     { table: 'supplier_products', column: 'price', type: 'DECIMAL(12,2) NULL' },
+    { table: 'supplier_products', column: 'price_max', type: 'DECIMAL(12,2) NULL' },
     { table: 'supplier_products', column: 'price_unit', type: 'VARCHAR(32) NULL' },
     // 报价币种（中国供应商常按 CNY 报价）；NULL = 旧数据，展示时回落到供应商所属国家币种
     { table: 'supplier_products', column: 'price_currency', type: 'VARCHAR(8) NULL' },
@@ -559,7 +562,7 @@ async function isColumnNullable(table, column) {
     return row?.IS_NULLABLE === 'YES';
 }
 // ─── 主逻辑 ─────────────────────────────────────────────
-async function runAutoMigrate() {
+async function runAutoMigrate(options = {}) {
     console.log(`${TAG} Checking database schema...`);
     let changes = 0;
     try {
@@ -916,7 +919,11 @@ async function runAutoMigrate() {
         }
     }
     catch (error) {
-        // 迁移失败不阻止服务启动
+        if (options.strict) {
+            console.error(`${TAG} Required migration failed:`, error);
+            throw error;
+        }
+        // 兼容脚本/维护任务的既有容错契约；生产启动显式传 strict=true。
         console.error(`${TAG} Migration error (non-fatal):`, error);
     }
 }
