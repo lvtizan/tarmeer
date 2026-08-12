@@ -152,6 +152,7 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **根因**：生产核查显示目标 admin 账号存在、启用、bcrypt hash 正常，登录失败属于凭据不匹配；可修复缺口是后台忘记密码页仍直连 `/api/auth/forgot-password`，没有强制走 admin 专用 reset flow。材料页产品卡只把图片或 `View Supplier` 局部包成链接，且旧逻辑可能对缺 slug 生成 `#`，交互语义不清。
 - **修复**：`/admin/forgot-password` 改为调用 `adminApi.forgotPassword()`，失败文案泛化；热门/搜索产品卡在合法 `supplier_slug` 时整卡链接到 `/materials/suppliers/{slug}`，非法/缺失 slug 渲染为普通卡片；新增 `scripts/harness/admin-materials-clickability.mjs` 并接入 smoke。
 - **预防**：登录失败先查账号状态、hash 长度和 reset flow，不要弱化登录校验；任何“卡片可点”UI 必须让整卡语义与视觉一致，无合法目标时不得伪装为链接或使用 `href="#"`；相关行为进入 smoke 静态守卫并用浏览器点击验证补证。
+- **后续处置**：2026-08-12 按用户指定凭据在生产 `/tarmeer/tarmeer_api` 使用同环境 `bcryptjs` 只重置 `yangliuqing@kp99.cn` 的 `admin_users.password`，清空 reset token；本地回环 `POST /api/admin/login` 验证 `200` 且返回 admin token。仍禁止为单个账号问题修改全局登录校验。
 
 ## 归档模板（新事故追加到本文件末尾）
 
