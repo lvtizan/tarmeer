@@ -50,6 +50,13 @@ test('formatProductPrice：无价格返回空串（旧产品不显示价格块�
   assert.equal(formatProductPrice(Infinity, 'SQM', false, 'AED'), '');
 });
 
+test('formatProductPrice：异常低价视为占位价不展示', () => {
+  assert.equal(formatProductPrice(0.01, 'SQM', false, 'AED'), '');
+  assert.equal(formatProductPrice(0.01, 'Priced by actual covered area', true, 'AED'), '');
+  assert.equal(formatProductPrice(1, 'SQM', false, 'AED'), '');
+  assert.equal(formatProductPrice(10, 'SQM', false, 'AED'), 'AED 10 / ㎡');
+});
+
 test('formatProductPrice：en 语言用英文单位', () => {
   assert.equal(formatProductPrice(80, 'PCS', false, 'AED', null, 'en'), 'AED 80 / pcs');
   assert.equal(formatProductPrice(1200, 'SQM', true, 'AED', null, 'en'), 'AED 1,200 (from) / ㎡');

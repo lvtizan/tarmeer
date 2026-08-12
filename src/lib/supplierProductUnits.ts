@@ -192,7 +192,7 @@ export function formatProductPrice(
   const legacyLang = typeof priceMaxOrLang === 'string' ? priceMaxOrLang : null;
   const priceMax = legacyLang ? null : priceMaxOrLang;
   const displayLang = legacyLang ?? lang;
-  if (price == null || !Number.isFinite(Number(price)) || Number(price) <= 0) return '';
+  if (price == null || !Number.isFinite(Number(price)) || Number(price) <= 1) return '';
   const num = Number(price);
   const formatAmount = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
   let amount = formatAmount(num);
