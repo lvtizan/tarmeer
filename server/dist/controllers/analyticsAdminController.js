@@ -320,7 +320,7 @@ async function getDailyVisits(req, res) {
               END) AS unique_visitors
          FROM visitor_logs
         WHERE DATE(created_at) BETWEEN ? AND ?${countryWhere}
-        GROUP BY DATE(created_at)
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
         ORDER BY stat_date ASC`, [start, end]);
         res.json({ dailyVisits: rows, dateRange: { start, end } });
     }
