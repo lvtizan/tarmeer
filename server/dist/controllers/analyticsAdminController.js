@@ -97,10 +97,11 @@ async function getCompanyVisitors(req, res) {
         }
     }
     try {
-        await (0, analyticsEventStore_1.ensureAnalyticsEventsTable)();
-        // Top 10 companies by unique visitors
+        await (0, visitorLogStore_1.ensureVisitorLogsTable)();
+        // Top 10 companies by unique visitors. Use visitor_logs, not analytics_events:
+        // PageViewTracker writes server-side visits here, while client analytics_events can be sparse.
         const [companyRows] = await database_1.default.execute(`SELECT
-        page_path,
+        CONCAT('/companies/', SUBSTRING_INDEX(SUBSTRING(page_path, CHAR_LENGTH('/companies/') + 1), '/', 1)) AS page_path,
         COUNT(DISTINCT CASE
           WHEN viewer_ip IS NOT NULL
            AND viewer_ip <> ''
@@ -111,11 +112,10 @@ async function getCompanyVisitors(req, res) {
           THEN viewer_ip
         END) AS unique_visitors,
         COUNT(*) AS total_views
-       FROM analytics_events
+       FROM visitor_logs
        WHERE DATE(created_at) BETWEEN ? AND ?
-         AND event_name = 'page_view'
          AND page_path LIKE '/companies/%'${countryPathFilter}
-       GROUP BY page_path
+       GROUP BY CONCAT('/companies/', SUBSTRING_INDEX(SUBSTRING(page_path, CHAR_LENGTH('/companies/') + 1), '/', 1))
        ORDER BY unique_visitors DESC, total_views DESC
        LIMIT 10`, [start, end]);
         const rawCompanies = companyRows;
@@ -152,7 +152,7 @@ async function getCompanyVisitors(req, res) {
         if (pagePaths.length > 0) {
             const placeholders = pagePaths.map(() => '?').join(',');
             const [cityRows] = await database_1.default.execute(`SELECT
-          page_path,
+          CONCAT('/companies/', SUBSTRING_INDEX(SUBSTRING(page_path, CHAR_LENGTH('/companies/') + 1), '/', 1)) AS page_path,
           COALESCE(location_label, 'Unknown') AS city,
           COUNT(DISTINCT CASE
             WHEN viewer_ip IS NOT NULL
@@ -162,12 +162,12 @@ async function getCompanyVisitors(req, res) {
              AND viewer_ip <> '::1'
              AND viewer_ip <> '::ffff:127.0.0.1'
             THEN viewer_ip
-          END) AS visitors
-         FROM analytics_events
+         END) AS visitors
+         FROM visitor_logs
          WHERE DATE(created_at) BETWEEN ? AND ?
-           AND event_name = 'page_view'
-           AND page_path IN (${placeholders})
-         GROUP BY page_path, location_label
+           AND page_path LIKE '/companies/%'
+           AND CONCAT('/companies/', SUBSTRING_INDEX(SUBSTRING(page_path, CHAR_LENGTH('/companies/') + 1), '/', 1)) IN (${placeholders})
+         GROUP BY CONCAT('/companies/', SUBSTRING_INDEX(SUBSTRING(page_path, CHAR_LENGTH('/companies/') + 1), '/', 1)), location_label
          ORDER BY visitors DESC`, [start, end, ...pagePaths]);
             cityBreakdown = cityRows;
         }
@@ -276,12 +276,12 @@ async function getDailyRegistrations(req, res) {
     const end = toDateString(req.query.endDate) || new Date().toISOString().slice(0, 10);
     const start = toDateString(req.query.startDate) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     try {
-        const [rows] = await database_1.default.execute(`SELECT DATE(created_at) AS stat_date,
+        const [rows] = await database_1.default.execute(`SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS stat_date,
               SUM(CASE WHEN role = 'homeowner' THEN 1 ELSE 0 END) AS homeowner_count,
               SUM(CASE WHEN role = 'company' THEN 1 ELSE 0 END) AS company_count
          FROM users
         WHERE DATE(created_at) BETWEEN ? AND ?
-        GROUP BY DATE(created_at)
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
         ORDER BY stat_date ASC`, [start, end]);
         res.json({ dailyRegistrations: rows, dateRange: { start, end } });
     }
@@ -307,7 +307,7 @@ async function getDailyVisits(req, res) {
     }
     try {
         await (0, visitorLogStore_1.ensureVisitorLogsTable)();
-        const [rows] = await database_1.default.execute(`SELECT DATE(created_at) AS stat_date,
+        const [rows] = await database_1.default.execute(`SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS stat_date,
               COUNT(*) AS page_views,
               COUNT(DISTINCT CASE
                 WHEN viewer_ip IS NOT NULL

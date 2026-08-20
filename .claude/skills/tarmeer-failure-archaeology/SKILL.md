@@ -154,6 +154,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **预防**：登录失败先查账号状态、hash 长度和 reset flow，不要弱化登录校验；任何“卡片可点”UI 必须让整卡语义与视觉一致，无合法目标时不得伪装为链接或使用 `href="#"`；相关行为进入 smoke 静态守卫并用浏览器点击验证补证。
 - **后续处置**：2026-08-12 按用户指定凭据在生产 `/tarmeer/tarmeer_api` 使用同环境 `bcryptjs` 只重置 `yangliuqing@kp99.cn` 的 `admin_users.password`，清空 reset token；本地回环 `POST /api/admin/login` 验证 `200` 且返回 admin token。仍禁止为单个账号问题修改全局登录校验。
 
+### FA-24 数据分析流量趋势和公司关注榜为空（2026-08-20）
+- **现象**：后台数据分析页切到「每日流量趋势」显示暂无流量数据，「最受关注的 10 家公司」也为空。
+- **根因**：两个统计口径错误。① `daily-visits` 返回 `DATE(created_at)`，mysql2/JSON 会序列化成 ISO 时间，前端按 `YYYY-MM-DD` 补 30 天日期轴时 key 对不上，全补成 0。② `company-visitors` 仍读 `analytics_events`，但生产页面访问事实表是 `PageViewTracker` 写入的 `visitor_logs`；生产近 30 天 `analytics_events` 公司页为 0，`visitor_logs` 公司页有 931 条。
+- **修复**：`daily-visits` 改用 `DATE_FORMAT(created_at, '%Y-%m-%d')` 并按同表达式分组；`company-visitors` 改读 `visitor_logs`，并把 `/companies/{slug}/...` 归一成 `/companies/{slug}` 后聚合 UV/PV。
+- **预防**：后台趋势接口返回日期必须是前端消费的稳定字符串，不返回 DB driver 的 Date 对象；同一 analytics 页面所有 PV/UV 统计默认使用同一事实表 `visitor_logs`，除非明确展示客户端事件。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
