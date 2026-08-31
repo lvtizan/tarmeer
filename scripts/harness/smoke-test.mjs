@@ -55,6 +55,7 @@ console.log('\n[2/3] Backend route existence');
 
 const ADMIN_ROUTES = [
   ['GET',    '/api/admin/companies'],
+  ['POST',   '/api/admin/suppliers'],
   ['GET',    '/api/admin/staff'],
   ['PATCH',  '/api/admin/staff/1/permissions'],   // was missing — caused 404/CORS fail
   ['GET',    '/api/admin/interviews'],
@@ -192,6 +193,30 @@ try {
   ok('admin 重置入口与材料卡片点击契约');
 } catch (e) {
   ng('admin 重置入口与材料卡片点击契约', commandTail(e));
+}
+try {
+  execSync('node scripts/harness/admin-suppliers-sort.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('admin/suppliers 时间排序稳定性');
+} catch (e) {
+  ng('admin/suppliers 时间排序稳定性', commandTail(e));
+}
+try {
+  execSync("TARMEER_HTTP_TESTS=1 node scripts/harness/admin-create-supplier-account.mjs", { cwd: ROOT, stdio: 'pipe' });
+  ok('admin 创建免邮箱验证供应商账号');
+} catch (e) {
+  ng('admin 创建免邮箱验证供应商账号', commandTail(e));
+}
+try {
+  execSync('node scripts/harness/company-china-options.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('公司资料中国电话/总部选项契约');
+} catch (e) {
+  ng('公司资料中国选项契约', commandTail(e));
+}
+try {
+  execSync('node scripts/harness/lighting-category.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('照明灯具品类/服务项契约');
+} catch (e) {
+  ng('照明灯具品类/服务项契约', commandTail(e));
 }
 
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────

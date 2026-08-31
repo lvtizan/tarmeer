@@ -111,6 +111,6 @@ Append an entry documenting why privileged account creation must stay separate f
 
 - [ ] **Step 4: Commit only the feature files**
 
-Run: `git add server/dist/controllers/supplierAdminController.js server/dist/routes/admin.js src/lib/adminApi.ts src/app/admin/suppliers/page.tsx scripts/harness/admin-create-supplier-account.mjs scripts/harness/smoke-test.mjs docs/plans/2026-08-31-admin-supplier-account-design.md docs/superpowers/plans/2026-08-31-admin-supplier-account.md .claude/skills/tarmeer-failure-archaeology/SKILL.md`
+Run: `git add server/dist/controllers/supplierAdminController.js server/dist/routes/admin.js src/lib/adminApi.ts src/app/admin/suppliers/page.tsx scripts/harness/admin-create-supplier-account.mjs scripts/harness/admin-suppliers-sort.mjs scripts/harness/smoke-test.mjs docs/plans/2026-08-31-admin-supplier-account-design.md docs/superpowers/plans/2026-08-31-admin-supplier-account.md .claude/skills/tarmeer-failure-archaeology/SKILL.md`
 
 Run: `git commit -m "feat(admin): create verified supplier accounts"`
