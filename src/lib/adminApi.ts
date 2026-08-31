@@ -1094,6 +1094,9 @@ class AdminApiClient {
     if (country) qs.set('country', country);
     return this.request(`/suppliers/report?${qs.toString()}`);
   }
+  async createSupplierAccount(data: { companyName: string; email: string; password: string; phone?: string; country?: 'ae' | 'vn' }) {
+    return this.request('/suppliers', { method: 'POST', body: JSON.stringify(data) });
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async updateInterview(id: number, data: Record<string, any>) {
     return this.request(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });

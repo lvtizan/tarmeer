@@ -8,6 +8,7 @@ exports.adminReplaceCatalogFile = adminReplaceCatalogFile;
 exports.adminAddCatalog = adminAddCatalog;
 exports.adminDeleteCatalog = adminDeleteCatalog;
 exports.adminReplaceProductImage = adminReplaceProductImage;
+exports.createAdminSupplierAccount = createAdminSupplierAccount;
 exports.listSuppliers = listSuppliers;
 exports.getSupplierDetail = getSupplierDetail;
 exports.updateSupplierStatus = updateSupplierStatus;
@@ -26,16 +27,18 @@ exports.toggleSupplierPublished = toggleSupplierPublished;
 exports.toggleSupplierProjectPublished = toggleSupplierProjectPublished;
 exports.getSupplierReport = getSupplierReport;
 const database_1 = __importDefault(require("../config/database"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
 const activityLogger_1 = require("../lib/activityLogger");
 const productPriceRange_1 = require("../lib/productPriceRange");
+const slugify_1 = require("../lib/slugify");
 // 报价币种白名单。⚠️ 与 supplierProductController.PRODUCT_CURRENCIES / 前端 src/lib/supplierProductUnits.ts 同源。
 const SUPPORTED_PRICE_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'];
 /** 记录供应商后台操作到 activity_log（审计）。整体 try/catch，记录失败绝不影响主操作。 */
-async function logSupplierAction(req, action, targetId, description) {
+async function logSupplierAction(req, action, targetId, description, country = req.admin?.country) {
     try {
         await activityLogger_1.logActivity({
             userId: req.admin?.id,
@@ -46,11 +49,102 @@ async function logSupplierAction(req, action, targetId, description) {
             targetId: targetId != null ? Number(targetId) : null,
             description,
             ip: activityLogger_1.getClientIp ? activityLogger_1.getClientIp(req) : undefined,
-            country: req.admin?.country,
+            country,
         });
     }
     catch (e) {
         console.error('[SupplierAudit] log failed:', e);
+    }
+}
+const ADMIN_SUPPLIER_COUNTRIES = new Set(['ae', 'vn']);
+function adminSupplierCountry(req) {
+    const requestedCountry = typeof req.body?.country === 'string' ? req.body.country : '';
+    if (req.admin?.role === 'super_admin') {
+        const selectedCountry = requestedCountry || req.admin.country;
+        return ADMIN_SUPPLIER_COUNTRIES.has(selectedCountry) ? selectedCountry : null;
+    }
+    return ADMIN_SUPPLIER_COUNTRIES.has(req.admin?.country) ? req.admin.country : null;
+}
+/** POST /admin/suppliers — privileged account provisioning; public registration remains verification-gated. */
+async function createAdminSupplierAccount(req, res) {
+    const companyName = typeof req.body?.companyName === 'string' ? req.body.companyName.trim() : '';
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    const phone = typeof req.body?.phone === 'string' ? req.body.phone.trim() : '';
+    const country = adminSupplierCountry(req);
+    if (!country)
+        return res.status(400).json({ error: 'A supported admin country is required.' });
+    if (!companyName || companyName.length > 100)
+        return res.status(400).json({ error: 'Company name is required and must be at most 100 characters.' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255)
+        return res.status(400).json({ error: 'A valid email is required.' });
+    if (password.length < 8)
+        return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    if (Buffer.byteLength(password, 'utf8') > 72)
+        return res.status(400).json({ error: 'Password must be at most 72 UTF-8 bytes.' });
+    if (phone.length > 64)
+        return res.status(400).json({ error: 'Phone must be at most 64 characters.' });
+    let connection;
+    try {
+        connection = await database_1.default.getConnection();
+        await connection.beginTransaction();
+        const [supplierUsers] = await connection.execute('SELECT id FROM supplier_users WHERE email = ? LIMIT 1', [email]);
+        const [siteUsers] = await connection.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+        if (supplierUsers.length > 0 || siteUsers.length > 0) {
+            await connection.rollback();
+            return res.status(409).json({ error: 'This email is already registered.' });
+        }
+        const passwordHash = await bcryptjs_1.default.hash(password, 12);
+        const [userResult] = await connection.execute(`INSERT INTO supplier_users (email, password, full_name, phone, email_verified)
+             VALUES (?, ?, ?, ?, 1)`, [email, passwordHash, companyName, phone || null]);
+        const userId = userResult.insertId;
+        const baseSlug = (0, slugify_1.slugify)(companyName).slice(0, 240) || 'supplier';
+        const slug = `${baseSlug}-${userId}`;
+        const [profileResult] = await connection.execute(`INSERT INTO supplier_profiles
+             (supplier_user_id, company_name, slug, status, contact_phone, country)
+             VALUES (?, ?, ?, 'pending', ?, ?)`, [userId, companyName, slug, phone || null, country]);
+        await connection.execute(`INSERT INTO activity_log
+             (user_id, user_name, user_role, action, target_type, target_id, description, ip, country)
+             VALUES (?, ?, ?, ?, 'supplier', ?, ?, ?, ?)`, [
+            req.admin?.id || null,
+            req.admin?.full_name || req.admin?.email || 'admin',
+            req.admin?.role || 'admin',
+            'supplier_account_create',
+            profileResult.insertId,
+            `创建免邮箱验证供应商账号：${email}`,
+            activityLogger_1.getClientIp ? activityLogger_1.getClientIp(req) : null,
+            country,
+        ]);
+        await connection.commit();
+        return res.status(201).json({
+            message: 'Supplier account created. It can sign in immediately.',
+            supplier: {
+                id: profileResult.insertId,
+                user_id: userId,
+                company_name: companyName,
+                email,
+                email_verified: true,
+                country,
+                status: 'pending',
+            },
+        });
+    }
+    catch (error) {
+        if (connection) {
+            try {
+                await connection.rollback();
+            }
+            catch (rollbackError) {
+                console.error('Admin create supplier account rollback error:', rollbackError);
+            }
+        }
+        if (error?.code === 'ER_DUP_ENTRY')
+            return res.status(409).json({ error: 'This email is already registered.' });
+        console.error('Admin create supplier account error:', error);
+        return res.status(500).json({ error: 'Failed to create supplier account.' });
+    }
+    finally {
+        connection?.release();
     }
 }
 /**
@@ -328,8 +422,12 @@ async function updateSupplier(req, res) {
 async function deleteSupplier(req, res) {
     try {
         const { id } = req.params;
+        const requestedCountry = typeof req.body?.country === 'string' ? req.body.country : '';
+        const country = req.admin?.role === 'super_admin' && ADMIN_SUPPLIER_COUNTRIES.has(requestedCountry)
+            ? requestedCountry
+            : (ADMIN_SUPPLIER_COUNTRIES.has(req.admin?.country) ? req.admin.country : null);
         // Get supplier_user_id
-        const [rows] = await database_1.default.execute('SELECT supplier_user_id FROM supplier_profiles WHERE id = ?', [id]);
+        const [rows] = await database_1.default.execute('SELECT supplier_user_id FROM supplier_profiles WHERE id = ? AND country = ?', [id, country]);
         const profile = rows[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
@@ -338,7 +436,7 @@ async function deleteSupplier(req, res) {
         await database_1.default.execute('DELETE FROM supplier_catalogs WHERE supplier_profile_id = ?', [id]);
         await database_1.default.execute('DELETE FROM supplier_profiles WHERE id = ?', [id]);
         await database_1.default.execute('DELETE FROM supplier_users WHERE id = ?', [profile.supplier_user_id]);
-        await logSupplierAction(req, 'supplier_delete', id, `删除供应商#${id}`);
+        await logSupplierAction(req, 'supplier_delete', id, `删除供应商#${id}`, country);
         res.json({ message: 'Supplier deleted.' });
     }
     catch (error) {

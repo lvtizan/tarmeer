@@ -1,17 +1,18 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
-import { Package, Trash2, Pencil, Check, X, ExternalLink, Download, Copy, CalendarDays, Tag, Search, EyeOff } from 'lucide-react';
+import { Package, Trash2, Pencil, Check, X, Plus, ExternalLink, Download, Copy, CalendarDays, Tag, Search, EyeOff } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import ProductCategoriesManager from '@/components/admin/ProductCategoriesManager';
 import AdminSelect from '@/components/ui/AdminSelect';
 import DeleteReasonModal from '@/components/admin/DeleteReasonModal';
 import SupplierThumbsPreview from '@/components/admin/SupplierThumbsPreview';
+import PasswordInput from '@/components/admin/PasswordInput';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface Supplier {
@@ -37,15 +38,32 @@ interface Supplier {
   source?: string;
 }
 
+function supplierSearchText(value: unknown): string {
+  return typeof value === 'string' ? value.toLowerCase() : '';
+}
+
+function supplierSortTime(...values: Array<string | null | undefined>): number {
+  for (const value of values) {
+    if (!value) continue;
+    const time = new Date(value).getTime();
+    if (Number.isFinite(time)) return time;
+  }
+  return 0;
+}
+
 export default function AdminSuppliersPage() {
   const { t } = useAdminT();
   const { country } = useAdminCountry();
+  const activeCountryRef = useRef(country);
+  const supplierFetchIdRef = useRef(0);
+  activeCountryRef.current = country;
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [partnerCount, setPartnerCount] = useState(0);
   const [allCount, setAllCount] = useState(0);
   const [teamCount, setTeamCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [originFilter, setOriginFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
@@ -61,9 +79,16 @@ export default function AdminSuppliersPage() {
   const [editingNameZh, setEditingNameZh] = useState<Record<number, string>>({});
   const [editingName, setEditingName] = useState<Record<number, string>>({});
   const [showCatManager, setShowCatManager] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createForm, setCreateForm] = useState({ companyName: '', email: '', password: '', phone: '' });
 
   const fetchSuppliers = useCallback(async () => {
+    const requestCountry = country;
+    const requestId = ++supplierFetchIdRef.current;
     setLoading(true);
+    setLoadError('');
     try {
       // limit 提到 500：admin 需一次加载完当前筛选全部（"公司创建的号"130 个 + 导出 Excel 要全量），避免旧的 50 静默截断
       const params: Record<string, string> = { limit: '500', country };
@@ -73,15 +98,27 @@ export default function AdminSuppliersPage() {
       if (groupFilter) params.group = groupFilter;
       const qs = new URLSearchParams(params).toString();
       const data = await adminApi.request(`/suppliers?${qs}`);
+      if (requestId !== supplierFetchIdRef.current || activeCountryRef.current !== requestCountry) return;
       setSuppliers(data.suppliers || []);
       setPartnerCount(data.partnerCount || 0);
       setAllCount(data.allCount || 0);
       setTeamCount(data.teamCount || 0);
-    } catch {}
-    setLoading(false);
+    } catch (error) {
+      if (requestId !== supplierFetchIdRef.current || activeCountryRef.current !== requestCountry) return;
+      const message = error instanceof Error ? error.message : '供应商加载失败';
+      setLoadError(message);
+      showToast('供应商加载失败', 'error');
+    }
+    if (requestId === supplierFetchIdRef.current && activeCountryRef.current === requestCountry) setLoading(false);
   }, [originFilter, statusFilter, sourceFilter, groupFilter, country]);
 
   useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
+  useEffect(() => {
+    setDeleteModal(null);
+    setCreateError('');
+    setDeleteLoading(false);
+    setCreateSubmitting(false);
+  }, [country]);
 
   const parseCats = (cats: string[] | string | null): string[] => {
     if (!cats) return [];
@@ -91,24 +128,66 @@ export default function AdminSuppliersPage() {
 
   const handleStatus = async (id: number, status: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const requestCountry = country;
     try {
       await adminApi.request(`/suppliers/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+      if (activeCountryRef.current !== requestCountry) return;
       setSuppliers(list => list.map(s => s.id === id ? { ...s, status } : s));
       showToast(t('Status updated', '状态已更新'), 'success');
     } catch {
-      showToast(t('Failed to update status', '更新状态失败'), 'error');
+      if (activeCountryRef.current === requestCountry) showToast(t('Failed to update status', '更新状态失败'), 'error');
     }
   };
 
   const handleDeleteConfirm = async (reason: string) => {
     if (!deleteModal) return;
+    const requestCountry = country;
     setDeleteLoading(true);
     try {
-      await adminApi.request(`/suppliers/${deleteModal.id}`, { method: 'DELETE', body: JSON.stringify({ reason }) });
-      setDeleteModal(null);
-      fetchSuppliers();
+      await adminApi.request(`/suppliers/${deleteModal.id}`, { method: 'DELETE', body: JSON.stringify({ reason, country: requestCountry }) });
+      if (activeCountryRef.current === requestCountry) {
+        setDeleteModal(null);
+        fetchSuppliers();
+      }
     } catch {}
-    setDeleteLoading(false);
+    if (activeCountryRef.current === requestCountry) setDeleteLoading(false);
+  };
+
+  const handleCreateSupplier = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setCreateError('');
+    if (!createForm.companyName.trim() || !createForm.email.trim() || !createForm.password) {
+      setCreateError(t('Company name, email, and password are required.', '公司名称、邮箱和密码均为必填项。'));
+      return;
+    }
+    if (createForm.password.length < 8) {
+      setCreateError(t('Password must be at least 8 characters.', '密码至少 8 位。'));
+      return;
+    }
+    if (new TextEncoder().encode(createForm.password).length > 72) {
+      setCreateError(t('Password must be at most 72 UTF-8 bytes.', '密码不能超过 72 个 UTF-8 字节。'));
+      return;
+    }
+    if (createForm.phone.length > 64) {
+      setCreateError(t('Phone must be at most 64 characters.', '联系电话不能超过 64 个字符。'));
+      return;
+    }
+    const requestCountry = country;
+    setCreateSubmitting(true);
+    try {
+      await adminApi.createSupplierAccount({ ...createForm, country: requestCountry });
+      if (activeCountryRef.current === requestCountry) {
+        setCreateForm({ companyName: '', email: '', password: '', phone: '' });
+        setShowCreateForm(false);
+        showToast(t('Supplier account created and ready to sign in.', '供应商账号已创建，可直接登录。'), 'success');
+        await fetchSuppliers();
+      }
+    } catch (error) {
+      if (activeCountryRef.current === requestCountry) {
+        setCreateError(error instanceof Error ? error.message : t('Failed to create supplier account.', '创建供应商账号失败。'));
+      }
+    }
+    if (activeCountryRef.current === requestCountry) setCreateSubmitting(false);
   };
 
   const getEditKey = (id: number, type: string) => `${type}-${id}`;
@@ -119,6 +198,7 @@ export default function AdminSuppliersPage() {
   };
 
   const handleOrderBlur = async (id: number, type: 'home' | 'list', original: number) => {
+    const requestCountry = country;
     const key = getEditKey(id, type);
     const raw = editingOrder[key];
     if (raw === undefined) return;
@@ -131,14 +211,17 @@ export default function AdminSuppliersPage() {
       } else {
         await adminApi.setSupplierListOrder(id, value);
       }
-      showOrderToast(`${type === 'home' ? '首页' : '列表'}排序已设为 ${value}`, key);
-      fetchSuppliers();
+      if (activeCountryRef.current === requestCountry) {
+        showOrderToast(`${type === 'home' ? '首页' : '列表'}排序已设为 ${value}`, key);
+        fetchSuppliers();
+      }
     } catch {
-      showToast(t('Failed to update order', '排序更新失败'), 'error');
+      if (activeCountryRef.current === requestCountry) showToast(t('Failed to update order', '排序更新失败'), 'error');
     }
   };
 
   const handleNameZhBlur = async (s: Supplier) => {
+    const requestCountry = country;
     const draft = editingNameZh[s.id];
     if (draft === undefined) return;
     const value = draft.trim();
@@ -146,16 +229,18 @@ export default function AdminSuppliersPage() {
     if (value === (s.name_zh ?? '')) return;
     try {
       await adminApi.request(`/suppliers/${s.id}`, { method: 'PUT', body: JSON.stringify({ name_zh: value }) });
+      if (activeCountryRef.current !== requestCountry) return;
       setSuppliers(list => list.map(x => x.id === s.id ? { ...x, name_zh: value } : x));
       showToast(t('Chinese name updated', '中文名已更新'), 'success');
     } catch {
-      showToast(t('Failed to update Chinese name', '更新中文名失败'), 'error');
+      if (activeCountryRef.current === requestCountry) showToast(t('Failed to update Chinese name', '更新中文名失败'), 'error');
     }
   };
 
   const startEditName = (s: Supplier) => setEditingName(prev => ({ ...prev, [s.id]: s.company_name }));
 
   const handleNameBlur = async (s: Supplier) => {
+    const requestCountry = country;
     const draft = editingName[s.id];
     if (draft === undefined) return;
     const value = draft.trim();
@@ -163,10 +248,11 @@ export default function AdminSuppliersPage() {
     if (!value || value === s.company_name) return; // 公司名必填：空则不保存、还原
     try {
       await adminApi.request(`/suppliers/${s.id}`, { method: 'PUT', body: JSON.stringify({ company_name: value }) });
+      if (activeCountryRef.current !== requestCountry) return;
       setSuppliers(list => list.map(x => x.id === s.id ? { ...x, company_name: value } : x));
       showToast(t('Company name updated', '公司名已更新'), 'success');
     } catch {
-      showToast(t('Failed to update company name', '更新公司名失败'), 'error');
+      if (activeCountryRef.current === requestCountry) showToast(t('Failed to update company name', '更新公司名失败'), 'error');
     }
   };
 
@@ -184,6 +270,36 @@ export default function AdminSuppliersPage() {
     else if (tab === 'partner') { setSourceFilter('partner'); setGroupFilter(''); }
     else { setSourceFilter(''); setGroupFilter('team'); }
   };
+
+  const visibleSuppliers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = suppliers.filter(s =>
+      !q ||
+      supplierSearchText(s.company_name).includes(q) ||
+      supplierSearchText(s.name_zh).includes(q) ||
+      supplierSearchText(s.user_email).includes(q)
+    );
+    const sorted = [...list];
+    if (productSort) {
+      sorted.sort((a, b) => {
+        const diff = (Number(a.product_count) || 0) - (Number(b.product_count) || 0);
+        return productSort === 'asc' ? diff : -diff;
+      });
+    }
+    if (joinedSort) {
+      sorted.sort((a, b) => {
+        const diff = supplierSortTime(a.published_at, a.updated_at, a.created_at) - supplierSortTime(b.published_at, b.updated_at, b.created_at);
+        return joinedSort === 'asc' ? diff : -diff;
+      });
+    }
+    if (editedSort) {
+      sorted.sort((a, b) => {
+        const diff = supplierSortTime(a.updated_at, a.created_at) - supplierSortTime(b.updated_at, b.created_at);
+        return editedSort === 'asc' ? diff : -diff;
+      });
+    }
+    return sorted;
+  }, [editedSort, joinedSort, productSort, search, suppliers]);
 
   const exportCsv = () => {
     const esc = (v: unknown): string => {
@@ -244,6 +360,14 @@ export default function AdminSuppliersPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
+            onClick={() => { setShowCreateForm(value => !value); setCreateError(''); }}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#b8864a] hover:bg-[#a07640] text-xs font-medium text-white transition"
+          >
+            {showCreateForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {showCreateForm ? t('Cancel', '取消') : t('New Supplier', '新建供应商账号')}
+          </button>
+          <button
             onClick={() => setShowCatManager(true)}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
           >
@@ -276,6 +400,69 @@ export default function AdminSuppliersPage() {
           </a>
         </div>
       </div>
+
+      {showCreateForm && (
+        <section className="mb-5 border border-stone-200 bg-white p-5 rounded-lg">
+          <h2 className="mb-4 text-sm font-semibold text-stone-700">{t('New Supplier Account', '新建供应商账号')}</h2>
+          <form onSubmit={handleCreateSupplier} className="space-y-3">
+            {createError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{createError}</p>}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="block text-xs font-medium text-stone-500">
+                {t('Company Name', '公司名称')}
+                <input
+                  type="text"
+                  value={createForm.companyName}
+                  onChange={event => setCreateForm(form => ({ ...form, companyName: event.target.value }))}
+                  required
+                  maxLength={100}
+                  className="mt-1 h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30"
+                />
+              </label>
+              <label className="block text-xs font-medium text-stone-500">
+                {t('Email', '邮箱')}
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={event => setCreateForm(form => ({ ...form, email: event.target.value }))}
+                  required
+                  maxLength={255}
+                  className="mt-1 h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30"
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="block text-xs font-medium text-stone-500">
+                {t('Phone (optional)', '联系电话（选填）')}
+                <input
+                  type="tel"
+                  value={createForm.phone}
+                  onChange={event => setCreateForm(form => ({ ...form, phone: event.target.value }))}
+                  maxLength={64}
+                  className="mt-1 h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 focus:border-[#b8864a] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/30"
+                />
+              </label>
+              <PasswordInput
+                id="new-supplier-password"
+                value={createForm.password}
+                onChange={password => setCreateForm(form => ({ ...form, password }))}
+                label={t('Initial Password', '初始密码')}
+                placeholder={t('At least 8 characters', '至少 8 位')}
+                minLength={8}
+                required
+              />
+            </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="submit"
+                disabled={createSubmitting}
+                className="h-9 rounded-lg bg-[#b8864a] px-4 text-sm font-medium text-white transition hover:bg-[#a07640] disabled:opacity-40"
+              >
+                {createSubmitting ? t('Creating...', '创建中...') : t('Create Account', '创建账号')}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
 
       <div className="flex items-center justify-between gap-2 mb-4">
         {/* 来源 tab：全部 / 合作方同步 / 公司创建的号 */}
@@ -343,7 +530,20 @@ export default function AdminSuppliersPage() {
         </div>
       </div>
 
-      {loading ? <Spinner /> : suppliers.length === 0 ? (
+      {loading ? <Spinner /> : loadError ? (
+        <div className="py-16 text-center">
+          <Package className="w-10 h-10 text-red-300 mx-auto mb-3" />
+          <p className="text-[15px] font-medium text-red-600">{t('Failed to load suppliers', '供应商加载失败')}</p>
+          <p className="mt-1 text-xs text-stone-500">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => fetchSuppliers()}
+            className="mt-4 inline-flex h-8 items-center justify-center rounded-lg bg-[#b8864a] px-3 text-xs font-medium text-white transition hover:bg-[#a07640]"
+          >
+            {t('Retry', '重试')}
+          </button>
+        </div>
+      ) : visibleSuppliers.length === 0 ? (
         <div className="py-16 text-center">
           <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />
           <p className="text-[15px] text-stone-500">{t('No suppliers found', '暂无供应商')}</p>
@@ -383,25 +583,7 @@ export default function AdminSuppliersPage() {
               </tr>
             </thead>
             <tbody>
-              {((() => {
-                const q = search.trim().toLowerCase();
-                const list = suppliers.filter(s =>
-                  !q ||
-                  s.company_name.toLowerCase().includes(q) ||
-                  (s.name_zh ?? '').toLowerCase().includes(q) ||
-                  (s.user_email ?? '').toLowerCase().includes(q)
-                );
-                if (productSort) list.sort((a, b) => productSort === 'asc' ? a.product_count - b.product_count : b.product_count - a.product_count);
-                if (joinedSort) list.sort((a, b) => {
-                  const d = new Date(a.published_at || a.updated_at).getTime() - new Date(b.published_at || b.updated_at).getTime();
-                  return joinedSort === 'asc' ? d : -d;
-                });
-                if (editedSort) list.sort((a, b) => {
-                  const d = new Date(a.updated_at || a.created_at).getTime() - new Date(b.updated_at || b.created_at).getTime();
-                  return editedSort === 'asc' ? d : -d;
-                });
-                return list;
-              })()).map(s => (
+              {visibleSuppliers.map(s => (
                 <tr
                   key={s.id}
                   className="border-b border-stone-100 hover:bg-stone-50/50 cursor-pointer"
