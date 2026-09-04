@@ -51,7 +51,9 @@ const projects = __importStar(require("../controllers/supplierProjectController"
 const materialsMacro = require("../controllers/materialsMacroController");
 const memoryCache_1 = require("../lib/memoryCache");
 const router = (0, express_1.Router)();
-const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+// Product photos are compressed by Sharp after receipt. The 60MB ceiling covers
+// high-resolution phone photos while bounding memory used by this in-memory upload.
+const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 60 * 1024 * 1024 } });
 const leadLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60 * 60 * 1000,
     max: 5,
