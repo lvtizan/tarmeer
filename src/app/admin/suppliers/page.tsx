@@ -361,7 +361,7 @@ export default function AdminSuppliersPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {hasPermission('can_approve') && <button
+          {hasPermission('can_approve_suppliers') && <button
             type="button"
             onClick={() => { setShowCreateForm(true); setCreateError(''); }}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#b8864a] hover:bg-[#a07640] text-xs font-medium text-white transition"

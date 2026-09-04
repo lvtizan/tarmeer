@@ -17,6 +17,7 @@ export interface AdminUser {
     can_view_stats?: boolean;
     can_view_interviews?: boolean;
     can_manage_field_staff?: boolean;
+    can_approve_suppliers?: boolean;
     can_view_suppliers?: boolean;
   } | null;
 }
@@ -296,6 +297,7 @@ class AdminApiClient {
     registeredCompanies: Array<{ id: number; name: string; phone: string; city: string; status: string; email: string; type: 'registered' }>;
     directoryCompanies: Array<{ id: number; name: string; phone: string; city: string; type: 'directory' }>;
     suppliers: Array<{ id: number; name: string; email: string; origin: string; status: string }>;
+    partnerCompanies: Array<{ id: number; partnerId: number; supplierRef: string; name: string; status: string; syncedAt: string }>;
   }> {
     const params = new URLSearchParams({ q });
     return this.request(`/search?${params}`);

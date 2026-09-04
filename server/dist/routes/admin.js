@@ -119,6 +119,17 @@ router.get('/inquiries/export', sseAuthAdapter, adminAuth_1.authenticateAdmin, a
 // All routes below require authentication
 router.use(adminAuth_1.authenticateAdmin);
 router.use(adminAuth_1.requireAdmin);
+// Supplier-only sub-admins must never reach unrelated admin data, even by typing an API URL.
+router.use((req, res, next) => {
+    const permissions = req.admin?.permissions || {};
+    const granted = Object.keys(permissions).filter((key) => permissions[key] === true);
+    const supplierOnly = req.admin?.role === 'sub_admin' && granted.length > 0
+        && granted.every((key) => key === 'can_view_suppliers' || key === 'can_approve_suppliers');
+    const allowed = req.path === '/profile' || req.path.startsWith('/suppliers') || req.path.startsWith('/partner-sync');
+    if (supplierOnly && !allowed)
+        return res.status(403).json({ error: 'Supplier-only administrator access.' });
+    next();
+});
 // Profile
 router.get('/profile', adminController_1.getProfile);
 router.get('/search', globalSearchController_1.globalSearch);
@@ -432,19 +443,19 @@ router.get('/portfolio-images', adminAuth_1.requireAdmin, async (req, res) => {
     }
 });
 // Supplier management
-router.post('/suppliers', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.createAdminSupplierAccount);
+router.post('/suppliers', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.createAdminSupplierAccount);
 router.get('/suppliers', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.listSuppliers);
 // 上架报表：必须在 /suppliers/:id 之前注册,否则被 :id 捕获
 router.get('/suppliers/report', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierReport);
 router.get('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierDetail);
 // 编辑类操作需 can_view_suppliers(查看=查看+编辑);审批/删除供应商/替换目录文件保持 can_approve(更高权限)
-router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.updateSupplierStatus);
+router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.updateSupplierStatus);
 router.put('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.updateSupplier);
-router.delete('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_approve'), supplierAdminController_1.deleteSupplier);
+router.delete('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.deleteSupplier);
 router.post('/suppliers/:id/products', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminAddProduct);
 router.put('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminUpdateProduct);
 router.delete('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteProduct);
-router.put('/suppliers/catalogs/:id/file', (0, adminAuth_1.requirePermission)('can_approve'), uploadLargePdf.single('file'), supplierAdminController_1.adminReplaceCatalogFile);
+router.put('/suppliers/catalogs/:id/file', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), uploadLargePdf.single('file'), supplierAdminController_1.adminReplaceCatalogFile);
 router.patch('/suppliers/catalogs/:id/title', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminRenameCatalog);
 router.post('/suppliers/:id/catalogs', (0, adminAuth_1.requirePermission)('can_view_suppliers'), (req, res, next) => uploadLargePdf.single('file')(req, res, (err) => err ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'PDF exceeds the 50MB limit. For larger catalogs, ask the supplier to upload it from their own portal (chunked upload).' : 'Upload failed.' }) : next()), supplierAdminController_1.adminAddCatalog);
 router.delete('/suppliers/catalogs/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteCatalog);
@@ -551,13 +562,13 @@ router.delete('/survey-questions/:id', adminAuth_1.authenticateAdmin, adminAuth_
 router.post('/survey-questions/reorder', adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin, surveyQuestionsController_1.reorderQuestions);
 // Partner sync admin (approve/reject products & companies)
 const partnerAdminController_1 = require("../controllers/partnerAdminController");
-router.get('/partner-sync/products', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.listPendingProducts);
-router.post('/partner-sync/products/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveProduct);
-router.post('/partner-sync/products/:id/reject', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.rejectProduct);
-router.get('/partner-sync/companies', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.listPendingCompanies);
-router.post('/partner-sync/companies/:id/approve', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.approveCompany);
-router.post('/partner-sync/companies/:id/reject', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.rejectCompany);
-router.post('/partner-sync/bulk-delete', (0, adminAuth_1.requirePermission)('can_approve'), partnerAdminController_1.bulkDeleteSellers);
+router.get('/partner-sync/products', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), partnerAdminController_1.listPendingProducts);
+router.post('/partner-sync/products/:id/approve', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), partnerAdminController_1.approveProduct);
+router.post('/partner-sync/products/:id/reject', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), partnerAdminController_1.rejectProduct);
+router.get('/partner-sync/companies', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), partnerAdminController_1.listPendingCompanies);
+router.post('/partner-sync/companies/:id/approve', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), partnerAdminController_1.approveCompany);
+router.post('/partner-sync/companies/:id/reject', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), partnerAdminController_1.rejectCompany);
+router.post('/partner-sync/bulk-delete', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), partnerAdminController_1.bulkDeleteSellers);
 // 采购线索 admin 管理（迁自 test；继承上方 router.use(authenticateAdmin)+requireAdmin，任意登录 admin 可访问；列表/更新按 country 隔离）
 const sourcingRequestController_1 = require("../controllers/sourcingRequestController");
 router.get('/sourcing-requests', sourcingRequestController_1.adminListSourcingRequests);

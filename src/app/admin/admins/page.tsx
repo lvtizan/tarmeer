@@ -17,6 +17,7 @@ interface Admin {
     can_view_stats?: boolean;
     can_view_interviews?: boolean;
     can_manage_field_staff?: boolean;
+    can_approve_suppliers?: boolean;
     can_view_suppliers?: boolean;
   } | null;
   is_active: boolean;
@@ -30,7 +31,7 @@ export default function AdminAdminsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editPermissionsAdmin, setEditPermissionsAdmin] = useState<Admin | null>(null);
-  const [editPermissions, setEditPermissions] = useState({ can_approve: false, can_sort: false, can_view_stats: false, can_view_interviews: false, can_manage_field_staff: false, can_view_suppliers: false });
+  const [editPermissions, setEditPermissions] = useState({ can_approve: false, can_approve_suppliers: false, can_sort: false, can_view_stats: false, can_view_interviews: false, can_manage_field_staff: false, can_view_suppliers: false });
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [permError, setPermError] = useState('');
   const [createData, setCreateData] = useState({
@@ -38,7 +39,7 @@ export default function AdminAdminsPage() {
     password: '',
     fullName: '',
     permissions: {
-      can_approve: false,
+      can_approve: false, can_approve_suppliers: false,
       can_sort: false,
       can_view_stats: true,
       can_view_interviews: false,
@@ -90,7 +91,7 @@ export default function AdminAdminsPage() {
         email: '',
         password: '',
         fullName: '',
-        permissions: { can_approve: false, can_sort: false, can_view_stats: true, can_view_interviews: false, can_manage_field_staff: false, can_view_suppliers: false },
+        permissions: { can_approve: false, can_approve_suppliers: false, can_sort: false, can_view_stats: true, can_view_interviews: false, can_manage_field_staff: false, can_view_suppliers: false },
       });
       await loadAdmins();
     } catch (err: unknown) {
@@ -104,6 +105,7 @@ export default function AdminAdminsPage() {
     setEditPermissionsAdmin(admin);
     setEditPermissions({
       can_approve: !!admin.permissions?.can_approve,
+      can_approve_suppliers: !!admin.permissions?.can_approve_suppliers,
       can_sort: !!admin.permissions?.can_sort,
       can_view_stats: !!admin.permissions?.can_view_stats,
       can_view_interviews: !!admin.permissions?.can_view_interviews,

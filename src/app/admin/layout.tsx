@@ -190,14 +190,14 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // 供应商专属子管理员：唯一为真的权限就是 can_view_suppliers → 只能看供应商模块，屏蔽其它后台。
+  // 供应商专属子管理员仅持供应商查看/审批权限 → 只能看供应商模块，屏蔽其它后台。
   // 用白名单(而非逐个排除)判定,未来新增权限也不会误判。
   const truthyPerms = admin?.permissions
     ? Object.entries(admin.permissions).filter(([, v]) => v).map(([k]) => k)
     : [];
   const supplierScoped = admin?.role === 'sub_admin'
     && truthyPerms.length > 0
-    && truthyPerms.every((k) => k === 'can_view_suppliers');
+    && truthyPerms.every((k) => k === 'can_view_suppliers' || k === 'can_approve_suppliers');
   // 路由守卫：供应商专属管理员直接访问非供应商后台页 → 重定向回供应商列表
   useEffect(() => {
     if (supplierScoped && !isStandalone
