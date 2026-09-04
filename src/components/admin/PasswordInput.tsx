@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface PasswordInputProps {
   id: string;
@@ -11,6 +11,7 @@ interface PasswordInputProps {
   minLength?: number;
   label?: string;
   autoFocus?: boolean;
+  resetKey?: string | number;
 }
 
 export default function PasswordInput({
@@ -22,8 +23,10 @@ export default function PasswordInput({
   minLength,
   label = 'Password',
   autoFocus = false,
+  resetKey,
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
+  useEffect(() => { setShowPassword(false); }, [resetKey]);
 
   return (
     <div>

@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
+import { useAdmin } from '@/contexts/AdminContext';
 import { Package, Trash2, Pencil, Check, X, Plus, ExternalLink, Download, Copy, CalendarDays, Tag, Search, EyeOff } from 'lucide-react';
 import AdminRowActions from '@/components/admin/AdminRowActions';
 import ProductCategoriesManager from '@/components/admin/ProductCategoriesManager';
@@ -54,6 +55,7 @@ function supplierSortTime(...values: Array<string | null | undefined>): number {
 export default function AdminSuppliersPage() {
   const { t } = useAdminT();
   const { country } = useAdminCountry();
+  const { hasPermission } = useAdmin();
   const activeCountryRef = useRef(country);
   const supplierFetchIdRef = useRef(0);
   activeCountryRef.current = country;
@@ -359,14 +361,14 @@ export default function AdminSuppliersPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
+          {hasPermission('can_approve') && <button
             type="button"
-            onClick={() => { setShowCreateForm(value => !value); setCreateError(''); }}
+            onClick={() => { setShowCreateForm(true); setCreateError(''); }}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#b8864a] hover:bg-[#a07640] text-xs font-medium text-white transition"
           >
-            {showCreateForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            {showCreateForm ? t('Cancel', '取消') : t('New Supplier', '新建供应商账号')}
-          </button>
+            <Plus className="w-3.5 h-3.5" />
+            {t('New Supplier', '新建供应商账号')}
+          </button>}
           <button
             onClick={() => setShowCatManager(true)}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
@@ -401,8 +403,7 @@ export default function AdminSuppliersPage() {
         </div>
       </div>
 
-      {showCreateForm && (
-        <section className="mb-5 border border-stone-200 bg-white p-5 rounded-lg">
+      <section hidden={!showCreateForm} className="mb-5 border border-stone-200 bg-white p-5 rounded-lg">
           <h2 className="mb-4 text-sm font-semibold text-stone-700">{t('New Supplier Account', '新建供应商账号')}</h2>
           <form onSubmit={handleCreateSupplier} className="space-y-3">
             {createError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{createError}</p>}
@@ -449,9 +450,11 @@ export default function AdminSuppliersPage() {
                 placeholder={t('At least 8 characters', '至少 8 位')}
                 minLength={8}
                 required
+                resetKey={showCreateForm ? 'open' : 'closed'}
               />
             </div>
             <div className="flex justify-end pt-1">
+              <button type="button" onClick={() => setShowCreateForm(false)} className="mr-2 h-9 rounded-lg border border-stone-200 px-4 text-sm text-stone-600 hover:bg-stone-50">{t('Cancel', '取消')}</button>
               <button
                 type="submit"
                 disabled={createSubmitting}
@@ -461,8 +464,7 @@ export default function AdminSuppliersPage() {
               </button>
             </div>
           </form>
-        </section>
-      )}
+      </section>
 
       <div className="flex items-center justify-between gap-2 mb-4">
         {/* 来源 tab：全部 / 合作方同步 / 公司创建的号 */}
@@ -560,7 +562,7 @@ export default function AdminSuppliersPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Status', '状态')}</th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
-                  onClick={() => setProductSort(s => s === 'desc' ? 'asc' : 'desc')}
+                  onClick={() => { setJoinedSort(null); setEditedSort(null); setProductSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Products', '产品')} {productSort === 'asc' ? '↑' : productSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
@@ -569,13 +571,13 @@ export default function AdminSuppliersPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">权重</th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
-                  onClick={() => { setEditedSort(null); setJoinedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
+                  onClick={() => { setProductSort(null); setEditedSort(null); setJoinedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Listed', '上架时间')} {joinedSort === 'asc' ? '↑' : joinedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
-                  onClick={() => { setJoinedSort(null); setEditedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
+                  onClick={() => { setProductSort(null); setJoinedSort(null); setEditedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Last Edited', '最后编辑')} {editedSort === 'asc' ? '↑' : editedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
