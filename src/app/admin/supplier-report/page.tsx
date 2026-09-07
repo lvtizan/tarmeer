@@ -18,8 +18,56 @@ interface Supplier {
 interface CreatorStat { creator_id: number | null; creator_name: string | null; creator_email: string | null; count: number }
 interface Report { from: string; to: string; country: string; total: number; byDay: { date: string; count: number }[]; byCreator: CreatorStat[]; suppliers: Supplier[] }
 
+const DAILY_LISTING_CAPACITY = 5;
+
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function validDate(v: string | null): string | null { return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null; }
+
+function datesInRange(from: string, to: string): string[] {
+  const dates: string[] = [];
+  const cursor = new Date(`${from}T00:00:00`);
+  const last = new Date(`${to}T00:00:00`);
+  while (cursor <= last) {
+    dates.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
+function DailyListingBarChart({ byDay, from, to, zh }: Pick<Report, 'byDay' | 'from' | 'to'> & { zh: boolean }) {
+  const counts = new Map(byDay.map(day => [day.date, Number(day.count) || 0]));
+  const days = datesInRange(from, to);
+  if (!days.length) return null;
+
+  return (
+    <div className="mt-4 overflow-x-auto pb-1" aria-label={zh ? '每日供应商上架数量柱状图' : 'Daily supplier listing bar chart'}>
+      <div className="relative min-w-[720px] rounded-lg bg-stone-50/70 px-3 pt-4" style={{ minWidth: Math.max(720, days.length * 27) }}>
+        <div className="pointer-events-none absolute inset-x-3 top-4 h-[104px] border-b border-dashed border-stone-200" />
+        <div className="pointer-events-none absolute inset-x-3 top-[51px] border-t border-dashed border-stone-200/80" />
+        <div className="pointer-events-none absolute inset-x-3 top-[77px] border-t border-dashed border-stone-200/80" />
+        <div className="grid h-[151px] items-end gap-1" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(22px, 1fr))` }}>
+          {days.map(date => {
+            const count = counts.get(date) || 0;
+            const height = `${Math.min(count, DAILY_LISTING_CAPACITY) / DAILY_LISTING_CAPACITY * 100}%`;
+            return (
+              <div key={date} className="relative flex h-full min-w-0 flex-col items-center justify-end pb-[35px]">
+                {count > 0 && (
+                  <div className="relative w-3 min-h-[3px] rounded-t-sm bg-[#c38b48] shadow-[0_2px_4px_rgba(184,134,74,0.2)]" style={{ height }} title={`${date}: ${count}`}>
+                    <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-semibold leading-none text-[#8d602e]">{count}</span>
+                  </div>
+                )}
+                <span className="absolute bottom-[8px] whitespace-nowrap text-[9px] leading-none text-stone-400" style={{ transform: 'rotate(-62deg)' }}>
+                  {date.slice(5).replace('-', '/')}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="absolute right-3 top-2 text-[10px] text-stone-400">{zh ? `满柱 ${DAILY_LISTING_CAPACITY} 家` : `Full bar ${DAILY_LISTING_CAPACITY}`}</div>
+      </div>
+    </div>
+  );
+}
 
 function StatusBadge({ status, published, zh }: { status: string; published: boolean; zh: boolean }) {
   const ok = status === 'approved' && published;
@@ -116,13 +164,7 @@ export default function SupplierReportPage() {
                 {zh ? `家供应商上架（${data.from}${data.from !== data.to ? ' ~ ' + data.to : ''}）` : `suppliers listed (${data.from}${data.from !== data.to ? ' ~ ' + data.to : ''})`}
               </span>
             </div>
-            {data.byDay.length > 1 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {data.byDay.map(d => (
-                  <span key={d.date} className="rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600">{d.date}: <b>{d.count}</b></span>
-                ))}
-              </div>
-            )}
+            <DailyListingBarChart byDay={data.byDay} from={data.from} to={data.to} zh={zh} />
             {data.byCreator.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {data.byCreator.map(creator => (
