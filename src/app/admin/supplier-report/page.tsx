@@ -49,13 +49,16 @@ function DailyListingBarChart({ byDay, from, to, zh }: Pick<Report, 'byDay' | 'f
           {days.map(date => {
             const count = counts.get(date) || 0;
             const height = `${Math.min(count, DAILY_LISTING_CAPACITY) / DAILY_LISTING_CAPACITY * 100}%`;
+            const dayOfWeek = new Date(`${date}T00:00:00`).getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             return (
               <div key={date} className="relative flex h-full min-w-0 flex-col items-center justify-end pb-[35px]">
                 {count > 0 && (
-                  <div className="relative w-3 min-h-[3px] rounded-t-sm bg-[#c38b48] shadow-[0_2px_4px_rgba(184,134,74,0.2)]" style={{ height }} title={`${date}: ${count}`}>
+                  <div className="relative w-3 min-h-[3px] bg-[#c38b48]" style={{ height }} title={`${date}: ${count}`}>
                     <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-semibold leading-none text-[#8d602e]">{count}</span>
                   </div>
                 )}
+                {isWeekend && <span className="absolute bottom-[22px] text-[8px] font-medium leading-none text-rose-400">{zh ? '周末' : 'WE'}</span>}
                 <span className="absolute bottom-[8px] whitespace-nowrap text-[9px] leading-none text-stone-400" style={{ transform: 'rotate(-62deg)' }}>
                   {date.slice(5).replace('-', '/')}
                 </span>
