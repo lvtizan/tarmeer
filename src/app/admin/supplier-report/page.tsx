@@ -13,8 +13,10 @@ interface Supplier {
   id: number; company_name: string; name_zh: string | null; categories: string[];
   status: string; is_published: number; listed_at: string;
   account_id: number | null; account_email: string | null; account_name: string | null;
+  creator_id: number | null; creator_name: string | null; creator_email: string | null;
 }
-interface Report { from: string; to: string; country: string; total: number; byDay: { date: string; count: number }[]; suppliers: Supplier[] }
+interface CreatorStat { creator_id: number | null; creator_name: string | null; creator_email: string | null; count: number }
+interface Report { from: string; to: string; country: string; total: number; byDay: { date: string; count: number }[]; byCreator: CreatorStat[]; suppliers: Supplier[] }
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function validDate(v: string | null): string | null { return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null; }
@@ -38,6 +40,7 @@ export default function SupplierReportPage() {
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
+  const [creatorSort, setCreatorSort] = useState<'asc' | 'desc' | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setErr('');
@@ -56,6 +59,16 @@ export default function SupplierReportPage() {
     const t = new Date(); const f = new Date(); f.setDate(f.getDate() - (n - 1));
     setTo(t.toISOString().slice(0, 10)); setFrom(f.toISOString().slice(0, 10));
   };
+  const creatorLabel = (creator: Pick<Supplier, 'creator_id' | 'creator_name' | 'creator_email'>) => {
+    if (creator.creator_name && creator.creator_email) return `${creator.creator_name} (${creator.creator_email})`;
+    if (creator.creator_id) return zh ? '创建者已删除' : 'Deleted administrator';
+    return creator.creator_name || creator.creator_email || (zh ? '未记录/系统导入' : 'Unattributed / import');
+  };
+  const displaySuppliers = data ? [...data.suppliers].sort((a, b) => {
+    if (!creatorSort) return 0;
+    const diff = creatorLabel(a).localeCompare(creatorLabel(b), undefined, { numeric: true });
+    return creatorSort === 'asc' ? diff : -diff;
+  }) : [];
 
   return (
     <div className="space-y-5">
@@ -66,7 +79,7 @@ export default function SupplierReportPage() {
       <div>
         <h1 className="text-xl font-bold text-[#1c1917]">{zh ? '供应商上架统计' : 'Supplier Listing Report'}</h1>
         <p className="mt-1 text-sm text-stone-500">
-          {zh ? '按日期看当天上架了哪几家供应商、哪个号传的。上架时间＝发布/最后更新时间。' : 'Suppliers listed per date and which account uploaded them. Listing time = publish/last-updated time.'}
+          {zh ? '按日期查看供应商上架、账号及创建者；汇总为每位创建者上架的供应商数。上架时间＝首次发布/历史最后更新时间。' : 'View supplier listings by date, account, and creator. The summary counts listed suppliers per creator.'}
         </p>
       </div>
 
@@ -109,6 +122,15 @@ export default function SupplierReportPage() {
                 ))}
               </div>
             )}
+            {data.byCreator.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {data.byCreator.map(creator => (
+                  <span key={creator.creator_id ?? 'unattributed'} className="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-800">
+                    {creatorLabel(creator)}: <b>{creator.count}</b>{zh ? ' 家' : ''}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 扁平表格 */}
@@ -124,11 +146,18 @@ export default function SupplierReportPage() {
                     <th className="px-4 py-3">{zh ? '中文名' : 'Chinese Name'}</th>
                     <th className="px-4 py-3">{zh ? '品类' : 'Category'}</th>
                     <th className="px-4 py-3">{zh ? '号（账号）' : 'Account'}</th>
+                    <th
+                      className="cursor-pointer select-none px-4 py-3 hover:text-stone-800"
+                      title={zh ? '点击按创建者归并统计' : 'Click to group by creator'}
+                      onClick={() => setCreatorSort(value => value === 'asc' ? 'desc' : 'asc')}
+                    >
+                      {zh ? '创建者' : 'Creator'} {creatorSort === 'asc' ? '↑' : creatorSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
+                    </th>
                     <th className="px-4 py-3">{zh ? '状态' : 'Status'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {data.suppliers.map(s => (
+                  {displaySuppliers.map(s => (
                     <tr key={s.id} className="hover:bg-stone-50/60">
                       <td className="whitespace-nowrap px-4 py-2.5 text-stone-500">{String(s.listed_at).slice(0, 10)}</td>
                       <td className="px-4 py-2.5">
@@ -141,6 +170,7 @@ export default function SupplierReportPage() {
                           ? <span className="text-stone-600">{s.account_email}</span>
                           : <span className="text-stone-400">{zh ? '系统导入/无归属' : 'Unattributed'}</span>}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-stone-600">{creatorLabel(s)}</td>
                       <td className="px-4 py-2.5"><StatusBadge status={s.status} published={!!s.is_published} zh={zh} /></td>
                     </tr>
                   ))}

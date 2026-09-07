@@ -315,6 +315,8 @@ async function addProduct(req, res) {
         // 供应商门户：specs/certifications/application_scenes 随产品落库（生产已上线的门户能力，reconcile 保留）
         const { specs, certifications, application_scenes } = req.body;
         const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, price, price_max, price_unit, price_currency, price_from, title_translated, description_translated, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [profileId, title || null, description || null, category || null, primaryUrl, urlsJson, sort_order || 0, parsedPrice.price, parsedPrice.priceMax, price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes)]);
+        // COALESCE makes this concurrency-safe: only the first successful product fixes the listing month.
+        await database_1.default.execute('UPDATE supplier_profiles SET first_product_at = COALESCE(first_product_at, NOW()) WHERE id = ?', [profileId]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [id]);
         const product = created[0];

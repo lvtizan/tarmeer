@@ -61,11 +61,16 @@ try {
   const adminRoutesSource = readFileSync(path.join(ROOT, 'server/dist/routes/admin.js'), 'utf8');
   const publicRegistrationSource = readFileSync(path.join(ROOT, 'server/dist/controllers/supplierAuthController.js'), 'utf8');
   const supplierAdminSource = readFileSync(path.join(ROOT, 'server/dist/controllers/supplierAdminController.js'), 'utf8');
+  const supplierControllerSource = readFileSync(path.join(ROOT, 'server/dist/controllers/supplierAdminController.js'), 'utf8');
+  const supplierReportSource = readFileSync(path.join(ROOT, 'src/app/admin/supplier-report/page.tsx'), 'utf8');
   check('admin API exposes the protected supplier-create request', /createSupplierAccount\(/.test(adminApiSource) && /request\('\/suppliers'/.test(adminApiSource), 'missing admin API method');
   check('supplier admin page has the account-creation form', /showCreateForm/.test(supplierPageSource) && /New Supplier/.test(supplierPageSource), 'missing supplier creation UI');
   check('supplier admin page has no email-verification bypass toggle', !/email verification.*checkbox|免邮箱验证.*(checkbox|勾选)/i.test(supplierPageSource), 'creation path must be fixed, not optional');
-  check('creation route requires approval permission', /router\.post\('\/suppliers',\s*\(0, adminAuth_1\.requirePermission\)\('can_approve'\)/.test(adminRoutesSource), 'route must stay behind can_approve');
-  const supplierControllerSource = readFileSync(path.join(ROOT, 'server/dist/controllers/supplierAdminController.js'), 'utf8');
+  check('creation route requires supplier approval permission', /router\.post\('\/suppliers',\s*\(0, adminAuth_1\.requirePermission\)\('can_approve_suppliers'\)/.test(adminRoutesSource), 'route must stay behind can_approve_suppliers');
+  check('supplier list and report expose creator attribution', /created_by_admin_id/.test(supplierControllerSource) && /creator_name/.test(supplierControllerSource) && /byCreator/.test(supplierControllerSource), 'creator fields or aggregation missing');
+  check('listing report excludes zero-product accounts and uses first product time', /sp\.first_product_at IS NOT NULL/.test(supplierControllerSource) && /DATE\(sp\.first_product_at\)/.test(supplierControllerSource), 'listing report must use first_product_at');
+  check('both supplier and admin product creation record first product time', /first_product_at = COALESCE\(first_product_at, NOW\(\)\)/.test(supplierControllerSource) && /first_product_at = COALESCE\(first_product_at, NOW\(\)\)/.test(readFileSync(path.join(ROOT, 'server/dist/controllers/supplierProductController.js'), 'utf8')), 'first product write path missing');
+  check('supplier report can group entries by creator', /creatorSort/.test(supplierReportSource) && /byCreator/.test(supplierReportSource), 'creator grouping UI missing');
   check('account creation writes its audit row before transaction commit', /INSERT INTO activity_log[\s\S]*?await connection\.commit\(\)/.test(supplierControllerSource), 'audit must be part of the creation transaction');
   check('public supplier registration remains verification-gated', /INSERT INTO supplier_users \(email, password, full_name, phone, verification_token, verification_expires\)/.test(publicRegistrationSource), 'public registration must not set email_verified');
   check('supplier deletion is country-scoped and audited with that country', /WHERE id = \? AND country = \?/.test(supplierAdminSource) && /supplier_delete/.test(supplierAdminSource) && /删除供应商#\$\{id\}`, country\)/.test(supplierAdminSource), 'delete must use selected country for query and audit');
@@ -103,7 +108,7 @@ try {
   check('creation response marks the account email-verified', superResult.body?.supplier?.email_verified === true, JSON.stringify(superResult.body));
 
   const [superRows] = await pool.execute(
-    `SELECT su.email_verified, su.password, sp.id AS supplier_profile_id, sp.country, sp.status
+    `SELECT su.email_verified, su.password, sp.id AS supplier_profile_id, sp.country, sp.status, sp.created_by_admin_id
      FROM supplier_users su JOIN supplier_profiles sp ON sp.supplier_user_id = su.id
      WHERE su.email = ?`, [superEmail]);
   const superAccount = superRows[0];
@@ -111,6 +116,7 @@ try {
   check('password is hashed rather than stored as plaintext', Boolean(superAccount?.password) && superAccount.password !== 'SafePass123', JSON.stringify(superAccount));
   check('super admin creation uses the active selected country', superAccount?.country === 'vn', JSON.stringify(superAccount));
   check('new supplier profile remains pending review', superAccount?.status === 'pending', JSON.stringify(superAccount));
+  check('new supplier profile records the creating admin', Number(superAccount?.created_by_admin_id) === 990001, JSON.stringify(superAccount));
   const [auditRows] = await pool.execute(
     "SELECT action, country FROM activity_log WHERE target_type = 'supplier' AND target_id = ? ORDER BY id DESC LIMIT 1",
     [superAccount?.supplier_profile_id || 0],
@@ -165,7 +171,7 @@ try {
     const readOnly = await request(readOnlyToken, { companyName: 'Denied Supplier', email: `harness-readonly-${marker}@local.test`, password: 'SafePass123', country: 'vn' });
     check('route rejects supplier read-only admins from creating accounts', readOnly.status === 403, `HTTP ${readOnly.status}`);
 
-    const supplierManagerToken = await insertAdmin(`harness-manager-route-${marker}@local.test`, 'sub_admin', { can_approve: true }, 'vn');
+    const supplierManagerToken = await insertAdmin(`harness-manager-route-${marker}@local.test`, 'sub_admin', { can_approve_suppliers: true }, 'vn');
     const routeEmail = `harness-route-${marker}@local.test`;
     const allowed = await request(supplierManagerToken, { companyName: 'HTTP Supplier', email: routeEmail, password: 'SafePass123', country: 'ae' });
     const allowedBody = await allowed.json();

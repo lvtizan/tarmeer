@@ -101,8 +101,8 @@ async function createAdminSupplierAccount(req, res) {
         const baseSlug = (0, slugify_1.slugify)(companyName).slice(0, 240) || 'supplier';
         const slug = `${baseSlug}-${userId}`;
         const [profileResult] = await connection.execute(`INSERT INTO supplier_profiles
-             (supplier_user_id, company_name, slug, status, contact_phone, country)
-             VALUES (?, ?, ?, 'pending', ?, ?)`, [userId, companyName, slug, phone || null, country]);
+             (supplier_user_id, company_name, slug, status, contact_phone, country, created_by_admin_id)
+             VALUES (?, ?, ?, 'pending', ?, ?, ?)`, [userId, companyName, slug, phone || null, country, req.admin?.id || null]);
         await connection.execute(`INSERT INTO activity_log
              (user_id, user_name, user_role, action, target_type, target_id, description, ip, country)
              VALUES (?, ?, ?, ?, 'supplier', ?, ?, ?, ?)`, [
@@ -333,10 +333,12 @@ async function listSuppliers(req, res) {
         const [teamRows] = await database_1.default.execute(`SELECT COUNT(*) as tc FROM supplier_profiles sp LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id WHERE sp.country = ? AND su.email LIKE '%@tarmeer-team.com'`, [country]);
         const teamCount = teamRows[0].tc;
         const [rows] = await database_1.default.query(`SELECT sp.*, su.email as user_email, su.full_name as user_name,
+              au.full_name as creator_name, au.email as creator_email,
               (SELECT COUNT(*) FROM supplier_products WHERE supplier_profile_id = sp.id) as product_count,
               (SELECT COUNT(*) FROM supplier_catalogs WHERE supplier_profile_id = sp.id) as catalog_count
        FROM supplier_profiles sp
        LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
+       LEFT JOIN admin_users au ON au.id = sp.created_by_admin_id
        ${where}
        ORDER BY CASE WHEN GREATEST(COALESCE(sp.home_display_order,0), COALESCE(sp.list_display_order,0)) > 0 THEN 0 ELSE 1 END,
                 LEAST(CASE WHEN sp.home_display_order > 0 THEN sp.home_display_order ELSE 999999 END,
@@ -466,6 +468,8 @@ async function adminAddProduct(req, res) {
             ? null
             : SUPPORTED_PRICE_CURRENCIES.includes(req.body.price_currency) ? req.body.price_currency : null;
         const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order, price, price_max, price_unit, price_currency, price_from, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0, parsedPrice.kind === 'valid' ? parsedPrice.value : null, parsedPriceMax.kind === 'valid' ? parsedPriceMax.value : null, req.body.price_unit || null, priceCurrency, req.body.price_from ? 1 : 0, jarr(specs), jarr(certifications), jarr(application_scenes)]);
+        // Admin-assisted uploads follow the same first-product listing rule as supplier self-service uploads.
+        await database_1.default.execute('UPDATE supplier_profiles SET first_product_at = COALESCE(first_product_at, NOW()) WHERE id = ?', [id]);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [result.insertId]);
         await logSupplierAction(req, 'supplier_product_add', id, `供应商#${id} 新增商品#${result.insertId}`);
         res.status(201).json({ product: created[0] });
@@ -782,9 +786,7 @@ async function toggleSupplierProjectPublished(req, res) {
 }
 // 供应商上架报表：按日期范围统计当天上架了几家 + 按「号」(supplier_user 账号) 分组哪个号传了哪几家。
 // 国家隔离：WHERE sp.country=?（admin 传当前 country）。
-// "上架"=已发布(is_published=1)，时间按 published_at(首次发布上架时刻,toggleSupplierPublished 里写入)——
-// 团队常先批量开号、之后每天挑老号填资料+发布上架，published_at 精确记录上架当天且不随后续编辑漂移。
-// COALESCE(published_at, updated_at) 兜底历史行(回填前 published_at 为 NULL 时退回 updated_at)。
+// "上架"=已发布且有商品，时间严格取首个商品上传时间；新建 0 商品账号绝不计入。
 async function getSupplierReport(req, res) {
     try {
         const country = req.query.country || req.country || 'ae';
@@ -792,14 +794,16 @@ async function getSupplierReport(req, res) {
         let from = isDate(req.query.from) ? req.query.from : new Date().toISOString().slice(0, 10);
         let to = isDate(req.query.to) ? req.query.to : from;
         if (from > to) { const tmp = from; from = to; to = tmp; } // 直连 API 可能传反,保证 from<=to
-        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.categories, sp.status, sp.is_published, sp.source, sp.created_at, sp.updated_at, sp.published_at,
-                COALESCE(sp.published_at, sp.updated_at) AS listed_ts,
-                DATE_FORMAT(COALESCE(sp.published_at, sp.updated_at), '%Y-%m-%d') AS listed_date,
-                sp.supplier_user_id, su.email AS account_email, su.full_name AS account_name
+        const [rows] = await database_1.default.execute(`SELECT sp.id, sp.company_name, sp.name_zh, sp.categories, sp.status, sp.is_published, sp.source, sp.created_at, sp.updated_at, sp.published_at, sp.first_product_at,
+                sp.first_product_at AS listed_ts,
+                DATE_FORMAT(sp.first_product_at, '%Y-%m-%d') AS listed_date,
+                sp.supplier_user_id, su.email AS account_email, su.full_name AS account_name,
+                sp.created_by_admin_id, au.full_name AS creator_name, au.email AS creator_email
          FROM supplier_profiles sp
          LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
-         WHERE sp.country = ? AND sp.is_published = 1 AND DATE(COALESCE(sp.published_at, sp.updated_at)) BETWEEN ? AND ?
-         ORDER BY COALESCE(sp.published_at, sp.updated_at) DESC, sp.id DESC`, [country, from, to]);
+         LEFT JOIN admin_users au ON au.id = sp.created_by_admin_id
+         WHERE sp.country = ? AND sp.is_published = 1 AND sp.first_product_at IS NOT NULL AND DATE(sp.first_product_at) BETWEEN ? AND ?
+         ORDER BY sp.first_product_at DESC, sp.id DESC`, [country, from, to]);
         // 按天统计（用 DB 格式化的日期，避免时区漂移）
         const byDayMap = {};
         for (const r of rows)
@@ -812,8 +816,22 @@ async function getSupplierReport(req, res) {
             categories: parseArr(r.categories), status: r.status, is_published: r.is_published,
             listed_at: r.listed_ts,
             account_id: r.supplier_user_id, account_email: r.account_email || null, account_name: r.account_name || null,
+            creator_id: r.created_by_admin_id || null, creator_name: r.creator_name || null, creator_email: r.creator_email || null,
         }));
-        res.json({ from, to, country, total: rows.length, byDay, suppliers });
+        const byCreatorMap = {};
+        for (const supplier of suppliers) {
+            const id = supplier.creator_id == null ? 'unattributed' : String(supplier.creator_id);
+            const current = byCreatorMap[id] || {
+                creator_id: supplier.creator_id,
+                creator_name: supplier.creator_name,
+                creator_email: supplier.creator_email,
+                count: 0,
+            };
+            current.count += 1;
+            byCreatorMap[id] = current;
+        }
+        const byCreator = Object.values(byCreatorMap).sort((a, b) => b.count - a.count || String(a.creator_name || a.creator_email || '').localeCompare(String(b.creator_name || b.creator_email || '')));
+        res.json({ from, to, country, total: rows.length, byDay, byCreator, suppliers });
     }
     catch (error) {
         console.error('getSupplierReport error:', error);

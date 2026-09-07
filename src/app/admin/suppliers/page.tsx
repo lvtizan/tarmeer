@@ -37,6 +37,9 @@ interface Supplier {
   list_display_order: number;
   weight_score: number | null;
   source?: string;
+  created_by_admin_id?: number | null;
+  creator_name?: string | null;
+  creator_email?: string | null;
 }
 
 function supplierSearchText(value: unknown): string {
@@ -74,6 +77,7 @@ export default function AdminSuppliersPage() {
   const [productSort, setProductSort] = useState<'asc' | 'desc' | null>(null);
   const [joinedSort, setJoinedSort] = useState<'asc' | 'desc' | null>('desc'); // 默认「上架时间(published_at)」从新到旧,最新上架的在最前(与服务端 ORDER BY 一致)
   const [editedSort, setEditedSort] = useState<'asc' | 'desc' | null>(null);
+  const [creatorSort, setCreatorSort] = useState<'asc' | 'desc' | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ id: number; name: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Record<string, string>>({});
@@ -282,6 +286,14 @@ export default function AdminSuppliersPage() {
       supplierSearchText(s.user_email).includes(q)
     );
     const sorted = [...list];
+    if (creatorSort) {
+      sorted.sort((a, b) => {
+        const aCreator = a.creator_name || a.creator_email || '未记录/系统导入';
+        const bCreator = b.creator_name || b.creator_email || '未记录/系统导入';
+        const diff = aCreator.localeCompare(bCreator, undefined, { numeric: true });
+        return creatorSort === 'asc' ? diff : -diff;
+      });
+    }
     if (productSort) {
       sorted.sort((a, b) => {
         const diff = (Number(a.product_count) || 0) - (Number(b.product_count) || 0);
@@ -301,7 +313,7 @@ export default function AdminSuppliersPage() {
       });
     }
     return sorted;
-  }, [editedSort, joinedSort, productSort, search, suppliers]);
+  }, [creatorSort, editedSort, joinedSort, productSort, search, suppliers]);
 
   const exportCsv = () => {
     const esc = (v: unknown): string => {
@@ -316,6 +328,7 @@ export default function AdminSuppliersPage() {
       t('Origin', '产地'),
       t('Status', '状态'),
       t('Products', '商品数'),
+      t('Creator', '创建者'),
       t('Email', '邮箱'),
       t('Listed', '上架时间'),
     ];
@@ -325,6 +338,7 @@ export default function AdminSuppliersPage() {
       esc(s.origin),
       esc(s.status),
       esc(s.product_count),
+      esc(s.creator_name || s.creator_email || (s.created_by_admin_id ? t('Deleted administrator', '创建者已删除') : t('Unattributed / import', '未记录/系统导入'))),
       esc(s.user_email),
       esc(s.published_at || s.updated_at),
     ].join(','));
@@ -562,22 +576,29 @@ export default function AdminSuppliersPage() {
                 <th className="text-left px-4 py-3 font-medium text-stone-600">{t('Status', '状态')}</th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800"
-                  onClick={() => { setJoinedSort(null); setEditedSort(null); setProductSort(s => s === 'desc' ? 'asc' : 'desc'); }}
+                  onClick={() => { setCreatorSort(null); setJoinedSort(null); setEditedSort(null); setProductSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Products', '产品')} {productSort === 'asc' ? '↑' : productSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
+                </th>
+                <th
+                  className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
+                  title={t('Click to group suppliers by creator', '点击按创建者归并统计')}
+                  onClick={() => { setProductSort(null); setJoinedSort(null); setEditedSort(null); setCreatorSort(s => s === 'asc' ? 'desc' : 'asc'); }}
+                >
+                  {t('Creator', '创建者')} {creatorSort === 'asc' ? '↑' : creatorSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">首页排序</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">列表排序</th>
                 <th className="text-left px-4 py-3 font-medium text-stone-600 whitespace-nowrap">权重</th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
-                  onClick={() => { setProductSort(null); setEditedSort(null); setJoinedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
+                  onClick={() => { setCreatorSort(null); setProductSort(null); setEditedSort(null); setJoinedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Listed', '上架时间')} {joinedSort === 'asc' ? '↑' : joinedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
                 <th
                   className="text-left px-4 py-3 font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 whitespace-nowrap"
-                  onClick={() => { setProductSort(null); setJoinedSort(null); setEditedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
+                  onClick={() => { setCreatorSort(null); setProductSort(null); setJoinedSort(null); setEditedSort(s => s === 'desc' ? 'asc' : 'desc'); }}
                 >
                   {t('Last Edited', '最后编辑')} {editedSort === 'asc' ? '↑' : editedSort === 'desc' ? '↓' : <span className="text-stone-300">↕</span>}
                 </th>
@@ -679,6 +700,9 @@ export default function AdminSuppliersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-[15px] text-stone-600">{s.product_count}</td>
+                  <td className="px-4 py-3 text-[14px] text-stone-600 whitespace-nowrap">
+                    {s.creator_name || s.creator_email || (s.created_by_admin_id ? t('Deleted administrator', '创建者已删除') : t('Unattributed / import', '未记录/系统导入'))}
+                  </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="relative">
                       {orderToast?.key === getEditKey(s.id, 'home') && (

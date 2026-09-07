@@ -498,6 +498,10 @@ const REQUIRED_COLUMNS = [
     { table: 'supplier_profiles', column: 'license_url', type: 'VARCHAR(500) NULL' },
     // Supplier country bucketing (mirrors company_profiles/homeowner_profiles.country; drives currency display)
     { table: 'supplier_profiles', column: 'country', type: "VARCHAR(5) NOT NULL DEFAULT 'ae'" },
+    // 管理员创建供应商账号时记录创建者；历史/自助注册保持 NULL，绝不猜测归属。
+    { table: 'supplier_profiles', column: 'created_by_admin_id', type: 'INT NULL' },
+    // 上架统计的唯一时间锚点：首个商品成功创建的时间（新建空号不计入）。
+    { table: 'supplier_profiles', column: 'first_product_at', type: 'DATETIME NULL' },
     // Supplier product multi-image + category
     { table: 'supplier_products', column: 'image_urls', type: 'JSON NULL' },
     { table: 'supplier_products', column: 'category', type: 'VARCHAR(100) NULL' },
@@ -546,6 +550,8 @@ const NULLABLE_COLUMNS = [
 const REQUIRED_INDEXES = [
     { table: 'designers', indexName: 'idx_oauth_google', columns: 'google_id' },
     { table: 'designers', indexName: 'idx_oauth_facebook', columns: 'facebook_id' },
+    { table: 'supplier_profiles', indexName: 'idx_supplier_created_by_admin', columns: 'created_by_admin_id' },
+    { table: 'supplier_profiles', indexName: 'idx_supplier_first_product_at', columns: 'first_product_at' },
 ];
 // ─── 工具函数 ───────────────────────────────────────────
 async function columnExists(table, column) {
@@ -614,6 +620,20 @@ async function runAutoMigrate(options = {}) {
             await database_1.default.execute(`UPDATE company_profiles SET slug = LOWER(REPLACE(REPLACE(REPLACE(TRIM(company_name), ' ', '-'), '.', ''), ',', '')) WHERE slug IS NULL OR slug = ''`);
         }
         catch { /* ignore if column doesn't exist yet */ }
+        // 4c. Deterministically backfill supplier attribution and first product timestamps.
+        // We only use an existing audit row or the earliest real product; unknown history stays NULL.
+        try {
+            await database_1.default.execute(`UPDATE supplier_profiles sp
+              JOIN activity_log al ON al.target_type = 'supplier' AND al.action = 'supplier_account_create' AND al.target_id = sp.id
+              SET sp.created_by_admin_id = al.user_id
+              WHERE sp.created_by_admin_id IS NULL AND al.user_id IS NOT NULL`);
+            await database_1.default.execute(`UPDATE supplier_profiles sp
+              JOIN (SELECT supplier_profile_id, MIN(created_at) AS first_product_at FROM supplier_products GROUP BY supplier_profile_id) products
+                ON products.supplier_profile_id = sp.id
+              SET sp.first_product_at = products.first_product_at
+              WHERE sp.first_product_at IS NULL`);
+        }
+        catch { /* legacy installs may not have supplier tables yet */ }
         // 4b. Populate slugs for existing projects that don't have one
         try {
             await database_1.default.execute(`UPDATE projects SET slug = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(title), ' ', '-'), '.', ''), ',', ''), '\'', '')) WHERE (slug IS NULL OR slug = '') AND title IS NOT NULL`);
