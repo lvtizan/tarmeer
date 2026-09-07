@@ -37,6 +37,11 @@ const productPriceRange_1 = require("../lib/productPriceRange");
 const slugify_1 = require("../lib/slugify");
 // 报价币种白名单。⚠️ 与 supplierProductController.PRODUCT_CURRENCIES / 前端 src/lib/supplierProductUnits.ts 同源。
 const SUPPORTED_PRICE_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'];
+// 合作方来源不是管理员创建：该合作方同步的供应商统一归属为业务来源“蓝鲸”。
+// 使用虚拟 ID，确保报表聚合不与普通“未记录/系统导入”混在一起。
+const BLUEWHALE_PARTNER_KEY = 'pk_9fada27f38';
+const BLUEWHALE_CREATOR_ID = -1;
+const BLUEWHALE_CREATOR_NAME = '蓝鲸';
 /** 记录供应商后台操作到 activity_log（审计）。整体 try/catch，记录失败绝不影响主操作。 */
 async function logSupplierAction(req, action, targetId, description, country = req.admin?.country) {
     try {
@@ -333,19 +338,22 @@ async function listSuppliers(req, res) {
         const [teamRows] = await database_1.default.execute(`SELECT COUNT(*) as tc FROM supplier_profiles sp LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id WHERE sp.country = ? AND su.email LIKE '%@tarmeer-team.com'`, [country]);
         const teamCount = teamRows[0].tc;
         const [rows] = await database_1.default.query(`SELECT sp.*, su.email as user_email, su.full_name as user_name,
-              au.full_name as creator_name, au.email as creator_email,
+              CASE WHEN sp.source = 'partner' AND pa.partner_key = ? THEN ${BLUEWHALE_CREATOR_ID} ELSE sp.created_by_admin_id END AS creator_id,
+              CASE WHEN sp.source = 'partner' AND pa.partner_key = ? THEN '${BLUEWHALE_CREATOR_NAME}' ELSE au.full_name END as creator_name,
+              CASE WHEN sp.source = 'partner' AND pa.partner_key = ? THEN NULL ELSE au.email END as creator_email,
               (SELECT COUNT(*) FROM supplier_products WHERE supplier_profile_id = sp.id) as product_count,
               (SELECT COUNT(*) FROM supplier_catalogs WHERE supplier_profile_id = sp.id) as catalog_count
        FROM supplier_profiles sp
        LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
        LEFT JOIN admin_users au ON au.id = sp.created_by_admin_id
+       LEFT JOIN partner_accounts pa ON pa.id = sp.partner_id
        ${where}
        ORDER BY CASE WHEN GREATEST(COALESCE(sp.home_display_order,0), COALESCE(sp.list_display_order,0)) > 0 THEN 0 ELSE 1 END,
                 LEAST(CASE WHEN sp.home_display_order > 0 THEN sp.home_display_order ELSE 999999 END,
                       CASE WHEN sp.list_display_order > 0 THEN sp.list_display_order ELSE 999999 END) ASC,
                 COALESCE(sp.published_at, sp.updated_at) DESC,
                 sp.id DESC
-       LIMIT ${limit} OFFSET ${offset}`, params);
+       LIMIT ${limit} OFFSET ${offset}`, [BLUEWHALE_PARTNER_KEY, BLUEWHALE_PARTNER_KEY, BLUEWHALE_PARTNER_KEY, ...params]);
         res.json({ suppliers: rows, partnerCount, allCount, teamCount, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }
     catch (error) {
@@ -798,12 +806,15 @@ async function getSupplierReport(req, res) {
                 sp.first_product_at AS listed_ts,
                 DATE_FORMAT(sp.first_product_at, '%Y-%m-%d') AS listed_date,
                 sp.supplier_user_id, su.email AS account_email, su.full_name AS account_name,
-                sp.created_by_admin_id, au.full_name AS creator_name, au.email AS creator_email
+                CASE WHEN sp.source = 'partner' AND pa.partner_key = ? THEN ${BLUEWHALE_CREATOR_ID} ELSE sp.created_by_admin_id END AS creator_id,
+                CASE WHEN sp.source = 'partner' AND pa.partner_key = ? THEN '${BLUEWHALE_CREATOR_NAME}' ELSE au.full_name END AS creator_name,
+                CASE WHEN sp.source = 'partner' AND pa.partner_key = ? THEN NULL ELSE au.email END AS creator_email
          FROM supplier_profiles sp
          LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
          LEFT JOIN admin_users au ON au.id = sp.created_by_admin_id
+         LEFT JOIN partner_accounts pa ON pa.id = sp.partner_id
          WHERE sp.country = ? AND sp.first_product_at IS NOT NULL AND DATE(sp.first_product_at) BETWEEN ? AND ?
-         ORDER BY sp.first_product_at DESC, sp.id DESC`, [country, from, to]);
+         ORDER BY sp.first_product_at DESC, sp.id DESC`, [BLUEWHALE_PARTNER_KEY, BLUEWHALE_PARTNER_KEY, BLUEWHALE_PARTNER_KEY, country, from, to]);
         // 按天统计（用 DB 格式化的日期，避免时区漂移）
         const byDayMap = {};
         for (const r of rows)
@@ -816,7 +827,7 @@ async function getSupplierReport(req, res) {
             categories: parseArr(r.categories), status: r.status, is_published: r.is_published,
             listed_at: r.listed_ts,
             account_id: r.supplier_user_id, account_email: r.account_email || null, account_name: r.account_name || null,
-            creator_id: r.created_by_admin_id || null, creator_name: r.creator_name || null, creator_email: r.creator_email || null,
+            creator_id: r.creator_id == null ? null : Number(r.creator_id), creator_name: r.creator_name || null, creator_email: r.creator_email || null,
         }));
         const byCreatorMap = {};
         for (const supplier of suppliers) {

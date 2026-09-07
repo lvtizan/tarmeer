@@ -38,6 +38,7 @@ interface Supplier {
   weight_score: number | null;
   source?: string;
   created_by_admin_id?: number | null;
+  creator_id?: number | null;
   creator_name?: string | null;
   creator_email?: string | null;
 }
@@ -53,6 +54,11 @@ function supplierSortTime(...values: Array<string | null | undefined>): number {
     if (Number.isFinite(time)) return time;
   }
   return 0;
+}
+
+function supplierCreatorLabel(supplier: Supplier, t: (en: string, zh: string) => string): string {
+  if (supplier.creator_id === -1) return t('Blue Whale', '蓝鲸');
+  return supplier.creator_name || supplier.creator_email || (supplier.created_by_admin_id ? t('Deleted administrator', '创建者已删除') : t('Unattributed / import', '未记录/系统导入'));
 }
 
 export default function AdminSuppliersPage() {
@@ -288,8 +294,8 @@ export default function AdminSuppliersPage() {
     const sorted = [...list];
     if (creatorSort) {
       sorted.sort((a, b) => {
-        const aCreator = a.creator_name || a.creator_email || '未记录/系统导入';
-        const bCreator = b.creator_name || b.creator_email || '未记录/系统导入';
+        const aCreator = supplierCreatorLabel(a, t);
+        const bCreator = supplierCreatorLabel(b, t);
         const diff = aCreator.localeCompare(bCreator, undefined, { numeric: true });
         return creatorSort === 'asc' ? diff : -diff;
       });
@@ -338,7 +344,7 @@ export default function AdminSuppliersPage() {
       esc(s.origin),
       esc(s.status),
       esc(s.product_count),
-      esc(s.creator_name || s.creator_email || (s.created_by_admin_id ? t('Deleted administrator', '创建者已删除') : t('Unattributed / import', '未记录/系统导入'))),
+      esc(supplierCreatorLabel(s, t)),
       esc(s.user_email),
       esc(s.published_at || s.updated_at),
     ].join(','));
@@ -701,7 +707,7 @@ export default function AdminSuppliersPage() {
                   </td>
                   <td className="px-4 py-3 text-[15px] text-stone-600">{s.product_count}</td>
                   <td className="px-4 py-3 text-[14px] text-stone-600 whitespace-nowrap">
-                    {s.creator_name || s.creator_email || (s.created_by_admin_id ? t('Deleted administrator', '创建者已删除') : t('Unattributed / import', '未记录/系统导入'))}
+                    {supplierCreatorLabel(s, t)}
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="relative">

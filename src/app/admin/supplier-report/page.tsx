@@ -60,6 +60,7 @@ export default function SupplierReportPage() {
     setTo(t.toISOString().slice(0, 10)); setFrom(f.toISOString().slice(0, 10));
   };
   const creatorLabel = (creator: Pick<Supplier, 'creator_id' | 'creator_name' | 'creator_email'>) => {
+    if (creator.creator_id === -1) return zh ? '蓝鲸' : 'Blue Whale';
     if (creator.creator_name && creator.creator_email) return `${creator.creator_name} (${creator.creator_email})`;
     if (creator.creator_id) return zh ? '创建者已删除' : 'Deleted administrator';
     return creator.creator_name || creator.creator_email || (zh ? '未记录/系统导入' : 'Unattributed / import');
