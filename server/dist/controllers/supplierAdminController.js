@@ -802,7 +802,7 @@ async function getSupplierReport(req, res) {
          FROM supplier_profiles sp
          LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
          LEFT JOIN admin_users au ON au.id = sp.created_by_admin_id
-         WHERE sp.country = ? AND sp.is_published = 1 AND sp.first_product_at IS NOT NULL AND DATE(sp.first_product_at) BETWEEN ? AND ?
+         WHERE sp.country = ? AND sp.first_product_at IS NOT NULL AND DATE(sp.first_product_at) BETWEEN ? AND ?
          ORDER BY sp.first_product_at DESC, sp.id DESC`, [country, from, to]);
         // 按天统计（用 DB 格式化的日期，避免时区漂移）
         const byDayMap = {};

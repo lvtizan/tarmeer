@@ -115,6 +115,8 @@ async function publishProduct(partner, stagingRow, imageResolver) {
         "INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, image_urls, sort_order, source, partner_external_id) VALUES (?,?,?,?,?,?,?, 'partner', ?)",
         [supplierId, title, desc, category, imageUrl, imageUrls, item.sort_order || 0, stagingRow.external_id]);
     }
+    // Keep partner-sync in the same first-product listing statistic as supplier/admin uploads.
+    await pool.execute("UPDATE supplier_profiles SET first_product_at=COALESCE(first_product_at,NOW()) WHERE id=?", [supplierId]);
   }
 }
 

@@ -79,7 +79,7 @@ export default function SupplierReportPage() {
       <div>
         <h1 className="text-xl font-bold text-[#1c1917]">{zh ? '供应商上架统计' : 'Supplier Listing Report'}</h1>
         <p className="mt-1 text-sm text-stone-500">
-          {zh ? '按日期查看供应商上架、账号及创建者；汇总为每位创建者上架的供应商数。上架时间＝首次发布/历史最后更新时间。' : 'View supplier listings by date, account, and creator. The summary counts listed suppliers per creator.'}
+          {zh ? '按日期查看供应商首个商品上传、账号及创建者；汇总为每位创建者开始上传的供应商数。统计时间＝首个商品上传时间。' : 'View first product uploads by date, account, and creator. The summary counts suppliers that started uploading per creator.'}
         </p>
       </div>
 
