@@ -38,6 +38,19 @@ function countriesOf(partner) {
   catch { return []; }
 }
 
+// 供应商品类优先由企业资料提供；资料未提供时，才从已同步商品的品类自动聚合。
+// 仅在尚未填写供应商品类时回填，不能用后续商品覆盖合作方明确给出的企业品类。
+async function syncPartnerSupplierCategories(supplierId) {
+  const [rows] = await pool.execute(
+    "SELECT DISTINCT category FROM supplier_products WHERE supplier_profile_id=? AND category IS NOT NULL AND category <> '' ORDER BY category",
+    [supplierId]);
+  const categories = rows.map(row => String(row.category).trim()).filter(Boolean);
+  if (!categories.length) return;
+  await pool.execute(
+    "UPDATE supplier_profiles SET categories=? WHERE id=? AND (categories IS NULL OR JSON_LENGTH(categories)=0)",
+    [JSON.stringify(categories), supplierId]);
+}
+
 // 确保 (partner, supplierRef, country) 有一行 supplier_profiles；company 为可选的最新企业 payload
 // supplierRef = '' 时走单企业兼容路径（旧行为保持不变）
 async function ensurePartnerSupplier(partner, country, company, supplierRef) {
@@ -45,6 +58,9 @@ async function ensurePartnerSupplier(partner, country, company, supplierRef) {
   const lang = LANG_BY_COUNTRY[country] || partner.default_lang || "en";
   const defLang = partner.default_lang || "en";
   const name = (company && pickText(company.company_name, lang, defLang)) || `Partner ${partner.id}`;
+  // 中文名是 AE 后台运营字段；不写入 VN 等国家视图，避免跨国语言串联。
+  const nameZh = country === "ae" && company ? pickText(company.company_name, 'zh', 'zh') : null;
+  const sourceCategories = country === "ae" && company ? pickArray(company.categories, 'zh', 'zh').filter(Boolean) : [];
   const desc = company ? pickText(company.description, lang, defLang) : null;
   const addr = company ? pickText(company.store_address, lang, defLang) : null;
   const phone = company?.contact_phone || null;
@@ -59,8 +75,8 @@ async function ensurePartnerSupplier(partner, country, company, supplierRef) {
       // company payload provided: 更新资料字段，但不改 status/is_published——审核状态由后台管理员掌控
       // （防止 partner 更新把待审/已下架的供应商自动改回 approved，绕过人工审核）
       await pool.execute(
-        "UPDATE supplier_profiles SET company_name=?, description=COALESCE(?,description), store_address=COALESCE(?,store_address), contact_phone=COALESCE(?,contact_phone), website=COALESCE(?,website), whatsapp=COALESCE(?,whatsapp), partner_supplier_ref=? WHERE id=?",
-        [name, desc, addr, phone, website, whatsapp, supplierRef || null, existing[0].id]);
+        "UPDATE supplier_profiles SET company_name=?, name_zh=COALESCE(?,name_zh), categories=COALESCE(?,categories), description=COALESCE(?,description), store_address=COALESCE(?,store_address), contact_phone=COALESCE(?,contact_phone), website=COALESCE(?,website), whatsapp=COALESCE(?,whatsapp), partner_supplier_ref=? WHERE id=?",
+        [name, nameZh, sourceCategories.length ? JSON.stringify(sourceCategories) : null, desc, addr, phone, website, whatsapp, supplierRef || null, existing[0].id]);
     }
     // no payload 分支：不再自动 approved+published，保留现有审核状态（无操作）
     return existing[0].id;
@@ -72,8 +88,8 @@ async function ensurePartnerSupplier(partner, country, company, supplierRef) {
   if (clash[0]) slug = `${slug}-${Date.now() % 100000}`;
   // 新上传的 partner 供应商建为 'pending'——需后台审核通过(status→approved)才在前端展示
   const [r] = await pool.execute(
-    "INSERT INTO supplier_profiles (supplier_user_id, company_name, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, partner_supplier_ref, status, is_published, published_at) VALUES (NULL,?,?,?,?,?,?,?,?, 'china', 'partner', ?, ?, 'pending', 1, NOW())",
-    [name, slug, desc, addr, phone, website, whatsapp, country, partner.id, supplierRef || null]);
+    "INSERT INTO supplier_profiles (supplier_user_id, company_name, name_zh, categories, slug, description, store_address, contact_phone, website, whatsapp, country, origin, source, partner_id, partner_supplier_ref, status, is_published, published_at) VALUES (NULL,?,?,?,?,?,?,?,?,?,?, 'china', 'partner', ?, ?, 'pending', 1, NOW())",
+    [name, nameZh, sourceCategories.length ? JSON.stringify(sourceCategories) : null, slug, desc, addr, phone, website, whatsapp, country, partner.id, supplierRef || null]);
   return r.insertId;
 }
 
@@ -117,6 +133,7 @@ async function publishProduct(partner, stagingRow, imageResolver) {
     }
     // Keep partner-sync in the same first-product listing statistic as supplier/admin uploads.
     await pool.execute("UPDATE supplier_profiles SET first_product_at=COALESCE(first_product_at,NOW()) WHERE id=?", [supplierId]);
+    await syncPartnerSupplierCategories(supplierId);
   }
 }
 
