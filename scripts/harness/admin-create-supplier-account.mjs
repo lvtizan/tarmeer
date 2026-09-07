@@ -63,6 +63,7 @@ try {
   const supplierAdminSource = readFileSync(path.join(ROOT, 'server/dist/controllers/supplierAdminController.js'), 'utf8');
   const supplierControllerSource = readFileSync(path.join(ROOT, 'server/dist/controllers/supplierAdminController.js'), 'utf8');
   const supplierReportSource = readFileSync(path.join(ROOT, 'src/app/admin/supplier-report/page.tsx'), 'utf8');
+  const partnerSyncPageSource = readFileSync(path.join(ROOT, 'src/app/admin/partner-sync/page.tsx'), 'utf8');
   check('admin API exposes the protected supplier-create request', /createSupplierAccount\(/.test(adminApiSource) && /request\('\/suppliers'/.test(adminApiSource), 'missing admin API method');
   check('supplier admin page has the account-creation form', /showCreateForm/.test(supplierPageSource) && /New Supplier/.test(supplierPageSource), 'missing supplier creation UI');
   check('supplier admin page has no email-verification bypass toggle', !/email verification.*checkbox|免邮箱验证.*(checkbox|勾选)/i.test(supplierPageSource), 'creation path must be fixed, not optional');
@@ -74,6 +75,7 @@ try {
   check('partner sync derives supplier Chinese names and categories from source data', /pickText\(company\.company_name, 'zh', 'zh'\)/.test(partnerPublishSource) && /syncPartnerSupplierCategories/.test(partnerPublishSource) && /SELECT DISTINCT category FROM supplier_products/.test(partnerPublishSource), 'partner source name or category derivation missing');
   check('supplier report can group entries by creator', /creatorSort/.test(supplierReportSource) && /byCreator/.test(supplierReportSource), 'creator grouping UI missing');
   check('blue whale partner attribution is consistently exposed', /BLUEWHALE_PARTNER_KEY[\s\S]*pk_9fada27f38/.test(supplierControllerSource) && /BLUEWHALE_CREATOR_NAME[\s\S]*蓝鲸/.test(supplierControllerSource) && /partner_accounts/.test(supplierControllerSource) && /supplierCreatorLabel/.test(supplierPageSource) && /creator\.creator_id === -1/.test(supplierReportSource), 'blue whale partner key, backend attribution, or admin display is missing');
+  check('partner review lists prefer supplied Chinese company names', /function pickCompanyName[\s\S]*obj\.zh/.test(partnerSyncPageSource) && /pickCompanyName\(companyPayload\.company_name\)/.test(partnerSyncPageSource), 'partner review company name must prefer Chinese source data');
   check('account creation writes its audit row before transaction commit', /INSERT INTO activity_log[\s\S]*?await connection\.commit\(\)/.test(supplierControllerSource), 'audit must be part of the creation transaction');
   check('public supplier registration remains verification-gated', /INSERT INTO supplier_users \(email, password, full_name, phone, verification_token, verification_expires\)/.test(publicRegistrationSource), 'public registration must not set email_verified');
   check('supplier deletion is country-scoped and audited with that country', /WHERE id = \? AND country = \?/.test(supplierAdminSource) && /supplier_delete/.test(supplierAdminSource) && /删除供应商#\$\{id\}`, country\)/.test(supplierAdminSource), 'delete must use selected country for query and audit');

@@ -66,6 +66,15 @@ function pickLang(map: unknown): string {
   return '';
 }
 
+/** 企业名称在中文后台优先展示合作方明确提供的中文名，缺失时才使用通用语言回退。 */
+function pickCompanyName(map: unknown): string {
+  if (map && typeof map === 'object' && !Array.isArray(map)) {
+    const obj = map as Record<string, unknown>;
+    if (typeof obj.zh === 'string' && obj.zh.trim()) return obj.zh.trim();
+  }
+  return pickLang(map);
+}
+
 /**
  * Render ALL language entries of a multilang object as an array of [lang, value] pairs,
  * so the reviewer can see every language key explicitly.
@@ -357,7 +366,7 @@ function SellerList({ groups, onSelect, selected, onToggleOne, onToggleAll }: Se
             {groups.map(g => {
               const companyPayload = g.company ? parsePayload(g.company.payload_json) : null;
               const displayName = companyPayload
-                ? (pickLang(companyPayload.company_name) || pickLang(companyPayload.name) || g.partner_key)
+                ? (pickCompanyName(companyPayload.company_name) || pickCompanyName(companyPayload.name) || g.partner_key)
                 : g.partner_key;
 
               return (
@@ -427,7 +436,7 @@ function PartnerDetail({ group, busy, onBack, onCompanyAction, onProductAction }
 
   const companyPayload = group.company ? parsePayload(group.company.payload_json) : null;
   const companyName = companyPayload
-    ? (pickLang(companyPayload.company_name) || pickLang(companyPayload.name) || group.partner_key)
+    ? (pickCompanyName(companyPayload.company_name) || pickCompanyName(companyPayload.name) || group.partner_key)
     : group.partner_key;
 
   return (
@@ -745,7 +754,7 @@ export default function PartnerSyncPage() {
     .filter(g => selected.has(g.groupKey))
     .map(g => {
       const cp = g.company ? parsePayload(g.company.payload_json) : null;
-      return cp ? (pickLang(cp.company_name) || pickLang(cp.name) || g.partner_key) : g.partner_key;
+      return cp ? (pickCompanyName(cp.company_name) || pickCompanyName(cp.name) || g.partner_key) : g.partner_key;
     });
 
   // After optimistic removal a seller group may become empty — navigate back if so
