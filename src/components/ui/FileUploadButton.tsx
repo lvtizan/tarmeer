@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Paperclip, CheckCircle, X } from 'lucide-react';
+import { prepareImageForUpload } from '@/lib/uploadImageCompression';
 
 interface FileUploadButtonProps {
   value: string; // stored URL — empty means nothing uploaded yet
@@ -11,15 +12,6 @@ interface FileUploadButtonProps {
   accept?: string;
   label?: string;
   sublabel?: string;
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 export default function FileUploadButton({
@@ -47,14 +39,23 @@ export default function FileUploadButton({
     setUploading(true);
     setErr('');
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const prepared = await prepareImageForUpload(file);
+      const formData = new FormData();
+      formData.append('file', prepared.file, prepared.file.name);
       const resp = await fetch(uploadUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getHeaders() },
-        body: JSON.stringify({ data_url: dataUrl }),
+        headers: getHeaders(),
+        body: formData,
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Upload failed');
+      const text = await resp.text();
+      let data: { url?: string; error?: string } = {};
+      try { data = JSON.parse(text) as typeof data; } catch { /* handled below */ }
+      if (!resp.ok) {
+        throw new Error(data.error || (resp.status === 413
+          ? '文件过大，请压缩或拆分后重试。'
+          : `上传服务返回异常（HTTP ${resp.status}）。`));
+      }
+      if (!data.url) throw new Error('上传服务未返回文件地址，请重试。');
       setDisplayName(file.name);
       onUpload(data.url);
     } catch (e: unknown) {

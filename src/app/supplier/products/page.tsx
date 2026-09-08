@@ -8,6 +8,7 @@ import { useAdminT } from '@/hooks/useAdminLang';
 import { ScreenSpinner } from '@/components/ui/Spinner';
 import { PRODUCT_UNITS, PRODUCT_CURRENCIES, formatProductPrice, parseProductPriceRange, isValidCurrency, buildProductPriceSubmission } from '@/lib/supplierProductUnits';
 import { getCountry } from '@/lib/country';
+import { buildSupplierFallbackCategoryOptions, getSupplierFallbackCategoryLabel } from '@/lib/supplierCategoryFallback';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -19,6 +20,10 @@ function authHeaders() { return { 'Content-Type': 'application/json', Authorizat
 
 const inputCls = 'w-full h-[50px] px-5 rounded-2xl border border-stone-200 bg-stone-50/80 text-[15px] text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
 const labelCls = 'block text-sm font-medium text-stone-500 mb-1.5';
+const fallbackCategoryOptions = () => buildSupplierFallbackCategoryOptions().map((option) => ({
+  value: option.value,
+  label: option.label_zh || option.label,
+}));
 
 interface Product {
   id: number;
@@ -47,15 +52,20 @@ export default function SupplierProductsPage() {
   ]);
   useEffect(() => {
     fetch(`${API_BASE}/suppliers/product-categories`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`category fetch ${r.status}`))))
       .then((d: { categories?: { value: string; label: string; label_zh?: string | null }[] }) => {
         const cats = (d.categories || []).map((c) => ({
           value: c.value,
-          label: c.label_zh && c.label_zh !== c.label ? `${c.label} · ${c.label_zh}` : c.label,
+          label: (() => {
+            const fallback = getSupplierFallbackCategoryLabel(c.value);
+            const en = c.label || fallback.label || c.value;
+            const zh = c.label_zh || fallback.label_zh;
+            return zh && zh !== en ? `${en} · ${zh}` : en;
+          })(),
         }));
         setCategoryOptions([{ value: '', label: t('No category', '无品类') }, ...cats]);
       })
-      .catch(() => {});
+      .catch(() => setCategoryOptions([{ value: '', label: t('No category', '无品类') }, ...fallbackCategoryOptions()]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -75,6 +85,7 @@ export default function SupplierProductsPage() {
   const [newImageUrls, setNewImageUrls] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [actionError, setActionError] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newPriceMax, setNewPriceMax] = useState('');
   const [originalPriceFields, setOriginalPriceFields] = useState<Pick<Product, 'price' | 'price_max' | 'price_unit' | 'price_currency' | 'price_from'> | null>(null);
@@ -176,18 +187,25 @@ export default function SupplierProductsPage() {
     const res = await fetch(`${API_BASE}/suppliers/me/translate`, {
       method: 'POST', headers: authHeaders() as HeadersInit, body: JSON.stringify({ text }),
     });
-    const data = await res.json();
-    return data?.translated || '';
+    const raw = await res.text();
+    let data: { translated?: string; error?: string } = {};
+    try { data = JSON.parse(raw) as typeof data; } catch { /* handled below */ }
+    if (!res.ok) throw new Error(data.error || `翻译服务暂不可用（HTTP ${res.status}）。`);
+    return data.translated || '';
   };
   const autoTranslateTitle = async (force = false) => {
     if (!newTitle.trim() || (newTitleEn.trim() && !force)) return;
     setTranslating('title');
-    try { setNewTitleEn(await translateField(newTitle)); } finally { setTranslating(null); }
+    try { setNewTitleEn(await translateField(newTitle)); }
+    catch (err: unknown) { setMsg(err instanceof Error ? err.message : '翻译失败，请手动填写英文名称。'); }
+    finally { setTranslating(null); }
   };
   const autoTranslateDesc = async (force = false) => {
     if (!newDesc.trim() || (newDescEn.trim() && !force)) return;
     setTranslating('desc');
-    try { setNewDescEn(await translateField(newDesc)); } finally { setTranslating(null); }
+    try { setNewDescEn(await translateField(newDesc)); }
+    catch (err: unknown) { setMsg(err instanceof Error ? err.message : '翻译失败，请手动填写英文描述。'); }
+    finally { setTranslating(null); }
   };
 
   // 新增(POST) / 编辑(PUT) 共用保存逻辑，按 editingId 分支
@@ -250,8 +268,13 @@ export default function SupplierProductsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`${API_BASE}/suppliers/me/products/${id}`, { method: 'DELETE', headers: authHeaders() as HeadersInit });
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setActionError('');
+    try {
+      const res = await fetch(`${API_BASE}/suppliers/me/products/${id}`, { method: 'DELETE', headers: authHeaders() as HeadersInit });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (!res.ok) throw new Error(data.error || '删除产品失败，请重试。');
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err: unknown) { setActionError(err instanceof Error ? err.message : '删除产品失败，请重试。'); }
   };
 
   if (loading) return <ScreenSpinner />;
@@ -390,6 +413,7 @@ export default function SupplierProductsPage() {
           </button>
         )}
       </div>
+      {actionError && <p role="alert" className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-2xl">{actionError}</p>}
 
       {/* 新增产品：内联面板 */}
       {adding && (

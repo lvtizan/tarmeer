@@ -90,7 +90,7 @@ router.get('/me/linked-portals', supplierAuth_1.authenticateSupplier, userAuth.g
 router.post('/me/cross-portal-token', supplierAuth_1.authenticateSupplier, userAuth.crossPortalToken);
 router.get('/me/profile', supplierAuth_1.authenticateSupplier, profile.getMyProfile);
 router.post('/me/profile', supplierAuth_1.authenticateSupplier, profile.upsertProfile);
-router.post('/me/upload-license', supplierAuth_1.authenticateSupplier, profile.uploadLicense);
+router.post('/me/upload-license', supplierAuth_1.authenticateSupplier, upload.single('file'), profile.uploadLicense);
 router.post('/me/upload-image', supplierAuth_1.authenticateSupplier, upload.single('file'), products.uploadProductImage);
 router.get('/me/products', supplierAuth_1.authenticateSupplier, products.listMyProducts);
 router.post('/me/products', supplierAuth_1.authenticateSupplier, products.addProduct);

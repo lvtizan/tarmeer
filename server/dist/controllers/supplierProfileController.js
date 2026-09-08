@@ -18,20 +18,32 @@ const redactPublicSupplier = supplierRedact_1.redactPublicSupplier;
 async function uploadLicense(req, res) {
     try {
         const userId = req.supplierUser.id;
-        const { data_url } = req.body;
-        if (!data_url)
-            return res.status(400).json({ error: 'No file data provided.' });
-        const matches = data_url.match(/^data:([^;]+);base64,(.+)$/);
-        if (!matches)
-            return res.status(400).json({ error: 'Invalid file format.' });
-        const mimeType = matches[1];
-        const base64Data = matches[2];
-        const buffer = Buffer.from(base64Data, 'base64');
         const extMap = {
             'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
             'image/gif': 'gif', 'application/pdf': 'pdf',
         };
-        const ext = extMap[mimeType] || 'bin';
+        let mimeType;
+        let buffer;
+        if (req.file) {
+            mimeType = req.file.mimetype;
+            buffer = req.file.buffer;
+        }
+        else {
+            // Keep temporary compatibility for an already-open old portal tab.
+            const { data_url } = req.body || {};
+            const matches = typeof data_url === 'string' && data_url.match(/^data:([^;]+);base64,([A-Za-z0-9+/=]+)$/);
+            if (!matches)
+                return res.status(400).json({ error: 'No file data provided.' });
+            mimeType = matches[1];
+            buffer = Buffer.from(matches[2], 'base64');
+        }
+        const ext = extMap[mimeType];
+        if (!ext)
+            return res.status(400).json({ error: 'Only JPG, PNG, WebP, GIF, and PDF files are supported.' });
+        if (!buffer || buffer.length === 0)
+            return res.status(400).json({ error: 'No file data provided.' });
+        if (buffer.length > 60 * 1024 * 1024)
+            return res.status(413).json({ error: 'File is too large. Please keep it under 60MB.' });
         const fileName = `${userId}-${(0, crypto_1.randomUUID)()}.${ext}`;
         const uploadDir = path_1.default.join(process.cwd(), 'public', 'uploads', 'suppliers', 'licenses');
         await promises_1.default.mkdir(uploadDir, { recursive: true, mode: 0o755 });

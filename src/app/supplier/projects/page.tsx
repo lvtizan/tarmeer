@@ -63,6 +63,7 @@ export default function SupplierProjectsPage() {
   const [images, setImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [actionError, setActionError] = useState('');
   const [tried, setTried] = useState(false);
 
   const loadProjects = () => {
@@ -136,8 +137,13 @@ export default function SupplierProjectsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`${API_BASE}/suppliers/me/projects/${id}`, { method: 'DELETE', headers: authHeaders() as HeadersInit });
-    setProjects(prev => prev.filter(p => p.id !== id));
+    setActionError('');
+    try {
+      const res = await fetch(`${API_BASE}/suppliers/me/projects/${id}`, { method: 'DELETE', headers: authHeaders() as HeadersInit });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (!res.ok) throw new Error(data.error || '删除项目失败，请重试。');
+      setProjects(prev => prev.filter(p => p.id !== id));
+    } catch (err: unknown) { setActionError(err instanceof Error ? err.message : '删除项目失败，请重试。'); }
   };
 
   const cancelAdd = () => { setAdding(false); setEditingId(null); setForm(EMPTY_FORM); setImages([]); setMsg(''); setTried(false); };
@@ -157,6 +163,7 @@ export default function SupplierProjectsPage() {
           </button>
         )}
       </div>
+      {actionError && <p role="alert" className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-2xl">{actionError}</p>}
 
       {/* Add project form */}
       {adding && (

@@ -34,6 +34,7 @@ export default function SupplierCatalogsPage() {
   const [uploadedNames, setUploadedNames] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [actionError, setActionError] = useState('');
   const [tried, setTried] = useState(false);
 
   useEffect(() => {
@@ -72,8 +73,13 @@ export default function SupplierCatalogsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`${API_BASE}/suppliers/me/catalogs/${id}`, { method: 'DELETE', headers: authHeaders() as HeadersInit });
-    setCatalogs(prev => prev.filter(c => c.id !== id));
+    setActionError('');
+    try {
+      const res = await fetch(`${API_BASE}/suppliers/me/catalogs/${id}`, { method: 'DELETE', headers: authHeaders() as HeadersInit });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (!res.ok) throw new Error(data.error || '删除目录失败，请重试。');
+      setCatalogs(prev => prev.filter(c => c.id !== id));
+    } catch (err: unknown) { setActionError(err instanceof Error ? err.message : '删除目录失败，请重试。'); }
   };
 
   const cancelAdd = () => { setAdding(false); setTitle(''); setUploadedUrls([]); setUploadedNames([]); setMsg(''); setTried(false); };
@@ -93,6 +99,7 @@ export default function SupplierCatalogsPage() {
           </button>
         )}
       </div>
+      {actionError && <p role="alert" className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-2xl">{actionError}</p>}
 
       {/* Add form */}
       {adding && (
