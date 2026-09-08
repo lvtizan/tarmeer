@@ -1,7 +1,6 @@
 'use client';
 
-// Hub 右侧默认内容（未搜索时）：按热度展示单品(popular products)。
-// 大类浏览已在左侧目录，这里不再重复类目——改成热门单品瀑布流，点进供应商。
+// Hub 右侧默认内容（未搜索时）：最新上架商品瀑布流。
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -27,35 +26,57 @@ export default function HubFeatured({
   const country = countryFromLang(useSiteLocale().lang).code;
   const [products, setProducts] = useState<PublicMaterialProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [displayedCategory, setDisplayedCategory] = useState<MegaCategory | null>(null);
+  const [displayedCountry, setDisplayedCountry] = useState(country);
+  const [retryNonce, setRetryNonce] = useState(0);
   const requestVersionRef = useRef(0);
+
+  const hasVisibleProducts = displayedCountry === country && products.length > 0;
+  const hidesStaleCountryProducts = displayedCountry !== country;
+  const displayedMatchesSelection = displayedCountry === country && displayedCategory?.key === selectedCategory?.key;
+  const canLoadMore = hasVisibleProducts && displayedMatchesSelection && !refreshing && !error;
 
   useEffect(() => {
     let on = true;
     const requestVersion = requestVersionRef.current + 1;
     requestVersionRef.current = requestVersion;
-    setLoading(true);
+    const canKeepVisibleProducts = displayedCountry === country && products.length > 0;
+    setLoading(!canKeepVisibleProducts);
+    setRefreshing(canKeepVisibleProducts);
     setLoadingMore(false);
     setError(null);
-    setProducts([]);
-    setPage(1);
+    if (!canKeepVisibleProducts) {
+      setProducts([]);
+      setTotal(0);
+      setDisplayedCategory(null);
+      setDisplayedCountry(country);
+    }
     fetchMaterialProducts({ page: 1, limit: 24, category: selectedCategory?.key }, country).then((result) => {
       if (on && requestVersionRef.current === requestVersion) {
         setError(result.error ?? null);
-        setProducts(result.products);
-        setTotal(result.pagination.total);
+        if (!result.error) {
+          setProducts(result.products);
+          setTotal(result.pagination.total);
+          setPage(1);
+          setDisplayedCategory(selectedCategory);
+          setDisplayedCountry(country);
+        }
         setLoading(false);
+        setRefreshing(false);
       }
     });
     return () => {
       on = false;
     };
-  }, [country, selectedCategory?.key]);
+  }, [country, selectedCategory?.key, retryNonce]);
 
   const loadMore = async () => {
+    if (!canLoadMore || loadingMore) return;
     const nextPage = page + 1;
     const requestVersion = requestVersionRef.current;
     setLoadingMore(true);
@@ -74,13 +95,13 @@ export default function HubFeatured({
   };
 
   return (
-    <div>
+    <div className="relative">
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
-            {selectedCategory ? selectedCategory.label : 'All products'}
+            {displayedCategory ? displayedCategory.label : 'All products'}
           </h3>
-          {!loading && <p className="mt-1 text-[13px] text-stone-400">{total} products</p>}
+          {!loading && !hidesStaleCountryProducts && <p className="mt-1 text-[13px] text-stone-400">{total} products</p>}
         </div>
         {selectedCategory ? (
           <button type="button" onClick={onShowAll} className="text-[13px] font-semibold text-[#b8864a] hover:text-[#a07640]">
@@ -91,14 +112,26 @@ export default function HubFeatured({
         )}
       </div>
 
-      {loading ? (
+      {loading || hidesStaleCountryProducts ? (
         <div className="flex justify-center py-16">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#b8864a]/30 border-t-[#b8864a]" />
         </div>
-      ) : products.length === 0 ? (
-        <p className="py-12 text-center text-sm text-stone-400">{error ? 'Products could not be loaded. Please try again.' : 'No products yet.'}</p>
+      ) : !hasVisibleProducts ? (
+        <div className="py-12 text-center text-sm text-stone-400">
+          <p>{error ? 'Products could not be loaded.' : 'No products yet.'}</p>
+          {error && (
+            <button type="button" onClick={() => setRetryNonce((value) => value + 1)} className="mt-3 font-semibold text-[#b8864a] hover:text-[#a07640]">
+              Retry
+            </button>
+          )}
+        </div>
       ) : (
         <>
+          {refreshing && (
+            <div className="pointer-events-none absolute right-0 top-0 z-10 rounded-full border border-stone-200 bg-white/95 px-3 py-1 text-xs font-medium text-stone-500 shadow-sm" aria-live="polite" aria-busy="true">
+              Updating products…
+            </div>
+          )}
           <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 [column-fill:_balance]">
             {products.map((p) => {
             const supplierSlug = isValidSupplierSlug(p.supplier_slug) ? p.supplier_slug : null;
@@ -142,14 +175,19 @@ export default function HubFeatured({
             );
             })}
           </div>
-          {products.length < total && (
+          {canLoadMore && products.length < total && (
             <div className="mt-7 flex justify-center">
               <button type="button" onClick={loadMore} disabled={loadingMore} className="rounded-xl border border-[#b8864a] px-5 py-2.5 text-sm font-semibold text-[#b8864a] transition hover:bg-[#faf6ef] disabled:opacity-40">
                 {loadingMore ? 'Loading…' : 'Load more products'}
               </button>
             </div>
           )}
-          {error && <p className="mt-3 text-center text-sm text-red-600">Could not load more products. Please try again.</p>}
+          {error && (
+            <div className="mt-3 text-center text-sm text-red-600">
+              <p>Could not update products.</p>
+              <button type="button" onClick={() => setRetryNonce((value) => value + 1)} className="mt-1 font-semibold text-[#b8864a] hover:text-[#a07640]">Retry</button>
+            </div>
+          )}
         </>
       )}
     </div>
