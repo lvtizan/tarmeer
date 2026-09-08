@@ -84,8 +84,6 @@ export default function MegaMenuDirectory({
     );
   }
 
-  const active = categories.find((c) => c.key === activeKey) ?? null;
-
   return (
     <div className="relative" onMouseLeave={() => setActiveKey(null)}>
       <div
@@ -98,7 +96,7 @@ export default function MegaMenuDirectory({
             const isOpen = openKey === c.key;
             const cover = c.image;
             return (
-              <li key={c.key}>
+              <li key={c.key} className="relative">
                 {/* Row */}
                 <div
                   role="button"
@@ -168,27 +166,27 @@ export default function MegaMenuDirectory({
                     <MobilePanel category={c} />
                   </div>
                 )}
+
+                {/* Desktop panel is anchored to its row so it follows the hovered category. */}
+                {isActive && (
+                  <div
+                    className="absolute left-full top-0 z-30 hidden pl-4 lg:block"
+                    onMouseEnter={() => setActiveKey(c.key)}
+                  >
+                    <div className="w-[720px] max-w-[760px] rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl">
+                      <MegaPanel
+                        category={c}
+                        products={products[`${country}:${c.key}`]}
+                        loadingProducts={productsLoading === `${country}:${c.key}`}
+                      />
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
       </div>
-
-      {/* Desktop floating mega panel */}
-      {active && (
-        <div
-          className="absolute left-full top-0 z-30 hidden pl-4 lg:block"
-          onMouseEnter={() => setActiveKey(active.key)}
-        >
-          <div className="w-[720px] max-w-[760px] rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl">
-            <MegaPanel
-              category={active}
-              products={products[`${country}:${active.key}`]}
-              loadingProducts={productsLoading === `${country}:${active.key}`}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
