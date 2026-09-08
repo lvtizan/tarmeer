@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [hub, directory, featured, publicFeed, imageUrl, supplierDetail, hubSearch, materialSearch, macroGrid, productDetail] = await Promise.all([
+const [hub, directory, featured, publicFeed, materialsApi, imageUrl, supplierDetail, hubSearch, materialSearch, macroGrid, productDetail] = await Promise.all([
   readFile('src/components/materials/MaterialsHub.tsx', 'utf8'),
   readFile('src/components/materials/MegaMenuDirectory.tsx', 'utf8'),
   readFile('src/components/materials/HubFeatured.tsx', 'utf8'),
   readFile('server/dist/controllers/supplierProductController.js', 'utf8'),
+  readFile('src/lib/materialsApi.ts', 'utf8'),
   readFile('src/lib/imageUrl.ts', 'utf8'),
   readFile('src/components/materials/SupplierDetailClient.tsx', 'utf8'),
   readFile('src/components/materials/HubSearchResults.tsx', 'utf8'),
@@ -20,7 +21,14 @@ assert.match(hub, /setSubmitted\(''\)/);
 assert.match(hub, /productsResultRef/);
 assert.match(hub, /scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\)/);
 assert.match(hub, /id="products-results"/);
-assert.match(featured, /fetchMaterialProducts\(\{ page: 1, limit: 24, category: selectedCategory\?\.key \}/);
+assert.match(featured, /balanced: !selectedCategory/);
+assert.match(featured, /const productRequest = \{ page: 1, limit: 24, category: selectedCategory\?\.key, balanced: !selectedCategory \}/);
+assert.match(featured, /fetchMaterialProducts\(productRequest, country\)/);
+assert.match(featured, /fetchMaterialProducts\(\{ \.\.\.productRequest, page: nextPage \}, country\)/);
+assert.match(publicFeed, /req\.query\.balanced === '1'/);
+assert.match(publicFeed, /ROW_NUMBER\(\) OVER \(PARTITION BY p\.supplier_profile_id ORDER BY p\.id DESC\) AS supplier_rank/);
+assert.match(publicFeed, /ORDER BY CEIL\(supplier_rank \/ 2\) ASC, id DESC/);
+assert.match(materialsApi, /if \(params\.balanced\) qs\.set\('balanced', '1'\)/);
 assert.match(publicFeed, /ORDER BY p\.id DESC/);
 const publicFeedHandler = publicFeed.slice(
   publicFeed.indexOf('async function listPublicProductsFeed'),

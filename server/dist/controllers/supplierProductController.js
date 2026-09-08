@@ -116,14 +116,26 @@ async function listPublicProductsFeed(req, res) {
             where += ` AND (JSON_CONTAINS(p.application_scenes, ?) OR p.category IN (${inPlaceholders}))`;
             params.push(JSON.stringify(scene), ...fallbackCats);
         }
+        const q = req.query.q;
+        const shouldBalance = req.query.balanced === '1' && !category && !scene && !(q && typeof q === 'string');
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total ${PUBLIC_PRODUCT_FROM} ${where}`, params);
         const total = countRows[0].total;
         // LIMIT/OFFSET 拼过整数校验的数字（pool.execute 传参会报错——已知坑）
-        const [rows] = await database_1.default.query(`SELECT ${PUBLIC_PRODUCT_SELECT}
-       ${PUBLIC_PRODUCT_FROM}
-       ${where}
-       ORDER BY p.id DESC
-       LIMIT ${limit} OFFSET ${offset}`, params);
+        const [rows] = shouldBalance
+            ? await database_1.default.query(`WITH ranked_products AS (
+           SELECT ${PUBLIC_PRODUCT_SELECT},
+                  ROW_NUMBER() OVER (PARTITION BY p.supplier_profile_id ORDER BY p.id DESC) AS supplier_rank
+           ${PUBLIC_PRODUCT_FROM}
+           ${where}
+         )
+         SELECT * FROM ranked_products
+         ORDER BY CEIL(supplier_rank / 2) ASC, id DESC
+         LIMIT ${limit} OFFSET ${offset}`, params)
+            : await database_1.default.query(`SELECT ${PUBLIC_PRODUCT_SELECT}
+           ${PUBLIC_PRODUCT_FROM}
+           ${where}
+           ORDER BY p.id DESC
+           LIMIT ${limit} OFFSET ${offset}`, params);
         res.json({ products: rows.map(mapPublicProduct), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }
     catch (error) {

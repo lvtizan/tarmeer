@@ -40,6 +40,7 @@ export default function HubFeatured({
   const hidesStaleCountryProducts = displayedCountry !== country;
   const displayedMatchesSelection = displayedCountry === country && displayedCategory?.key === selectedCategory?.key;
   const canLoadMore = hasVisibleProducts && displayedMatchesSelection && !refreshing && !error;
+  const productRequest = { page: 1, limit: 24, category: selectedCategory?.key, balanced: !selectedCategory };
 
   useEffect(() => {
     let on = true;
@@ -56,7 +57,7 @@ export default function HubFeatured({
       setDisplayedCategory(null);
       setDisplayedCountry(country);
     }
-    fetchMaterialProducts({ page: 1, limit: 24, category: selectedCategory?.key }, country).then((result) => {
+    fetchMaterialProducts(productRequest, country).then((result) => {
       if (on && requestVersionRef.current === requestVersion) {
         setError(result.error ?? null);
         if (!result.error) {
@@ -81,7 +82,7 @@ export default function HubFeatured({
     const requestVersion = requestVersionRef.current;
     setLoadingMore(true);
     setError(null);
-    const result = await fetchMaterialProducts({ page: nextPage, limit: 24, category: selectedCategory?.key }, country);
+    const result = await fetchMaterialProducts({ ...productRequest, page: nextPage }, country);
     if (requestVersionRef.current !== requestVersion) return;
     if (result.error) {
       setError(result.error);

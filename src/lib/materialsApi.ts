@@ -159,7 +159,7 @@ async function request<T>(endpoint: string, country?: string): Promise<T> {
 }
 
 export async function fetchMaterialProducts(
-  params: { page?: number; limit?: number; category?: string; scene?: string; q?: string },
+  params: { page?: number; limit?: number; category?: string; scene?: string; q?: string; balanced?: boolean },
   country: string
 ): Promise<MaterialProductsPage> {
   const qs = new URLSearchParams();
@@ -168,6 +168,7 @@ export async function fetchMaterialProducts(
   if (params.category) qs.set('category', params.category);
   if (params.scene) qs.set('scene', params.scene);
   if (params.q) qs.set('q', params.q);
+  if (params.balanced) qs.set('balanced', '1');
   const suffix = qs.toString() ? `?${qs.toString()}` : '';
   try {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
