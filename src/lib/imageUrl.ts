@@ -8,6 +8,10 @@
 function getUploadsBase(): string {
   if (typeof window === 'undefined') return '';
   const { hostname, protocol } = window.location;
+  // 本地开发可直接读取生产公开 API；相对图片路径仍回源正式静态站，不下载、不复制资产到本机。
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'https://www.tarmeer.com';
+  }
   // admin.tarmeer.com → https://www.tarmeer.com
   if (hostname.startsWith('admin.')) {
     return `${protocol}//www.${hostname.replace(/^admin\./, '')}`;

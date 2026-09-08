@@ -47,6 +47,7 @@ export interface PublicMaterialProduct extends ProductPriceFields {
 export interface MaterialProductsPage {
   products: PublicMaterialProduct[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
+  error?: string;
 }
 
 function parseJsonColumn<T>(value: unknown, fallback: T): T {
@@ -178,8 +179,8 @@ export async function fetchMaterialProducts(
       products: (result.products || []).map(toMaterialProduct),
       pagination: result.pagination || { page: 1, limit: 24, total: 0, totalPages: 0 },
     };
-  } catch {
-    return { products: [], pagination: { page: 1, limit: 24, total: 0, totalPages: 0 } };
+  } catch (error) {
+    return { products: [], pagination: { page: 1, limit: 24, total: 0, totalPages: 0 }, error: error instanceof Error ? error.message : 'Unable to load products.' };
   }
 }
 

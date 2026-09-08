@@ -100,7 +100,7 @@ async function listPublicProductsFeed(req, res) {
         const offset = (page - 1) * limit;
         const country = resolvePublicCountry(req);
         // 国家隔离铁律：只暴露本国 approved + published 供应商的产品
-        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND sp.country = ?";
+        let where = "WHERE sp.status = 'approved' AND sp.is_published = 1 AND sp.country = ? AND p.image_url IS NOT NULL AND p.image_url <> ''";
         const params = [country];
         const category = req.query.category;
         if (category && typeof category === 'string') {
@@ -122,7 +122,7 @@ async function listPublicProductsFeed(req, res) {
         const [rows] = await database_1.default.query(`SELECT ${PUBLIC_PRODUCT_SELECT}
        ${PUBLIC_PRODUCT_FROM}
        ${where}
-       ORDER BY COALESCE(sp.weight_score, 0) DESC, p.sort_order, p.id DESC
+       ORDER BY p.id DESC
        LIMIT ${limit} OFFSET ${offset}`, params);
         res.json({ products: rows.map(mapPublicProduct), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }

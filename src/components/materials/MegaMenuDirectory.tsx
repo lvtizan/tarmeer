@@ -25,9 +25,13 @@ function categoryHref(c: MegaCategory): string {
 export default function MegaMenuDirectory({
   categories,
   loading,
+  selectedKey,
+  onSelectCategory,
 }: {
   categories: MegaCategory[];
   loading: boolean;
+  selectedKey: string | null;
+  onSelectCategory: (category: MegaCategory) => void;
 }) {
   const country = countryFromLang(useSiteLocale().lang).code;
 
@@ -43,19 +47,19 @@ export default function MegaMenuDirectory({
 
   useEffect(() => {
     if (!activeKey) return;
-    if (fetchedRef.current.has(activeKey)) return;
-    fetchedRef.current.add(activeKey);
-    const key = activeKey;
-    setProductsLoading(key);
-    fetchMacroProducts(key, country)
+    const cacheKey = `${country}:${activeKey}`;
+    if (fetchedRef.current.has(cacheKey)) return;
+    fetchedRef.current.add(cacheKey);
+    setProductsLoading(cacheKey);
+    fetchMacroProducts(activeKey, country)
       .then((res) => {
-        setProducts((prev) => ({ ...prev, [key]: res.products.slice(0, 6) }));
+        setProducts((prev) => ({ ...prev, [cacheKey]: res.products.slice(0, 6) }));
       })
       .catch(() => {
-        setProducts((prev) => ({ ...prev, [key]: [] }));
+        setProducts((prev) => ({ ...prev, [cacheKey]: [] }));
       })
       .finally(() => {
-        setProductsLoading((cur) => (cur === key ? null : cur));
+        setProductsLoading((cur) => (cur === cacheKey ? null : cur));
       });
   }, [activeKey, country]);
 
@@ -100,16 +104,20 @@ export default function MegaMenuDirectory({
                   role="button"
                   tabIndex={0}
                   onMouseEnter={() => setActiveKey(c.key)}
-                  onClick={() => setOpenKey(isOpen ? null : c.key)}
+                  onClick={() => {
+                    onSelectCategory(c);
+                    setOpenKey(isOpen ? null : c.key);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
+                      onSelectCategory(c);
                       setOpenKey(isOpen ? null : c.key);
                     }
                   }}
                   className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors"
                   style={
-                    isActive
+                    isActive || selectedKey === c.key
                       ? { backgroundColor: 'rgba(184,134,74,0.10)' }
                       : undefined
                   }
@@ -169,14 +177,14 @@ export default function MegaMenuDirectory({
       {/* Desktop floating mega panel */}
       {active && (
         <div
-          className="absolute left-full top-0 z-30 hidden lg:block"
+          className="absolute left-full top-0 z-30 hidden pl-4 lg:block"
           onMouseEnter={() => setActiveKey(active.key)}
         >
-          <div className="ml-4 w-[720px] max-w-[760px] rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl">
+          <div className="w-[720px] max-w-[760px] rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl">
             <MegaPanel
               category={active}
-              products={products[active.key]}
-              loadingProducts={productsLoading === active.key}
+              products={products[`${country}:${active.key}`]}
+              loadingProducts={productsLoading === `${country}:${active.key}`}
             />
           </div>
         </div>

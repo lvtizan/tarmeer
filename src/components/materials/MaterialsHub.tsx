@@ -2,7 +2,7 @@
 
 // 材料搜索 Hub（/materials AE 主页）：顶部 Products/Suppliers tab + 搜索条；
 // 左侧类目目录(hover mega 浮层)；右侧未搜索=精选(HubFeatured)，搜索后=结果(HubSearchResults)。
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Search, LogIn } from 'lucide-react';
@@ -34,6 +34,9 @@ export default function MaterialsHub() {
   const [searching, setSearching] = useState(false);
   const [mega, setMega] = useState<MegaCategory[]>([]);
   const [megaLoading, setMegaLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<MegaCategory | null>(null);
+  const searchVersionRef = useRef(0);
+  const productsResultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let on = true;
@@ -49,6 +52,20 @@ export default function MaterialsHub() {
     };
   }, [country]);
 
+  useEffect(() => {
+    searchVersionRef.current += 1;
+    setSelectedCategory(null);
+    setSubmitted('');
+    setResults([]);
+    setTotal(0);
+    setSearching(false);
+  }, [country]);
+
+  useEffect(() => {
+    if (!selectedCategory || !window.matchMedia('(max-width: 1023px)').matches) return;
+    productsResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedCategory]);
+
   const runSearch = useCallback(
     (query: string, type: Tab) => {
       const term = query.trim();
@@ -58,8 +75,11 @@ export default function MaterialsHub() {
         setTotal(0);
         return;
       }
+      const searchVersion = searchVersionRef.current + 1;
+      searchVersionRef.current = searchVersion;
       setSearching(true);
       searchMaterials(type, term, country).then((r) => {
+        if (searchVersionRef.current !== searchVersion) return;
         setResults(r.results);
         setTotal(r.total);
         setSearching(false);
@@ -76,6 +96,16 @@ export default function MaterialsHub() {
   const switchTab = (t: Tab) => {
     setTab(t);
     if (submitted) runSearch(submitted, t);
+  };
+
+  const selectCategory = (category: MegaCategory) => {
+    // 分类浏览优先于已有的搜索结果，避免点击目录后右侧仍停留在旧搜索页。
+    setSubmitted('');
+    setResults([]);
+    setTotal(0);
+    setSearching(false);
+    setTab('products');
+    setSelectedCategory(category);
   };
 
   const isSearching = submitted.length > 0;
@@ -152,13 +182,21 @@ export default function MaterialsHub() {
       ) : (
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[300px_1fr] lg:py-10">
           <div className="relative lg:z-20">
-            <MegaMenuDirectory categories={mega} loading={megaLoading} />
+            <MegaMenuDirectory
+              categories={mega}
+              loading={megaLoading}
+              selectedKey={selectedCategory?.key ?? null}
+              onSelectCategory={selectCategory}
+            />
           </div>
-          <div>
+          <div ref={productsResultRef} id="products-results" className="scroll-mt-6">
             {isSearching ? (
               <HubSearchResults type={tab} results={results} total={total} query={submitted} loading={searching} />
             ) : (
-              <HubFeatured />
+              <HubFeatured
+                selectedCategory={selectedCategory}
+                onShowAll={() => setSelectedCategory(null)}
+              />
             )}
           </div>
         </div>
