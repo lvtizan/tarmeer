@@ -8,6 +8,7 @@ import { ArrowRight } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { resolveImageUrl } from '@/lib/imageUrl';
+import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import { type MegaCategory } from '@/lib/materialMacros';
 import { fetchMaterialProducts, type PublicMaterialProduct } from '@/lib/materialsApi';
 import ProductPriceLine from './ProductPriceLine';
@@ -129,7 +130,7 @@ export default function HubFeatured({
             const className = 'group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm';
             if (supplierSlug) {
               return (
-                <Link key={p.id} href={`/materials/suppliers/${supplierSlug}`} className={`${className} cursor-pointer`}>
+                <Link key={p.id} href={supplierFromProductsHref(supplierSlug)} className={`${className} cursor-pointer`}>
                   {card}
                 </Link>
               );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -94,6 +94,8 @@ interface SupplierDetailClientProps {
 
 export default function SupplierDetailClient({ slug, initialSupplier = null, initialProducts = [] }: SupplierDetailClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const originTab = searchParams.get('from') === 'products' ? 'products' : 'suppliers';
   const country = countryFromLang(useSiteLocale().lang);
   const requestIdentity = `${country.code}:${slug}`;
   const [supplier, setSupplier] = useState<SupplierProfile | null>(initialSupplier);
@@ -205,7 +207,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
     return () => observer.disconnect();
   }, [supplier]);
 
-  const handleBack = () => router.push('/materials?tab=suppliers');
+  const handleBack = () => router.push(`/materials?tab=${originTab}`);
 
   const parseCategories = (cats: string[] | string | null): string[] => {
     if (!cats) return [];
@@ -224,7 +226,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7]">
       <div className="text-center">
         <h1 className="text-xl font-bold text-[#2c2c2c] mb-4">Supplier not found</h1>
-        <button onClick={handleBack} className="text-[#b8864a] hover:underline text-[15px]">Back to Suppliers</button>
+        <button onClick={handleBack} className="text-[#b8864a] hover:underline text-[15px]">Back to {originTab === 'products' ? 'Products' : 'Suppliers'}</button>
       </div>
     </div>
   );
@@ -268,12 +270,12 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
             onClick={handleBack}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors mb-4"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Suppliers
+            <ArrowLeft className="w-4 h-4" /> Back to {originTab === 'products' ? 'Products' : 'Suppliers'}
           </button>
           <nav className="flex items-center gap-1.5 text-xs text-white/50 mb-8">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <span>/</span>
-            <Link href="/materials?tab=suppliers" className="hover:text-white transition-colors">Materials</Link>
+            <Link href={`/materials?tab=${originTab}`} className="hover:text-white transition-colors">Materials</Link>
             <span>/</span>
             <span className="text-white/80 truncate max-w-[200px]">{publicTitle}</span>
           </nav>

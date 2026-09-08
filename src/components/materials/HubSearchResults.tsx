@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { SearchProduct, SearchSupplier } from '@/lib/materialMacros';
 import ProductPriceLine from './ProductPriceLine';
+import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 
 function isValidSupplierSlug(slug: string | null): slug is string {
   return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
@@ -76,7 +77,7 @@ export default function HubSearchResults({
             const className = 'group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm';
             if (supplierSlug) {
               return (
-                <Link key={r.id} href={`/materials/suppliers/${supplierSlug}`} className={`${className} cursor-pointer`}>
+                <Link key={r.id} href={supplierFromProductsHref(supplierSlug)} className={`${className} cursor-pointer`}>
                   {card}
                 </Link>
               );

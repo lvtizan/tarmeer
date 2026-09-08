@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [hub, directory, featured, publicFeed, imageUrl] = await Promise.all([
+const [hub, directory, featured, publicFeed, imageUrl, supplierDetail, hubSearch, materialSearch, macroGrid, productDetail] = await Promise.all([
   readFile('src/components/materials/MaterialsHub.tsx', 'utf8'),
   readFile('src/components/materials/MegaMenuDirectory.tsx', 'utf8'),
   readFile('src/components/materials/HubFeatured.tsx', 'utf8'),
   readFile('server/dist/controllers/supplierProductController.js', 'utf8'),
   readFile('src/lib/imageUrl.ts', 'utf8'),
+  readFile('src/components/materials/SupplierDetailClient.tsx', 'utf8'),
+  readFile('src/components/materials/HubSearchResults.tsx', 'utf8'),
+  readFile('src/components/materials/MaterialSearchResults.tsx', 'utf8'),
+  readFile('src/components/materials/MacroProductGrid.tsx', 'utf8'),
+  readFile('src/components/materials/ProductDetailClient.tsx', 'utf8'),
 ]);
 
 assert.match(hub, /selectedCategory/);
@@ -28,6 +33,13 @@ assert.match(featured, /resolveImageUrl\(p\.image_url\)/);
 assert.match(featured, /Show all products/);
 assert.match(featured, /Load more products/);
 assert.match(featured, /requestVersionRef/);
+assert.match(featured, /supplierFromProductsHref\(supplierSlug\)/);
+assert.match(hubSearch, /supplierFromProductsHref\(supplierSlug\)/);
+assert.match(materialSearch, /supplierFromProductsHref\(p\.supplier_slug\)/);
+assert.match(macroGrid, /supplierFromProductsHref\(p\.supplier_slug\)/);
+assert.match(productDetail, /supplierFromProductsHref\(product\.supplier_slug\)/);
+assert.match(supplierDetail, /searchParams\.get\('from'\) === 'products'/);
+assert.match(supplierDetail, /router\.push\(`\/materials\?tab=\$\{originTab\}`\)/);
 assert.match(directory, /selectedKey: string \| null/);
 assert.match(directory, /onSelectCategory: \(category: MegaCategory\) => void/);
 assert.match(directory, /<li key=\{c\.key\} className="relative">/);

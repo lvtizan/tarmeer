@@ -9,6 +9,7 @@ import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { fetchMacroProducts, PREMIUM_MATERIALS, type MacroProduct } from '@/lib/materialMacros';
 import Lightbox from '@/components/Lightbox';
 import ProductPriceLine from './ProductPriceLine';
+import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 
 export default function MacroProductGrid({ macroKey, label }: { macroKey: string; label: string }) {
   const country = countryFromLang(useSiteLocale().lang).code;
@@ -109,7 +110,7 @@ export default function MacroProductGrid({ macroKey, label }: { macroKey: string
               )}
               {p.supplier_slug && (
                 <Link
-                  href={`/materials/suppliers/${p.supplier_slug}`}
+                  href={supplierFromProductsHref(p.supplier_slug)}
                   className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[#b8864a] transition hover:text-[#a07640]"
                 >
                   View Supplier <ArrowRight className="h-3 w-3" />

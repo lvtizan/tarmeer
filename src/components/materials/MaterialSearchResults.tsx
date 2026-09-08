@@ -7,6 +7,7 @@ import { ArrowRight } from 'lucide-react';
 import Lightbox from '@/components/Lightbox';
 import { fetchMaterialProducts, type PublicMaterialProduct } from '@/lib/materialsApi';
 import { resolveImageUrl } from '@/lib/imageUrl';
+import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import ProductPriceLine from './ProductPriceLine';
@@ -79,7 +80,7 @@ export default function MaterialSearchResults({ query }: { query: string }) {
                   )}
                   {p.supplier_slug && (
                     <Link
-                      href={`/materials/suppliers/${p.supplier_slug}`}
+                      href={supplierFromProductsHref(p.supplier_slug)}
                       className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[#b8864a] transition hover:text-[#a07640]"
                     >
                       View Supplier <ArrowRight className="h-3 w-3" />

@@ -15,6 +15,7 @@ import MaterialProductCard from './MaterialProductCard';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import { APPLICATION_SCENES, type PublicMaterialProduct, type SupplierCatalog } from '@/lib/materialsApi';
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
+import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import ProductPriceLine from './ProductPriceLine';
 
 // pdf.js 阅读器懒加载：只在客户端、独立 chunk，不进初始包（不看图册的用户零成本）
@@ -72,7 +73,7 @@ function SupplierCard({ product }: { product: PublicMaterialProduct }) {
     </div>
   );
   return product.supplier_slug ? (
-    <Link href={`/materials/suppliers/${product.supplier_slug}`} className="block">
+    <Link href={supplierFromProductsHref(product.supplier_slug)} className="block">
       {inner}
     </Link>
   ) : (

@@ -11,6 +11,7 @@ import {
 } from '@/lib/materialMacros';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import ProductPriceLine from './ProductPriceLine';
 
 const GOLD = '#b8864a';
@@ -297,7 +298,7 @@ function MegaPanel({
               return p.supplier_slug ? (
                 <Link
                   key={p.id}
-                  href={`/materials/suppliers/${p.supplier_slug}`}
+                  href={supplierFromProductsHref(p.supplier_slug)}
                   className="w-20 flex-none"
                 >
                   {content}
