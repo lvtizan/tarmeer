@@ -160,6 +160,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：`daily-visits` 改用 `DATE_FORMAT(created_at, '%Y-%m-%d')` 并按同表达式分组；`company-visitors` 改读 `visitor_logs`，并把 `/companies/{slug}/...` 归一成 `/companies/{slug}` 后聚合 UV/PV。
 - **预防**：后台趋势接口返回日期必须是前端消费的稳定字符串，不返回 DB driver 的 Date 对象；同一 analytics 页面所有 PV/UV 统计默认使用同一事实表 `visitor_logs`，除非明确展示客户端事件。
 
+### FA-25 供应商超大图片被反向代理拦截，前端只显示 Server error（2026-09-08）
+- **现象**：供应商在产品页单张拖放、粘贴或文件夹拖放高分辨率图片时，缩略图前的上传请求报 `Server error`，误以为拖放控件失效。
+- **根因**：公共 `ImageUploadZone` 本身仍支持递归文件夹和粘贴；实际失败文件为 71–88MB，超过 Nginx 60MB `client_max_body_size`，网关返回 HTML 413，旧前端 JSON 解析失败后笼统显示 `Server error`。
+- **修复**：公共组件在每张超限图片上传前，浏览器端逐级缩放/重编码到 18MB 安全预算再上传；透明 PNG 输出 WebP 保持透明；非图片及目录 PDF 分块上传保持原行为；非 JSON 413 改为可理解的错误信息。
+- **预防**：上传问题先以 access/error log 关联请求状态和体积，不能只看前端错误字串；上传入口必须使用公共组件，且任何重新编码文件不能经会按原文件扩展名落盘的分块路径，避免 MIME/扩展名不一致。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```

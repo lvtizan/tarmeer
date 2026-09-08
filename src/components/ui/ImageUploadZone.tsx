@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Paperclip, X, FileText } from 'lucide-react';
 import { getDroppedFiles } from '@/lib/dropFiles';
 import { resolveImageUrl } from '@/lib/imageUrl';
+import { prepareImageForUpload } from '@/lib/uploadImageCompression';
 
 interface ImageUploadZoneProps {
   value: string[];
@@ -34,7 +35,11 @@ function xhrPost(url: string, headers: Record<string, string>, formData: FormDat
         const res = JSON.parse(xhr.responseText);
         if (xhr.status >= 200 && xhr.status < 300) resolve(res);
         else reject(new Error((res as { error?: string }).error || 'Upload failed'));
-      } catch { reject(new Error('Server error')); }
+      } catch {
+        reject(new Error(xhr.status === 413
+          ? '图片文件过大，正在自动压缩失败，请换一张图片后重试。'
+          : `上传服务返回异常（HTTP ${xhr.status || '未知'}）。`));
+      }
     };
     xhr.onerror = () => reject(new Error('Upload failed'));
     xhr.send(formData);
@@ -78,8 +83,13 @@ export default function ImageUploadZone({
     return a === 'application/pdf' && fileExt(file.name) === 'pdf';
   });
 
-  const uploadOne = async (file: File): Promise<{ url: string; original_name?: string }> => {
-    if (chunkUploadUrl && file.size > 4 * 1024 * 1024) {
+  const uploadOne = async (sourceFile: File): Promise<{ url: string; original_name?: string }> => {
+    const prepared = await prepareImageForUpload(sourceFile);
+    const file = prepared.file;
+    // A compressed image is already kept below the safe single-request budget.
+    // Send it normally so the server infers its extension from the actual WebP/JPEG
+    // filename rather than from the original PNG/JPEG display name.
+    if (chunkUploadUrl && !prepared.compressed && file.size > 4 * 1024 * 1024) {
       // Chunked upload for large files
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const uploadId = Array.from(crypto.getRandomValues(new Uint8Array(8)))
@@ -92,7 +102,7 @@ export default function ImageUploadZone({
         fd.append('upload_id', uploadId);
         fd.append('chunk_index', String(i));
         fd.append('total_chunks', String(totalChunks));
-        fd.append('original_name', file.name);
+        fd.append('original_name', prepared.originalName);
         data = await xhrPost(chunkUploadUrl, getHeaders(), fd) as typeof data;
         setProgress(Math.round((i + 1) / totalChunks * 100));
       }
@@ -100,8 +110,8 @@ export default function ImageUploadZone({
     }
     // Single upload
     const fd = new FormData();
-    fd.append('file', file);
-    fd.append('original_name', file.name);
+    fd.append('file', file, file.name);
+    fd.append('original_name', prepared.originalName);
     return await xhrPost(uploadUrl, getHeaders(), fd, setProgress) as { url: string; original_name?: string };
   };
 
