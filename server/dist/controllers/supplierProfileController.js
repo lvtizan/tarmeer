@@ -14,6 +14,7 @@ const path_1 = __importDefault(require("path"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
 const supplierRedact_1 = require("../lib/supplierRedact");
+const catalogRenderer_1 = require("../lib/catalogRenderer");
 const redactPublicSupplier = supplierRedact_1.redactPublicSupplier;
 async function uploadLicense(req, res) {
     try {
@@ -131,6 +132,7 @@ async function getPublicProfile(req, res) {
         const [products] = await database_1.default.execute('SELECT * FROM supplier_products WHERE supplier_profile_id = ? ORDER BY sort_order, id', [supplier.id]);
         // Get catalogs
         const [catalogs] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [supplier.id]);
+        catalogs.forEach((catalog) => (0, catalogRenderer_1.enqueueCatalogRender)(catalog));
         // 自填文本(商品/目录标题·简介)里可能含品牌名,一并遮蔽(用真实厂家名匹配,遮完再 redact supplier)
         const realName = supplier.company_name;
         const maskedProducts = (Array.isArray(products) ? products : []).map((p) => ({

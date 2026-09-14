@@ -29,6 +29,7 @@ exports.getSupplierReport = getSupplierReport;
 const database_1 = __importDefault(require("../config/database"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const path_1 = __importDefault(require("path"));
+const catalogRenderer_1 = require("../lib/catalogRenderer");
 const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
 const imageVariants_1 = require("../lib/imageVariants");
@@ -198,6 +199,7 @@ async function adminReplaceCatalogFile(req, res) {
         await promises_1.default.writeFile(absPath, req.file.buffer, { mode: 0o644 });
         const newUrl = `/uploads/${relPath}`;
         await database_1.default.execute('UPDATE supplier_catalogs SET file_url = ? WHERE id = ?', [newUrl, catalogId]);
+        (0, catalogRenderer_1.enqueueCatalogRender)({ id: catalogId, file_url: newUrl }, { force: true });
         await logSupplierAction(req, 'supplier_catalog_file_replace', supplierId, `供应商#${supplierId} 替换目录#${catalogId} 文件`);
         res.json({ id: catalogId, file_url: newUrl, file_size: req.file.size });
     }
@@ -232,6 +234,7 @@ async function adminAddCatalog(req, res) {
         const [result] = await database_1.default.execute('INSERT INTO supplier_catalogs (supplier_profile_id, title, file_url, file_size) VALUES (?, ?, ?, ?)', [supplierId, title, fileUrl, req.file.size || null]);
         await logSupplierAction(req, 'supplier_catalog_add', supplierId, `供应商#${supplierId} 新增目录#${result.insertId}`);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE id = ?', [result.insertId]);
+        (0, catalogRenderer_1.enqueueCatalogRender)(created[0]);
         res.status(201).json({ catalog: created[0] });
     }
     catch (error) {

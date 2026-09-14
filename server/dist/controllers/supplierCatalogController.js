@@ -17,6 +17,7 @@ const os_1 = __importDefault(require("os"));
 const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
 const supplierRedact_1 = require("../lib/supplierRedact");
+const catalogRenderer_1 = require("../lib/catalogRenderer");
 async function getProfileId(supplierUserId) {
     const [rows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE supplier_user_id = ? LIMIT 1', [supplierUserId]);
     return rows[0]?.id || null;
@@ -103,6 +104,7 @@ async function listCatalogs(req, res) {
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
         const [catalogs] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [profile.id]);
+        catalogs.forEach((catalog) => (0, catalogRenderer_1.enqueueCatalogRender)(catalog));
         // 公开去标识：目录标题里的真实厂名(中英)一并遮蔽(与 getPublicProfile 同口径,修 C1/退 F3)。
         // 注意：file_url 仍含真实文件名(pre-existing F2,与供应商详情页 CatalogReader 共用),需 proxy 下载路由单独治理。
         const realName = profile.company_name || '';
@@ -127,6 +129,7 @@ async function listMyCatalogs(req, res) {
         if (!profileId)
             return res.json({ catalogs: [] });
         const [catalogs] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [profileId]);
+        catalogs.forEach((catalog) => (0, catalogRenderer_1.enqueueCatalogRender)(catalog));
         res.json({ catalogs });
     }
     catch (error) {
@@ -145,6 +148,7 @@ async function uploadCatalog(req, res) {
         const [result] = await database_1.default.execute('INSERT INTO supplier_catalogs (supplier_profile_id, title, file_url, file_size) VALUES (?, ?, ?, ?)', [profileId, title, file_url, file_size || null]);
         const id = result.insertId;
         const [created] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE id = ?', [id]);
+        (0, catalogRenderer_1.enqueueCatalogRender)(created[0]);
         res.status(201).json({ catalog: created[0] });
     }
     catch (error) {

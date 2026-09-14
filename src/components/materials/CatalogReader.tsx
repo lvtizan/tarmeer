@@ -1,7 +1,7 @@
 'use client';
 
 // 供应商 PDF 图册 → 网页内电子书阅读器。
-// - 供应商上传 PDF 即入库，本组件用 pdf.js 在浏览器逐页渲染成电子书（无服务端转换）。
+// - 优先读取服务端预渲染页图；旧目录会由服务端在首次读取时自动补建，避免客户端 PDF 解析不稳定。
 // - 懒渲染：打开只渲当前页，其余空闲后台补；懒加载：整个组件经 next/dynamic(ssr:false) 单独成 chunk。
 // - 双层交叉淡出切页（无黑闪）；缩略图/页码/全屏叠加在图上；无下载入口。
 // - 多本图册用顶部 tab 切换；catalogs 为空时调用方不渲染本组件。
@@ -72,7 +72,7 @@ async function fetchWithProgress(url: string, onProgress: (pct: number | null) =
   return URL.createObjectURL(new Blob(chunks as BlobPart[], { type: 'image/webp' }));
 }
 
-// download 提供时：右上角显示下载按钮，点击先弹询单，提交成功后下载"去标识版"PDF（pages/<id>/catalog.pdf）
+// download 提供时：右上角显示下载按钮，点击先弹询单，提交成功后下载原始 PDF。
 export default function CatalogReader({
   catalogs,
   download,
@@ -108,6 +108,7 @@ export default function CatalogReader({
   // 方案③：有预渲染 WebP 就走 image 模式（拉单页图，秒开），否则回退 pdf 模式（pdf.js 现渲）
   const modeRef = useRef<'pdf' | 'image'>('pdf');
   const pagesBaseRef = useRef('');
+  const imageExtRef = useRef<'webp' | 'jpg'>('webp');
   // 预渲染版本号 ?r=<rev>：重渲染换 rev → 打破 nginx 30d immutable 缓存（同名 WebP 内容变了也能刷新）
   const revQueryRef = useRef('');
   const numPagesRef = useRef(0);
@@ -115,10 +116,10 @@ export default function CatalogReader({
 
   const active = catalogs[activeIdx];
 
-  // 下载"去标识版"PDF（服务端渲染时生成的 catalog.pdf，只含展示的产品页）
+  // 原 PDF 永远保留作无障碍兜底；预渲染页图只负责在线阅读。
   const triggerDownload = useCallback(() => {
     if (!active) return;
-    const url = resolveImageUrl(`/uploads/suppliers/catalogs/pages/${active.id}/catalog.pdf`);
+    const url = resolveImageUrl(active.file_url);
     const a = document.createElement('a');
     a.href = url;
     a.download = `${(active.title || 'catalog').replace(/[^\w一-龥.-]+/g, '_')}.pdf`;
@@ -139,7 +140,7 @@ export default function CatalogReader({
       // 首页可能已带进度预取为 blob（见加载流程），命中直接用；否则给带版本号的 URL，浏览器缓存
       const cachedImg = urlsRef.current.get(p);
       if (cachedImg) return cachedImg;
-      return `${pagesBaseRef.current}/${p}.webp${revQueryRef.current}`;
+      return `${pagesBaseRef.current}/${p}.${imageExtRef.current}${revQueryRef.current}`;
     }
     const pdf = pdfRef.current;
     if (!pdf) return null;
@@ -241,6 +242,7 @@ export default function CatalogReader({
 
     modeRef.current = 'pdf';
     pagesBaseRef.current = '';
+    imageExtRef.current = 'webp';
     revQueryRef.current = '';
     numPagesRef.current = 0;
 
@@ -249,23 +251,26 @@ export default function CatalogReader({
         // ① 优先用预渲染的 WebP（方案③）：拉单页图秒开，不碰大 PDF
         const pagesBase = resolveImageUrl(`/uploads/suppliers/catalogs/pages/${active.id}`);
         try {
-          // manifest 用 no-cache（每次向服务器校验）：重渲染后能拿到新页数/新版本号，不被 30d immutable 锁死
-          const mf = await fetch(`${pagesBase}/manifest.json`, { cache: 'no-cache' });
-          if (mf.ok) {
+          // 服务端在上传后转换 PDF；旧目录在首次访问时补建。短暂轮询而不是立刻落入 pdf.js，
+          // 可消除不同浏览器、不同 PDF 版本下的偶发解析失败。
+          for (let attempt = 0; attempt < 30 && !cancelled; attempt += 1) {
+            const mf = await fetch(`${pagesBase}/manifest.json`, { cache: 'no-cache' });
+            if (mf.ok) {
             const data = await mf.json();
             const pages = Number(data?.pages) || 0;
             if (pages > 0 && !cancelled) {
               modeRef.current = 'image';
               pagesBaseRef.current = pagesBase;
+              imageExtRef.current = data?.format === 'jpg' ? 'jpg' : 'webp';
               revQueryRef.current = data?.rev ? `?r=${data.rev}` : '';
               numPagesRef.current = pages;
               setNumPages(pages);
               setRatio(Number(data?.ar) || 1.4);
-              setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBase}/${i + 1}-thumb.webp${revQueryRef.current}`));
+              setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBase}/${i + 1}-thumb.${imageExtRef.current}${revQueryRef.current}`));
               // 首页带进度加载：流式拉 WebP 显示真实百分比，加载完再淡入（用户有"加载到哪了"的底）
               try {
                 const objUrl = await fetchWithProgress(
-                  `${pagesBase}/1.webp${revQueryRef.current}`,
+                  `${pagesBase}/1.${imageExtRef.current}${revQueryRef.current}`,
                   (pct) => { if (!cancelled) setProgress(pct); }
                 );
                 if (cancelled) { URL.revokeObjectURL(objUrl); return; }
@@ -279,6 +284,15 @@ export default function CatalogReader({
               await showPage(1, 'open');
               return; // 图片模式，无需 pdf.js
             }
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, 1000));
+          }
+          if (!cancelled) {
+            // Do not silently return to browser pdf.js after the server renderer
+            // has timed out: that was the source of the intermittent black reader.
+            setError(true);
+            setLoading(false);
+            return;
           }
         } catch {
           /* 无预渲染或取 manifest 失败 → 回退 pdf.js */
@@ -528,7 +542,10 @@ export default function CatalogReader({
         {error && (
           <div className="absolute inset-0 z-[7] flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-white/60">
             <BookOpen className="mb-1 h-6 w-6 text-white/30" />
-            Unable to load this catalog.
+            <span>We’re preparing this catalog. Please refresh shortly.</span>
+            <a href={resolveImageUrl(active.file_url)} target="_blank" rel="noreferrer" className="mt-2 text-[#e6c88f] underline underline-offset-2">
+              Download the original PDF
+            </a>
           </div>
         )}
       </div>
