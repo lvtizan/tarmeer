@@ -4,6 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.adminRenameCatalog = adminRenameCatalog;
+exports.requireSupplierCountryScope = requireSupplierCountryScope;
+exports.adminGetCatalogSource = adminGetCatalogSource;
+exports.adminPublishCatalog = adminPublishCatalog;
+exports.adminUnpublishCatalog = adminUnpublishCatalog;
 exports.adminReplaceCatalogFile = adminReplaceCatalogFile;
 exports.adminAddCatalog = adminAddCatalog;
 exports.adminDeleteCatalog = adminDeleteCatalog;
@@ -29,6 +33,7 @@ exports.getSupplierReport = getSupplierReport;
 const database_1 = __importDefault(require("../config/database"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const path_1 = __importDefault(require("path"));
+const catalogValidation_1 = require("../lib/catalogValidation");
 const catalogRenderer_1 = require("../lib/catalogRenderer");
 const promises_1 = __importDefault(require("fs/promises"));
 const variantWorker_1 = require("../lib/variantWorker");
@@ -64,12 +69,44 @@ async function logSupplierAction(req, action, targetId, description, country = r
 }
 const ADMIN_SUPPLIER_COUNTRIES = new Set(['ae', 'vn']);
 function adminSupplierCountry(req) {
-    const requestedCountry = typeof req.body?.country === 'string' ? req.body.country : '';
+    const requestedCountry = typeof req.body?.country === 'string' ? req.body.country : (typeof req.query?.country === 'string' ? req.query.country : '');
     if (req.admin?.role === 'super_admin') {
         const selectedCountry = requestedCountry || req.admin.country;
         return ADMIN_SUPPLIER_COUNTRIES.has(selectedCountry) ? selectedCountry : null;
     }
     return ADMIN_SUPPLIER_COUNTRIES.has(req.admin?.country) ? req.admin.country : null;
+}
+async function getAdminCatalog(req, catalogId) {
+    if (req.admin?.role === 'super_admin') {
+        const [rows] = await database_1.default.execute(`SELECT sc.*, sp.country
+            FROM supplier_catalogs sc
+            JOIN supplier_profiles sp ON sp.id = sc.supplier_profile_id
+            WHERE sc.id = ? LIMIT 1`, [catalogId]);
+        return rows[0] || null;
+    }
+    const country = adminSupplierCountry(req);
+    if (!country) return null;
+    const [rows] = await database_1.default.execute(`SELECT sc.*, sp.country
+        FROM supplier_catalogs sc
+        JOIN supplier_profiles sp ON sp.id = sc.supplier_profile_id
+        WHERE sc.id = ? AND sp.country = ? LIMIT 1`, [catalogId, country]);
+    return rows[0] || null;
+}
+async function requireSupplierCountryScope(req, res, next) {
+    try {
+        const supplierId = Number(req.params.id);
+        if (!Number.isSafeInteger(supplierId) || supplierId < 1)
+            return res.status(400).json({ error: 'invalid supplier id' });
+        if (req.admin?.role === 'super_admin') return next();
+        const country = ADMIN_SUPPLIER_COUNTRIES.has(req.admin?.country) ? req.admin.country : null;
+        if (!country) return res.status(403).json({ error: 'Supplier country access denied.' });
+        const [rows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE id = ? AND country = ? LIMIT 1', [supplierId, country]);
+        if (!rows[0]) return res.status(404).json({ error: 'Supplier not found.' });
+        next();
+    } catch (error) {
+        console.error('Supplier country scope check failed:', error);
+        res.status(500).json({ error: 'Unable to verify supplier access.' });
+    }
 }
 /** POST /admin/suppliers — privileged account provisioning; public registration remains verification-gated. */
 async function createAdminSupplierAccount(req, res) {
@@ -164,16 +201,74 @@ async function adminRenameCatalog(req, res) {
         const title = (req.body?.title || '').toString().trim();
         if (!title)
             return res.status(400).json({ error: 'title is required' });
-        const [rows] = await database_1.default.execute('SELECT id FROM supplier_catalogs WHERE id = ?', [catalogId]);
-        if (rows.length === 0)
+        const catalog = await getAdminCatalog(req, catalogId);
+        if (!catalog)
             return res.status(404).json({ error: 'catalog not found' });
-        await database_1.default.execute('UPDATE supplier_catalogs SET title = ? WHERE id = ?', [title, catalogId]);
-        await logSupplierAction(req, 'supplier_catalog_rename', catalogId, `重命名目录#${catalogId} → ${title}`);
+        await database_1.default.execute('UPDATE supplier_catalogs SET title = ? WHERE id = ? AND supplier_profile_id = ?', [title, catalogId, catalog.supplier_profile_id]);
+        await logSupplierAction(req, 'supplier_catalog_rename', catalogId, `重命名目录#${catalogId} → ${title}`, catalog.country);
         res.json({ id: catalogId, title });
     }
     catch (error) {
         console.error('Admin rename catalog error:', error);
         res.status(500).json({ error: 'Failed to rename catalog.' });
+    }
+}
+/** GET /admin/suppliers/catalogs/:id/source — authenticated, inline review only. */
+async function adminGetCatalogSource(req, res) {
+    try {
+        const catalogId = Number(req.params.id);
+        if (!Number.isSafeInteger(catalogId) || catalogId < 1)
+            return res.status(400).json({ error: 'invalid catalog id' });
+        const catalog = await getAdminCatalog(req, catalogId);
+        if (!catalog)
+            return res.status(404).json({ error: 'catalog not found' });
+        const source = (0, catalogRenderer_1.catalogFilePath)(catalog.file_url);
+        if (!source)
+            return res.status(404).json({ error: 'catalog source is unavailable' });
+        await promises_1.default.access(source);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="catalog-${catalogId}.pdf"`);
+        res.setHeader('Cache-Control', 'private, no-store');
+        return res.sendFile(source);
+    }
+    catch (error) {
+        console.error('Admin get catalog source error:', error);
+        res.status(404).json({ error: 'Catalog source is unavailable.' });
+    }
+}
+/** Publish a completed, reviewed preview. Conversion alone never makes it public. */
+async function adminPublishCatalog(req, res) {
+    try {
+        const catalogId = Number(req.params.id);
+        if (!Number.isSafeInteger(catalogId) || catalogId < 1)
+            return res.status(400).json({ error: 'invalid catalog id' });
+        const catalog = await getAdminCatalog(req, catalogId);
+        if (!catalog)
+            return res.status(404).json({ error: 'catalog not found' });
+        const manifest = await (0, catalogRenderer_1.publishCatalogPreview)(catalogId);
+        await logSupplierAction(req, 'supplier_catalog_publish', catalogId, `审核并发布目录#${catalogId}`, catalog.country);
+        res.json({ id: catalogId, catalog_visible: 1, manifest });
+    }
+    catch (error) {
+        console.error('Admin publish catalog error:', error);
+        res.status(409).json({ error: error?.message || 'Catalog preview is not ready.' });
+    }
+}
+async function adminUnpublishCatalog(req, res) {
+    try {
+        const catalogId = Number(req.params.id);
+        if (!Number.isSafeInteger(catalogId) || catalogId < 1)
+            return res.status(400).json({ error: 'invalid catalog id' });
+        const catalog = await getAdminCatalog(req, catalogId);
+        if (!catalog)
+            return res.status(404).json({ error: 'catalog not found' });
+        await (0, catalogRenderer_1.unpublishCatalogPreview)(catalogId, catalog.supplier_profile_id);
+        await logSupplierAction(req, 'supplier_catalog_unpublish', catalogId, `撤回目录#${catalogId}`, catalog.country);
+        res.json({ id: catalogId, catalog_visible: 0 });
+    }
+    catch (error) {
+        console.error('Admin unpublish catalog error:', error);
+        res.status(500).json({ error: 'Failed to unpublish catalog.' });
     }
 }
 /**
@@ -182,77 +277,122 @@ async function adminRenameCatalog(req, res) {
  * UPDATE supplier_catalogs.file_url 指向新路径。
  */
 async function adminReplaceCatalogFile(req, res) {
+    let stagedPath = null;
     try {
         const catalogId = Number(req.params.id);
         if (!catalogId)
             return res.status(400).json({ error: 'invalid catalog id' });
         if (!req.file?.buffer)
             return res.status(400).json({ error: 'no file uploaded' });
-        const [rows] = await database_1.default.execute('SELECT id, supplier_profile_id, file_url FROM supplier_catalogs WHERE id = ?', [catalogId]);
-        const cat = rows[0];
+        if (!(0, catalogValidation_1.isPdfUpload)(req.file) || req.file.size > catalogValidation_1.MAX_CATALOG_BYTES)
+            return res.status(400).json({ error: 'Catalogs must be valid PDF files up to 60 MB.' });
+        const cat = await getAdminCatalog(req, catalogId);
         if (!cat)
             return res.status(404).json({ error: 'catalog not found' });
         const supplierId = cat.supplier_profile_id;
-        const relPath = `catalogs/redacted/${supplierId}/${catalogId}.pdf`;
-        const absPath = path_1.default.resolve(process.cwd(), 'public/uploads', relPath);
+        // Do not overwrite the source a running conversion is reading. The
+        // published page revision remains available until this unique candidate
+        // is completely rendered and atomically published.
+        const fileName = `admin-${supplierId}-${catalogId}-${require('crypto').randomUUID()}.pdf`;
+        const absPath = path_1.default.resolve(process.cwd(), 'private/catalogs', fileName);
+        stagedPath = absPath;
         await promises_1.default.mkdir(path_1.default.dirname(absPath), { recursive: true });
         await promises_1.default.writeFile(absPath, req.file.buffer, { mode: 0o644 });
-        const newUrl = `/uploads/${relPath}`;
-        await database_1.default.execute('UPDATE supplier_catalogs SET file_url = ? WHERE id = ?', [newUrl, catalogId]);
-        (0, catalogRenderer_1.enqueueCatalogRender)({ id: catalogId, file_url: newUrl }, { force: true });
-        await logSupplierAction(req, 'supplier_catalog_file_replace', supplierId, `供应商#${supplierId} 替换目录#${catalogId} 文件`);
+        const newUrl = `private://catalogs/${fileName}`;
+        // Keep the last published page revision online while this candidate is
+        // rendered. The worker switches the manifest atomically when ready.
+        const [updateResult] = await database_1.default.execute("UPDATE supplier_catalogs SET file_url = ?, file_size = ?, render_status = 'pending', render_error = NULL, source_sha256 = NULL, render_attempts = 0, render_claim_token = NULL WHERE id = ? AND supplier_profile_id = ?", [newUrl, req.file.size, catalogId, cat.supplier_profile_id]);
+        if (updateResult.affectedRows !== 1) throw new Error('Catalog changed before replacement.');
+        stagedPath = null;
+        const [oldReferences] = await database_1.default.execute('SELECT id FROM supplier_catalogs WHERE file_url = ? LIMIT 1', [cat.file_url]);
+        if (oldReferences.length === 0 && typeof cat.file_url === 'string' && cat.file_url.startsWith('private://catalogs/')) {
+            const oldSource = (0, catalogRenderer_1.catalogFilePath)(cat.file_url);
+            if (oldSource)
+                await promises_1.default.rm(oldSource, { force: true }).catch((error) => console.warn('Old catalog source cleanup skipped:', error?.message));
+        }
+        await logSupplierAction(req, 'supplier_catalog_file_replace', supplierId, `供应商#${supplierId} 替换目录#${catalogId} 文件`, cat.country);
         res.json({ id: catalogId, file_url: newUrl, file_size: req.file.size });
     }
     catch (error) {
+        if (stagedPath) await promises_1.default.rm(stagedPath, { force: true }).catch(() => {});
         console.error('Admin replace catalog file error:', error);
         res.status(500).json({ error: 'Failed to replace catalog file.' });
     }
 }
 /** 管理员帮供应商新增目录 PDF。multipart/form-data：file(PDF) + title(可选，缺省用文件名)。 */
 async function adminAddCatalog(req, res) {
+    let stagedPath = null;
     try {
         const supplierId = Number(req.params.id);
         if (!supplierId)
             return res.status(400).json({ error: 'invalid supplier id' });
         if (!req.file?.buffer)
             return res.status(400).json({ error: 'no file uploaded' });
-        const isPdf = req.file.mimetype === 'application/pdf' || /\.pdf$/i.test(req.file.originalname || '');
-        if (!isPdf)
-            return res.status(400).json({ error: 'Only PDF files are allowed.' });
-        const [supRows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE id = ?', [supplierId]);
+        if (!(0, catalogValidation_1.isPdfUpload)(req.file) || req.file.size > catalogValidation_1.MAX_CATALOG_BYTES)
+            return res.status(400).json({ error: 'Catalogs must be valid PDF files up to 60 MB.' });
+        const country = adminSupplierCountry(req);
+        const supplierSql = req.admin?.role === 'super_admin'
+            ? 'SELECT id FROM supplier_profiles WHERE id = ?'
+            : 'SELECT id FROM supplier_profiles WHERE id = ? AND country = ?';
+        const [supRows] = await database_1.default.execute(supplierSql, req.admin?.role === 'super_admin' ? [supplierId] : [supplierId, country]);
         if (supRows.length === 0)
             return res.status(404).json({ error: 'supplier not found' });
         const title = (typeof req.body.title === 'string' && req.body.title.trim())
             || (req.file.originalname || 'Catalog').replace(/\.pdf$/i, '').trim()
             || 'Catalog';
         const fileName = `admin-${supplierId}-${require('crypto').randomUUID()}.pdf`;
-        const relPath = `suppliers/catalogs/${fileName}`;
-        const absPath = path_1.default.resolve(process.cwd(), 'public/uploads', relPath);
+        const absPath = path_1.default.resolve(process.cwd(), 'private/catalogs', fileName);
+        stagedPath = absPath;
         await promises_1.default.mkdir(path_1.default.dirname(absPath), { recursive: true });
         await promises_1.default.writeFile(absPath, req.file.buffer, { mode: 0o644 });
-        const fileUrl = `/uploads/${relPath}`;
-        const [result] = await database_1.default.execute('INSERT INTO supplier_catalogs (supplier_profile_id, title, file_url, file_size) VALUES (?, ?, ?, ?)', [supplierId, title, fileUrl, req.file.size || null]);
+        const fileUrl = `private://catalogs/${fileName}`;
+        const [result] = await database_1.default.execute("INSERT INTO supplier_catalogs (supplier_profile_id, title, file_url, file_size, render_status, catalog_visible) VALUES (?, ?, ?, ?, 'pending', 0)", [supplierId, title, fileUrl, req.file.size || null]);
+        stagedPath = null;
         await logSupplierAction(req, 'supplier_catalog_add', supplierId, `供应商#${supplierId} 新增目录#${result.insertId}`);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE id = ?', [result.insertId]);
-        (0, catalogRenderer_1.enqueueCatalogRender)(created[0]);
         res.status(201).json({ catalog: created[0] });
     }
     catch (error) {
+        if (stagedPath) await promises_1.default.rm(stagedPath, { force: true }).catch(() => {});
         console.error('Admin add catalog error:', error);
         res.status(500).json({ error: 'Failed to add catalog.' });
     }
 }
-/** 管理员帮供应商删除目录（按 supplier 侧口径只删库记录，磁盘文件保留）。 */
+/** 管理员帮供应商删除目录，并清理私有原件及公开/候选页图。 */
 async function adminDeleteCatalog(req, res) {
     try {
         const catalogId = Number(req.params.id);
         if (!catalogId)
             return res.status(400).json({ error: 'invalid catalog id' });
-        const [rows] = await database_1.default.execute('SELECT id, supplier_profile_id FROM supplier_catalogs WHERE id = ?', [catalogId]);
-        if (rows.length === 0)
-            return res.status(404).json({ error: 'catalog not found' });
-        await database_1.default.execute('DELETE FROM supplier_catalogs WHERE id = ?', [catalogId]);
-        await logSupplierAction(req, 'supplier_catalog_delete', rows[0].supplier_profile_id, `供应商#${rows[0].supplier_profile_id} 删除目录#${catalogId}`);
+        const connection = await database_1.default.getConnection();
+        let catalog;
+        let quarantine = null;
+        try {
+            await connection.beginTransaction();
+            const [rows] = req.admin?.role === 'super_admin'
+                ? await connection.execute('SELECT sc.*, sp.country FROM supplier_catalogs sc JOIN supplier_profiles sp ON sp.id = sc.supplier_profile_id WHERE sc.id = ? FOR UPDATE', [catalogId])
+                : await connection.execute('SELECT sc.*, sp.country FROM supplier_catalogs sc JOIN supplier_profiles sp ON sp.id = sc.supplier_profile_id WHERE sc.id = ? AND sp.country = ? FOR UPDATE', [catalogId, req.admin?.country]);
+            catalog = rows[0];
+            if (!catalog) {
+                await connection.rollback();
+                return res.status(404).json({ error: 'catalog not found' });
+            }
+            quarantine = await (0, catalogRenderer_1.quarantineCatalogPublicArtifacts)(catalogId);
+            await connection.execute('DELETE FROM supplier_catalogs WHERE id = ? AND supplier_profile_id = ?', [catalogId, catalog.supplier_profile_id]);
+            await connection.commit();
+        }
+        catch (error) {
+            await connection.rollback().catch(() => {});
+            // Fail closed. A visible row left by rollback is repaired from its
+            // immutable private revision; never race another withdraw by
+            // restoring a static public path here.
+            throw error;
+        }
+        finally { connection.release(); }
+        const [references] = await database_1.default.execute('SELECT id FROM supplier_catalogs WHERE file_url = ? LIMIT 1', [catalog.file_url]);
+        await (0, catalogRenderer_1.removeCatalogArtifacts)(catalogId, catalog.file_url, references.length === 0).catch((error) => console.warn('Admin catalog private cleanup deferred:', error?.message));
+        await (0, catalogRenderer_1.discardCatalogPublicQuarantine)(quarantine).catch((error) => console.warn('Admin catalog quarantine cleanup deferred:', error?.message));
+        await logSupplierAction(req, 'supplier_catalog_delete', catalog.supplier_profile_id, `供应商#${catalog.supplier_profile_id} 删除目录#${catalogId}`, catalog.country);
         res.json({ message: 'Catalog deleted.' });
     }
     catch (error) {
@@ -367,10 +507,12 @@ async function listSuppliers(req, res) {
 async function getSupplierDetail(req, res) {
     try {
         const { id } = req.params;
+        const countryClause = req.admin?.role === 'super_admin' ? '' : ' AND sp.country = ?';
+        const queryParams = req.admin?.role === 'super_admin' ? [id] : [id, req.admin?.country];
         const [rows] = await database_1.default.execute(`SELECT sp.*, su.email as user_email, su.full_name as user_name, su.phone as user_phone, su.created_at as user_created_at
        FROM supplier_profiles sp
        LEFT JOIN supplier_users su ON su.id = sp.supplier_user_id
-       WHERE sp.id = ?`, [id]);
+       WHERE sp.id = ?${countryClause}`, queryParams);
         const supplier = rows[0];
         if (!supplier)
             return res.status(404).json({ error: 'Supplier not found.' });
@@ -435,21 +577,43 @@ async function updateSupplier(req, res) {
 async function deleteSupplier(req, res) {
     try {
         const { id } = req.params;
-        const requestedCountry = typeof req.body?.country === 'string' ? req.body.country : '';
-        const country = req.admin?.role === 'super_admin' && ADMIN_SUPPLIER_COUNTRIES.has(requestedCountry)
-            ? requestedCountry
-            : (ADMIN_SUPPLIER_COUNTRIES.has(req.admin?.country) ? req.admin.country : null);
-        // Get supplier_user_id
-        const [rows] = await database_1.default.execute('SELECT supplier_user_id FROM supplier_profiles WHERE id = ? AND country = ?', [id, country]);
-        const profile = rows[0];
-        if (!profile)
-            return res.status(404).json({ error: 'Supplier not found.' });
-        // Cascade delete: products → catalogs → profile → user
-        await database_1.default.execute('DELETE FROM supplier_products WHERE supplier_profile_id = ?', [id]);
-        await database_1.default.execute('DELETE FROM supplier_catalogs WHERE supplier_profile_id = ?', [id]);
-        await database_1.default.execute('DELETE FROM supplier_profiles WHERE id = ?', [id]);
-        await database_1.default.execute('DELETE FROM supplier_users WHERE id = ?', [profile.supplier_user_id]);
-        await logSupplierAction(req, 'supplier_delete', id, `删除供应商#${id}`, country);
+        const country = ADMIN_SUPPLIER_COUNTRIES.has(req.admin?.country) ? req.admin.country : null;
+        const connection = await database_1.default.getConnection();
+        let profile;
+        let catalogRows = [];
+        const quarantines = [];
+        try {
+            await connection.beginTransaction();
+            const [rows] = req.admin?.role === 'super_admin'
+                ? await connection.execute('SELECT supplier_user_id, country FROM supplier_profiles WHERE id = ? FOR UPDATE', [id])
+                : await connection.execute('SELECT supplier_user_id, country FROM supplier_profiles WHERE id = ? AND country = ? FOR UPDATE', [id, country]);
+            profile = rows[0];
+            if (!profile) {
+                await connection.rollback();
+                return res.status(404).json({ error: 'Supplier not found.' });
+            }
+            [catalogRows] = await connection.execute('SELECT id, file_url FROM supplier_catalogs WHERE supplier_profile_id = ? FOR UPDATE', [id]);
+            for (const catalog of catalogRows) quarantines.push([catalog.id, await (0, catalogRenderer_1.quarantineCatalogPublicArtifacts)(catalog.id)]);
+            // Cascade delete: products → catalogs → profile → user
+            await connection.execute('DELETE FROM supplier_products WHERE supplier_profile_id = ?', [id]);
+            await connection.execute('DELETE FROM supplier_catalogs WHERE supplier_profile_id = ?', [id]);
+            await connection.execute('DELETE FROM supplier_profiles WHERE id = ?', [id]);
+            await connection.execute('DELETE FROM supplier_users WHERE id = ?', [profile.supplier_user_id]);
+            await connection.commit();
+        }
+        catch (error) {
+            await connection.rollback().catch(() => {});
+            // Same fail-closed rule for bulk deletion. The worker restores
+            // only versions whose database state remains explicitly public.
+            throw error;
+        }
+        finally { connection.release(); }
+        for (const catalog of catalogRows) {
+            const [references] = await database_1.default.execute('SELECT id FROM supplier_catalogs WHERE file_url = ? LIMIT 1', [catalog.file_url]);
+            await (0, catalogRenderer_1.removeCatalogArtifacts)(catalog.id, catalog.file_url, references.length === 0).catch((error) => console.warn(`Supplier catalog #${catalog.id} private cleanup deferred:`, error?.message));
+        }
+        for (const [, quarantine] of quarantines) await (0, catalogRenderer_1.discardCatalogPublicQuarantine)(quarantine).catch((error) => console.warn('Supplier catalog quarantine cleanup deferred:', error?.message));
+        await logSupplierAction(req, 'supplier_delete', id, `删除供应商#${id}`, profile.country);
         res.json({ message: 'Supplier deleted.' });
     }
     catch (error) {

@@ -68,7 +68,7 @@ const productCategoryController_1 = require("../controllers/productCategoryContr
 const companyImportService_1 = require("../services/companyImportService");
 const multer_1 = __importDefault(require("multer"));
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-const uploadLargePdf = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const uploadLargePdf = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 60 * 1024 * 1024 } });
 const adminAuth_1 = require("../middleware/adminAuth");
 const router = (0, express_1.Router)();
 // ============ Public routes (no auth) ============
@@ -447,27 +447,30 @@ router.post('/suppliers', (0, adminAuth_1.requirePermission)('can_approve_suppli
 router.get('/suppliers', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.listSuppliers);
 // 上架报表：必须在 /suppliers/:id 之前注册,否则被 :id 捕获
 router.get('/suppliers/report', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierReport);
-router.get('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.getSupplierDetail);
+router.get('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.getSupplierDetail);
 // 编辑类操作需 can_view_suppliers(查看=查看+编辑);审批/删除供应商/替换目录文件保持 can_approve(更高权限)
-router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.updateSupplierStatus);
-router.put('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.updateSupplier);
-router.delete('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.deleteSupplier);
-router.post('/suppliers/:id/products', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminAddProduct);
-router.put('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminUpdateProduct);
-router.delete('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteProduct);
+router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.updateSupplierStatus);
+router.put('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.updateSupplier);
+router.delete('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.deleteSupplier);
+router.post('/suppliers/:id/products', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminAddProduct);
+router.put('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminUpdateProduct);
+router.delete('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminDeleteProduct);
+router.get('/suppliers/catalogs/:id/source', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminGetCatalogSource);
+router.put('/suppliers/catalogs/:id/publish', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.adminPublishCatalog);
+router.put('/suppliers/catalogs/:id/unpublish', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.adminUnpublishCatalog);
 router.put('/suppliers/catalogs/:id/file', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), uploadLargePdf.single('file'), supplierAdminController_1.adminReplaceCatalogFile);
 router.patch('/suppliers/catalogs/:id/title', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminRenameCatalog);
-router.post('/suppliers/:id/catalogs', (0, adminAuth_1.requirePermission)('can_view_suppliers'), (req, res, next) => uploadLargePdf.single('file')(req, res, (err) => err ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'PDF exceeds the 50MB limit. For larger catalogs, ask the supplier to upload it from their own portal (chunked upload).' : 'Upload failed.' }) : next()), supplierAdminController_1.adminAddCatalog);
+router.post('/suppliers/:id/catalogs', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, (req, res, next) => uploadLargePdf.single('file')(req, res, (err) => err ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'PDF exceeds the 60MB limit.' : 'Upload failed.' }) : next()), supplierAdminController_1.adminAddCatalog);
 router.delete('/suppliers/catalogs/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteCatalog);
-router.put('/suppliers/:id/products/:productId/image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), upload.single('file'), supplierAdminController_1.adminReplaceProductImage);
-router.post('/suppliers/:id/project-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), upload.single('file'), supplierAdminController_1.adminUploadProjectImage);
-router.post('/suppliers/:id/projects', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminAddProject);
-router.put('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminUpdateProject);
-router.delete('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteProject);
-router.put('/suppliers/:id/home-order', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.setSupplierHomeOrder);
-router.put('/suppliers/:id/list-order', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.setSupplierListOrder);
-router.put('/suppliers/:id/toggle-published', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.toggleSupplierPublished);
-router.put('/suppliers/:id/projects/:projectId/toggle-published', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.toggleSupplierProjectPublished);
+router.put('/suppliers/:id/products/:productId/image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, upload.single('file'), supplierAdminController_1.adminReplaceProductImage);
+router.post('/suppliers/:id/project-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, upload.single('file'), supplierAdminController_1.adminUploadProjectImage);
+router.post('/suppliers/:id/projects', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminAddProject);
+router.put('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminUpdateProject);
+router.delete('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminDeleteProject);
+router.put('/suppliers/:id/home-order', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.setSupplierHomeOrder);
+router.put('/suppliers/:id/list-order', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.setSupplierListOrder);
+router.put('/suppliers/:id/toggle-published', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.toggleSupplierPublished);
+router.put('/suppliers/:id/projects/:projectId/toggle-published', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.toggleSupplierProjectPublished);
 // Admin management (super admin only)
 router.get('/admins', adminAuth_1.requireSuperAdmin, adminController_1.listAdmins);
 router.post('/admins', adminAuth_1.requireSuperAdmin, adminController_1.createSubAdmin);

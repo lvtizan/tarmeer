@@ -131,8 +131,7 @@ async function getPublicProfile(req, res) {
         // Get products
         const [products] = await database_1.default.execute('SELECT * FROM supplier_products WHERE supplier_profile_id = ? ORDER BY sort_order, id', [supplier.id]);
         // Get catalogs
-        const [catalogs] = await database_1.default.execute('SELECT * FROM supplier_catalogs WHERE supplier_profile_id = ? ORDER BY created_at DESC', [supplier.id]);
-        catalogs.forEach((catalog) => (0, catalogRenderer_1.enqueueCatalogRender)(catalog));
+        const [catalogs] = await database_1.default.execute('SELECT id, title, file_size, created_at FROM supplier_catalogs WHERE supplier_profile_id = ? AND catalog_visible = 1 ORDER BY created_at DESC', [supplier.id]);
         // 自填文本(商品/目录标题·简介)里可能含品牌名,一并遮蔽(用真实厂家名匹配,遮完再 redact supplier)
         const realName = supplier.company_name;
         const maskedProducts = (Array.isArray(products) ? products : []).map((p) => ({

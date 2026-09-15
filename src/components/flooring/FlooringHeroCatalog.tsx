@@ -22,13 +22,11 @@ const CATALOGS: SupplierCatalog[] = [
   {
     id: 9000001,
     title: 'Art Flooring Collection',
-    file_url: '/uploads/flooring/catalogs/parbro-art.pdf',
     file_size: null,
   },
   {
     id: 9000002,
     title: 'Parquet Series',
-    file_url: '/uploads/flooring/catalogs/parbro-parquet.pdf',
     file_size: null,
   },
 ];

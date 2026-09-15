@@ -31,7 +31,7 @@ check(
 
 check(
   'popular product cards use a full-card supplier link when supplier_slug exists',
-  /if\s*\(supplierSlug\)\s*\{[\s\S]{0,500}<Link[\s\S]{0,220}href=\{`\/materials\/suppliers\/\$\{supplierSlug\}`\}/.test(hubFeatured) &&
+  /if\s*\(supplierSlug\)\s*\{[\s\S]{0,500}<Link[\s\S]{0,220}href=\{supplierFromProductsHref\(supplierSlug\)\}/.test(hubFeatured) &&
     !hubFeatured.includes("href={p.supplier_slug ? `/materials/suppliers/${p.supplier_slug}` : '#'}"),
 );
 
@@ -48,7 +48,7 @@ check(
 
 check(
   'search product cards use a full-card supplier link when supplier_slug exists',
-  /if\s*\(supplierSlug\)\s*\{[\s\S]{0,500}<Link[\s\S]{0,220}href=\{`\/materials\/suppliers\/\$\{supplierSlug\}`\}/.test(hubSearchResults),
+  /if\s*\(supplierSlug\)\s*\{[\s\S]{0,500}<Link[\s\S]{0,220}href=\{supplierFromProductsHref\(supplierSlug\)\}/.test(hubSearchResults),
 );
 
 check(

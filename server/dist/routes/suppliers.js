@@ -54,6 +54,38 @@ const router = (0, express_1.Router)();
 // Product photos are compressed by Sharp after receipt. The 60MB ceiling covers
 // high-resolution phone photos while bounding memory used by this in-memory upload.
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 60 * 1024 * 1024 } });
+// Catalogs larger than 4 MB always use 2 MB chunks in ImageUploadZone. Keep
+// the single-request heap ceiling low and rate-limit by authenticated supplier.
+const catalogUpload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
+const catalogChunk = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 + 1024, files: 1 } });
+const catalogUploadLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000,
+    max: 80,
+    keyGenerator: (req) => `supplier:${req.supplierUser?.id || 'unknown'}`,
+    message: { error: 'Too many catalog upload requests. Please try again later.' },
+});
+const activeCatalogBodiesByUser = new Map();
+let activeCatalogBodies = 0;
+function limitCatalogBodyConcurrency(req, res, next) {
+    const userId = Number(req.supplierUser?.id);
+    const userActive = activeCatalogBodiesByUser.get(userId) || 0;
+    if (!Number.isSafeInteger(userId) || userId < 1 || userActive >= 1 || activeCatalogBodies >= 8)
+        return res.status(429).json({ error: 'Another catalog upload is in progress. Please retry shortly.' });
+    activeCatalogBodies += 1;
+    activeCatalogBodiesByUser.set(userId, userActive + 1);
+    let released = false;
+    const release = () => {
+        if (released) return;
+        released = true;
+        activeCatalogBodies = Math.max(0, activeCatalogBodies - 1);
+        const remaining = (activeCatalogBodiesByUser.get(userId) || 1) - 1;
+        if (remaining > 0) activeCatalogBodiesByUser.set(userId, remaining);
+        else activeCatalogBodiesByUser.delete(userId);
+    };
+    res.once('finish', release);
+    res.once('close', release);
+    next();
+}
 const leadLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60 * 60 * 1000,
     max: 5,
@@ -98,8 +130,8 @@ router.post('/me/translate', translateLimiter, supplierAuth_1.authenticateSuppli
 router.put('/me/products/:id', supplierAuth_1.authenticateSupplier, products.updateProduct);
 router.delete('/me/products/:id', supplierAuth_1.authenticateSupplier, products.deleteProduct);
 router.put('/me/products-reorder', supplierAuth_1.authenticateSupplier, products.reorderProducts);
-router.post('/me/upload-catalog-file', supplierAuth_1.authenticateSupplier, upload.single('file'), catalogs.uploadCatalogFile);
-router.post('/me/upload-catalog-chunk', supplierAuth_1.authenticateSupplier, upload.single('file'), catalogs.uploadCatalogChunk);
+router.post('/me/upload-catalog-file', supplierAuth_1.authenticateSupplier, catalogUploadLimiter, limitCatalogBodyConcurrency, catalogUpload.single('file'), catalogs.uploadCatalogFile);
+router.post('/me/upload-catalog-chunk', supplierAuth_1.authenticateSupplier, catalogUploadLimiter, limitCatalogBodyConcurrency, catalogChunk.single('file'), catalogs.uploadCatalogChunk);
 router.get('/me/catalogs', supplierAuth_1.authenticateSupplier, catalogs.listMyCatalogs);
 router.post('/me/catalogs', supplierAuth_1.authenticateSupplier, catalogs.uploadCatalog);
 router.delete('/me/catalogs/:id', supplierAuth_1.authenticateSupplier, catalogs.deleteCatalog);

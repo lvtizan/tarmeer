@@ -4,6 +4,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { getCountry } from '@/lib/country';
+import { useAdmin } from '@/contexts/AdminContext';
 import SupplierEditModal from '@/components/admin/SupplierEditModal';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { showToast } from '@/components/ui/Toast';
@@ -605,6 +606,8 @@ export default function AdminSupplierDetailPage() {
   const routeParams = useParams();
   const id = routeParams?.id as string | undefined;
   const { t, lang } = useAdminT();
+  const { hasPermission, isSuperAdmin } = useAdmin();
+  const canApproveCatalogs = isSuperAdmin || hasPermission('can_approve_suppliers');
   const router = useRouter();
   const searchParams = useSearchParams();
   // 返回目标：从上架统计(?from=report)进来则回到该报表并带回日期筛选，否则回外层供应商列表
@@ -622,7 +625,7 @@ export default function AdminSupplierDetailPage() {
   } | null>(null);
   const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number; description?: string; budget?: string }>>([]);
-  const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url: string; file_size?: number }>>([]);
+  const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url?: string; file_size?: number; render_status?: 'pending' | 'processing' | 'ready' | 'failed'; render_error?: string | null; catalog_visible?: number; source_sha256?: string | null; published_sha256?: string | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -654,6 +657,7 @@ export default function AdminSupplierDetailPage() {
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
   const [savingCatalogId, setSavingCatalogId] = useState<number | null>(null);
+  const [catalogActionId, setCatalogActionId] = useState<number | null>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
   const [uploadingCatalog, setUploadingCatalog] = useState(false);
   const catalogFileRef = useRef<HTMLInputElement>(null);
@@ -703,6 +707,27 @@ export default function AdminSupplierDetailPage() {
     } catch { showToast(t('Failed to delete', '删除失败'), 'error'); }
   };
 
+  const handleReviewCatalog = async (catalogId: number) => {
+    try { await adminApi.openSupplierCatalogSource(catalogId); }
+    catch (error) { showToast(error instanceof Error ? error.message : t('Unable to open PDF', '无法打开 PDF'), 'error'); }
+  };
+
+  const handleCatalogVisibility = async (catalogId: number, visible: boolean) => {
+    setCatalogActionId(catalogId);
+    try {
+      if (visible) await adminApi.publishSupplierCatalog(catalogId);
+      else await adminApi.unpublishSupplierCatalog(catalogId);
+      setCatalogs(prev => prev.map(c => c.id === catalogId ? {
+        ...c,
+        catalog_visible: visible ? 1 : 0,
+        published_sha256: visible ? c.source_sha256 : null,
+      } : c));
+      showToast(visible ? t('Catalog published', '目录已发布') : t('Catalog withdrawn', '目录已撤回'), 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('Operation failed', '操作失败'), 'error');
+    } finally { setCatalogActionId(null); }
+  };
+
   const handleReplaceImage = async (file: File, productId: number) => {
     if (!supplier) return;
     setReplacingId(productId);
@@ -744,6 +769,11 @@ export default function AdminSupplierDetailPage() {
   }, [id, t]);
 
   useEffect(() => { fetchSupplier(); }, [fetchSupplier]);
+  useEffect(() => {
+    if (!catalogs.some(c => c.render_status === 'pending' || c.render_status === 'processing')) return;
+    const timer = window.setInterval(fetchSupplier, 10_000);
+    return () => window.clearInterval(timer);
+  }, [catalogs, fetchSupplier]);
 
   const handleStatus = async (status: string) => {
     setIsSubmitting(true);
@@ -1226,13 +1256,13 @@ export default function AdminSupplierDetailPage() {
                 {catalogs.map((c) => {
                   const isEditing = editingCatalogId === c.id;
                   const isSaving = savingCatalogId === c.id;
+                  const hasUnpublishedRevision = c.render_status === 'ready' && Boolean(c.source_sha256) && c.source_sha256 !== c.published_sha256;
                   return (
                     <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-white border border-stone-200 hover:border-[#b8864a]/40 hover:shadow-sm transition group">
-                      <a href={c.file_url} target="_blank" rel="noopener noreferrer"
-                        onClick={e => isEditing && e.preventDefault()}
+                      <button type="button" onClick={() => !isEditing && handleReviewCatalog(c.id)}
                         className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0 hover:bg-red-100 transition">
                         <FileText className="w-4 h-4 text-red-500" />
-                      </a>
+                      </button>
                       <div className="flex-1 min-w-0">
                         {isEditing ? (
                           <input
@@ -1252,6 +1282,17 @@ export default function AdminSupplierDetailPage() {
                                 {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
                               </p>
                             )}
+                            <p className={`text-[11px] mt-1 ${c.render_status === 'failed' ? 'text-red-500' : c.catalog_visible ? 'text-emerald-600' : 'text-amber-600'}`}>
+                              {c.render_status === 'failed'
+                                ? t(`Conversion failed: ${c.render_error || 'unknown error'}`, `转换失败：${c.render_error || '未知错误'}`)
+                                : c.catalog_visible
+                                  ? t('Published', '已发布')
+                                  : c.render_status === 'ready'
+                                    ? t('Ready for review', '待审核发布')
+                                    : c.render_status === 'processing'
+                                      ? t('Generating preview…', '正在生成预览…')
+                                      : t('Waiting for preview', '等待生成预览')}
+                            </p>
                           </>
                         )}
                       </div>
@@ -1272,10 +1313,21 @@ export default function AdminSupplierDetailPage() {
                             className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-[#b8864a] hover:bg-stone-100 transition opacity-0 group-hover:opacity-100" title={t('Rename', '重命名')}>
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-                          <a href={c.file_url} target="_blank" rel="noopener noreferrer"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-[#b8864a] hover:bg-stone-100 transition">
+                          <button type="button" onClick={() => handleReviewCatalog(c.id)} title={t('Review PDF', '审阅 PDF')}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-[#b8864a] hover:bg-stone-100 transition">
                             <Download className="w-4 h-4" />
-                          </a>
+                          </button>
+                          {canApproveCatalogs && hasUnpublishedRevision ? (
+                            <button type="button" onClick={() => handleCatalogVisibility(c.id, true)} disabled={catalogActionId === c.id}
+                              className="h-7 px-2 rounded-lg text-[11px] text-white bg-[#b8864a] hover:bg-[#a07640] transition disabled:opacity-40">
+                              {c.catalog_visible ? t('Publish update', '发布更新') : t('Publish', '发布')}
+                            </button>
+                          ) : canApproveCatalogs && c.catalog_visible ? (
+                            <button type="button" onClick={() => handleCatalogVisibility(c.id, false)} disabled={catalogActionId === c.id}
+                              className="h-7 px-2 rounded-lg text-[11px] text-stone-600 bg-stone-100 hover:bg-stone-200 transition disabled:opacity-40">
+                              {t('Withdraw', '撤回')}
+                            </button>
+                          ) : null}
                           <button onClick={() => handleDeleteCatalog(c.id)}
                             className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition opacity-0 group-hover:opacity-100" title={t('Delete', '删除')}>
                             <Trash2 className="w-3.5 h-3.5" />

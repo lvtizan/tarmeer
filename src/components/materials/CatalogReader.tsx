@@ -8,48 +8,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import * as pdfjsLib from 'pdfjs-dist';
-import { Maximize2, X, ChevronLeft, ChevronRight, BookOpen, Download } from 'lucide-react';
+import { Maximize2, X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import type { SupplierCatalog } from '@/lib/materialsApi';
-import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
-
-type PdfDoc = Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']>;
-
-// 浏览器 canvas 上限：Chrome 单边 16384、Safari 限总面积（~16.7M px）。取保守值，
-// 否则超长/超大页（如把整张价目表拼成一条 597×7418pt 的长页）会算出几万像素的 canvas，
-// 渲染直接失败 → 阅读器报 "Unable to load"。用较严约束缩小，宁可小一点也要渲染成功。
-const MAX_CANVAS_SIDE = 8192;
-const MAX_CANVAS_AREA = 16_000_000;
-
-async function renderToCanvas(pdf: PdfDoc, num: number, canvas: HTMLCanvasElement, targetW: number) {
-  const page = await pdf.getPage(num);
-  const vp0 = page.getViewport({ scale: 1 });
-  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-  // 目标按宽度缩放；再对超高/超大页做单边 + 面积双重钳制，防 canvas 超过浏览器上限导致渲染失败
-  const scale = Math.min(
-    (targetW / vp0.width) * dpr,
-    MAX_CANVAS_SIDE / vp0.width,
-    MAX_CANVAS_SIDE / vp0.height,
-    Math.sqrt(MAX_CANVAS_AREA / (vp0.width * vp0.height)),
-  );
-  const vp = page.getViewport({ scale });
-  canvas.width = vp.width;
-  canvas.height = vp.height;
-  await page.render({ canvasContext: canvas.getContext('2d')!, viewport: vp }).promise;
-  return { w: vp0.width, h: vp0.height };
-}
-
-async function renderToDataURL(pdf: PdfDoc, num: number, targetW: number): Promise<string> {
-  const c = document.createElement('canvas');
-  await renderToCanvas(pdf, num, c, targetW);
-  return c.toDataURL('image/jpeg', 0.82);
-}
 
 // 流式下载一张图并回报进度（loaded/total）→ 首页有确定进度条。返回 blob URL 直接当图源用。
 // 无 Content-Length（拿不到 total）时回报 null = 走不确定态；同源失败(如 CORS)由调用方 catch 回退普通 <img>。
@@ -69,20 +30,13 @@ async function fetchWithProgress(url: string, onProgress: (pct: number | null) =
     onProgress(total ? Math.min(99, Math.round((received / total) * 100)) : null);
   }
   onProgress(100);
-  return URL.createObjectURL(new Blob(chunks as BlobPart[], { type: 'image/webp' }));
+  return URL.createObjectURL(new Blob(chunks as BlobPart[], {
+    type: resp.headers.get('Content-Type') || 'image/jpeg',
+  }));
 }
 
-// download 提供时：右上角显示下载按钮，点击先弹询单，提交成功后下载原始 PDF。
-export default function CatalogReader({
-  catalogs,
-  download,
-}: {
-  catalogs: SupplierCatalog[];
-  download?: { companyName?: string; companyId?: number; companySlug?: string };
-}) {
+export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[] }) {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [showInquiry, setShowInquiry] = useState(false);
-  const [unlocked, setUnlocked] = useState(false); // 询单提交后本会话解锁下载
   const [numPages, setNumPages] = useState(0);
   const [curPage, setCurPage] = useState(1);
   const [ratio, setRatio] = useState(1.6);
@@ -97,79 +51,22 @@ export default function CatalogReader({
   const wrap0 = useRef<HTMLDivElement>(null);
   const wrap1 = useRef<HTMLDivElement>(null);
 
-  const pdfRef = useRef<PdfDoc | null>(null);
-  // 全分辨率整页缓存做 LRU（大 PDF 不无限累积 base64）；pending 去重防同页重复渲染
+  // 首页页图只走服务端转换版本；浏览器不再解析原 PDF，避免不同浏览器 PDF 引擎造成黑屏。
   const urlsRef = useRef<Map<number, string>>(new Map());
-  const pendingRef = useRef<Map<number, Promise<string | null>>>(new Map());
   const topRef = useRef(0);
   const curPageRef = useRef(1); // 当前页（供全屏 portal 重挂后重绘用，不进渲染依赖）
   const seqRef = useRef(0); // 单调递增，切换图册时不重置（否则跨册 id 撞号会串页）
-  const targetWRef = useRef(1400);
-  // 方案③：有预渲染 WebP 就走 image 模式（拉单页图，秒开），否则回退 pdf 模式（pdf.js 现渲）
-  const modeRef = useRef<'pdf' | 'image'>('pdf');
   const pagesBaseRef = useRef('');
   const imageExtRef = useRef<'webp' | 'jpg'>('webp');
   // 预渲染版本号 ?r=<rev>：重渲染换 rev → 打破 nginx 30d immutable 缓存（同名 WebP 内容变了也能刷新）
   const revQueryRef = useRef('');
   const numPagesRef = useRef(0);
-  const loadingTaskRef = useRef<ReturnType<typeof pdfjsLib.getDocument> | null>(null);
 
   const active = catalogs[activeIdx];
 
-  // 原 PDF 永远保留作无障碍兜底；预渲染页图只负责在线阅读。
-  const triggerDownload = useCallback(() => {
-    if (!active) return;
-    const url = resolveImageUrl(active.file_url);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${(active.title || 'catalog').replace(/[^\w一-龥.-]+/g, '_')}.pdf`;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }, [active]);
-  const onDownloadClick = () => {
-    if (unlocked) triggerDownload(); // 本会话已填过询单 → 直接下
-    else setShowInquiry(true); // 否则先弹询单
-  };
-
-  const CACHE_CAP = 12;
   const ensurePage = useCallback(async (p: number): Promise<string | null> => {
     if (p < 1 || p > numPagesRef.current) return null;
-    if (modeRef.current === 'image') {
-      // 首页可能已带进度预取为 blob（见加载流程），命中直接用；否则给带版本号的 URL，浏览器缓存
-      const cachedImg = urlsRef.current.get(p);
-      if (cachedImg) return cachedImg;
-      return `${pagesBaseRef.current}/${p}.${imageExtRef.current}${revQueryRef.current}`;
-    }
-    const pdf = pdfRef.current;
-    if (!pdf) return null;
-    const cached = urlsRef.current.get(p);
-    if (cached) {
-      urlsRef.current.delete(p);
-      urlsRef.current.set(p, cached); // LRU touch：移到队尾
-      return cached;
-    }
-    const inflight = pendingRef.current.get(p);
-    if (inflight) return inflight;
-    const task = (async () => {
-      try {
-        const url = await renderToDataURL(pdf, p, targetWRef.current);
-        urlsRef.current.set(p, url);
-        while (urlsRef.current.size > CACHE_CAP) {
-          const oldest = urlsRef.current.keys().next().value;
-          if (oldest === undefined) break;
-          urlsRef.current.delete(oldest);
-        }
-        return url;
-      } catch {
-        return null; // 渲染被 destroy 打断等：吞掉，避免未处理 rejection
-      } finally {
-        pendingRef.current.delete(p);
-      }
-    })();
-    pendingRef.current.set(p, task);
-    return task;
+    return urlsRef.current.get(p) || `${pagesBaseRef.current}/${p}.${imageExtRef.current}${revQueryRef.current}`;
   }, []);
 
   const showPage = useCallback(
@@ -190,7 +87,10 @@ export default function CatalogReader({
       try {
         if (bottomImg.decode) await bottomImg.decode();
       } catch {
-        /* ignore decode abort */
+        // A missing/corrupt page must keep the previous good page visible,
+        // rather than fading an empty image layer over it (the old black screen).
+        if (my === seqRef.current) setError(true);
+        return;
       }
       if (my !== seqRef.current) return;
       if (mode === 'open') {
@@ -229,7 +129,6 @@ export default function CatalogReader({
     setCurPage(1);
     urlsRef.current.forEach((u) => { if (u.startsWith('blob:')) URL.revokeObjectURL(u); });
     urlsRef.current = new Map();
-    pendingRef.current = new Map();
     topRef.current = 0;
     // 注意：seqRef 不重置（单调递增），否则旧册在途 showPage 与新册撞号会串页
     // 重置双层
@@ -240,7 +139,6 @@ export default function CatalogReader({
       }
     });
 
-    modeRef.current = 'pdf';
     pagesBaseRef.current = '';
     imageExtRef.current = 'webp';
     revQueryRef.current = '';
@@ -259,18 +157,19 @@ export default function CatalogReader({
             const data = await mf.json();
             const pages = Number(data?.pages) || 0;
             if (pages > 0 && !cancelled) {
-              modeRef.current = 'image';
-              pagesBaseRef.current = pagesBase;
+              pagesBaseRef.current = typeof data?.dir === 'string' && /^revisions\/[a-f0-9]{64}$/i.test(data.dir)
+                ? `${pagesBase}/${data.dir}`
+                : pagesBase;
               imageExtRef.current = data?.format === 'jpg' ? 'jpg' : 'webp';
               revQueryRef.current = data?.rev ? `?r=${data.rev}` : '';
               numPagesRef.current = pages;
               setNumPages(pages);
               setRatio(Number(data?.ar) || 1.4);
-              setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBase}/${i + 1}-thumb.${imageExtRef.current}${revQueryRef.current}`));
+              setThumbUrls(Array.from({ length: pages }, (_, i) => `${pagesBaseRef.current}/${i + 1}-thumb.${imageExtRef.current}${revQueryRef.current}`));
               // 首页带进度加载：流式拉 WebP 显示真实百分比，加载完再淡入（用户有"加载到哪了"的底）
               try {
                 const objUrl = await fetchWithProgress(
-                  `${pagesBase}/1.${imageExtRef.current}${revQueryRef.current}`,
+                  `${pagesBaseRef.current}/1.${imageExtRef.current}${revQueryRef.current}`,
                   (pct) => { if (!cancelled) setProgress(pct); }
                 );
                 if (cancelled) { URL.revokeObjectURL(objUrl); return; }
@@ -295,65 +194,11 @@ export default function CatalogReader({
             return;
           }
         } catch {
-          /* 无预渲染或取 manifest 失败 → 回退 pdf.js */
-        }
-        if (cancelled) return;
-
-        // ② 回退：pdf.js 现渲（disableAutoFetch + Range，只按需拉字节）
-        const src = resolveImageUrl(active.file_url);
-        const loadingTask = pdfjsLib.getDocument({ url: src, disableAutoFetch: true, rangeChunkSize: 262144 });
-        // pdf.js 下载进度（字节级）→ 驱动进度条
-        loadingTask.onProgress = (data: { loaded: number; total: number }) => {
-          if (!cancelled) setProgress(data.total ? Math.min(99, Math.round((data.loaded / data.total) * 100)) : null);
-        };
-        loadingTaskRef.current = loadingTask;
-        const pdf = await loadingTask.promise;
-        if (cancelled) return;
-        pdfRef.current = pdf;
-        numPagesRef.current = pdf.numPages;
-        setNumPages(pdf.numPages);
-        setThumbUrls(new Array(pdf.numPages).fill(null));
-
-        const d0 = (await pdf.getPage(1)).getViewport({ scale: 1 });
-        if (cancelled) return;
-        // 极端比例页（如 1:12 的长条价目表）会把阅读器盒子撑到几千像素高，破坏布局 →
-        // 显示比例钳到 [0.5, 3]；超长页在框内 object-contain 居中显示（全屏可放大细看）。
-        const r0 = Number((d0.width / d0.height).toFixed(4)) || 1.6;
-        setRatio(Math.min(3, Math.max(0.5, r0)));
-        targetWRef.current = Math.min(
-          Math.round((window.innerWidth || 1200) * (window.devicePixelRatio || 1)),
-          1600
-        );
-
-        const first = await ensurePage(1);
-        if (cancelled) return;
-        if (!first) {
-          // getDocument 成功但首页渲染失败：给错误态，不留黑屏
-          setError(true);
-          setLoading(false);
-          return;
-        }
-        setLoading(false);
-        setProgress(null);
-        await showPage(1, 'open');
-
-        // 缩略图（小图，便宜）——逐页容错，单页失败不拖垮整条
-        for (let p = 1; p <= pdf.numPages; p++) {
-          if (cancelled) return;
-          let turl: string | null = null;
-          try {
-            turl = await renderToDataURL(pdf, p, 90);
-          } catch {
-            turl = null;
+          if (!cancelled) {
+            setError(true);
+            setLoading(false);
           }
-          if (cancelled) return;
-          setThumbUrls((prev) => {
-            const next = prev.slice();
-            next[p - 1] = turl;
-            return next;
-          });
         }
-        // 整页按需渲染 + 相邻页预取（见 showPage），不再一次性全量 backfill —— 大 PDF 不占内存/CPU
       } catch {
         if (!cancelled) {
           setError(true);
@@ -364,9 +209,6 @@ export default function CatalogReader({
 
     return () => {
       cancelled = true;
-      loadingTaskRef.current?.destroy?.();
-      loadingTaskRef.current = null;
-      pdfRef.current = null;
       urlsRef.current.forEach((u) => { if (u.startsWith('blob:')) URL.revokeObjectURL(u); });
     };
   }, [active, ensurePage, showPage]);
@@ -453,19 +295,8 @@ export default function CatalogReader({
           {curPage} / {numPages || '–'}
         </div>
 
-        {/* 右上工具：下载(需填询单) + 全屏 */}
+        {/* 右上工具 */}
         <div className="absolute top-2.5 right-2.5 z-[6] flex items-center gap-1.5">
-          {download && (
-            <button
-              type="button"
-              onClick={onDownloadClick}
-              aria-label="Download catalog"
-              className="flex h-8 items-center gap-1.5 rounded-lg bg-[#b8864a] px-2.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-[#a07640]"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Download</span>
-            </button>
-          )}
           <button
             type="button"
             onClick={() => setFs((v) => !v)}
@@ -542,10 +373,7 @@ export default function CatalogReader({
         {error && (
           <div className="absolute inset-0 z-[7] flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-white/60">
             <BookOpen className="mb-1 h-6 w-6 text-white/30" />
-            <span>We’re preparing this catalog. Please refresh shortly.</span>
-            <a href={resolveImageUrl(active.file_url)} target="_blank" rel="noreferrer" className="mt-2 text-[#e6c88f] underline underline-offset-2">
-              Download the original PDF
-            </a>
+            <span>{active.render_status === 'failed' ? 'This catalog could not be prepared. Please contact us.' : 'We’re preparing this catalog. Please refresh shortly.'}</span>
           </div>
         )}
       </div>
@@ -555,51 +383,5 @@ export default function CatalogReader({
   // 全屏时 portal 到 body：逃出 hero 的 z-10 堆叠上下文，否则页面 sticky tab 条 / 顶栏(z-40+)会盖住全屏 PDF
   const rendered = fs && typeof document !== 'undefined' ? createPortal(reader, document.body) : reader;
 
-  // 下载询单弹层：portal 到 body，z 高于全屏(9999)；提交成功 → 解锁 + 触发下载 + 稍后自动关
-  const inquiryModal =
-    showInquiry && download && typeof document !== 'undefined'
-      ? createPortal(
-          <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 p-4"
-            onClick={() => setShowInquiry(false)}
-          >
-            <div
-              className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => setShowInquiry(false)}
-                aria-label="Close"
-                className="absolute right-3 top-3 z-[1] flex h-8 w-8 items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <ServiceInquiryCard
-                inline
-                title="Download this catalog"
-                subtitle="Tell us about your project — we’ll unlock the PDF and connect you."
-                submitLabel="Submit & Download"
-                leadTag="Material Inquiry"
-                companyId={download.companyId}
-                companyName={download.companyName}
-                companySlug={download.companySlug}
-                onSuccess={() => {
-                  setUnlocked(true);
-                  triggerDownload();
-                  setTimeout(() => setShowInquiry(false), 1600);
-                }}
-              />
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
-
-  return (
-    <>
-      {rendered}
-      {inquiryModal}
-    </>
-  );
+  return rendered;
 }

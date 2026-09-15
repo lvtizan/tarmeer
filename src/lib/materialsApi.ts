@@ -189,8 +189,10 @@ export async function fetchMaterialProducts(
 export interface SupplierCatalog {
   id: number;
   title: string;
-  file_url: string;
+  file_url?: string;
   file_size: number | null;
+  render_status?: 'pending' | 'processing' | 'ready' | 'failed' | null;
+  render_error?: string | null;
 }
 
 /** 拉某供应商的图册列表（slug 定位）。失败/无则返回空数组 → 阅读器模块自动隐藏。 */
@@ -206,10 +208,12 @@ export async function fetchSupplierCatalogs(slug: string, country: string): Prom
       .map((c) => ({
         id: Number(c.id),
         title: String(c.title || 'Catalog'),
-        file_url: String(c.file_url || ''),
+        file_url: c.file_url ? String(c.file_url) : undefined,
         file_size: c.file_size != null ? Number(c.file_size) : null,
+        render_status: c.render_status || null,
+        render_error: c.render_error || null,
       }))
-      .filter((c) => c.file_url);
+      .filter((c) => c.id > 0);
   } catch {
     return [];
   }

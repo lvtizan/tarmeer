@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, Download, FolderOpen, X } from 'lucide-react';
+import { Plus, Trash2, FileText, FolderOpen, X } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { ScreenSpinner } from '@/components/ui/Spinner';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -22,6 +22,8 @@ interface Catalog {
   title: string;
   file_url: string;
   file_size?: number;
+  render_status?: 'pending' | 'processing' | 'ready' | 'failed';
+  render_error?: string | null;
 }
 
 export default function SupplierCatalogsPage() {
@@ -38,11 +40,20 @@ export default function SupplierCatalogsPage() {
   const [tried, setTried] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/suppliers/me/catalogs`, { headers: authHeaders() as HeadersInit })
-      .then(r => r.json())
-      .then(data => { if (data?.catalogs) setCatalogs(data.catalogs); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const load = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/suppliers/me/catalogs`, { headers: authHeaders() as HeadersInit });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || t('Unable to load catalogs.', '目录加载失败，请刷新重试。'));
+        setCatalogs(Array.isArray(data?.catalogs) ? data.catalogs : []);
+        setActionError('');
+      } catch (error) {
+        setActionError(error instanceof Error ? error.message : t('Unable to load catalogs.', '目录加载失败，请刷新重试。'));
+      } finally { setLoading(false); }
+    };
+    void load();
+    const timer = window.setInterval(() => { void load(); }, 10_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const handleAdd = async () => {
@@ -119,9 +130,9 @@ export default function SupplierCatalogsPage() {
               uploadUrl={`${API_BASE}/suppliers/me/upload-catalog-file`}
               chunkUploadUrl={`${API_BASE}/suppliers/me/upload-catalog-chunk`}
               getHeaders={() => ({ Authorization: `Bearer ${getToken()}` })}
-              accept="image/*,application/pdf"
-              label={t('Click, drag or paste to upload', '点击、拖放或粘贴截图上传')}
-              sublabel="PDF · JPG · PNG · WebP"
+              accept="application/pdf"
+              label={t('Click or drag a PDF to upload', '点击或拖入 PDF 上传')}
+              sublabel="PDF · up to 60 MB"
               onFileMeta={({ original_name }) => {
                 setUploadedNames(prev => [...prev, original_name]);
                 if (original_name && !title.trim()) setTitle(original_name);
@@ -172,17 +183,19 @@ export default function SupplierCatalogsPage() {
                     {c.file_size > 1048576 ? `${(c.file_size / 1048576).toFixed(1)} MB` : `${(c.file_size / 1024).toFixed(0)} KB`}
                   </p>
                 )}
+                {c.render_status === 'pending' || c.render_status === 'processing' ? (
+                  <p className="text-xs text-amber-700 mt-0.5">{t('Preparing online preview…', '正在生成在线预览…')}</p>
+                ) : c.render_status === 'failed' ? (
+                  <p className="text-xs text-red-600 mt-0.5">{t(c.render_error || 'Preview failed. Please contact support.', c.render_error || '预览生成失败，请联系管理员。')}</p>
+                ) : (
+                  <p className="text-xs text-emerald-700 mt-0.5">{t('Online preview ready', '在线预览已就绪')}</p>
+                )}
               </div>
               <button onClick={() => handleDelete(c.id)}
                 className="shrink-0 w-9 h-9 rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition"
                 aria-label="Delete">
                 <Trash2 className="w-4 h-4" />
               </button>
-              <a href={c.file_url} target="_blank" rel="noopener noreferrer"
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-sm font-medium text-stone-600 hover:bg-[#b8864a] hover:text-white hover:border-[#b8864a] transition">
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('View', '查看')}</span>
-              </a>
             </div>
           ))}
         </div>
@@ -192,7 +205,7 @@ export default function SupplierCatalogsPage() {
             <FolderOpen className="w-8 h-8 text-stone-300" />
           </div>
           <h3 className="text-[15px] font-semibold text-[#2c2c2c] mb-2">{t('No catalogs yet', '暂无目录')}</h3>
-          <p className="text-sm text-stone-500">{t('Upload product catalogues and brochures for buyers to download.', '上传产品目录和宣传册，供采购方下载。')}</p>
+          <p className="text-sm text-stone-500">{t('Upload PDF catalogues and brochures for buyers to view online.', '上传 PDF 产品目录和宣传册，供采购方在线浏览。')}</p>
         </div>
       ) : null}
     </div>

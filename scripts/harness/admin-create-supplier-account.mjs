@@ -80,7 +80,7 @@ try {
   check('daily listing bars are flat and mark weekends', /isWeekend/.test(supplierReportSource) && /周末/.test(supplierReportSource) && !/rounded-t-sm bg-\[#c38b48\] shadow/.test(supplierReportSource), 'daily chart must use flat bars and show weekend labels');
   check('account creation writes its audit row before transaction commit', /INSERT INTO activity_log[\s\S]*?await connection\.commit\(\)/.test(supplierControllerSource), 'audit must be part of the creation transaction');
   check('public supplier registration remains verification-gated', /INSERT INTO supplier_users \(email, password, full_name, phone, verification_token, verification_expires\)/.test(publicRegistrationSource), 'public registration must not set email_verified');
-  check('supplier deletion is country-scoped and audited with that country', /WHERE id = \? AND country = \?/.test(supplierAdminSource) && /supplier_delete/.test(supplierAdminSource) && /删除供应商#\$\{id\}`, country\)/.test(supplierAdminSource), 'delete must use selected country for query and audit');
+  check('supplier deletion is country-scoped and audited with the target country', /supplier_user_id, country FROM supplier_profiles WHERE id = \?/.test(supplierAdminSource) && /WHERE id = \? AND country = \?/.test(supplierAdminSource) && /supplier_delete/.test(supplierAdminSource) && /删除供应商#\$\{id\}`, profile\.country\)/.test(supplierAdminSource), 'super admin must resolve the target country; sub-admin must remain country-scoped');
   check('country switch resets stale mutation loading state', /setDeleteLoading\(false\)[\s\S]{0,120}setCreateSubmitting\(false\)/.test(supplierPageSource), 'stale requests must not leave controls disabled');
 
   const invalidCountry = await create({

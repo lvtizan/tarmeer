@@ -888,6 +888,50 @@ class AdminApiClient {
     return res.json();
   }
 
+  async openSupplierCatalogSource(catalogId: number | string): Promise<void> {
+    // Open synchronously while the click still has browser activation; opening
+    // only after fetch is commonly blocked as an unsolicited popup.
+    const popup = window.open('about:blank', '_blank');
+    if (popup) {
+      popup.opener = null;
+      popup.document.title = 'Loading catalog…';
+      popup.document.body.textContent = 'Loading catalog…';
+    }
+    const token = this.getToken();
+    try {
+      const res = await fetch(`${API_BASE}/admin/suppliers/catalogs/${catalogId}/source`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!res.ok) {
+        let message = `HTTP ${res.status}`;
+        try { const body = await res.json(); if (body?.error) message = body.error; } catch { /* ignore */ }
+        throw new Error(message);
+      }
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      if (popup) popup.location.replace(objectUrl);
+      else {
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5 * 60 * 1000);
+    } catch (error) {
+      popup?.close();
+      throw error;
+    }
+  }
+
+  async publishSupplierCatalog(catalogId: number | string) {
+    return this.request(`/suppliers/catalogs/${catalogId}/publish`, { method: 'PUT' });
+  }
+
+  async unpublishSupplierCatalog(catalogId: number | string) {
+    return this.request(`/suppliers/catalogs/${catalogId}/unpublish`, { method: 'PUT' });
+  }
+
   // Complaint management
   async getComplaints(params?: { page?: number; limit?: number; status?: string; search?: string; country?: string }) {
     const query = new URLSearchParams();

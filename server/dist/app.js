@@ -77,6 +77,7 @@ const autoMigrate_1 = require("./lib/autoMigrate");
 const startServer_1 = require("./lib/startServer");
 const database_1 = __importDefault(require("./config/database"));
 const weightCalculator_1 = require("./lib/weightCalculator");
+const catalogRenderer_1 = require("./lib/catalogRenderer");
 const passport_1 = __importDefault(require("./middleware/passport"));
 dotenv_1.default.config();
 // 验证JWT配置
@@ -585,6 +586,7 @@ async function startProductionServer(dependencies = {}) {
             }
             catch { /* non-fatal */ }
             scheduleWeightCalculation();
+            (0, catalogRenderer_1.startCatalogRenderWorker)();
             resolve(server);
         });
         server.once('error', onStartupError);

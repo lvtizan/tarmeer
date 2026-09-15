@@ -80,7 +80,7 @@ interface Project {
 interface Catalog {
   id: number;
   title: string;
-  file_url: string;
+  file_url?: string;
   file_size: number | null;
   created_at: string;
 }
@@ -338,15 +338,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
             {/* 右：PDF 电子书（供应商有 catalog 才显示；桌面右侧、移动端在文案下方），复用 flooring hero 同款控件 */}
             {catalogs.length > 0 && (
               <div className="w-full">
-                <CatalogReader
-                  catalogs={catalogs}
-                  download={{
-                    // 公开去标识：线索 payload 也用品类通用名（遮蔽可见渲染≠遮蔽序列化 payload，见 FA-14）；归因靠 companyId/slug
-                    companyName: publicTitle,
-                    companyId: supplier.id,
-                    companySlug: supplier.slug,
-                  }}
-                />
+                <CatalogReader catalogs={catalogs} />
               </div>
             )}
           </div>

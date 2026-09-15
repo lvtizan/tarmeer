@@ -502,6 +502,16 @@ const REQUIRED_COLUMNS = [
     { table: 'supplier_profiles', column: 'created_by_admin_id', type: 'INT NULL' },
     // 上架统计的唯一时间锚点：首个商品成功创建的时间（新建空号不计入）。
     { table: 'supplier_profiles', column: 'first_product_at', type: 'DATETIME NULL' },
+    // 目录转页的持久状态。历史记录先保留为可见，后台逐条验证/重建；新上传明确写 pending + 不可见。
+    { table: 'supplier_catalogs', column: 'render_status', type: "ENUM('pending','processing','ready','failed') NOT NULL DEFAULT 'ready'" },
+    { table: 'supplier_catalogs', column: 'catalog_visible', type: 'TINYINT(1) NOT NULL DEFAULT 1' },
+    { table: 'supplier_catalogs', column: 'render_error', type: 'VARCHAR(500) NULL' },
+    { table: 'supplier_catalogs', column: 'render_attempts', type: 'INT NOT NULL DEFAULT 0' },
+    { table: 'supplier_catalogs', column: 'render_started_at', type: 'DATETIME NULL' },
+    { table: 'supplier_catalogs', column: 'rendered_at', type: 'DATETIME NULL' },
+    { table: 'supplier_catalogs', column: 'source_sha256', type: 'CHAR(64) NULL' },
+    { table: 'supplier_catalogs', column: 'published_sha256', type: 'CHAR(64) NULL' },
+    { table: 'supplier_catalogs', column: 'render_claim_token', type: 'CHAR(36) NULL' },
     // Supplier product multi-image + category
     { table: 'supplier_products', column: 'image_urls', type: 'JSON NULL' },
     { table: 'supplier_products', column: 'category', type: 'VARCHAR(100) NULL' },
@@ -552,6 +562,7 @@ const REQUIRED_INDEXES = [
     { table: 'designers', indexName: 'idx_oauth_facebook', columns: 'facebook_id' },
     { table: 'supplier_profiles', indexName: 'idx_supplier_created_by_admin', columns: 'created_by_admin_id' },
     { table: 'supplier_profiles', indexName: 'idx_supplier_first_product_at', columns: 'first_product_at' },
+    { table: 'supplier_catalogs', indexName: 'idx_supplier_catalog_render_status', columns: 'render_status' },
 ];
 // ─── 工具函数 ───────────────────────────────────────────
 async function columnExists(table, column) {
@@ -728,7 +739,8 @@ async function runAutoMigrate(options = {}) {
           ('AC Maintenance',          52),
           ('Stone & Marble',          53),
           ('Steel Works',             54),
-          ('Fire Fighting & Safety',  55)`);
+          ('Fire Fighting & Safety',  55),
+          ('Lighting Fixtures',       56)`);
         }
         catch { /* table may not exist yet */ }
         // 7b. Back-fill category column for existing services (idempotent UPDATE)
@@ -740,7 +752,7 @@ async function runAutoMigrate(options = {}) {
                 ['Renovation', ['Full Renovation', 'Kitchen Renovation', 'Bathroom Renovation', 'Partial Renovation', 'Renovation']],
                 ['Outdoor & Pools', ['Landscape Design', 'Pool Construction', 'Garden Design', 'Outdoor Lighting', 'Landscape']],
                 ['Home Systems', ['MEP', 'Smart Home & Automation', 'HVAC & Ducting', 'Electrical', 'Plumbing']],
-                ['Interiors & Furniture', ['Furniture Supply', 'Custom Joinery', 'Curtains & Blinds', 'Flooring', 'Wallpaper & Finishes', 'Furniture']],
+                ['Interiors & Furniture', ['Furniture Supply', 'Lighting Fixtures', 'Custom Joinery', 'Curtains & Blinds', 'Flooring', 'Wallpaper & Finishes', 'Furniture']],
                 ['Maintenance', ['General Maintenance', 'Deep Cleaning', 'Handyman Services', 'AC Maintenance', 'Maintenance']],
                 ['Specialty Works', ['Glass & Aluminium', 'Stone & Marble', 'Stone & Marble Fixing', 'Steel Works', 'Steel & Fabrication', 'Steel Fabrication', 'Waterproofing', 'Fire Fighting & Safety', 'Fire Fighting', 'Painting & Finishing', 'Flooring & Tiling', 'Demolition', 'Epoxy & PU Flooring', 'Scaffolding', 'Lighting Installation', 'Gypsum & Partitions', 'Joinery', 'Custom Joinery']],
             ];
@@ -823,7 +835,7 @@ async function runAutoMigrate(options = {}) {
           ('stairs','Stairs & Handrails','building_materials',11),
           ('plants','Plants & Landscaping','building_materials',12),
           ('furniture','Furniture','soft_furnishing',1),
-          ('lighting','Lighting','soft_furnishing',2),
+          ('lighting','Lighting Fixtures','soft_furnishing',2),
           ('curtains','Curtains','soft_furnishing',3),
           ('decor','Decor & Accessories','soft_furnishing',4)
       `);
@@ -835,9 +847,18 @@ async function runAutoMigrate(options = {}) {
           WHEN 'boards' THEN '板材' WHEN 'paint' THEN '涂料' WHEN 'art_paint' THEN '艺术漆'
           WHEN 'doors_windows' THEN '门窗' WHEN 'kitchen_bath' THEN '厨卫' WHEN 'hardware' THEN '五金'
           WHEN 'flooring' THEN '地板' WHEN 'stairs' THEN '楼梯' WHEN 'plants' THEN '植物景观'
-          WHEN 'furniture' THEN '家具' WHEN 'lighting' THEN '灯具'
+          WHEN 'furniture' THEN '家具' WHEN 'lighting' THEN '照明灯具'
           WHEN 'curtains' THEN '窗帘' WHEN 'decor' THEN '软饰' ELSE label_zh END
         WHERE label_zh IS NULL AND value IN ('building_materials','soft_furnishing','new_materials','tiles','stone','boards','paint','art_paint','doors_windows','kitchen_bath','hardware','flooring','stairs','plants','furniture','lighting','curtains','decor')
+      `);
+            // 运营要求: 灯具供应商上传资料时品类要明确显示"照明灯具"。
+            // 只修正历史默认值/空值,不覆盖运营后续自定义 label。
+            await database_1.default.execute(`
+        UPDATE product_categories
+        SET label = CASE WHEN label IS NULL OR label = '' OR label = 'Lighting' THEN 'Lighting Fixtures' ELSE label END,
+            label_zh = CASE WHEN label_zh IS NULL OR label_zh = '' OR label_zh = '灯具' THEN '照明灯具' ELSE label_zh END
+        WHERE value = 'lighting'
+          AND (label IS NULL OR label = '' OR label = 'Lighting' OR label_zh IS NULL OR label_zh = '' OR label_zh = '灯具')
       `);
         }
         catch { /* ignore */ }
