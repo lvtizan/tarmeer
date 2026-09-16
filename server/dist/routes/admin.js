@@ -68,6 +68,11 @@ const productCategoryController_1 = require("../controllers/productCategoryContr
 const companyImportService_1 = require("../services/companyImportService");
 const multer_1 = __importDefault(require("multer"));
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+// 与 ImageUploadZone 的客户端安全阈值（18 MB）一致，压缩前后都不会被后台 10 MB 限制意外拦截。
+const uploadImage = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+const uploadImageFile = (req, res, next) => uploadImage.single('file')(req, res, (err) => err
+    ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Image exceeds the 20MB limit.' : 'Upload failed.' })
+    : next());
 const uploadLargePdf = (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), limits: { fileSize: 60 * 1024 * 1024 } });
 const adminAuth_1 = require("../middleware/adminAuth");
 const router = (0, express_1.Router)();
@@ -462,8 +467,9 @@ router.put('/suppliers/catalogs/:id/file', (0, adminAuth_1.requirePermission)('c
 router.patch('/suppliers/catalogs/:id/title', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminRenameCatalog);
 router.post('/suppliers/:id/catalogs', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, (req, res, next) => uploadLargePdf.single('file')(req, res, (err) => err ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'PDF exceeds the 60MB limit.' : 'Upload failed.' }) : next()), supplierAdminController_1.adminAddCatalog);
 router.delete('/suppliers/catalogs/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteCatalog);
+router.post('/suppliers/:id/product-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, uploadImageFile, supplierAdminController_1.adminUploadProductImage);
 router.put('/suppliers/:id/products/:productId/image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, upload.single('file'), supplierAdminController_1.adminReplaceProductImage);
-router.post('/suppliers/:id/project-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, upload.single('file'), supplierAdminController_1.adminUploadProjectImage);
+router.post('/suppliers/:id/project-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, uploadImageFile, supplierAdminController_1.adminUploadProjectImage);
 router.post('/suppliers/:id/projects', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminAddProject);
 router.put('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminUpdateProject);
 router.delete('/suppliers/:id/projects/:projectId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminDeleteProject);

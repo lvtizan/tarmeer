@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processUploadedImage = processUploadedImage;
+exports.processStrictUploadedImage = processStrictUploadedImage;
 exports.generateVariants = generateVariants;
 const sharp_1 = __importDefault(require("sharp"));
 const path_1 = __importDefault(require("path"));
@@ -38,6 +39,18 @@ async function processUploadedImage(buffer) {
         // Fallback: return original unchanged (will still get variant generation)
         return { buffer, ext: 'webp' };
     }
+}
+/** Strict endpoint variant: never persist undecodable bytes as a WebP file. */
+async function processStrictUploadedImage(buffer) {
+    const processed = await (0, sharp_1.default)(buffer)
+        .rotate()
+        .resize(MAX_ORIGINAL_LONG_EDGE, MAX_ORIGINAL_LONG_EDGE, {
+        fit: 'inside',
+        withoutEnlargement: true,
+    })
+        .webp({ quality: ORIGINAL_QUALITY })
+        .toBuffer();
+    return { buffer: processed, ext: 'webp' };
 }
 const VARIANTS = [
     { suffix: '-blur', maxLongEdge: 40, quality: 20 },

@@ -12,6 +12,7 @@ exports.adminReplaceCatalogFile = adminReplaceCatalogFile;
 exports.adminAddCatalog = adminAddCatalog;
 exports.adminDeleteCatalog = adminDeleteCatalog;
 exports.adminReplaceProductImage = adminReplaceProductImage;
+exports.adminUploadProductImage = adminUploadProductImage;
 exports.createAdminSupplierAccount = createAdminSupplierAccount;
 exports.listSuppliers = listSuppliers;
 exports.getSupplierDetail = getSupplierDetail;
@@ -32,6 +33,7 @@ exports.toggleSupplierProjectPublished = toggleSupplierProjectPublished;
 exports.getSupplierReport = getSupplierReport;
 const database_1 = __importDefault(require("../config/database"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const crypto_1 = require("crypto");
 const path_1 = __importDefault(require("path"));
 const catalogValidation_1 = require("../lib/catalogValidation");
 const catalogRenderer_1 = require("../lib/catalogRenderer");
@@ -43,6 +45,21 @@ const productPriceRange_1 = require("../lib/productPriceRange");
 const slugify_1 = require("../lib/slugify");
 // 报价币种白名单。⚠️ 与 supplierProductController.PRODUCT_CURRENCIES / 前端 src/lib/supplierProductUnits.ts 同源。
 const SUPPORTED_PRICE_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'];
+const MAX_ADMIN_PROJECT_IMAGES = 200;
+function validProjectImageList(images) {
+    return Array.isArray(images) && images.length <= MAX_ADMIN_PROJECT_IMAGES
+        && images.every((url) => typeof url === 'string' && url.length > 0 && url.length <= 500);
+}
+async function supplierImagePathIsOwned(profile, imageUrl, folder) {
+    if (typeof imageUrl !== 'string' || imageUrl.includes('..') || imageUrl.includes('\\') || imageUrl.includes('%') || imageUrl.includes('?') || imageUrl.includes('#')) return false;
+    const slug = (profile.slug || `id${profile.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (!new RegExp(`^/uploads/suppliers/${slug}/${folder}/\\d+_[0-9a-f-]{36}\\.webp$`, 'i').test(imageUrl)) return false;
+    const base = path_1.default.resolve(process.cwd(), 'public/uploads/suppliers', slug, folder);
+    const candidate = path_1.default.resolve(process.cwd(), 'public', imageUrl.replace(/^\//, ''));
+    if (path_1.default.dirname(candidate) !== base) return false;
+    try { return (await promises_1.default.stat(candidate)).isFile(); }
+    catch { return false; }
+}
 // 合作方来源不是管理员创建：该合作方同步的供应商统一归属为业务来源“蓝鲸”。
 // 使用虚拟 ID，确保报表聚合不与普通“未记录/系统导入”混在一起。
 const BLUEWHALE_PARTNER_KEY = 'pk_9fada27f38';
@@ -438,6 +455,46 @@ async function adminReplaceProductImage(req, res) {
         res.status(500).json({ error: 'Failed to replace product image.' });
     }
 }
+/**
+ * 管理员新增产品时使用的临时图片入口。
+ * 与供应商个人中心的 /suppliers/me/upload-image 语义一致：只落盘并返回 URL，
+ * 由随后新增产品的请求决定是否引用它。路由层已做管理员权限和国家范围校验。
+ */
+async function adminUploadProductImage(req, res) {
+    try {
+        const supplierId = Number(req.params.id);
+        if (!supplierId)
+            return res.status(400).json({ error: 'invalid id' });
+        if (!req.file?.buffer)
+            return res.status(400).json({ error: 'no file uploaded' });
+        if (!String(req.file.mimetype || '').startsWith('image/'))
+            return res.status(400).json({ error: 'Only images are allowed.' });
+        // MIME 可由客户端伪造；必须完整转码，禁止沿用兼容路径的原始字节 fallback。
+        try {
+            var processed = await (0, imageVariants_1.processStrictUploadedImage)(req.file.buffer);
+        }
+        catch {
+            return res.status(400).json({ error: 'Only valid image files are allowed.' });
+        }
+        const [supRows] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [supplierId]);
+        const sup = supRows[0];
+        if (!sup)
+            return res.status(404).json({ error: 'supplier not found' });
+        const { buffer: processedBuffer, ext: processedExt } = processed;
+        const dirSlug = (sup.slug || `id${sup.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+        const relPath = `suppliers/${dirSlug}/photos/${Date.now()}_${(0, crypto_1.randomUUID)()}.${processedExt}`;
+        const absPath = path_1.default.resolve(process.cwd(), 'public/uploads', relPath);
+        await promises_1.default.mkdir(path_1.default.dirname(absPath), { recursive: true, mode: 0o755 });
+        await promises_1.default.writeFile(absPath, processedBuffer, { mode: 0o644 });
+        (0, variantWorker_1.enqueueVariants)(absPath);
+        await logSupplierAction(req, 'supplier_product_image_upload', supplierId, `供应商#${supplierId} 上传产品图`);
+        res.json({ url: `/uploads/${relPath}` });
+    }
+    catch (error) {
+        console.error('Admin upload product image error:', error);
+        res.status(500).json({ error: 'Failed to upload image.' });
+    }
+}
 async function listSuppliers(req, res) {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -624,12 +681,16 @@ async function deleteSupplier(req, res) {
 async function adminAddProduct(req, res) {
     try {
         const { id } = req.params;
-        const [profileRows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE id = ?', [id]);
+        const [profileRows] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [id]);
         if (profileRows.length === 0)
             return res.status(404).json({ error: 'Supplier not found.' });
         const { title, description, category, image_url, sort_order, specs, certifications, application_scenes } = req.body;
         if (!image_url)
             return res.status(400).json({ error: 'image_url is required.' });
+        // 该后台页不再接受任意外链/其他供应商路径：新增产品只能消费目标供应商的受控上传结果。
+        const profile = profileRows[0];
+        if (!await supplierImagePathIsOwned(profile, image_url, 'photos'))
+            return res.status(400).json({ error: 'Product image must be uploaded for this supplier.' });
         // 新增时也落规格/认证/应用场景(与编辑一致);数组→JSON串(空→'[]'),未传→null
         const jarr = (x) => Array.isArray(x) ? JSON.stringify(x) : null;
         const parsedPrice = (0, productPriceRange_1.parseProductPrice)(req.body.price, 'price', { allowClear: true });
@@ -783,14 +844,22 @@ async function adminUploadProjectImage(req, res) {
             return res.status(400).json({ error: 'invalid id' });
         if (!req.file?.buffer)
             return res.status(400).json({ error: 'no file uploaded' });
+        if (!String(req.file.mimetype || '').startsWith('image/'))
+            return res.status(400).json({ error: 'Only images are allowed.' });
+        try {
+            var processed = await (0, imageVariants_1.processStrictUploadedImage)(req.file.buffer);
+        }
+        catch {
+            return res.status(400).json({ error: 'Only valid image files are allowed.' });
+        }
         const [supRows] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [supplierId]);
         const sup = supRows[0];
         if (!sup)
             return res.status(404).json({ error: 'supplier not found' });
-        const { buffer: processedBuffer, ext: processedExt } = await (0, imageVariants_1.processUploadedImage)(req.file.buffer);
+        const { buffer: processedBuffer, ext: processedExt } = processed;
         const ts = Date.now();
         const dirSlug = (sup.slug || `id${sup.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-        const relPath = `suppliers/${dirSlug}/projects/${ts}.${processedExt}`;
+        const relPath = `suppliers/${dirSlug}/projects/${ts}_${(0, crypto_1.randomUUID)()}.${processedExt}`;
         const absPath = path_1.default.resolve(process.cwd(), 'public/uploads', relPath);
         await promises_1.default.mkdir(path_1.default.dirname(absPath), { recursive: true, mode: 0o755 });
         await promises_1.default.writeFile(absPath, processedBuffer, { mode: 0o644 });
@@ -805,13 +874,18 @@ async function adminUploadProjectImage(req, res) {
 async function adminAddProject(req, res) {
     try {
         const supplierId = Number(req.params.id);
-        const [supRows] = await database_1.default.execute('SELECT id FROM supplier_profiles WHERE id = ?', [supplierId]);
+        const [supRows] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [supplierId]);
         if (supRows.length === 0)
             return res.status(404).json({ error: 'Supplier not found.' });
         const { title, description, location, area_sqm, budget, year, images } = req.body;
         if (!title?.trim())
             return res.status(400).json({ error: 'Title is required.' });
-        const imgs = Array.isArray(images) ? images : [];
+        const imgs = images === undefined ? [] : images;
+        if (!validProjectImageList(imgs)) return res.status(400).json({ error: `A project supports up to ${MAX_ADMIN_PROJECT_IMAGES} images.` });
+        for (const url of imgs) {
+            if (!await supplierImagePathIsOwned(supRows[0], url, 'projects'))
+                return res.status(400).json({ error: 'Project images must be uploaded for this supplier.' });
+        }
         const [result] = await database_1.default.execute(`INSERT INTO supplier_projects
          (supplier_profile_id, title, description, location, area_sqm, budget, year, images, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`, [
@@ -837,13 +911,23 @@ async function adminAddProject(req, res) {
 async function adminUpdateProject(req, res) {
     try {
         const { id, projectId } = req.params;
-        const [rows] = await database_1.default.execute('SELECT id FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?', [projectId, id]);
+        const [rows] = await database_1.default.execute('SELECT id, images FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?', [projectId, id]);
         if (rows.length === 0)
             return res.status(404).json({ error: 'Project not found.' });
         const { title, description, location, area_sqm, budget, year, images } = req.body;
         if (!title?.trim())
             return res.status(400).json({ error: 'Title is required.' });
-        const imgs = Array.isArray(images) ? images : [];
+        const imgs = images === undefined ? [] : images;
+        if (!validProjectImageList(imgs)) return res.status(400).json({ error: `A project supports up to ${MAX_ADMIN_PROJECT_IMAGES} images.` });
+        const [profiles] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [id]);
+        if (profiles.length === 0) return res.status(404).json({ error: 'Supplier not found.' });
+        let previousImages = [];
+        try { previousImages = Array.isArray(rows[0].images) ? rows[0].images : JSON.parse(rows[0].images || '[]'); } catch { previousImages = []; }
+        const previousSet = new Set(previousImages.filter((url) => typeof url === 'string'));
+        for (const url of imgs) {
+            if (!previousSet.has(url) && !await supplierImagePathIsOwned(profiles[0], url, 'projects'))
+                return res.status(400).json({ error: 'Project images must be uploaded for this supplier.' });
+        }
         await database_1.default.execute(`UPDATE supplier_projects
        SET title=?, description=?, location=?, area_sqm=?, budget=?, year=?, images=?
        WHERE id=?`, [

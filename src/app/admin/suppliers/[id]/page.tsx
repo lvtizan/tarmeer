@@ -9,6 +9,7 @@ import SupplierEditModal from '@/components/admin/SupplierEditModal';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { showToast } from '@/components/ui/Toast';
 import SmartImage from '@/components/ui/SmartImage';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import {
   ArrowLeft, Trash2, ExternalLink, Pencil, Check, Star,
   Package, Layers, FolderOpen, FileText, Download, MapPin, ImageIcon,
@@ -275,41 +276,17 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
     editingProject ? projectToForm(editingProject) : emptyProjectForm()
   );
   const [saving, setSaving] = useState(false);
-  const [uploadingImg, setUploadingImg] = useState(false);
+  const [projectImagesUploading, setProjectImagesUploading] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
-  const imgInputRef = useRef<HTMLInputElement>(null);
 
   const set = (k: keyof ProjectFormState, v: string) => setForm(f => ({ ...f, [k]: v }));
-
-  const handleUploadImage = async (file: File) => {
-    setUploadingImg(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', file, file.name);
-      const token = adminApi.getToken();
-      const API_BASE = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin';
-      const res = await fetch(`${API_BASE}/suppliers/${supplierId}/project-image`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: fd,
-      });
-      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-      const data = await res.json();
-      setForm(f => ({ ...f, images: [...f.images, data.url] }));
-      setActiveImg(Number.MAX_SAFE_INTEGER); // 上传后展示最新图(curIdx 会钳到最后一张)
-    } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : 'Upload failed', 'error');
-    } finally {
-      setUploadingImg(false);
-      if (imgInputRef.current) imgInputRef.current.value = '';
-    }
-  };
 
   const removeImage = (idx: number) => {
     setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
   };
 
   const handleSave = async () => {
+    if (projectImagesUploading) { showToast(t('Wait for image upload to finish.', '请等待图片上传完成'), 'error'); return; }
     if (!form.title.trim()) { showToast(t('Title is required', '请填写标题'), 'error'); return; }
     setSaving(true);
     try {
@@ -370,19 +347,14 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
             <button type="button" onClick={() => setActiveImg(i)} className={`h-14 w-20 overflow-hidden rounded-lg border-2 ${i === curIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70 hover:opacity-100'}`}>
               <img src={resolveImageUrl(url)} alt="" className="h-full w-full object-cover" />
             </button>
-            <button type="button" onClick={() => removeImage(i)} className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="h-3 w-3" /></button>
+            <button type="button" disabled={saving || projectImagesUploading} onClick={() => removeImage(i)} className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 disabled:opacity-40"><X className="h-3 w-3" /></button>
           </div>
         ))}
-        <button type="button" onClick={() => imgInputRef.current?.click()} disabled={uploadingImg} className="flex h-14 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-stone-300 text-[10px] text-stone-400 hover:border-[#b8864a] hover:text-[#b8864a] disabled:opacity-50">
-          <Upload className="h-4 w-4" />{uploadingImg ? '...' : t('Add', '上传')}
-        </button>
       </div>
     </>
   );
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      {/* 上传 input 只渲一次(桌面/移动图库共用同一 ref,避免两个 input 抢 ref) */}
-      <input ref={imgInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (file) handleUploadImage(file); }} />
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-7xl h-[88vh] flex overflow-hidden">
         {/* 左 7：图库 */}
         <div className="hidden md:flex md:w-[70%] flex-col bg-stone-100">{gallery}</div>
@@ -390,11 +362,28 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
         <div className="flex w-full flex-col border-l border-stone-100 md:w-[30%]">
           <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3">
             <h2 className="text-sm font-bold text-[#2c2c2c]">{editingProject ? t('Edit Project', '编辑项目') : t('Add Project', '添加项目')}</h2>
-            <button onClick={onClose} className="p-1 text-stone-400 hover:text-stone-600"><X className="h-5 w-5" /></button>
+            <button onClick={onClose} disabled={saving || projectImagesUploading} className="p-1 text-stone-400 hover:text-stone-600 disabled:opacity-40"><X className="h-5 w-5" /></button>
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
             {/* 移动端图库(桌面在左栏) */}
             <div className="flex flex-col rounded-lg bg-stone-100 md:hidden">{gallery}</div>
+            {/* 此上传区只挂载一次；桌面/移动端都复用同一实例，避免粘贴事件重复上传。 */}
+            <ImageUploadZone
+              value={form.images}
+              onUpload={(images) => { setForm(f => ({ ...f, images })); setActiveImg(Number.MAX_SAFE_INTEGER); }}
+              onUploadStateChange={setProjectImagesUploading}
+              disabled={saving}
+              uploadUrl={`${(process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin'}/suppliers/${supplierId}/project-image`}
+              getHeaders={() => {
+                const token = adminApi.getToken();
+                const headers: Record<string, string> = {};
+                if (token) headers.Authorization = `Bearer ${token}`;
+                return headers;
+              }}
+              label={t('Click, drag or paste project images', '点击、拖放或粘贴项目图片')}
+              sublabel={t('Supports folder upload · large images are optimized automatically', '支持文件夹拖入 · 大图自动压缩')}
+              showPreviews={false}
+            />
             <div>
               <label className="mb-1 block text-xs font-medium text-stone-500">{t('Title *', '标题 *')}</label>
               <input type="text" value={form.title} onChange={e => set('title', e.target.value)} placeholder={t('e.g. Modern Living Room Renovation', '如：现代风格客厅改造')} className={inputCls} />
@@ -421,8 +410,8 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
             </div>
           </div>
           <div className="flex shrink-0 justify-end gap-2 border-t border-stone-100 px-4 py-3">
-            <button onClick={onClose} className="rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-200">{t('Cancel', '取消')}</button>
-            <button onClick={handleSave} disabled={saving} className="rounded-lg bg-[#b8864a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a07540] disabled:opacity-50">
+            <button onClick={onClose} disabled={saving || projectImagesUploading} className="rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-200 disabled:opacity-40">{t('Cancel', '取消')}</button>
+            <button onClick={handleSave} disabled={saving || projectImagesUploading} className="rounded-lg bg-[#b8864a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a07540] disabled:opacity-50">
               {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
             </button>
           </div>
@@ -630,12 +619,13 @@ export default function AdminSupplierDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const emptyNewProduct = () => ({ image_url: '', title: '', category: '', price: '', price_max: '', price_unit: '', price_currency: '', price_from: false });
+  const emptyNewProduct = () => ({ title: '', category: '', price: '', price_max: '', price_unit: '', price_currency: '', price_from: false });
   const [newProduct, setNewProduct] = useState(emptyNewProduct);
+  const [newProductImages, setNewProductImages] = useState<string[]>([]);
   const [newProductExtras, setNewProductExtras] = useState<ProductExtraFields>(emptyExtraFields());
   const [newProductPriceError, setNewProductPriceError] = useState('');
   const [newProductPriceErrorField, setNewProductPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
-  const resetNewProduct = () => { setNewProduct(emptyNewProduct()); setNewProductExtras(emptyExtraFields()); setNewProductPriceError(''); setNewProductPriceErrorField(null); };
+  const resetNewProduct = () => { setNewProduct(emptyNewProduct()); setNewProductImages([]); setNewProductExtras(emptyExtraFields()); setNewProductPriceError(''); setNewProductPriceErrorField(null); };
   // 新增产品的品类下拉也接后台「产品分类」(子类按大类分组)，与编辑弹窗一致
   const [prodCatGroups, setProdCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
   useEffect(() => {
@@ -646,6 +636,7 @@ export default function AdminSupplierDetailPage() {
     }).catch(() => { /* 拉不到就空 */ });
   }, []);
   const [addingProduct, setAddingProduct] = useState(false);
+  const [productImagesUploading, setProductImagesUploading] = useState(false);
   const [replacingId, setReplacingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceTargetRef = useRef<number | null>(null);
@@ -824,7 +815,8 @@ export default function AdminSupplierDetailPage() {
   };
 
   const handleAddProduct = async () => {
-    if (!newProduct.image_url.trim()) { showToast(t('Image URL is required', '请填写图片地址'), 'error'); return; }
+    if (productImagesUploading) { showToast(t('Wait for image upload to finish.', '请等待图片上传完成'), 'error'); return; }
+    if (newProductImages.length === 0) { showToast(t('Please upload at least one image.', '请至少上传一张图片'), 'error'); return; }
     const priceSubmission = buildProductPriceSubmission({ min: newProduct.price, max: newProduct.price_max, unit: newProduct.price_unit, currency: newProduct.price_currency, from: newProduct.price_from, dirty: true });
     if (!priceSubmission.ok) {
       const message = priceSubmission.field === 'min'
@@ -838,26 +830,36 @@ export default function AdminSupplierDetailPage() {
       return;
     }
     setAddingProduct(true);
+    const added: typeof products = [];
     try {
       const cleanedExtras = cleanExtraFields(newProductExtras);
-      const data = await adminApi.request(`/suppliers/${id}/products`, {
-        method: 'POST',
-        body: JSON.stringify({
-          image_url: newProduct.image_url.trim(),
-          title: newProduct.title.trim() || null,
-          category: newProduct.category || null,
-          ...priceSubmission.payload,
-          sort_order: products.length,
-          specs: cleanedExtras.specs,
-          certifications: cleanedExtras.certifications,
-          application_scenes: cleanedExtras.application_scenes,
-        }),
-      });
-      setProducts(prev => [...prev, data.product]);
+      for (const image_url of newProductImages) {
+        const data = await adminApi.request(`/suppliers/${id}/products`, {
+          method: 'POST',
+          body: JSON.stringify({
+            image_url,
+            title: newProduct.title.trim() || null,
+            category: newProduct.category || null,
+            ...priceSubmission.payload,
+            sort_order: products.length + added.length,
+            specs: cleanedExtras.specs,
+            certifications: cleanedExtras.certifications,
+            application_scenes: cleanedExtras.application_scenes,
+          }),
+        });
+        added.push(data.product);
+      }
+      setProducts(prev => [...prev, ...added]);
       resetNewProduct();
       setShowAddProduct(false);
       showToast(t('Product added', '产品图已添加'), 'success');
     } catch (error: unknown) {
+      // 成功的图片立即反映到列表，未创建的保留在表单里，重试不会重复提交。
+      if (added.length > 0) {
+        setProducts(prev => [...prev, ...added]);
+        const addedUrls = new Set(added.map(p => p.image_url));
+        setNewProductImages(prev => prev.filter(url => !addedUrls.has(url)));
+      }
       showToast(error instanceof Error ? error.message : t('Failed to add product', '添加失败'), 'error');
     } finally {
       setAddingProduct(false);
@@ -1145,14 +1147,29 @@ export default function AdminSupplierDetailPage() {
                 {t('Products', '产品')}
                 <span className="font-normal text-stone-400 normal-case tracking-normal">({products.length})</span>
               </h2>
-              <button onClick={() => setShowAddProduct(v => { if (v) resetNewProduct(); return !v; })} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#b8864a]/10 text-[#b8864a] hover:bg-[#b8864a]/20 transition-colors">
+              <button disabled={addingProduct || productImagesUploading} onClick={() => setShowAddProduct(v => { if (v) resetNewProduct(); return !v; })} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#b8864a]/10 text-[#b8864a] hover:bg-[#b8864a]/20 transition-colors disabled:opacity-40">
                 <Plus className="w-3.5 h-3.5" />{t('Add Image', '添加图片')}
               </button>
             </div>
             {showAddProduct && (
               <div className="bg-white rounded-xl border border-[#b8864a]/30 p-4 mb-3 space-y-3">
                 <p className="text-xs font-medium text-stone-500">{t('Add Product Image', '添加产品图')}</p>
-                <input type="text" placeholder={t('Image URL (e.g. /uploads/suppliers/68/xxx.jpg)', '图片地址（如 /uploads/suppliers/68/xxx.jpg）')} value={newProduct.image_url} onChange={e => setNewProduct(v => ({ ...v, image_url: e.target.value }))} className={inputCls} />
+                <ImageUploadZone
+                  value={newProductImages}
+                  onUpload={setNewProductImages}
+                  onUploadStateChange={setProductImagesUploading}
+                  disabled={addingProduct}
+                  uploadUrl={`${(process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin'}/suppliers/${id}/product-image`}
+                  getHeaders={() => {
+                    const token = adminApi.getToken();
+                    const headers: Record<string, string> = {};
+                    if (token) headers.Authorization = `Bearer ${token}`;
+                    return headers;
+                  }}
+                  label={t('Click, drag or paste product images', '点击、拖放或粘贴产品图片')}
+                  sublabel={t('Supports folder upload · large images are optimized automatically', '支持文件夹拖入 · 大图自动压缩')}
+                />
+                {newProductImages.length > 1 && <p className="text-xs text-stone-400">{t(`${newProductImages.length} images selected. They will be added as separate product entries with the same details.`, `已选 ${newProductImages.length} 张图，将按相同信息分别新增为产品。`)}</p>}
                 <div className="flex gap-2">
                   <input type="text" placeholder={t('Title (optional)', '名称（可选）')} value={newProduct.title} onChange={e => setNewProduct(v => ({ ...v, title: e.target.value }))} className={inputCls + ' flex-1'} />
                   <select value={newProduct.category} onChange={e => setNewProduct(v => ({ ...v, category: e.target.value }))} className="h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]">
@@ -1174,8 +1191,8 @@ export default function AdminSupplierDetailPage() {
                 <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={newProduct.price_from} onChange={e => setNewProduct(v => ({ ...v, price_from: e.target.checked }))} />{t('Show as a starting price when no maximum is provided', '未填写最高价时显示为起价')}</label>
                 <ProductExtraFieldsEditor value={newProductExtras} onChange={setNewProductExtras} t={t} />
                 <div className="flex gap-2">
-                  <button onClick={handleAddProduct} disabled={addingProduct} className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition">{addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}</button>
-                  <button onClick={() => { setShowAddProduct(false); resetNewProduct(); }} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
+                  <button onClick={handleAddProduct} disabled={addingProduct || productImagesUploading} className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition">{addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}</button>
+                  <button disabled={addingProduct || productImagesUploading} onClick={() => { setShowAddProduct(false); resetNewProduct(); }} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition disabled:opacity-40">{t('Cancel', '取消')}</button>
                 </div>
               </div>
             )}

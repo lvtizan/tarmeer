@@ -84,15 +84,18 @@ function ProductAddModal({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const busy = uploading || saving;
+  const requestClose = () => { if (!busy) onClose(); };
 
   const handleUpload = async (file: File) => {
+    if (busy) return;
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append('file', file, file.name);
       const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
       const API_BASE = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin';
-      const res = await fetch(`${API_BASE}/suppliers/${supplierId}/project-image`, {
+      const res = await fetch(`${API_BASE}/suppliers/${supplierId}/product-image`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: fd,
@@ -109,6 +112,7 @@ function ProductAddModal({
   };
 
   const handleSave = async () => {
+    if (busy) return;
     if (!imageUrl) { showToast('请先上传图片', 'error'); return; }
     const priceSubmission = buildProductPriceSubmission({ min: price, max: priceMax, unit: priceUnit, currency: priceCurrency, from: priceFrom, dirty: true });
     if (!priceSubmission.ok) {
@@ -142,7 +146,7 @@ function ProductAddModal({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between p-5 border-b border-stone-100">
           <h3 className="text-base font-bold text-[#2c2c2c]">添加产品</h3>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
+          <button onClick={requestClose} disabled={busy} className="text-stone-400 hover:text-stone-600 p-1 disabled:opacity-40"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
@@ -152,7 +156,8 @@ function ProductAddModal({
                 <img src={imageUrl} alt="" className="w-full h-full object-cover" />
                 <button
                   onClick={() => setImageUrl('')}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600"
+                  disabled={busy}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 disabled:opacity-40"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -160,7 +165,7 @@ function ProductAddModal({
             ) : (
               <button
                 onClick={() => fileRef.current?.click()}
-                disabled={uploading}
+                disabled={busy}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-stone-300 text-xs text-stone-500 hover:border-[#b8864a] hover:text-[#b8864a] transition disabled:opacity-50"
               >
                 {uploading ? '上传中...' : '+ 上传图片'}
@@ -203,7 +208,7 @@ function ProductAddModal({
           <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
-          <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition">取消</button>
+          <button onClick={requestClose} disabled={busy} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition disabled:opacity-40">取消</button>
           <button
             onClick={handleSave}
             disabled={saving || uploading}

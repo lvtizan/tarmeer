@@ -6,6 +6,10 @@ import { getDroppedFiles } from '@/lib/dropFiles';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { prepareImageForUpload } from '@/lib/uploadImageCompression';
 
+// All mounted zones share one paste owner. A page can contain a hidden product
+// form behind a project dialog, so per-instance booleans are not sufficient.
+let activePasteZone: symbol | null = null;
+
 interface ImageUploadZoneProps {
   value: string[];
   onUpload: (urls: string[]) => void;
@@ -18,6 +22,10 @@ interface ImageUploadZoneProps {
   /** 删除第 idx 个已上传文件时通知父组件(用于同步平行的 names[] 等,避免错位) */
   onRemove?: (idx: number) => void;
   chunkUploadUrl?: string; // if set, files > 4MB are uploaded in 2MB chunks
+  /** 外层已经有图库预览时，只复用上传交互，避免重复展示缩略图。 */
+  showPreviews?: boolean;
+  disabled?: boolean;
+  onUploadStateChange?: (uploading: boolean) => void;
 }
 
 function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
@@ -57,17 +65,26 @@ export default function ImageUploadZone({
   onFileMeta,
   onRemove,
   chunkUploadUrl,
+  showPreviews = true,
+  disabled = false,
+  onUploadStateChange,
 }: ImageUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [err, setErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const zoneRef = useRef<HTMLDivElement>(null);
   // Keep the latest committed value so batched uploads append without clobbering
   // each other (fixes lost images when many files/a folder are dropped at once).
   const valueRef = useRef(value);
   valueRef.current = value;
   const uploadManyRef = useRef<(files: File[]) => void>(() => {});
   const uploadingRef = useRef(false); // 供 paste 判断,避免与进行中的上传并发导致状态错乱
+  // 页面上可以同时存在产品、项目等多个上传区。粘贴只交给最后操作过的一个，
+  // 不能让每个 document 监听器并发上传同一张截图。
+  const zoneIdRef = useRef(Symbol('image-upload-zone'));
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
 
   const acceptMatchers = accept.split(',').map(s => s.trim());
   const fileExt = (name: string) => { const m = /\.([a-z0-9]+)$/i.exec(name || ''); return m ? m[1].toLowerCase() : ''; };
@@ -116,33 +133,39 @@ export default function ImageUploadZone({
   };
 
   const uploadMany = async (files: File[]) => {
-    if (uploadingRef.current) return; // 上传进行中,忽略并发调用(如 paste / 二次拖入),避免状态错乱
+    if (disabledRef.current || uploadingRef.current) return; // 上传进行中/父表单保存中不接受新文件
     const valid = files.filter(matchesAccept);
+    const rejected = files.filter(file => !matchesAccept(file));
     if (valid.length === 0) {
       if (files.length > 0) setErr('不支持该文件类型。');
       return;
     }
     uploadingRef.current = true;
     setUploading(true);
+    onUploadStateChange?.(true);
     setProgress(0);
     setErr('');
     try {
-      // 顺序上传；每传好一个就立即提交显示(增量),不等全部完成。
-      // valueRef 保证追加基于最新值,onFileMeta 与 onUpload 同步逐个触发(名称/URL 对齐)。
+      // 顺序上传且逐项容错：一张失败不阻断文件夹中其余图片。
+      const failures: string[] = rejected.map(file => `${file.name}（类型不支持）`);
       for (const file of valid) {
         setProgress(0);
-        const data = await uploadOne(file);
-        if (!data.url) throw new Error('Upload failed'); // 服务端 2xx 但没返回 url → 不提交空值
-        const merged = [...valueRef.current, data.url];
-        valueRef.current = merged;
-        onUpload(merged);
-        if (onFileMeta) onFileMeta({ original_name: data.original_name || file.name });
+        try {
+          const data = await uploadOne(file);
+          if (!data.url) throw new Error('Upload failed');
+          const merged = [...valueRef.current, data.url];
+          valueRef.current = merged;
+          onUpload(merged);
+          if (onFileMeta) onFileMeta({ original_name: data.original_name || file.name });
+        } catch (error) {
+          failures.push(`${file.name}（${error instanceof Error ? error.message : '上传失败'}）`);
+        }
       }
-    } catch (e: unknown) {
-      setErr((e instanceof Error ? e.message : null) || 'Upload failed');
+      if (failures.length > 0) setErr(`以下文件未上传：${failures.join('、')}`);
     } finally {
       uploadingRef.current = false;
       setUploading(false);
+      onUploadStateChange?.(false);
       setProgress(0);
     }
   };
@@ -151,18 +174,29 @@ export default function ImageUploadZone({
 
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
+      if (disabledRef.current || activePasteZone !== zoneIdRef.current) return;
       const item = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'));
       if (item) {
         const file = item.getAsFile();
         if (file) uploadManyRef.current([file]);
       }
     };
+    const deactivateOutside = (e: PointerEvent) => {
+      if (!zoneRef.current?.contains(e.target as Node) && activePasteZone === zoneIdRef.current) activePasteZone = null;
+    };
     document.addEventListener('paste', handler);
-    return () => document.removeEventListener('paste', handler);
+    document.addEventListener('pointerdown', deactivateOutside);
+    return () => {
+      document.removeEventListener('paste', handler);
+      document.removeEventListener('pointerdown', deactivateOutside);
+      if (activePasteZone === zoneIdRef.current) activePasteZone = null;
+    };
   }, []);
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    if (disabledRef.current) return;
+    activePasteZone = zoneIdRef.current;
     try {
       // Recurse into dropped folders, filtering by this zone's `accept`.
       const { files } = await getDroppedFiles(e, matchesAccept);
@@ -173,16 +207,22 @@ export default function ImageUploadZone({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    uploadMany(Array.from(e.target.files ?? []));
+    if (!disabledRef.current) uploadMany(Array.from(e.target.files ?? []));
     e.target.value = '';
   };
 
-  const remove = (idx: number) => { onUpload(value.filter((_, i) => i !== idx)); onRemove?.(idx); };
+  const remove = (idx: number) => {
+    if (disabledRef.current || uploadingRef.current) return;
+    const next = valueRef.current.filter((_, i) => i !== idx);
+    valueRef.current = next;
+    onUpload(next);
+    onRemove?.(idx);
+  };
 
   return (
-    <div className="space-y-3">
+    <div ref={zoneRef} className="space-y-3">
       {/* Uploaded file previews */}
-      {value.length > 0 && (
+      {showPreviews && value.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {value.map((url, idx) => (
             <div key={idx} className="relative shrink-0">
@@ -209,10 +249,11 @@ export default function ImageUploadZone({
       {/* Upload zone */}
       <button
         type="button"
-        onClick={() => fileRef.current?.click()}
+        onClick={() => { activePasteZone = zoneIdRef.current; fileRef.current?.click(); }}
+        onFocus={() => { activePasteZone = zoneIdRef.current; }}
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
-        disabled={uploading}
+        disabled={disabled || uploading}
         className="flex flex-col items-center justify-center gap-2 w-full h-24 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 text-stone-400 hover:border-[#b8864a]/40 hover:text-[#b8864a] transition disabled:opacity-50 text-sm cursor-pointer"
       >
         {uploading ? (
