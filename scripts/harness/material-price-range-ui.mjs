@@ -21,7 +21,6 @@ const publicSurfaces = [
   ['macro product grid', read('src/components/materials/MacroProductGrid.tsx')],
   ['mega menu directory', read('src/components/materials/MegaMenuDirectory.tsx')],
   ['product detail title', read('src/components/materials/ProductDetailClient.tsx')],
-  ['supplier detail products', supplierDetail],
 ];
 
 const checks = [];
@@ -171,6 +170,10 @@ for (const [label, source] of publicSurfaces) {
 check('supplier detail Product type includes all price fields',
   ['price', 'price_max', 'price_unit', 'price_currency', 'price_from'].every((field) =>
     new RegExp(`${field}\\??\\s*:`).test(supplierDetail)));
+check('supplier detail products hide prices while retaining the product detail link',
+  !has(supplierDetail, /import ProductPriceLine/)
+  && !has(supplierDetail, /<ProductPriceLine\s+product=\{p\}/)
+  && has(supplierDetail, /href=\{`\/materials\/products\/\$\{p\.id\}`\}/));
 check('supplier hydration forwards country in both request cache keys',
   (supplierDetail.match(/country=\$\{country\.code\}/g) || []).length >= 2);
 check('supplier hydration forwards x-country in both request headers',
