@@ -2,6 +2,8 @@
 // 契约见 docs/plans/china-materials-revamp-spec.md（§2.3 / §3.1）
 // SSR 与客户端解析方式对齐 publicApi.ts：country 同时走 query + x-country header。
 import { normalizeProductPriceFields, type ProductPriceFields } from '@/lib/supplierProductUnits';
+import { sanitizeDescription } from '@/lib/materialDescription';
+export { sanitizeDescription } from '@/lib/materialDescription';
 
 const API_BASE =
   typeof window === 'undefined'
@@ -100,20 +102,6 @@ function normalizeStringArray(value: unknown): string[] {
  * 清洗合作方同步残留的出厂价/MOQ 片段（如 "Price: CN¥197.02-264.95 | MOQ: Min. Order: 2 pieces"）。
  * 业务口径：贸易价不对外显示（spec §6），价格只走 price 字段由业务决定何时展示。
  */
-export function sanitizeDescription(value: unknown): string | null {
-  if (value == null) return null;
-  const cleaned = String(value)
-    .replace(/price\s*:\s*[^|\n]*/gi, '')
-    .replace(/moq\s*:\s*[^|\n]*/gi, '')
-    .replace(/min\.?\s*order\s*:?\s*[^|\n]*/gi, '')
-    .replace(/(?:CN¥|US\$|¥)\s*[\d.,]+(?:\s*[-–~]\s*[\d.,]+)?/g, '')
-    .replace(/\s*\|\s*(?=\||$)/gm, '') // 清掉残留的空竖线分隔
-    .replace(/^[\s|]+|[\s|]+$/gm, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-  return cleaned || null;
-}
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function toMaterialProduct(row: any): PublicMaterialProduct {
   const imageUrls = normalizeStringArray(row.image_urls);

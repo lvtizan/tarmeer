@@ -3,7 +3,7 @@
 // 产品分类 value→label 的共享映射(单一数据源 product_categories,经 /api/public/product-categories)。
 // 所有买家/供应商界面显示 supplier_products.category 时都用它,避免直接渲染原始 value(如 NEW_MATERIALS)。
 // 模块级缓存 + 单飞(inflight)去重,多个组件同时挂载只发一次请求。
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -35,5 +35,5 @@ export function useProductCategoryLabels(): (v?: string | null) => string {
     loadLabels().then((m) => { if (alive) setLabels(m); });
     return () => { alive = false; };
   }, []);
-  return (v?: string | null) => (v ? labels[v] || v : '');
+  return useCallback((v?: string | null) => (v ? labels[v] || v : ''), [labels]);
 }

@@ -169,7 +169,6 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     '@id': `${supplierUrl}#business`,
     name: pubTitle,
     url: supplierUrl,
-    ...(supplier.description ? { description: supplier.description.slice(0, 300) } : {}),
     ...(image ? { image } : {}),
     ...(supplier.contact_phone ? { telephone: supplier.contact_phone } : {}),
     ...(hasStore
@@ -191,7 +190,6 @@ export default async function SupplierDetailPage({ params }: PageProps) {
       {supplier && (
         <div className="sr-only">
           <h1>{pubTitle}</h1>
-          {supplier.description && <p>{supplier.description}</p>}
         </div>
       )}
       <SupplierDetailClient

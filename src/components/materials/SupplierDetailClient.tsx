@@ -12,12 +12,13 @@ import {
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
-import { sanitizeDescription } from '@/lib/materialsApi';
+import { sanitizeDescription } from '@/lib/materialDescription';
 import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS, supplierPublicTitle } from '@/lib/supplierConstants';
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { createSupplierIdentityGuard, isSupplierContentStale } from '@/lib/supplierDetailIdentity';
+import SupplierProductLibrary from './SupplierProductLibrary';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
 const CatalogReader = dynamic(() => import('./CatalogReader'), {
@@ -62,6 +63,7 @@ export interface Product {
   price_unit: string | null;
   price_currency: 'AED' | 'CNY' | 'USD' | 'VND' | null;
   price_from: boolean;
+  specs?: Array<{ label?: unknown; value?: unknown }> | string | null;
 }
 
 interface Project {
@@ -110,12 +112,12 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   const openLightbox = (images: string[], idx: number, labels?: (string | null)[]) =>
     setLightbox({ images, labels, idx });
   const closeLightbox = () => setLightbox(null);
-  const [productCatFilter, setProductCatFilter] = useState<string | null>(null);
   const [logoError, setLogoError] = useState(false);
 
   const [showFloatingForm, setShowFloatingForm] = useState(false);
   const [floatingFormDismissed, setFloatingFormDismissed] = useState(false);
   const mobileFormRef = useRef<HTMLDivElement>(null);
+  const desktopFormRef = useRef<HTMLDivElement>(null);
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<'products' | 'projects'>('products');
@@ -127,6 +129,10 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
 
   const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const scrollToInquiry = () => {
+    const target = window.matchMedia('(min-width: 1700px)').matches ? desktopFormRef : mobileFormRef;
+    target.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   useEffect(() => {
@@ -140,7 +146,6 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
       setProjects([]);
       setCatalogs([]);
       setLightbox(null);
-      setProductCatFilter(null);
       setLogoError(false);
       setShowFloatingForm(false);
       setFloatingFormDismissed(false);
@@ -241,8 +246,6 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   if (products.length > 0) statItems.push({ label: 'Products', count: products.length });
   if (projects.length > 0) statItems.push({ label: 'Projects', count: projects.length });
   if (catalogs.length > 0) statItems.push({ label: 'Catalogs', count: catalogs.length });
-
-  const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
 
   // 没上传内容的模块整块隐藏，对应 tab 也不显示（下方 map 里按 count 跳过，避免点了滚动到空白）
   // 画册不在 tab 里（已移到 hero 区展示）；tab 仅产品/项目
@@ -381,65 +384,33 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
         </div>
       </div>
 
+      {/* Products use a dedicated full-width material-library layout. Keeping it
+          outside the legacy content/inquiry columns prevents overlap on wide screens. */}
+      {products.length > 0 && (
+        <div ref={productsRef} id="section-products" className="scroll-mt-28">
+          <div className="mx-auto max-w-[1920px] px-4 pt-8 sm:px-6 sm:pt-10 lg:px-8">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#2c2c2c]">
+              <Package className="h-5 w-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
+              Material library
+              <span className="text-sm font-normal text-stone-400">({products.length})</span>
+            </h2>
+          </div>
+          <SupplierProductLibrary
+            products={products}
+            categoryLabel={catLabel}
+            onOpenProduct={(visibleProducts, index) => openLightbox(
+              visibleProducts.map((product) => product.image_url),
+              index,
+              visibleProducts.map((product) => product.title_translated || product.title),
+            )}
+          />
+        </div>
+      )}
+
       {/* ========== Main Content ========== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="min-[1700px]:flex">
           <div className="min-w-0 min-[1700px]:flex-1 space-y-10">
-            {/* Products section — 无产品则整块隐藏，不显示空状态 */}
-            {products.length > 0 && (
-            <div ref={productsRef} id="section-products" className="scroll-mt-28">
-              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
-                Products
-                <span className="text-sm font-normal text-stone-400">({products.length})</span>
-              </h2>
-                <>
-                  {productCategories.length > 1 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <button onClick={() => setProductCatFilter(null)}
-                        className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${!productCatFilter ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>All</button>
-                      {productCategories.map(cat => (
-                        <button key={cat} onClick={() => setProductCatFilter(cat)}
-                          className={`px-3 py-1.5 rounded-2xl text-xs font-medium transition ${productCatFilter === cat ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}>{catLabel(cat)}</button>
-                      ))}
-                    </div>
-                  )}
-                  {/* 瀑布流(masonry)：图按自然比例(w-full h-auto)自适应，高图高/宽图宽，无留白无裁切 */}
-                  <div className="columns-2 sm:columns-3 gap-4 [column-fill:_balance]">
-                    {products.filter(p => !productCatFilter || p.category === productCatFilter).map((p) => (
-                      <div key={p.id} className="group mb-4 break-inside-avoid cursor-pointer" onClick={() => openLightbox(products.map(x => x.image_url), products.indexOf(p), products.map(x => x.title))}>
-                        <div className="rounded-2xl overflow-hidden bg-white border border-stone-200">
-                          <SmartImage
-                            src={p.image_url}
-                            variant="thumb"
-                            alt={p.title || ''}
-                            className="w-full h-auto group-hover:scale-105 transition duration-300"
-                            loading="lazy"
-                          />
-                        </div>
-                        {p.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider mt-2">{catLabel(p.category)}</p>}
-                        {(p.title_translated || p.title) && (
-                          // 标题作可爬内链 → 产品详情页(供应商页已 SSR,链接进 HTML；图片点击仍开 lightbox，stopPropagation 隔开)
-                          <Link
-                            href={`/materials/products/${p.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="block text-[15px] font-medium text-[#2c2c2c] mt-0.5 truncate hover:text-[#b8864a] transition-colors"
-                          >
-                            {p.title_translated || p.title}
-                          </Link>
-                        )}
-                        {(() => {
-                          // 与产品详情页同源清洗：合作方同步残留的出厂价/MOQ 不外显（spec §6）
-                          const desc = sanitizeDescription(p.description_translated || p.description);
-                          return desc ? <p className="text-xs text-[#6b6b6b] mt-0.5 line-clamp-2">{desc}</p> : null;
-                        })()}
-                      </div>
-                    ))}
-                  </div>
-                </>
-            </div>
-            )}
-
             {/* Projects section — 无项目则整块隐藏，不显示空状态 */}
             {projects.length > 0 && (
             <div ref={projectsRef} id="section-projects" className="scroll-mt-28">
@@ -452,6 +423,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                   {projects.map(proj => {
                     const imgs = Array.isArray(proj.images) ? proj.images : [];
                     const materials = Array.isArray(proj.materials) ? proj.materials : [];
+                    const projectDescription = sanitizeDescription(proj.description);
                     return (
                       <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
                         {imgs.length > 0 && (
@@ -470,7 +442,11 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                         )}
                         <div className="p-5">
                           <h3 className="text-[15px] font-semibold text-[#2c2c2c]">{proj.title}</h3>
-                          {proj.description && <p className="text-sm text-stone-500 mt-1 leading-relaxed">{proj.description}</p>}
+                          {projectDescription && (
+                            <p className="text-sm text-stone-500 mt-1 leading-relaxed">
+                              {projectDescription}
+                            </p>
+                          )}
                           <div className="flex flex-wrap gap-3 mt-2">
                             {proj.location && (
                               <span className="inline-flex items-center gap-1 text-xs text-stone-500">
@@ -495,18 +471,19 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                             <div className="mt-5 pt-4 border-t border-stone-100">
                               <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-3">Materials Used In This Project</p>
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {materials.slice(0, 6).map((m) => (
-                                  <div key={m.id} className="rounded-2xl border border-stone-200 overflow-hidden bg-stone-50/40">
+                                {materials.slice(0, 6).map((m) => {
+                                  const materialDescription = sanitizeDescription(m.description);
+                                  return <div key={m.id} className="rounded-2xl border border-stone-200 overflow-hidden bg-stone-50/40">
                                     <div className="aspect-[4/3] bg-stone-100">
                                       <SmartImage src={m.image_url} alt={m.title || ''} className="w-full h-full object-cover" loading="lazy" />
                                     </div>
                                     <div className="p-2.5">
                                       {m.category && <p className="text-[10px] font-medium text-[#b8864a] uppercase tracking-wider">{catLabel(m.category)}</p>}
                                       <p className="text-xs font-medium text-[#2c2c2c] line-clamp-1 mt-0.5">{m.title || 'Material'}</p>
-                                      {m.description && <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{m.description}</p>}
+                                      {materialDescription && <p className="text-[11px] text-stone-500 line-clamp-2 mt-1">{materialDescription}</p>}
                                     </div>
                                   </div>
-                                ))}
+                                })}
                               </div>
                             </div>
                           )}
@@ -533,7 +510,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
           </div>
 
           {/* Sticky sidebar — 1700px+ */}
-          <div className="hidden min-[1700px]:block w-72 shrink-0 ml-8" style={{ marginRight: '-320px' }}>
+          <div ref={desktopFormRef} className="hidden min-[1700px]:block w-72 shrink-0 ml-8" style={{ marginRight: '-320px' }}>
             <div className="sticky top-[112px]">
               <ServiceInquiryCard
                 title="Contact this Supplier"
@@ -555,11 +532,11 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="min-[1700px]:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 px-4 py-3 flex items-center gap-3 shadow-lg"
+            className="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-stone-200 bg-white px-4 py-3 shadow-lg min-[1700px]:bottom-6 min-[1700px]:left-auto min-[1700px]:right-6 min-[1700px]:w-80 min-[1700px]:rounded-2xl min-[1700px]:border"
           >
             <button
               className="btn-primary flex-1 py-3 text-[15px]"
-              onClick={() => mobileFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={scrollToInquiry}
             >
               Send Inquiry
             </button>

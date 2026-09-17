@@ -13,6 +13,7 @@ const adminModal = read('src/components/admin/SupplierEditModal.tsx');
 const publicPrice = readOptional('src/components/materials/ProductPriceLine.tsx');
 const publicPriceDisplay = readOptional('src/lib/productPriceDisplay.ts');
 const supplierDetail = read('src/components/materials/SupplierDetailClient.tsx');
+const supplierLibrary = read('src/components/materials/SupplierProductLibrary.tsx');
 const publicSurfaces = [
   ['material product card', read('src/components/materials/MaterialProductCard.tsx')],
   ['material search results', read('src/components/materials/MaterialSearchResults.tsx')],
@@ -172,8 +173,11 @@ check('supplier detail Product type includes all price fields',
     new RegExp(`${field}\\??\\s*:`).test(supplierDetail)));
 check('supplier detail products hide prices while retaining the product detail link',
   !has(supplierDetail, /import ProductPriceLine/)
-  && !has(supplierDetail, /<ProductPriceLine\s+product=\{p\}/)
-  && has(supplierDetail, /href=\{`\/materials\/products\/\$\{p\.id\}`\}/));
+  && !has(supplierLibrary, /import ProductPriceLine/)
+  && !has(supplierLibrary, /<ProductPriceLine/)
+  && has(supplierLibrary, /href=\{`\/materials\/products\/\$\{product\.id\}`\}/));
+check('supplier project materials sanitize hidden price and import metadata',
+  has(supplierDetail, /sanitizeDescription\(m\.description\)/));
 check('supplier hydration forwards country in both request cache keys',
   (supplierDetail.match(/country=\$\{country\.code\}/g) || []).length >= 2);
 check('supplier hydration forwards x-country in both request headers',
@@ -187,7 +191,7 @@ check('supplier hydration ignores obsolete country requests',
 check('supplier rendering gates stale route or country identity before effects run',
   has(supplierDetail, /isSupplierContentStale\(loadedIdentity, requestIdentity\)/) && has(supplierDetail, /if\s*\(loading \|\| contentStale\)/));
 check('supplier identity switch clears entity-specific visual state',
-  has(supplierDetail, /if\s*\(identityChanged\)[\s\S]{0,500}setLightbox\(null\)[\s\S]{0,500}setProductCatFilter\(null\)[\s\S]{0,500}setLogoError\(false\)/));
+  has(supplierDetail, /if\s*\(identityChanged\)[\s\S]{0,500}setLightbox\(null\)[\s\S]{0,500}setLogoError\(false\)/));
 
 let passed = 0;
 for (const item of checks) {

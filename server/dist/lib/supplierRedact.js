@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.maskSupplierName = maskSupplierName;
 exports.maskPhraseInText = maskPhraseInText;
 exports.maskSupplierMentions = maskSupplierMentions;
+exports.maskSupplierValue = maskSupplierValue;
 exports.redactPublicSupplier = redactPublicSupplier;
 exports.supplierPublicTitle = supplierPublicTitle;
 exports.stripLeadingRedact = stripLeadingRedact;
@@ -16,6 +17,24 @@ function maskSupplierMentions(text, companyName) {
     if (brand && brand.length >= 4)
         out = maskPhraseInText(out, brand);
     return out;
+}
+/** Recursively mask supplier names in public JSON/text fields, including specs arrays. */
+function maskSupplierValue(value, companyName, companyNameZh) {
+    if (typeof value === 'string') {
+        let out = maskSupplierMentions(value, companyName);
+        if (companyNameZh)
+            out = maskSupplierMentions(out, companyNameZh);
+        return out;
+    }
+    if (Array.isArray(value))
+        return value.map((item) => maskSupplierValue(item, companyName, companyNameZh));
+    if (value && typeof value === 'object') {
+        const out = {};
+        for (const [key, item] of Object.entries(value))
+            out[key] = maskSupplierValue(item, companyName, companyNameZh);
+        return out;
+    }
+    return value;
 }
 /**
  * 公开供应商的“通用标题”：用品类而非真实厂家名，既藏身份又保 SEO 关键词。

@@ -134,14 +134,20 @@ async function getPublicProfile(req, res) {
         const [catalogs] = await database_1.default.execute('SELECT id, title, file_size, created_at FROM supplier_catalogs WHERE supplier_profile_id = ? AND catalog_visible = 1 ORDER BY created_at DESC', [supplier.id]);
         // 自填文本(商品/目录标题·简介)里可能含品牌名,一并遮蔽(用真实厂家名匹配,遮完再 redact supplier)
         const realName = supplier.company_name;
+        const realNameZh = supplier.name_zh || '';
         const maskedProducts = (Array.isArray(products) ? products : []).map((p) => ({
             ...p,
-            title: supplierRedact_1.maskSupplierMentions(p.title, realName),
-            description: supplierRedact_1.maskSupplierMentions(p.description, realName),
+            title: supplierRedact_1.maskSupplierValue(p.title, realName, realNameZh),
+            description: supplierRedact_1.maskSupplierValue(p.description, realName, realNameZh),
+            title_translated: supplierRedact_1.maskSupplierValue(p.title_translated, realName, realNameZh),
+            description_translated: supplierRedact_1.maskSupplierValue(p.description_translated, realName, realNameZh),
+            specs: supplierRedact_1.maskSupplierValue(p.specs, realName, realNameZh),
+            certifications: supplierRedact_1.maskSupplierValue(p.certifications, realName, realNameZh),
+            application_scenes: supplierRedact_1.maskSupplierValue(p.application_scenes, realName, realNameZh),
         }));
         const maskedCatalogs = (Array.isArray(catalogs) ? catalogs : []).map((c) => ({
             ...c,
-            title: supplierRedact_1.maskSupplierMentions(c.title, realName),
+            title: supplierRedact_1.maskSupplierValue(c.title, realName, realNameZh),
         }));
         res.json({ supplier: redactPublicSupplier(supplier), products: maskedProducts, catalogs: maskedCatalogs });
     }

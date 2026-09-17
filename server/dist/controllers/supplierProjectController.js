@@ -21,7 +21,7 @@ async function listPublicProjects(req, res) {
         const { slug } = req.params;
         // 国家隔离铁律：按站点国家解析供应商，禁止 VN 站命中 AE 供应商项目（P0 串域）。
         const reqCountry = (typeof req.query.country === 'string' && ['ae', 'vn'].includes(req.query.country) ? req.query.country : null) || req.country || 'ae';
-        const [profiles] = await database_1.default.execute("SELECT id, company_name FROM supplier_profiles WHERE slug = ? AND status = 'approved' AND country = ?", [slug, reqCountry]);
+        const [profiles] = await database_1.default.execute("SELECT id, company_name, name_zh FROM supplier_profiles WHERE slug = ? AND status = 'approved' AND country = ?", [slug, reqCountry]);
         const profile = profiles[0];
         if (!profile)
             return res.status(404).json({ error: 'Supplier not found.' });
@@ -30,8 +30,8 @@ async function listPublicProjects(req, res) {
         const realName = profile.company_name;
         const maskedProjects = (Array.isArray(projects) ? projects : []).map((p) => ({
             ...p,
-            title: supplierRedact_1.maskSupplierMentions(p.title, realName),
-            description: supplierRedact_1.maskSupplierMentions(p.description, realName),
+            title: supplierRedact_1.maskSupplierValue(p.title, realName, profile.name_zh),
+            description: supplierRedact_1.maskSupplierValue(p.description, realName, profile.name_zh),
         }));
         res.json({ projects: maskedProjects });
     }

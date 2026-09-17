@@ -183,6 +183,24 @@ try {
   ng('产品表单 payload 与 Supplier identity 行为', commandTail(e));
 }
 try {
+  execSync('node --test src/lib/supplierProductLibrary.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('供应商材质库系列聚合与搜索');
+} catch (e) {
+  ng('供应商材质库系列聚合与搜索', commandTail(e));
+}
+try {
+  execSync('node --test src/lib/materialDescription.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('公开材料描述价格与导入元数据清洗');
+} catch (e) {
+  ng('公开材料描述价格与导入元数据清洗', commandTail(e));
+}
+try {
+  execSync('node scripts/harness/supplier-public-redaction.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('公开供应商译名/规格/SSR 去标识边界');
+} catch (e) {
+  ng('公开供应商译名/规格/SSR 去标识边界', commandTail(e));
+}
+try {
   execSync('node scripts/harness/material-public-price-api.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('公开产品价格本地 DB controller 契约');
 } catch (e) {

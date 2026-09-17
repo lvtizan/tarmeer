@@ -54,27 +54,7 @@ function resolvePublicCountry(req) {
 function mapPublicProduct(row) {
     const realName = row.supplier_real_name || '';
     const realZh = row.supplier_real_name_zh || '';
-    const mask = (t) => {
-        let out = supplierRedact_1.maskSupplierMentions(t, realName);
-        if (realZh)
-            out = supplierRedact_1.maskSupplierMentions(out, realZh);
-        return out;
-    };
-    // 去标识补齐：供应商自填的 specs/certifications/application_scenes 也可能被打入真实厂名，
-    // 与 title/description 同规遮蔽（只替换本供应商自己的真名，不影响正常规格值）。
-    const maskArr = (arr) => (Array.isArray(arr)
-        ? arr.map((el) => {
-            if (typeof el === 'string')
-                return mask(el);
-            if (el && typeof el === 'object') {
-                const o = {};
-                for (const k in el)
-                    o[k] = typeof el[k] === 'string' ? mask(el[k]) : el[k];
-                return o;
-            }
-            return el;
-        })
-        : arr);
+    const mask = (value) => supplierRedact_1.maskSupplierValue(value, realName, realZh);
     // 中文产品优先用英文译名（洞石系列→TRAVERTINE SLAB），再走同一 mask() 遮蔽真名。
     // title_translated/description_translated 从 rest 剥离，绝不外发（否则前端拿未遮蔽译名 = 泄露真名 P0）。
     const { supplier_real_name, supplier_real_name_zh, supplier_categories, title_translated, description_translated, ...rest } = row;
@@ -87,9 +67,9 @@ function mapPublicProduct(row) {
         supplier_name: supplierRedact_1.supplierPublicTitle(supplier_categories),
         supplier_logo: null,
         image_urls: (0, productJsonFields_1.parseJsonArray)(rest.image_urls),
-        specs: maskArr((0, productJsonFields_1.parseJsonArray)(rest.specs)),
-        certifications: maskArr((0, productJsonFields_1.parseJsonArray)(rest.certifications)),
-        application_scenes: maskArr((0, productJsonFields_1.parseJsonArray)(rest.application_scenes)),
+        specs: mask((0, productJsonFields_1.parseJsonArray)(rest.specs)),
+        certifications: mask((0, productJsonFields_1.parseJsonArray)(rest.certifications)),
+        application_scenes: mask((0, productJsonFields_1.parseJsonArray)(rest.application_scenes)),
     };
 }
 // GET /api/suppliers/products/public — 跨供应商公开产品 feed（spec §3.1，中国新材料目录）
@@ -271,21 +251,16 @@ async function listProducts(req, res) {
         // 公开去标识(FA-14 遮 payload)：产品自填 title/description/specs/certs/scenes 里的真实厂名(中英)遮蔽。
         const __rn = profile.company_name || '';
         const __rz = profile.name_zh || '';
-        const __mask = (t) => { if (typeof t !== 'string') return t; let o = supplierRedact_1.maskSupplierMentions(t, __rn); if (__rz) o = supplierRedact_1.maskSupplierMentions(o, __rz); return o; };
-        const __maskField = (v) => {
-            if (v == null) return v;
-            if (typeof v === 'string') return __mask(v);
-            if (Array.isArray(v)) return v.map(__maskField);
-            if (typeof v === 'object') { const o = {}; for (const k in v) o[k] = __maskField(v[k]); return o; }
-            return v;
-        };
+        const __mask = (value) => supplierRedact_1.maskSupplierValue(value, __rn, __rz);
         const masked = (Array.isArray(products) ? products : []).map((p) => ({
             ...p,
             title: __mask(p.title),
             description: __mask(p.description),
-            specs: __maskField(p.specs),
-            certifications: __maskField(p.certifications),
-            application_scenes: __maskField(p.application_scenes),
+            title_translated: __mask(p.title_translated),
+            description_translated: __mask(p.description_translated),
+            specs: __mask(p.specs),
+            certifications: __mask(p.certifications),
+            application_scenes: __mask(p.application_scenes),
         }));
         res.json({ products: masked });
     }
