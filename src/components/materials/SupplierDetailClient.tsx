@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowUp, ArrowLeft, X,
   Package, Layers, MapPin,
@@ -114,10 +114,10 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   const closeLightbox = () => setLightbox(null);
   const [logoError, setLogoError] = useState(false);
 
-  const [showFloatingForm, setShowFloatingForm] = useState(false);
-  const [floatingFormDismissed, setFloatingFormDismissed] = useState(false);
-  const mobileFormRef = useRef<HTMLDivElement>(null);
-  const desktopFormRef = useRef<HTMLDivElement>(null);
+  const [inquiryOpen, setInquiryOpen] = useState(false);
+  const inquiryPanelRef = useRef<HTMLDivElement>(null);
+  const inquiryTriggerRef = useRef<HTMLButtonElement>(null);
+  const reduceMotion = useReducedMotion();
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<'products' | 'projects'>('products');
@@ -130,9 +130,10 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-  const scrollToInquiry = () => {
-    const target = window.matchMedia('(min-width: 1700px)').matches ? desktopFormRef : mobileFormRef;
-    target.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const openInquiry = () => setInquiryOpen(true);
+  const closeInquiry = () => {
+    setInquiryOpen(false);
+    requestAnimationFrame(() => inquiryTriggerRef.current?.focus());
   };
 
   useEffect(() => {
@@ -147,8 +148,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
       setCatalogs([]);
       setLightbox(null);
       setLogoError(false);
-      setShowFloatingForm(false);
-      setFloatingFormDismissed(false);
+      setInquiryOpen(false);
       setActiveSection('products');
       setLoading(true);
     }
@@ -183,12 +183,60 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   }, [slug, country.code]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (!floatingFormDismissed) setShowFloatingForm(window.scrollY > 400);
+    if (!inquiryOpen) return;
+    const panel = inquiryPanelRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const getFocusable = () => panel?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+    );
+    getFocusable()?.[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeInquiry();
+        return;
+      }
+      const focusable = getFocusable();
+      if (event.key !== 'Tab' || !focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!panel?.contains(document.activeElement) || !Array.from(focusable).includes(document.activeElement as HTMLElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [floatingFormDismissed]);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [inquiryOpen]);
+
+  useEffect(() => {
+    const mobile = window.matchMedia('(max-width: 639px)');
+    const previousPaddingBottom = document.body.style.paddingBottom;
+    const reserveInquiryCtaSpace = () => {
+      document.body.style.paddingBottom = mobile.matches
+        ? 'calc(4.5rem + env(safe-area-inset-bottom))'
+        : previousPaddingBottom;
+    };
+    reserveInquiryCtaSpace();
+    mobile.addEventListener('change', reserveInquiryCtaSpace);
+    return () => {
+      mobile.removeEventListener('change', reserveInquiryCtaSpace);
+      document.body.style.paddingBottom = previousPaddingBottom;
+    };
+  }, []);
 
   useEffect(() => {
     if (!supplier) return;
@@ -497,59 +545,86 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
 
             {/* 画册已移到 hero 区右侧展示（复用 flooring hero 同款电子书控件），此处不再重复渲染 */}
 
-            {/* Inline inquiry form — shown on screens < 1700px */}
-            <div ref={mobileFormRef} className="min-[1700px]:hidden">
-              <ServiceInquiryCard
-                title="Contact this Supplier"
-                leadTag="Material Inquiry"
-                companyName={publicTitle}
-                companySlug={supplier.slug}
-                companyId={supplier.id}
-              />
-            </div>
-          </div>
-
-          {/* Sticky sidebar — 1700px+ */}
-          <div ref={desktopFormRef} className="hidden min-[1700px]:block w-72 shrink-0 ml-8" style={{ marginRight: '-320px' }}>
-            <div className="sticky top-[112px]">
-              <ServiceInquiryCard
-                title="Contact this Supplier"
-                leadTag="Material Inquiry"
-                companyName={publicTitle}
-                companySlug={supplier.slug}
-                companyId={supplier.id}
-              />
-            </div>
           </div>
         </div>
       </div>
 
       {/* ========== Floating CTA ========== */}
-      <AnimatePresence>
-        {showFloatingForm && !floatingFormDismissed && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-stone-200 bg-white px-4 py-3 shadow-lg min-[1700px]:bottom-6 min-[1700px]:left-auto min-[1700px]:right-6 min-[1700px]:w-80 min-[1700px]:rounded-2xl min-[1700px]:border"
+      {!inquiryOpen && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-lg sm:bottom-6 sm:left-auto sm:right-6 sm:w-72 sm:rounded-2xl sm:border sm:py-3">
+          <button
+            ref={inquiryTriggerRef}
+            type="button"
+            className="btn-primary w-full py-3 text-[15px]"
+            onClick={openInquiry}
+            aria-haspopup="dialog"
+            aria-controls="supplier-inquiry-panel"
+            aria-expanded={inquiryOpen}
           >
+            Send Inquiry
+          </button>
+        </div>
+      )}
+
+      {/* Keep the mounted form state when buyers close and reopen the drawer. */}
+      <motion.div
+        className={`fixed inset-0 z-[70] ${inquiryOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        initial={false}
+        animate={{ opacity: inquiryOpen ? 1 : 0 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.16 }}
+        aria-hidden={!inquiryOpen}
+        inert={!inquiryOpen}
+      >
             <button
-              className="btn-primary flex-1 py-3 text-[15px]"
-              onClick={scrollToInquiry}
+              type="button"
+              className="absolute inset-0 h-full w-full cursor-default bg-black/35 backdrop-blur-[1px]"
+              onClick={closeInquiry}
+              aria-label="Close inquiry form"
+            />
+            <motion.div
+              ref={inquiryPanelRef}
+              id="supplier-inquiry-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="supplier-inquiry-title"
+              initial={false}
+              animate={{
+                y: inquiryOpen || reduceMotion ? 0 : 48,
+                opacity: inquiryOpen ? 1 : 0,
+                scale: inquiryOpen || reduceMotion ? 1 : 0.98,
+              }}
+              transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 360, damping: 34 }}
+              className="absolute inset-x-0 bottom-0 max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain rounded-t-3xl border border-stone-200 bg-white px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[420px] sm:max-h-[calc(100dvh-3rem)] sm:rounded-3xl sm:p-6"
             >
-              Send Inquiry
-            </button>
-            <button
-              onClick={() => setFloatingFormDismissed(true)}
-              className="w-11 h-11 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 hover:text-stone-600 transition shrink-0"
-              aria-label="Dismiss"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <div className="mb-5 flex items-start justify-between gap-4 border-b border-stone-100 pb-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#b8864a]">Material sourcing</p>
+                  <h2 id="supplier-inquiry-title" className="mt-1 text-xl font-semibold text-[#1c1917]">Send an inquiry</h2>
+                  <p className="mt-1 text-sm text-stone-500">Keep browsing—we’ll send your request to this supplier.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeInquiry}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition hover:border-stone-300 hover:bg-stone-50 hover:text-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a]"
+                  aria-label="Close inquiry form"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <ServiceInquiryCard
+                key={requestIdentity}
+                inline
+                title="Project details"
+                subtitle="Share a few details and our team will follow up shortly."
+                submitLabel="Send inquiry"
+                leadTag="Material Inquiry"
+                companyName={publicTitle}
+                companySlug={supplier.slug}
+                companyId={supplier.id}
+                isVn={country.code === 'vn'}
+              />
+            </motion.div>
+      </motion.div>
 
       {/* ========== Lightbox ========== */}
       {lightbox !== null && (

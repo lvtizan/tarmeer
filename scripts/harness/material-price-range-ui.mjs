@@ -14,6 +14,7 @@ const publicPrice = readOptional('src/components/materials/ProductPriceLine.tsx'
 const publicPriceDisplay = readOptional('src/lib/productPriceDisplay.ts');
 const supplierDetail = read('src/components/materials/SupplierDetailClient.tsx');
 const supplierLibrary = read('src/components/materials/SupplierProductLibrary.tsx');
+const serviceInquiry = read('src/components/services/ServiceInquiryCard.tsx');
 const publicSurfaces = [
   ['material product card', read('src/components/materials/MaterialProductCard.tsx')],
   ['material search results', read('src/components/materials/MaterialSearchResults.tsx')],
@@ -192,6 +193,57 @@ check('supplier rendering gates stale route or country identity before effects r
   has(supplierDetail, /isSupplierContentStale\(loadedIdentity, requestIdentity\)/) && has(supplierDetail, /if\s*\(loading \|\| contentStale\)/));
 check('supplier identity switch clears entity-specific visual state',
   has(supplierDetail, /if\s*\(identityChanged\)[\s\S]{0,500}setLightbox\(null\)[\s\S]{0,500}setLogoError\(false\)/));
+check('supplier inquiry opens in a bottom-right dialog without scrolling the page',
+  has(supplierDetail, /id="supplier-inquiry-panel"/)
+  && has(supplierDetail, /role="dialog"/)
+  && has(supplierDetail, /sm:bottom-6\s+sm:right-6/)
+  && has(supplierDetail, /onClick=\{openInquiry\}/)
+  && !has(supplierDetail, /scrollToInquiry|mobileFormRef|desktopFormRef/));
+check('supplier inquiry entry remains reachable without scrolling or permanent dismissal',
+  has(supplierDetail, /!inquiryOpen && \(/)
+  && !has(supplierDetail, /showFloatingForm|floatingFormDismissed|aria-label="Dismiss"/));
+check('supplier inquiry drawer supports escape, focus trapping and trigger focus restoration',
+  has(supplierDetail, /event\.key === 'Escape'/)
+  && has(supplierDetail, /event\.key !== 'Tab'/)
+  && has(supplierDetail, /const getFocusable =/)
+  && has(supplierDetail, /const focusable = getFocusable\(\)/)
+  && has(supplierDetail, /!panel\?\.contains\(document\.activeElement\)/)
+  && has(supplierDetail, /!Array\.from\(focusable\)\.includes\(document\.activeElement as HTMLElement\)/)
+  && has(supplierDetail, /inquiryTriggerRef\.current\?\.focus\(\)/));
+check('supplier inquiry drawer locks background scroll and has a backdrop close target',
+  has(supplierDetail, /document\.body\.style\.overflow = 'hidden'/)
+  && has(supplierDetail, /aria-label="Close inquiry form"/)
+  && has(supplierDetail, /onClick=\{closeInquiry\}/));
+check('supplier inquiry preserves draft while closed and resets it for a new supplier identity',
+  has(supplierDetail, /aria-hidden=\{!inquiryOpen\}/)
+  && has(supplierDetail, /inert=\{!inquiryOpen\}/)
+  && has(supplierDetail, /pointer-events-none/)
+  && has(supplierDetail, /key=\{requestIdentity\}/));
+check('supplier inquiry respects reduced-motion preferences',
+  has(supplierDetail, /useReducedMotion\(\)/)
+  && (supplierDetail.match(/reduceMotion \? \{ duration: 0 \}/g) || []).length >= 2);
+check('shared inquiry fields expose accessible names and announced errors',
+  ['Your name', 'Phone number', 'Project area in square metres', 'Message (optional)'].every((label) =>
+    serviceInquiry.includes(`aria-label="${label}"`))
+  && has(serviceInquiry, /aria-label=\{isVn \? 'Chọn thành phố' : 'Select city'\}/)
+  && has(serviceInquiry, /role="alert"/)
+  && has(serviceInquiry, /aria-live="assertive"/));
+check('supplier inquiry exposes expanded state and required form fields',
+  has(supplierDetail, /aria-expanded=\{inquiryOpen\}/)
+  && (serviceInquiry.match(/aria-required="true"/g) || []).length >= 4
+  && (serviceInquiry.match(/\brequired\b/g) || []).length >= 4);
+check('supplier inquiry uses the current country city list and mobile safe-area spacing',
+  has(supplierDetail, /isVn=\{country\.code === 'vn'\}/)
+  && (supplierDetail.match(/env\(safe-area-inset-bottom\)/g) || []).length >= 3
+  && has(supplierDetail, /document\.body\.style\.paddingBottom = mobile\.matches/)
+  && has(supplierDetail, /document\.body\.style\.paddingBottom = previousPaddingBottom/));
+check('inquiry success is announced and receives focus after submission',
+  has(serviceInquiry, /role="status"/)
+  && has(serviceInquiry, /aria-live="polite"/)
+  && has(serviceInquiry, /successRef\.current\?\.focus\(\)/));
+check('shared inquiry inputs use the required white field background',
+  !has(serviceInquiry, /bg-stone-50/)
+  && (serviceInquiry.match(/bg-white/g) || []).length >= 4);
 
 let passed = 0;
 for (const item of checks) {

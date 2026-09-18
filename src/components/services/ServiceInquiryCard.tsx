@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import SelectField from '../form/SelectField';
 import { trackContact, trackLead } from '../../lib/analytics';
@@ -75,6 +75,12 @@ export default function ServiceInquiryCard({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const errorId = useId();
+  const successRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (submitted) successRef.current?.focus();
+  }, [submitted]);
 
   const canSubmit = minimal
     ? Boolean(form.phone && form.areaSize)
@@ -124,7 +130,7 @@ export default function ServiceInquiryCard({
             .filter(Boolean)
             .join(' ')}
         >
-          <div className="text-center py-4">
+          <div ref={successRef} role="status" aria-live="polite" tabIndex={-1} className="text-center py-4 outline-none">
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-100 flex items-center justify-center">
               <svg
                 className="w-6 h-6 text-emerald-600"
@@ -149,16 +155,22 @@ export default function ServiceInquiryCard({
   }
 
   const inputCls =
-    'h-12 w-full rounded-lg border border-stone-200 bg-stone-50 px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors';
+    'h-12 w-full rounded-lg border border-stone-200 bg-white px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors';
 
   const formContent = (
     <form className="space-y-3" onSubmit={handleSubmit}>
       {error && (
-        <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+        <p id={errorId} role="alert" aria-live="assertive" className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
       )}
       {!minimal && (
         <input
           type="text"
+          name="name"
+          aria-label="Your name"
+          aria-describedby={error ? errorId : undefined}
+          aria-required="true"
+          required
+          autoComplete="name"
           placeholder="Your name"
           value={form.name}
           onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -167,6 +179,12 @@ export default function ServiceInquiryCard({
       )}
       <input
         type="tel"
+        name="phone"
+        aria-label="Phone number"
+        aria-describedby={error ? errorId : undefined}
+        aria-required="true"
+        required
+        autoComplete="tel"
         placeholder="Phone number"
         value={form.phone}
         onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
@@ -174,6 +192,13 @@ export default function ServiceInquiryCard({
       />
       {!minimal && (
         <SelectField
+          name="city"
+          aria-label={isVn ? 'Chọn thành phố' : 'Select city'}
+          aria-describedby={error ? errorId : undefined}
+          aria-required="true"
+          required
+          autoComplete="address-level2"
+          className="bg-white"
           value={form.city}
           onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
         >
@@ -188,6 +213,11 @@ export default function ServiceInquiryCard({
       <div className="relative">
         <input
           type="number"
+          name="areaSize"
+          aria-label="Project area in square metres"
+          aria-describedby={error ? errorId : undefined}
+          aria-required="true"
+          required
           min={1}
           step={1}
           placeholder="Project area (m²)"
@@ -202,18 +232,21 @@ export default function ServiceInquiryCard({
       {!minimal && (
         <textarea
           placeholder="Message (optional)"
+          name="message"
+          aria-label="Message (optional)"
+          aria-describedby={error ? errorId : undefined}
           rows={3}
           value={form.message}
           onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
-          className="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors"
+          className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/40 outline-none transition-colors"
         />
       )}
       <button
         type="submit"
         disabled={!canSubmit || submitting}
-        className="w-full h-12 bg-[#1c1917] hover:bg-[#b8864a] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-12 bg-[#b8864a] hover:bg-[#a07640] text-white text-sm font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {submitting ? 'Sending...' : submitLabel}
+        {submitting ? 'Sending…' : submitLabel}
       </button>
     </form>
   );
