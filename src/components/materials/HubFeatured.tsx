@@ -1,12 +1,30 @@
 'use client';
 
 // Hub 右侧默认内容（未搜索时）：宽屏自适应商品网格。
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { type MegaCategory } from '@/lib/materialMacros';
 import { fetchMaterialProducts, type PublicMaterialProduct } from '@/lib/materialsApi';
+import {
+  createAutoLoadRequestGuard,
+  hasAnotherAutoLoadPage,
+  mergeAutoLoadPage,
+  observeAutoLoad,
+  requestAutoLoadPage,
+} from '@/lib/materialAutoLoad';
 import HubProductCard from './HubProductCard';
+
+const MATERIAL_PAGE_SIZE = 24;
+
+function buildProductRequest(page: number, category?: string) {
+  return {
+    page,
+    limit: MATERIAL_PAGE_SIZE,
+    category,
+    balanced: !category,
+  };
+}
 
 export default function HubFeatured({
   selectedCategory,
@@ -20,6 +38,8 @@ export default function HubFeatured({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -27,12 +47,14 @@ export default function HubFeatured({
   const [displayedCountry, setDisplayedCountry] = useState(country);
   const [retryNonce, setRetryNonce] = useState(0);
   const requestVersionRef = useRef(0);
+  const loadMoreGuardRef = useRef(createAutoLoadRequestGuard());
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
 
   const hasVisibleProducts = displayedCountry === country && products.length > 0;
   const hidesStaleCountryProducts = displayedCountry !== country;
   const displayedMatchesSelection = displayedCountry === country && displayedCategory?.key === selectedCategory?.key;
   const canLoadMore = hasVisibleProducts && displayedMatchesSelection && !refreshing && !error;
-  const productRequest = { page: 1, limit: 24, category: selectedCategory?.key, balanced: !selectedCategory };
+  const productRequest = buildProductRequest(1, selectedCategory?.key);
 
   useEffect(() => {
     let on = true;
@@ -42,10 +64,13 @@ export default function HubFeatured({
     setLoading(!canKeepVisibleProducts);
     setRefreshing(canKeepVisibleProducts);
     setLoadingMore(false);
+    loadMoreGuardRef.current.reset();
+    setLoadMoreError(null);
     setError(null);
     if (!canKeepVisibleProducts) {
       setProducts([]);
       setTotal(0);
+      setHasMore(false);
       setDisplayedCategory(null);
       setDisplayedCountry(country);
     }
@@ -55,6 +80,7 @@ export default function HubFeatured({
         if (!result.error) {
           setProducts(result.products);
           setTotal(result.pagination.total);
+          setHasMore(result.pagination.page < result.pagination.totalPages);
           setPage(1);
           setDisplayedCategory(selectedCategory);
           setDisplayedCountry(country);
@@ -68,24 +94,47 @@ export default function HubFeatured({
     };
   }, [country, selectedCategory?.key, retryNonce]);
 
-  const loadMore = async () => {
-    if (!canLoadMore || loadingMore) return;
+  const loadMore = useCallback(async () => {
+    if (!canLoadMore || !hasMore) return;
     const nextPage = page + 1;
-    const requestVersion = requestVersionRef.current;
-    setLoadingMore(true);
-    setError(null);
-    const result = await fetchMaterialProducts({ ...productRequest, page: nextPage }, country);
-    if (requestVersionRef.current !== requestVersion) return;
-    if (result.error) {
-      setError(result.error);
-      setLoadingMore(false);
-      return;
+    const outcome = await requestAutoLoadPage({
+      guard: loadMoreGuardRef.current,
+      onStart: () => {
+        setLoadingMore(true);
+        setLoadMoreError(null);
+      },
+      load: () => fetchMaterialProducts(
+        buildProductRequest(nextPage, selectedCategory?.key),
+        country,
+      ),
+    });
+    if (outcome.status === 'success') {
+      const result = outcome.value;
+      if (result.error) {
+        setLoadMoreError(result.error);
+      } else {
+        setProducts((current) => mergeAutoLoadPage(current, result.products));
+        setPage(nextPage);
+        setTotal(result.pagination.total);
+        setHasMore(hasAnotherAutoLoadPage(
+          result.products.length,
+          result.pagination.page,
+          result.pagination.totalPages,
+        ));
+      }
+    } else if (outcome.status === 'error') {
+      setLoadMoreError('Products could not be loaded.');
     }
-    setProducts((current) => [...current, ...result.products]);
-    setPage(nextPage);
-    setTotal(result.pagination.total);
-    setLoadingMore(false);
-  };
+    if (outcome.status !== 'busy' && outcome.lockReleased) setLoadingMore(false);
+  }, [canLoadMore, country, hasMore, page, selectedCategory]);
+
+  const shouldLoadMore = canLoadMore && hasMore;
+
+  useEffect(() => {
+    const target = loadMoreSentinelRef.current;
+    if (!target || !shouldLoadMore || loadingMore || loadMoreError) return;
+    return observeAutoLoad(target, () => void loadMore());
+  }, [loadMore, loadMoreError, loadingMore, products.length, shouldLoadMore]);
 
   return (
     <div className="relative">
@@ -131,10 +180,29 @@ export default function HubFeatured({
           <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {products.map((product) => <HubProductCard key={product.id} product={product} />)}
           </div>
-          {canLoadMore && products.length < total && (
-            <div className="mt-7 flex justify-center">
-              <button type="button" onClick={loadMore} disabled={loadingMore} className="rounded-xl border border-[#b8864a] px-5 py-2.5 text-sm font-semibold text-[#b8864a] transition hover:bg-[#faf6ef] disabled:opacity-40">
-                {loadingMore ? 'Loading…' : 'Load more products'}
+          {shouldLoadMore && !loadMoreError && (
+            <div
+              ref={loadMoreSentinelRef}
+              className="mt-6 flex h-16 items-center justify-center"
+              role="status"
+              aria-live="polite"
+              aria-busy={loadingMore}
+            >
+              {loadingMore ? (
+                <span className="inline-flex items-center gap-2 text-sm text-stone-500">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#b8864a]/30 border-t-[#b8864a]" />
+                  Loading more products…
+                </span>
+              ) : (
+                <span className="sr-only">More products load automatically as you scroll.</span>
+              )}
+            </div>
+          )}
+          {loadMoreError && (
+            <div className="mt-6 text-center text-sm text-red-600" role="alert">
+              <p>Could not load more products.</p>
+              <button type="button" onClick={() => void loadMore()} className="mt-1 font-semibold text-[#b8864a] hover:text-[#a07640]">
+                Retry
               </button>
             </div>
           )}

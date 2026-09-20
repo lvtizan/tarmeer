@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
@@ -30,5 +31,16 @@ assert.match(card, /alt=\{`\$\{title\}\$\{supplierName/);
 assert.doesNotMatch(card, /Tarmeer UAE|sourced from China/);
 assert.match(card, /className="min-h-6 min-w-0 overflow-hidden \[&>p\]:truncate"/);
 assert.match(card, /flex min-h-5 min-w-0/);
+assert.match(featured, /observeAutoLoad/);
+assert.match(featured, /ref=\{loadMoreSentinelRef\}/);
+assert.match(featured, /requestAutoLoadPage/);
+assert.match(featured, /mergeAutoLoadPage\(current, result\.products\)/);
+assert.match(featured, /Could not load more products\./);
+assert.doesNotMatch(featured, /Load more products<\/button>|'Load more products'/);
 
-console.log('materials-hub-layout: 23/23 PASS');
+execFileSync(process.execPath, ['--test', 'src/lib/materialAutoLoad.test.mjs'], {
+  cwd: new URL('../..', import.meta.url),
+  stdio: 'pipe',
+});
+
+console.log('materials-hub-layout: 30/30 PASS');
